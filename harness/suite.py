@@ -17,7 +17,7 @@ from pathlib import Path
 
 from runlib.runfolder import new_run_id
 from suitelib import baselines, history, report as report_module
-from suitelib.launcher import DEFAULT_RUN_TIMEOUT_S, SubprocessLauncher, LAUNCHER_ENV, close_game, resolve_command
+from suitelib.launcher import SubprocessLauncher, LAUNCHER_ENV, close_game, resolve_command
 from suitelib.runner import run_suite
 from suitelib.suitefile import SUITES_DIR, SuiteFileError, load_suite
 
@@ -37,7 +37,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--baselines-dir", type=Path, default=baselines.BASELINES_DIR)
     parser.add_argument("--suites-dir", type=Path, default=SUITES_DIR)
     parser.add_argument("--launcher-command", help="replace run.py (default: env HARNESS_SUITE_LAUNCHER, else run.py)")
-    parser.add_argument("--run-timeout-s", type=float, default=DEFAULT_RUN_TIMEOUT_S, help="time limit of one run")
+    parser.add_argument("--run-timeout-s", type=float, default=None,
+                        help="fixed time limit of one run. Default: the scenario LIMIT_S plus 600 s, at least 900 s")
     return parser.parse_args(argv)
 
 

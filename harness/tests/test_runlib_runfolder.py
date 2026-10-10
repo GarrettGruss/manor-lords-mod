@@ -11,7 +11,9 @@ from runlib.runfolder import (
     IterationLimitError,
     RunLock,
     RunLockedError,
+    DEFAULT_MAX_RUNS,
     bump_iterations,
+    default_max_runs,
     create_run_folder,
     new_run_id,
     write_config,
@@ -96,6 +98,29 @@ class IterationTest(TempRootCase):
         (self.root / ".iterations").write_text("abc")
         with self.assertRaises(ValueError):
             bump_iterations(self.root, 5)
+
+    def test_message_names_the_option_and_the_environment_variable(self):
+        (self.root / ".iterations").write_text("3")
+        with self.assertRaises(IterationLimitError) as caught:
+            bump_iterations(self.root, 3)
+        self.assertIn("--max-runs", str(caught.exception))
+        self.assertIn("HARNESS_MAX_RUNS", str(caught.exception))
+
+
+class DefaultMaxRunsTest(unittest.TestCase):
+    def test_default_is_400(self):
+        self.assertEqual(DEFAULT_MAX_RUNS, 400)
+        self.assertEqual(default_max_runs({}), 400)
+        self.assertEqual(default_max_runs({"HARNESS_MAX_RUNS": "  "}), 400)
+
+    def test_environment_variable_overrides(self):
+        self.assertEqual(default_max_runs({"HARNESS_MAX_RUNS": "750"}), 750)
+
+    def test_bad_values_fail_loudly(self):
+        for bad in ("abc", "0", "-5", "1.5"):
+            with self.assertRaises(ValueError, msg=bad) as caught:
+                default_max_runs({"HARNESS_MAX_RUNS": bad})
+            self.assertIn("HARNESS_MAX_RUNS", str(caught.exception))
 
 
 if __name__ == "__main__":

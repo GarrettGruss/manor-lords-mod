@@ -9,12 +9,12 @@ import runlib_path  # noqa: F401
 from runlib.bridge_client import Bridge, object_path
 from runlib.runfolder import create_run_folder
 from runlib.runner import PhaseContext, PhaseFailed
-from runlib.scenario import SCENARIO_INFO, get_limit_s, list_scenarios, register
+from runlib.scenario import LONG_LIMIT_S, MAX_LIMIT_S, SCENARIO_INFO, get_limit_s, list_scenarios, register
 from runlib.scenario_context import ScenarioContext
 from scenarios import selftest_fail, smoke
 
-# Raised from 120 to 300 s for the raid scenarios of spec 10: a raid cycle needs several game days (5 s each at speed 3).
-LIMIT_CAP_S = 300
+# A limit above LONG_LIMIT_S (300 s) needs a LONG_REASON in the module, and MAX_LIMIT_S is the last word (spec 10, U3).
+LIMIT_CAP_S = MAX_LIMIT_S
 
 ENGINE = "Map.Map:PersistentLevel.RTSGameManager"
 PLAYER = "Map.Map:PersistentLevel.MyPawnCPP_BP3_C_77"
@@ -202,10 +202,12 @@ class RealScenarioTest(ContextTestCase):
 class RegistryTest(unittest.TestCase):
     def test_hidden_scenarios_are_not_listed_by_default(self):
         self.assertEqual(sorted(list_scenarios()), [
-            "autosave-protection", "datatable-vanilla", "letter-delivery", "noop", "raid-behavior", "raid-load", "raid-loot",
-            "raid-politics", "raid-sack", "raid-seasons", "raid-spawn", "raid-tiers", "raid-timeline", "raid-timer",
-            "silver-change", "smoke", "standin-captives", "standin-outposts",
-            "standin-tribute", "telemetry-sanity", "time-advance", "winter-region"])
+            "autosave-protection", "datatable-vanilla", "letter-delivery", "noop",
+            "raid-behavior", "raid-load", "raid-loot", "raid-politics",
+            "raid-sack", "raid-seasons", "raid-spawn", "raid-tiers",
+            "raid-timeline", "raid-timer", "silver-change", "smoke",
+            "soak-days", "standin-captives", "standin-outposts", "standin-tribute",
+            "telemetry-sanity", "time-advance", "winter-region"])
         self.assertIn("selftest-timeout", list_scenarios(include_hidden=True))
         self.assertIn("selftest-action", list_scenarios(include_hidden=True))
         self.assertIn("selftest-crash", list_scenarios(include_hidden=True))
@@ -215,6 +217,7 @@ class RegistryTest(unittest.TestCase):
     def test_every_scenario_has_a_limit_under_the_cap(self):
         for name, info in list_scenarios(include_hidden=True).items():
             self.assertTrue(0 < info.limit_s <= LIMIT_CAP_S, name)
+            self.assertTrue(info.limit_s <= LONG_LIMIT_S or info.long_reason, name)
         self.assertEqual(get_limit_s("selftest-timeout"), 5)
         self.assertEqual(get_limit_s("unknown"), 90)
 

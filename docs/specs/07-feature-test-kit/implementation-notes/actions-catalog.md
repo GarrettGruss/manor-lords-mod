@@ -26,6 +26,7 @@ Status words: `verified` = the effect was read back in the real game. `partial` 
 | spawn a bandit squad | verified (+18 units) | `spawn_bandit_squad()` | `MLCheatManager:SpawnBanditSquad` |
 | place a building (real OS mouse) | verified (HitchingPost, 10 of 10 runs with the good point; uses the OS mouse and focus) | `place_building(type_id, fx, fy)` | `activateBuildingMode`, real click (`osinput.py`) |
 | send a letter | verified, only with the helper mod `HarnessActions` | `send_letter(paragraphs, sender)` | command channel, then `PawnCPP:sendLetter` |
+| close pop-ups ("Hunger!" and similar) | verified (3 real pop-ups at 8x; the clock resumes at the old speed). Needs the mod `HarnessActions` version 6 | `close_popups()`, `popup_state()`, `ctx.popups()` | command `close_popups`: press the Accept handler of `popupMessageWidget_C` (spec 10, S8) |
 | read InBox / outbox | verified (read only) | `ctx.bridge.read_property` | `get InBox` |
 | read the HUD silver number | verified | `ctx.bridge.hud_treasury_text()` | `TreasuryNumeric:GetText()` |
 | save state to a new fixture | **not possible** | `save_state` raises | `PawnCPP:requestSaveFile` |

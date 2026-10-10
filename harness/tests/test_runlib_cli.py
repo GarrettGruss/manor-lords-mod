@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -18,9 +19,11 @@ class CliTest(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.runs_root = Path(temp.name) / "runs"
 
-    def run_cli(self, *args):
+    def run_cli(self, *args, env=None):
         command = [sys.executable, str(RUN_PY), "--runs-root", str(self.runs_root), *args]
-        return subprocess.run(command, capture_output=True, text=True, timeout=60)
+        environment = {key: value for key, value in os.environ.items() if key != "HARNESS_MAX_RUNS"}
+        environment.update(env or {})
+        return subprocess.run(command, capture_output=True, text=True, timeout=60, env=environment)
 
     def test_each_fake_outcome(self):
         for outcome in OUTCOMES:
@@ -48,6 +51,28 @@ class CliTest(unittest.TestCase):
         result = self.run_cli("--fake", "pass", "--max-runs", "1")
         self.assertEqual(result.returncode, 4)
         self.assertIn("Iteration limit", result.stderr)
+
+    def test_iteration_limit_from_the_environment(self):
+        env = {"HARNESS_MAX_RUNS": "1"}
+        self.assertEqual(self.run_cli("--fake", "pass", env=env).returncode, 0)
+        result = self.run_cli("--fake", "pass", env=env)
+        self.assertEqual(result.returncode, 4)
+        self.assertIn("Iteration limit", result.stderr)
+        # The option wins over the environment variable.
+        self.assertEqual(self.run_cli("--fake", "pass", "--max-runs", "5", env=env).returncode, 0)
+
+    def test_default_limit_is_400(self):
+        (self.runs_root).mkdir()
+        (self.runs_root / ".iterations").write_text("399")
+        self.assertEqual(self.run_cli("--fake", "pass").returncode, 0)
+        result = self.run_cli("--fake", "pass")
+        self.assertEqual(result.returncode, 4)
+        self.assertIn("max is 400", result.stderr)
+
+    def test_bad_environment_value_is_a_clear_error(self):
+        result = self.run_cli("--fake", "pass", env={"HARNESS_MAX_RUNS": "many"})
+        self.assertEqual(result.returncode, 4)
+        self.assertIn("HARNESS_MAX_RUNS", result.stderr)
 
     def test_live_lock_holder(self):
         holder = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])

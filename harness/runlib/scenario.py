@@ -3,6 +3,7 @@
 A scenario is a Python module in `harness/scenarios/`. It defines:
   NAME     the scenario name (default: the file name with "_" replaced by "-")
   LIMIT_S  the hard time limit for the whole scenario, in seconds
+  LONG_REASON  required when LIMIT_S is above LONG_LIMIT_S (300 s): why the scenario needs so much time
   HIDDEN   True for test scenarios. They are not listed unless asked for.
   run(ctx) the function. It gets a ScenarioContext and returns ctx.result().
 """
@@ -23,6 +24,13 @@ from .runner import PhaseContext
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_LIMIT_S = 90.0
+# A limit above LONG_LIMIT_S is for a soak or a multi-year run. It needs a written reason (LONG_REASON in the module).
+# MAX_LIMIT_S fits a 2-game-year soak: 730 days at 8x is about 3650 s, plus the boot.
+LONG_LIMIT_S = 300.0
+MAX_LIMIT_S = 4200.0
+# The limits of the other phases (preflight 60, deploy 120, launch 60, boot 240, collect 60, teardown 30) and some room.
+RUN_OVERHEAD_S = 600.0
+MIN_RUN_TIMEOUT_S = 900.0
 
 
 @dataclass(frozen=True)
@@ -30,18 +38,32 @@ class ScenarioInfo:
     limit_s: float
     hidden: bool = False
     summary: str = ""
+    long_reason: str = ""
 
 
 SCENARIOS: dict[str, Callable] = {}
 SCENARIO_INFO: dict[str, ScenarioInfo] = {}
 
 
-def register(name: str, limit_s: float = DEFAULT_LIMIT_S, hidden: bool = False, summary: str = "") -> Callable:
+def check_limit(name: str, limit_s: float, long_reason: str = "") -> None:
+    """Refuse a limit that is not positive, above MAX_LIMIT_S, or above LONG_LIMIT_S without a reason."""
+    if not 0 < limit_s <= MAX_LIMIT_S:
+        raise ValueError(f"Scenario {name!r}: LIMIT_S {limit_s} must be above 0 and at most {MAX_LIMIT_S:g} s.")
+    if limit_s > LONG_LIMIT_S and not long_reason.strip():
+        raise ValueError(
+            f"Scenario {name!r}: LIMIT_S {limit_s:g} s is above {LONG_LIMIT_S:g} s. "
+            "A long scenario needs a LONG_REASON text that says why."
+        )
+
+
+def register(name: str, limit_s: float = DEFAULT_LIMIT_S, hidden: bool = False, summary: str = "",
+             long_reason: str = "") -> Callable:
     def add(function):
         if name in SCENARIOS:
             raise ValueError(f"Scenario {name!r} is registered twice.")
+        check_limit(name, limit_s, long_reason)
         SCENARIOS[name] = function
-        SCENARIO_INFO[name] = ScenarioInfo(limit_s, hidden, summary)
+        SCENARIO_INFO[name] = ScenarioInfo(limit_s, hidden, summary, long_reason)
         return function
 
     return add
@@ -56,6 +78,15 @@ def get_scenario(name: str) -> Callable:
 def get_limit_s(name: str) -> float:
     info = SCENARIO_INFO.get(name)
     return info.limit_s if info else DEFAULT_LIMIT_S
+
+
+def run_timeout_s(name: str, floor_s: float = MIN_RUN_TIMEOUT_S) -> float:
+    """How long a launcher may wait for run.py on this scenario: the scenario limit plus the other phases.
+
+    The suite runner and run_series.py use it, so the kill timer of the launcher never ends a long scenario
+    before its own limit does.
+    """
+    return max(floor_s, get_limit_s(name) + RUN_OVERHEAD_S)
 
 
 def list_scenarios(include_hidden: bool = False) -> dict[str, ScenarioInfo]:
@@ -78,7 +109,8 @@ def load_scenario_modules(package: str = "scenarios") -> None:
         if name in SCENARIOS:
             continue
         summary = (module.__doc__ or "").strip().splitlines()[0:1]
-        register(name, module.LIMIT_S, getattr(module, "HIDDEN", False), summary[0] if summary else "")(module.run)
+        register(name, module.LIMIT_S, getattr(module, "HIDDEN", False), summary[0] if summary else "",
+                 getattr(module, "LONG_REASON", ""))(module.run)
 
 
 def configure_bridge_client(ctx: PhaseContext, install: GameInstall) -> Bridge:

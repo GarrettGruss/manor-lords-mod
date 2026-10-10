@@ -54,7 +54,45 @@ def start(game, **world_options):
     return world
 
 
+ACCEPT = "BndEvt__popupMessageWidget_Button_Accept_K2Node_ComponentBoundEvent_0_OnButtonReleasedEvent__DelegateSignature"
+
+
+def add_popup(game, kind, closing=False):
+    """A pop-up widget like the real one: `messageType` and `closing`, and the Accept handler sets `closing`."""
+    widget = game.obj("popupMessageWidget_C", messageType=game.text(kind), closing=closing)
+    pressed = []
+    game.method(widget, ACCEPT, lambda w: (pressed.append(kind), game.exec("return nil"), None)[0])
+    return widget, pressed
+
+
 class HarnessActionsTests(unittest.TestCase):
+    def test_popup_state_lists_the_open_popups_and_changes_nothing(self):
+        with FakeGame() as game:
+            start(game)
+            _, pressed = add_popup(game, "hunger")
+            add_popup(game, "old", closing=True)
+            send(game, 1, {"command": "popup_state"})
+            answer = result(game, 1)
+            self.assertEqual((answer["ok"], answer["widgets"], answer["open"]), (True, 2, ["hunger"]))
+            self.assertEqual(pressed, [])
+
+    def test_close_popups_presses_accept_only_on_open_popups(self):
+        with FakeGame() as game:
+            start(game)
+            _, pressed_hunger = add_popup(game, "hunger")
+            _, pressed_old = add_popup(game, "old", closing=True)
+            send(game, 1, {"command": "close_popups"})
+            answer = result(game, 1)
+            self.assertEqual((answer["ok"], answer["count"], answer["closed"]), (True, 1, ["hunger"]))
+            self.assertEqual((pressed_hunger, pressed_old), (["hunger"], []))
+
+    def test_close_popups_without_a_widget_is_a_clean_zero(self):
+        with FakeGame() as game:
+            start(game)
+            send(game, 1, {"command": "close_popups"})
+            answer = result(game, 1)
+            self.assertEqual((answer["ok"], answer["count"], answer["widgets"]), (True, 0, 0))
+
     def test_ping_answers_with_the_version(self):
         with FakeGame() as game:
             start(game)

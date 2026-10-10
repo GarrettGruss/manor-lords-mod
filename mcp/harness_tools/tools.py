@@ -23,7 +23,7 @@ from typing import Callable
 import psutil
 
 from runlib import game
-from runlib.runfolder import new_run_id
+from runlib.runfolder import DEFAULT_MAX_RUNS, default_max_runs, new_run_id
 
 MAX_RESULT_BYTES = 20_000
 MAX_TEXT_CHARS = 15_000  # leaves room for the JSON frame around one text field
@@ -31,7 +31,6 @@ MAX_WAIT_S = 50  # a client may time out on a long MCP call, so one wait stays s
 POLL_STEP_S = 0.5
 READ_WINDOW_BYTES = 200_000  # a huge log is never read whole
 MAX_SCREENSHOTS = 200
-DEFAULT_MAX_RUNS = 100  # same default as harness/run.py; a config.json of a run overrides it
 TRUNCATED_MARKER = "[... cut: older text removed ...]"
 
 NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
@@ -237,7 +236,12 @@ def read_iteration_state(runs_root: Path) -> dict:
         used = 0
     folders = list_run_folders(runs_root)
     config = read_json_file(folders[0] / "config.json") if folders else None
-    max_runs = (config or {}).get("max_runs", DEFAULT_MAX_RUNS)
+    # A config.json of a run overrides the default. Else the same default as run.py (HARNESS_MAX_RUNS or 400).
+    try:
+        fallback = default_max_runs()
+    except ValueError:
+        fallback = DEFAULT_MAX_RUNS
+    max_runs = (config or {}).get("max_runs", fallback)
     return {"runs_used": used, "max_runs": max_runs, "runs_left": max(0, max_runs - used)}
 
 
@@ -376,8 +380,19 @@ def running_result(runs_root: Path, run_id: str, started: float) -> dict:
         # The launcher printed something and made no run folder: it refused or crashed.
         text, _ = cut_from_start(log.read_text(encoding="utf-8", errors="replace"))
         return {"ok": False, "status": "failed_to_start", "run_id": run_id, "launcher_log": text}
-    return {"ok": True, "status": "running", "run_id": run_id, "phase": guess_phase(folder),
-            "elapsed_s": round(time.monotonic() - started, 1)}
+    result = {"ok": True, "status": "running", "run_id": run_id, "phase": guess_phase(folder),
+              "elapsed_s": round(time.monotonic() - started, 1)}
+    limit = scenario_limit_s(folder)
+    if limit:
+        # A long scenario (a soak) runs up to this long. The agent keeps calling wait_for_run until the summary appears.
+        result["scenario_limit_s"] = limit
+    return result
+
+
+def scenario_limit_s(folder: Path) -> float | None:
+    config = read_json_file(folder / "config.json") or {}
+    limit = (config.get("limits_s") or {}).get("scenario")
+    return limit if isinstance(limit, (int, float)) and not isinstance(limit, bool) else None
 
 
 def wait_for_run(runs_root: Path, repo_root: Path, run_id: str, seconds: int = 45) -> dict:

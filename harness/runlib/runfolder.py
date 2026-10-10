@@ -12,6 +12,10 @@ from pathlib import Path
 import psutil
 
 
+DEFAULT_MAX_RUNS = 400  # a safety rail for unattended loops. Delete runs/.iterations to reset the counter.
+MAX_RUNS_ENV = "HARNESS_MAX_RUNS"  # overrides the default. The option --max-runs of run.py overrides both.
+
+
 class RunLockedError(RuntimeError):
     """Another live process holds the run lock."""
 
@@ -127,6 +131,20 @@ class RunLock:
         self.took_over_pid = holder_pid
 
 
+def default_max_runs(environ: dict | None = None) -> int:
+    """The cap on runs: the environment variable HARNESS_MAX_RUNS, else DEFAULT_MAX_RUNS. A bad value is an error."""
+    text = (os.environ if environ is None else environ).get(MAX_RUNS_ENV, "").strip()
+    if not text:
+        return DEFAULT_MAX_RUNS
+    try:
+        value = int(text)
+    except ValueError:
+        value = 0
+    if value < 1:
+        raise ValueError(f"{MAX_RUNS_ENV}={text!r} is not a whole number of 1 or more. Fix or unset it.")
+    return value
+
+
 def bump_iterations(runs_root: Path, max_runs: int) -> int:
     """Add one to runs/.iterations and return the new count. Refuse to pass max_runs."""
     counter_path = Path(runs_root) / ".iterations"
@@ -139,7 +157,7 @@ def bump_iterations(runs_root: Path, max_runs: int) -> int:
     if current >= max_runs:
         raise IterationLimitError(
             f"Iteration limit reached: {current} runs done, max is {max_runs}. "
-            f"Raise --max-runs or reset {counter_path}."
+            f"Raise --max-runs (or set {MAX_RUNS_ENV}) or reset {counter_path}."
         )
     atomic_write_text(counter_path, str(current + 1))
     return current + 1

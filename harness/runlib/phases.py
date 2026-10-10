@@ -33,6 +33,7 @@ from .game import (
 )
 from .runfolder import atomic_write_text, write_config
 from .runner import Phase, PhaseContext, PhaseFailed
+from .waiting import ScenarioFailure
 from .scenario import REPO_ROOT, configure_bridge_client, get_limit_s, get_scenario
 from .scenario_context import ScenarioContext
 from .screenshot import capture_game_window
@@ -213,6 +214,10 @@ def _scenario(install: GameInstall, scenario_name: str):
         except ActionNotPossible as error:
             # A real result, not a harness bug: the scenario asked for something the kit cannot do.
             result = scenario_ctx.fail("action is possible", str(error))
+        except ScenarioFailure as error:
+            # A real result too: the game stalled, a pop-up held it, or a wait ran out. A dead game is a crash first.
+            ensure_game_alive(ctx, "scenario")
+            result = scenario_ctx.fail(type(error).__name__, str(error))
         except Exception:
             ensure_game_alive(ctx, "scenario")  # a dead game explains the error: it is a crash
             raise

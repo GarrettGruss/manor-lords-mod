@@ -198,7 +198,7 @@ class GameStatusTest(ToolsTestCase):
         with mock.patch.object(tools.game, "find_game_processes", return_value=[]):
             result = tools.game_status(self.runs, REPO_ROOT)
         self.assertEqual(result["lock_holder_pid"], os.getpid())
-        self.assertEqual((result["runs_used"], result["max_runs"], result["runs_left"]), (7, 100, 93))
+        self.assertEqual((result["runs_used"], result["max_runs"], result["runs_left"]), (7, 400, 393))
         self.assertFalse(result["game_running"])
 
     def test_stale_lock_is_not_a_holder_and_is_not_removed(self):
@@ -372,6 +372,12 @@ class RunScenarioTest(ToolsTestCase):
                 mock.patch.object(tools.time, "monotonic", side_effect=[0, 0, tools.MAX_WAIT_S + 1, 0]):
             result = tools.wait_for_run(self.runs, REPO_ROOT, "r1", seconds=9999)
         self.assertEqual(result["status"], "running")
+
+    def test_running_result_shows_the_scenario_limit_of_a_long_run(self):
+        self.make_run("r1", files={"config.json": json.dumps({"limits_s": {"scenario": 3700, "boot": 240}})})
+        with mock.patch.object(tools.time, "sleep"),                 mock.patch.object(tools.time, "monotonic", side_effect=[0, 0, tools.MAX_WAIT_S + 1, 0]):
+            result = tools.wait_for_run(self.runs, REPO_ROOT, "r1", seconds=5)
+        self.assertEqual((result["status"], result["scenario_limit_s"]), ("running", 3700))
 
     def test_phase_hint_from_files(self):
         folder = self.make_run("r1", files={"config.json": "{}"})

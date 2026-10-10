@@ -18,6 +18,7 @@ from runlib.runfolder import (
     RunLockedError,
     bump_iterations,
     create_run_folder,
+    default_max_runs,
     write_config,
 )
 from runlib.fixtures import DEFAULT_FIXTURE, FixtureError
@@ -29,11 +30,11 @@ from runlib.summary import EXIT_CODES
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PAK_CONFIG = Path(__file__).resolve().parent / "pakmod.local.json"
-DEFAULT_MAX_RUNS = 100  # a safety rail for unattended loops. Delete runs/.iterations to reset the counter.
 TEST_SAVE = "saveGame_0"
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
+    max_runs_default = default_max_runs()  # a bad HARNESS_MAX_RUNS stops here, with a clear message
     parser = argparse.ArgumentParser(description="Run one test iteration.")
     parser.add_argument("--fake", choices=OUTCOMES, help="use fake phases with this outcome (no game)")
     parser.add_argument("--scenario", help=f"run the real game with this scenario. Known: {sorted(list_scenarios())}")
@@ -55,7 +56,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
                         help="seconds between telemetry samples in the game (0 = off, default %(default)s)")
     parser.add_argument("--run-id", help="use this run id instead of a generated one")
     parser.add_argument("--runs-root", type=Path, default=REPO_ROOT / "runs")
-    parser.add_argument("--max-runs", type=int, default=DEFAULT_MAX_RUNS, help="cap on runs in this runs folder")
+    parser.add_argument("--max-runs", type=int, default=max_runs_default,
+                        help="cap on runs in this runs folder (default %(default)s: 400, or the environment variable HARNESS_MAX_RUNS)")
     return parser.parse_args(argv)
 
 
@@ -132,7 +134,10 @@ def print_scenarios(include_hidden: bool) -> int:
 
 
 def main(argv: list[str]) -> int:
-    args = parse_args(argv)
+    try:
+        args = parse_args(argv)
+    except ValueError as error:
+        return fail_before_run(str(error))
     if args.list_scenarios:
         return print_scenarios(args.include_test_scenarios)
     if (args.fake is None) == (args.scenario is None):

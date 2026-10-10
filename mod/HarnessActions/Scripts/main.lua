@@ -14,6 +14,8 @@
 --   {"id":"0005","command":"datatable_info"}       row count and names of the item table (read only)
 --   {"id":"0006","command":"datatable_read","row":"name","field":"Value"}              one number field of one row
 --   {"id":"0007","command":"datatable_write","row":"name","field":"Value","value":5}  change one number field
+--   {"command":"popup_state"}                                  read the pop-up windows of the game (read only)
+--   {"command":"close_popups"}                                 press Accept on every pop-up that is open ("Hunger!" and similar)
 --   Raid and unit commands (spec 10, see mod/shared/HarnessRaids):
 --   {"command":"raid_state"}                                   read the raid timer, the setup and the raid id lists
 --   {"command":"units_census","sample":10}                     counts of units by side, role, state, region
@@ -32,7 +34,7 @@ local autosave = require("HarnessAutosave")
 local datatable = require("HarnessDataTable")
 local raids = require("HarnessRaids")
 
-local VERSION = "5"
+local VERSION = "6"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -159,7 +161,50 @@ local function datatableWrite(request)
     return { ok = true, row = request.row, field = request.field, change = change }
 end
 
+-- Pop-ups ("Hunger!" and others) are one widget class. The game pauses until the player presses Accept, and it then goes
+-- back to the old speed (spec 10, spike S8). `closing` is false while a pop-up waits. IsInViewport and GetIsVisible
+-- were false for an open pop-up, so they cannot be used. The handler below is the Blueprint event of the Accept button.
+local POPUP_CLASS = "popupMessageWidget_C"
+local POPUP_ACCEPT = "BndEvt__popupMessageWidget_Button_Accept_K2Node_ComponentBoundEvent_0_OnButtonReleasedEvent__DelegateSignature"
+
+local function popupWidgets()
+    local found = {}
+    for _, widget in ipairs(FindAllOf(POPUP_CLASS) or {}) do
+        if widget:IsValid() and not widget:GetFullName():find("Default__", 1, true) then found[#found + 1] = widget end
+    end
+    return found
+end
+
+local function popupType(widget)
+    local ok, name = pcall(function() return widget.messageType:ToString() end)
+    return ok and name or "?"
+end
+
+local function popupState()
+    local open = {}
+    local widgets = popupWidgets()
+    for _, widget in ipairs(widgets) do
+        if not widget.closing then open[#open + 1] = popupType(widget) end
+    end
+    return { ok = true, widgets = #widgets, open = open }
+end
+
+local function closePopups()
+    local closed = {}
+    local widgets = popupWidgets()
+    for _, widget in ipairs(widgets) do
+        if not widget.closing then
+            local kind = popupType(widget)
+            widget[POPUP_ACCEPT](widget)
+            closed[#closed + 1] = kind
+        end
+    end
+    return { ok = true, widgets = #widgets, closed = closed, count = #closed }
+end
+
 local COMMANDS = {
+    popup_state = popupState,
+    close_popups = closePopups,
     ping = function() return { ok = true, version = VERSION } end,
     send_letter = sendLetter,
     autosave_status = autosaveStatus,
