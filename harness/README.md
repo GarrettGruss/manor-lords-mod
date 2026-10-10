@@ -198,3 +198,12 @@ Test the suite without the game: `HARNESS_SUITE_LAUNCHER` (or `--launcher-comman
 ```powershell
 .venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_suitelib*.py" -v
 ```
+
+## Mock kit (no game needed)
+
+`harness/tests/fakegame/` is a fake UE4SS API on `lupa`. A mod test needs fewer than 30 lines (spec 06, part B).
+Read `harness/tests/fakegame/README.md` for how to write one, and for what the fake does not cover.
+
+```powershell
+uv run --no-project --python 3.12 --with lupa python -m unittest discover -s harness/tests -p "test_fakegame*.py" -v
+uv run --no-project --python 3.12 --with lupa python harness/tests/boot_state_machine.py [mode ...]

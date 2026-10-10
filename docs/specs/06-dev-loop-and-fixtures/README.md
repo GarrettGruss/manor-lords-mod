@@ -1,6 +1,6 @@
 # Spec 06: Dev loop, mock kit and save fixtures
 
-Status: draft. Roadmap phase: 8 (see `docs/specs/00-harness-overview/README.md`).
+Status: in progress: part B (mock kit) done; hot reload (part A) and fixtures (part C) pending. Roadmap phase: 8 (see `docs/specs/00-harness-overview/README.md`).
 
 ## Goal
 Make iteration fast and the test situations repeatable:
@@ -44,7 +44,7 @@ Deliverable: `python harness/tools/reload_mods.py [--mod Name]` that deploys, re
 ## Plan
 1. Test the hot reload options in the real game. Record the results (what works, how long, side effects like double hooks).
 2. Build `reload_mods.py` for the working option, with tests. Measure the loop time.
-3. Build the mock kit and move the HarnessBoot test onto it. Write a second mod test as a proof.
+3. [x] Build the mock kit and move the HarnessBoot test onto it. Write a second mod test as a proof. (Done: part B, see `implementation-notes/mock-kit.md`.)
 4. Test in the real game whether the load screen lists `harness_base`. Then build `fixtures.py` and `--fixture`.
 5. Run the launcher with `--fixture base` 3 times.
 6. Update the spec, the README and the uninstall script.
