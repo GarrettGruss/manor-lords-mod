@@ -1,6 +1,6 @@
 # Building placement: search and probe
 
-Date: 2026-10-10 (branch feat/12-clock-cause-and-buildings). Result: **no verified action. Not possible through the bridge alone.**
+Date: 2026-10-10 (branch feat/12-clock-cause-and-buildings). Result of the first attempt: no verified action through the bridge alone. **Third attempt (real OS mouse): verified, see the end of this file.**
 Probe: hidden scenario `probe-building` (`HARNESS_PROBE_B` = `read`, `mode`, `click`, `scan`). Game paused at start, `saveGame_0`.
 
 ## Candidates from the jmap
@@ -67,3 +67,29 @@ State while armed: `isUsingUI` false, `bFullscreenUIActive` false, `currentUIMod
 ### Remaining gap
 The preview never appears, so the placement code path stops before the click: the Blueprint tick probably needs a real viewport hit (a ray from the real mouse), not only `getMouse3d`.
 `BuildingSpawnParams` cannot be filled from Lua. Open options: OS mouse input over the ground (intrusive, not done), a save fixture that already has the buildings, or reading the Blueprint script of the pawn to find the check that fails.
+
+## Third attempt: real OS mouse (2026-10-10, branch feat/14-os-mouse-placement)
+Result: **verified. A building is placed with a real left click.** Probe runs and 10 runs of the scenario `place-building`.
+
+Steps that work (code: `harness/runlib/osinput.py`, action `place_building`):
+1. The game is paused after boot. Bring the game window (class `UnrealWindow`) to the front (`AttachThreadInput`, `BringWindowToTop`, `SetForegroundWindow`). Check that it is the foreground window. Else send no input.
+2. `PawnCPP:activateBuildingMode(id)` through the bridge.
+3. `SetCursorPos` to a point of the window (fraction 0.65, 0.65), then 1 pixel right and back, so the game sees a mouse move.
+   Now `getMouse` is the window position (for example (1280, 1002)) and `getMouse3d` is a real ground point (z about 3000 to 5700, not -100000). The **preview appears** (screenshot).
+4. Unpause, wait 2 s, left click (mouse_event down, 150 ms, up), wait 3 s, pause.
+5. `getBuildingCount(30, False)` of the player region grows by 1 (3 to 4, 5 to 6, 14 to 15). The new building shows as a construction site (screenshot).
+6. `resetBuildingMode`, `ClipCursor(NULL)`, and the cursor goes back (measured: 0 px difference in 3 runs).
+
+### Facts
+- The earlier blocker was right: the preview needs a real cursor over terrain. A faked `getMouse3d` was not enough.
+- Dunghill (121) with 0 timber: the preview shows "Not enough goods!" and the click places nothing. Use `give_item` first. HitchingPost (30) is free.
+- **A click on a spot that overlaps another building site places nothing** (the preview is orange, not white). At window fraction (0.5, 0.7) the spot overlaps the log pile of the start camp in some starts (2 of 4 probe runs placed nothing there). At (0.65, 0.65) 8 of 8 runs placed the building.
+- The start save gives a different map spot per run (region names change), but the camera shows the same camp layout, so a fixed window fraction works.
+- Count the buildings of the chosen type in the player region (`getBuildingCount(type, False)`), not the length of `GetBuildings`. `props` on an `SMBuildingMaster` returns no type property.
+- Cursor: before the fix the cursor came back 8 pixels away (the game clips the cursor to its window). `ClipCursor(NULL)` before the restore fixes it.
+- No crash. No save was called. The user's cursor and focus are taken during the action (about 6 s).
+
+### Not verified
+- Other building types than HitchingPost 30 (Dunghill needs goods; not tried with goods).
+- Other window sizes, other monitors or DPI scales (tested once: window 2582x1496 at 100 % scale).
+- Whether the game accepts the click when the window is only partly visible or when another program steals the focus during the click.

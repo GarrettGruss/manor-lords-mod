@@ -24,6 +24,7 @@ Status words: `verified` = the effect was read back in the real game. `partial` 
 | set weather values | partial: the game moves them back in seconds | `set_weather(name, v)` | `set raining` and others on the TemporalComponent |
 | start rain (`RainNow`) | partial: rain rises slowly (0.04 after 3 s, 0.11 after 13 s) | no | `MLCheatManager:RainNow` |
 | spawn a bandit squad | verified (+18 units) | `spawn_bandit_squad()` | `MLCheatManager:SpawnBanditSquad` |
+| place a building (real OS mouse) | verified (HitchingPost, 10 of 10 runs with the good point; uses the OS mouse and focus) | `place_building(type_id, fx, fy)` | `activateBuildingMode`, real click (`osinput.py`) |
 | send a letter | verified, only with the helper mod `HarnessActions` | `send_letter(paragraphs, sender)` | command channel, then `PawnCPP:sendLetter` |
 | read InBox / outbox | verified (read only) | `ctx.bridge.read_property` | `get InBox` |
 | read the HUD silver number | verified | `ctx.bridge.hud_treasury_text()` | `TreasuryNumeric:GetText()` |
@@ -39,7 +40,7 @@ Status words: `verified` = the effect was read back in the real game. `partial` 
   It exists because the stock UE4SS mod `CheatManagerEnablerMod` is on in `ue4ss\Mods\mods.txt` (`UE4SS.log`: "Constructed CheatManager").
   **Caveat:** if that mod is turned off, the cheat manager actions fail. The console command `EnableCheats` did not create one (it was there already, so this is not proof).
 - Do setters on `Approval` hold? Not always. See the region rows below.
-- Is there a reflected function that places a building or starts a raid? No function that places a building from a bridge call was found (second search and probe: `building-placement.md`; a third attempt with a faked mouse hook and a raw spawn call also placed nothing, 2026-10-10). `RTSMultiEngineCPP:spawnRaiders(NumSquads, ArmyCenter struct)` exists, but it was not called (struct parameter). The cheat `SpawnRaidersOfType("Bandit")` changed nothing.
+- Is there a reflected function that places a building or starts a raid? No function that places a building from a bridge call was found (a real OS mouse click does place one: `place_building`, third attempt in `building-placement.md`) (second search and probe: `building-placement.md`; a third attempt with a faked mouse hook and a raw spawn call also placed nothing, 2026-10-10). `RTSMultiEngineCPP:spawnRaiders(NumSquads, ArmyCenter struct)` exists, but it was not called (struct parameter). The cheat `SpawnRaidersOfType("Bandit")` changed nothing.
 
 ## Player values (probe-money)
 
