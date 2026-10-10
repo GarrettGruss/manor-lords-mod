@@ -94,3 +94,24 @@ New: `test_suitelib_launcher.py` (timeout kills the run and calls the cleanup on
 - The iteration cap path (exit 3) with the real `run.py`; unit tests only.
 - The 900 s default run limit; real runs take at most 90 s.
 - Baselines come from 2 to 4 runs and were set by hand for timing metrics. Re-check them after more runs.
+
+## Thicker baselines (2026-10-10)
+Five more `core` suites were run (each smoke x2, time-advance x2, telemetry-sanity x1): all five passed (exit 0), about 4.5 minutes each.
+With the earlier runs, 14 smoke, 12 time-advance and 5 telemetry-sanity passing runs exist. Observed `duration_s` (seconds):
+
+| Scenario | Runs | Min | Max | Mean | Std dev |
+|---|---|---|---|---|---|
+| smoke | 14 | 42.7 | 44.0 | 43.6 | 0.5 |
+| time-advance | 12 | 53.4 | 58.2 | 55.7 | 1.5 |
+| telemetry-sanity | 5 | 89.6 | 90.1 | 89.8 | 0.2 |
+
+Findings:
+- Runs are very stable. Every value of every metric of these runs was inside the existing baseline ranges, so those ranges are now backed by 12 to 14 runs.
+- `--update-baseline --from-last 12` proposed tighter ranges for the timing metrics (for example smoke `duration_s` [38.4, 48.4]). They were not used: they leave
+  almost no room for a loaded machine and would produce noisy drift.
+- The `duration_s` ranges were tightened by hand (an explicit, reviewed edit) to about 20 percent around the observed spread:
+  smoke [36, 52] (was [30, 70]), time-advance [44, 68] (was [40, 90]), telemetry-sanity [78, 102] (was [65, 130]). The other metrics are unchanged.
+  A feature that makes a run 1.5 times slower is now reported as drift.
+- Check: the `core` suite run against the new ranges passed with no drift (exit 0).
+
+Still thin: `telemetry-sanity` has 5 runs. The suite `full` (all non-hidden scenarios) has no baselines yet.
