@@ -10,6 +10,7 @@ Each changed place in the code has a comment `PATCH P<n> (harness)`. Search for 
 | P5 | `mod/UEBridge/scripts/main.lua` | Result limits are at most 500. A response over 1,000,000 bytes becomes an error. |
 | P6 | `mod/UEBridge/scripts/main.lua` | `dump` needs `allow_writes`. |
 | P2 | `mcp/ue4ss_bridge/server.py` | `eval_lua` and the CLI `eval` verb work only if `UE4SS_BRIDGE_ALLOW_EVAL=1`. The eval timeout is at most 60 s. |
+| P8 | `mod/UEBridge/scripts/main.lua` | `get`, `set` and `call` refuse a name that is not a non-empty string. A nil name crashed the game (see `smoke-test-log.md`). |
 | P3 | none | The Lua mod lives in `mod/UEBridge/`, so `harness/deploy.ps1` deploys it as `Mods\UEBridge`. |
 | P7 | `mcp/requirements.txt`, `.mcp.json`, `.claude/settings.json` | `mcp` is pinned. Stdio only. Eval is denied. Risky tools ask first. |
 
