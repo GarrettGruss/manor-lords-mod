@@ -18,6 +18,7 @@ from runlib.runfolder import (
     create_run_folder,
     write_config,
 )
+from runlib.fixtures import DEFAULT_FIXTURE, FixtureError
 from runlib.game import DEFAULT_TELEMETRY_INTERVAL_S
 from runlib.phases import build_real_phases
 from runlib.runner import Phase, execute_run
@@ -35,6 +36,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--scenario", help=f"run the real game with this scenario. Known: {sorted(list_scenarios())}")
     parser.add_argument("--list-scenarios", action="store_true", help="print the scenarios and their time limits, then exit")
     parser.add_argument("--include-test-scenarios", action="store_true", help="with --list-scenarios: also list the hidden selftest scenarios")
+    parser.add_argument("--fixture", default=DEFAULT_FIXTURE,
+                        help="save fixture to start from (harness/fixtures/fixtures.json, default %(default)s). "
+                             "It is copied into the private appdata folder of the run, never next to the user's saves")
     parser.add_argument("--keep-open", action="store_true", help="do not stop the game at the end")
     parser.add_argument("--telemetry-interval", type=float, default=DEFAULT_TELEMETRY_INTERVAL_S,
                         help="seconds between telemetry samples in the game (0 = off, default %(default)s)")
@@ -54,7 +58,7 @@ def build_phases(args: argparse.Namespace) -> list[Phase]:
     if args.fake:
         return build_fake_phases(args.fake)
     return build_real_phases(args.scenario, keep_open=args.keep_open, test_save=TEST_SAVE,
-                             telemetry_interval_s=args.telemetry_interval)
+                             telemetry_interval_s=args.telemetry_interval, fixture=args.fixture)
 
 
 def build_config(args: argparse.Namespace, run, phases: list[Phase], lock) -> dict:
@@ -63,6 +67,8 @@ def build_config(args: argparse.Namespace, run, phases: list[Phase], lock) -> di
         "scenario": f"fake-{args.fake}" if args.fake else args.scenario,
         "fake_outcome": args.fake,
         "test_save": None if args.fake else TEST_SAVE,
+        "fixture": None if args.fake else args.fixture,
+        "private_appdata": not args.fake,
         "keep_open": args.keep_open,
         "telemetry_interval_s": None if args.fake else args.telemetry_interval,
         "limits_s": {phase.name: phase.time_limit_s for phase in phases},
@@ -77,7 +83,7 @@ def build_config(args: argparse.Namespace, run, phases: list[Phase], lock) -> di
 def run_one(args: argparse.Namespace) -> int:
     try:
         phases = build_phases(args)  # a wrong scenario name fails here, before any lock or folder
-    except ValueError as error:
+    except (ValueError, FixtureError) as error:
         return fail_before_run(str(error))
     try:
         with RunLock(args.runs_root) as lock:

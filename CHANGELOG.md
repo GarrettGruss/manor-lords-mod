@@ -6,7 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Hot reload without a game restart (spec 06): `python harness/tools/reload_mods.py [--mod Name] [--run-dir DIR]` deploys and restarts the changed Lua mods in the running game in about 2 s. The new mod `HarnessReload` calls `RestartMod` on a request file (`reload.json`) and writes `reload.result.json` with the version line. `HarnessLogTest`, `HarnessTelemetry` and `HarnessLoadProbe` now log `loaded version <v>`.
+- Save fixtures (spec 06): every run gives the game its own `LOCALAPPDATA` (`<run>/appdata`) with the fixture `base` (a copy of the user's `saveGame_0`, listed in `harness/fixtures/fixtures.json`, no save data in git). The user's save folder is hashed before and after the run and is never used by the game. `run.py --fixture <name>`, `harness/tools/fixtures.py` (`list`, `record`, `install`, `remove`). Crash reports are collected from the private folder. The game lists only `saveGame_0` to `saveGame_27` and `autosave`, so a custom slot name does not work (`implementation-notes/fixtures.md`).
+- `HarnessBoot` logs the slots of the load screen when the wanted slot is missing.
 - `manor-harness` MCP server (`mcp/harness_tools/`) with start-and-poll tools to run scenarios and read results (spec 05).
+- Mock kit `harness/tests/fakegame/`: a fake UE4SS API on lupa (objects, TArray, loops, key binds, hooks, fake time, fake game clock, a Manor Lords menu and game state). `boot_state_machine.py` now uses it. See `harness/tests/fakegame/README.md`.
 - `HarnessLog` shared Lua module. It writes a log file that flushes on each line.
 - `HarnessLogTest` mod to check that the log works.
 - `harness/deploy.ps1` to copy mods into the UE4SS `Mods` folder and enable them.

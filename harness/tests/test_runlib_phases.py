@@ -143,12 +143,12 @@ class StalePreflightTest(TempTestCase):
             with self.assertRaisesRegex(PhaseFailed, "Steam"):
                 phases._preflight(install, "saveGame_0")(self.ctx)
 
-    def test_missing_save_fails(self):
+    def test_missing_fixture_source_fails(self):
         install = GameInstall(root=self.temp / "game", saved_dir=self.temp / "saved")
         install.exe.parent.mkdir(parents=True)
         install.exe.write_text("")
         with mock.patch.object(phases, "is_steam_running", return_value=True):
-            with self.assertRaisesRegex(PhaseFailed, "test save not found"):
+            with self.assertRaisesRegex(PhaseFailed, "fixture base"):
                 phases._preflight(install, "saveGame_0")(self.ctx)
 
     def test_stop_processes_raises_if_one_stays(self):

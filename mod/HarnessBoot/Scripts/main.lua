@@ -193,6 +193,20 @@ local function findSlotEntry(screen, wanted)
     return nil, count
 end
 
+-- Names of all slots in the list, for the log when the wanted slot is missing.
+local function listSlotNames(screen)
+    local names = {}
+    local okAll = pcall(function()
+        local slots = screen.SortedSlotsByDate
+        for i = 1, slots:GetArrayNum() do
+            local descr = unwrap(slots[i]).Descriptor
+            names[#names + 1] = isValid(descr) and tostring(asText(descr.saveSlot)) or "<invalid>"
+        end
+    end)
+    if not okAll then names[#names + 1] = "<list could not be read>" end
+    return table.concat(names, ",")
+end
+
 local function checkSaveExists()
     -- A missing save is a clear failure. If the check itself cannot run, go on without it.
     local okFind, handler = pcall(StaticFindObject, "/Script/ManorLords.Default__IoHandler")
@@ -256,6 +270,8 @@ local function stepLoadingSave()
     end
 
     if secondsInState() > TIMEOUT_S.LOADING_SAVE then
+        local screen = FindFirstOf("W_MainMenu_SaveLoadScreenV2_C")
+        if isValid(screen) then log.info(TAG, "slots in the list: " .. listSlotNames(screen)) end
         fail("slot '" .. boot.slot .. "' did not appear in the save list in " .. TIMEOUT_S.LOADING_SAVE .. " s")
     end
 end

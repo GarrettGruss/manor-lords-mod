@@ -119,6 +119,11 @@ def condense_environment(environment: dict) -> dict:
             short[key] = environment[key]
     if environment.get("test_save_sha256"):
         short["test_save_sha256"] = environment["test_save_sha256"][:12]
+    fixture = environment.get("fixture")
+    if fixture:
+        short["fixture"] = fixture["fixture"]
+        short["fixture_sav_sha256"] = fixture["sav_sha256"][:12]
+        short["user_saves_sha256"] = fixture["user_files_sha256"][:12]
     if environment.get("mods"):
         # One hash over all mods: it changes when any deployed mod changes.
         joined = json.dumps(environment["mods"], sort_keys=True).encode("utf-8")
