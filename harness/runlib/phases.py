@@ -81,7 +81,9 @@ def _preflight(install: GameInstall, test_save: str, fixture: str = fixtures.DEF
     def run(ctx: PhaseContext) -> str | None:
         ctx.state["run_started_epoch"] = time.time()
         if not is_steam_running():
-            raise PhaseFailed("Steam is not running. Start Steam first.")
+            # Not an error: a direct launch works without Steam (tested 2026-10-10: READY after 32 s, the game does not start
+            # Steam). The note tells the reader that this run had no Steam.
+            ctx.state["notes"].append("Steam was not running; the game was started directly without it")
         venv_python = REPO_ROOT / ".venv" / "Scripts" / "python.exe"
         if not venv_python.exists():
             raise PhaseFailed(f"venv not found: {venv_python}")

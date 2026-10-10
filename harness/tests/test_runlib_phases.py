@@ -137,11 +137,21 @@ class StalePreflightTest(TempTestCase):
             phases._stop_stale_game(self.ctx)
         self.assertEqual(self.ctx.state["notes"], [])
 
-    def test_steam_missing_fails(self):
+    def test_steam_missing_is_only_a_note(self):
+        # A direct launch works without Steam, so a missing Steam is not a failure. The next check fails here (no game exe),
+        # which proves that preflight went past the Steam check.
         install = GameInstall(root=self.temp / "game", saved_dir=self.temp / "saved")
         with mock.patch.object(phases, "is_steam_running", return_value=False):
-            with self.assertRaisesRegex(PhaseFailed, "Steam"):
+            with self.assertRaisesRegex(PhaseFailed, "game exe not found"):
                 phases._preflight(install, "saveGame_0")(self.ctx)
+        self.assertEqual(self.ctx.state["notes"], ["Steam was not running; the game was started directly without it"])
+
+    def test_steam_running_adds_no_note(self):
+        install = GameInstall(root=self.temp / "game", saved_dir=self.temp / "saved")
+        with mock.patch.object(phases, "is_steam_running", return_value=True):
+            with self.assertRaisesRegex(PhaseFailed, "game exe not found"):
+                phases._preflight(install, "saveGame_0")(self.ctx)
+        self.assertEqual(self.ctx.state["notes"], [])
 
     def test_missing_fixture_source_fails(self):
         install = GameInstall(root=self.temp / "game", saved_dir=self.temp / "saved")
