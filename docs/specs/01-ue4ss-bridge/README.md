@@ -44,9 +44,10 @@ security review (see `review-checklist.md`) passing.
 - Gate: no unresolved High findings.
 
 ### Step 2: Vendor and patch
-- Copy the reviewed Lua mod into `mod/ue4ss-bridge/` (pinned to a commit hash,
-  recorded in `mod/ue4ss-bridge/VERSION`).
-- Apply required patches as a documented diff in `mod/ue4ss-bridge/PATCHES.md`.
+- Copy the reviewed Lua mod into `mod/UEBridge/` and the MCP server into `mcp/ue4ss_bridge/`.
+  The folder must be named `UEBridge`. The pinned upstream commit is in `vendor/ue4ss-bridge/VERSION`.
+- Apply the required patches. Each one is marked `PATCH P<n> (harness)` in the code and listed in
+  `vendor/ue4ss-bridge/PATCHES.md`.
 - Adapt paths for the new layout (`ue4ss\bridge\`), and make the bridge
   directory configurable via `HARNESS_RUN_DIR` when set, so each run has its
   own request/response files.
