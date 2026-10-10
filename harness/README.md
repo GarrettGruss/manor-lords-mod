@@ -293,3 +293,32 @@ A game crash while a letter is sent (plain strings instead of `FName` values) is
 `letter-delivery` (a letter into the InBox, about 40 s). Hidden: `selftest-action` (an impossible action, must fail with a clear message) and `probe-actions`
 (the probe; choose a group with `HARNESS_PROBE`: money, time, region, cheat, cheat2, cheat3, weather, hud, mail, helper; the groups `message`, `items` and `names` end the game on purpose).
 Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_actions.py" -v` and, with lupa, `test_fakegame_harnessactions.py`.
+
+## Asset mods (spec 09)
+`harness/tools/pakmod.py` builds, installs and removes `.pak` files. **Status: tested with a fake packer only. A real pak build is not verified.**
+Use Lua first. Build a pak only when the data cannot be changed at runtime (`docs/specs/09-asset-mods/README.md`).
+
+Setup (only you can do this; the repo has no pak tools and no AES key):
+1. Get a pak tool, for example UnrealPak (from an Unreal Engine install) or `retoc`. Put it anywhere outside the repo.
+2. Make a work folder outside the repo, for example `C:\modwork`. Put the edited asset files in `C:\modwork\<name>\`, with the in-game folder layout,
+   for example `C:\modwork\myedit\ManorLords\Content\NotStronghold\Data\DT_Items.uasset`. The tool writes the mount path `../../../ManorLords/Content/...` for each file.
+   Exports from FModel, `.usmap` files and AES keys stay outside the repo. Never commit them.
+3. Write `harness\pakmod.local.json` (it is in `.gitignore`):
+   ```json
+   {"packer": "C:/tools/UnrealPak/UnrealPak.exe", "packer_args": ["-Create={response}", "{output}"], "work_dir": "C:/modwork"}
+   ```
+   `{response}` is replaced with the response file path, `{output}` with `<work_dir>\out\<name>_P.pak`. Change `packer_args` to what your tool needs. Give the AES key as an argument there only if the tool needs it, and keep the file out of git.
+4. Run `.venv\Scripts\python.exe harness\tools\pakmod.py check`. It lists what is missing.
+
+Commands (all accept `--dry-run` and `--game-dir`; the name matches `^[A-Za-z0-9_-]{1,40}$`):
+```
+pakmod.py check
+pakmod.py build <name>       # writes <work_dir>\out\<name>_P.pak
+pakmod.py install <name>     # copies it to ManorLords\Content\Paks\~mods\ and records its SHA-256 in ~mods\.harness-paks.json
+pakmod.py list
+pakmod.py remove <name>      # or: remove --all. Deletes only manifest files whose hash still matches
+```
+`uninstall.ps1 -Remove` also removes the manifest paks. Restart the game after install or remove (the launcher starts a new game for each run anyway).
+To check the effect: `run.py --scenario datatable-vanilla` with `HARNESS_EXPECT_ITEM_ROWS='{"17": {"Value": 0.75}}'` (new values) after a pak that changes them.
+Without a pak the scenario compares 24 `itemStats` rows with `harness/vanilla/itemStats.json` (about 50 s per run). Details: `docs/specs/09-asset-mods/implementation-notes/tooling.md`.
+Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_pakmod.py" -v` and `test_runlib_itemtable.py`.

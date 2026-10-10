@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Asset mod tooling (spec 09): `harness/tools/pakmod.py` (`check`, `build`, `install`, `remove`, `list`, all with `--dry-run` and `--game-dir`), configured by the local file `harness/pakmod.local.json` (not committed). `uninstall.ps1 -Remove` also removes harness paks (only files in `~mods\.harness-paks.json` whose hash matches). Tested with a fake packer; a real pak build is not verified (needs UnrealPak or `retoc` from the user).
+- Scenario `datatable-vanilla` and the file `harness/vanilla/itemStats.json` (24 vanilla `itemStats` rows, row count 213): the scenario compares the rows read in the game with the vanilla values. `HARNESS_EXPECT_ITEM_ROWS` states new values for a data pak. Hidden scenario `datatable-record` writes the vanilla file. Actions `ctx.actions.datatable_info()` and `ctx.actions.datatable_read(row, field)`.
 - Autosave protection (spec 06): `HarnessBoot` state `DISABLING_AUTOSAVE` restarts the pawn autosave timer with a one year period before READY (shared module `HarnessAutosave`, `MLGameInstance:SetAutosavePeriodOnPawn`). The timer ran in real time, also in a paused game. `HarnessActions` commands `autosave_status` and `disable_autosave`, action `ctx.actions.autosave_status()`, scenario `autosave-protection`, and fake game support for the timer (`boot_state_machine.py` mode `autosavefails`).
 - `HarnessActions` commands `datatable_info`, `datatable_read` and `datatable_write` with the shared module `HarnessDataTable` (spec 09 first check: number fields of `itemStats` rows can be read and written at runtime).
 - Hidden scenario `selftest-crash`: makes the real game crash through the bridge (`getItem` or `playEventMessage`) to test the crash verdict and the crash report copy.
@@ -54,6 +56,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - MCP dependencies are locked with hashes (`mcp/requirements.in` and `mcp/requirements.txt`) and installed with uv.
 
 ### Fixed
+- The command channel retries when the mod still holds a result file open (Windows `PermissionError`) or has written only part of it. A run of 120 reads failed with `PermissionError` before.
 - Crash reports were never copied: the UE crash handler writes into the user's real `Crashes` folder, not the private `LOCALAPPDATA`. `collect` now searches both folders and matches the process id. `teardown` stops the `CrashReportClient.exe` that a crash leaves open.
 - `--keep-open` now prints how to stop the game and delete the private appdata, and says that the user's save files were not compared.
 - Vendored bridge: the poller no longer stays busy forever after a failed reply. Large responses and limits are capped. `dump` needs `allow_writes`.

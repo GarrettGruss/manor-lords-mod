@@ -45,7 +45,7 @@ An agent uses the fastest layer that can answer its question. It moves to a slow
 | 06 | dev-loop-and-fixtures | Hot reload without a game restart, a reusable mock kit, several test saves | done (hot reload, mock kit, fixtures through a private LOCALAPPDATA) |
 | 07 | feature-test-kit | Helpers to give resources, place buildings, trigger events, advance time | done (14 checked actions, `ctx.actions`, helper mod for letters; no building placement) |
 | 08 | regression-suite | Run many scenarios and saves, compare with baselines, find flaky tests | done (PR 6). Baselines are thin (2 to 4 runs) |
-| 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | deferred on purpose (PR 7). The spec says when to build it |
+| 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | tooling built and tested with a fake packer (`feat/11-asset-mod-tool`). A real pak build is not verified: it needs a pak tool, an edited asset and maybe the AES key from the user. The spec says when to build it |
 
 Order and reasons:
 - 03 comes first: every later spec needs a run folder and a summary.
@@ -131,3 +131,4 @@ Then update the status here and in the changelog.
 - Thicker baselines: run the `core` suite more times before trusting the timing ranges (spec 08).
 - Building placement and raids have no verified action. Search the jmap for the function behind each UI action when a feature needs it (spec 07).
 - CLOSED (done on 2026-10-10 in feat/10-roadmap-followups): Spec 09 first check. A Lua mod reads and writes number fields of `itemStats` rows (213 rows, `FindRow`), so a pak is not needed for numbers. The bridge cannot read rows (`RowStruct` read and `getItem` crash the game). Not verified: that game logic uses a changed value, persistence over a load, string and soft fields. Notes: `09-asset-mods/implementation-notes/datatable-check.md`.
+- OPEN (user input needed): Spec 09 real pak build. `pakmod.py` and `datatable-vanilla` are built and tested without a pak tool. To verify the chain, the user supplies UnrealPak or `retoc`, an edited `DT_Items` asset and possibly the AES key, and writes `harness/pakmod.local.json` (`harness/README.md`, section "Asset mods"). Notes: `09-asset-mods/implementation-notes/tooling.md`.
