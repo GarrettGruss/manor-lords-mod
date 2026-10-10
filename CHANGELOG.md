@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `manor-harness` MCP server (`mcp/harness_tools/`) with start-and-poll tools to run scenarios and read results (spec 05).
 - `HarnessLog` shared Lua module. It writes a log file that flushes on each line.
 - `HarnessLogTest` mod to check that the log works.
 - `harness/deploy.ps1` to copy mods into the UE4SS `Mods` folder and enable them.

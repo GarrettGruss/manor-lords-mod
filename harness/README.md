@@ -151,3 +151,18 @@ Exit codes of `game-launch.ps1`: 0 started (and `READY` with `-WaitForBoot`), 1 
 2 the process did not start, 3 HarnessBoot `FAILED` or the game ended, 4 timeout, 5 other error.
 Exit codes of `game-close.ps1`: 0 closed or not running, 1 killed or still running, 2 error.
 The old `launch-series.ps1` was removed. Use `run_series.py`.
+
+## Agent tools
+
+`mcp/harness_tools/` is an MCP server (`manor-harness`, spec 05). An agent uses it instead of shell commands.
+It is registered in `.mcp.json`. To start it by hand: `$env:PYTHONPATH = "mcp;harness"; .venv\Scripts\python.exe -m harness_tools`.
+
+A run takes 1 to 3 minutes, so the tools start and poll:
+1. `run_scenario(name)` starts `harness/run.py` in the background and returns `{"status": "started", "run_id": ...}`.
+2. `wait_for_run(run_id)` waits up to 45 s (cap 50 s). It returns the summary, or `{"status": "running", ...}`. Call it again.
+3. `read_summary`, `read_log`, `read_telemetry` and `list_screenshots` read the result.
+
+Other tools: `list_scenarios`, `list_runs`, `game_status`, `stop_game` (refuses while a run holds the lock).
+The read-only tools are allowed in `.claude/settings.json`. `run_scenario` and `stop_game` ask first.
+`HARNESS_RUNS_ROOT` moves the runs folder. It is for tests only.
+Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_harness_tools*.py"`.
