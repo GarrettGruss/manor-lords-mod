@@ -161,6 +161,75 @@ def lock_holder_pid(runs_root: Path) -> int | None:
     return pid if psutil.pid_exists(pid) else None
 
 
+# --- start claim ------------------------------------------------------------------------------
+# run.py takes runs/.lock only after it has started. The claim closes that gap, so two quick
+# run_scenario calls cannot both start a launcher. run.py does not release the claim.
+# A claim is released by its launcher process ending: a dead launcher means a stale claim.
+
+CLAIM_NAME = ".active-launcher.json"
+CLAIM_GRACE_S = 10  # time a claim counts as live while the launcher pid is not known yet
+
+
+def claim_path(runs_root: Path) -> Path:
+    return Path(runs_root) / CLAIM_NAME
+
+
+def claim_is_live(path: Path, claim: dict | None) -> bool:
+    if claim is None:  # unreadable: the writer may be half way through, so judge by file age
+        try:
+            return time.time() - path.stat().st_mtime < CLAIM_GRACE_S
+        except FileNotFoundError:
+            return False
+    if claim.get("launcher_known"):
+        return psutil.pid_exists(int(claim["pid"]))
+    return time.time() - float(claim.get("started", 0)) < CLAIM_GRACE_S
+
+
+def active_claim(runs_root: Path) -> dict | None:
+    """The live claim, or None. Read only: a stale claim is not removed."""
+    path = claim_path(runs_root)
+    claim = read_json_file(path)
+    if path.exists() and claim_is_live(path, claim):
+        return claim or {"run_id": None}
+    return None
+
+
+def write_claim(path: Path, claim: dict) -> None:
+    """Replace the claim file in one step, so a reader never sees a half-written file."""
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(json.dumps(claim), encoding="utf-8")
+    os.replace(temp, path)
+
+
+def try_create_claim(path: Path, run_id: str) -> bool:
+    claim = {"run_id": run_id, "pid": os.getpid(), "started": time.time(), "launcher_known": False}
+    try:
+        with path.open("x", encoding="utf-8") as handle:  # mode 'x' fails if the file exists: the atomic step
+            json.dump(claim, handle)
+    except FileExistsError:
+        return False
+    return True
+
+
+def claim_start_slot(runs_root: Path, run_id: str) -> Path:
+    """Take the start slot or raise ToolError that names the active run."""
+    path = claim_path(runs_root)
+    for _ in range(2):
+        if try_create_claim(path, run_id):
+            return path
+        claim = read_json_file(path)
+        if claim_is_live(path, claim):
+            active = (claim or {}).get("run_id") or "unknown"
+            raise ToolError(f"A launcher is already starting or running (run {active}). "
+                            f"Use wait_for_run with run_id {active}. Do not start a second run.")
+        path.unlink(missing_ok=True)  # stale: its launcher is gone
+    raise ToolError("Could not take the start slot. Another call took it first. Try again.")
+
+
+def release_claim(path: Path) -> None:
+    path.unlink(missing_ok=True)
+
+
 def read_iteration_state(runs_root: Path) -> dict:
     try:
         used = int((Path(runs_root) / ".iterations").read_text().strip())
@@ -180,6 +249,7 @@ def game_status(runs_root: Path, repo_root: Path) -> dict:
             "game_running": bool(pids),
             "game_pids": pids,
             "lock_holder_pid": lock_holder_pid(runs_root),
+            "active_run_id": (active_claim(runs_root) or {}).get("run_id"),
             **read_iteration_state(runs_root),
         }
 
@@ -191,6 +261,9 @@ def stop_game(runs_root: Path, repo_root: Path) -> dict:
         holder = lock_holder_pid(runs_root)
         if holder is not None:
             raise ToolError(f"A run holds the lock (process {holder}). Stopping the game now would break it.")
+        claim = active_claim(runs_root)
+        if claim is not None:
+            raise ToolError(f"A launcher is active (run {claim.get('run_id')}). Stopping the game now would break it.")
         processes = game.find_game_processes()
         pids = [p.pid for p in processes]
         if not processes:
@@ -268,7 +341,13 @@ def run_scenario(
         Path(runs_root).mkdir(parents=True, exist_ok=True)
         run_id = new_run_id()
         make_argv = launcher_command or default_launcher_command(repo_root)
-        pid = spawn_detached(make_argv(name, run_id, Path(runs_root)), launcher_log_path(runs_root, run_id))
+        claim = claim_start_slot(runs_root, run_id)
+        try:
+            pid = spawn_detached(make_argv(name, run_id, Path(runs_root)), launcher_log_path(runs_root, run_id))
+        except BaseException:
+            release_claim(claim)
+            raise
+        write_claim(claim, {"run_id": run_id, "pid": pid, "started": time.time(), "launcher_known": True})
         return {"ok": True, "status": "started", "run_id": run_id, "launcher_pid": pid,
                 "next": "Call wait_for_run with this run_id."}
 
