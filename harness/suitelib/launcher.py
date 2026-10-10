@@ -16,6 +16,24 @@ HARNESS_DIR = Path(__file__).resolve().parent.parent
 LAUNCHER_ENV = "HARNESS_SUITE_LAUNCHER"
 DEFAULT_RUN_TIMEOUT_S = 900.0
 STDERR_TAIL_CHARS = 300
+GAME_CLOSE_SCRIPT = HARNESS_DIR / "game-close.ps1"
+GAME_CLOSE_GRACE_S = 10
+
+
+def close_game() -> None:
+    """Stop the game after a run timeout. run.py was killed, so its own teardown did not run."""
+    subprocess.run(
+        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(GAME_CLOSE_SCRIPT), "-GraceSeconds", str(GAME_CLOSE_GRACE_S)],
+        capture_output=True,
+        text=True,
+    )
+
+
+def kill_process_tree(process: subprocess.Popen) -> None:
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True)
+    else:
+        process.kill()
 
 
 def default_command() -> list[str]:
@@ -38,7 +56,9 @@ def resolve_command(option_text: str | None = None) -> list[str]:
 class SubprocessLauncher:
     """Callable with the run_one signature. One call is one run.py process."""
 
-    def __init__(self, runs_root: Path, command: list[str] | None = None, run_timeout_s: float = DEFAULT_RUN_TIMEOUT_S):
+    def __init__(self, runs_root: Path, command: list[str] | None = None, run_timeout_s: float = DEFAULT_RUN_TIMEOUT_S, on_timeout=None):
+        # on_timeout runs after a timeout kill. suite.py sets it to close_game for the real run.py.
+        self.on_timeout = on_timeout
         self.runs_root = Path(runs_root)
         self.command = command or default_command()
         self.run_timeout_s = run_timeout_s
@@ -50,14 +70,24 @@ class SubprocessLauncher:
         started = time.monotonic()
         stderr, timed_out, start_error = "", False, None
         try:
-            done = subprocess.run([*self.command, *arguments], capture_output=True, text=True, timeout=self.run_timeout_s)
-            stderr = done.stderr or ""
-        except subprocess.TimeoutExpired:
-            timed_out = True
+            stderr, timed_out = self._run_process(arguments)
         except OSError as error:
             start_error = f"could not start the launcher: {error}"
         wall_s = time.monotonic() - started
+        if timed_out and self.on_timeout:
+            self.on_timeout()
         return self._read_result(run_id, wall_s, stderr, timed_out, start_error)
+
+    def _run_process(self, arguments: list[str]) -> tuple[str, bool]:
+        """Return (stderr, timed_out). On a timeout the whole process tree is killed."""
+        process = subprocess.Popen([*self.command, *arguments], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            _, stderr = process.communicate(timeout=self.run_timeout_s)
+            return stderr or "", False
+        except subprocess.TimeoutExpired:
+            kill_process_tree(process)
+            process.communicate()
+            return "", True
 
     def _read_result(self, run_id, wall_s, stderr, timed_out, start_error) -> RunResult:
         summary_path = self.runs_root / run_id / "summary.json"

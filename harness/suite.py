@@ -11,12 +11,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 from runlib.runfolder import new_run_id
 from suitelib import baselines, history, report as report_module
-from suitelib.launcher import DEFAULT_RUN_TIMEOUT_S, SubprocessLauncher, resolve_command
+from suitelib.launcher import DEFAULT_RUN_TIMEOUT_S, SubprocessLauncher, LAUNCHER_ENV, close_game, resolve_command
 from suitelib.runner import run_suite
 from suitelib.suitefile import SUITES_DIR, SuiteFileError, load_suite
 
@@ -80,7 +81,9 @@ def update_baseline(args: argparse.Namespace) -> int:
 
 def run_named_suite(args: argparse.Namespace) -> int:
     suite = load_suite(args.suite, args.suites_dir)
-    launcher = SubprocessLauncher(args.runs_root, resolve_command(args.launcher_command), args.run_timeout_s)
+    # A custom launcher (tests) may not start a game, so only the real run.py gets the game cleanup.
+    using_run_py = not (args.launcher_command or os.environ.get(LAUNCHER_ENV, "").strip())
+    launcher = SubprocessLauncher(args.runs_root, resolve_command(args.launcher_command), args.run_timeout_s, close_game if using_run_py else None)
     suite_id = new_run_id()
     max_seconds = args.max_minutes * 60 if args.max_minutes else None
     outcome = run_suite(suite, launcher, suite_id, max_seconds)
