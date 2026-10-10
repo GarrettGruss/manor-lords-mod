@@ -36,3 +36,14 @@
 - The client timeout of a long MCP call. 45 s per `wait_for_run` is a guess. Lower the default if the client times out.
 - Behaviour of the detached process when Claude Code closes the server in the middle of a run. A run should continue (new process group), but this is not tested.
 - `.mcp.json` `PYTHONPATH` with `;` as separator was not tested through Claude Code. The stdio test used the same two paths.
+
+## Start race found in the real test
+- What happened: two quick `run_scenario` calls both started a launcher. The tool only read `runs/.lock`, and `run.py` takes that lock later.
+  One launcher lost the lock and failed with "Run lock ... is held by process N". The tool reported `failed_to_start` for it.
+- Fix: `run_scenario` now claims a start slot before it starts a process. The claim is the file `runs/.active-launcher.json`,
+  created with exclusive create (mode `x`). It holds `run_id`, `pid` and `started`. The launcher pid is written right after `Popen` (`.tmp` + `os.replace`).
+- A second call is refused at once with an error that names the active run id. A stale claim is replaced once.
+  A claim is live while its launcher pid is alive, or, before the pid is known, for 10 s. If `Popen` fails, the claim is removed.
+- `run.py` is not changed, so it does not release the claim. A dead launcher pid is the release rule.
+- `game_status` shows `active_run_id`. `stop_game` refuses while a live claim exists.
+- Tests added: second call refused, stale claim replaced, live claim refuses, `Popen` failure releases the claim, status and stop, two threads (one starts).
