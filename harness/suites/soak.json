@@ -1,0 +1,6 @@
+{
+  "name": "soak",
+  "scenarios": [{"scenario": "smoke", "repeat": 10}],
+  "time_budget_s": 3600,
+  "flake_retries": 1
+}
