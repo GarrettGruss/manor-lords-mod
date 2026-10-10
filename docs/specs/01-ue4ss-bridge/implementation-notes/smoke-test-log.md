@@ -41,3 +41,24 @@ Fix: patch P8. `get`, `set` and `call` now refuse a name that is not a non-empty
 ## Next
 - Redeploy with P8. Relaunch the game. Repeat test 4 with the correct field name.
 - Ask the user before test 3 (write) and before any test that changes game state.
+
+## Run 2 (after patch P8)
+
+Same game build. A new game session, same map. The pawn path changes in each session, so read it with `world` first.
+
+| Test | Result | Notes |
+|---|---|---|
+| 4. Call a UFunction | pass | `getGameSpeed` on the player pawn returned `1`. |
+| 4b. Call with a wrong argument count | pass (clean error) | `getGameSpeedID` returned `UFunction expected 1 parameters, received 0`. The function has an out parameter. `call_function` cannot pass out parameters (review finding L7). |
+| 4c. Call a function that does not exist | pass (clean error) | `attempt to call a TrivialObject value`. See the finding below. |
+| P8: call with no function name | pass | Error `call needs a non-empty string name, got nil`. The game did not crash. This is the input that crashed it in run 1. |
+| P8: get with no name | pass | Error `get needs a non-empty string name, got nil`. |
+| 5. Reload | pass | `reload` gave generation 2, and `hello` worked afterwards. The log shows a second `ready` line. This reloads UEBridge only, not other mods. |
+| 3. Write a property | not run | Needs user approval. |
+| 6. Kill the game mid-request | not run | Needs the user to agree to a forced game exit. |
+
+## Findings from run 2
+- `obj["noSuchFunction"]` does not return nil. It returns a `TrivialObject`. The upstream check `if fn == nil` in `UEB.call` never fires for a wrong name.
+  The call still fails with a clear error and no crash. A better message is a possible later patch. It is not needed now.
+- `reload` keeps the game running and the bridge answers again within about 2 seconds.
+- The pawn path (`MyPawnCPP_BP3_C_<number>`) changes between sessions. Never store it. Look it up with `world` or `objects`.
