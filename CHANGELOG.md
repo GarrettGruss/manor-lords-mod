@@ -15,6 +15,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `harness/run.py` and `harness/runlib/`: the run launcher core (run folder, lock, iteration cap, phase runner, `summary.json`) with fake phases for tests. Real game phases are not built yet.
 - Real run phases (`preflight`, `deploy`, `launch`, `boot`, `scenario`, `collect`, `teardown`) and `harness/run.py --scenario noop`: one complete iteration with the real game, crash detection, and a scenario registry (`harness/runlib/scenario.py`).
 - `harness/requirements.in` and a hash-locked `harness/requirements.txt` (psutil).
+- Spec `docs/specs/00-harness-overview/`: the roadmap for the harness, the test layers, and what "90% of testing" means.
 - Jmap findings for the game reflection data, in `docs/specs/02-save-autoload/implementation-notes/`.
 - `CLAUDE.md` with project rules, including one feature branch for each spec and Sonnet for subagents.
 - Security review of ue4ss-bridge, with required patches P1 to P7.
