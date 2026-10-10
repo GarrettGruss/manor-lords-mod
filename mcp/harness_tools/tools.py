@@ -380,8 +380,19 @@ def running_result(runs_root: Path, run_id: str, started: float) -> dict:
         # The launcher printed something and made no run folder: it refused or crashed.
         text, _ = cut_from_start(log.read_text(encoding="utf-8", errors="replace"))
         return {"ok": False, "status": "failed_to_start", "run_id": run_id, "launcher_log": text}
-    return {"ok": True, "status": "running", "run_id": run_id, "phase": guess_phase(folder),
-            "elapsed_s": round(time.monotonic() - started, 1)}
+    result = {"ok": True, "status": "running", "run_id": run_id, "phase": guess_phase(folder),
+              "elapsed_s": round(time.monotonic() - started, 1)}
+    limit = scenario_limit_s(folder)
+    if limit:
+        # A long scenario (a soak) runs up to this long. The agent keeps calling wait_for_run until the summary appears.
+        result["scenario_limit_s"] = limit
+    return result
+
+
+def scenario_limit_s(folder: Path) -> float | None:
+    config = read_json_file(folder / "config.json") or {}
+    limit = (config.get("limits_s") or {}).get("scenario")
+    return limit if isinstance(limit, (int, float)) and not isinstance(limit, bool) else None
 
 
 def wait_for_run(runs_root: Path, repo_root: Path, run_id: str, seconds: int = 45) -> dict:

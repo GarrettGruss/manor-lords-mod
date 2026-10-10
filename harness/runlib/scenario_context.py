@@ -23,6 +23,7 @@ from .snapshot import snapshot
 from .telemetry import TelemetryReader
 from .windows import list_windows, pick_game_window
 from .timectl import TimeControl
+from .waiting import WaitResult, run_until
 
 
 MAX_REASON_CHARS = 300
@@ -101,6 +102,19 @@ class ScenarioContext:
         self.ensure_alive()
         result = self.bridge.unpause()
         self.log.info(f"unpause {result}")
+        return result
+
+    def run_until(self, predicate, timeout_s: float, *, what: str = "the condition", clock: str = "wall", **options) -> WaitResult:
+        """Poll `predicate()` until it is true. `timeout_s` counts wall seconds (clock="wall") or game seconds (clock="game").
+
+        Options: poll_s, stall_s and on_stall (stall detector), on_poll. Raises WaitTimeout or GameStalled with a clear message.
+        The game does not run by itself: start it first (for example with `ctx.time.set_speed`). See runlib/waiting.py.
+        """
+        options.setdefault("read_clock", self.bridge.read_clock_value)
+        options.setdefault("check_alive", self.ensure_alive)
+        options.setdefault("log", self.log.info)
+        result = run_until(predicate, timeout_s, what=what, clock=clock, **options)
+        self.log.info(f"run_until {what}: {result.as_dict()}")
         return result
 
     def screenshot(self, name: str) -> None:

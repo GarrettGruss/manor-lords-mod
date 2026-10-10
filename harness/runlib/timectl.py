@@ -13,6 +13,7 @@ import time
 from typing import Callable
 
 from .bridge_client import Bridge
+from .waiting import ScenarioFailure
 
 SPEED_FACTOR = {1: 1.0, 2: 4.0, 3: 8.0}  # speed index -> game seconds for each wall second
 CLOCK_SECONDS_PER_DAY = 40.0
@@ -27,7 +28,7 @@ LIMIT_FACTOR = 3  # the wall time limit is this many times the expected time (sp
 LIMIT_EXTRA_S = 10.0
 
 
-class TimeControlError(Exception):
+class TimeControlError(ScenarioFailure):
     """The game clock did not behave as the scenario asked. The message says why."""
 
 

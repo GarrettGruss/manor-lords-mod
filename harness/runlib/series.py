@@ -10,8 +10,10 @@ import time
 from pathlib import Path
 from typing import Callable
 
+from .scenario import run_timeout_s
+
 RUN_LINE = re.compile(r"^(?P<run_id>\S+) (?P<verdict>\w+) reason=(?P<reason>.*?) summary=(?P<summary>.+)$")
-RUN_TIMEOUT_S = 600
+RUN_TIMEOUT_S = 600  # the least time one run may take. A scenario with a longer limit gets more (see scenario.run_timeout_s)
 COLUMNS = ("n", "run_id", "verdict", "exit", "total_s", "boot_s", "reason")
 
 
@@ -60,9 +62,11 @@ def tally(rows: list[dict]) -> dict[str, int]:
     return counts
 
 
-def run_launcher_once(run_py: Path, scenario: str, extra_args: list[str], timeout_s: float = RUN_TIMEOUT_S) -> tuple[int, str]:
+def run_launcher_once(run_py: Path, scenario: str, extra_args: list[str], timeout_s: float | None = None) -> tuple[int, str]:
     """Run run.py once. Return (exit code, stdout). A launcher that hangs is stopped and reported."""
     command = [sys.executable, str(run_py), "--scenario", scenario, *extra_args]
+    if timeout_s is None:
+        timeout_s = run_timeout_s(scenario, RUN_TIMEOUT_S)
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=timeout_s)
     except subprocess.TimeoutExpired:

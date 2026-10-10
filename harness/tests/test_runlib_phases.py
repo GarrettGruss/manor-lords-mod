@@ -22,6 +22,7 @@ from runlib.game import (
 from runlib.runfolder import create_run_folder
 from runlib.runner import PhaseContext, PhaseFailed
 from runlib.scenario import SCENARIOS, get_scenario
+from runlib.waiting import GameStalled, WaitTimeout
 from runlib.scenario_context import ScenarioContext
 
 
@@ -252,6 +253,28 @@ class ScenarioTest(TempTestCase):
                 with self.assertRaises(PhaseFailed):
                     phases._scenario(install, "boom")(self.ctx)
         self.assertEqual(self.ctx.state["crash"]["reason"], "game process ended during scenario")
+
+    def run_failing_scenario(self, error, popen_code):
+        self.ctx.state["game_popen"] = FakePopen(popen_code)
+        install = GameInstall(root=self.temp / "game", saved_dir=self.temp / "saved")
+        with mock.patch.dict(SCENARIOS, {"stalls": mock.Mock(side_effect=error)}):
+            with mock.patch.object(phases, "configure_bridge_client"):
+                phases._scenario(install, "stalls")(self.ctx)
+
+    def test_stall_is_a_failed_scenario_not_a_harness_error(self):
+        self.run_failing_scenario(GameStalled("the game clock stood still at 5.0 for 20 s"), None)
+        result = self.ctx.state["scenario_result"]
+        self.assertFalse(result["passed"])
+        self.assertIn("stood still", result["asserts"][0]["value"])
+        self.assertEqual(result["asserts"][0]["name"], "GameStalled")
+
+    def test_wait_timeout_is_a_failed_scenario(self):
+        self.run_failing_scenario(WaitTimeout("timeout: x was not true within 5 wall seconds"), None)
+        self.assertFalse(self.ctx.state["scenario_result"]["passed"])
+
+    def test_stall_with_a_dead_game_is_a_crash(self):
+        with self.assertRaises(PhaseFailed):
+            self.run_failing_scenario(GameStalled("stalled"), 1)
 
 
 class CollectTest(TempTestCase):
