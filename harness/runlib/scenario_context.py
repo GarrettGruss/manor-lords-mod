@@ -7,13 +7,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .actions import Actions
 from .bridge_client import Bridge
+from .commands import CommandChannel
 from .expectations import Expectations
 from .game import ensure_game_alive
 from .runner import PhaseContext
 from .snapshot import snapshot
 from .telemetry import TelemetryReader
 from .timectl import TimeControl
+
+
+MAX_REASON_CHARS = 300
 
 
 class ScenarioLog:
@@ -40,6 +45,9 @@ class ScenarioContext:
         self.expect = Expectations(self.log.info)
         self.time = TimeControl(bridge, check_alive=self.ensure_alive, log=self.log.info)
         self.telemetry = TelemetryReader(self.run_dir)
+        self.notes: list[str] = []
+        commands = CommandChannel(self.run_dir / "commands", check_alive=self.ensure_alive)
+        self.actions = Actions(bridge, self.expect, self.notes, self.log.info, self.ensure_alive, commands)
 
     # ---- game helpers ----
     def ensure_alive(self, where: str = "scenario") -> None:
@@ -85,5 +93,13 @@ class ScenarioContext:
     def check_range(self, name: str, value: float, low: float, high: float) -> bool:
         return self.expect.in_range(name, value, low, high)
 
+    def fail(self, name: str, reason: str) -> dict:
+        """End the scenario as failed with a clear reason, for example an action that is not possible."""
+        self.expect.record(name, False, reason[:MAX_REASON_CHARS], "")
+        return self.result()
+
     def result(self) -> dict:
-        return self.expect.result()
+        result = self.expect.result()
+        if self.notes:
+            result["notes"] = list(self.notes)
+        return result

@@ -10,6 +10,9 @@ import time
 from typing import Any, Callable
 
 ENGINE_CLASS = "RTSMultiEngineCPP"
+HUD_PANEL_CLASS = "W_HUD_LordPanel_V2_C"
+# The live HUD widget sits under the transient game engine. The other match is the class template.
+LIVE_OBJECT_MARK = " /Engine/Transient"
 # The clock counts as stopped when it moves less than this between two reads (game seconds).
 STILL_LIMIT = 0.001
 
@@ -55,6 +58,29 @@ class Bridge:
 
     def read_property(self, ref: str, name: str) -> Any:
         return self._result("get", ref=ref, name=name)
+
+    def write_property(self, ref: str, name: str, value: Any) -> Any:
+        """Set a property. The bridge answers {"previous", "current"}, where current is read back from the game."""
+        return self._result("set", ref=ref, name=name, value=value)
+
+    def count_objects(self, class_name: str) -> int:
+        return self._result("objects", class_name=class_name, limit=1)["count"]
+
+    def region_paths(self, engine: str | None = None) -> list[str]:
+        return [object_path(ref) for ref in self.read_property(engine or self.engine_path(), "regions")]
+
+    def player_region_path(self) -> str:
+        """The region the player lord is in (`currentRegion`)."""
+        return object_path(self.read_property(self.player_path(), "currentRegion"))
+
+    def hud_treasury_text(self) -> str:
+        """The silver number as the HUD shows it (the lord panel of the live game, not the class template)."""
+        found = self._result("objects", class_name=HUD_PANEL_CLASS, limit=5)["objects"]
+        live = [object_path(entry) for entry in found if LIVE_OBJECT_MARK in entry]
+        if not live:
+            raise RuntimeError(f"No live {HUD_PANEL_CLASS} found. The HUD is not loaded.")
+        numeric = object_path(self.read_property(live[0], "TreasuryNumeric"))
+        return self.call_function(numeric, "GetText")
 
     def calendar_path(self, engine: str | None = None) -> str:
         return object_path(self.read_property(engine or self.engine_path(), "TemporalComponent"))

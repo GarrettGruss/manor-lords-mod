@@ -198,8 +198,11 @@ class RealScenarioTest(ContextTestCase):
 
 class RegistryTest(unittest.TestCase):
     def test_hidden_scenarios_are_not_listed_by_default(self):
-        self.assertEqual(sorted(list_scenarios()), ["noop", "smoke", "telemetry-sanity", "time-advance"])
+        self.assertEqual(sorted(list_scenarios()), [
+            "letter-delivery", "noop", "silver-change", "smoke", "telemetry-sanity", "time-advance", "winter-region"])
         self.assertIn("selftest-timeout", list_scenarios(include_hidden=True))
+        self.assertIn("selftest-action", list_scenarios(include_hidden=True))
+        self.assertIn("probe-actions", list_scenarios(include_hidden=True))
 
     def test_every_scenario_has_a_limit_under_the_cap(self):
         for name, info in list_scenarios(include_hidden=True).items():

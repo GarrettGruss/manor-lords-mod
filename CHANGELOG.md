@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Feature test kit (spec 07): `ctx.actions` (`harness/runlib/actions.py`) with 14 actions that were checked in the real game (silver, influence, king's favour, day and season, region values, wealth, goods, settlement level, weather, bandit squad, letters). Each action reads the value before and after and returns `{action, ok, args, before, after}`. Actions that are not possible (`save_state`, `show_message`, ...) and unknown names raise `ActionNotPossible`, which fails the scenario with the reason. Catalog with numbers: `docs/specs/07-feature-test-kit/implementation-notes/actions-catalog.md`.
+- Mod `HarnessActions` and `harness/runlib/commands.py`: a command channel (`<run>/commands/0001.json`, ...) for game functions that need object parameters. First use: `send_letter`. Mock tests in `harness/tests/test_fakegame_harnessactions.py`.
+- Scenarios `silver-change`, `winter-region` and `letter-delivery`, the hidden `selftest-action`, and the hidden probe `probe-actions`. New bridge helpers: `write_property`, `count_objects`, `region_paths`, `player_region_path`, `hud_treasury_text`. `ctx.fail(name, reason)` and `notes` in the scenario result.
 - Hot reload without a game restart (spec 06): `python harness/tools/reload_mods.py [--mod Name] [--run-dir DIR]` deploys and restarts the changed Lua mods in the running game in about 2 s. The new mod `HarnessReload` calls `RestartMod` on a request file (`reload.json`) and writes `reload.result.json` with the version line. `HarnessLogTest`, `HarnessTelemetry` and `HarnessLoadProbe` now log `loaded version <v>`.
 - Save fixtures (spec 06): every run gives the game its own `LOCALAPPDATA` (`<run>/appdata`) with the fixture `base` (a copy of the user's `saveGame_0`, listed in `harness/fixtures/fixtures.json`, no save data in git). The user's save folder is hashed before and after the run and is never used by the game. `run.py --fixture <name>`, `harness/tools/fixtures.py` (`list`, `record`, `install`, `remove`). Crash reports are collected from the private folder. The game lists only `saveGame_0` to `saveGame_27` and `autosave`, so a custom slot name does not work (`implementation-notes/fixtures.md`).
 - `HarnessBoot` logs the slots of the load screen when the wanted slot is missing.
@@ -18,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Spec `docs/specs/02-save-autoload/` for the save auto-load and ready signal.
 - Spec `docs/specs/03-run-launcher/` for the run launcher and `summary.json`.
 - Spec `docs/specs/09-asset-mods/`: when and how to change game data with pak files. Deferred, because no planned feature needs it yet.
+- Spec `docs/specs/07-feature-test-kit/`: actions for scenarios (give resources, change time or state, read letters) with checked effects.
 - `harness/run.py` and `harness/runlib/`: the run launcher core (run folder, lock, iteration cap, phase runner, `summary.json`) with fake phases for tests. Real game phases are not built yet.
 - Real run phases (`preflight`, `deploy`, `launch`, `boot`, `scenario`, `collect`, `teardown`) and `harness/run.py --scenario noop`: one complete iteration with the real game, crash detection, and a scenario registry (`harness/runlib/scenario.py`).
 - `harness/requirements.in` and a hash-locked `harness/requirements.txt` (psutil).

@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 
 from . import fixtures
+from .actions import ActionNotPossible
 from .environment import gather_environment, hash_mods
 from .game import (
     DEFAULT_TELEMETRY_INTERVAL_S,
@@ -200,6 +201,9 @@ def _scenario(install: GameInstall, scenario_name: str):
         take_screenshot(ctx, "start")
         try:
             result = scenario(scenario_ctx)
+        except ActionNotPossible as error:
+            # A real result, not a harness bug: the scenario asked for something the kit cannot do.
+            result = scenario_ctx.fail("action is possible", str(error))
         except Exception:
             ensure_game_alive(ctx, "scenario")  # a dead game explains the error: it is a crash
             raise

@@ -243,3 +243,41 @@ Details and measurements: `docs/specs/06-dev-loop-and-fixtures/implementation-no
 .venv\Scripts\python.exe harness\run.py --scenario smoke --fixture base
 .venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_fixtures.py" -v
 ```
+
+## Actions (`ctx.actions`)
+
+Spec 07. An action creates a game situation and checks that it happened. It checks that the world is loaded, reads the value, makes the change, reads again,
+and returns `{"action", "ok", "args", "before", "after"}` (and `note` for a caveat). It adds one line to `notes` in the scenario result.
+A failed read-back also adds a failed assertion, so the verdict is `fail`. Call actions while the game is paused: a running game changes silver and stock by itself.
+
+| Action | Effect |
+|---|---|
+| `add_silver(n)`, `set_silver(n)` | player silver |
+| `add_influence(n)`, `set_influence(n)`, `add_kings_favour(n)` | influence, king's favour |
+| `set_day(n)`, `set_season("winter"/"spring"/"summer"/"autumn")` | calendar. `daysTotal` grows by 1 for each call |
+| `set_region_value(name, value, region=None)` | `Approval`, `publicOrder`, `regionalWealth`, `supplies_food`. `region` is `None` (player region) or a `regionName`. The game recalculates Approval and supplies_food within days |
+| `add_regional_wealth(n, region=None)`, `set_settlement_level(n, region=None)` | region |
+| `give_item(id or "Timber"/"Planks"/"Fish", n)` | goods in the stock of the player region |
+| `set_weather(name, value)` | `raining`, `snowing`, `fogLevel`, `droughtLevel`, `wind`. The game moves them back within seconds |
+| `spawn_bandit_squad()` | +18 units |
+| `send_letter(["welcome_from_hildebolt"], sender=1)` | an AI lord sends a letter. Needs the mod `HarnessActions` |
+
+`save_state`, `show_message`, `get_item_info`, `remove_all_families` and `spawn_raiders` raise `ActionNotPossible` with the reason. An unknown name does too.
+The runner turns it into a failed scenario (assertion `action is possible`), not a crash. `ctx.actions.available()` lists the names.
+Status, numbers and caveats of every action: `docs/specs/07-feature-test-kit/implementation-notes/actions-catalog.md`.
+
+The cheat manager actions (`give_item`, `set_settlement_level`, `spawn_bandit_squad`) need the stock UE4SS mod `CheatManagerEnablerMod` to be on in `ue4ss\Mods\mods.txt`.
+**Never call `PawnCPP:requestSaveFile`.** It writes into the user's real save folder, not into the private one (see the catalog).
+
+Helpers in the bridge client: `write_property`, `count_objects`, `region_paths`, `player_region_path`, `hud_treasury_text` (the silver number of the HUD; it updates only while the game runs, and writes 1000 and more as `1.2k`).
+
+### Helper mod HarnessActions
+For game functions that need object parameters. The client `runlib/commands.py` (`CommandChannel`) writes `<run>/commands/0001.json`, `0002.json`, ... in order. The mod runs the command on the game thread
+and writes `<number>.result.json`. Both sides write `.tmp` first and then rename. Commands: `ping` and `send_letter` (`sender`, `paragraphs`). The mod never runs text as code; it checks every input.
+A game crash while a letter is sent (plain strings instead of `FName` values) is recorded in the catalog.
+
+### Scenarios of spec 07
+`silver-change` (set, add and take silver; checks the player value, the telemetry and the HUD, about 50 s), `winter-region` (winter, forced Approval and wealth, 3 game days, about 65 s),
+`letter-delivery` (a letter into the InBox, about 40 s). Hidden: `selftest-action` (an impossible action, must fail with a clear message) and `probe-actions`
+(the probe; choose a group with `HARNESS_PROBE`: money, time, region, cheat, cheat2, cheat3, weather, hud, mail, helper; the groups `message`, `items` and `names` end the game on purpose).
+Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_actions.py" -v` and, with lupa, `test_fakegame_harnessactions.py`.
