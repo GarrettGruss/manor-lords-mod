@@ -30,6 +30,8 @@ WEATHER_NOTE = "the game moves the weather back toward its own target within sec
 ITEM_IDS = {"timber": 16, "planks": 17, "fish": 30}
 # Letter paragraphs that were sent in the real game. Other names may be missing in the game data.
 LETTER_PARAGRAPHS = ("welcome_from_hildebolt",)
+DEFAULT_PLACE_FX = 0.65  # open meadow right of the start camp; the middle (0.5, 0.7) overlaps a building site in some starts
+DEFAULT_PLACE_FY = 0.65
 FLOAT_TOLERANCE = 0.01  # property floats are 32 bit
 MAX_NOTE_CHARS = 140
 
@@ -90,9 +92,11 @@ class Actions:
 
     def __init__(self, bridge: Bridge, expect=None, notes: list[str] | None = None,
                  log: Callable[[str], None] = lambda message: None,
-                 ensure_alive: Callable[[], None] = lambda: None, commands: CommandChannel | None = None):
+                 ensure_alive: Callable[[], None] = lambda: None, commands: CommandChannel | None = None,
+                 mouse_placer: Callable[[int, float, float], None] | None = None):
         self._bridge = bridge
         self._commands = commands
+        self._mouse_placer = mouse_placer
         self._expect = expect
         self._notes = notes if notes is not None else []
         self._log = log
@@ -265,6 +269,24 @@ class Actions:
         """Spawn one bandit squad (cheat manager). Checked with the number of SMUnit objects (+18 in the probe)."""
         return self._perform("spawn_bandit_squad", {}, lambda: self._bridge.count_objects("SMUnit"),
                              lambda: self._bridge.call_function(CHEAT_MANAGER, "SpawnBanditSquad"), increased)
+
+    # ---- buildings (real OS mouse) ----
+
+    def place_building(self, type_id: int, fx: float = DEFAULT_PLACE_FX, fy: float = DEFAULT_PLACE_FY) -> dict:
+        """Place a building of `type_id` with a REAL left click at a fraction (fx, fy) of the game window.
+
+        WARNING: this uses the OS mouse and the keyboard focus. Do not use it while a person works on this computer.
+        The game window comes to the front, the cursor moves over it, and the cursor goes back afterwards.
+        The player needs the goods of the building (HitchingPost 30 is free). A blocked spot places nothing and fails the read-back.
+        Checked with the number of buildings of this type in the player region (+1).
+        """
+        if self._mouse_placer is None:
+            raise ActionNotPossible("place_building: no OS mouse input in this context")
+        path = self._region(None)
+        count = lambda: self._bridge.call_function(path, "getBuildingCount", [type_id, False])  # noqa: E731
+        call = lambda: self._mouse_placer(type_id, fx, fy)  # noqa: E731
+        return self._perform("place_building", {"type_id": type_id, "fx": fx, "fy": fy}, count, call, changed_by(1),
+                             note="uses the OS mouse and keyboard focus")
 
     # ---- letters (through the helper mod HarnessActions, because sendLetter needs object parameters) ----
 

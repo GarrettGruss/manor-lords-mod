@@ -11,10 +11,12 @@ from .actions import Actions
 from .bridge_client import Bridge
 from .commands import CommandChannel
 from .expectations import Expectations
-from .game import ensure_game_alive
+from . import osinput
+from .game import ensure_game_alive, find_game_processes
 from .runner import PhaseContext
 from .snapshot import snapshot
 from .telemetry import TelemetryReader
+from .windows import list_windows, pick_game_window
 from .timectl import TimeControl
 
 
@@ -47,7 +49,21 @@ class ScenarioContext:
         self.telemetry = TelemetryReader(self.run_dir)
         self.notes: list[str] = []
         commands = CommandChannel(self.run_dir / "commands", check_alive=self.ensure_alive)
-        self.actions = Actions(bridge, self.expect, self.notes, self.log.info, self.ensure_alive, commands)
+        self.actions = Actions(bridge, self.expect, self.notes, self.log.info, self.ensure_alive, commands,
+                               mouse_placer=self._place_with_mouse)
+
+    # ---- real OS mouse (used by the action place_building) ----
+    def _place_with_mouse(self, type_id: int, fx: float, fy: float) -> None:
+        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        player = self.bridge.player_path()
+        steps = osinput.PlacementSteps(
+            activate=lambda: self.bridge.call_function(player, "activateBuildingMode", [type_id]),
+            cancel=lambda: self.bridge.call_function(player, "resetBuildingMode"),
+            ground_under_cursor=lambda: osinput.is_ground_point(self.bridge.call_function(player, "getMouse3d")),
+            unpause=self.unpause,
+            pause=self.pause,
+        )
+        osinput.place_with_mouse(osinput.Win32Input(), window["hwnd"], steps, fx, fy)
 
     # ---- game helpers ----
     def ensure_alive(self, where: str = "scenario") -> None:
