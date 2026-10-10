@@ -84,3 +84,21 @@ I looked at `start.png` and `end.png` of a smoke run with the Read tool.
 - Another monitor, a minimized window, the "A New Message" banner, and a real UE crash report.
 - `--keep-open` with the real game. Steam closed.
 - A bridge error inside a scenario while the game is alive (unit tested only: it is `harness_error`).
+
+## Real test: minimized window and debug windows (2026-10-10)
+The game process owns several top-level windows: the game (class `UnrealWindow`, title "Manor Lords"), the UE4SS debug GUI (class `GLFW30`,
+title "UE4SS Debugging Tools ..."), the UE4SS console (class `ConsoleWindowClass`) and a few hidden OpenGL helper windows.
+
+Defect found: `pick_game_window` took the largest visible, not minimized window of the process. With the game window minimized, it
+silently picked the UE4SS debug GUI, and the screenshot showed the GUI and reported success. In a normal run the same debug windows
+also sat in front of part of the game, and `mss` copies screen pixels, so they were in the picture.
+
+Fix (`runlib/windows.py`, `runlib/screenshot.py`, `test_runlib_windows_overlay.py`, 12 tests):
+- The picker returns only the `UnrealWindow` if one exists. If it is minimized or hidden, the note says "the game window is minimized" or
+  "not visible". Without an `UnrealWindow` it falls back to the old rule.
+- Before a capture, the visible debug windows of the game process (UE4SS GUI and console) are minimized, then the screen gets 0.4 s to repaint.
+
+Real result: the normal screenshot is clean (the game with "Game Paused", the date and the speed buttons, no debug window). With the game
+window minimized the capture gives the note `LookupError: the game window is minimized` and writes no file. After a restore the capture works.
+
+Not tested: a second monitor (the window rectangle is cut to the virtual screen, unit tested only).

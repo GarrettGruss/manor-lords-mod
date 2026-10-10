@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Callable
 
-from .windows import list_windows, pick_game_window
+from .windows import list_windows, minimize_window, overlay_windows, pick_game_window
+
+REPAINT_WAIT_S = 0.4  # time for the screen to repaint after an overlay window was minimized
 
 
 def clip_to_bounds(rect: tuple[int, int, int, int], bounds: dict) -> dict | None:
@@ -37,10 +40,18 @@ def capture_game_window(
     windows_fn: Callable[[], list[dict]] = list_windows,
     grabber_factory: Callable = _default_grabber,
     png_writer: Callable = _write_png,
+    minimize_fn: Callable[[int], None] = minimize_window,
 ) -> str | None:
     """Save a PNG of the game window. Return None on success, or a note that says why it failed."""
     try:
-        window = pick_game_window(windows_fn(), pids)
+        windows = windows_fn()
+        window = pick_game_window(windows, pids)
+        # The screenshot copies screen pixels, so a debug window in front of the game would be in the picture.
+        overlays = overlay_windows(windows, pids)
+        for overlay in overlays:
+            minimize_fn(overlay["hwnd"])
+        if overlays:
+            time.sleep(REPAINT_WAIT_S)
         with grabber_factory() as grabber:
             region = clip_to_bounds(window["rect"], grabber.monitors[0])
             if region is None:
