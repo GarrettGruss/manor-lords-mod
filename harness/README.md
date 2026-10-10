@@ -263,6 +263,7 @@ A failed read-back also adds a failed assertion, so the verdict is `fail`. Call 
 | `give_item(id or "Timber"/"Planks"/"Fish", n)` | goods in the stock of the player region |
 | `set_weather(name, value)` | `raining`, `snowing`, `fogLevel`, `droughtLevel`, `wind`. The game moves them back within seconds |
 | `spawn_bandit_squad()` | +18 units |
+| `place_building(type_id, fx=0.65, fy=0.65)` | One more building of that type in the player region. **Uses the OS mouse and keyboard focus: do not use it while a person works on this computer.** The window comes to the front, the real cursor clicks the ground at that fraction of the window, and the cursor goes back. Aborts with an error if the game is not the foreground window or no ground is under the cursor. The player needs the goods of the building (HitchingPost 30 is free); a spot that overlaps another building places nothing. Scenario `place-building`. Code: `harness/runlib/osinput.py` |
 | `send_letter(["welcome_from_hildebolt"], sender=1)` | an AI lord sends a letter. Needs the mod `HarnessActions` |
 
 `save_state`, `show_message`, `get_item_info`, `remove_all_families` and `spawn_raiders` raise `ActionNotPossible` with the reason. An unknown name does too.
@@ -291,7 +292,7 @@ A game crash while a letter is sent (plain strings instead of `FName` values) is
 
 ### Scenarios of spec 07
 `silver-change` (set, add and take silver; checks the player value, the telemetry and the HUD, about 50 s), `winter-region` (winter, forced Approval and wealth, 3 game days, about 65 s),
-`letter-delivery` (a letter into the InBox, about 40 s). Hidden: `selftest-action` (an impossible action, must fail with a clear message) and `probe-actions`, `probe-building` (HARNESS_PROBE_B: read, mode, click, scan)
+`letter-delivery` (a letter into the InBox, about 40 s), `place-building` (hidden, so the MCP tools and suites never start it: a real OS mouse click; do not run it while a person works on the computer). Hidden: `selftest-action` (an impossible action, must fail with a clear message) and `probe-actions`, `probe-building` (HARNESS_PROBE_B: read, mode, click, scan)
 (the probe; choose a group with `HARNESS_PROBE`: money, time, region, cheat, cheat2, cheat3, weather, hud, mail, helper; the groups `message`, `items` and `names` end the game on purpose).
 Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_actions.py" -v` and, with lupa, `test_fakegame_harnessactions.py`.
 

@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Action `place_building(type_id, fx, fy)` (spec 07): places a building with a real OS mouse click on the game window (`harness/runlib/osinput.py`, tests `test_runlib_osinput.py`, scenario `place-building`). It uses the OS mouse and keyboard focus: do not use it while a person works on this computer. Verified in the real game with the HitchingPost; the earlier notes on why a faked mouse failed are in `building-placement.md`.
 - Clock restart cause (spec 02): found with a temporary hook probe (source kept in `docs/specs/02-save-autoload/implementation-notes/`). Note `clock-restart-cause.md`. Hidden scenario `probe-building` and the note `building-placement.md` (spec 07): no verified way to place a building. Second attempt (fake mouse hooks, raw spawn call) also failed; probe source kept in the notes, not deployed.
 - Fake game: `FakeGameClock(cinematic=(start, end))` models the intro cinematic. New boot test modes `cinematic`, `nocinematic`, `silentrestart`, `cinematicstuck`, and a check of the number of `pauseGame` calls.
 - Asset mod tooling (spec 09): `harness/tools/pakmod.py` (`check`, `build`, `install`, `remove`, `list`, all with `--dry-run` and `--game-dir`), configured by the local file `harness/pakmod.local.json` (not committed). `uninstall.ps1 -Remove` also removes harness paks (only files in `~mods\.harness-paks.json` whose hash matches). Tested with a fake packer; a real pak build is not verified (needs UnrealPak or `retoc` from the user).
