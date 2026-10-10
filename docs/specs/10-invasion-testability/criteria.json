@@ -107,11 +107,12 @@
     "upgrades": [
       "U10"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario standin-outposts (stand-in mod; real-game run pending)"
+      "standin-outposts"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "O2",
@@ -124,11 +125,12 @@
     "upgrades": [
       "U10"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario standin-outposts (stand-in mod; real-game run pending)"
+      "standin-outposts"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "O3",
@@ -141,11 +143,12 @@
     "upgrades": [
       "U10"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario standin-outposts (stand-in mod; real-game run pending)"
+      "standin-outposts"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "O4",
@@ -158,11 +161,12 @@
     "upgrades": [
       "U10"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario standin-outposts (stand-in mod; real-game run pending)"
+      "standin-outposts"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "R1",
@@ -253,11 +257,12 @@
     "upgrades": [
       "U10"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario standin-captives (stand-in mod; real-game run pending)"
+      "standin-captives"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "R6",
@@ -424,11 +429,12 @@
     "upgrades": [
       "U10"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario standin-outposts (stand-in mod; real-game run pending)"
+      "standin-outposts"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "S5",
@@ -441,11 +447,12 @@
     "upgrades": [
       "U10"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario standin-tribute (stand-in mod; real-game run pending)"
+      "standin-tribute"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "P1",
