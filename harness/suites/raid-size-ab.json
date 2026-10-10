@@ -1,0 +1,15 @@
+{
+  "name": "raid-size-ab",
+  "scenarios": [
+    {
+      "scenario": "raid-tiers",
+      "repeat": 4,
+      "variants": [
+        {"name": "size-100", "env": {"RAID_STANDIN_SIZE_PERCENT": "100"}},
+        {"name": "size-150", "env": {"RAID_STANDIN_SIZE_PERCENT": "150"}}
+      ]
+    }
+  ],
+  "time_budget_s": 1200,
+  "flake_retries": 0
+}
