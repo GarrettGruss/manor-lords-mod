@@ -83,3 +83,9 @@ in `ask`, and a headless session has nobody who can approve it. This is the inte
 so it was not bypassed. The start and poll flow itself was checked with a real run through the tool functions (see above).
 To try it in an interactive Claude Code session, approve the `run_scenario` prompt once. To allow it for unattended work, move
 `mcp__manor-harness__run_scenario` from `ask` to `allow` in `.claude/settings.json`. That is the user's decision.
+
+## Decision: run_scenario is allowed (2026-10-10, by the user)
+The user answered the question "Should the harness MCP tool run_scenario be allowed without asking each time?" with "Allow it".
+`mcp__manor-harness__run_scenario` moved from `ask` to `allow` in `.claude/settings.json`. `stop_game` stays in `ask` (it kills a process).
+The run cap (default 100 runs in `runs/.iterations`), the run lock and the start claim (`runs/.active-launcher.json`) limit the cost of an unattended loop.
+The scenario `place-building` is hidden, so this tool cannot start it (it takes over the real mouse).

@@ -1,6 +1,8 @@
 {
   "permissions": {
-    "deny": ["mcp__ue4ss-bridge__eval_lua"],
+    "deny": [
+      "mcp__ue4ss-bridge__eval_lua"
+    ],
     "allow": [
       "mcp__manor-harness__list_scenarios",
       "mcp__manor-harness__read_summary",
@@ -9,10 +11,10 @@
       "mcp__manor-harness__read_telemetry",
       "mcp__manor-harness__list_screenshots",
       "mcp__manor-harness__game_status",
-      "mcp__manor-harness__wait_for_run"
+      "mcp__manor-harness__wait_for_run",
+      "mcp__manor-harness__run_scenario"
     ],
     "ask": [
-      "mcp__manor-harness__run_scenario",
       "mcp__manor-harness__stop_game",
       "mcp__ue4ss-bridge__set_property",
       "mcp__ue4ss-bridge__call_function",
