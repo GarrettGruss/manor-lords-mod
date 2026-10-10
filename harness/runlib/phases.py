@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .environment import gather_environment, hash_mods
 from .game import (
+    DEFAULT_TELEMETRY_INTERVAL_S,
     DEFAULT_TEST_SAVE,
     GameInstall,
     build_game_environment,
@@ -100,9 +101,9 @@ def _deploy(install: GameInstall):
 
 # ---- launch ----
 
-def _launch(install: GameInstall, test_save: str):
+def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float):
     def run(ctx: PhaseContext) -> str | None:
-        env = build_game_environment(ctx.run.path, test_save)
+        env = build_game_environment(ctx.run.path, test_save, telemetry_interval_s=telemetry_interval_s)
         # The working folder must be Win64, or UE4SS does not find its files.
         popen = subprocess.Popen(
             [str(install.exe)], cwd=install.win64, env=env,
@@ -226,6 +227,14 @@ def copy_new_dumps(install: GameInstall, crash_dir: Path, since_epoch: float) ->
     return copied
 
 
+def describe_telemetry(run_path: Path) -> str | None:
+    """Name and sample count of telemetry.jsonl, or None if the mod wrote none (telemetry off, or a crash)."""
+    path = run_path / "telemetry.jsonl"
+    if not path.is_file():
+        return None
+    return f"{path.name} ({len(path.read_text(encoding='utf-8').splitlines())} samples)"
+
+
 def list_logs(run_path: Path) -> list[str]:
     return sorted(path.name for path in run_path.glob("*.log"))
 
@@ -246,6 +255,7 @@ def _collect(install: GameInstall):
         screenshots = sorted(p.relative_to(ctx.run.path).as_posix() for p in ctx.run.screenshots_dir.iterdir())
         ctx.state["artifacts"] = {
             "logs": list_logs(ctx.run.path), "crash": crash_dirs + dumps, "screenshots": screenshots,
+            "telemetry": describe_telemetry(ctx.run.path),
         }
         return None
 
@@ -276,14 +286,15 @@ def _teardown(install: GameInstall, keep_open: bool):
 
 
 def build_real_phases(
-    scenario_name: str, keep_open: bool = False, install: GameInstall | None = None, test_save: str = DEFAULT_TEST_SAVE
+    scenario_name: str, keep_open: bool = False, install: GameInstall | None = None, test_save: str = DEFAULT_TEST_SAVE,
+    telemetry_interval_s: float = DEFAULT_TELEMETRY_INTERVAL_S,
 ) -> list[Phase]:
     get_scenario(scenario_name)  # fail before any game starts if the name is wrong
     install = install or GameInstall()
     return [
         Phase("preflight", _preflight(install, test_save), 60),
         Phase("deploy", _deploy(install), 120),
-        Phase("launch", _launch(install, test_save), 60),
+        Phase("launch", _launch(install, test_save, telemetry_interval_s), 60),
         Phase("boot", _boot, 240),
         Phase("scenario", _scenario(install, scenario_name), get_limit_s(scenario_name)),
         Phase("collect", _collect(install), 60, always_run=True),

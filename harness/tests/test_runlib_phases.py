@@ -82,16 +82,28 @@ class EnvironmentTest(TempTestCase):
         self.assertEqual(env["HARNESS_RUN_DIR"], str(self.run_folder.path.resolve()))
         self.assertTrue(os.path.isabs(env["HARNESS_RUN_DIR"]))
 
+    def test_telemetry_interval_default_and_off(self):
+        default = build_game_environment(self.run_folder.path, "s", base_env={})
+        self.assertEqual(default["HARNESS_TELEMETRY_INTERVAL_S"], "5")
+        off = build_game_environment(self.run_folder.path, "s", base_env={}, telemetry_interval_s=0)
+        self.assertEqual(off["HARNESS_TELEMETRY_INTERVAL_S"], "0")
+
+    def test_describe_telemetry(self):
+        self.assertIsNone(phases.describe_telemetry(self.temp))
+        (self.temp / "telemetry.jsonl").write_text('{"n":1}\n{"n":2}\n', encoding="utf-8")
+        self.assertEqual(phases.describe_telemetry(self.temp), "telemetry.jsonl (2 samples)")
+
     def test_launch_passes_environment_and_working_folder(self):
         install = GameInstall(root=self.temp / "game", saved_dir=self.temp / "saved")
         with mock.patch.object(phases.subprocess, "Popen", return_value=FakePopen()) as popen, mock.patch.object(
             phases.time, "sleep"
         ):
-            phases._launch(install, "saveGame_0")(self.ctx)
+            phases._launch(install, "saveGame_0", 2.5)(self.ctx)
         args, kwargs = popen.call_args
         self.assertEqual(args[0], [str(install.exe)])
         self.assertEqual(kwargs["cwd"], install.win64)
         self.assertEqual(kwargs["env"]["HARNESS_RUN_DIR"], str(self.run_folder.path.resolve()))
+        self.assertEqual(kwargs["env"]["HARNESS_TELEMETRY_INTERVAL_S"], "2.5")
         self.assertIn("game_popen", self.ctx.state)
 
     def test_hash_mods_changes_with_content(self):
