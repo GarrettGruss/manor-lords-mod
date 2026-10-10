@@ -31,7 +31,7 @@ MAX_WAIT_S = 50  # a client may time out on a long MCP call, so one wait stays s
 POLL_STEP_S = 0.5
 READ_WINDOW_BYTES = 200_000  # a huge log is never read whole
 MAX_SCREENSHOTS = 200
-DEFAULT_MAX_RUNS = 20  # same default as harness/run.py; a config.json of a run overrides it
+DEFAULT_MAX_RUNS = 100  # same default as harness/run.py; a config.json of a run overrides it
 TRUNCATED_MARKER = "[... cut: older text removed ...]"
 
 NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")

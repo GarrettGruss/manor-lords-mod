@@ -198,7 +198,7 @@ class GameStatusTest(ToolsTestCase):
         with mock.patch.object(tools.game, "find_game_processes", return_value=[]):
             result = tools.game_status(self.runs, REPO_ROOT)
         self.assertEqual(result["lock_holder_pid"], os.getpid())
-        self.assertEqual((result["runs_used"], result["max_runs"], result["runs_left"]), (7, 20, 13))
+        self.assertEqual((result["runs_used"], result["max_runs"], result["runs_left"]), (7, 100, 93))
         self.assertFalse(result["game_running"])
 
     def test_stale_lock_is_not_a_holder_and_is_not_removed(self):
