@@ -12,4 +12,4 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Spec `docs/specs/01-ue4ss-bridge/` with a review checklist.
 - Spec `docs/specs/02-save-autoload/` for the save auto-load and ready signal.
 - Jmap findings for the game reflection data, in `docs/specs/02-save-autoload/implementation-notes/`.
-- `CLAUDE.md` with project rules, including one feature branch for each spec.
+- `CLAUDE.md` with project rules, including one feature branch for each spec and Sonnet for subagents.
