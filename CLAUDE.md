@@ -32,6 +32,13 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
   - Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`.
   - Write the summary in the imperative mood. Keep it under 72 characters.
   - Example: `feat(deploy): verify file hashes after copy`.
+- Remote: `origin` is `git@github.com:GarrettGruss/manor-lords-mod.git`. The default branch is `main`.
+- Use one feature branch for each spec.
+  - Name it `feat/<NN>-<feature-name>`, the same as the spec folder. Example: `feat/02-save-autoload`.
+  - Create the branch from an up-to-date `main`. Do the spec work, code, notes, and changelog entries on that branch.
+  - Keep commits atomic on the branch. Merge into `main` only when the user asks.
+  - Small changes that do not belong to one spec (for example `chore` or `docs` for the project rules) may go to `main`.
+  - Do not push or merge unless the user asks.
 - Do not commit unless the user asks.
 - Never skip hooks. Never force push.
 
