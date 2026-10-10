@@ -3,15 +3,21 @@
 Vendored from upstream commit a5eae1c with harness patches. See
 `docs/specs/01-ue4ss-bridge/implementation-notes/patches-python.md`.
 
-## Setup (from the repo root)
+## Setup (from the repo root, with uv)
 
-1. Create the virtual environment: `py -m venv .venv`
-2. Install the pinned dependency: `.venv\Scripts\python.exe -m pip install -r mcp\requirements.txt`
-3. Start the server (Claude Code does this from `.mcp.json`). Set `PYTHONPATH=mcp` so Python finds the package:
+1. Create the virtual environment: `uv venv --python 3.12 .venv`
+2. Install the locked dependencies (hashes are checked):
+   `uv pip install --python .venv\Scripts\python.exe --require-hashes -r mcp\requirements.txt`
+3. Claude Code starts the server from `.mcp.json` over stdio. To start it by hand:
    `$env:PYTHONPATH = "mcp"; .venv\Scripts\python.exe -m ue4ss_bridge`
    Running `python mcp/ue4ss_bridge/__main__.py` directly does not work. The file uses relative imports.
 
 Use stdio only. Do not use `--http`.
+
+## Change a dependency
+
+Edit `mcp/requirements.in`, then rebuild the lock file:
+`uv pip compile mcp\requirements.in --generate-hashes --python-version 3.12 -o mcp\requirements.txt`
 
 ## Environment variables
 

@@ -20,6 +20,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Vendored bridge: raw Lua eval is off by default, and it is gated in the Python server too.
 - Vendored bridge: the bridge folder follows `HARNESS_RUN_DIR`.
+- MCP dependencies are locked with hashes (`mcp/requirements.in` and `mcp/requirements.txt`) and installed with uv.
 
 ### Fixed
 - Vendored bridge: the poller no longer stays busy forever after a failed reply. Large responses and limits are capped. `dump` needs `allow_writes`.
