@@ -45,6 +45,7 @@ from . import __version__
 
 PROTOCOL = 3
 DEFAULT_TIMEOUT = 15.0
+MAX_EVAL_TIMEOUT = 60.0  # PATCH P2 (harness): upper bound for agent-supplied eval timeouts
 # An unconsumed request.json older than this is a leftover from a dead game, not a call in flight.
 STALE_REQUEST_S = 10.0
 
@@ -409,22 +410,25 @@ def build_server(host: str = "127.0.0.1", port: int = 8930):
             info["detail"] = str(e)
         return info
 
-    @mcp.tool(name="eval_lua")
-    def eval_lua_tool(code: str, timeout: float = DEFAULT_TIMEOUT) -> dict:
-        """Run a Lua chunk inside the game on the game thread and return what it returns.
+    # PATCH P2 (harness): eval_lua is registered only when the user opts in with
+    # UE4SS_BRIDGE_ALLOW_EVAL=1. The timeout is capped (P2) so the agent cannot wait without limit.
+    if os.environ.get("UE4SS_BRIDGE_ALLOW_EVAL") == "1":
+      @mcp.tool(name="eval_lua")
+      def eval_lua_tool(code: str, timeout: float = DEFAULT_TIMEOUT) -> dict:
+          """Run a Lua chunk inside the game on the game thread and return what it returns.
 
-        The full UE4SS Lua API is available (StaticFindObject, FindFirstOf, FindAllOf, RegisterHook,
-        ForEachUObject, ...) plus the UEB helper table: UEB.resolve(ref), UEB.props(ref),
-        UEB.funcs(ref), UEB.get(ref, name), UEB.set(ref, name, value), UEB.call(ref, fn, args),
-        UEB.objects(class, limit), UEB.types(pattern, limit), UEB.console(cmd), UEB.world(),
-        UEB.dump(kind), UEB.snapshot(ref, label), UEB.diff(ref, label), UEB.snapshots(),
-        UEB.forget(label), UEB.subclasses(ref, limit, pattern), UEB.target(distance, channel, ref),
-        UEB.watch(ref, names, label, interval_ms, every), UEB.hook(fnpath, label, max_args),
-        UEB.events(since, label, limit, clear), UEB.streams(), UEB.unwatch(label). UEHelpers is in
-        scope too. print() output is captured and returned alongside the result. Refused when the
-        mod's settings.lua sets allow_eval = false; the other tools keep working.
-        """
-        return _unwrap(eval_lua(code, timeout))
+          The full UE4SS Lua API is available (StaticFindObject, FindFirstOf, FindAllOf, RegisterHook,
+          ForEachUObject, ...) plus the UEB helper table: UEB.resolve(ref), UEB.props(ref),
+          UEB.funcs(ref), UEB.get(ref, name), UEB.set(ref, name, value), UEB.call(ref, fn, args),
+          UEB.objects(class, limit), UEB.types(pattern, limit), UEB.console(cmd), UEB.world(),
+          UEB.dump(kind), UEB.snapshot(ref, label), UEB.diff(ref, label), UEB.snapshots(),
+          UEB.forget(label), UEB.subclasses(ref, limit, pattern), UEB.target(distance, channel, ref),
+          UEB.watch(ref, names, label, interval_ms, every), UEB.hook(fnpath, label, max_args),
+          UEB.events(since, label, limit, clear), UEB.streams(), UEB.unwatch(label). UEHelpers is in
+          scope too. print() output is captured and returned alongside the result. Refused when the
+          mod's settings.lua sets allow_eval = false; the other tools keep working.
+          """
+          return _unwrap(eval_lua(code, min(timeout, MAX_EVAL_TIMEOUT)))
 
     @mcp.tool()
     def world_info() -> dict:
@@ -716,6 +720,9 @@ def _cli(cmd: str, rest: list[str]) -> int:
         elif cmd == "hello":
             print(json.dumps(hello(), indent=1))
         elif cmd == "eval":
+            # PATCH P2b (harness): the CLI shares the eval gate, so a shell cannot bypass it.
+            if os.environ.get("UE4SS_BRIDGE_ALLOW_EVAL") != "1":
+                raise BridgeError("eval is disabled. Set UE4SS_BRIDGE_ALLOW_EVAL=1 to enable it.")
             code = rest[0] if rest else "-"
             if code == "-":
                 code = sys.stdin.read()
