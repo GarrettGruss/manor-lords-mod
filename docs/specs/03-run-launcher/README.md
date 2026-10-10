@@ -1,6 +1,6 @@
 # Spec 03: Run launcher and run summary
 
-Status: in progress. Step 1 (run folder, runner and summary with fake phases) is done. The key design question (how to pass settings to the game) is answered.
+Status: done for steps 1 to 6 (run folder, real phases, scenarios, screenshots, five runs, old scripts retired). Some open questions are not tested, see "Answers to the open questions".
 Roadmap phase: 5 (outer harness).
 
 ## Goal
@@ -20,7 +20,7 @@ The iteration: deploy the mod, start the game, load the test save, run a scenari
 - The game does not close on a close request. The harness stops it with a kill.
 - A direct launch of `ManorLords-Win64-Shipping.exe` passes environment variables to the mods (`implementation-notes/direct-launch-with-environment.md`).
   Each run can use its own folder with `HARNESS_RUN_DIR`.
-- `harness/game-launch.ps1`, `game-close.ps1` and `launch-series.ps1` exist, but they use Steam and one shared folder. The run launcher replaces them for runs.
+- `harness/game-launch.ps1`, `game-close.ps1` and `launch-series.ps1` existed, but they use Steam and one shared folder. The run launcher replaces them for runs.
 - Crash data: UE crash reports are in `%LOCALAPPDATA%\ManorLords\Saved\Crashes\`, and UE4SS keeps its own log and crash dumps in `ue4ss\`.
 
 ## Design
@@ -101,11 +101,11 @@ Keep it small (about 1 to 2 KB), so the agent can read it in one step.
 
 ## Plan
 1. Write the run folder, config and `summary.json` code, with fake phases and unit tests (no game). **Done.** (`implementation-notes/step1-runlib-design.md`)
-2. Add `preflight`, `deploy`, `launch`, `boot` and `teardown` with the real game. Test: start, `READY`, stop. Test a stale game process.
-3. Add the scenario runner and a `smoke` scenario (unpause for a few game seconds, check that the clock moves, pause again).
-4. Add `collect`: screenshots, `UE4SS.log`, crash reports. Test with a deliberate crash (kill the game in the middle of the scenario).
-5. Run 5 runs in a row. Record the results in `implementation-notes/`.
-6. Retire `launch-series.ps1` and the Steam-based launch scripts, or make them thin wrappers. Update the harness README.
+2. Add `preflight`, `deploy`, `launch`, `boot` and `teardown` with the real game. **Done.** (`implementation-notes/step2-real-phases.md`)
+3. Add the scenario runner and a `smoke` scenario. **Done.** Scenarios are modules in `harness/scenarios/` with `LIMIT_S`. `smoke` takes about 9 s. (`implementation-notes/step3-6-scenarios-screenshots.md`)
+4. Add `collect`: screenshots, `UE4SS.log`, crash reports and dumps. **Done.** Tested with a game killed in the middle of the scenario (verdict `crash`).
+5. Run 5 runs in a row. **Done.** 5 of 5 `pass`, 42 to 45 s each. Self tests: `fail` (exit 1) and `timeout` (exit 3) work.
+6. Retire `launch-series.ps1` and the Steam-based launch scripts. **Done.** `launch-series.ps1` is replaced by `harness/run_series.py`. `game-launch.ps1` and `game-close.ps1` stay for manual use. The harness README starts with `run.py`.
 
 ## Open questions
 - Screenshots: does `mss` capture the game window when it is not in front, or on another monitor? Does the "A New Message" banner cover the screen?
@@ -114,6 +114,16 @@ Keep it small (about 1 to 2 KB), so the agent can read it in one step.
 - Test save copy: does the load screen list a slot with a custom name? If it does, copy `saveGame_0` to a harness slot for each run.
 - Can the scenario unpause the game reliably, given that the game restarts the clock by itself after a load?
 - Is a game started with Python `Popen` killed when the launcher exits? Decide whether the game must outlive the launcher (`--keep-open`).
+
+## Answers to the open questions
+Details and numbers: `implementation-notes/step3-6-scenarios-screenshots.md`.
+- Screenshots: `mss` captures screen pixels, so a window in front of the game is in the picture (the UE4SS GUI was seen). The picture shows the real game otherwise.
+  Another monitor, a minimized window and the "A New Message" banner were not tested with the real game.
+- UE crash folder: not answered. A terminate does not produce one. No real UE crash happened in these steps.
+- Steam closed: not tested (asking Steam to exit is not safe). `preflight` fails with a clear message if Steam is not running (unit test only).
+- Test save copy: not tested. The runs only read `saveGame_0`, and its hash did not change.
+- Unpause after a load: works in the runs made (7 of 7 smoke runs), because HarnessBoot holds the pause first.
+- `Popen` and launcher exit: not tested. The launcher always stops the game in `teardown`. `--keep-open` leaves it on purpose, and was not tested with the real game.
 
 ## Acceptance criteria
 - One command from the repo root runs a complete iteration and writes `summary.json` for these outcomes: `pass`, `fail` (a failing assertion), `crash` (game killed in the middle of the scenario), `timeout`, and `harness_error`.

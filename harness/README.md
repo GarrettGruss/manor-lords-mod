@@ -1,5 +1,53 @@
 # Harness
 
+## Run a test (run.py)
+
+`harness/run.py` is the normal way to test a mod. One command runs one complete iteration with the real game
+and writes `runs/<id>/summary.json` (spec 03). Read `summary.json` first. Open screenshots and logs only if it says to.
+Steam must be running. The game must not be started by hand.
+
+```powershell
+.venv\Scripts\python.exe harness\run.py --list-scenarios
+.venv\Scripts\python.exe harness\run.py --scenario smoke [--keep-open] [--run-id ID] [--max-runs N]
+.venv\Scripts\python.exe harness\run_series.py --scenario smoke --runs 5
+```
+
+Exit code: 0 pass, 1 fail, 2 crash, 3 timeout, 4 harness error.
+`run_series.py` runs the launcher N times, prints a table and writes `runs\series-<time>.json`. It exits 0 only if all runs pass.
+
+Setup (once). Install the locked packages (`psutil`, `mss`) into the project venv:
+
+```powershell
+uv pip install --python .venv\Scripts\python.exe --require-hashes -r harness\requirements.txt
+```
+
+To lock again after a change of `harness\requirements.in`:
+`uv pip compile harness\requirements.in --generate-hashes --python-version 3.12 -o harness\requirements.txt`
+
+### Phases
+`preflight`, `deploy`, `launch`, `boot`, `scenario`, `collect`, `teardown`. `collect` and `teardown` always run.
+The launcher starts `ManorLords-Win64-Shipping.exe` directly with `HARNESS_RUN_DIR`, `HARNESS_AUTOBOOT` and `HARNESS_TEST_SAVE`.
+Teardown ends the game with a terminate, because the game ignores a close request. `--keep-open` leaves the game running.
+A stale game process is stopped in `preflight` and recorded in `notes`. A game that ends before teardown is a `crash`.
+The test save `saveGame_0` is only read.
+
+### Scenarios
+A scenario is a module in `harness/scenarios/` with `LIMIT_S` (hard time limit, in seconds) and `run(ctx)`.
+`ctx` gives `read_clock()`, `unpause()`, `pause()`, `read_calendar()`, `check(...)`, `check_range(...)`, `log.info(...)`, `run_dir` and `bridge`.
+`run` returns `ctx.result()`: `{"passed": bool, "asserts": [...]}`. It is also saved as `scenario.json`. The log is `scenario.log`.
+A scenario that is over its limit gives the verdict `timeout`.
+Scenarios: `noop`, `smoke`. Test scenarios (`selftest-fail`, `selftest-timeout`) show with `--list-scenarios --include-test-scenarios`.
+
+### Run folder
+`summary.json`, `config.json`, `boot.json`, `ready.marker`, `mod.log`, `scenario.json`, `scenario.log`, `UE4SS.log`,
+`bridge/`, `screenshots/start.png` and `end.png`, and `crash/` (new UE crash reports and UE4SS dumps).
+Screenshots show the screen area of the game window. Windows in front of the game are in the picture. A failed screenshot adds a note and does not fail the run.
+
+### Unit tests (no game)
+```powershell
+.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib*.py" -v
+```
+
 ## deploy.ps1
 
 Copies `mod/` into the UE4SS `Mods` folder (PowerShell 5.1):
@@ -62,70 +110,18 @@ If the game is running, the script warns. Changes take effect at the next game s
 To turn UE4SS off for one launch, use the Steam launch option `--disable-ue4ss`.
 To turn UE4SS off fully, rename `dwmapi.dll`. The script does neither.
 
-## Start and stop the game
+## Start and stop the game by hand
 
-All scripts: `powershell -ExecutionPolicy Bypass -File harness\<script>.ps1`. They never touch save files.
+These scripts are for manual use. `run.py` does not use them. They start the game through Steam (`steam://rungameid/1363080`),
+so they cannot pass per-run settings. HarnessBoot is turned on with the switch file `ue4ss\harness\autoboot.enable`.
+They never touch save files. `powershell -ExecutionPolicy Bypass -File harness\<script>.ps1`.
 
 | Script | What it does |
 |---|---|
-| `game-launch.ps1` | Starts the game through Steam (`steam://rungameid/1363080`). Deletes the old `boot.json` and `ready.marker` first. With `-WaitForBoot` it waits until HarnessBoot reports `READY` or `FAILED`. |
+| `game-launch.ps1` | Starts the game through Steam. Deletes the old `boot.json` and `ready.marker` first. With `-WaitForBoot` it waits for `READY` or `FAILED`. |
 | `game-close.ps1` | Asks the game window to close, waits `-GraceSeconds` (default 20), then kills the game. `-NoForce` never kills. |
-| `launch-series.ps1` | Closes and starts the game `-Runs` times (default 10). It records the HarnessBoot state, the time to ready, the number of `pauseGame` calls, and whether the game clock is stopped. Results go to `runs\launch-series-<time>.json`. |
 
 Exit codes of `game-launch.ps1`: 0 started (and `READY` with `-WaitForBoot`), 1 already running or HarnessBoot is off,
 2 the process did not start, 3 HarnessBoot `FAILED` or the game ended, 4 timeout, 5 other error.
 Exit codes of `game-close.ps1`: 0 closed or not running, 1 killed or still running, 2 error.
-
-Notes:
-- Steam starts the game, so the scripts cannot pass environment variables to it. HarnessBoot is turned on with the switch file `ue4ss\harness\autoboot.enable`.
-- `launch-series.ps1` needs the project venv (`.venv`, see `mcp\README.md`). It reads the clock through the bridge with `harness\tools\read_clock.py`.
-- In the first test, the game did not close after the close request (20 s), so `game-close.ps1` killed it. A kill can lose the end of `UE4SS.log`.
-  `mod.log` is flushed on each line and is not affected.
-
-## Run launcher (fake mode)
-
-`harness/run.py` runs one test iteration and writes `runs/<id>/summary.json` (spec 03).
-Only fake phases exist now. They need no game. The real game phases come in the next step.
-
-Setup (once). The `runlib` package needs `psutil`:
-
-```powershell
-uv pip install --python .venv\Scripts\python.exe --require-hashes -r harness\requirements.txt
-```
-
-`harness\requirements.in` lists the packages. To lock them again:
-`uv pip compile harness\requirements.in --generate-hashes --python-version 3.12 -o harness\requirements.txt`
-
-Run a fake iteration. The outcome is `pass`, `fail`, `crash`, `timeout` or `harness_error`:
-
-```powershell
-.venv\Scripts\python.exe harness\run.py --fake pass [--run-id ID] [--runs-root DIR] [--max-runs N]
-```
-
-The script prints one line (run id, verdict, reason, path to `summary.json`).
-Exit code: 0 pass, 1 fail, 2 crash, 3 timeout, 4 harness error.
-The run lock is `runs\.lock`. The iteration counter is `runs\.iterations` (default cap: 20).
-
-Run the unit tests (no game needed):
-
-```powershell
-.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib*.py" -v
-```
-
-## Run launcher (real game)
-
-`harness/run.py --scenario <name>` runs one complete iteration with the real game (spec 03, step 2).
-Exactly one of `--scenario` and `--fake` is required. Steam must be running.
-
-```powershell
-.venv\Scripts\python.exe harness\run.py --scenario noop [--keep-open] [--run-id ID] [--max-runs N]
-```
-
-Phases: `preflight`, `deploy`, `launch`, `boot`, `scenario`, `collect`, `teardown`.
-The launcher starts `ManorLords-Win64-Shipping.exe` directly with `HARNESS_RUN_DIR`, `HARNESS_AUTOBOOT` and `HARNESS_TEST_SAVE`.
-`collect` and `teardown` always run. Teardown ends the game with a terminate, because the game ignores a close request.
-`--keep-open` leaves the game running and adds a note to the summary.
-A stale game process is stopped in `preflight` and recorded in `notes` of `summary.json`.
-A game that ends before teardown is a `crash` (exit code 2).
-Scenarios are functions registered in `harness/runlib/scenario.py`. The only one now is `noop`: it checks that the game is paused and the bridge works.
-The test save `saveGame_0` is only read (existence check and SHA-256).
+The old `launch-series.ps1` was removed. Use `run_series.py`.

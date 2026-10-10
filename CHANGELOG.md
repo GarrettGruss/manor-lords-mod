@@ -24,7 +24,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `HarnessBoot` mod: loads the test save from the main menu, pauses the game and holds the pause for 8 s of a stopped game clock, and writes `boot.json` and `ready.marker`. It is off unless `HARNESS_AUTOBOOT=1` or `ue4ss/harness/autoboot.enable` exists.
 - `harness/tests/` with a Lua syntax check and a state machine test that need no game.
 - `harness/uninstall.ps1`: disables the harness (mods set to 0, autoboot switch removed) or removes everything `deploy.ps1` installed with `-Remove`.
-- `harness/game-launch.ps1`, `harness/game-close.ps1` and `harness/launch-series.ps1` to start and stop the game, and to repeat the start many times and record the results.
+- `harness/game-launch.ps1` and `harness/game-close.ps1` to start and stop the game by hand.
+- Scenario runner (`harness/scenarios/`, `ScenarioContext`, bridge helpers), scenario `smoke`, hidden test scenarios `selftest-fail` and `selftest-timeout`, and `run.py --list-scenarios`.
+- Screenshots of the game window (`mss`), copy of UE4SS crash dumps, and `harness/run_series.py` to run the launcher N times.
 
 ### Changed
 - Vendored bridge: raw Lua eval is off by default, and it is gated in the Python server too.
