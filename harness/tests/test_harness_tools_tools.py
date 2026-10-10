@@ -281,6 +281,72 @@ class RunScenarioTest(ToolsTestCase):
         self.assertEqual(done["summary"]["verdict"], "pass")
         self.assertEqual(tools.read_summary(self.runs, REPO_ROOT)["run_id"], run_id)
 
+    def test_second_call_is_refused_at_once_and_names_first_run(self):
+        command = self.script_command(STUB_LAUNCHER)
+        first = tools.run_scenario(self.runs, REPO_ROOT, "noop", launcher_command=command)
+        begin = time.monotonic()
+        second = tools.run_scenario(self.runs, REPO_ROOT, "noop", launcher_command=command)
+        self.assertLess(time.monotonic() - begin, 0.5)
+        self.assertError(second, first["run_id"])
+        self.assertEqual(len(list(self.runs.glob(".launcher-*.log"))), 1)
+        tools.wait_for_run(self.runs, REPO_ROOT, first["run_id"], 10)
+
+    def write_claim_file(self, **claim):
+        (self.runs / tools.CLAIM_NAME).write_text(json.dumps(claim))
+
+    def test_stale_claim_is_replaced(self):
+        self.write_claim_file(run_id="old", pid=999999999, started=time.time() - 60, launcher_known=True)
+        result = tools.run_scenario(self.runs, REPO_ROOT, "noop", launcher_command=self.script_command(STUB_LAUNCHER))
+        self.assertEqual(result["status"], "started")
+        claim = json.loads((self.runs / tools.CLAIM_NAME).read_text())
+        self.assertEqual(claim["run_id"], result["run_id"])
+        tools.wait_for_run(self.runs, REPO_ROOT, result["run_id"], 10)
+
+    def test_claim_with_live_pid_refuses(self):
+        self.write_claim_file(run_id="busy", pid=os.getpid(), started=time.time() - 60, launcher_known=True)
+        result = tools.run_scenario(self.runs, REPO_ROOT, "noop", launcher_command=self.script_command(STUB_LAUNCHER))
+        self.assertError(result, "busy")
+        self.assertEqual(list(self.runs.glob(".launcher-*")), [])
+
+    def test_young_claim_without_launcher_pid_refuses(self):
+        self.write_claim_file(run_id="young", pid=os.getpid(), started=time.time(), launcher_known=False)
+        self.assertError(tools.run_scenario(self.runs, REPO_ROOT, "noop",
+                                            launcher_command=self.script_command(STUB_LAUNCHER)), "young")
+
+    def test_popen_failure_releases_claim(self):
+        with mock.patch.object(tools.subprocess, "Popen", side_effect=OSError("no exec")):
+            with self.assertRaises(OSError):
+                tools.run_scenario(self.runs, REPO_ROOT, "noop", launcher_command=self.script_command(STUB_LAUNCHER))
+        self.assertFalse((self.runs / tools.CLAIM_NAME).exists())
+
+    def test_game_status_shows_active_run_and_stop_game_refuses(self):
+        started = tools.run_scenario(self.runs, REPO_ROOT, "noop", launcher_command=self.script_command(STUB_LAUNCHER))
+        with mock.patch.object(tools.game, "find_game_processes", return_value=[]):
+            self.assertEqual(tools.game_status(self.runs, REPO_ROOT)["active_run_id"], started["run_id"])
+        with mock.patch.object(tools.game, "stop_processes") as stop:
+            self.assertError(tools.stop_game(self.runs, REPO_ROOT), started["run_id"])
+        stop.assert_not_called()
+        tools.wait_for_run(self.runs, REPO_ROOT, started["run_id"], 10)
+
+    def test_concurrent_calls_start_exactly_one(self):
+        import threading
+        command = self.script_command(STUB_LAUNCHER)
+        results, barrier = [], threading.Barrier(2)
+
+        def call():
+            barrier.wait()
+            results.append(tools.run_scenario(self.runs, REPO_ROOT, "noop", launcher_command=command))
+
+        threads = [threading.Thread(target=call) for _ in range(2)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        started = [r for r in results if r["ok"]]
+        self.assertEqual(len(started), 1, results)
+        self.assertEqual(len(list(self.runs.glob(".launcher-*.log"))), 1)
+        tools.wait_for_run(self.runs, REPO_ROOT, started[0]["run_id"], 10)
+
     def test_launcher_output_goes_to_log_file(self):
         command = self.script_command("print('hello from launcher')", "chatty.py", pass_ids=False)
         run_id = tools.run_scenario(self.runs, REPO_ROOT, "noop", launcher_command=command)["run_id"]
