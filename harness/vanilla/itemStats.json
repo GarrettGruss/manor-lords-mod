@@ -1,0 +1,131 @@
+{
+ "table": "RTSMultiEngineCPP.itemStats",
+ "row_count": 213,
+ "fields": [
+  "Weight",
+  "Value",
+  "spoilageRate"
+ ],
+ "rows": {
+  "-1": {
+   "Weight": 0,
+   "Value": 0,
+   "spoilageRate": 0
+  },
+  "1": {
+   "Weight": 0,
+   "Value": 1.5,
+   "spoilageRate": 0.09
+  },
+  "3": {
+   "Weight": 0,
+   "Value": 1,
+   "spoilageRate": 0
+  },
+  "5": {
+   "Weight": 0,
+   "Value": 2,
+   "spoilageRate": 0.13
+  },
+  "7": {
+   "Weight": 0,
+   "Value": 1.5,
+   "spoilageRate": 0
+  },
+  "9": {
+   "Weight": 0,
+   "Value": 1,
+   "spoilageRate": 0
+  },
+  "11": {
+   "Weight": 0,
+   "Value": 0.5,
+   "spoilageRate": 0
+  },
+  "13": {
+   "Weight": 0,
+   "Value": 1,
+   "spoilageRate": 0
+  },
+  "15": {
+   "Weight": 0,
+   "Value": 0.5,
+   "spoilageRate": 0
+  },
+  "17": {
+   "Weight": 0,
+   "Value": 0.5,
+   "spoilageRate": 0
+  },
+  "20": {
+   "Weight": 0,
+   "Value": 0,
+   "spoilageRate": 0
+  },
+  "22": {
+   "Weight": 0,
+   "Value": 0,
+   "spoilageRate": 0
+  },
+  "24": {
+   "Weight": 0,
+   "Value": 0,
+   "spoilageRate": 0
+  },
+  "26": {
+   "Weight": 0,
+   "Value": 0,
+   "spoilageRate": 0
+  },
+  "28": {
+   "Weight": 0,
+   "Value": 3.5,
+   "spoilageRate": 0.16
+  },
+  "30": {
+   "Weight": 0,
+   "Value": 1,
+   "spoilageRate": 0.23
+  },
+  "32": {
+   "Weight": 0,
+   "Value": 1.5,
+   "spoilageRate": 0.2
+  },
+  "34": {
+   "Weight": 0,
+   "Value": 3,
+   "spoilageRate": 0
+  },
+  "36": {
+   "Weight": 0,
+   "Value": 0,
+   "spoilageRate": 0
+  },
+  "43": {
+   "Weight": 0,
+   "Value": 10,
+   "spoilageRate": 0
+  },
+  "45": {
+   "Weight": 0,
+   "Value": 3,
+   "spoilageRate": 0.17
+  },
+  "52": {
+   "Weight": 0,
+   "Value": 0,
+   "spoilageRate": 0
+  },
+  "89": {
+   "Weight": 0,
+   "Value": 0,
+   "spoilageRate": 0
+  },
+  "98": {
+   "Weight": 0,
+   "Value": 25,
+   "spoilageRate": 0
+  }
+ }
+}

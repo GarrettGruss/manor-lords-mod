@@ -283,6 +283,23 @@ class Actions:
         check = lambda before, after: after["count"] == before["count"] + 1 and after["last"] == list(paragraphs)  # noqa: E731
         return self._perform("send_letter", {"paragraphs": list(paragraphs), "sender": sender}, self._inbox_state, call, check)
 
+    # ---- item table (spec 09, read only, through the helper mod HarnessActions) ----
+
+    def datatable_info(self) -> dict:
+        """Row count, the first row names and the row struct of `itemStats`. It changes nothing."""
+        return self._send_datatable("datatable_info")["info"]
+
+    def datatable_read(self, row: str | int, field: str) -> float:
+        """Read one number field (Weight, Value, spoilageRate) of one `itemStats` row. It changes nothing."""
+        answer = self._send_datatable("datatable_read", row=str(row), field=field)
+        return answer["values"][field]
+
+    def _send_datatable(self, command: str, **fields) -> dict:
+        if self._commands is None:
+            raise ActionNotPossible(f"{command}: no command channel to the mod HarnessActions in this context")
+        self._precondition()
+        return self._commands.send(command, **fields)
+
     # ---- autosave (through the helper mod HarnessActions) ----
 
     def autosave_status(self) -> dict:

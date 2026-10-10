@@ -1,6 +1,8 @@
 # Spec 09: Asset mods (pak editing and repacking)
 
-Status: deferred. No planned feature needs it yet. This spec records when to build it and how to test it with the harness.
+Status: tooling built and tested with a fake packer. A real pak build is **not verified**: it needs UnrealPak or `retoc`, an edited asset and possibly the AES key. Only the user can supply them.
+No planned feature needs a pak yet, so the "when to build" rule below still applies before anyone edits a real asset.
+Notes: `implementation-notes/tooling.md`.
 Roadmap phase: 11 (see `docs/specs/00-harness-overview/README.md`).
 
 ## Goal
@@ -39,7 +41,11 @@ Build it only when a feature spec shows that the data cannot be changed at runti
   Limits found: the bridge cannot read rows (`RowStruct` read and `getItem` crash the game, because `Item` has a `SoftClassProperty`), so rows are read by field name in a Lua mod only.
   Not verified: that game logic uses the changed value, persistence over a new load, strings and soft fields.
 
+- 2026-10-10: tooling built in `feat/11-asset-mod-tool` (`harness/tools/pakmod.py`, `uninstall.ps1 -Remove` removes harness paks, scenario `datatable-vanilla`). Verified with a fake packer and temp folders, and `datatable-vanilla` passed 3 of 3 in the real game (no pak). NOT verified: a real packer, a real edited asset, a real pak in the game. The decision "Lua first" is unchanged.
+  `deploy.ps1` is not changed: `pakmod.py install` does the copy and writes its own manifest (`~mods\.harness-paks.json`), because a pak is built outside the repo.
+
 ## Acceptance criteria (for when it is built)
 - A trivial asset change (one number in one data row) is built into a pak, deployed, seen by a scenario, and removed by the uninstall script.
+  Status: the pieces exist (`pakmod.py`, `datatable-vanilla` with `HARNESS_EXPECT_ITEM_ROWS`, `uninstall.ps1 -Remove`). The whole chain with a real pak is not run.
 - The tool refuses to write outside its work folder and the game's `~mods` folder.
 - Nothing from FModel exports or AES keys is committed.

@@ -49,13 +49,24 @@ class CommandChannel:
         temp.write_text(json.dumps(body), encoding="utf-8")
         os.replace(temp, self.folder / f"{name}.json")
 
+    @staticmethod
+    def _read_answer(path: Path) -> dict | None:
+        """Return the answer, or None when it is not ready. The mod may still hold the file open or half written (Windows says PermissionError)."""
+        if not path.is_file():
+            return None
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (PermissionError, ValueError):
+            return None
+
     def _wait_for_answer(self, name: str, command: str) -> dict:
         path = self.folder / f"{name}.result.json"
         started = self._monotonic()
         while True:
             self._check_alive()
-            if path.is_file():
-                return json.loads(path.read_text(encoding="utf-8"))
+            answer = self._read_answer(path)
+            if answer is not None:
+                return answer
             if self._monotonic() - started > self._timeout_s:
                 raise CommandError(
                     f"no answer to command {command} ({name}) in {self._timeout_s:.0f} s. Is the mod HarnessActions loaded?")

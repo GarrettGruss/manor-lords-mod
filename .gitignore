@@ -2,3 +2,4 @@ runs/
 saves/*.bak
 .venv/
 __pycache__/
+harness/pakmod.local.json

@@ -12,6 +12,10 @@
     - Deletes the files listed in Mods\.harness-manifest.json and prunes empty folders.
     - Removes the harness mod lines from mods.txt.
     - Deletes the manifest.
+    - Deletes the asset mod paks that pakmod.py installed (spec 09): only files listed in
+      ManorLords\Content\Paks\~mods\.harness-paks.json whose SHA-256 still matches, only inside ~mods.
+      It deletes the pak manifest, and the ~mods folder if the harness created it and it is empty.
+      A pak that changed since install is skipped with a warning.
     - Deletes the folders ue4ss\bridge and ue4ss\harness (only these two).
     - Keeps mods.txt.harness.bak. The script prints its path, so you can restore it by hand.
 
@@ -52,6 +56,8 @@ $modsTxt      = Join-Path $modsDir 'mods.txt'
 $bakPath      = "$modsTxt.harness.bak"
 $manifestPath = Join-Path $modsDir '.harness-manifest.json'
 $switchPath   = Join-Path $ue4ssDir 'harness\autoboot.enable'
+$pakModsDir   = Join-Path $GameDir 'ManorLords\Content\Paks\~mods'
+$pakManifest  = Join-Path $pakModsDir '.harness-paks.json'
 $outputDirs   = @((Join-Path $ue4ssDir 'bridge'), (Join-Path $ue4ssDir 'harness'))
 $tag = if ($DryRun) { '[dry-run] ' } else { '' }
 
@@ -105,6 +111,36 @@ function Remove-ManifestFiles([string[]]$manifestFiles) {
             $d = Split-Path -Parent $d
         }
     }
+}
+
+# Spec 09: delete only the paks that pakmod.py recorded, and only if they are unchanged.
+function Remove-HarnessPaks {
+    if (-not (Test-Path -LiteralPath $pakManifest)) { return }
+    Assert-InsideGameDir $pakManifest
+    $m = Get-Content -LiteralPath $pakManifest -Raw | ConvertFrom-Json
+    $kept = 0
+    foreach ($p in $m.files.PSObject.Properties) {
+        $name = $p.Name
+        if ($name -ne (Split-Path -Leaf $name) -or $name -notlike '*.pak') { throw "Pak manifest entry is not a plain pak file name: $name" }
+        $dst = Join-Path $pakModsDir $name
+        Assert-InsideGameDir $dst
+        if (-not (Test-Path -LiteralPath $dst)) { continue }
+        if ((Get-FileHash -LiteralPath $dst -Algorithm SHA256).Hash -ine $p.Value) {
+            Write-Warning "pak changed since install, not deleted: $name"
+            $kept++
+            continue
+        }
+        Write-Host ("{0}deleted    ~mods\{1}" -f $tag, $name)
+        $script:deleted++
+        if (-not $DryRun) { Remove-Item -LiteralPath $dst -Force }
+    }
+    if ($kept -gt 0) { Write-Host 'paks       manifest kept because a pak was skipped'; return }
+    Write-Host ("{0}deleted    ~mods\.harness-paks.json" -f $tag)
+    $script:deleted++
+    if ($DryRun) { return }
+    Remove-Item -LiteralPath $pakManifest -Force
+    $isEmpty = -not (Get-ChildItem -LiteralPath $pakModsDir -Force)
+    if ($m.created_dir -eq $true -and $isEmpty) { Remove-Item -LiteralPath $pakModsDir -Force; Write-Host 'deleted    empty ~mods folder' }
 }
 
 function Remove-SwitchFile {
@@ -168,7 +204,7 @@ function Remove-Manifest {
 
 # ---- Checks ----
 if (-not (Test-Path -LiteralPath $modsDir)) { throw "UE4SS Mods dir not found: $modsDir" }
-foreach ($p in @($modsDir, $modsTxt, $manifestPath, $switchPath) + $outputDirs) { Assert-InsideGameDir $p }
+foreach ($p in @($modsDir, $modsTxt, $manifestPath, $switchPath, $pakModsDir, $pakManifest) + $outputDirs) { Assert-InsideGameDir $p }
 
 if (Get-Process -Name 'ManorLords-Win64-Shipping' -ErrorAction SilentlyContinue) {
     Write-Warning 'Game is running (ManorLords-Win64-Shipping.exe). Changes take effect at the next game start.'
@@ -185,6 +221,7 @@ try {
     Update-ModsTxt $modNames
     if ($Remove) {
         Remove-Manifest
+        Remove-HarnessPaks
         Remove-OutputFolders
         if (Test-Path -LiteralPath $bakPath) { Write-Host "backup     kept, restore by hand if needed: $bakPath" }
     }

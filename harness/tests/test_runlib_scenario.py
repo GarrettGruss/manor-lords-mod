@@ -199,7 +199,7 @@ class RealScenarioTest(ContextTestCase):
 class RegistryTest(unittest.TestCase):
     def test_hidden_scenarios_are_not_listed_by_default(self):
         self.assertEqual(sorted(list_scenarios()), [
-            "autosave-protection", "letter-delivery", "noop", "silver-change", "smoke", "telemetry-sanity", "time-advance", "winter-region"])
+            "autosave-protection", "datatable-vanilla", "letter-delivery", "noop", "silver-change", "smoke", "telemetry-sanity", "time-advance", "winter-region"])
         self.assertIn("selftest-timeout", list_scenarios(include_hidden=True))
         self.assertIn("selftest-action", list_scenarios(include_hidden=True))
         self.assertIn("selftest-crash", list_scenarios(include_hidden=True))
