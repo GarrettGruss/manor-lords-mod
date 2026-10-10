@@ -166,3 +166,32 @@ Other tools: `list_scenarios`, `list_runs`, `game_status`, `stop_game` (refuses 
 The read-only tools are allowed in `.claude/settings.json`. `run_scenario` and `stop_game` ask first.
 `HARNESS_RUNS_ROOT` moves the runs folder. It is for tests only.
 Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_harness_tools*.py"`.
+
+## Regression suite
+
+`harness/suite.py` runs many scenarios in one command and writes one report (spec 08).
+Each run is a separate `run.py` process, so a crash in one run does not stop the suite.
+
+```powershell
+.venv\Scripts\python.exe harness\suite.py --suite core [--max-minutes N] [--runs-root DIR]
+.venv\Scripts\python.exe harness\suite.py --list
+.venv\Scripts\python.exe harness\suite.py --update-baseline <scenario> [--from-last N]
+```
+
+Suites are files `harness\suites\<name>.json`: `smoke` (1 run), `core` and `soak` (smoke x10).
+Each entry has `scenario`, `repeat`, and optional `fixture` and `optional`. An `optional` entry is skipped, with a note, when its scenario does not exist yet.
+The suite file has `time_budget_s` and `flake_retries`. A failed run is retried up to `flake_retries` times. A scenario that fails and then passes is marked `flaky`.
+
+Output: `runs\suite-<id>\report.json` (under 4 KB for a passing suite) and `report.md`. History: `runs\suite-history.jsonl`.
+Exit code: 0 pass (non-strict drift is allowed), 1 fail or strict drift, 2 crash or timeout left after retries, 3 time budget or iteration cap ended the suite early, 4 harness error.
+If several apply, the order is 4, 3, 2, 1.
+
+Baselines are in `harness\baselines\<scenario>.json`: `{"metrics": {"duration_s": [lo, hi]}, "strict": [...]}`.
+A metric outside its range is `drift`. Drift fails the suite only for metrics listed in `strict` (add them by hand).
+Only `--update-baseline` writes a baseline file. It uses the last N passing runs and widens min and max by 20% of the spread (at least 10% of the largest value). Review the file before you commit it.
+
+Test the suite without the game: `HARNESS_SUITE_LAUNCHER` (or `--launcher-command`) replaces `run.py`.
+
+```powershell
+.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_suitelib*.py" -v
+```

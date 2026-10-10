@@ -1,6 +1,6 @@
 # Spec 08: Regression suite and baselines
 
-Status: draft. Roadmap phase: 10 (see `docs/specs/00-harness-overview/README.md`).
+Status: in progress: code and tests done with a stub launcher; real runs pending. Roadmap phase: 10 (see `docs/specs/00-harness-overview/README.md`). Notes: `implementation-notes/build-notes.md`.
 
 ## Goal
 Run many scenarios in one command, compare the results with baselines, and find flaky tests.
@@ -48,12 +48,12 @@ Top: totals, a verdict (`pass` if every scenario passed and none changed beyond 
 - The suite keeps a history file `runs/suite-history.jsonl` (verdict per scenario per run) so flake rates can be computed over time.
 
 ## Plan
-1. Write the suite runner and the report with unit tests (fake runs through a stub for `run.py`).
-2. Write 3 suites: `smoke` (1 scenario), `core` (the scenarios that exist), `soak` (one long scenario repeated).
-3. Run `core` twice in the real game. Record the report and the timings.
-4. Write the baseline tool. Make baselines for the scenarios that exist. Run again and check for drift.
-5. Test: a deliberate regression (a mod change that breaks a metric) is caught by the suite.
-6. Update the spec, the README and the roadmap.
+1. [x] Write the suite runner and the report with unit tests (fake runs through a stub for `run.py`).
+2. [x] Write 3 suites: `smoke` (1 scenario), `core` (the scenarios that exist), `soak` (one long scenario repeated).
+3. [ ] Run `core` twice in the real game. Record the report and the timings.
+4. [ ] (baseline tool done and tested with fake runs; real baselines and drift check pending) Write the baseline tool. Make baselines for the scenarios that exist. Run again and check for drift.
+5. [ ] (caught with a stub scenario in tests; the real mod regression is pending) Test: a deliberate regression (a mod change that breaks a metric) is caught by the suite.
+6. [ ] (spec and harness README done; roadmap pending) Update the spec, the README and the roadmap.
 
 ## Open questions
 - What margin for baselines? Start with 20% of the observed spread, plus a floor.
