@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -108,6 +109,45 @@ def decide_verdict(phases: list[PhaseResult], state: dict) -> tuple[str, str | N
     return "pass", None
 
 
+def condense_environment(environment: dict) -> dict:
+    """The short form for summary.json. The full form (with every mod hash) stays in config.json."""
+    if not environment:
+        return {}
+    short: dict = {}
+    for key in ("game_build", "test_save"):
+        if key in environment:
+            short[key] = environment[key]
+    if environment.get("test_save_sha256"):
+        short["test_save_sha256"] = environment["test_save_sha256"][:12]
+    if environment.get("mods"):
+        # One hash over all mods: it changes when any deployed mod changes.
+        joined = json.dumps(environment["mods"], sort_keys=True).encode("utf-8")
+        short["mods_hash"] = hashlib.sha256(joined).hexdigest()[:12]
+    git = environment.get("harness_git")
+    if git:
+        short["git"] = git["commit"][:10] + ("+dirty" if git.get("dirty") else "")
+    return short
+
+
+def compact(data: dict) -> dict:
+    """Drop empty and default fields, and keep only the seconds of phases that went well.
+
+    A phase that did not go well keeps its status and detail. The agent needs those.
+    """
+    data["phases"] = [
+        {"name": p["name"], "seconds": p["seconds"]} if p["status"] == "ok"
+        else {key: value for key, value in p.items() if value not in (None, "")}
+        for p in data["phases"]
+    ]
+    if data.get("boot"):
+        data["boot"] = {key: value for key, value in data["boot"].items() if value is not None}
+    if data.get("artifacts"):
+        data["artifacts"] = {key: value for key, value in data["artifacts"].items() if value}
+    for key in [k for k, v in data.items() if v in (None, [], {}) and k != "verdict"]:
+        del data[key]
+    return data
+
+
 def _json_size(data: dict) -> int:
     return len(json.dumps(data, indent=2).encode("utf-8"))
 
@@ -118,7 +158,7 @@ def _cut(text: str, limit: int) -> str:
 
 def _shrink_details(data: dict, limit: int) -> None:
     # The reason can repeat a phase detail, so it is cut too.
-    if data["reason"]:
+    if data.get("reason"):
         data["reason"] = _cut(data["reason"], limit)
     for phase in data["phases"]:
         if phase.get("detail"):
@@ -129,14 +169,14 @@ def _fit_to_limit(data: dict) -> dict:
     """Cut long detail strings until the JSON is under the size limit."""
     if _json_size(data) <= MAX_SUMMARY_BYTES:
         return data
-    data["notes"].append(f"WARNING: summary was over {MAX_SUMMARY_BYTES} bytes. Long detail strings were cut.")
+    data.setdefault("notes", []).append(f"WARNING: summary was over {MAX_SUMMARY_BYTES} bytes. Long detail strings were cut.")
     for limit in (300, 100, 30, 0):
         _shrink_details(data, limit)
         if _json_size(data) <= MAX_SUMMARY_BYTES:
             return data
-    data["notes"].append("WARNING: summary is still over the limit after all details were cut.")
+    data.setdefault("notes", []).append("WARNING: summary is still over the limit after all details were cut.")
     return data
 
 
 def write_summary(path: Path, summary: Summary) -> None:
-    atomic_write_text(Path(path), json.dumps(_fit_to_limit(summary.to_dict()), indent=2))
+    atomic_write_text(Path(path), json.dumps(_fit_to_limit(compact(summary.to_dict())), indent=2))
