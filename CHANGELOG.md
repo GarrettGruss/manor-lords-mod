@@ -28,8 +28,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `harness/game-launch.ps1` and `harness/game-close.ps1` to start and stop the game by hand.
 - Scenario runner (`harness/scenarios/`, `ScenarioContext`, bridge helpers), scenario `smoke`, hidden test scenarios `selftest-fail` and `selftest-timeout`, and `run.py --list-scenarios`.
 - Screenshots of the game window (`mss`), copy of UE4SS crash dumps, and `harness/run_series.py` to run the launcher N times.
+- Time control for scenarios (`ctx.time`: `set_speed`, `run_game_seconds`, `run_game_days`, `pause`), typed assertions (`ctx.expect`), `ctx.snapshot()` and a telemetry reader (`ctx.telemetry`).
+- `HarnessTelemetry` mod is deployed and used in runs. The launcher passes `HARNESS_TELEMETRY_INTERVAL_S` (`run.py --telemetry-interval`, default 5, 0 = off) and lists `telemetry.jsonl` in the summary.
+- Scenarios `time-advance` and `telemetry-sanity`.
+- Spec 04 notes with real speed, calendar and telemetry measurements.
 
 ### Changed
+- `summary.json` is smaller: it drops empty fields, keeps only the seconds of good phases, and has a short environment (the full mod hashes are in `config.json`). Assertion records use `rule` instead of `range`.
 - Vendored bridge: raw Lua eval is off by default, and it is gated in the Python server too.
 - Vendored bridge: the bridge folder follows `HARNESS_RUN_DIR`.
 - MCP dependencies are locked with hashes (`mcp/requirements.in` and `mcp/requirements.txt`) and installed with uv.

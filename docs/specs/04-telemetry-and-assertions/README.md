@@ -1,6 +1,6 @@
 # Spec 04: Telemetry, assertions and scenario control
 
-Status: draft. Roadmap phase: 6 (see `docs/specs/00-harness-overview/README.md`).
+Status: done. Real results are in `implementation-notes/` (`time-measurements.md`, `telemetry-real-game.md`). Roadmap phase: 6 (see `docs/specs/00-harness-overview/README.md`).
 
 ## Goal
 A scenario can control game time, sample game state, and assert ranges. The result goes into `scenario.json` and `summary.json`,
@@ -18,12 +18,14 @@ so a run can say pass or fail for a mod feature.
   `Region` (`Approval`, `publicOrder`, `regionalWealth`, `supplies_food`, `isSettled`, `getNumTotalPopulation()`, `getNumHomelessFamilies()`).
   Details: `docs/specs/02-save-autoload/implementation-notes/in-game-messages-and-hud.md` and `jmap-findings.md`.
 - The game starts at 1x after a load, and restarts its clock once after our first pause. `bIsPlayerPaused` is not reliable. Use the clock to decide if the game is paused.
+- Measured (see `implementation-notes/time-measurements.md`): speed index 1, 2, 3 give clock rates of 1, 4 and 8. One game day is 40 game seconds.
+  `day` is the day of the year (1 to 365, wraps with `Year`). `daysTotal` counts days without a wrap. A game pop-up pauses the game.
 - `pauseGame()` stops the clock. `setGameSpeed(0)` does not.
 - The game speed settings are pause, 1x, 2x and 3x. The functions are `changeGameSpeed(newSpeedIndex, playSfx)`, `increaseGameSpeed`, `decreaseGameSpeed` and `unPauseGame`.
 
 ## Design
 
-### Part A: time control (Python, `harness/scenarios/lib/timectl.py`)
+### Part A: time control (Python, `harness/runlib/timectl.py`, as `ctx.time`)
 - `unpause(speed=1)`: unpause and set the speed. Verify that the clock moves.
 - `pause()`: call `pauseGame`. Verify that the clock stands still for 3 s (the same rule as HarnessBoot).
 - `run_game_seconds(n, speed)`: unpause, wait until the game clock has advanced by `n`, then pause. Limit: wall time `n / speed * 3` plus 10 s.
@@ -40,7 +42,7 @@ A mod that samples game state on the game thread and appends one JSON line per s
 - Lines are flushed one by one, like HarnessLog.
 - A mod can add its own metrics: `HarnessTelemetry.register(name, fn)` adds a field to every sample. `fn` runs on the game thread.
 
-### Part C: snapshots and assertions (Python, `harness/scenarios/lib/`)
+### Part C: snapshots and assertions (Python, `harness/runlib/snapshot.py` and `expectations.py`)
 - `snapshot(ctx)`: read the same fields now through the bridge. Returns a dict with the same shape as one telemetry sample.
 - `ctx.expect` records assertions. Each one has `name`, `ok`, `value`, and the rule:
   - `in_range(name, value, lo, hi)`
@@ -48,7 +50,7 @@ A mod that samples game state on the game thread and appends one JSON line per s
   - `changed(name, before, after, min_delta=None, max_delta=None)`
   - `equals(name, value, expected)` (for flags and names, not for simulation numbers)
   - `eventually(name, fn, timeout_s)`: poll `fn` until it returns true.
-- `scenario_result(ctx)` returns `{"passed": all ok, "asserts": [...]}` and writes `scenario.json`.
+- `ctx.result()` (instead of `scenario_result(ctx)`) returns `{"passed": all ok, "asserts": [...]}` and writes `scenario.json`.
 - Assertion records stay short (under 200 bytes each) so that `summary.json` stays under 4 KB. Long data goes to `telemetry.jsonl`.
 
 ### Part D: scenario format
@@ -62,20 +64,22 @@ def run(ctx): ...        # use ctx.time, ctx.bridge, ctx.expect, ctx.telemetry, 
 Built-in scenarios: `smoke` (spec 03), `time-advance` (run 2 game days at 3x, check the date moves and the clock stops), `telemetry-sanity` (check that the samples have the expected fields and sane ranges).
 
 ## Plan
-1. Write `timectl` and test it against the real game with the bridge. Record real timings (at 1x, 2x and 3x) in `implementation-notes/`.
-2. Write `HarnessTelemetry` with a mock test (the fake game API from `harness/tests/boot_state_machine.py`), then test in the real game.
-3. Write the `ctx.expect` assertions and the unit tests (no game).
-4. Write the scenarios `time-advance` and `telemetry-sanity`. Run each 3 times. Record the results.
-5. Update the spec and the harness README.
+1. `timectl` and real timings. **Done.** (`time-measurements.md`)
+2. `HarnessTelemetry` with a mock test, then the real game. **Done.** It worked unchanged. (`telemetry-real-game.md`)
+3. `ctx.expect` assertions, `snapshot`, telemetry reader, compact `summary.json`, with unit tests. **Done.** 157 launcher tests, 19 telemetry mock tests.
+4. Scenarios `time-advance` and `telemetry-sanity`, 3 runs each. **Done.** All pass.
+5. Update the spec and the harness README. **Done.**
 
-## Open questions
-- How fast does the game clock run at 2x and 3x, and does `changeGameSpeed` take an index or a value?
-- Does the day counter ever skip or repeat? Is `TemporalComponent.day` the day of the year or of the month?
-- Is a wall-time sample of 5 s enough to see changes? Does reading all regions each time slow the game?
-- Does `daysTotal` ever become non-zero? (It read 0 with `day` = 61.)
+## Answers to the open questions
+- `changeGameSpeed` takes an index: 1, 2, 3 give `gameSpeed` 1, 4, 8 (clock rate the same). Index 0 stops the clock.
+- `day` is the day of the year, 1 to 365, and wraps to 1 with `Year` + 1. The counters were consistent. `daysTotal` never wraps.
+- A 5 s wall sample is enough at 1x (a game day is 40 s). At 8x a game day is 5 wall s, so there is about one sample for each day. Reading 7 regions did not slow the game (clock rate 1.001 at 1x).
+- `daysTotal` does change: it counts days from the load (0 at day 61).
+- New finding: after the boot pause the game drops the speed back to 1x about 3 s after the first `changeGameSpeed`. `set_speed` retries. A pop-up (for example "Hunger!") pauses the game and the bridge cannot close it.
 
 ## Acceptance criteria
-- `run_game_days(2, 3)` ends with the game paused (clock stopped) and the date moved by 2 days, in 3 runs out of 3.
-- `telemetry.jsonl` has samples in a run, with all fields present, and a sample every 5 s plus or minus 2 s.
-- Every assertion type has a unit test for pass and fail. A run with a failing assertion gives the verdict `fail` and the failed assertion is in `summary.json`.
-- The scenarios `time-advance` and `telemetry-sanity` pass 3 times in a row with the run launcher.
+Results of 2026-10-10 (real game, launcher runs):
+- `run_game_days(2, 3)`: done in 3 of 3 `time-advance` runs (pass, 54 s each in the launcher, scenario about 24 s). Date moved by 2, `daysTotal` by 2, clock stopped for 3 s, wall time 12 s.
+- `telemetry.jsonl`: samples in every run, all fields present, no read errors, gap 5 s in every gap checked (3 of 3 `telemetry-sanity` runs, 10 samples in the 40 s window).
+- Each assertion type has a unit test for pass and fail (`harness/tests/test_runlib_timectl.py`). A real run with a failing assertion (`selftest-fail`) gave verdict `fail`, exit 1, and the failed assertion is in `summary.json`.
+- `time-advance` 3 of 3 pass and `telemetry-sanity` 3 of 3 pass (about 89 s each), `smoke` pass (43.8 s). Summaries are 1.9 KB, 3.4 KB and 2.0 KB. The first two `time-advance` runs failed before the speed fix (see `time-measurements.md`). The three counted runs used the final code.
