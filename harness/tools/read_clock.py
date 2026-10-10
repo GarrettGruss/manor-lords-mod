@@ -9,8 +9,8 @@ import time
 from ue4ss_bridge import server as bridge
 
 
-def main():
-    wait_seconds = float(sys.argv[1]) if len(sys.argv) > 1 else 6.0
+def read_clock(wait_seconds=6.0):
+    """Return the clock report as a dict. A failed read is a result (ok false), not an exception."""
     try:
         engine = bridge.one("objects", class_name="RTSMultiEngineCPP", limit=1)["result"]["objects"][0]
         engine = engine.split(" ", 1)[1]
@@ -26,7 +26,12 @@ def main():
                   "seconds": wait_seconds, "gameSpeed": speed, "paused": abs(second - first) < 0.001}
     except Exception as error:  # a failed read is a result, not a crash
         result = {"ok": False, "error": str(error).splitlines()[0][-200:] if str(error) else repr(error)}
-    print(json.dumps(result))
+    return result
+
+
+def main():
+    wait_seconds = float(sys.argv[1]) if len(sys.argv) > 1 else 6.0
+    print(json.dumps(read_clock(wait_seconds)))
 
 
 if __name__ == "__main__":
