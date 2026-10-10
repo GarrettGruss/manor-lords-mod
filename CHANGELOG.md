@@ -33,6 +33,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `HarnessTelemetry` mod is deployed and used in runs. The launcher passes `HARNESS_TELEMETRY_INTERVAL_S` (`run.py --telemetry-interval`, default 5, 0 = off) and lists `telemetry.jsonl` in the summary.
 - Scenarios `time-advance` and `telemetry-sanity`.
 - Spec 04 notes with real speed, calendar and telemetry measurements.
+- `harness/suite.py` and `harness/suitelib/`: the regression suite. It runs a suite through `run.py`, retries failures to find flaky scenarios, writes `report.json` and `report.md`, compares metrics with baselines, and writes baselines only on request. Suites are in `harness/suites/`.
 
 ### Changed
 - `summary.json` is smaller: it drops empty fields, keeps only the seconds of good phases, and has a short environment (the full mod hashes are in `config.json`). Assertion records use `rule` instead of `range`.
