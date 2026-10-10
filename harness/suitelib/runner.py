@@ -7,10 +7,12 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from .runresult import RunResult, worst_verdict
-from .suitefile import Suite, SuiteEntry
+from .suitefile import DEFAULT_VARIANT_NAME, Suite, SuiteEntry, Variant
 
 # run_one(scenario, run_id, fixture) -> RunResult. It must not raise, but the runner guards against it.
-RunOne = Callable[[str, str, "str | None"], RunResult]
+# For an entry with explicit variants the runner passes the Variant as a fourth argument (A/B runs, spec 10).
+# An entry without variants is called with three arguments, so a three-argument callable still works.
+RunOne = Callable[..., RunResult]
 
 # A harness_error is not retried: the same setup would fail the same way.
 RETRY_VERDICTS = ("fail", "crash", "timeout")
@@ -24,7 +26,19 @@ class EntryOutcome:
     entry: SuiteEntry
     # One list of attempts for each repeat. The last attempt of a list decides that repeat.
     repeats: list[list[RunResult]] = field(default_factory=list)
+    # The variant name of each item of `repeats` (same length and order).
+    variant_names: list[str] = field(default_factory=list)
     skipped_note: str | None = None
+
+    def repeats_of(self, variant_name: str) -> list[list[RunResult]]:
+        return [repeat for repeat, name in zip(self.repeats, self.variant_names) if name == variant_name]
+
+    @property
+    def variant_order(self) -> list[str]:
+        """Variant names in the order they were declared (the first one is the reference of A/B comparisons)."""
+        if not self.entry.has_variants:
+            return [DEFAULT_VARIANT_NAME]
+        return [variant.name for variant in self.entry.variants]
 
     @property
     def attempts(self) -> list[RunResult]:
@@ -54,11 +68,13 @@ class SuiteOutcome:
     not_run: list[str] = field(default_factory=list)  # scenarios that never started
 
 
-def _guarded(run_one: RunOne, scenario: str, run_id: str, fixture: str | None) -> RunResult:
+def _guarded(run_one: RunOne, scenario: str, run_id: str, fixture: str | None, variant: Variant | None = None) -> RunResult:
     # One broken run must never stop the suite.
     started = time.monotonic()
     try:
-        return run_one(scenario, run_id, fixture)
+        if variant is None:
+            return run_one(scenario, run_id, fixture)
+        return run_one(scenario, run_id, fixture, variant)
     except Exception as error:  # noqa: BLE001 - any failure of one run becomes a result
         return RunResult(run_id, "harness_error", time.monotonic() - started, reason=f"run_one raised {error!r}")
 
@@ -77,23 +93,25 @@ class _SuiteRun:
             return False
         return True
 
-    def next_run_id(self, scenario: str, retry: int) -> str:
+    def next_run_id(self, scenario: str, retry: int, variant: Variant | None = None) -> str:
         self.run_count += 1
         suffix = f"-r{retry}" if retry else ""
-        return f"{self.suite_id}-{self.run_count:03d}-{scenario}{suffix}"
+        variant_part = f"-{variant.name}" if variant else ""
+        return f"{self.suite_id}-{self.run_count:03d}-{scenario}{variant_part}{suffix}"
 
-    def run_attempt(self, entry: SuiteEntry, retry: int) -> RunResult:
-        result = _guarded(self.run_one, entry.scenario, self.next_run_id(entry.scenario, retry), entry.fixture)
+    def run_attempt(self, entry: SuiteEntry, retry: int, variant: Variant | None) -> RunResult:
+        run_id = self.next_run_id(entry.scenario, retry, variant)
+        result = _guarded(self.run_one, entry.scenario, run_id, entry.fixture, variant)
         if result.iteration_cap:
             self.stop_reason = STOP_ITERATION_CAP
         return result
 
-    def run_repeat(self, entry: SuiteEntry) -> list[RunResult]:
+    def run_repeat(self, entry: SuiteEntry, variant: Variant | None) -> list[RunResult]:
         attempts: list[RunResult] = []
         for retry in range(self.suite.flake_retries + 1):
             if not self.budget_left():
                 break
-            result = self.run_attempt(entry, retry)
+            result = self.run_attempt(entry, retry, variant)
             if self.stop_reason == STOP_ITERATION_CAP:
                 break  # the cap refused the run. It says nothing about the scenario.
             attempts.append(result)
@@ -103,16 +121,20 @@ class _SuiteRun:
 
     def run_entry(self, entry: SuiteEntry) -> EntryOutcome:
         outcome = EntryOutcome(entry)
+        # Variants alternate inside each repeat (A, B, A, B), so slow drift of the machine hits all variants alike.
         for _ in range(entry.repeat):
-            attempts = self.run_repeat(entry)
-            if attempts:
-                outcome.repeats.append(attempts)
-            if self.stop_reason:
-                break
-            if self._is_unknown_optional(entry, attempts):
-                outcome.repeats.clear()
-                outcome.skipped_note = f"optional scenario {entry.scenario!r} does not exist yet. Skipped."
-                break
+            for variant in entry.run_variants:
+                attempts = self.run_repeat(entry, variant)
+                if attempts:
+                    outcome.repeats.append(attempts)
+                    outcome.variant_names.append(variant.name if variant else DEFAULT_VARIANT_NAME)
+                if self.stop_reason:
+                    return outcome
+                if self._is_unknown_optional(entry, attempts):
+                    outcome.repeats.clear()
+                    outcome.variant_names.clear()
+                    outcome.skipped_note = f"optional scenario {entry.scenario!r} does not exist yet. Skipped."
+                    return outcome
         return outcome
 
     @staticmethod

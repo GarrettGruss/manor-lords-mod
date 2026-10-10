@@ -25,6 +25,17 @@ The agent runs the suite before a pull request and gets one report that says wha
   "time_budget_s": 1800, "flake_retries": 1 }
 ```
 
+### Variants (A/B, added for spec 10 U4)
+An entry may have `variants` and an `expect` rule:
+```json
+{ "scenario": "smoke", "repeat": 5,
+  "variants": [ {"name": "baseline"}, {"name": "with-pak", "paks": ["demo"], "env": {"X": "1"}} ],
+  "expect": {"metric": "ticks", "direction": "lower", "min_rel_diff": 0.2} }
+```
+Without `variants` the entry has one implicit variant `default` (nothing changes). With variants, each repeat runs every variant in order (A, B, A, B), the launcher passes `--pak` and `--env` to `run.py`,
+and `report.json` gets a `variants` list per scenario and an `ab` section (each later variant against the first, the 8 metrics with the largest effect size; the file stays under 8 KB).
+The note `ab: different on N metrics` does not change pass or fail. A missed `expect` gives exit code 1. Rules and limits: `docs/specs/10-invasion-testability/implementation-notes/ab-statistics.md`.
+
 ### Runner
 `python harness/suite.py --suite core [--max-minutes N]`:
 - runs each entry in order through `run.py` (a subprocess per run, so a crash cannot stop the suite),

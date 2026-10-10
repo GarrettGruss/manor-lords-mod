@@ -5,11 +5,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from . import baselines
+from . import ab, baselines, stats
 from .baselines import DriftFinding
 from .runner import STOP_ITERATION_CAP, EntryOutcome, SuiteOutcome
+from .runresult import worst_verdict
 
-MAX_REPORT_JSON_BYTES = 4096  # for a passing suite
+MAX_REPORT_JSON_BYTES = 4096  # for a passing suite without A/B variants
+MAX_AB_REPORT_JSON_BYTES = 8192  # with the "ab" section: at most 8 metrics per compared variant
 MAX_TEXT_CHARS = 60
 MAX_REASON_CHARS = 120
 MAX_FAILED_ASSERTS = 5
@@ -94,11 +96,61 @@ def scenario_report(entry: EntryOutcome, findings: list[DriftFinding] | None, fl
     data.update({key: value for key, value in optional_parts.items() if value})
     if entry.verdict not in ("pass", "skipped") and attempts[-1].reason:
         data["reason"] = cut(attempts[-1].reason, MAX_REASON_CHARS)
+    if entry.entry.has_variants and not entry.skipped_note:
+        data["variants"] = [variant_report(entry, name) for name in entry.variant_order]
     return data
 
 
-def decide_exit_code(outcome: SuiteOutcome, statuses: list[str]) -> int:
-    """4 harness error, 3 incomplete, 2 unresolved crash or timeout, 1 fail or strict drift, else 0."""
+def variant_report(entry: EntryOutcome, name: str) -> dict:
+    """One line per variant: runs, passes, the Wilson interval of the pass rate and the median duration."""
+    finals = [repeat[-1] for repeat in entry.repeats_of(name)]
+    passes = sum(1 for final in finals if final.verdict == "pass")
+    interval = stats.pass_rate(passes, len(finals))
+    durations = [final.duration_s for final in finals if final.verdict == "pass"]
+    data = {
+        "name": name,
+        "verdict": worst_verdict([final.verdict for final in finals]),
+        "runs": len(finals),
+        "passes": passes,
+        "pass_interval": [round(interval["low"], 2), round(interval["high"], 2)],
+    }
+    if durations:
+        data["median_duration_s"] = round(stats.summarize(durations)["median"], 1)
+    return data
+
+
+def _rounded(value, digits: int = 3):
+    return None if value is None else round(value, digits)
+
+
+def comparison_report(item: ab.MetricComparison) -> dict:
+    result = item.result
+    return {
+        "variant": item.variant,
+        "metric": cut(item.metric),
+        "verdict": result["verdict"],
+        "effect_size": _rounded(result["effect_size"], 2),
+        "rel_diff": _rounded(result["rel_diff"]),
+        "p_value": _rounded(result["p_value"]),
+        "overlap": result["overlap"],
+        "medians": [_rounded(result["a_summary"]["median"]), _rounded(result["b_summary"]["median"])],
+        "n": [result["a_summary"]["n"], result["b_summary"]["n"]],
+    }
+
+
+def ab_report(entry: EntryOutcome, comparisons: list[ab.MetricComparison]) -> dict:
+    data: dict = {
+        "scenario": entry.entry.scenario,
+        "reference": entry.variant_order[0],
+        "compared": [comparison_report(item) for item in ab.strongest(comparisons)],
+    }
+    if entry.entry.expect:
+        data["expect"] = ab.check_expectation(entry.entry.expect, comparisons, entry.variant_order)
+    return data
+
+
+def decide_exit_code(outcome: SuiteOutcome, statuses: list[str], expectation_failed: bool = False) -> int:
+    """4 harness error, 3 incomplete, 2 unresolved crash or timeout, 1 fail, strict drift or a missed A/B expectation, else 0."""
     verdicts = [entry.verdict for entry in outcome.entries]
     if "harness_error" in verdicts:
         return EXIT_HARNESS_ERROR
@@ -106,7 +158,7 @@ def decide_exit_code(outcome: SuiteOutcome, statuses: list[str]) -> int:
         return EXIT_BUDGET
     if "crash" in verdicts or "timeout" in verdicts:
         return EXIT_CRASH
-    if "fail" in verdicts or "strict-drift" in statuses:
+    if "fail" in verdicts or "strict-drift" in statuses or expectation_failed:
         return EXIT_FAIL
     return EXIT_PASS
 
@@ -130,7 +182,10 @@ def build_report(
         for item in outcome.entries
     ]
     statuses = [item["baseline"] for item in scenarios]
-    exit_code = decide_exit_code(outcome, statuses)
+    all_comparisons = {id(item): ab.compare_entry(item) for item in outcome.entries if item.entry.has_variants and not item.skipped_note}
+    ab_sections = [ab_report(item, all_comparisons[id(item)]) for item in outcome.entries if id(item) in all_comparisons]
+    expectation_failed = any(not section["expect"]["met"] for section in ab_sections if "expect" in section)
+    exit_code = decide_exit_code(outcome, statuses, expectation_failed)
     attempts = [attempt for item in outcome.entries for attempt in item.attempts]
     report: dict = {
         "suite": outcome.suite.name,
@@ -147,6 +202,10 @@ def build_report(
         "budget_s": outcome.budget_s,
         "scenarios": scenarios,
     }
+    if ab_sections:
+        report["ab"] = ab_sections
+        different = sum(ab.count_different(found) for found in all_comparisons.values())
+        report["notes"] = [f"ab: different on {different} metrics"]
     if outcome.stop_reason:
         report["stopped"] = _stop_text(outcome)
     if outcome.not_run:
@@ -175,7 +234,7 @@ def render_markdown(report: dict) -> str:
         f"Exit code {report['exit_code']}. {totals['runs']} runs, {totals['passed_runs']} passed, "
         f"{totals['flaky']} flaky scenario(s). {report['elapsed_s']} s of {report['budget_s']:.0f} s.",
     ]
-    for key, label in (("stopped", "Stopped"), ("not_run", "Not run"), ("skipped", "Skipped")):
+    for key, label in (("stopped", "Stopped"), ("not_run", "Not run"), ("skipped", "Skipped"), ("notes", "Notes")):
         if report.get(key):
             value = report[key] if isinstance(report[key], str) else "; ".join(report[key])
             lines.append(f"{label}: {value}")
@@ -187,7 +246,35 @@ def render_markdown(report: dict) -> str:
             f"| {item['stability']} | {durations} | {item['baseline']} |"
         )
     lines += _detail_lines(report["scenarios"])
+    lines += _ab_lines(report)
     return "\n".join(lines) + "\n"
+
+
+def _ab_lines(report: dict) -> list[str]:
+    """The A/B tables. The first variant is the reference. Effect size is Cohen's d, positive when the variant is higher."""
+    lines: list[str] = []
+    variants_by_scenario = {item["scenario"]: item.get("variants", []) for item in report["scenarios"]}
+    for section in report.get("ab", []):
+        lines += ["", f"## A/B: {section['scenario']} (reference: {section['reference']})", "",
+                  "| Variant | Runs | Passes | Pass rate 95% | Median duration (s) |", "|---|---|---|---|---|"]
+        for variant in variants_by_scenario.get(section["scenario"], []):
+            low, high = variant["pass_interval"]
+            lines.append(f"| {variant['name']} | {variant['runs']} | {variant['passes']} | {low:.2f} to {high:.2f} "
+                         f"| {variant.get('median_duration_s', '-')} |")
+        lines += ["", "| Variant | Metric | Verdict | Effect d | Rel. diff | p | Ranges overlap | Median ref -> variant | n |",
+                  "|---|---|---|---|---|---|---|---|---|"]
+        for item in section["compared"]:
+            lines.append(f"| {item['variant']} | {item['metric']} | {item['verdict']} | {item['effect_size']} | {item['rel_diff']} "
+                         f"| {item['p_value']} | {'yes' if item['overlap'] else 'no'} | {item['medians'][0]} -> {item['medians'][1]} "
+                         f"| {item['n'][0]}/{item['n'][1]} |")
+        if "expect" in section:
+            expect = section["expect"]
+            lines += ["", f"Expectation: {expect['metric']} {expect['direction']} by at least {expect['min_rel_diff']}: "
+                          f"{'MET' if expect['met'] else 'NOT MET'} ({expect['reason']})"]
+    if lines:
+        lines += ["", "Verdicts use a permutation test and an effect size. They are heuristics for small samples "
+                      "(see docs/specs/10-invasion-testability/implementation-notes/ab-statistics.md)."]
+    return lines
 
 
 def _detail_lines(scenarios: list[dict]) -> list[str]:

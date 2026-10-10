@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import math
+import re
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +16,7 @@ from .commands import CommandChannel
 from .expectations import Expectations
 from . import osinput
 from .game import ensure_game_alive, find_game_processes
+from .runfolder import atomic_write_text
 from .runner import PhaseContext
 from .snapshot import snapshot
 from .telemetry import TelemetryReader
@@ -21,6 +25,8 @@ from .timectl import TimeControl
 
 
 MAX_REASON_CHARS = 300
+METRICS_FILE = "metrics.json"  # read by the suite runner (spec 10, A/B statistics)
+METRIC_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,60}$")
 
 
 class ScenarioLog:
@@ -48,6 +54,7 @@ class ScenarioContext:
         self.time = TimeControl(bridge, check_alive=self.ensure_alive, log=self.log.info)
         self.telemetry = TelemetryReader(self.run_dir)
         self.notes: list[str] = []
+        self._metrics: dict[str, float] = {}
         commands = CommandChannel(self.run_dir / "commands", check_alive=self.ensure_alive)
         self.actions = Actions(bridge, self.expect, self.notes, self.log.info, self.ensure_alive, commands,
                                mouse_placer=self._place_with_mouse)
@@ -100,6 +107,20 @@ class ScenarioContext:
     def snapshot(self) -> dict:
         self.ensure_alive()
         return snapshot(self.bridge)
+
+    # ---- metrics for A/B statistics ----
+    def metric(self, name: str, value: float) -> None:
+        """Record one number of this run (for example `ticks` or `losses`) in <run>/metrics.json.
+
+        The suite compares these numbers between variants. A second call with the same name replaces the value.
+        """
+        if not METRIC_NAME.fullmatch(name):
+            raise ValueError(f"bad metric name {name!r}: use 1 to 60 characters from A-Z a-z 0-9 _ . -")
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+            raise ValueError(f"metric {name!r} must be a finite number, got {value!r}")
+        self._metrics[name] = float(value)
+        atomic_write_text(self.run_dir / METRICS_FILE, json.dumps(self._metrics, indent=1))
+        self.log.info(f"metric {name} = {value}")
 
     # ---- assertions ----
     def check(self, name: str, ok: bool, value: Any = None, range: list | None = None) -> bool:

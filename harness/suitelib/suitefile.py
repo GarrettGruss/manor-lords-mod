@@ -3,16 +3,43 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
+from runlib import paks
+from runlib.extra_env import EnvOptionError, check_env_entry
+
 SUITES_DIR = Path(__file__).resolve().parent.parent / "suites"
-ENTRY_KEYS = {"scenario", "repeat", "fixture", "optional"}
+ENTRY_KEYS = {"scenario", "repeat", "fixture", "optional", "variants", "expect"}
+VARIANT_KEYS = {"name", "paks", "env"}
+EXPECT_KEYS = {"metric", "direction", "min_rel_diff"}
+DIRECTIONS = ("lower", "higher")
+VARIANT_NAME = re.compile(r"^[A-Za-z0-9_-]{1,30}$")
+DEFAULT_VARIANT_NAME = "default"
 SUITE_KEYS = {"name", "scenarios", "time_budget_s", "flake_retries"}
 
 
 class SuiteFileError(ValueError):
     """The suite file is missing or wrong. The message says what to fix."""
+
+
+@dataclass(frozen=True)
+class Variant:
+    """One side of an A/B test: harness paks to install and extra game environment variables."""
+
+    name: str = DEFAULT_VARIANT_NAME
+    paks: tuple[str, ...] = ()
+    env: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class Expectation:
+    """A pass or fail rule for an A/B result: the metric of a later variant must differ from the first in a direction."""
+
+    metric: str
+    direction: str  # "lower" or "higher": where the later variant must be, compared with the first
+    min_rel_diff: float  # the relative difference of the medians must be at least this large
 
 
 @dataclass(frozen=True)
@@ -22,6 +49,18 @@ class SuiteEntry:
     fixture: str | None = None
     # An optional entry is skipped, not failed, when its scenario does not exist yet.
     optional: bool = False
+    # An empty tuple means one implicit variant named "default" (the format before A/B variants).
+    variants: tuple[Variant, ...] = ()
+    expect: Expectation | None = None
+
+    @property
+    def has_variants(self) -> bool:
+        return bool(self.variants)
+
+    @property
+    def run_variants(self) -> tuple[Variant | None, ...]:
+        """What the runner loops over. None is the implicit default variant: no extra run.py options."""
+        return self.variants or (None,)
 
 
 @dataclass(frozen=True)
@@ -45,6 +84,57 @@ def _integer(value, where: str, minimum: int) -> int:
     return value
 
 
+def parse_variant(data, where: str) -> Variant:
+    if not isinstance(data, dict):
+        raise SuiteFileError(f"{where}: must be an object.")
+    _check_unknown_keys(data, VARIANT_KEYS, where)
+    name = data.get("name")
+    if not isinstance(name, str) or not VARIANT_NAME.fullmatch(name):
+        raise SuiteFileError(f"{where}: 'name' must be 1 to 30 characters from A-Z a-z 0-9 _ -, got {name!r}.")
+    pak_names = data.get("paks", [])
+    if not isinstance(pak_names, list):
+        raise SuiteFileError(f"{where}: 'paks' must be a list of pak names.")
+    env = data.get("env", {})
+    if not isinstance(env, dict):
+        raise SuiteFileError(f"{where}: 'env' must be an object of text values.")
+    non_text = [key for key, value in env.items() if not isinstance(value, str)]
+    if non_text:
+        raise SuiteFileError(f"{where}: 'env' values must be text. Fix: {non_text}.")
+    try:
+        checked_paks = tuple(paks.check_name(pak) for pak in pak_names)
+        for key, value in env.items():
+            check_env_entry(key, value)
+    except (paks.PakError, EnvOptionError) as error:
+        raise SuiteFileError(f"{where}: {error}.") from error
+    return Variant(name=name, paks=checked_paks, env=dict(env))
+
+
+def parse_variants(data, where: str) -> tuple[Variant, ...]:
+    if not isinstance(data, list) or not data:
+        raise SuiteFileError(f"{where}: 'variants' must be a non-empty list.")
+    variants = tuple(parse_variant(item, f"{where}, variants[{index}]") for index, item in enumerate(data))
+    names = [variant.name for variant in variants]
+    if len(set(names)) != len(names):
+        raise SuiteFileError(f"{where}: variant names must be unique, got {names}.")
+    return variants
+
+
+def parse_expect(data, where: str, variant_count: int) -> Expectation:
+    if not isinstance(data, dict):
+        raise SuiteFileError(f"{where}: 'expect' must be an object.")
+    _check_unknown_keys(data, EXPECT_KEYS, f"{where}, expect")
+    if variant_count < 2:
+        raise SuiteFileError(f"{where}: 'expect' needs at least two variants.")
+    metric, direction, minimum = data.get("metric"), data.get("direction"), data.get("min_rel_diff", 0.0)
+    if not isinstance(metric, str) or not metric:
+        raise SuiteFileError(f"{where}, expect: 'metric' must be a non-empty string.")
+    if direction not in DIRECTIONS:
+        raise SuiteFileError(f"{where}, expect: 'direction' must be one of {list(DIRECTIONS)}, got {direction!r}.")
+    if isinstance(minimum, bool) or not isinstance(minimum, (int, float)) or minimum < 0:
+        raise SuiteFileError(f"{where}, expect: 'min_rel_diff' must be a number >= 0, got {minimum!r}.")
+    return Expectation(metric=metric, direction=direction, min_rel_diff=float(minimum))
+
+
 def parse_entry(data, index: int, suite_name: str) -> SuiteEntry:
     where = f"suite {suite_name!r}, scenarios[{index}]"
     if not isinstance(data, dict):
@@ -60,7 +150,9 @@ def parse_entry(data, index: int, suite_name: str) -> SuiteEntry:
     if not isinstance(optional, bool):
         raise SuiteFileError(f"{where}: 'optional' must be true or false.")
     repeat = _integer(data.get("repeat", 1), f"{where}, 'repeat'", 1)
-    return SuiteEntry(scenario=scenario, repeat=repeat, fixture=fixture, optional=optional)
+    variants = parse_variants(data["variants"], where) if "variants" in data else ()
+    expect = parse_expect(data["expect"], where, len(variants)) if "expect" in data else None
+    return SuiteEntry(scenario=scenario, repeat=repeat, fixture=fixture, optional=optional, variants=variants, expect=expect)
 
 
 def parse_suite(data, expected_name: str | None = None) -> Suite:
