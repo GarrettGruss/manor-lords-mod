@@ -49,7 +49,8 @@ end
 -- scripts\settings.lua is optional; the keys are documented there.
 -- It lives in scripts\ because mod managers that deploy only <mod>\scripts drop a root-level file.
 -- scripts\settings.lua wins; a root copy (the 1.0.0 layout) is a fallback only.
-local SETTINGS = { enabled = true, poll_ms = 50, allow_eval = true, allow_writes = true, bridge_dir = nil }
+-- PATCH P1 (harness): raw Lua eval is off by default
+local SETTINGS = { enabled = true, poll_ms = 50, allow_eval = false, allow_writes = true, bridge_dir = nil }
 local ROOT_SETTINGS_IGNORED = false
 do
     local scriptsChunk = loadfile(MOD_DIR .. "\\scripts\\settings.lua")
@@ -79,7 +80,37 @@ if not SETTINGS.allow_writes and SETTINGS.allow_eval then
 end
 if not SETTINGS.allow_writes then SETTINGS.allow_eval = false end
 
-local DIR = SETTINGS.bridge_dir or (UE4SS_DIR .. "\\bridge")
+-- PATCH P1 (harness): the run launcher sets HARNESS_RUN_DIR; it wins over settings. os.getenv may be missing in this Lua build.
+local envRunDir = nil
+if type(os.getenv) == "function" then
+    local okEnv, value = pcall(os.getenv, "HARNESS_RUN_DIR")
+    if okEnv and type(value) == "string" and value ~= "" then envRunDir = value end
+end
+local DIR = (envRunDir and (envRunDir:gsub("\\", "/"):gsub("/+$", "") .. "/bridge"))
+    or SETTINGS.bridge_dir or (UE4SS_DIR .. "\\bridge")
+
+-- PATCH P1 (harness): create the bridge folder if it is missing. Lua has no mkdir, so use the shell.
+-- Fail loudly: without the folder every response write fails.
+local function ensureBridgeDir()
+    local probePath = DIR .. "/.probe"
+    local probe = io.open(probePath, "wb")
+    if probe then
+        probe:close()
+        os.remove(probePath)
+        return
+    end
+    if type(os.execute) == "function" then
+        pcall(os.execute, 'mkdir "' .. DIR:gsub("/", "\\") .. '" >nul 2>&1')
+    end
+    probe = io.open(probePath, "wb")
+    if probe then
+        probe:close()
+        os.remove(probePath)
+    else
+        print("[" .. MOD_NAME .. "] ERROR: bridge folder missing and could not be created: " .. DIR .. "\n")
+    end
+end
+ensureBridgeDir()
 local REQUEST = DIR .. "/request.json"
 local RESPONSE = DIR .. "/response.json"
 local RESPONSE_TMP = DIR .. "/response.tmp"
@@ -126,6 +157,9 @@ end
 -- A batched props result nests values two levels deeper than a direct one; 6 keeps them intact.
 local MAX_DEPTH = 6
 local MAX_ITEMS = 200
+-- PATCH P5 (harness): hard caps so one call cannot flood the game thread or the response file
+local MAX_LIMIT = 500
+local MAX_BODY_BYTES = 1000000
 
 local function safe(fn, ...)
     local ok, r = pcall(fn, ...)
@@ -654,7 +688,7 @@ end
 
 -- Live instances of a short class name.
 function UEB.objects(className, limit)
-    limit = limit or 100
+    limit = math.min(tonumber(limit) or 100, MAX_LIMIT) -- PATCH P5 (harness): clamp limit
     local found = FindAllOf(className) or {}
     local out = {}
     for i, o in ipairs(found) do
@@ -666,7 +700,7 @@ end
 
 -- Loaded reflected types (Class, BlueprintGeneratedClass, ScriptStruct, Enum) matching a pattern.
 function UEB.types(pattern, limit)
-    limit = limit or 200
+    limit = math.min(tonumber(limit) or 200, MAX_LIMIT) -- PATCH P5 (harness): clamp limit
     local out, total = {}, 0
     ForEachUObject(function(obj)
         if not obj:IsValid() then return end
@@ -688,7 +722,7 @@ end
 -- Every loaded class derived from a base class. The engine has no reverse index, so this walks
 -- GUObjectArray once testing IsChildOf: about 1.5 s on a large game.
 function UEB.subclasses(ref, limit, pattern)
-    limit = tonumber(limit) or 200
+    limit = math.min(tonumber(limit) or 200, MAX_LIMIT) -- PATCH P5 (harness): clamp limit
     local base = UEB.resolve(ref)
     local baseKind = safe(function() return base:GetClass():GetFName():ToString() end)
     if baseKind ~= "Class" and baseKind ~= "BlueprintGeneratedClass" then
@@ -1016,7 +1050,7 @@ end
 function UEB.events(since, label, limit, clear)
     local buf = UEB_EVENTS
     since = tonumber(since) or 0
-    limit = tonumber(limit) or 500
+    limit = math.min(tonumber(limit) or 500, MAX_LIMIT) -- PATCH P5 (harness): clamp limit
     local from = math.max(since + 1, buf.first)
     local out, last = {}, since
     for s = from, buf.seq do
@@ -1139,6 +1173,7 @@ local dumpers = {
 }
 
 function UEB.dump(kind)
+    requireWrites("dump") -- PATCH P6 (harness): dump writes files, so it needs allow_writes
     local fn = dumpers[kind]
     if not fn then error("unknown dump kind " .. tostring(kind)) end
     fn()
@@ -1239,17 +1274,39 @@ local function runEval(code)
     return true, encoded, output, nil
 end
 
-local busy = false
+-- PATCH P4 (harness): busySince lets the poller recover if the game thread never answers
+local busy, busySince = false, 0
+local BUSY_RECOVER_SECONDS = 120
 local handled = 0
 
 -- ms is os.clock() CPU time, an approximation; Lua has no wall clock finer than a second.
 local function respond(id, ok, result, output, err, started)
+    local ms = math.floor((os.clock() - started) * 1000)
     local body = json.encode({
         id = id, ok = ok, result = result, output = output, error = err,
-        ms = math.floor((os.clock() - started) * 1000), protocol = PROTOCOL,
+        ms = ms, protocol = PROTOCOL,
     })
+    -- PATCH P5 (harness): replace an oversized body with a small error response
+    if #body > MAX_BODY_BYTES then
+        body = json.encode({
+            id = id, ok = false, result = nil, output = {},
+            error = string.format("response too large (%d bytes, max %d); use a smaller limit",
+                #body, MAX_BODY_BYTES),
+            ms = ms, protocol = PROTOCOL,
+        })
+    end
     local wrote, werr = writeAtomic(RESPONSE, RESPONSE_TMP, body)
     if not wrote then log("response write failed: %s", tostring(werr)) end
+end
+
+-- PATCH P4 (harness): respond must never throw before busy is cleared; try an error response if it does
+local function respondAndClearBusy(id, ok, result, output, err, started)
+    local okR, errR = pcall(respond, id, ok, result, output, err, started)
+    if not okR then
+        local okE, errE = pcall(respond, id, false, nil, {}, "encode: " .. tostring(errR), started)
+        if not okE then log("error response also failed: %s", tostring(errE)) end
+    end
+    busy = false
 end
 
 local function handle(req)
@@ -1271,13 +1328,13 @@ local function handle(req)
             return
         end
         busy = true
+        busySince = os.time() -- PATCH P4 (harness)
         trace("batch id=" .. tostring(req.id) .. " (" .. #req.calls .. " calls)")
         ExecuteInGameThread(function()
             local ok, result = pcall(UEB.batch, req.calls)
             trace("idle after id=" .. tostring(req.id))
-            if ok then respond(req.id, true, result, {}, nil, started)
-            else respond(req.id, false, nil, {}, tostring(result), started) end
-            busy = false
+            -- PATCH P4 (harness): protected respond; busy is always cleared
+            respondAndClearBusy(req.id, ok, ok and result or nil, {}, (not ok) and tostring(result) or nil, started)
         end)
         return
     end
@@ -1295,12 +1352,12 @@ local function handle(req)
         return
     end
     busy = true
+    busySince = os.time() -- PATCH P4 (harness)
     trace("eval id=" .. tostring(req.id) .. " " .. req.code:gsub("%s+", " "))
     ExecuteInGameThread(function()
         local ok, result, output, err = runEval(req.code)
         trace("idle after id=" .. tostring(req.id))
-        respond(req.id, ok, result, output, err, started)
-        busy = false
+        respondAndClearBusy(req.id, ok, result, output, err, started) -- PATCH P4 (harness)
     end)
 end
 
@@ -1319,7 +1376,12 @@ end
 
 LoopAsync(POLL_MS, function()
     if myGeneration ~= UEB_GENERATION then return true end
-    if busy then return false end
+    -- PATCH P4 (harness): recover if the game thread never answered
+    if busy then
+        if os.time() - busySince < BUSY_RECOVER_SECONDS then return false end
+        log("busy for more than %d s; clearing busy", BUSY_RECOVER_SECONDS)
+        busy = false
+    end
     local raw = readFile(REQUEST)
     if not raw then return false end
     os.remove(REQUEST)
