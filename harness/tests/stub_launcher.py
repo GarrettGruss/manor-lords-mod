@@ -38,8 +38,11 @@ def write_summary(args, step):
         "duration_s": step.get("duration_s", 50.0),
         "phases": [],
         "scenario_result": {"asserts": step.get("asserts", [])},
+        "stub_args": {"pak": args.pak, "env": args.env},
     }
     (folder / "summary.json").write_text(json.dumps(data))
+    if "metrics" in step:
+        (folder / "metrics.json").write_text(json.dumps(step["metrics"]))
 
 
 def main():
@@ -48,6 +51,8 @@ def main():
     parser.add_argument("--run-id")
     parser.add_argument("--runs-root")
     parser.add_argument("--fixture")
+    parser.add_argument("--pak", action="append", default=[])
+    parser.add_argument("--env", action="append", default=[])
     args = parser.parse_args()
     step = next_step(args.scenario)
     mode = step.get("mode")

@@ -10,7 +10,8 @@ import sys
 import time
 from pathlib import Path
 
-from .runresult import RunResult, result_from_summary
+from .runresult import RunResult, result_from_summary, with_run_folder_metrics
+from .suitefile import Variant
 
 HARNESS_DIR = Path(__file__).resolve().parent.parent
 LAUNCHER_ENV = "HARNESS_SUITE_LAUNCHER"
@@ -53,6 +54,18 @@ def resolve_command(option_text: str | None = None) -> list[str]:
     return default_command()
 
 
+def variant_arguments(variant: Variant | None) -> list[str]:
+    """The run.py options of a variant. The list form keeps a value with spaces in one piece (no shell)."""
+    if variant is None:
+        return []
+    arguments: list[str] = []
+    for pak_name in variant.paks:
+        arguments += ["--pak", pak_name]
+    for key, value in variant.env.items():
+        arguments += ["--env", f"{key}={value}"]
+    return arguments
+
+
 class SubprocessLauncher:
     """Callable with the run_one signature. One call is one run.py process."""
 
@@ -63,10 +76,11 @@ class SubprocessLauncher:
         self.command = command or default_command()
         self.run_timeout_s = run_timeout_s
 
-    def __call__(self, scenario: str, run_id: str, fixture: str | None = None) -> RunResult:
+    def __call__(self, scenario: str, run_id: str, fixture: str | None = None, variant: Variant | None = None) -> RunResult:
         arguments = ["--scenario", scenario, "--run-id", run_id, "--runs-root", str(self.runs_root)]
         if fixture:
             arguments += ["--fixture", fixture]
+        arguments += variant_arguments(variant)
         started = time.monotonic()
         stderr, timed_out, start_error = "", False, None
         try:
@@ -110,6 +124,7 @@ class SubprocessLauncher:
     @staticmethod
     def _result_from_file(run_id: str, path: Path, wall_s: float) -> RunResult:
         try:
-            return result_from_summary(run_id, json.loads(path.read_text(encoding="utf-8")))
+            result = result_from_summary(run_id, json.loads(path.read_text(encoding="utf-8")))
+            return with_run_folder_metrics(result, path.parent)
         except (json.JSONDecodeError, OSError, AttributeError) as error:
             return RunResult(run_id, "harness_error", wall_s, reason=f"summary.json is unreadable: {error}")

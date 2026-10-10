@@ -49,7 +49,9 @@ def fail(message: str) -> int:
 def list_suites(suites_dir: Path) -> int:
     for path in sorted(Path(suites_dir).glob("*.json")):
         suite = load_suite(path.stem, suites_dir)
-        scenarios = ", ".join(f"{e.scenario}x{e.repeat}{'?' if e.optional else ''}" for e in suite.entries)
+        scenarios = ", ".join(
+            f"{e.scenario}x{e.repeat}{'?' if e.optional else ''}" + (f" [{'/'.join(v.name for v in e.variants)}]" if e.variants else "")
+            for e in suite.entries)
         print(f"{suite.name}: {scenarios} (budget {suite.time_budget_s:.0f} s, retries {suite.flake_retries})")
     return 0
 
