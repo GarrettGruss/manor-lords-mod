@@ -119,20 +119,35 @@ def build_game_environment(run_dir: Path, test_save: str, base_env: dict | None 
 
 
 def read_boot_file(path: Path) -> dict | None:
-    """Return boot.json as a dict, or None if it is missing or not readable yet."""
+    """Return boot.json as a dict, or None if it is missing or not readable yet.
+
+    PermissionError counts as "not readable yet": on Windows the mod replaces the file (remove, then rename),
+    and a read at that moment fails. The boot phase polls again one second later.
+    """
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
+    except (FileNotFoundError, PermissionError, json.JSONDecodeError):
         return None
     return data if isinstance(data, dict) else None
 
 
+READ_RETRIES = 10
+READ_RETRY_WAIT_S = 0.2
+
+
 def count_pause_calls(mod_log: Path) -> int:
-    try:
-        text = Path(mod_log).read_text(encoding="utf-8", errors="replace")
-    except FileNotFoundError:
-        return 0
-    return sum(1 for line in text.splitlines() if PAUSE_CALL_MARKER in line)
+    """Count the pauseGame calls HarnessBoot logged. The mod keeps the log open, so a read can be refused once."""
+    for attempt in range(READ_RETRIES):
+        try:
+            text = Path(mod_log).read_text(encoding="utf-8", errors="replace")
+            return sum(1 for line in text.splitlines() if PAUSE_CALL_MARKER in line)
+        except FileNotFoundError:
+            return 0
+        except PermissionError:
+            if attempt == READ_RETRIES - 1:
+                raise
+            time.sleep(READ_RETRY_WAIT_S)
+    return 0
 
 
 def ensure_game_alive(ctx: PhaseContext, where: str) -> None:

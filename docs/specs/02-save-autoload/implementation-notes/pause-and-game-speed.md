@@ -94,7 +94,8 @@ The 8 s window is a guess based on one run (the clock restarted about 4 s after 
 If a run still shows a late restart, find the cause first. A hook on `RTSMultiEngineCPP:setGameSpeed` would show who sets the speed.
 
 ## Open
-- Which game code restarts the clock after the load? Not confirmed.
+- RESOLVED (2026-10-10): the intro cinematic ends and restores 1x. See `clock-restart-cause.md`.
+- (old) Which game code restarts the clock after the load? Not confirmed.
 - Is 8 s long enough in every launch? Check the next runs. Look at `boot.json` and at `mod.log` for a second `pauseGame` call.
 
 ## Result of the third fix (run at 23:07, build with the 8 s hold)

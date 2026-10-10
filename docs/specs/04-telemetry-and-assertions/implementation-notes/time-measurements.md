@@ -27,7 +27,7 @@ falls back to 1 (seen twice). `changeGameSpeed` alone also does not make a pause
 `pauseGame` and `changeGameSpeed`). `unPauseGame()` clears the flag.
 In the launcher runs the speed was set back to 1x once more, even after `unPauseGame`, about 3 s after the first change (`attempt 2` in 3 of 3
 `time-advance` runs; the later `telemetry-sanity` runs at speed 1 had `attempt 1`). A second `changeGameSpeed` held for the whole run.
-The cause is not known (it looks like the late restart of spec 02). `TimeControl.set_speed` calls `unPauseGame`, then `changeGameSpeed`,
+The cause of the late restart of spec 02 is known now (intro cinematic, `02-save-autoload/implementation-notes/clock-restart-cause.md`), but this fallback is a different event: two `decreaseGameSpeed` calls 1 to 2 s after `changeGameSpeed(3)`, caller unknown (same note). `TimeControl.set_speed` calls `unPauseGame`, then `changeGameSpeed`,
 waits 3 s, checks `gameSpeed`, and tries again up to 3 times.
 
 ## Calendar (`TemporalComponent`)

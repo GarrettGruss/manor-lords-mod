@@ -37,6 +37,10 @@ local CLOCK_STOPPED_EPSILON = 0.001
 local CLOCK_STOPPED_SECONDS = 8
 -- Wait at least this long between two pauseGame calls (seconds).
 local PAUSE_RETRY_S = 2
+-- After a load the game plays an intro cinematic (PawnCPP.currentUIMode 1). When it ends, the game calls
+-- setMainUIMode(0) and restores 1x, which undoes a pause (spec 02, clock-restart-cause.md).
+-- So no pauseGame call is made while it plays. After this many seconds in PAUSING we pause anyway.
+local CINEMATIC_WAIT_S = 25
 
 local OUT_DIR = log.dir()
 local BOOT_FILE = OUT_DIR .. "/boot.json"
@@ -407,6 +411,12 @@ local function callPauseGame(engine)
     if not ok then log.warn(TAG, "pauseGame failed: " .. tostring(err)) end
 end
 
+-- true while the intro cinematic plays. A property that cannot be read counts as "not playing".
+local function isCinematicPlaying(engine)
+    local ok, mode = pcall(function() return engine.playerRef.currentUIMode end)
+    return ok and type(mode) == "number" and mode ~= 0
+end
+
 local function stepPausing()
     local engine = FindFirstOf("RTSMultiEngineCPP")
     if not isValid(engine) then
@@ -430,7 +440,14 @@ local function stepPausing()
     if moved then
         pausing.sawRunning = true
         pausing.stoppedSince = nil
-        if os.time() - pausing.lastCallAt >= PAUSE_RETRY_S then callPauseGame(engine) end
+        if isCinematicPlaying(engine) and secondsInState() < CINEMATIC_WAIT_S then
+            if not pausing.waitLogged then
+                pausing.waitLogged = true
+                log.info(TAG, "intro cinematic is playing; waiting for it to end before pauseGame")
+            end
+        elseif os.time() - pausing.lastCallAt >= PAUSE_RETRY_S then
+            callPauseGame(engine)
+        end
     elseif hasPrevious and pausing.sawRunning then
         if pausing.stoppedSince == nil then pausing.stoppedSince = os.time() end
         if os.time() - pausing.stoppedSince >= CLOCK_STOPPED_SECONDS then
