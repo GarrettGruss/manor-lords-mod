@@ -65,7 +65,10 @@ def _failed_asserts(entry: EntryOutcome) -> list[dict]:
     failed = []
     for attempt in entry.attempts:
         for item in attempt.failed_asserts:
-            failed.append({"name": cut(item["name"]), "value": _value_for_json(item["value"])})
+            found = {"name": cut(item["name"]), "value": _value_for_json(item["value"])}
+            # A retry that fails the same way adds no information.
+            if found not in failed:
+                failed.append(found)
     return failed[:MAX_FAILED_ASSERTS]
 
 

@@ -32,9 +32,15 @@ class ReportTest(unittest.TestCase):
         self.assertLess(len(report.render_json(data).encode()), 4096)
         self.assertEqual(data["totals"]["runs"], 10)
 
+    def test_same_failed_assertion_in_a_retry_is_listed_once(self):
+        same = [{"name": "ticks", "value": 0}]
+        script = {"a": [result("r1", "fail", failed=same), result("r2", "fail", failed=same)]}
+        data = self.build(outcome_for([entry("a")], script, retries=1))
+        self.assertEqual(data["scenarios"][0]["failed"], [{"name": "ticks", "value": 0}])
+
     def test_long_failure_text_is_truncated(self):
         long_name, long_value = "n" * 500, "v" * 500
-        bad = result("r", "fail", failed=[{"name": long_name, "value": long_value}] * 20)
+        bad = result("r", "fail", failed=[{"name": str(i) + long_name, "value": long_value} for i in range(20)])
         data = self.build(outcome_for([entry("a")], {"a": [bad]}, retries=0))
         item = data["scenarios"][0]
         self.assertEqual(len(item["failed"]), report.MAX_FAILED_ASSERTS)
