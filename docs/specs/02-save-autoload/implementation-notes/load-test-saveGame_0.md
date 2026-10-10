@@ -19,7 +19,7 @@ No Lua error and no crash. About 10 seconds after F8 the bridge showed the game 
 | Game mode, pawn | `RTSGame_C`, `MyPawnCPP_BP3_C` |
 | Objects | `RTSMultiEngineCPP` 1, `PawnCPP` 5 (1 player, 4 AI), `Region` 7 |
 | Calendar (`RTSMultiEngineCPP.TemporalComponent`) | `day` 61, `month` 3, `Year` 1, `Season` 1 (spring) |
-| Paused | `PawnCPP.bIsPlayerPaused` = true. The game starts paused after a load. |
+| Paused | `PawnCPP.bIsPlayerPaused` read true, but the game clock was running. **The game does not start paused.** See `pause-and-game-speed.md`. |
 | `RTSMultiEngineCPP.gameSpeed` | 0 at first, 1 about 4 seconds later |
 | Regions | 7. Settled: Hochweg, Krumme Leite, Riesenbuckel. Not settled: 4 others. All have `Approval` 50. |
 
@@ -34,7 +34,7 @@ No Lua error and no crash. About 10 seconds after F8 the bridge showed the game 
 - Does `LoadGame` need the widget visible or focused? The load screen was opened by the mod first. The dialog was dismissed. Not tested with the dialog still open.
 - Splash or intro to skip? The "still in development" dialog appears at the menu. The mod worked after the user closed it. It is not known whether it blocks `LoadGame`. Test next.
 - Earliest safe "ready" signal: not decided. `RTSMultiEngineCPP` exists about 10 s after F8. Test the polling check from the spec.
-- Is `pauseGame` safe right after load? The game is already paused after load. Do not call it again.
+- Is `pauseGame` safe right after load? The game does not start paused (the first note was wrong). See `pause-and-game-speed.md`.
 
 ## Other findings
 - `ue4ss/harness/mod.log` is append-only. Entries from earlier game sessions stay in the file. Use `HARNESS_RUN_DIR` per run, or truncate at launch.
