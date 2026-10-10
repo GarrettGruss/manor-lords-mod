@@ -23,6 +23,7 @@ from .game import (
     build_game_environment,
     count_pause_calls,
     ensure_game_alive,
+    find_crash_reporters,
     find_game_processes,
     is_steam_running,
     read_boot_file,
@@ -41,6 +42,8 @@ LAUNCH_ALIVE_CHECK_S = 3
 DEPLOY_TIMEOUT_S = 110
 MAX_CRASH_DIR_BYTES = 50 * 1024 * 1024
 DEPLOY_SUMMARY = re.compile(r"Summary:.*errors:\s*(\d+)")
+CRASH_CONTEXT_FILE = "CrashContext.runtime-xml"
+CRASH_PROCESS_ID = re.compile(r"<ProcessId>(\d+)</ProcessId>")
 
 
 # ---- preflight ----
@@ -227,13 +230,36 @@ def copy_ue4ss_log(install: GameInstall, run_path: Path) -> bool:
     return True
 
 
-def copy_new_crash_dirs(install: GameInstall, crash_dir: Path, since_epoch: float, notes: list[str]) -> list[str]:
-    """Copy crash report folders newer than `since_epoch`. Return their paths relative to the run folder."""
+def read_crash_process_id(folder: Path) -> int | None:
+    """The process id that UE wrote into the crash report, or None if the report has no readable id."""
+    try:
+        text = (folder / CRASH_CONTEXT_FILE).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    match = CRASH_PROCESS_ID.search(text)
+    return int(match.group(1)) if match else None
+
+
+def is_crash_of_process(folder: Path, game_pid: int | None) -> bool:
+    """True if the report may belong to the game process. A report without an id counts as a match."""
+    if game_pid is None:
+        return True
+    report_pid = read_crash_process_id(folder)
+    return report_pid is None or report_pid == game_pid
+
+
+def copy_new_crash_dirs(install: GameInstall, crash_dir: Path, since_epoch: float, notes: list[str],
+                        game_pid: int | None = None) -> list[str]:
+    """Copy crash report folders newer than `since_epoch` that belong to `game_pid`.
+
+    Return their paths relative to the run folder. The pid check keeps a crash of another game
+    process (for example one the user started) out of the run.
+    """
     if not install.crashes_dir.is_dir():
         return []
     copied = []
     for folder in sorted(p for p in install.crashes_dir.iterdir() if p.is_dir()):
-        if folder.stat().st_mtime <= since_epoch:
+        if folder.stat().st_mtime <= since_epoch or not is_crash_of_process(folder, game_pid):
             continue
         if _folder_size(folder) > MAX_CRASH_DIR_BYTES:
             notes.append(f"crash report {folder.name} is over 50 MB and was not copied")
@@ -256,6 +282,21 @@ def copy_new_dumps(install: GameInstall, crash_dir: Path, since_epoch: float) ->
     return copied
 
 
+def copy_crash_reports(install: GameInstall, ctx: PhaseContext, since_epoch: float) -> list[str]:
+    """Copy the crash reports of this run's game.
+
+    The crash handler of UE writes into the user's REAL `Crashes` folder, not into the private appdata
+    (seen in a real crash, see real-crash-report.md). So the real folder is searched, and the private one too.
+    """
+    searched = [install]
+    if ctx.state.get("appdata_dir"):
+        searched.insert(0, _private_install(install, ctx))
+    copied: list[str] = []
+    for where in searched:
+        copied += copy_new_crash_dirs(where, ctx.run.crash_dir, since_epoch, ctx.state["notes"], ctx.state.get("game_pid"))
+    return copied
+
+
 def describe_telemetry(run_path: Path) -> str | None:
     """Name and sample count of telemetry.jsonl, or None if the mod wrote none (telemetry off, or a crash)."""
     path = run_path / "telemetry.jsonl"
@@ -275,9 +316,7 @@ def _collect(install: GameInstall):
         take_screenshot(ctx, "end")
         since = ctx.state.get("run_started_epoch", 0.0)
         copy_ue4ss_log(install, ctx.run.path)
-        # UE writes crash reports under the LOCALAPPDATA it sees: the run's appdata, when the run used one.
-        crash_install = _private_install(install, ctx) if ctx.state.get("appdata_dir") else install
-        crash_dirs = copy_new_crash_dirs(crash_install, ctx.run.crash_dir, since, ctx.state["notes"])
+        crash_dirs = copy_crash_reports(install, ctx, since)
         if crash_dirs:
             ctx.state["notes"].append(f"{len(crash_dirs)} new UE crash report(s) were copied")
         dumps = copy_new_dumps(install, ctx.run.crash_dir, since)
@@ -309,6 +348,18 @@ def _finish_appdata(install: GameInstall, ctx: PhaseContext) -> str | None:
     return f"appdata removed ({removed} files), user saves unchanged"
 
 
+def stop_orphan_crash_reporters(ctx: PhaseContext) -> None:
+    """After a crash, CrashReportClient.exe stays open and waits for a click. Stop the ones of this run's game."""
+    game_pid = ctx.state.get("game_pid")
+    if game_pid is None:
+        return
+    orphans = [process for process in find_crash_reporters() if process.ppid() == game_pid]
+    if not orphans:
+        return
+    stop_processes(orphans)
+    ctx.state["notes"].append(f"{len(orphans)} CrashReportClient process(es) of the crashed game were stopped")
+
+
 def _teardown(install: GameInstall, keep_open: bool):
     def run(ctx: PhaseContext) -> str | None:
         # Set first, so the end of the process is not read as a crash.
@@ -317,6 +368,9 @@ def _teardown(install: GameInstall, keep_open: bool):
             ctx.state["notes"].append("--keep-open: the game was left running")
             if ctx.state.get("appdata_dir"):
                 ctx.state["notes"].append(f"private appdata is still in place: {ctx.state['appdata_dir']}")
+                ctx.state["notes"].append("the user's save files were not compared (--keep-open). "
+                                          "Stop the game with harness/game-close.ps1, then delete the appdata with "
+                                          "harness/tools/fixtures.py remove --appdata <that folder>")
             return "teardown: game left running (--keep-open)"
         running = find_game_processes()
         stop_processes(running)
@@ -326,6 +380,7 @@ def _teardown(install: GameInstall, keep_open: bool):
         # UE4SS.log is buffered, so the copy from collect can be short. Copy again after the game ended.
         if copy_ue4ss_log(install, ctx.run.path):
             ctx.state["artifacts"]["logs"] = list_logs(ctx.run.path)
+        stop_orphan_crash_reporters(ctx)
         pids = [process.pid for process in running]
         stopped = f"teardown: game stopped (PID {pids})" if pids else "teardown: game stopped (none was running)"
         appdata_detail = _finish_appdata(install, ctx)

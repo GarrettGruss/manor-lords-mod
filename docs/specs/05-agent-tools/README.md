@@ -1,6 +1,6 @@
 # Spec 05: Agent tools (MCP server for the harness)
 
-Status: done except one check. Code, 43 tests and a real run through the tool functions are done. A real Claude Code session that lists and calls the tools needs a new session (`.mcp.json` is read at start) and is still to check. Roadmap phase: 7 (see `docs/specs/00-harness-overview/README.md`).
+Status: done. Code, 46 tests, a real run through the tool functions, and a check in a real Claude Code session (list_scenarios, game_status and list_runs through `.mcp.json`) are done. Roadmap phase: 7 (see `docs/specs/00-harness-overview/README.md`).
 
 ## Goal
 An agent drives the harness through MCP tools. It runs a scenario, reads the summary, and reads logs, without shell commands.

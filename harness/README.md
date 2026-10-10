@@ -231,7 +231,10 @@ UE4SS auto reload is also on in this install, but it reloads only one mod when t
 
 Every run gives the game its own `LOCALAPPDATA` (`<run folder>\appdata`). The fixture (default `base`, a copy of the user's `saveGame_0`) is its `saveGame_0`.
 The user's save folder is never used by the game in a run. It is hashed before and after, and a change fails the run. The private folder is deleted in teardown.
-`--keep-open` leaves it in place. Crash reports are read from it.
+`--keep-open` leaves it in place and does not compare the user's save files. Stop the game with `harness\game-close.ps1`, then run
+`.venv\Scripts\python.exe harness	oolsixtures.py remove --appdata runs\<id>ppdata` (about 4 MB per run).
+A game crash writes its UE crash report into the user's REAL `Crashes` folder (not the private one). `collect` copies the reports of this game (matched by process id) into `crash/`,
+and `teardown` stops the `CrashReportClient.exe` that the crash leaves open. Test it with `python harness/run.py --scenario selftest-crash` (verdict `crash`, exit 2).
 
 `python harness\tools\fixtures.py list | record <name> --source-slot <slot> | install <name> --appdata DIR | remove --appdata DIR` (spec 06, part C).
 `harness\fixtures\fixtures.json` lists fixtures: name, source slot, SHA-256 of each source file, description, tags. It holds no save data.
@@ -270,6 +273,15 @@ The cheat manager actions (`give_item`, `set_settlement_level`, `spawn_bandit_sq
 **Never call `PawnCPP:requestSaveFile`.** It writes into the user's real save folder, not into the private one (see the catalog).
 
 Helpers in the bridge client: `write_property`, `count_objects`, `region_paths`, `player_region_path`, `hud_treasury_text` (the silver number of the HUD; it updates only while the game runs, and writes 1000 and more as `1.2k`).
+
+### Autosave protection
+The game's autosave timer runs in real time, also while the game is paused, and an autosave writes into the user's REAL save folder.
+`HarnessBoot` has a step `DISABLING_AUTOSAVE` before `PAUSING`: it restarts the timer with a one year period (`MLGameInstance:SetAutosavePeriodOnPawn`) and fails the boot if the timer is not far away.
+`ctx.actions.autosave_status()` reads the timer. Scenario `autosave-protection` checks it over 60 game seconds. Notes: `docs/specs/06-dev-loop-and-fixtures/implementation-notes/autosave.md`.
+
+### DataTable commands (spec 09 first check)
+`HarnessActions` also has `datatable_info`, `datatable_read` and `datatable_write` for number fields (`Weight`, `Value`, `spoilageRate`) of `RTSMultiEngineCPP.itemStats` rows.
+Do not read `RowStruct` or whole `Item` structs through the bridge: it crashes the game. Notes: `docs/specs/09-asset-mods/implementation-notes/datatable-check.md`.
 
 ### Helper mod HarnessActions
 For game functions that need object parameters. The client `runlib/commands.py` (`CommandChannel`) writes `<run>/commands/0001.json`, `0002.json`, ... in order. The mod runs the command on the game thread

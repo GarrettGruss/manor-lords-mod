@@ -10,11 +10,12 @@
 --   boot.json     current state and the history of state changes. Always up to date.
 --   ready.marker  written once, when the game is ready for a scenario.
 --
--- States: WAITING_FOR_MENU -> LOADING_SAVE -> WAITING_FOR_READY -> PAUSING -> READY.
+-- States: WAITING_FOR_MENU -> LOADING_SAVE -> WAITING_FOR_READY -> DISABLING_AUTOSAVE -> PAUSING -> READY.
 -- Any wait can go to FAILED. READY means the game clock was measured as stopped.
 -- Rule: game objects are touched only on the game thread (ExecuteInGameThread).
 
 local log = require("HarnessLog")
+local autosave = require("HarnessAutosave")
 
 local TAG = "HarnessBoot"
 local DEFAULT_SLOT = "saveGame_0"
@@ -24,6 +25,7 @@ local TIMEOUT_S = {
     WAITING_FOR_MENU = 120,
     LOADING_SAVE = 30,
     WAITING_FOR_READY = 180,
+    DISABLING_AUTOSAVE = 30,
     PAUSING = 60,
 }
 -- The ready check must pass this many polls in a row. This avoids a short false "ready".
@@ -346,7 +348,7 @@ local function stepWaitingForReady()
     if allTrue(checks) then
         stablePolls = stablePolls + 1
         if stablePolls >= READY_STABLE_POLLS then
-            setState("PAUSING")
+            setState("DISABLING_AUTOSAVE")
             return
         end
     else
@@ -355,6 +357,32 @@ local function stepWaitingForReady()
     if secondsInState() > TIMEOUT_S.WAITING_FOR_READY then
         fail("game was not ready in " .. TIMEOUT_S.WAITING_FOR_READY .. " s (" .. describeChecks(checks) .. ")")
     end
+end
+
+---------------------------------------------------------------------------------------------
+-- Step: DISABLING_AUTOSAVE
+-- The autosave timer of the game runs in real time, also while the game is paused. Its autosave writes
+-- into the user's REAL save folder (CLAUDE.md, Safety). So the timer is pushed far into the future before READY.
+-- The step only restarts the timer. It calls no function that saves.
+---------------------------------------------------------------------------------------------
+
+local function stepDisablingAutosave()
+    local changes, problem = autosave.disable()
+    if not changes then
+        -- The pawn may not be complete yet. Try again until the time limit.
+        if secondsInState() > TIMEOUT_S.DISABLING_AUTOSAVE then
+            fail("autosave could not be disabled in " .. TIMEOUT_S.DISABLING_AUTOSAVE .. " s: " .. tostring(problem))
+        end
+        return
+    end
+    if not autosave.is_disabled(changes.after) then
+        fail("autosave timer was not pushed away (remaining " .. tostring(changes.after.remaining_s)
+            .. " s, exists " .. tostring(changes.after.timer_exists) .. ")")
+        return
+    end
+    log.info(TAG, string.format("autosave disabled: timer remaining %s s -> %s s (settings period %s s)",
+        tostring(changes.before.remaining_s), tostring(changes.after.remaining_s), tostring(changes.after.settings_period_s)))
+    setState("PAUSING")
 end
 
 ---------------------------------------------------------------------------------------------
@@ -430,6 +458,7 @@ local STEPS = {
     WAITING_FOR_MENU = stepWaitingForMenu,
     LOADING_SAVE = stepLoadingSave,
     WAITING_FOR_READY = stepWaitingForReady,
+    DISABLING_AUTOSAVE = stepDisablingAutosave,
     PAUSING = stepPausing,
 }
 

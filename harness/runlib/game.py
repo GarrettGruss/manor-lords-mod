@@ -16,6 +16,7 @@ import psutil
 from .runner import PhaseContext, PhaseFailed
 
 GAME_PROCESS_NAMES = ("manorlords-win64-shipping.exe", "manorlords.exe")  # the real game, then the Steam stub
+CRASH_REPORTER_NAMES = ("crashreportclient.exe",)  # UE starts it when the game crashes, and it waits for a click
 STEAM_PROCESS_NAME = "steam.exe"
 PAUSE_CALL_MARKER = "calling pauseGame"
 DEFAULT_TEST_SAVE = "saveGame_0"
@@ -71,6 +72,10 @@ def find_processes(names: tuple[str, ...]) -> list[psutil.Process]:
 
 def find_game_processes() -> list[psutil.Process]:
     return find_processes(GAME_PROCESS_NAMES)
+
+
+def find_crash_reporters() -> list[psutil.Process]:
+    return find_processes(CRASH_REPORTER_NAMES)
 
 
 def is_steam_running() -> bool:

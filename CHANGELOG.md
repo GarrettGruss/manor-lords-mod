@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Autosave protection (spec 06): `HarnessBoot` state `DISABLING_AUTOSAVE` restarts the pawn autosave timer with a one year period before READY (shared module `HarnessAutosave`, `MLGameInstance:SetAutosavePeriodOnPawn`). The timer ran in real time, also in a paused game. `HarnessActions` commands `autosave_status` and `disable_autosave`, action `ctx.actions.autosave_status()`, scenario `autosave-protection`, and fake game support for the timer (`boot_state_machine.py` mode `autosavefails`).
+- `HarnessActions` commands `datatable_info`, `datatable_read` and `datatable_write` with the shared module `HarnessDataTable` (spec 09 first check: number fields of `itemStats` rows can be read and written at runtime).
+- Hidden scenario `selftest-crash`: makes the real game crash through the bridge (`getItem` or `playEventMessage`) to test the crash verdict and the crash report copy.
 - Feature test kit (spec 07): `ctx.actions` (`harness/runlib/actions.py`) with 14 actions that were checked in the real game (silver, influence, king's favour, day and season, region values, wealth, goods, settlement level, weather, bandit squad, letters). Each action reads the value before and after and returns `{action, ok, args, before, after}`. Actions that are not possible (`save_state`, `show_message`, ...) and unknown names raise `ActionNotPossible`, which fails the scenario with the reason. Catalog with numbers: `docs/specs/07-feature-test-kit/implementation-notes/actions-catalog.md`.
 - Mod `HarnessActions` and `harness/runlib/commands.py`: a command channel (`<run>/commands/0001.json`, ...) for game functions that need object parameters. First use: `send_letter`. Mock tests in `harness/tests/test_fakegame_harnessactions.py`.
 - Scenarios `silver-change`, `winter-region` and `letter-delivery`, the hidden `selftest-action`, and the hidden probe `probe-actions`. New bridge helpers: `write_property`, `count_objects`, `region_paths`, `player_region_path`, `hud_treasury_text`. `ctx.fail(name, reason)` and `notes` in the scenario result.
@@ -51,5 +54,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - MCP dependencies are locked with hashes (`mcp/requirements.in` and `mcp/requirements.txt`) and installed with uv.
 
 ### Fixed
+- Crash reports were never copied: the UE crash handler writes into the user's real `Crashes` folder, not the private `LOCALAPPDATA`. `collect` now searches both folders and matches the process id. `teardown` stops the `CrashReportClient.exe` that a crash leaves open.
+- `--keep-open` now prints how to stop the game and delete the private appdata, and says that the user's save files were not compared.
 - Vendored bridge: the poller no longer stays busy forever after a failed reply. Large responses and limits are capped. `dump` needs `allow_writes`.
 - Vendored bridge: a nil property or function name no longer crashes the game. It returns an error.

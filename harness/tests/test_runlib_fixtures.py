@@ -216,8 +216,9 @@ class RunPhasesTest(UserSavesCase):
         private = phases._private_install(self.install, self.ctx)
         (private.crashes_dir / "UECC-1").mkdir(parents=True)
         (private.crashes_dir / "UECC-1" / "report.txt").write_text("crash")
-        (self.install.crashes_dir / "UECC-user").mkdir(parents=True)  # a user crash report must be ignored
-        self.ctx.state["run_started_epoch"] = 0
+        (self.install.crashes_dir / "UECC-user").mkdir(parents=True)  # a crash report of another process must be ignored
+        (self.install.crashes_dir / "UECC-user" / phases.CRASH_CONTEXT_FILE).write_text("<ProcessId>1111</ProcessId>")
+        self.ctx.state.update(run_started_epoch=0, game_pid=4242)
         phases._collect(self.install)(self.ctx)
         self.assertEqual(self.ctx.state["artifacts"]["crash"], ["crash/UECC-1"])
 

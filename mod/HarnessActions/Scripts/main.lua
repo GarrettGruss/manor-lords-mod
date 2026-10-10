@@ -9,13 +9,20 @@
 -- Request shapes (a fixed small JSON, read with patterns, never run as code):
 --   {"id":"0001","command":"ping"}
 --   {"id":"0002","command":"send_letter","sender":1,"paragraphs":["name_one","name_two"]}
+--   {"id":"0003","command":"autosave_status"}      read the autosave timer (read only)
+--   {"id":"0004","command":"disable_autosave"}     restart the autosave timer with a one year period
+--   {"id":"0005","command":"datatable_info"}       row count and names of the item table (read only)
+--   {"id":"0006","command":"datatable_read","row":"name","field":"Value"}              one number field of one row
+--   {"id":"0007","command":"datatable_write","row":"name","field":"Value","value":5}  change one number field
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
 
 local log = require("HarnessLog")
 local json = require("HarnessJson")
+local autosave = require("HarnessAutosave")
+local datatable = require("HarnessDataTable")
 
-local VERSION = "1"
+local VERSION = "3"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -71,6 +78,9 @@ local function parseRequest(raw)
         id = raw:match('"id"%s*:%s*"([%w_]+)"'),
         command = raw:match('"command"%s*:%s*"([%w_]+)"'),
         sender = tonumber(raw:match('"sender"%s*:%s*(%d+)')),
+        row = raw:match('"row"%s*:%s*"([%w_ %-]+)"'),
+        field = raw:match('"field"%s*:%s*"([%w_]+)"'),
+        value = tonumber(raw:match('"value"%s*:%s*(-?[%d%.]+)')),
     }
 end
 
@@ -95,9 +105,47 @@ local function sendLetter(request, raw)
     return { ok = true, inbox_before = before, inbox_after = inboxCount(player), paragraphs = #paragraphs }
 end
 
+local function autosaveStatus()
+    return { ok = true, status = autosave.status() }
+end
+
+-- Not a save function: it only restarts the autosave timer with a very long period.
+local function disableAutosave()
+    local changes, problem = autosave.disable()
+    if not changes then return { ok = false, error = problem } end
+    return { ok = true, changes = changes }
+end
+
+local function datatableInfo()
+    local info, problem = datatable.info()
+    if not info then return { ok = false, error = problem } end
+    return { ok = true, info = info }
+end
+
+local function datatableRead(request)
+    if not request.row or not request.field then return { ok = false, error = "row and field are required" } end
+    local values, problem = datatable.read_row(request.row, { request.field })
+    if not values then return { ok = false, error = problem } end
+    return { ok = true, row = request.row, values = values }
+end
+
+local function datatableWrite(request)
+    if not request.row or not request.field or not request.value then
+        return { ok = false, error = "row, field and value are required" }
+    end
+    local change, problem = datatable.write_number(request.row, request.field, request.value)
+    if not change then return { ok = false, error = problem } end
+    return { ok = true, row = request.row, field = request.field, change = change }
+end
+
 local COMMANDS = {
     ping = function() return { ok = true, version = VERSION } end,
     send_letter = sendLetter,
+    autosave_status = autosaveStatus,
+    disable_autosave = disableAutosave,
+    datatable_info = datatableInfo,
+    datatable_read = datatableRead,
+    datatable_write = datatableWrite,
 }
 
 local function runCommand(number, raw)

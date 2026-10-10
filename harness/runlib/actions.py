@@ -282,3 +282,12 @@ class Actions:
         call = lambda: self._commands.send("send_letter", sender=sender, paragraphs=list(paragraphs))  # noqa: E731
         check = lambda before, after: after["count"] == before["count"] + 1 and after["last"] == list(paragraphs)  # noqa: E731
         return self._perform("send_letter", {"paragraphs": list(paragraphs), "sender": sender}, self._inbox_state, call, check)
+
+    # ---- autosave (through the helper mod HarnessActions) ----
+
+    def autosave_status(self) -> dict:
+        """Read the autosave timer of the game: handle_id, timer_exists, remaining_s and settings_period_s. It changes nothing."""
+        if self._commands is None:
+            raise ActionNotPossible("autosave_status: no command channel to the mod HarnessActions in this context")
+        self._precondition()
+        return self._commands.send("autosave_status")["status"]

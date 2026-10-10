@@ -10,6 +10,7 @@
 #   missing    DoesSaveGameExist is false; FAILED before the menu is touched
 #   pausefails pauseGame has no effect; FAILED because the clock never stops
 #   neverstarts the game never starts its clock; FAILED because the clock never started
+#   autosavefails SetAutosavePeriodOnPawn answers true but the timer stays; FAILED before the game is paused
 #
 # The fake game is the kit in harness/tests/fakegame. It copies a real behavior: for a few seconds after the load the game holds the clock at 0.
 # Then it starts the clock itself, and that undoes any pause made too early.
@@ -21,7 +22,7 @@ import sys
 import fakegame_path  # noqa: F401  (makes the fakegame package importable)
 from fakegame import FakeGame, FakeGameClock, build_manor_lords_state
 
-ALL_MODES = ["happy", "slotlate", "noslot", "missing", "pausefails", "neverstarts"]
+ALL_MODES = ["happy", "slotlate", "noslot", "missing", "pausefails", "neverstarts", "autosavefails"]
 
 # What each mode must end with: (state, text that the failure reason must contain)
 EXPECTED = {
@@ -31,6 +32,7 @@ EXPECTED = {
     "missing": ("FAILED", "does not exist"),
     "pausefails": ("FAILED", "clock did not stop"),
     "neverstarts": ("FAILED", "clock never started"),
+    "autosavefails": ("FAILED", "autosave timer was not pushed away"),
 }
 
 # How each mode changes the fake game. Times are fake seconds.
@@ -54,6 +56,8 @@ def state_options(mode):
     if mode == "neverstarts":
         clock["starts"] = False
     options["clock"] = FakeGameClock(**clock)
+    if mode == "autosavefails":
+        options["autosave_works"] = False
     return options
 
 
@@ -72,7 +76,8 @@ def run_mode(mode, boot_script=None, **game_options):
         marker = game.read_text("ready.marker").strip() if "ready.marker" in game.files() else None
         clock_at_ready = state.clock.time
         game.advance(SETTLE_AFTER_READY_S)  # the game may restart the clock after READY
-        return boot, marker, list(state.calls) + state.clock.calls, seconds, (clock_at_ready, state.clock.time)
+        return boot, marker, list(state.calls) + state.clock.calls + list(state.autosave.calls), seconds, (
+        clock_at_ready, state.clock.time, state.autosave.remaining())
 
 
 def check(mode, boot_script=None):
@@ -90,6 +95,12 @@ def check(mode, boot_script=None):
             problems.append("ready.marker does not say paused")
         if "pauseGame" not in calls:
             problems.append("pauseGame was never called")
+        if not any(call.startswith("SetAutosavePeriodOnPawn") for call in calls):
+            problems.append("the autosave timer was never restarted")
+        if clocks[2] < 1000000:
+            problems.append(f"the autosave timer has only {clocks[2]:.0f} s left")
+        if [h["state"] for h in boot["history"]].index("DISABLING_AUTOSAVE") > [h["state"] for h in boot["history"]].index("PAUSING"):
+            problems.append("autosave was disabled after the pause")
         if clocks[0] != clocks[1]:
             problems.append(f"the clock moved after READY ({clocks[0]} -> {clocks[1]}): the game was not really paused")
     elif marker is not None:

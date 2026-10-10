@@ -57,3 +57,29 @@ Ran the tool functions with the real game from this worktree (not a Claude Code 
 - The default run cap shown by the tool was 20 and is now 100, like `run.py`.
 
 Still not checked: a real Claude Code session that lists and calls the tools (needs a new session so that `.mcp.json` is loaded), and a run that survives the MCP server closing.
+
+## Check in a real Claude Code session (2026-10-10)
+A fresh headless Claude Code session (`claude -p`, version 2.1.296, model Sonnet) was started in the repo with
+`--mcp-config .mcp.json --strict-mcp-config` and only the read-only tools allowed:
+`mcp__manor-harness__list_scenarios`, `game_status` and `list_runs`.
+
+Result: the `manor-harness` server started from `.mcp.json` (stdio, `PYTHONPATH=mcp;harness` worked on Windows), the session found and
+called all three tools, and the answers were correct (the scenario list, "game not running, no lock, 72 of 100 runs used",
+and the 3 newest runs with their verdicts and durations). So the registration, the permissions (read-only tools allowed) and the
+server work in a real client.
+
+Two defects were found and fixed:
+- `list_scenarios` showed no descriptions. It read the function docstring. It now uses the registry summary.
+- `list_scenarios` listed the hidden test scenarios (selftest-*, probe-actions). They are now hidden, and `run_scenario` refuses them
+  as unknown. Three tests cover this (`test_harness_tools_scenarios.py`).
+
+Not checked: `run_scenario` and `stop_game` in a real client (they ask for permission, so a headless session cannot approve them),
+and a client time limit for long calls (the start and poll design avoids long calls).
+
+## `run_scenario` in a real client (2026-10-10)
+A second headless session was asked to start `smoke` with `run_scenario`, then `wait_for_run` and `read_summary`, with those three tools
+passed in `--allowedTools`. `run_scenario` was refused ("permission has not been granted"): `.claude/settings.json` puts `run_scenario`
+in `ask`, and a headless session has nobody who can approve it. This is the intended permission design (the tool starts the game),
+so it was not bypassed. The start and poll flow itself was checked with a real run through the tool functions (see above).
+To try it in an interactive Claude Code session, approve the `run_scenario` prompt once. To allow it for unattended work, move
+`mcp__manor-harness__run_scenario` from `ask` to `allow` in `.claude/settings.json`. That is the user's decision.
