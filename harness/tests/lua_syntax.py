@@ -1,6 +1,6 @@
 # Syntax check for every Lua file in mod/. Run from the repo root:
 #   uv run --no-project --python 3.12 --with lupa python harness/tests/lua_syntax.py
-﻿import sys, pathlib
+import sys, pathlib
 from lupa import LuaRuntime
 lua = LuaRuntime()
 bad = 0

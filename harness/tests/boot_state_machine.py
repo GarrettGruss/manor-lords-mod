@@ -1,7 +1,7 @@
 # Runs mod/HarnessBoot against a fake game API (no game needed). Run from the repo root:
 #   uv run --no-project --python 3.12 --with lupa python harness/tests/boot_state_machine.py [happy|noslot|missing]
 # It checks the state machine and the output files. It does not prove the real game API behaves the same.
-﻿import os, sys, json, tempfile, pathlib
+import os, sys, json, tempfile, pathlib
 from lupa import LuaRuntime
 
 out = tempfile.mkdtemp(prefix="boot-test-")
