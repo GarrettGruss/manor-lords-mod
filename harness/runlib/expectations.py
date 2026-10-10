@@ -17,6 +17,16 @@ def _number(value: Any) -> str:
     return f"{value:g}" if isinstance(value, (int, float)) and not isinstance(value, bool) else repr(value)
 
 
+def _json_safe(value: Any) -> Any:
+    """A set cannot go into JSON. Store it as a sorted list (sets of mixed types keep the order of their text)."""
+    if isinstance(value, (set, frozenset)):
+        try:
+            return sorted(value)
+        except TypeError:
+            return sorted(value, key=repr)
+    return value
+
+
 class Expectations:
     def __init__(self, log: Callable[[str], None] = lambda message: None,
                  sleep: Callable[[float], None] = time.sleep, monotonic: Callable[[], float] = time.monotonic):
@@ -26,7 +36,7 @@ class Expectations:
         self._monotonic = monotonic
 
     def record(self, name: str, ok: bool, value: Any, rule: str) -> bool:
-        entry = {"name": name, "ok": bool(ok), "value": value, "rule": rule[:MAX_RULE_CHARS]}
+        entry = {"name": name, "ok": bool(ok), "value": _json_safe(value), "rule": rule[:MAX_RULE_CHARS]}
         self.records.append(entry)
         self._log(f"assert {'ok' if ok else 'FAILED'}: {name} value={value} rule={rule}")
         return entry["ok"]
