@@ -126,6 +126,7 @@ Each spike answers one "can the harness do this" question on the base game, with
 2. Spikes S1 to S10 in the real game (one agent at a time uses the game), with results in notes. Update the matrix marks and `METHOD_VERIFIED` for each criterion.
 3. Build U1 to U6, U9 and U10 in order of what the spikes show works. Unit tests with fake bridges. Each gets a real scenario on a stand-in.
 4. Reference scenarios (stand-ins on the base game) for every A and P criterion that has a method, each tagged with `COVERS`.
+   - U4 built (2026-10-10): `run.py --pak/--env`, suite `variants`, `suitelib/stats.py`, the A/B report and the `expect` rule, `ctx.metric`. Unit tested with a seeded stand-in; NOT verified: a real A/B on the game and a real pak in a run. Notes: `implementation-notes/ab-statistics.md`.
 5. Run the coverage tool. Close gaps or move criteria to H with a written reason. Record the final number.
 6. When the mod exists: run the same scenarios against it (a later spec).
 

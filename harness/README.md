@@ -339,3 +339,18 @@ The tool `harness/tools/coverage.py` measures how many criteria of spec 10 (Inva
 - Run: `.venv\Scripts\python.exe harness\tools\coverage.py` (options: `--json`, `--min-verified 0.9`, `--runs-root`, `--criteria`, `--check-spec`). Exit code 0 is ok, 1 is a failed check, 2 is bad input.
 - Numbers: automatable share is (A + P) / all criteria. Verified share is the A and P criteria with a verified method / all A and P criteria. The target is 90%. Blocked criteria (missing game systems) stay in the count, so they lower the share. The gap list names A and P criteria with no scenario and no verification.
 - Tests: `.venv\Scripts\python.exe -m unittest harness/tests/test_coverage.py`.
+
+## A/B variants and statistics
+Combat is not deterministic, so a feature is judged over N runs per variant (spec 10, U4). Rules and limits: `docs/specs/10-invasion-testability/implementation-notes/ab-statistics.md`.
+- `run.py --pak <name>` (repeatable) installs the built pak `<work_dir>\out\<name>_P.pak` before the game starts and always removes it at the end (also after a crash). The work folder comes from `harness\pakmod.local.json` (`--pak-config`).
+- `run.py --env KEY=VALUE` (repeatable) sets a variable for the game process. Name `^[A-Z][A-Z0-9_]{0,63}$`, not starting with `HARNESS_RUN_DIR`, `LOCALAPPDATA`, `PATH` or `UE4SS_BRIDGE`. Value printable, no newline, at most 256 characters. A value is hidden in `config.json` if the name contains KEY, TOKEN, SECRET or PASSWORD. `summary.environment` lists env keys only.
+- Suite entry with variants (the first variant is the reference; no `variants` means one variant `default`):
+```json
+{ "scenario": "smoke", "repeat": 5,
+  "variants": [ {"name": "baseline"}, {"name": "with-pak", "paks": ["demo"], "env": {"X": "1"}} ],
+  "expect": {"metric": "ticks", "direction": "lower", "min_rel_diff": 0.2} }
+```
+  Runs alternate A, B, A, B. `expect` is optional: it needs a `different` verdict, the median moving in `direction`, and a relative difference of at least `min_rel_diff`. If not met, the suite exits with 1. Example suite: `harness\suitesb-example.json`.
+- Metrics per run: `duration_s`, the numeric values of the scenario asserts, and `metrics.json` in the run folder: a flat `{"name": number}` file. A scenario writes it with `ctx.metric("ticks", 120)` (name `A-Z a-z 0-9 _ . -`, finite number; the same name replaces the value; it wins over an assert of the same name).
+- Report: `report.json` has `variants` per scenario and an `ab` section (each later variant against the first, per metric: verdict `different`, `same` or `inconclusive`, Cohen's d, relative difference of the medians, p-value, range overlap; the 8 strongest metrics per variant). It stays under 8 KB (a suite without variants: 4 KB). `report.md` has the tables. Fewer than 3 runs per variant is always `inconclusive`.
+- Tests: `test_suitelib_stats.py`, `test_suitelib_ab.py`, `test_runlib_variant.py`.
