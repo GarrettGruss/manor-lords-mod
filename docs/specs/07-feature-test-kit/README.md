@@ -1,6 +1,6 @@
 # Spec 07: Feature test kit (actions for scenarios)
 
-Status: draft. Roadmap phase: 9 (see `docs/specs/00-harness-overview/README.md`).
+Status: built and checked in the real game (2026-10-10). Roadmap phase: 9 (see `docs/specs/00-harness-overview/README.md`).
 
 ## Goal
 A scenario can create the situation that a mod feature needs, and observe the result. The kit gives named actions
@@ -23,7 +23,7 @@ Each action has a checked effect, so the agent knows it did what it said.
 ## Design
 
 ### The action catalog
-A file `harness/scenarios/lib/actions.py` with one function per action, each with:
+A file `harness/runlib/actions.py` (exposed as `ctx.actions`) with one function per action, each with:
 - a precondition check (for example, the game is loaded),
 - the call,
 - a postcondition check that reads the state back (the effect), and
@@ -48,6 +48,9 @@ If the bridge cannot do an action (object-reference parameters, for example), ad
 the bridge or the scenario writes a command file `<run>/commands/<id>.json`, the mod runs it on the game thread, and writes `<run>/commands/<id>.result.json`.
 Same rules as the bridge: atomic writes, unique ids, time limits, no `eval`, a fixed list of allowed commands.
 
+Built as written, with one change: UE4SS Lua cannot list a folder, so the ids are the numbers `0001`, `0002`, ... in order, and the mod waits for the next number.
+The commands are `ping` and `send_letter`. The client is `harness/runlib/commands.py`.
+
 ## Plan
 1. Probe the candidate actions in the real game (a probe script, not production code). Write the catalog with real results.
 2. Build `actions.py` for the verified actions, with unit tests on the checking logic (no game).
@@ -66,3 +69,27 @@ Same rules as the bridge: atomic writes, unique ids, time limits, no `eval`, a f
 - `actions.py` has unit tests for the checking logic.
 - Two scenarios use actions and pass 3 times in a row with the launcher.
 - A scenario that uses a `not possible` action fails with a clear message, not a crash.
+
+## Result (2026-10-10)
+
+Details and numbers: `implementation-notes/actions-catalog.md`.
+
+- Probed in the real game in 18 probe runs (4 ended in a game crash, which the launcher recorded as a result). 14 actions are `verified` or `partial` and are in `actions.py`; 5 are `not possible` with a reason (`ctx.actions.<name>` raises `ActionNotPossible`).
+- The cheat manager exists because the stock mod `CheatManagerEnablerMod` is on. The kit depends on that mod.
+- Setters hold for silver, influence, wealth and the date. `Approval` and `supplies_food` are recalculated by the game within one to three game days. Weather values move back in seconds.
+- `requestSaveFile` writes into the user's real save folder, even with a private `LOCALAPPDATA`. In the probe it overwrote the user's old slot `saveGame_9`. `save_state` is `not possible`. The run guard caught it.
+- The helper mod `HarnessActions` was needed for `send_letter` (object parameter). Plain strings as `FName` values crashed the game; `FName(name)` works.
+- Scenarios: `silver-change`, `winter-region`, `letter-delivery` (3 passes in a row each), and the hidden `selftest-action` (fails with a clear message, run once). The hidden `probe-actions` is the probe.
+- Unit tests: `harness/tests/test_runlib_actions.py` (45 tests), `harness/tests/test_fakegame_harnessactions.py` (12 tests, lupa).
+
+### Open
+- The look of the world after `set_season` (trees, snow) was not checked, only the calendar.
+- When exactly the game recalculates `Approval` is not known.
+- `spawnRaiders`, `spawnBanditCamp`, `RemoveAllFamilies` and the on-screen letter banner were not verified.
+- Actions assume a paused game. A running game changes silver and stock by itself.
+
+### Acceptance
+- Catalog with at least 6 actions with a clear status and before/after values: done (14 usable, 5 not possible).
+- Unit tests for the checking logic: done.
+- Two scenarios (and a third for the helper mod) pass 3 times in a row: done.
+- A scenario with a `not possible` action fails with a clear message: done (`selftest-action`).
