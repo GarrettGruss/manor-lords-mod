@@ -23,7 +23,7 @@ from typing import Callable
 import psutil
 
 from runlib import game
-from runlib.runfolder import new_run_id
+from runlib.runfolder import DEFAULT_MAX_RUNS, default_max_runs, new_run_id
 
 MAX_RESULT_BYTES = 20_000
 MAX_TEXT_CHARS = 15_000  # leaves room for the JSON frame around one text field
@@ -31,7 +31,6 @@ MAX_WAIT_S = 50  # a client may time out on a long MCP call, so one wait stays s
 POLL_STEP_S = 0.5
 READ_WINDOW_BYTES = 200_000  # a huge log is never read whole
 MAX_SCREENSHOTS = 200
-DEFAULT_MAX_RUNS = 100  # same default as harness/run.py; a config.json of a run overrides it
 TRUNCATED_MARKER = "[... cut: older text removed ...]"
 
 NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
@@ -237,7 +236,12 @@ def read_iteration_state(runs_root: Path) -> dict:
         used = 0
     folders = list_run_folders(runs_root)
     config = read_json_file(folders[0] / "config.json") if folders else None
-    max_runs = (config or {}).get("max_runs", DEFAULT_MAX_RUNS)
+    # A config.json of a run overrides the default. Else the same default as run.py (HARNESS_MAX_RUNS or 400).
+    try:
+        fallback = default_max_runs()
+    except ValueError:
+        fallback = DEFAULT_MAX_RUNS
+    max_runs = (config or {}).get("max_runs", fallback)
     return {"runs_used": used, "max_runs": max_runs, "runs_left": max(0, max_runs - used)}
 
 

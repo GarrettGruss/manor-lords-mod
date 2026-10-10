@@ -218,7 +218,7 @@ def build_report(
 
 def _stop_text(outcome: SuiteOutcome) -> str:
     if outcome.stop_reason == STOP_ITERATION_CAP:
-        return "iteration cap reached. Raise --max-runs of run.py or reset runs/.iterations."
+        return "iteration cap reached. Raise --max-runs of run.py (or set HARNESS_MAX_RUNS) or reset runs/.iterations."
     return f"time budget of {outcome.budget_s:.0f} s used up. The suite is incomplete."
 
 
