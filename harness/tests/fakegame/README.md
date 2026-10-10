@@ -59,7 +59,7 @@ Options: `wanted_slot_listed`, `save_exists`, `menu_delay`, `slot_list_delay`, `
 
 The clock copies the real game (see `docs/specs/02-save-autoload/implementation-notes/pause-and-game-speed.md`):
 it stands at 0 for `hold_seconds` after `LoadGame`, then the game starts it and undoes an earlier pause,
-and once more later (`late_revert_after`). `PawnCPP.bIsPlayerPaused` is stuck at true until a pause call.
+and the intro cinematic (`cinematic=(start, end)`, `currentUIMode` 1) ends later with a restart at 1x. `late_revert_after` is a restart with no sign (off by default). `PawnCPP.bIsPlayerPaused` is stuck at true until a pause call.
 
 ## What the fake does that helps you
 

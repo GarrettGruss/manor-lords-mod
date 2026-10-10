@@ -11,6 +11,10 @@
 #   pausefails pauseGame has no effect; FAILED because the clock never stops
 #   neverstarts the game never starts its clock; FAILED because the clock never started
 #   autosavefails SetAutosavePeriodOnPawn answers true but the timer stays; FAILED before the game is paused
+#   cinematic  the intro cinematic ends after the clock started; pauseGame must be called once, after the cinematic
+#   nocinematic there is no intro; pauseGame is called once, at once
+#   silentrestart the game restarts the clock with no sign (old behavior); the hold calls pauseGame twice; READY
+#   cinematicstuck the cinematic never ends; pauseGame is called after the wait limit; READY
 #
 # The fake game is the kit in harness/tests/fakegame. It copies a real behavior: for a few seconds after the load the game holds the clock at 0.
 # Then it starts the clock itself, and that undoes any pause made too early.
@@ -22,7 +26,8 @@ import sys
 import fakegame_path  # noqa: F401  (makes the fakegame package importable)
 from fakegame import FakeGame, FakeGameClock, build_manor_lords_state
 
-ALL_MODES = ["happy", "slotlate", "noslot", "missing", "pausefails", "neverstarts", "autosavefails"]
+ALL_MODES = ["happy", "slotlate", "noslot", "missing", "pausefails", "neverstarts", "autosavefails",
+             "cinematic", "nocinematic", "silentrestart", "cinematicstuck"]
 
 # What each mode must end with: (state, text that the failure reason must contain)
 EXPECTED = {
@@ -33,12 +38,19 @@ EXPECTED = {
     "pausefails": ("FAILED", "clock did not stop"),
     "neverstarts": ("FAILED", "clock never started"),
     "autosavefails": ("FAILED", "autosave timer was not pushed away"),
+    "cinematic": ("READY", None),
+    "nocinematic": ("READY", None),
+    "silentrestart": ("READY", None),
+    "cinematicstuck": ("READY", None),
 }
+# Exact number of pauseGame calls, where a mode checks it.
+PAUSE_CALLS = {"happy": 1, "cinematic": 1, "nocinematic": 1, "silentrestart": 2}
 
 # How each mode changes the fake game. Times are fake seconds.
 SLOT_LIST_DELAY_S = 4
 CLOCK_HOLD_S = 12  # longer than the ready check, as in the real game (about 8 s)
-LATE_REVERT_S = 17  # the game restarts the clock once more, shortly after our pause
+LATE_REVERT_S = 17  # the cinematic ends (or the silent restart happens) at this time after the load
+CINEMATIC_START_S = 5
 SETTLE_AFTER_READY_S = 10
 
 
@@ -50,7 +62,13 @@ def state_options(mode):
         options["wanted_slot_listed"] = False
     if mode == "missing":
         options["save_exists"] = False
-    clock = {"hold_seconds": CLOCK_HOLD_S, "late_revert_after": LATE_REVERT_S}
+    clock = {"hold_seconds": CLOCK_HOLD_S, "cinematic": (CINEMATIC_START_S, LATE_REVERT_S)}
+    if mode == "nocinematic":
+        clock["cinematic"] = None
+    if mode == "silentrestart":
+        clock.update(cinematic=None, late_revert_after=LATE_REVERT_S)
+    if mode == "cinematicstuck":
+        clock["cinematic"] = (CINEMATIC_START_S, None)
     if mode == "pausefails":
         clock["pause_works"] = False
     if mode == "neverstarts":
@@ -101,6 +119,9 @@ def check(mode, boot_script=None):
             problems.append(f"the autosave timer has only {clocks[2]:.0f} s left")
         if [h["state"] for h in boot["history"]].index("DISABLING_AUTOSAVE") > [h["state"] for h in boot["history"]].index("PAUSING"):
             problems.append("autosave was disabled after the pause")
+        wanted = PAUSE_CALLS.get(mode)
+        if wanted is not None and calls.count("pauseGame") != wanted:
+            problems.append(f"pauseGame was called {calls.count('pauseGame')} times, expected {wanted}")
         if clocks[0] != clocks[1]:
             problems.append(f"the clock moved after READY ({clocks[0]} -> {clocks[1]}): the game was not really paused")
     elif marker is not None:
