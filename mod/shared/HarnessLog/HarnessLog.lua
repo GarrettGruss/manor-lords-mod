@@ -57,6 +57,12 @@ function M.path() return path end
 -- Folder that holds mod.log. Other harness files (boot.json, ready.marker) go here too.
 function M.dir() return dir end
 
+-- Make a folder (and its parents). Harmless if it exists. Only pass a path that the harness built from checked names.
+function M.make_dir(folder)
+    if folder:find('[^%w_%-%./:\\ ~]') then error("unsafe folder path: " .. folder, 2) end
+    os.execute('mkdir "' .. folder:gsub("/", "\\") .. '" >nul 2>&1')
+end
+
 function M.close()
     if file then file:close(); file = nil end
 end

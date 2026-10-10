@@ -1,6 +1,20 @@
 # Mod-state contract and the stand-in mod (spec 10, U10)
 
-Status: built and tested with the fake game kit and fake bridges (2026-10-10). NOT verified in the real game: the real-game run of the three stand-in scenarios is pending.
+Status: redesigned on 2026-10-10 after the first real-game run. The new design is built and tested with the fake game kit (now with one Lua state for each mod) and fake bridges. NOT verified in the real game: the run of the three stand-in scenarios with the new design is pending.
+
+## Finding of 2026-10-10 (real game, run `20261010-172028-008b`)
+UE4SS gives every Lua mod its OWN Lua state. A shared module such as `HarnessCommands` is loaded once for each mod, so each mod has its own, separate registry.
+`InvasionStandIn.reset` was registered in the state of the stand-in, but `HarnessActions` (another state) answered `unknown command`. The same holds for `HarnessTelemetry.register` called from another mod.
+Lua tables and functions cannot cross states. Files and UObjects can. `ModRef:SetSharedVariable` carries only primitives.
+The first design (one registry, commands relayed by `HarnessActions`) therefore cannot work. The fake kit hid this because it ran all mods in one Lua state.
+
+New design, with the fewest moving parts: **each mod serves its own commands and metrics, in its own state, through its own folder.**
+- The first `HarnessCommands.register(...)` or `HarnessCommands.metric(...)` in a state starts a small poller (`LoopAsync`, 100 ms) in that state.
+- The poller reads `<HARNESS_RUN_DIR>/modcmd/<ModName>/<number>.json` and writes `<number>.result.json` (same file rules as `HarnessActions`: `.tmp` then rename, numbers in order, an answered number is skipped after a restart).
+- Without `HARNESS_RUN_DIR` no poller starts.
+- `HarnessActions` no longer knows about mod commands (its dotted-command branch and its `require("HarnessCommands")` are removed; `VERSION` is "5").
+- Metrics are served by the built-in command `harness.metrics` of each mod. They are no longer in `telemetry.jsonl`.
+- The fake kit has the option `FakeGame(separate_states=True)`. Each `load_mod` then runs the mod in its own Lua state (own globals, own `require`, own loaded modules, same game API and objects). The mod tests use it, so a test fails when a design relies on a shared registry.
 
 ## Why
 The Invasion Mode mod adds systems that the base game does not have: outposts (O1 to O4, S4), captives (R5) and tribute (S5).
@@ -8,10 +22,10 @@ The harness must observe and drive that state the same way for every mod. This n
 The stand-in mod `InvasionStandIn` is a toy that proves the contract. The real mod replaces it, and the scenarios run again against the real mod.
 
 ## The contract in one page
-A mod exposes two things.
+A mod exposes two things. Both are served by the mod itself, in its own Lua state.
 
 1. **Commands** (actions on mod state): `HarnessCommands.register(name, handler, schema)`.
-2. **Metrics** (values over time): `HarnessTelemetry.register(name, fn)`.
+2. **Metrics** (values that the harness reads): `HarnessCommands.metric(name, fn)`.
 
 Both use the name rule `<ModName>.<name>`.
 
@@ -39,49 +53,57 @@ end, {
 - **Result.** The result must be encodable by `HarnessJson.encode` (tables, numbers, booleans, strings). A function or userdata in the result is refused with a clear error.
 - **Time.** A handler must be quick: it blocks the game thread. A handler that takes more than 0.05 s (`os.clock`) is logged as a warning in `mod.log`. It is not stopped (Lua cannot stop it safely). Do slow work in steps, over several commands.
 - **Duplicates.** `register` raises an error for a name that exists. A mod that can hot reload calls `HarnessCommands.unregister(name)` first (the stand-in does).
-- **Introspection.** `HarnessCommands.list()` gives `{name, args}` sorted by name. The built-in command `harness.list_commands` returns it, so the harness can see what a game has.
+- **Introspection.** `HarnessCommands.list(modName)` gives `{name, args}` sorted by name, for the commands of that mod and the built-in ones. The built-in command `harness.list_commands` returns it, so the harness can see what a mod has.
+- **Own mod only.** The poller of mod X runs only `X.*` commands and `harness.*` commands. A request for `Y.cmd` in the folder of X is refused.
 
 ### Metrics
-`HarnessTelemetry.register("MyMod.gold", function() return gold end)`. The function runs on the game thread at each telemetry sample.
-Each sample in `telemetry.jsonl` holds the values under `custom`:
-```json
-{"n": 12, "clock": 1008, "date": {...}, "custom": {"MyMod.gold": 40, "InvasionStandIn.outposts_alive": 2}, "errors": []}
-```
-A metric function that raises an error is left out of the sample and `custom.<name>` appears in `errors`. Telemetry samples every 5 s of wall time by default (`HARNESS_TELEMETRY_INTERVAL_S`), also while the game is paused.
-So a metric can be up to one interval old. After a command, wait for the metric (`ctx.mod.wait_metric`). The answer of a command is always current.
+`HarnessCommands.metric("MyMod.gold", function() return gold end)`. The function returns a number, a boolean or a string.
+The harness reads all metrics of a mod with the built-in command `harness.metrics`. The answer is `{"metrics": {"MyMod.gold": 40}, "errors": {}}`.
+A metric function that raises an error, or returns another type, is left out of `metrics` and named in `errors` with the reason.
+A second call with the same name replaces the function (a reload runs the file again).
+The function runs on the game thread when the harness asks, so a value is always current. There is no history: `ctx.mod.metrics_window()` returns the reads that the scenario made itself.
+Metrics are no longer written to `telemetry.jsonl` (the telemetry mod and its own `HarnessTelemetry.register` are unchanged for metrics that belong to the telemetry sampler, for example `custom.units`).
 
 ### How a request reaches a handler
 ```
 scenario  ctx.mod.command("MyMod.add_gold", amount=5)
-  -> <run>/commands/0007.json   {"id":"0007","command":"MyMod.add_gold","args":{"amount":5}}
-  -> HarnessActions (game thread): a command name with a dot that is not built in goes to HarnessCommands.handleRequest
-  -> HarnessJson.decode(request) -> validate args -> pcall(handler, args)
-  <- <run>/commands/0007.result.json   {"id":"0007","command":"MyMod.add_gold","ok":true,"result":{"gold":40}}
+  -> <run>/modcmd/MyMod/0007.json   {"command":"MyMod.add_gold","args":{"amount":5}}       (written as .tmp, then renamed)
+  -> the poller of HarnessCommands in the Lua state of MyMod (game thread): HarnessJson.decode -> validate args -> pcall(handler, args)
+  <- <run>/modcmd/MyMod/0007.result.json   {"ok":true,"result":{"gold":40},"command":"MyMod.add_gold","id":"0007"}
 ```
-The change in `mod/HarnessActions/Scripts/main.lua` is small on purpose (another worktree edits that file): one `require`, the command-name pattern now allows a dot, and one `elseif` branch in `runCommand`. `VERSION` was not changed.
+- The folder is the mod name: the text before the first dot of the command name. The harness never creates it. The mod creates it when it registers its first command or metric, so a missing folder means the mod is not loaded.
+- Numbers: the client writes `0001`, `0002`, ... in order (UE4SS Lua cannot list a folder). A new client continues after the highest request already in the folder. After a restart the poller skips the numbers that have a result.
+- `HarnessActions` is not involved.
+
+### Hot reload
+UE4SS gives a restarted mod a new Lua state and stops the loops of the old state (`06-dev-loop-and-fixtures/implementation-notes/hot-reload.md`, observed with `HarnessLogTest`).
+We rely on that. As a second guard, each poller writes a random token to `modcmd/<ModName>/owner.txt` when it starts and stops itself when the file holds another token.
+So two pollers never serve the same folder for longer than one poll tick (100 ms). A test starts a second state for the same mod and checks that the old poller stops. In the same state, a second call to `register` starts no second poller (a per-state table).
+A reloaded mod has a fresh registry. The stand-in calls `unregister` before `register` only for the case that the file runs twice in one state.
 
 ### The Python side
 `ctx.mod` is a `runlib.modstate.ModState`:
 
 | Call | Meaning |
 |---|---|
-| `command(name, **args)` | Run a command, return its `result`. A refusal raises `ModCommandError` (`.command`, `.reason` with the message of the mod). No answer raises `CommandError` (the mod is not loaded, or the game stalls). |
+| `command(name, **args)` | Run a command, return its `result`. A refusal raises `ModCommandError` (`.command`, `.reason` with the message of the mod). No folder or no answer raises `ModDidNotAnswer` ("mod did not answer: <ModName>": the mod may not be loaded, or the game stalls). |
 | `refusal(name, **args)` | Run a command that must be refused. Returns the message, or `None` when the mod accepted it. |
-| `commands()` | The registered commands with schemas. |
-| `metric(name, default=...)` | The latest value of a metric in `telemetry.jsonl`. A missing metric raises `ModMetricError`, or gives `default`. |
-| `wait_metric(name, predicate, timeout_s=15)` | Poll until `predicate(value)` is true. Returns the value. A timeout raises `ModMetricError` with the last value. |
-| `metrics_window(names=None, start_clock=None, end_clock=None)` | One row `{clock, date, values}` per sample, for trends and rates. |
+| `commands(mod)` | The commands that the mod registered, with schemas. |
+| `metric(name, default=...)` | The current value of a metric (one `harness.metrics` command). A missing metric raises `ModMetricError`, or gives `default`. A mod that does not answer always raises. |
+| `read_metrics(mod)` | All metrics of a mod now, as `{name: value}`. |
+| `wait_metric(name, predicate, timeout_s=15)` | Poll (every 0.5 s) until `predicate(value)` is true. Returns the value. A timeout raises `ModMetricError` with the last value. |
+| `metrics_window(names=None, start_s=None, end_s=None)` | `{t, values}` for each read that the scenario made (`t` is seconds since `ctx.mod` was made). The mod keeps no history. |
 
-`CommandChannel` raises `CommandRefused` (a subclass of `CommandError`) when the mod answers `ok=false`. This is how `ModState` tells a refusal from a missing answer.
-Use `ctx.expect.eventually(label, lambda: ctx.mod.metric(name, None) == 5, 20)` for an assertion on a metric. It records a pass or a fail and does not raise.
+`ModCommandChannel` (in `runlib/commands.py`) is the client of the folders. It raises `ModDidNotAnswer` (a `CommandError`) and `CommandRefused` when the mod answers `ok=false`. This is how `ModState` tells a refusal from a missing answer.
+Use `ctx.expect.eventually(label, lambda: ctx.mod.metric(name, None) == 5, 20)` for an assertion on a metric. It records a pass or a fail and does not raise (a mod that does not answer still raises).
 
 ## Security rules
 - **No eval.** The request is decoded by `HarnessJson.decode`, a strict data parser (depth limit 6, size limit 16 KB, duplicate keys refused). No `load`, `loadstring`, `dofile`, `loadfile`, `os.execute` or `io.popen` in the new Lua files; a test scans the sources.
-- **Only registered names run.** A name must match the pattern and be in the registry. A name with other characters is not matched at all (the command pattern in HarnessActions only reads `[%w_%.]`).
+- **Only registered names run.** A name must match the pattern and be in the registry of the mod. A name with other characters is not in the registry. The mod name in the folder path is checked by the Python client and by `HarnessLog.make_dir` (the only `os.execute` is in `HarnessLog`, with a checked path).
 - **Arguments are data.** A string argument that holds Lua code is just a string (a test shows that it is never run).
 - **Handlers are trusted code** of a mod that the developer deployed. The registry limits what the harness can send. It does not sandbox the handler.
-- **Local only.** The channel is a file folder of the run. Single-player only. The commands never save the game: a mod must not register a command that calls a save function (see `CLAUDE.md`).
-- The stand-in only changes its own Lua tables. It adds no hook and no loop. It reads `TemporalComponent.daysTotal` (read only) to move its toy rules by game days.
+- **Local only.** The channel is a file folder of the run (`modcmd/`). Single-player only. The commands never save the game: a mod must not register a command that calls a save function (see `CLAUDE.md`).
+- The stand-in only changes its own Lua tables. It adds no hook and no loop (the poller of HarnessCommands is the only loop). It reads `TemporalComponent.daysTotal` (read only) to move its toy rules by game days.
 
 ## The stand-in mod `InvasionStandIn`
 A test fixture in `mod/InvasionStandIn/Scripts/main.lua`. `deploy.ps1` copies and enables every folder in `mod/`, so it is also loaded in other runs. It is inert there: it registers commands and metrics and does nothing else.
@@ -94,9 +116,9 @@ The rules are deterministic and simple (they only prove the method):
 - `evacuate`: moves families and grain from any region to a region with an alive outpost; refused when the stock is too small.
 - Captives: `capture`, `free_captives`, `captives`; ransom is 15 per captive held.
 - Tribute: `offer_tribute(kind, amount)` with kind `payment` (once from the treasury), `hostages` (a count) or `vassal` (a yearly payment, every `year_days` game days, default 365; `set_year_days` shortens the toy year for tests). `accept_tribute`, `reject_tribute`, `tribute`.
-- Game days: the mod does not run a loop. Each command and each metric read first applies the days that passed since the last call (read from `daysTotal`, at most 4000 days at once).
+- Game days: the mod runs no loop of its own (only the command poller of HarnessCommands). Each command and each metric read first applies the days that passed since the last call (read from `daysTotal`, at most 4000 days at once).
 - Commands: `found_outpost lose_outpost upgrade_outpost outpost reveal raid_target region_stock evacuate capture free_captives captives offer_tribute accept_tribute reject_tribute tribute set_year_days reset`.
-- Metrics: `InvasionStandIn.outposts_alive`, `.trade_value`, `.captives`, `.tribute_paid`, `.leaked`.
+- Metrics (`HarnessCommands.metric`, read with `harness.metrics`): `InvasionStandIn.outposts_alive`, `.trade_value`, `.captives`, `.tribute_paid`, `.leaked`.
 
 ## Scenarios (run in the real game later by the caller; each name says it is a toy)
 | Scenario | Covers | What it does |
@@ -105,18 +127,19 @@ The rules are deterministic and simple (they only prove the method):
 | `standin-captives` | R5 | Captures 5, frees 2, refuses a too large free, frees the rest; counts, freed total, ransom value, metric `captives`. |
 | `standin-tribute` | S5 | Offers and accepts a payment, a refused unaffordable payment, hostages, vassalage; 5 game days at speed 3 with a 2-day toy year; treasury and yearly payments; metric `tribute_paid`. |
 
-## What was tested (fake game kit, no game)
-- `test_fakegame_harnesscommands.py`: registration (valid, invalid names, reserved prefix, duplicates, bad schemas), validation (unknown, missing, wrong type, limits, `oneOf`), handler errors, refusals, non-JSON results, slow handler warning, strings are not run, source scan for eval, `list`, `handleRequest`, the JSON decoder, and the dispatch through the real HarnessActions mod file in the kit (request file in, result file out).
-- `test_fakegame_invasionstandin.py`: registration of commands and metrics, metrics in the telemetry file, every toy rule, reload, no engine.
-- `test_runlib_modstate.py`: `ModState` with a fake mod behind the channel and fake telemetry files, and `ctx.mod` in the scenario context.
-- `test_fakegame_standin_scenarios.py`: the three scenarios run against the real Lua files (the chain scenario, ModState, request files, HarnessActions, HarnessCommands, InvasionStandIn, HarnessTelemetry), a clock that overshoots, repeated runs, and broken rules that must fail the scenarios.
+## What was tested (fake game kit with one Lua state for each mod, no game)
+- `test_fakegame_harnesscommands.py`: registration, validation, handler errors, refusals, non-JSON results, slow handler warning, strings are not run, source scan for eval, `list`, `serve`, metrics, the JSON decoder, and the poller (request file in, result file out, order and gaps, own mod only, no poller without a run folder, reload skips answered numbers, a stale poller stops, two mods with separate registries).
+- `test_fakegame_invasionstandin.py`: the stand-in runs in its own state next to `HarnessActions` and `HarnessTelemetry`. The registry of another state does not hold the stand-in commands (this test fails with the old shared-registry design). Every toy rule, reload, no engine.
+- `test_fakegame_kit.py`: the `separate_states` option (own globals, own loaded modules, shared game API).
+- `test_runlib_modstate.py`: `ModCommandChannel` and `ModState` with a fake mod behind the request files, "mod did not answer" for a missing folder, and `ctx.mod` in the scenario context.
+- `test_fakegame_standin_scenarios.py`: the three scenarios run against the real Lua files through the request files, a clock that overshoots, repeated runs, a mod that is missing, and broken rules that must fail the scenarios.
 
 ## NOT verified (needs the real game)
-1. **One registry across mods.** The fake kit loads all mods in one Lua state, so `require("HarnessCommands")` and `require("HarnessTelemetry")` give the same table to every mod. UE4SS may give each mod its own Lua state. Then the registry that `HarnessActions` sees would not hold the stand-in commands. The first assertion of `standin-outposts` (`stand-in commands are registered`) shows this at once. The same question applies to `HarnessTelemetry.register` from another mod (spec 04 tested it only in the kit).
-   If states are separate, the fix is to let `HarnessActions` load the registrations, for example a mod calls `ModRef:SetSharedVariable` with a request, or the stand-in module is loaded by `HarnessActions` with `dofile`. Decide after the real run.
-2. That the new command pattern, `HarnessJson.decode` and the dot dispatch behave in the real Lua 5.4 of UE4SS (the kit embeds Lua 5.5).
-3. `TemporalComponent.daysTotal` read from Lua (the Python side reads it through the bridge; the Lua read is new).
-4. That a game day at speed 3 takes about 5 wall seconds with the stand-in loaded, and that the three scenarios fit their limits (120 s, 60 s, 120 s).
-5. A real hot reload of the stand-in (the kit only runs the file twice).
+1. The whole new design in UE4SS: the poller starts in the stand-in state, creates `modcmd/InvasionStandIn/`, reads and answers the files. The first assertion of `standin-outposts` shows it at once.
+2. That `LoopAsync` and `ExecuteInGameThread` work from a shared module that a mod `require`s (the module code runs in the state of the mod, but this is not checked in the real game).
+3. That the old poller of a hot-reloaded mod stops (the loop stops with the old state, as seen for `HarnessLogTest`; the token file is a second guard that the real game has not exercised).
+4. That the new command pattern, `HarnessJson.decode` and `os.execute("mkdir ...")` from `HarnessLog.make_dir` behave in the real Lua 5.4 of UE4SS (the kit embeds Lua 5.5).
+5. `TemporalComponent.daysTotal` read from Lua (the Python side reads it through the bridge; the Lua read is new).
+6. That a game day at speed 3 takes about 5 wall seconds with the stand-in loaded, and that the three scenarios fit their limits (120 s, 60 s, 120 s). A metric read now costs one command round trip (about 0.1 s) instead of a wait for the next telemetry sample.
 
 `method_verified` stays false in `criteria.json` for O1 to O4, R5, S4 and S5. The scenarios are listed in `verified_by` as planned.

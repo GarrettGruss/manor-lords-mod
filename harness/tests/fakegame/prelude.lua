@@ -375,4 +375,44 @@ function fg.press(key, modifiers)
     return ran
 end
 
+---------------------------------------------------------------------------------------------
+-- Separate mod states
+---------------------------------------------------------------------------------------------
+
+-- UE4SS gives every Lua mod its own Lua state. A state has its own globals, its own `require` and its own loaded
+-- modules (so a shared module is loaded again for each mod), but the same game API and the same game objects.
+-- This kit models a state as an environment table. Reads fall through to the real globals (the fake game API).
+-- Writes stay in the environment. A table or function of one state can still be reached from Python or from a global
+-- of the real state; the kit cannot forbid that. A mod test must pass data through files, as the real mods do.
+function fg.new_state()
+    local env = setmetatable({}, { __index = _G })
+    local loaded = {}
+    env.package = { path = package.path, loaded = loaded }
+    env._G = env
+    function env.require(name)
+        if loaded[name] ~= nil then return loaded[name] end
+        local tried = {}
+        for template in string.gmatch(env.package.path, "[^;]+") do
+            local file = template:gsub("%?", (name:gsub("%.", "/")))
+            local chunk = loadfile(file, "t", env)
+            if chunk then
+                local result = chunk(name, file)
+                if result == nil then result = true end
+                loaded[name] = result
+                return result
+            end
+            tried[#tried + 1] = file
+        end
+        error("module '" .. name .. "' not found in this state: " .. table.concat(tried, ", "), 2)
+    end
+    return env
+end
+
+-- Run a chunk of source text in a state.
+function fg.run_in_state(env, source, chunk_name)
+    local chunk, err = load(source, chunk_name, "t", env)
+    if not chunk then error(err, 0) end
+    return chunk()
+end
+
 return fg

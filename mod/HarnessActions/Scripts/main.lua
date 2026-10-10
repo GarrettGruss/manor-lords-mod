@@ -14,8 +14,6 @@
 --   {"id":"0005","command":"datatable_info"}       row count and names of the item table (read only)
 --   {"id":"0006","command":"datatable_read","row":"name","field":"Value"}              one number field of one row
 --   {"id":"0007","command":"datatable_write","row":"name","field":"Value","value":5}  change one number field
---   {"id":"0008","command":"ModName.command","args":{...}}   a command that another mod registered in HarnessCommands
---   {"id":"0009","command":"harness.list_commands"}           the registered commands and their argument schemas
 --   Raid and unit commands (spec 10, see mod/shared/HarnessRaids):
 --   {"command":"raid_state"}                                   read the raid timer, the setup and the raid id lists
 --   {"command":"units_census","sample":10}                     counts of units by side, role, state, region
@@ -24,17 +22,17 @@
 --   {"command":"kill_units","side":"bandit","count":5}         SMUnit:just_die on live units of one side
 --      kill_units also takes "with_loot":1 (only units that carry loot) and "actors":1 (report new actor classes)
 --   {"command":"set_unit_loot","side":"bandit","count":3,"amount":5}   write ItemsLooted
--- Result: {"id","command","ok","error",...fields of the command}. A HarnessCommands command answers {"ok","result"}.
+-- Result: {"id","command","ok","error",...fields of the command}.
+-- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
 
 local log = require("HarnessLog")
 local json = require("HarnessJson")
 local autosave = require("HarnessAutosave")
 local datatable = require("HarnessDataTable")
-local commands = require("HarnessCommands")
 local raids = require("HarnessRaids")
 
-local VERSION = "4"
+local VERSION = "5"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -184,8 +182,6 @@ local function runCommand(number, raw)
     local handler = request.command and COMMANDS[request.command]
     if not request.id or request.id ~= idOf(number) then
         result = { ok = false, error = "request id must be " .. idOf(number) }
-    elseif not handler and commands.isName(request.command) then
-        result = commands.handleRequest(request.command, raw)
     elseif not handler then
         result = { ok = false, error = "unknown command: " .. tostring(request.command) }
     else

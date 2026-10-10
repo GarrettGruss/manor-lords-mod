@@ -21,13 +21,17 @@ class FakeGame:
     strict_threads: fail when a game object is touched outside the game thread.
     array_wrap: TArray elements come as wrappers that need :get().
     fstring_mode: text properties come as FString-like values that need :ToString().
+    separate_states: every `load_mod` runs the mod in its own Lua state, as UE4SS does. A shared module (HarnessCommands)
+        is then loaded again for each mod, and the registries are separate. Loading the same mod again makes a fresh state.
     """
 
     def __init__(self, env=None, strict_threads=False, array_wrap=False, fstring_mode=True,
-                 repo_root=REPO_ROOT):
+                 repo_root=REPO_ROOT, separate_states=False):
         self.repo_root = Path(repo_root)
         self._env = dict(env or {})
         self._options = (strict_threads, array_wrap, fstring_mode)
+        self.separate_states = separate_states
+        self._states = {}
         self._saved_env = {}
         self._tickers = []
         self.run_dir = None
@@ -158,15 +162,29 @@ class FakeGame:
 
     # -- running a mod and reading its output ---------------------------------------------
 
-    def exec(self, code):
-        """Run Lua code in the game state. Returns what the chunk returns."""
-        return self.lua.execute(code)
+    def state(self, name, fresh=False):
+        """The Lua state of a mod (a name), or None when the game runs all mods in one state. `fresh` makes a new state."""
+        if not self.separate_states:
+            return None
+        if fresh or name not in self._states:
+            self._states[name] = self.fg.new_state()
+        return self._states[name]
+
+    def exec(self, code, state=None):
+        """Run Lua code in the game state, or in the state of the mod `state`. Returns what the chunk returns."""
+        env = self.state(state) if state else None
+        if env is None:
+            return self.lua.execute(code)
+        return self.fg.run_in_state(env, code, "=exec")
 
     def load_mod(self, name):
-        return self.load_script(self.repo_root / "mod" / name / "Scripts" / "main.lua")
+        return self.load_script(self.repo_root / "mod" / name / "Scripts" / "main.lua", state=name, fresh=True)
 
-    def load_script(self, path):
+    def load_script(self, path, state=None, fresh=False):
         source = Path(path).read_text(encoding="utf-8")
+        env = self.state(state, fresh) if state else None
+        if env is not None:
+            return self.fg.run_in_state(env, source, "@" + Path(path).as_posix())
         run = self.lua.eval("function(src, name) local f, e = load(src, name); if not f then error(e, 0) end; return f() end")
         return run(source, "@" + Path(path).as_posix())
 

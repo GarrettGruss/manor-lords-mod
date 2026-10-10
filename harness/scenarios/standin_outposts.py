@@ -21,12 +21,12 @@ def command(ctx, name, **args):
 
 
 def metric_is(ctx, label, name, expected):
-    """The telemetry sample is up to 5 s old, so wait for it."""
+    """A metric is read from the mod now. The wait covers the toy days that pass at game speed."""
     ctx.expect.eventually(label, lambda: ctx.mod.metric(PREFIX + name, None) == expected, TELEMETRY_WAIT_S)
 
 
 def check_commands_are_listed(ctx):
-    names = {item["name"] for item in ctx.mod.commands()}
+    names = {item["name"] for item in ctx.mod.commands("InvasionStandIn")}
     wanted = {PREFIX + name for name in ("found_outpost", "lose_outpost", "reveal", "evacuate", "outpost")}
     ctx.expect.equals("stand-in commands are registered", sorted(wanted - names), [])
 

@@ -37,7 +37,7 @@ Steps: open `FakeGame`, build a world, `load_mod`, move the fake time, press key
 
 | Call | Use |
 |---|---|
-| `FakeGame(env, strict_threads, array_wrap, fstring_mode)` | Context manager. `env` value `None` removes a variable. |
+| `FakeGame(env, strict_threads, array_wrap, fstring_mode, separate_states)` | Context manager. `env` value `None` removes a variable. `separate_states=True`: see below. |
 | `game.obj("Class", **props)` | Fake UObject. Found by `FindFirstOf("Class")` while valid. |
 | `game.method(obj, "Name", fn)` | `obj:Name(...)` calls `fn(obj, ...)`. |
 | `game.array(items, wrap=None, visible=None)` | TArray: `GetArrayNum`, 1-based index, `ForEach`. `visible()` makes it fill over time. |
@@ -46,7 +46,7 @@ Steps: open `FakeGame`, build a world, `load_mod`, move the fake time, press key
 | `game.finder("Class", fn)`, `game.static(path, obj)` | Control `FindFirstOf` and `StaticFindObject`. |
 | `game.tick(s)`, `game.advance(seconds)`, `game.run_until_idle()` | Move fake time (default step 0.5 s). |
 | `game.press("F8", "CONTROL")`, `game.fire_hook(path, ...)`, `game.spawn(obj)` | Key binds, hooks, `NotifyOnNewObject`. |
-| `game.load_mod(name)`, `game.exec(lua)` | Run a mod or Lua code. |
+| `game.load_mod(name)`, `game.exec(lua, state=None)` | Run a mod or Lua code. With `separate_states`, `state="ModName"` runs the code in the Lua state of that mod. |
 | `game.files()`, `read_json`, `read_jsonl`, `read_text`, `log_lines()`, `printed()` | Read the output. |
 | `FakeGameClock(...)` and `build_manor_lords_state(game, ...)` | Game clock with pause and speed, and a Manor Lords state. |
 
@@ -60,6 +60,14 @@ Options: `wanted_slot_listed`, `save_exists`, `menu_delay`, `slot_list_delay`, `
 The clock copies the real game (see `docs/specs/02-save-autoload/implementation-notes/pause-and-game-speed.md`):
 it stands at 0 for `hold_seconds` after `LoadGame`, then the game starts it and undoes an earlier pause,
 and the intro cinematic (`cinematic=(start, end)`, `currentUIMode` 1) ends later with a restart at 1x. `late_revert_after` is a restart with no sign (off by default). `PawnCPP.bIsPlayerPaused` is stuck at true until a pause call.
+
+## One Lua state for each mod (`separate_states=True`)
+
+UE4SS gives every Lua mod its own Lua state (found in the real game on 2026-10-10). A shared module such as `HarnessCommands` is loaded again for each mod,
+and tables or functions cannot cross between mods. By default the kit runs all mods in one state, which hides this.
+With `separate_states=True`, each `load_mod(name)` makes a fresh state for that mod (a second `load_mod` of the same name is like a hot reload).
+A state has its own globals, its own `require` and its own loaded modules, but it shares the game API and the fake objects.
+Test mod code that talks to another mod through files, as the real mods must. Limit: the kit cannot stop Python from reaching into a state.
 
 ## What the fake does that helps you
 

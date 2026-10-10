@@ -12,7 +12,7 @@ from typing import Any
 
 from .actions import Actions
 from .bridge_client import Bridge
-from .commands import CommandChannel
+from .commands import CommandChannel, ModCommandChannel
 from .expectations import Expectations
 from . import osinput
 from .game import ensure_game_alive, find_game_processes
@@ -59,7 +59,8 @@ class ScenarioContext:
         self.commands = CommandChannel(self.run_dir / "commands", check_alive=self.ensure_alive)
         self.actions = Actions(bridge, self.expect, self.notes, self.log.info, self.ensure_alive, self.commands,
                                mouse_placer=self._place_with_mouse)
-        self.mod = ModState(self)  # commands and metrics of mods (spec 10, U10)
+        self.mod_commands = ModCommandChannel(self.run_dir / "modcmd", check_alive=self.ensure_alive)
+        self.mod = ModState(self)  # commands and metrics of mods, served by each mod itself (spec 10, U10)
 
     # ---- real OS mouse (used by the action place_building) ----
     def _place_with_mouse(self, type_id: int, fx: float, fy: float) -> None:
