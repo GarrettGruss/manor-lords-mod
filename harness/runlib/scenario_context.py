@@ -8,8 +8,12 @@ from pathlib import Path
 from typing import Any
 
 from .bridge_client import Bridge
+from .expectations import Expectations
 from .game import ensure_game_alive
 from .runner import PhaseContext
+from .snapshot import snapshot
+from .telemetry import TelemetryReader
+from .timectl import TimeControl
 
 
 class ScenarioLog:
@@ -32,8 +36,10 @@ class ScenarioContext:
         self.run = phase.run
         self.run_dir = phase.run.path
         self.log = ScenarioLog(self.run_dir / "scenario.log")
-        self._asserts: list[dict] = []
         self._screenshot_fn = screenshot_fn
+        self.expect = Expectations(self.log.info)
+        self.time = TimeControl(bridge, check_alive=self.ensure_alive, log=self.log.info)
+        self.telemetry = TelemetryReader(self.run_dir)
 
     # ---- game helpers ----
     def ensure_alive(self, where: str = "scenario") -> None:
@@ -67,17 +73,17 @@ class ScenarioContext:
         if self._screenshot_fn:
             self._screenshot_fn(self.phase, name)
 
+    def snapshot(self) -> dict:
+        self.ensure_alive()
+        return snapshot(self.bridge)
+
     # ---- assertions ----
     def check(self, name: str, ok: bool, value: Any = None, range: list | None = None) -> bool:
-        entry: dict = {"name": name, "ok": bool(ok), "value": value}
-        if range is not None:
-            entry["range"] = range
-        self._asserts.append(entry)
-        self.log.info(f"assert {'ok' if ok else 'FAILED'}: {name} value={value} range={range}")
-        return bool(ok)
+        """A plain assertion. Prefer the typed ones in `ctx.expect`."""
+        return self.expect.record(name, ok, value, f"{range[0]}..{range[1]}" if range else "")
 
     def check_range(self, name: str, value: float, low: float, high: float) -> bool:
-        return self.check(name, low <= value <= high, value, [low, high])
+        return self.expect.in_range(name, value, low, high)
 
     def result(self) -> dict:
-        return {"passed": all(item["ok"] for item in self._asserts), "asserts": list(self._asserts)}
+        return self.expect.result()

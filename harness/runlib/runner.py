@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Callable
 
 from .runfolder import RunFolder
-from .summary import PhaseResult, Summary, decide_verdict, write_summary
+from .summary import PhaseResult, Summary, condense_environment, decide_verdict, write_summary
 
 
 class PhaseFailed(Exception):
@@ -120,7 +120,7 @@ def _build_summary(run: RunFolder, config: dict, results: list[PhaseResult], sta
         scenario_result=state["scenario_result"],
         crash=state["crash"],
         artifacts=state["artifacts"],
-        environment=config.get("environment", {}),
+        environment=condense_environment(config.get("environment", {})),
         notes=_build_notes(config, results, state),
     )
 

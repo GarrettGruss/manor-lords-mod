@@ -92,12 +92,17 @@ def stop_processes(processes: list[psutil.Process], wait_s: float = STOP_WAIT_S)
         raise RuntimeError(f"game process still running after terminate: PID {[p.pid for p in alive]}")
 
 
-def build_game_environment(run_dir: Path, test_save: str, base_env: dict | None = None) -> dict:
+DEFAULT_TELEMETRY_INTERVAL_S = 5.0
+
+
+def build_game_environment(run_dir: Path, test_save: str, base_env: dict | None = None,
+                           telemetry_interval_s: float = DEFAULT_TELEMETRY_INTERVAL_S) -> dict:
     """The environment for the game process. Each run has its own HARNESS_RUN_DIR."""
     env = dict(os.environ if base_env is None else base_env)
     env["HARNESS_RUN_DIR"] = str(Path(run_dir).resolve())
     env["HARNESS_AUTOBOOT"] = "1"
     env["HARNESS_TEST_SAVE"] = test_save
+    env["HARNESS_TELEMETRY_INTERVAL_S"] = f"{telemetry_interval_s:g}"  # 0 turns telemetry off
     return env
 
 

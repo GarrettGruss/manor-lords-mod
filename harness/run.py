@@ -18,13 +18,14 @@ from runlib.runfolder import (
     create_run_folder,
     write_config,
 )
+from runlib.game import DEFAULT_TELEMETRY_INTERVAL_S
 from runlib.phases import build_real_phases
 from runlib.runner import Phase, execute_run
 from runlib.scenario import list_scenarios
 from runlib.summary import EXIT_CODES
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_MAX_RUNS = 20
+DEFAULT_MAX_RUNS = 100  # a safety rail for unattended loops. Delete runs/.iterations to reset the counter.
 TEST_SAVE = "saveGame_0"
 
 
@@ -35,6 +36,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--list-scenarios", action="store_true", help="print the scenarios and their time limits, then exit")
     parser.add_argument("--include-test-scenarios", action="store_true", help="with --list-scenarios: also list the hidden selftest scenarios")
     parser.add_argument("--keep-open", action="store_true", help="do not stop the game at the end")
+    parser.add_argument("--telemetry-interval", type=float, default=DEFAULT_TELEMETRY_INTERVAL_S,
+                        help="seconds between telemetry samples in the game (0 = off, default %(default)s)")
     parser.add_argument("--run-id", help="use this run id instead of a generated one")
     parser.add_argument("--runs-root", type=Path, default=REPO_ROOT / "runs")
     parser.add_argument("--max-runs", type=int, default=DEFAULT_MAX_RUNS, help="cap on runs in this runs folder")
@@ -50,7 +53,8 @@ def fail_before_run(message: str) -> int:
 def build_phases(args: argparse.Namespace) -> list[Phase]:
     if args.fake:
         return build_fake_phases(args.fake)
-    return build_real_phases(args.scenario, keep_open=args.keep_open, test_save=TEST_SAVE)
+    return build_real_phases(args.scenario, keep_open=args.keep_open, test_save=TEST_SAVE,
+                             telemetry_interval_s=args.telemetry_interval)
 
 
 def build_config(args: argparse.Namespace, run, phases: list[Phase], lock) -> dict:
@@ -60,6 +64,7 @@ def build_config(args: argparse.Namespace, run, phases: list[Phase], lock) -> di
         "fake_outcome": args.fake,
         "test_save": None if args.fake else TEST_SAVE,
         "keep_open": args.keep_open,
+        "telemetry_interval_s": None if args.fake else args.telemetry_interval,
         "limits_s": {phase.name: phase.time_limit_s for phase in phases},
         "max_runs": args.max_runs,
         "environment": {},

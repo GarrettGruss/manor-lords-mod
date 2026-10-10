@@ -38,6 +38,32 @@ A scenario is a module in `harness/scenarios/` with `LIMIT_S` (hard time limit, 
 A scenario that is over its limit gives the verdict `timeout`.
 Scenarios: `noop`, `smoke`. Test scenarios (`selftest-fail`, `selftest-timeout`) show with `--list-scenarios --include-test-scenarios`.
 
+### Time control (`ctx.time`)
+`set_speed(n)`, `run_game_seconds(n, speed)`, `run_game_days(n, speed)` and `pause()`. Speed 1, 2, 3 give clock rates 1, 4 and 8. One game day is 40 game seconds.
+Each run function unpauses, sets the speed, waits, pauses, and checks that the clock stands still for 3 s. It returns
+`{clock_start, clock_end, wall_s, paused_at_end, speed}` (days also have `days_start`, `days_end`, `day_start`, `day_end`).
+It raises `TimeControlError` on a timeout, with a pause first. Days are counted with `daysTotal`, which does not wrap at the year end (365 days).
+`absolute_day(date)` gives a day number for date asserts. A game pop-up (for example "Hunger!") pauses the game and gives a `TimeControlError`.
+`set_speed` takes about 3 s, because it waits to see that the speed holds. Numbers: spec 04 `implementation-notes/time-measurements.md`.
+
+### Telemetry
+The mod `HarnessTelemetry` writes one JSON line every N wall seconds to `<run>/telemetry.jsonl` (clock, date, player, 7 regions, `errors`).
+N is `--telemetry-interval` of `run.py` (default 5, 0 = off, saved in `config.json`). In a scenario: `ctx.telemetry.read()` and
+`ctx.telemetry.window(start_clock, end_clock)`. `ctx.snapshot()` reads the same fields now through the bridge (a failed field is null and listed in `errors`).
+Samples use wall time, so a short run at speed 3 has few samples. Other mods can add a metric with `HarnessTelemetry.register(name, fn)`.
+
+### Assertions (`ctx.expect`)
+`in_range`, `at_least`, `at_most`, `changed(name, before, after, min_delta, max_delta)`, `equals` and `eventually(name, fn, timeout_s)`.
+Each adds `{name, ok, value, rule}`. Use ranges for simulation numbers. A failed assertion gives the verdict `fail`. `ctx.check` and `ctx.check_range` still work.
+
+### Scenarios for spec 04
+`time-advance` (2 game days at speed 3, about 54 s a run) and `telemetry-sanity` (40 game seconds at speed 1, then checks on the samples and a snapshot, about 89 s).
+Each module has `DESCRIPTION` and `LIMIT_S`.
+
+### summary.json size
+`summary.json` leaves out empty fields, lists good phases as name and seconds only, and has a short `environment` (game build, save, `mods_hash`, git commit).
+The full data (all mod hashes, limits, telemetry interval) is in `config.json`.
+
 ### Run folder
 `summary.json`, `config.json`, `boot.json`, `ready.marker`, `mod.log`, `scenario.json`, `scenario.log`, `UE4SS.log`,
 `bridge/`, `screenshots/start.png` and `end.png`, and `crash/` (new UE crash reports and UE4SS dumps).

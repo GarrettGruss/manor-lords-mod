@@ -46,16 +46,30 @@ class Bridge:
     def player_path(self) -> str:
         return object_path(self._result("get", ref=self.engine_path(), name="playerRef"))
 
-    def read_clock_value(self) -> float:
-        return self._result("call", ref=self.engine_path(), function="getGameTimeAdjusted", args=[])
+    def read_clock_value(self, engine: str | None = None) -> float:
+        """Read the game clock. Pass `engine` (from engine_path) to save one round trip in a fast loop."""
+        return self._result("call", ref=engine or self.engine_path(), function="getGameTimeAdjusted", args=[])
+
+    def call_function(self, ref: str, function: str, args: list | None = None) -> Any:
+        return self._result("call", ref=ref, function=function, args=args or [])
+
+    def read_property(self, ref: str, name: str) -> Any:
+        return self._result("get", ref=ref, name=name)
+
+    def calendar_path(self, engine: str | None = None) -> str:
+        return object_path(self.read_property(engine or self.engine_path(), "TemporalComponent"))
+
+    def read_game_speed(self) -> float:
+        """The game speed factor: 0 paused, 1, 4 or 8 (see spec 04 time-measurements)."""
+        return self.read_property(self.engine_path(), "gameSpeed")
 
     def read_calendar(self) -> dict:
         calendar_path = object_path(self._result("get", ref=self.engine_path(), name="TemporalComponent"))
         names = {"day": "day", "month": "month", "year": "Year"}
         return {key: self._result("get", ref=calendar_path, name=name) for key, name in names.items()}
 
-    def call_on_player(self, function: str) -> None:
-        self._result("call", ref=self.player_path(), function=function, args=[])
+    def call_on_player(self, function: str, args: list | None = None) -> None:
+        self._result("call", ref=self.player_path(), function=function, args=args or [])
 
     def measure_clock(self, wait_s: float) -> dict:
         first = self.read_clock_value()

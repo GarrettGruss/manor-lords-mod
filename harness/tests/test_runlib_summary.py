@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 import runlib_path  # noqa: F401
-from runlib.summary import EXIT_CODES, PhaseResult, Summary, decide_verdict, write_summary
+from runlib.summary import EXIT_CODES, PhaseResult, Summary, compact, condense_environment, decide_verdict, write_summary
 
 PASSED = {"passed": True}
 
@@ -92,8 +92,8 @@ class VerdictTest(unittest.TestCase):
 
 class WriteSummaryTest(unittest.TestCase):
     def make_summary(self, detail=None):
-        phases = [PhaseResult("boot", "ok", 1, detail)]
-        return Summary("id", "pass", None, "smoke", "2026-10-09T23:30:00Z", 1.0, phases)
+        phases = [PhaseResult("boot", "failed", 1, detail)]
+        return Summary("id", "fail", None, "smoke", "2026-10-09T23:30:00Z", 1.0, phases)
 
     def test_atomic_write_leaves_no_tmp(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -115,7 +115,47 @@ class WriteSummaryTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "summary.json"
             write_summary(path, self.make_summary("short"))
-            self.assertEqual(json.loads(path.read_text())["notes"], [])
+            self.assertNotIn("notes", json.loads(path.read_text()))
+
+    def test_empty_and_default_fields_are_dropped(self):
+        summary = Summary("id", "pass", None, "smoke", "2026-10-09T23:30:00Z", 1.0,
+                          [PhaseResult("boot", "ok", 31.2, "READY after 31 s")], boot={"state": "READY", "reason": None})
+        data = compact(summary.to_dict())
+        self.assertEqual(data["phases"], [{"name": "boot", "seconds": 31.2}])
+        self.assertEqual(data["boot"], {"state": "READY"})
+        for key in ("reason", "crash", "notes", "artifacts", "environment", "scenario_result"):
+            self.assertNotIn(key, data)
+
+    def test_failed_phase_keeps_status_and_detail(self):
+        data = compact(Summary("id", "harness_error", "r", "s", "t", 1.0, [PhaseResult("deploy", "failed", 2, "bad")]).to_dict())
+        self.assertEqual(data["phases"], [{"name": "deploy", "status": "failed", "seconds": 2, "detail": "bad"}])
+
+    def test_environment_is_short_and_mod_hash_is_one_value(self):
+        full = {"game_build": "1", "test_save": "saveGame_0", "test_save_sha256": "a" * 64, "python": "3.12",
+                "mods": {"A": "x" * 64, "B": "y" * 64}, "harness_git": {"commit": "c" * 40, "dirty": True}}
+        short = condense_environment(full)
+        self.assertEqual(set(short), {"game_build", "test_save", "test_save_sha256", "mods_hash", "git"})
+        self.assertEqual(len(short["mods_hash"]), 12)
+        self.assertEqual(short["git"], "cccccccccc+dirty")
+        changed = dict(full, mods={"A": "x" * 64, "B": "z" * 64})
+        self.assertNotEqual(condense_environment(changed)["mods_hash"], short["mods_hash"])
+
+    def test_ten_asserts_stay_under_4kb(self):
+        asserts = [{"name": f"telemetry sample spacing is in range {i}", "ok": True, "value": 5.123456, "rule": "3..7"} for i in range(10)]
+        phases = [PhaseResult(n, "ok", 12.34) for n in ("preflight", "deploy", "launch", "boot", "scenario", "collect", "teardown")]
+        env = {"game_build": "12345678", "test_save": "saveGame_0", "test_save_sha256": "a" * 64, "mods": {"A": "b"},
+               "harness_git": {"commit": "c" * 40, "dirty": True}}
+        summary = Summary("20261010-123456-abcd", "pass", None, "telemetry-sanity", "2026-10-10T12:34:56Z", 99.0, phases,
+                          boot={"state": "READY", "seconds": 31.0, "pause_calls": 2},
+                          scenario_result={"passed": True, "asserts": asserts},
+                          artifacts={"logs": ["UE4SS.log", "mod.log", "scenario.log"], "screenshots": ["screenshots/end.png", "screenshots/start.png"],
+                                     "telemetry": "telemetry.jsonl"},
+                          environment=condense_environment(env))
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "summary.json"
+            write_summary(path, summary)
+            self.assertLess(path.stat().st_size, 4096)
+            self.assertNotIn("notes", json.loads(path.read_text()))
 
 
 if __name__ == "__main__":
