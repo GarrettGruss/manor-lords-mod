@@ -16,6 +16,7 @@ from .commands import CommandChannel
 from .expectations import Expectations
 from . import osinput
 from .game import ensure_game_alive, find_game_processes
+from .modstate import ModState
 from .runfolder import atomic_write_text
 from .runner import PhaseContext
 from .snapshot import snapshot
@@ -55,9 +56,10 @@ class ScenarioContext:
         self.telemetry = TelemetryReader(self.run_dir)
         self.notes: list[str] = []
         self._metrics: dict[str, float] = {}
-        commands = CommandChannel(self.run_dir / "commands", check_alive=self.ensure_alive)
-        self.actions = Actions(bridge, self.expect, self.notes, self.log.info, self.ensure_alive, commands,
+        self.commands = CommandChannel(self.run_dir / "commands", check_alive=self.ensure_alive)
+        self.actions = Actions(bridge, self.expect, self.notes, self.log.info, self.ensure_alive, self.commands,
                                mouse_placer=self._place_with_mouse)
+        self.mod = ModState(self)  # commands and metrics of mods (spec 10, U10)
 
     # ---- real OS mouse (used by the action place_building) ----
     def _place_with_mouse(self, type_id: int, fx: float, fy: float) -> None:

@@ -127,6 +127,7 @@ Each spike answers one "can the harness do this" question on the base game, with
 3. Build U1 to U6, U9 and U10 in order of what the spikes show works. Unit tests with fake bridges. Each gets a real scenario on a stand-in.
 4. Reference scenarios (stand-ins on the base game) for every A and P criterion that has a method, each tagged with `COVERS`.
    - U4 built (2026-10-10): `run.py --pak/--env`, suite `variants`, `suitelib/stats.py`, the A/B report and the `expect` rule, `ctx.metric`. Unit tested with a seeded stand-in; NOT verified: a real A/B on the game and a real pak in a run. Notes: `implementation-notes/ab-statistics.md`.
+   - U10 built (2026-10-10): the mod-state contract (`HarnessCommands` registry in `mod/shared`, built-in command `harness.list_commands`, metric naming `<ModName>.<metric>` under `custom` in telemetry), `ctx.mod` (`runlib/modstate.py`), the stand-in mod `InvasionStandIn` and the scenarios `standin-outposts`, `standin-captives`, `standin-tribute`. Unit tested in the fake game kit and with fake bridges. **PENDING: the real-game run of the three stand-in scenarios.** Until it passes, `method_verified` stays false for O1 to O4, R5, S4 and S5 (they are listed as `planned` in `verified_by`). Open risk: UE4SS may give each mod its own Lua state, so the registry may not be shared between mods. Notes: `implementation-notes/mod-state-contract.md`.
 5. Run the coverage tool. Close gaps or move criteria to H with a written reason. Record the final number.
 6. When the mod exists: run the same scenarios against it (a later spec).
 
