@@ -16,6 +16,7 @@ from pathlib import Path
 from . import fixtures
 from .actions import ActionNotPossible
 from .environment import gather_environment, hash_mods
+from .pak_phases import install_paks, remove_paks_phase
 from .game import (
     DEFAULT_TELEMETRY_INTERVAL_S,
     DEFAULT_TEST_SAVE,
@@ -77,7 +78,8 @@ def _prepare_appdata(install: GameInstall, ctx: PhaseContext, fixture: str) -> N
     ctx.config.setdefault("environment", {})["fixture"] = result.as_dict()
 
 
-def _preflight(install: GameInstall, test_save: str, fixture: str = fixtures.DEFAULT_FIXTURE):
+def _preflight(install: GameInstall, test_save: str, fixture: str = fixtures.DEFAULT_FIXTURE,
+               pak_names: list[str] | None = None, pak_work_dir: Path | None = None):
     def run(ctx: PhaseContext) -> str | None:
         ctx.state["run_started_epoch"] = time.time()
         if not is_steam_running():
@@ -98,6 +100,8 @@ def _preflight(install: GameInstall, test_save: str, fixture: str = fixtures.DEF
             gather_environment(private, REPO_ROOT, ctx.run.path, test_save)
         )
         write_config(ctx.run, ctx.config)
+        if pak_names:
+            install_paks(install, ctx, pak_names, pak_work_dir)
         return None
 
     return run
@@ -131,10 +135,10 @@ def _deploy(install: GameInstall):
 
 # ---- launch ----
 
-def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float):
+def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float, extra_env: dict[str, str] | None = None):
     def run(ctx: PhaseContext) -> str | None:
         env = build_game_environment(ctx.run.path, test_save, telemetry_interval_s=telemetry_interval_s,
-                                     appdata_dir=ctx.state.get("appdata_dir"))
+                                     appdata_dir=ctx.state.get("appdata_dir"), extra_env=extra_env)
         # The working folder must be Win64, or UE4SS does not find its files.
         popen = subprocess.Popen(
             [str(install.exe)], cwd=install.win64, env=env,
@@ -394,16 +398,21 @@ def _teardown(install: GameInstall, keep_open: bool):
 def build_real_phases(
     scenario_name: str, keep_open: bool = False, install: GameInstall | None = None, test_save: str = DEFAULT_TEST_SAVE,
     telemetry_interval_s: float = DEFAULT_TELEMETRY_INTERVAL_S, fixture: str | None = None,
+    pak_names: list[str] | None = None, pak_work_dir: Path | None = None, extra_env: dict[str, str] | None = None,
 ) -> list[Phase]:
     get_scenario(scenario_name)  # fail before any game starts if the name is wrong
     install = install or GameInstall()
     fixture = fixtures.check_name(fixture or fixtures.DEFAULT_FIXTURE)  # a bad name fails before any game starts
-    return [
-        Phase("preflight", _preflight(install, test_save, fixture), 60),
+    phases = [
+        Phase("preflight", _preflight(install, test_save, fixture, pak_names, pak_work_dir), 60),
         Phase("deploy", _deploy(install), 120),
-        Phase("launch", _launch(install, test_save, telemetry_interval_s), 60),
+        Phase("launch", _launch(install, test_save, telemetry_interval_s, extra_env), 60),
         Phase("boot", _boot, 240),
         Phase("scenario", _scenario(install, scenario_name), get_limit_s(scenario_name)),
         Phase("collect", _collect(install), 60, always_run=True),
         Phase("teardown", _teardown(install, keep_open), 30, always_run=True),
     ]
+    if pak_names:
+        # After teardown: the game is stopped by then, so it no longer holds the pak file.
+        phases.append(remove_paks_phase(install))
+    return phases

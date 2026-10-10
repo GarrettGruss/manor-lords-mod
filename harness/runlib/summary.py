@@ -128,6 +128,9 @@ def condense_environment(environment: dict) -> dict:
         # One hash over all mods: it changes when any deployed mod changes.
         joined = json.dumps(environment["mods"], sort_keys=True).encode("utf-8")
         short["mods_hash"] = hashlib.sha256(joined).hexdigest()[:12]
+    for key in ("paks", "env_keys"):
+        if environment.get(key):
+            short[key] = environment[key]
     git = environment.get("harness_git")
     if git:
         short["git"] = git["commit"][:10] + ("+dirty" if git.get("dirty") else "")
