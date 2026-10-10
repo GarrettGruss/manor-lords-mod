@@ -62,3 +62,28 @@ Same game build. A new game session, same map. The pawn path changes in each ses
   The call still fails with a clear error and no crash. A better message is a possible later patch. It is not needed now.
 - `reload` keeps the game running and the bridge answers again within about 2 seconds.
 - The pawn path (`MyPawnCPP_BP3_C_<number>`) changes between sessions. Never store it. Look it up with `world` or `objects`.
+
+## Run 2, remaining tests
+
+| Test | Result | Notes |
+|---|---|---|
+| 3. Write a property | pass | Read `RTSMultiEngineCPP.gameSpeed` = 1. Set it to 2. The result showed `previous 1, current 2`. A read-back gave 2. `PawnCPP:getGameSpeed` also returned 2, so the change reached the pawn. Then I set it back to 1 and checked: 1 and 1. The restore ran in a `finally` block. |
+| 6. Kill the game mid-request | pass | Sent `types` (a slow request that walks all objects). Killed the game 0.25 s later with `taskkill /F`. |
+
+### Test 6 details
+- The in-flight request returned an error after 15.08 s, which is the client timeout. The message was:
+  `the game crashed during this call (the process is gone). in flight: batch[1] types. no crash report was written; the process may have been closed instead.`
+  The message names the request and says why. It does not hang.
+- A new request (`hello`) after the kill also failed after 15.08 s: `request never picked up: the game is not running.`
+- Only `lastop.log` was left in `ue4ss\bridge\`. The client removed its own `request.json`.
+- The server could not tell a forced exit from a crash. It said "crashed or closed" in the same message. The harness must check the process state itself.
+
+### Findings
+- The client waits the full timeout (15 s) even when the game process is already gone. The harness should check that the process is alive before it sends a request, and use short timeouts.
+- After a kill, the next game launch still has to clear `ue4ss\bridge\`. A leftover `request.json` from a dead game could run in the new game. The server treats a request older than 10 s as stale, but the launcher must also wipe the folder (spec 03).
+- The `class_name` field is required for `objects`. A wrong field name gives a clean error here, not a crash.
+
+## Status of the six smoke tests
+All six pass: hello, inspect, read/write, call a function, reload, kill mid-request.
+Not yet checked: that Claude Code loads `.mcp.json` and lists the MCP tools, and the struct-argument case from the open questions.
+The game is closed now (killed by test 6).
