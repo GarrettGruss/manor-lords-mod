@@ -209,6 +209,45 @@ class ClockTests(KitCase):
         self.assertLess(state.clock.time - before, 3)
 
 
+class SeparateStateTests(KitCase):
+    """UE4SS gives every Lua mod its own Lua state. The option separate_states models this."""
+
+    def load_registry_of(self, game, mod):
+        game.exec('REGISTRY = require("HarnessCommands")', state=mod)
+        return game.exec("return tostring(REGISTRY)", state=mod)
+
+    def test_one_state_shares_a_module_between_mods(self):
+        game = self.make_game()
+        game.exec('require("HarnessCommands").register("A.x", function() return 1 end, {})')
+        names = game.exec('local n = {}; for _, c in ipairs(require("HarnessCommands").list()) do n[#n + 1] = c.name end; return table.concat(n, ",")')
+        self.assertIn("A.x", names)
+
+    def test_separate_states_load_a_shared_module_again_for_each_mod(self):
+        game = self.make_game(separate_states=True)
+        self.assertNotEqual(self.load_registry_of(game, "A"), self.load_registry_of(game, "B"))
+        game.exec('REGISTRY.register("A.x", function() return 1 end, {})', state="A")
+        names_of_b = game.exec('local n = {}; for _, c in ipairs(REGISTRY.list()) do n[#n + 1] = c.name end; return table.concat(n, ",")', state="B")
+        self.assertNotIn("A.x", names_of_b)
+
+    def test_globals_of_a_state_stay_in_it_but_the_game_api_is_shared(self):
+        game = self.make_game(separate_states=True)
+        game.obj("Thing", size=3)
+        game.exec("MINE = 1", state="A")
+        self.assertIsNone(game.exec("return MINE", state="B"))
+        self.assertEqual(game.exec("return FindFirstOf('Thing').size", state="B"), 3)
+
+    def test_loading_a_mod_again_makes_a_fresh_state(self):
+        game = self.make_game(separate_states=True)
+        game.exec("MINE = 1", state="A")
+        game.state("A", fresh=True)
+        self.assertIsNone(game.exec("return MINE", state="A"))
+
+    def test_a_missing_module_fails_loudly(self):
+        game = self.make_game(separate_states=True)
+        with self.assertRaisesRegex(LuaError, "module 'NoSuchModule' not found in this state"):
+            game.exec('require("NoSuchModule")', state="A")
+
+
 class BootWithWrapperModesTests(unittest.TestCase):
     """HarnessBoot must also work when arrays give wrappers and text gives FStrings."""
 
