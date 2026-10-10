@@ -22,6 +22,7 @@ from runlib.game import (
 from runlib.runfolder import create_run_folder
 from runlib.runner import PhaseContext, PhaseFailed
 from runlib.scenario import SCENARIOS, get_scenario
+from runlib.scenario_context import ScenarioContext
 
 
 class FakePopen:
@@ -207,16 +208,19 @@ class ScenarioTest(TempTestCase):
         with self.assertRaisesRegex(ValueError, "Unknown scenario"):
             get_scenario("nope")
 
-    def test_noop_passes_when_paused(self):
+    def noop_result(self, clock):
         self.ctx.state["game_popen"] = FakePopen(None)
-        with mock.patch("runlib.scenario.read_clock_through_bridge", return_value={"ok": True, "paused": True}):
-            result = get_scenario("noop")(self.ctx)
-        self.assertTrue(result["passed"])
+        scenario_ctx = ScenarioContext(self.ctx, mock.Mock())
+        scenario_ctx.bridge.measure_clock.return_value = clock
+        return get_scenario("noop")(scenario_ctx)
+
+    def test_noop_passes_when_paused(self):
+        clock = {"clock": 1.0, "change": 0.0, "seconds": 3, "paused": True}
+        self.assertTrue(self.noop_result(clock)["passed"])
 
     def test_noop_fails_when_not_paused(self):
-        self.ctx.state["game_popen"] = FakePopen(None)
-        with mock.patch("runlib.scenario.read_clock_through_bridge", return_value={"ok": True, "paused": False}):
-            self.assertFalse(get_scenario("noop")(self.ctx)["passed"])
+        clock = {"clock": 4.0, "change": 3.0, "seconds": 3, "paused": False}
+        self.assertFalse(self.noop_result(clock)["passed"])
 
     def test_bridge_error_with_dead_game_is_a_crash(self):
         self.ctx.state["game_popen"] = FakePopen(1)
