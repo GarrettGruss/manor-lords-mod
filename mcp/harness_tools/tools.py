@@ -280,12 +280,16 @@ def stop_game(runs_root: Path, repo_root: Path) -> dict:
 # --- scenarios and runs -----------------------------------------------------------------------
 
 def load_scenarios() -> dict[str, str]:
-    """Registered scenarios: name -> first line of the docstring. Empty if the registry is missing."""
+    """Registered scenarios: name -> description. Empty if the registry is missing.
+
+    Hidden scenarios (self tests that fail, crash or time out on purpose, and probes) are left out,
+    so an agent cannot start them by mistake.
+    """
     try:
-        from runlib.scenario import SCENARIOS
+        from runlib.scenario import list_scenarios as registry
     except ImportError:
         return {}
-    return {name: ((fn.__doc__ or "").strip().splitlines() or [""])[0] for name, fn in sorted(SCENARIOS.items())}
+    return {name: info.summary or "(no description)" for name, info in registry(include_hidden=False).items()}
 
 
 def list_scenarios(runs_root: Path, repo_root: Path) -> dict:
