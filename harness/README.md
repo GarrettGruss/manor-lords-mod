@@ -19,3 +19,15 @@ powershell -ExecutionPolicy Bypass -File harness\deploy.ps1 -GameDir 'D:\Games\M
 
 If the game is running a warning is printed and the deploy continues (UE4SS hot reload).
 `UE4SS-settings.ini` is never touched.
+
+## Lua checks without the game
+
+Run from the repo root. They need only `uv`.
+
+- Syntax of all mods: `uv run --no-project --python 3.12 --with lupa python harness/tests/lua_syntax.py`
+- HarnessBoot state machine against a fake game API:
+  `uv run --no-project --python 3.12 --with lupa python harness/tests/boot_state_machine.py happy`
+  Other modes: `noslot` (slot not in the list) and `missing` (save file missing).
+
+These checks use Lua 5.4 from the `lupa` package. They find syntax errors and wrong variable names.
+They cannot show that the real UE4SS API behaves like the fake one.
