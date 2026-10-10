@@ -207,3 +207,39 @@ Read `harness/tests/fakegame/README.md` for how to write one, and for what the f
 ```powershell
 uv run --no-project --python 3.12 --with lupa python -m unittest discover -s harness/tests -p "test_fakegame*.py" -v
 uv run --no-project --python 3.12 --with lupa python harness/tests/boot_state_machine.py [mode ...]
+
+## Hot reload (no game restart)
+
+`python harness\tools\reload_mods.py [--mod Name ...] [--run-dir DIR] [--no-deploy]` (spec 06, part A). The game must run with a run folder
+(started by `run.py --keep-open`, or by a script that sets `HARNESS_RUN_DIR`). The tool deploys, restarts the mods that deploy changed
+(or the ones named with `--mod`), and waits until each mod logs `loaded version <v>` with the `VERSION` of the file in `mod/`.
+It prints one JSON line. Exit code: 0 all reloaded, 1 a reload failed (wrong version, timeout, error), 2 harness error.
+The loop takes about 2 s. `HarnessBoot` and `HarnessReload` are not restarted by default. A shared module change restarts the mods that `require` it.
+
+The mod `HarnessReload` does the work: it reads `<run>/reload.json` (`{"mod", "id"}`), calls `RestartMod`, and writes `reload.result.json`.
+A reloadable mod needs `local VERSION = "..."` and a log line `loaded version <VERSION>` with its folder name as tag.
+A syntax error is not in `mod.log`; look at `ue4ss\UE4SS.log` (`Error loading script`). Details: `docs/specs/06-dev-loop-and-fixtures/implementation-notes/hot-reload.md`.
+UE4SS auto reload is also on in this install, but it reloads only one mod when two change together, so the tool does not rely on it.
+
+```powershell
+.venv\Scripts\python.exe harness\run.py --scenario noop --keep-open     # leaves the game running
+.venv\Scripts\python.exe harness\tools\reload_mods.py                   # after you edit a mod
+.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_reload_mods.py" -v
+```
+
+## Save fixtures
+
+Every run gives the game its own `LOCALAPPDATA` (`<run folder>\appdata`). The fixture (default `base`, a copy of the user's `saveGame_0`) is its `saveGame_0`.
+The user's save folder is never used by the game in a run. It is hashed before and after, and a change fails the run. The private folder is deleted in teardown.
+`--keep-open` leaves it in place. Crash reports are read from it.
+
+`python harness\tools\fixtures.py list | record <name> --source-slot <slot> | install <name> --appdata DIR | remove --appdata DIR` (spec 06, part C).
+`harness\fixtures\fixtures.json` lists fixtures: name, source slot, SHA-256 of each source file, description, tags. It holds no save data.
+`run.py --fixture <name>` picks a fixture. A source that no longer matches its SHA-256 fails the preflight (run `record` to accept the new files).
+The game lists only `autosave` and `saveGame_0` to `saveGame_27`, which is why a fixture is always installed as `saveGame_0` in the private folder.
+Details and measurements: `docs/specs/06-dev-loop-and-fixtures/implementation-notes/fixtures.md`.
+
+```powershell
+.venv\Scripts\python.exe harness\run.py --scenario smoke --fixture base
+.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_fixtures.py" -v
+```

@@ -1,6 +1,6 @@
 # Spec 06: Dev loop, mock kit and save fixtures
 
-Status: in progress: part B (mock kit) done; hot reload (part A) and fixtures (part C) pending. Roadmap phase: 8 (see `docs/specs/00-harness-overview/README.md`).
+Status: done. Part A (hot reload), part B (mock kit) and part C (fixtures through a private LOCALAPPDATA) are built and tested in the real game. Roadmap phase: 8 (see `docs/specs/00-harness-overview/README.md`).
 
 ## Goal
 Make iteration fast and the test situations repeatable:
@@ -34,27 +34,33 @@ Deliverable: `python harness/tools/reload_mods.py [--mod Name]` that deploys, re
 - Refactor `boot_state_machine.py` to use it. Add `docs` on how to write a mod test. A new mod needs a test in under 30 lines.
 
 ### Part C: save fixtures
-- A fixtures folder `harness/fixtures/` holds a manifest `fixtures.json` only: name, source slot, SHA-256, description, tags (the save files stay out of git).
-- `python harness/tools/fixtures.py install <name>` copies the files of a slot to a NEW slot name `harness_<name>` in the save folder (additive; it never overwrites a file that is not a harness slot).
-  It also writes `<slot>_descr.sav` and the image files the menu needs. `remove <name>` and `remove --all` delete only `harness_*` slots.
-- The run launcher gets `--fixture <name>`: it installs the fixture and sets `HARNESS_TEST_SAVE=harness_<name>`.
-- `harness/uninstall.ps1 -Remove` removes the `harness_*` slots too.
-- First fixture: `base` (a copy of the user's `saveGame_0`). More fixtures are made by the agent through scenarios that save a game state (`PawnCPP:requestSaveFile`), spec 07.
+Changed after a real-game test: the load screen lists only `autosave` and `saveGame_0` to `saveGame_27`, so a slot named `harness_<name>` is never listed (`implementation-notes/fixtures.md`).
+New design: the launcher sets `LOCALAPPDATA=<run folder>\appdata` for the game process only. The game then reads and writes its saves in `<run>\appdata\ManorLords\Saved\SaveGames`.
+- `harness/fixtures/fixtures.json` holds the manifest only: name, source slot, SHA-256 of each source file, description, tags (no save data in git).
+- A run copies the fixture into the private folder as `saveGame_0` (and a read-only copy of the user's `Saved\Config`). The user's save folder is never opened by the game.
+- `run.py --fixture <name>` (default `base`, a copy of the user's `saveGame_0`). The redirect is used by all runs.
+- Hash guard: all user save files are hashed in preflight and in teardown. A difference fails the run. The private folder is deleted in teardown.
+- `python harness/tools/fixtures.py list|record|install <name> --appdata DIR|remove --appdata DIR`.
+- More fixtures are made by the agent through scenarios that save a game state (`PawnCPP:requestSaveFile`), spec 07.
 
 ## Plan
-1. Test the hot reload options in the real game. Record the results (what works, how long, side effects like double hooks).
-2. Build `reload_mods.py` for the working option, with tests. Measure the loop time.
+1. [x] Test the hot reload options in the real game. Record the results (what works, how long, side effects like double hooks). (Done: `implementation-notes/hot-reload.md`.)
+2. [x] Build `reload_mods.py` for the working option, with tests. Measure the loop time. (Done: 2.1 to 2.3 s.)
 3. [x] Build the mock kit and move the HarnessBoot test onto it. Write a second mod test as a proof. (Done: part B, see `implementation-notes/mock-kit.md`.)
-4. Test in the real game whether the load screen lists `harness_base`. Then build `fixtures.py` and `--fixture`.
-5. Run the launcher with `--fixture base` 3 times.
-6. Update the spec, the README and the uninstall script.
+4. [x] Test in the real game whether the load screen lists `harness_base`. **It does not.** Switched to a private `LOCALAPPDATA` per run (`implementation-notes/fixtures.md`). Built `fixtures.py` and `--fixture`.
+5. [x] Run the launcher with `--fixture base` 3 times. All 3 runs passed (boot 31.0, 30.0, 31.0 s). The user's 204 save files were identical after the runs.
+6. [x] Update the spec and the README. `uninstall.ps1` needs no change (no slot files are written to the user's folder).
+
+## Answers to the open questions
+- Which hot reload option is safe for mods that use `RegisterHook`? `RestartMod`: it gives the mod a new Lua state and UE4SS unregisters the old hooks. Auto reload is not safe for a change of two mods at once (only one is reloaded). See `hot-reload.md`.
+- Do custom slot names work? **No.** The load screen asks `SlotNameFromIndex` for 30 fixed numbers and never reads another name.
+- How is a fixture loaded then? The game gets a private `LOCALAPPDATA`, and the fixture is its `saveGame_0`. This works: boot reaches READY in about 31 s, the same as before.
 
 ## Open questions
-- Which hot reload option is safe for mods that use `RegisterHook`?
-- Do custom slot names work? What does the menu need (descriptor, thumbnail)?
-- The `_descr.sav` holds `saveSlot`. Is it a plain copy problem, or must the descriptor be edited for the new slot name?
+- Crash reports in the private folder (expected in `<run>\appdata\ManorLords\Saved\Crashes`; not tested, no crash was forced).
+- Steam cloud or achievements with a redirected folder (not tested).
 
 ## Acceptance criteria
-- A Lua change reaches the running game in under 30 s, checked with a version line in `mod.log`, 3 times in a row.
-- A new mod can be tested with the mock kit in under 30 lines, shown by two tests.
-- `harness_base` is installed, loaded by the launcher (`READY`, paused), and removed, and no non-harness save file changes (checked with hashes before and after).
+- [x] A Lua change reaches the running game in under 30 s, checked with a version line in `mod.log`, 3 times in a row. (2.3 s, 2.1 s, 2.1 s.)
+- [x] A new mod can be tested with the mock kit in under 30 lines, shown by two tests.
+- [x] The fixture `base` is installed, loaded by the launcher (`READY`, paused) and removed, and no user save file changed (SHA-256 before and after). 3 runs with `--fixture base` passed; 204 user files identical; the private folder was deleted each time.

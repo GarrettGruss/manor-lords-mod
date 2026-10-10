@@ -40,7 +40,7 @@ An agent uses the fastest layer that can answer its question. It moves to a slow
 | 03 | run-launcher | One command makes one run folder with `summary.json` | in progress |
 | 04 | telemetry-and-assertions | Sample game state, assert ranges, define the scenario format, control game time | planned |
 | 05 | agent-tools | MCP tools so the agent drives the harness directly | planned |
-| 06 | dev-loop-and-fixtures | Hot reload without a game restart, a reusable mock kit, several test saves | planned |
+| 06 | dev-loop-and-fixtures | Hot reload without a game restart, a reusable mock kit, several test saves | done (hot reload, mock kit, fixtures through a private LOCALAPPDATA) |
 | 07 | feature-test-kit | Helpers to give resources, place buildings, trigger events, advance time | planned |
 | 08 | regression-suite | Run many scenarios and saves, compare with baselines, find flaky tests | planned |
 | 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | only if a feature needs it |
