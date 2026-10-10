@@ -1,0 +1,62 @@
+{
+  "scenario": "telemetry-sanity",
+  "metrics": {
+    "a sample taken after the pause": [
+      0.0,
+      10.0
+    ],
+    "clock rate while sampling": [
+      0.9,
+      1.1
+    ],
+    "duration_s": [
+      65.0,
+      130.0
+    ],
+    "highest approval": [
+      45.0,
+      55.0
+    ],
+    "highest publicOrder": [
+      90.0,
+      110.0
+    ],
+    "longest gap between samples (s)": [
+      4.5,
+      5.5
+    ],
+    "lowest approval": [
+      45.0,
+      55.0
+    ],
+    "lowest publicOrder": [
+      90.0,
+      110.0
+    ],
+    "player influence is not negative": [
+      -0.001,
+      0.001
+    ],
+    "player kingsFavour is not negative": [
+      -0.001,
+      0.001
+    ],
+    "player silver is not negative": [
+      -0.001,
+      0.001
+    ],
+    "region count": [
+      6.3,
+      7.7
+    ],
+    "samples while running": [
+      6.0,
+      12.0
+    ],
+    "shortest gap between samples (s)": [
+      4.5,
+      5.5
+    ]
+  },
+  "strict": []
+}

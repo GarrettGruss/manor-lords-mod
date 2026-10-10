@@ -1,0 +1,10 @@
+{
+  "name": "selftest",
+  "scenarios": [
+    {"scenario": "selftest-fail", "repeat": 1},
+    {"scenario": "selftest-timeout", "repeat": 1},
+    {"scenario": "smoke", "repeat": 1}
+  ],
+  "time_budget_s": 900,
+  "flake_retries": 1
+}

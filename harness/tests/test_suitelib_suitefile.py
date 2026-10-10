@@ -69,7 +69,7 @@ class LoadSuiteTest(unittest.TestCase):
     def test_shipped_suites_are_valid(self):
         for name, repeats in (("smoke", 1), ("core", 2), ("soak", 10)):
             self.assertEqual(load_suite(name, SUITES_DIR).entries[0].repeat, repeats)
-        self.assertEqual([e.optional for e in load_suite("core").entries], [False, True, True])
+        self.assertEqual([e.optional for e in load_suite("core").entries], [False, False, False])
 
 
 if __name__ == "__main__":
