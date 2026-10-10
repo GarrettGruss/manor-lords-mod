@@ -75,3 +75,11 @@ Two defects were found and fixed:
 
 Not checked: `run_scenario` and `stop_game` in a real client (they ask for permission, so a headless session cannot approve them),
 and a client time limit for long calls (the start and poll design avoids long calls).
+
+## `run_scenario` in a real client (2026-10-10)
+A second headless session was asked to start `smoke` with `run_scenario`, then `wait_for_run` and `read_summary`, with those three tools
+passed in `--allowedTools`. `run_scenario` was refused ("permission has not been granted"): `.claude/settings.json` puts `run_scenario`
+in `ask`, and a headless session has nobody who can approve it. This is the intended permission design (the tool starts the game),
+so it was not bypassed. The start and poll flow itself was checked with a real run through the tool functions (see above).
+To try it in an interactive Claude Code session, approve the `run_scenario` prompt once. To allow it for unattended work, move
+`mcp__manor-harness__run_scenario` from `ask` to `allow` in `.claude/settings.json`. That is the user's decision.
