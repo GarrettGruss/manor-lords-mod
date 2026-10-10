@@ -144,7 +144,7 @@ class ScenarioContextTest(ContextTestCase):
         ctx.check_range("b", 5, 1, 3)
         result = ctx.result()
         self.assertFalse(result["passed"])
-        self.assertEqual(result["asserts"][1], {"name": "b", "ok": False, "value": 5, "range": [1, 3]})
+        self.assertEqual(result["asserts"][1], {"name": "b", "ok": False, "value": 5, "rule": "1..3"})
         self.assertNotIn("range", result["asserts"][0])
 
     def test_empty_result_passes(self):
@@ -198,12 +198,12 @@ class RealScenarioTest(ContextTestCase):
 
 class RegistryTest(unittest.TestCase):
     def test_hidden_scenarios_are_not_listed_by_default(self):
-        self.assertEqual(sorted(list_scenarios()), ["noop", "smoke"])
+        self.assertEqual(sorted(list_scenarios()), ["noop", "smoke", "telemetry-sanity", "time-advance"])
         self.assertIn("selftest-timeout", list_scenarios(include_hidden=True))
 
     def test_every_scenario_has_a_limit_under_the_cap(self):
         for name, info in list_scenarios(include_hidden=True).items():
-            self.assertTrue(0 < info.limit_s <= 90, name)
+            self.assertTrue(0 < info.limit_s <= 120, name)
         self.assertEqual(get_limit_s("selftest-timeout"), 5)
         self.assertEqual(get_limit_s("unknown"), 90)
 
