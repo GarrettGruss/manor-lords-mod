@@ -54,6 +54,9 @@ end
 
 function M.path() return path end
 
+-- Folder that holds mod.log. Other harness files (boot.json, ready.marker) go here too.
+function M.dir() return dir end
+
 function M.close()
     if file then file:close(); file = nil end
 end
