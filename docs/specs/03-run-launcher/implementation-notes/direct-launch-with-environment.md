@@ -39,3 +39,15 @@ What the harness does today: `preflight` checks that `steam.exe` is running and 
 starts the game without Steam. Whether the game itself would start without Steam (it may call Steam to restart itself, or exit) is unknown.
 To test it, the user can close Steam by hand and run: `.venv\Scripts\python.exe harness\run.py --scenario noop --skip-steam-check` (this option does not exist yet:
 add it only if the answer matters), or start the game executable directly with `HARNESS_RUN_DIR` set and look at `boot.json`.
+
+## Steam closed: tested (2026-10-10, the user closed Steam and said "steam should be closed")
+The section above says the test was not run. It was run later, after the user answered "Yes, test it" and closed Steam. This script did NOT shut Steam down or start it again.
+
+Direct launch without Steam (`ManorLords-Win64-Shipping.exe` started with `HARNESS_RUN_DIR`, `HARNESS_AUTOBOOT=1`, `HARNESS_TEST_SAVE`):
+- The game started and stayed alive. `HarnessBoot` reached `READY` after 32 s (the same as with Steam). `boot.json`, `ready.marker`, `mod.log`, `telemetry.jsonl` and `bridge/` were written.
+- The game did NOT start Steam by itself (no `steam.exe` or `steamwebhelper.exe` afterwards).
+- A full launcher run (`run.py --scenario smoke`) with Steam closed: verdict pass, boot READY (31 s, 1 `pauseGame` call), private appdata removed, user saves unchanged.
+
+Decision: Steam is not required. The preflight no longer fails when Steam is not running. It adds the note "Steam was not running; the game was started directly without it" to the summary
+(2 tests). `harness/game-launch.ps1` (Steam URL launch) still needs Steam, and it is for manual use only.
+Not tested: Steam features such as cloud saves or achievements (not needed for tests).

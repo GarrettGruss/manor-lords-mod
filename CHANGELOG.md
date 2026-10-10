@@ -53,6 +53,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `harness/suite.py` and `harness/suitelib/`: the regression suite. It runs a suite through `run.py`, retries failures to find flaky scenarios, writes `report.json` and `report.md`, compares metrics with baselines, and writes baselines only on request. Suites are in `harness/suites/` (`smoke`, `core`, `soak`, `selftest`). Real baselines for `smoke`, `time-advance` and `telemetry-sanity` are in `harness/baselines/`. After a run timeout the suite kills `run.py` and closes the game (found in a real run: the game stayed open).
 
 ### Changed
+- The preflight no longer fails when Steam is not running. The direct launch works without Steam (tested), so it only adds a note to the summary. `.claude/settings.json`: `run_scenario` is allowed without asking, by the user's decision.
 - `HarnessBoot` waits for the end of the intro cinematic (`PawnCPP.currentUIMode ~= 0`) before it calls `pauseGame`, so the game does not undo the pause. One `pauseGame` call in each boot (5 of 5 smoke runs, before: two); the 8 s hold stays as a safety net.
 - Fake clock: `late_revert_after` is off by default (the intro cinematic is the default restart).
 - `summary.json` is smaller: it drops empty fields, keeps only the seconds of good phases, and has a short environment (the full mod hashes are in `config.json`). Assertion records use `rule` instead of `range`.

@@ -4,7 +4,7 @@
 
 `harness/run.py` is the normal way to test a mod. One command runs one complete iteration with the real game
 and writes `runs/<id>/summary.json` (spec 03). Read `summary.json` first. Open screenshots and logs only if it says to.
-Steam must be running. The game must not be started by hand.
+Steam does not have to be running (tested 2026-10-10). If it is not, the run carries a note. The game must not be started by hand.
 
 ```powershell
 .venv\Scripts\python.exe harness\run.py --list-scenarios

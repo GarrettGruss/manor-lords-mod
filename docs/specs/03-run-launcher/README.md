@@ -120,7 +120,7 @@ Details and numbers: `implementation-notes/step3-6-scenarios-screenshots.md`.
 - Screenshots: `mss` captures screen pixels, so a window in front of the game is in the picture (the UE4SS GUI was seen). The picture shows the real game otherwise.
   Another monitor, a minimized window and the "A New Message" banner were not tested with the real game.
 - UE crash folder: not answered. A terminate does not produce one. No real UE crash happened in these steps.
-- Steam closed: not tested (asking Steam to exit is not safe). `preflight` fails with a clear message if Steam is not running (unit test only).
+- Steam closed: TESTED 2026-10-10 (the user closed Steam). The direct launch works without Steam, see implementation-notes/direct-launch-with-environment.md. Old text: not tested (asking Steam to exit is not safe). `preflight` fails with a clear message if Steam is not running (unit test only).
 - Test save copy: not tested. The runs only read `saveGame_0`, and its hash did not change.
 - Unpause after a load: works in the runs made (7 of 7 smoke runs), because HarnessBoot holds the pause first.
 - `Popen` and launcher exit: not tested. The launcher always stops the game in `teardown`. `--keep-open` leaves it on purpose, and was not tested with the real game.
