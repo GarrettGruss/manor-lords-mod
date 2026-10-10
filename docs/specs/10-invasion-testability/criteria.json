@@ -1,0 +1,626 @@
+[
+  {
+    "id": "T1",
+    "title": "A raid is announced N days before it arrives, and it arrives within a tolerance of the announced day",
+    "pillar": "threat",
+    "mark": "A",
+    "method": "read the raid timer, read the inbox or alert, advance time, detect arrival",
+    "blocked_by": null,
+    "spikes": [
+      "S1"
+    ],
+    "upgrades": [
+      "U2",
+      "U3",
+      "U5"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "T2",
+    "title": "The announced size is within 20% of the spawned size",
+    "pillar": "threat",
+    "mark": "A",
+    "method": "count units by side",
+    "blocked_by": null,
+    "spikes": [
+      "S1",
+      "S3"
+    ],
+    "upgrades": [
+      "U1"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "T3",
+    "title": "The announced type matches the composition (units by type)",
+    "pillar": "threat",
+    "mark": "A",
+    "method": "units by type and faction",
+    "blocked_by": null,
+    "spikes": [
+      "S3"
+    ],
+    "upgrades": [
+      "U1"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "T4",
+    "title": "The countdown is visible in the UI",
+    "pillar": "threat",
+    "mark": "P",
+    "method": "screenshot, plus reading the widget text if a widget exists",
+    "blocked_by": null,
+    "spikes": [
+      "S9"
+    ],
+    "upgrades": [
+      "U7"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "T5",
+    "title": "Raid timing follows the season rules (Cuman summer, Norse spring and autumn)",
+    "pillar": "threat",
+    "mark": "A",
+    "method": "set the day, run a simulated multi-year schedule, record raid days and seasons",
+    "blocked_by": null,
+    "spikes": [
+      "S1"
+    ],
+    "upgrades": [
+      "U2",
+      "U3"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "O1",
+    "title": "An outpost reveals a raid only inside its own border",
+    "pillar": "outposts",
+    "mark": "A",
+    "method": "outpost objects, region of each raider",
+    "blocked_by": "outposts do not exist in the game data (no way found to found an AI village)",
+    "spikes": [],
+    "upgrades": [
+      "U10"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "O2",
+    "title": "Raiders hit the outposts first",
+    "pillar": "outposts",
+    "mark": "A",
+    "method": "first target region of each raid",
+    "blocked_by": "outposts do not exist in the game data (no way found to found an AI village)",
+    "spikes": [],
+    "upgrades": [
+      "U10"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "O3",
+    "title": "A lost outpost cuts trade and blinds scouting",
+    "pillar": "outposts",
+    "mark": "A",
+    "method": "trade value, visibility flag",
+    "blocked_by": "outposts do not exist in the game data (no way found to found an AI village)",
+    "spikes": [],
+    "upgrades": [
+      "U10"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "O4",
+    "title": "An unprotected outpost may pay tribute and leak intel",
+    "pillar": "outposts",
+    "mark": "A",
+    "method": "state flags over time",
+    "blocked_by": "outposts do not exist in the game data (no way found to found an AI village)",
+    "spikes": [],
+    "upgrades": [
+      "U10"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "R1",
+    "title": "Each raid has one objective and one breaking point",
+    "pillar": "raid",
+    "mark": "A",
+    "method": "per-raid state log",
+    "blocked_by": null,
+    "spikes": [
+      "S3",
+      "S4"
+    ],
+    "upgrades": [
+      "U1"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "R2",
+    "title": "Loot carried per raider stays within the cap",
+    "pillar": "raid",
+    "mark": "A",
+    "method": "goods carried per unit (`ItemsLooted` or equivalent)",
+    "blocked_by": null,
+    "spikes": [
+      "S3"
+    ],
+    "upgrades": [
+      "U1",
+      "U6"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "R3",
+    "title": "Loot drops where a looter dies, and peasants can recover it",
+    "pillar": "raid",
+    "mark": "A",
+    "method": "kill a unit, read ground goods",
+    "blocked_by": null,
+    "spikes": [
+      "S5"
+    ],
+    "upgrades": [
+      "U2"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "R4",
+    "title": "Retreat triggers work: full loot, morale break, timer end, leader dead",
+    "pillar": "raid",
+    "mark": "A",
+    "method": "force each condition, observe the state change",
+    "blocked_by": null,
+    "spikes": [
+      "S4"
+    ],
+    "upgrades": [
+      "U1",
+      "U2",
+      "U6"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "R5",
+    "title": "A captive is freed when the captor is killed or routed in time",
+    "pillar": "raid",
+    "mark": "A",
+    "method": "captive state, kill captor",
+    "blocked_by": "the base game has no captive system",
+    "spikes": [],
+    "upgrades": [
+      "U10"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "R6",
+    "title": "Raiders go for the nearest high-value stockpile (bait works)",
+    "pillar": "raid",
+    "mark": "A",
+    "method": "target choice versus stock positions",
+    "blocked_by": null,
+    "spikes": [
+      "S4"
+    ],
+    "upgrades": [
+      "U2",
+      "U5"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "R7",
+    "title": "A guarded, locked granary loses less per trip than an open barn",
+    "pillar": "raid",
+    "mark": "A",
+    "method": "stock deltas per trip",
+    "blocked_by": null,
+    "spikes": [
+      "S6"
+    ],
+    "upgrades": [
+      "U5"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "R8",
+    "title": "Burned buildings become ruins, and rebuild costs partial goods",
+    "pillar": "raid",
+    "mark": "A",
+    "method": "building state, rebuild cost",
+    "blocked_by": null,
+    "spikes": [
+      "S6"
+    ],
+    "upgrades": [
+      "U1"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "C1",
+    "title": "Counters work: casualty ratios of spearmen against horse archers (and shield wall against shock infantry) fall in a range over N runs",
+    "pillar": "combat",
+    "mark": "A",
+    "method": "casualties by type, N-run A/B",
+    "blocked_by": null,
+    "spikes": [
+      "S3"
+    ],
+    "upgrades": [
+      "U1",
+      "U4",
+      "U6"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "C2",
+    "title": "Veterancy persists across fights",
+    "pillar": "combat",
+    "mark": "A",
+    "method": "`combatExperience` before and after",
+    "blocked_by": null,
+    "spikes": [
+      "S3"
+    ],
+    "upgrades": [
+      "U1"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "C3",
+    "title": "Unit stat changes (data) take effect",
+    "pillar": "combat",
+    "mark": "A",
+    "method": "read unit rows (`DT_units`), compare with expected values",
+    "blocked_by": null,
+    "spikes": [
+      "S7"
+    ],
+    "upgrades": [
+      "U2",
+      "U7"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "S1",
+    "title": "A lost battle removes a share of buildings, stock and people within the configured percent",
+    "pillar": "sack",
+    "mark": "A",
+    "method": "counts before and after, a way to remove buildings, goods and people",
+    "blocked_by": null,
+    "spikes": [
+      "S6"
+    ],
+    "upgrades": [
+      "U1",
+      "U2",
+      "U5",
+      "U6"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "S2",
+    "title": "The run continues after a sack (no game over)",
+    "pillar": "sack",
+    "mark": "A",
+    "method": "game state, victory status",
+    "blocked_by": null,
+    "spikes": [],
+    "upgrades": [],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "S3",
+    "title": "Repeated sacks inside the window are fatal",
+    "pillar": "sack",
+    "mark": "A",
+    "method": "repeat, read the game over state",
+    "blocked_by": null,
+    "spikes": [
+      "S6"
+    ],
+    "upgrades": [],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "S4",
+    "title": "Evacuation moves families, grain and units to the fallback",
+    "pillar": "sack",
+    "mark": "A",
+    "method": "counts in both places",
+    "blocked_by": "outposts do not exist in the game data (no way found to found an AI village)",
+    "spikes": [],
+    "upgrades": [
+      "U10"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "S5",
+    "title": "Tribute terms apply (payment, hostages, vassalage with yearly tribute)",
+    "pillar": "sack",
+    "mark": "A",
+    "method": "treasury and flags over time",
+    "blocked_by": "the base game has no tribute system",
+    "spikes": [],
+    "upgrades": [
+      "U10"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "P1",
+    "title": "Laws and pacts apply their costs and benefits",
+    "pillar": "pressure",
+    "mark": "A",
+    "method": "economy and defense metrics before and after",
+    "blocked_by": null,
+    "spikes": [],
+    "upgrades": [],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "P2",
+    "title": "Fear and hope (morale meter) follow the threat",
+    "pillar": "pressure",
+    "mark": "A",
+    "method": "approval and morale metrics against the clock",
+    "blocked_by": null,
+    "spikes": [],
+    "upgrades": [
+      "U1"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "P3",
+    "title": "Refugees add workers and mouths",
+    "pillar": "pressure",
+    "mark": "A",
+    "method": "population, food use",
+    "blocked_by": null,
+    "spikes": [],
+    "upgrades": [],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "P4",
+    "title": "The war economy toggle shifts workers",
+    "pillar": "pressure",
+    "mark": "A",
+    "method": "worker counts by building type",
+    "blocked_by": null,
+    "spikes": [],
+    "upgrades": [
+      "U1"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "P5",
+    "title": "Mercenaries can be hired, with cost and presence",
+    "pillar": "pressure",
+    "mark": "A",
+    "method": "hire action (`HiredMercenaryCompanies`), units",
+    "blocked_by": null,
+    "spikes": [
+      "S2"
+    ],
+    "upgrades": [
+      "U2",
+      "U7"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "P6",
+    "title": "Season rules apply (winter pauses fighting, strains food)",
+    "pillar": "pressure",
+    "mark": "A",
+    "method": "season set, observation",
+    "blocked_by": null,
+    "spikes": [],
+    "upgrades": [],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "D1",
+    "title": "Tiers change size, frequency, variety and targeting",
+    "pillar": "difficulty",
+    "mark": "A",
+    "method": "N-run comparisons across tiers",
+    "blocked_by": null,
+    "spikes": [
+      "S1",
+      "S2"
+    ],
+    "upgrades": [
+      "U3",
+      "U4"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "D2",
+    "title": "A warlord who escaped returns stronger",
+    "pillar": "difficulty",
+    "mark": "A",
+    "method": "state carried between raids",
+    "blocked_by": null,
+    "spikes": [
+      "S1"
+    ],
+    "upgrades": [
+      "U4"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "D3",
+    "title": "At top tier raiders retreat only when the leader dies",
+    "pillar": "difficulty",
+    "mark": "A",
+    "method": "force and observe",
+    "blocked_by": null,
+    "spikes": [
+      "S4"
+    ],
+    "upgrades": [],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "Q1",
+    "title": "The game does not crash over a simulated 2-year run",
+    "pillar": "quality",
+    "mark": "A",
+    "method": "soak scenario with pop-up handling",
+    "blocked_by": null,
+    "spikes": [
+      "S8"
+    ],
+    "upgrades": [
+      "U3",
+      "U9"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "Q2",
+    "title": "A large battle keeps the game responsive (tick rate, no stall)",
+    "pillar": "quality",
+    "mark": "A",
+    "method": "game clock rate against wall time during 300-unit battles",
+    "blocked_by": null,
+    "spikes": [
+      "S10"
+    ],
+    "upgrades": [
+      "U1",
+      "U9"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  },
+  {
+    "id": "Q3",
+    "title": "The telegraph creates dread; the sack size feels fair; the mode is fun",
+    "pillar": "quality",
+    "mark": "H",
+    "method": "people",
+    "blocked_by": null,
+    "spikes": [],
+    "upgrades": [],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": "Dread, fairness and fun are felt by people. No number can judge them."
+  },
+  {
+    "id": "Q4",
+    "title": "Cuman visuals, animations, UI readability",
+    "pillar": "quality",
+    "mark": "P",
+    "method": "screenshots, a person judges",
+    "blocked_by": null,
+    "spikes": [
+      "S9"
+    ],
+    "upgrades": [
+      "U6"
+    ],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": ""
+  }
+]
