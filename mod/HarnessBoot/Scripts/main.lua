@@ -24,7 +24,7 @@ local TIMEOUT_S = {
     WAITING_FOR_MENU = 120,
     LOADING_SAVE = 30,
     WAITING_FOR_READY = 180,
-    PAUSING = 30,
+    PAUSING = 60,
 }
 -- The ready check must pass this many polls in a row. This avoids a short false "ready".
 local READY_STABLE_POLLS = 3
@@ -347,7 +347,7 @@ end
 -- clock stays still for several polls. If the clock still moves, pauseGame is called again.
 ---------------------------------------------------------------------------------------------
 
-local pausing = { lastClock = nil, stoppedPolls = 0, lastCallAt = 0, calls = 0 }
+local pausing = { lastClock = nil, sawRunning = false, stoppedPolls = 0, lastCallAt = 0, calls = 0 }
 
 local function callPauseGame(engine)
     local okPlayer, player = pcall(function() return engine.playerRef end)
@@ -375,10 +375,18 @@ local function stepPausing()
         return
     end
 
-    local stopped = pausing.lastClock ~= nil and math.abs(clock - pausing.lastClock) < CLOCK_STOPPED_EPSILON
+    local hasPrevious = pausing.lastClock ~= nil
+    local moved = hasPrevious and math.abs(clock - pausing.lastClock) >= CLOCK_STOPPED_EPSILON
     pausing.lastClock = clock
 
-    if stopped then
+    -- Right after a load the clock stands at 0 for a few seconds, because the game itself holds the
+    -- speed at 0. That is not a pause: the game then sets the speed to 1x and would undo ours.
+    -- So wait until the clock has moved at least once, and only then pause and check again.
+    if moved then
+        pausing.sawRunning = true
+        pausing.stoppedPolls = 0
+        if os.time() - pausing.lastCallAt >= PAUSE_RETRY_S then callPauseGame(engine) end
+    elseif hasPrevious and pausing.sawRunning then
         pausing.stoppedPolls = pausing.stoppedPolls + 1
         if pausing.stoppedPolls >= CLOCK_STOPPED_POLLS then
             if writeReadyMarker(engine, clock) then
@@ -388,13 +396,12 @@ local function stepPausing()
             end
             return
         end
-    else
-        pausing.stoppedPolls = 0
-        if os.time() - pausing.lastCallAt >= PAUSE_RETRY_S then callPauseGame(engine) end
     end
 
     if secondsInState() > TIMEOUT_S.PAUSING then
-        fail("game clock did not stop in " .. TIMEOUT_S.PAUSING .. " s (" .. pausing.calls .. " pauseGame calls)")
+        local why = pausing.sawRunning and "the clock did not stop" or "the clock never started"
+        fail("game clock did not stop in " .. TIMEOUT_S.PAUSING .. " s (" .. why .. ", "
+            .. pausing.calls .. " pauseGame calls)")
     end
 end
 
