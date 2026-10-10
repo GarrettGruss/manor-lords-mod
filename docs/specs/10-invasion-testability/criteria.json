@@ -14,12 +14,12 @@
       "U3",
       "U5"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-timeline"
+      "raid-timeline"
     ],
     "reason_human": "",
-    "spike_note": "partial: timer write and arrival verified (raid-timer); announcement not observable in the base game"
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "T2",
@@ -57,12 +57,12 @@
     "upgrades": [
       "U1"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-timeline"
+      "raid-timeline"
     ],
     "reason_human": "",
-    "spike_note": "not verified: the census has side and role (all raiders are Soldier), unitTemp reads None and squad type is not readable (getSquadByID ends the game). Unit types need the mod to expose them"
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "T4",
@@ -95,12 +95,12 @@
       "U2",
       "U3"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-seasons"
+      "raid-seasons"
     ],
     "reason_human": "",
-    "spike_note": "partial: set_season and set_raid_timer work; the base game picks a new timer at random (208 and 353 seen) with no season rule found"
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "O1",
@@ -188,11 +188,12 @@
     "upgrades": [
       "U1"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-behavior"
+      "raid-behavior"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "R2",
@@ -250,11 +251,12 @@
       "U2",
       "U6"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-behavior"
+      "raid-behavior"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "R5",
@@ -288,11 +290,12 @@
       "U2",
       "U5"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-behavior"
+      "raid-behavior"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "R7",
@@ -411,11 +414,12 @@
     "blocked_by": null,
     "spikes": [],
     "upgrades": [],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-sack"
+      "raid-sack"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "S3",
@@ -428,11 +432,12 @@
       "S6"
     ],
     "upgrades": [],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-sack"
+      "raid-sack"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "S4",
@@ -479,11 +484,12 @@
     "blocked_by": null,
     "spikes": [],
     "upgrades": [],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-politics"
+      "raid-politics"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "P2",
@@ -496,11 +502,12 @@
     "upgrades": [
       "U1"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-politics"
+      "raid-politics"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "P3",
@@ -526,11 +533,12 @@
     "upgrades": [
       "U1"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-politics"
+      "raid-politics"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "P5",
@@ -559,11 +567,12 @@
     "blocked_by": null,
     "spikes": [],
     "upgrades": [],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-seasons"
+      "raid-seasons"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "D1",
@@ -580,11 +589,12 @@
       "U3",
       "U4"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-tiers"
+      "raid-tiers"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "D2",
@@ -599,11 +609,12 @@
     "upgrades": [
       "U4"
     ],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-tiers"
+      "raid-tiers"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "D3",
@@ -616,11 +627,12 @@
       "S4"
     ],
     "upgrades": [],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
-      "planned: scenario raid-tiers"
+      "raid-tiers"
     ],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
     "id": "Q1",
