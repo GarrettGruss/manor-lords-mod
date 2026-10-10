@@ -24,7 +24,7 @@ No Lua error and no crash. About 10 seconds after F8 the bridge showed the game 
 | Regions | 7. Settled: Hochweg, Krumme Leite, Riesenbuckel. Not settled: 4 others. All have `Approval` 50. |
 
 ## Things that did not read as expected
-- `silver`, `influence` and `kingsFavour` on the player pawn are 0 in a settled save. Either these are not the right fields, or the values are stored elsewhere (for example per region, `regionalWealth`). Check before using them as telemetry.
+- `silver`, `influence` and `kingsFavour` on the player pawn read 0. **The user says these start at 0 in this game, so 0 is correct for this save.** They are valid fields. They will change as the game runs.
 - `daysTotal` is 0 although `day` is 61. `TemporalComponent.day` looks like the day of the year, and `daysTotal` may count from another point. Do not use `daysTotal` as the clock. Compare against the calendar shown in the game.
 - `RTSMultiEngineCPP` has no property named `daysTotal`. The function `getDaysTotal()` exists and returned 0.
 
