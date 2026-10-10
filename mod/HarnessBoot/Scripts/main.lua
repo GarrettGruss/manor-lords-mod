@@ -30,8 +30,9 @@ local TIMEOUT_S = {
 local READY_STABLE_POLLS = 3
 -- The game clock counts as stopped when it moves less than this between two polls (in game seconds).
 local CLOCK_STOPPED_EPSILON = 0.001
--- The clock must stay stopped for this many polls in a row.
-local CLOCK_STOPPED_POLLS = 3
+-- The clock must stay stopped for this many seconds in a row before the game counts as paused.
+-- After a load, the game was seen to restart its clock 2 to 4 s after our pause. A short check is not enough.
+local CLOCK_STOPPED_SECONDS = 8
 -- Wait at least this long between two pauseGame calls (seconds).
 local PAUSE_RETRY_S = 2
 
@@ -344,10 +345,10 @@ end
 -- Step: PAUSING
 -- The flag PawnCPP.bIsPlayerPaused is not reliable: it read true while game time was running.
 -- So this step calls pauseGame and then reads the game clock. The game is paused only when the
--- clock stays still for several polls. If the clock still moves, pauseGame is called again.
+-- clock stays still for CLOCK_STOPPED_SECONDS. If the clock moves again, pauseGame is called again.
 ---------------------------------------------------------------------------------------------
 
-local pausing = { lastClock = nil, sawRunning = false, stoppedPolls = 0, lastCallAt = 0, calls = 0 }
+local pausing = { lastClock = nil, sawRunning = false, stoppedSince = nil, lastCallAt = 0, calls = 0 }
 
 local function callPauseGame(engine)
     local okPlayer, player = pcall(function() return engine.playerRef end)
@@ -384,11 +385,11 @@ local function stepPausing()
     -- So wait until the clock has moved at least once, and only then pause and check again.
     if moved then
         pausing.sawRunning = true
-        pausing.stoppedPolls = 0
+        pausing.stoppedSince = nil
         if os.time() - pausing.lastCallAt >= PAUSE_RETRY_S then callPauseGame(engine) end
     elseif hasPrevious and pausing.sawRunning then
-        pausing.stoppedPolls = pausing.stoppedPolls + 1
-        if pausing.stoppedPolls >= CLOCK_STOPPED_POLLS then
+        if pausing.stoppedSince == nil then pausing.stoppedSince = os.time() end
+        if os.time() - pausing.stoppedSince >= CLOCK_STOPPED_SECONDS then
             if writeReadyMarker(engine, clock) then
                 setState("READY")
             else
