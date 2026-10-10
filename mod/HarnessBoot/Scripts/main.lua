@@ -10,7 +10,8 @@
 --   boot.json     current state and the history of state changes. Always up to date.
 --   ready.marker  written once, when the game is ready for a scenario.
 --
--- States: WAITING_FOR_MENU -> LOADING_SAVE -> WAITING_FOR_READY -> READY. Any wait can go to FAILED.
+-- States: WAITING_FOR_MENU -> LOADING_SAVE -> WAITING_FOR_READY -> PAUSING -> READY.
+-- Any wait can go to FAILED. READY means the game clock was measured as stopped.
 -- Rule: game objects are touched only on the game thread (ExecuteInGameThread).
 
 local log = require("HarnessLog")
@@ -23,9 +24,16 @@ local TIMEOUT_S = {
     WAITING_FOR_MENU = 120,
     LOADING_SAVE = 30,
     WAITING_FOR_READY = 180,
+    PAUSING = 30,
 }
 -- The ready check must pass this many polls in a row. This avoids a short false "ready".
 local READY_STABLE_POLLS = 3
+-- The game clock counts as stopped when it moves less than this between two polls (in game seconds).
+local CLOCK_STOPPED_EPSILON = 0.001
+-- The clock must stay stopped for this many polls in a row.
+local CLOCK_STOPPED_POLLS = 3
+-- Wait at least this long between two pauseGame calls (seconds).
+local PAUSE_RETRY_S = 2
 
 local OUT_DIR = log.dir()
 local BOOT_FILE = OUT_DIR .. "/boot.json"
@@ -228,12 +236,12 @@ local function stepLoadingSave()
             local okCount, n = pcall(function() return screen.SortedSlotsByDate:GetArrayNum() end)
             if okCount then count = n end
         end
-        if count > 0 then
-            local entry, listed = findSlotEntry(screen, boot.slot)
-            if entry == nil then
-                fail("slot '" .. boot.slot .. "' is not in the save list (" .. tostring(listed) .. " entries)")
-                return
-            end
+        -- The game fills the slot list while it scans the save folder. A list that is not empty
+        -- may still be incomplete (10 of 29 entries was seen). Keep polling until the wanted slot
+        -- shows up, and fail only when the time limit ends.
+        local entry = nil
+        if count > 0 then entry = findSlotEntry(screen, boot.slot) end
+        if entry ~= nil then
             log.info(TAG, "calling LoadGame")
             local okLoad, errLoad = pcall(function() widget:LoadGame(entry) end)
             if not okLoad then
@@ -247,7 +255,7 @@ local function stepLoadingSave()
     end
 
     if secondsInState() > TIMEOUT_S.LOADING_SAVE then
-        fail("save list was not ready in " .. TIMEOUT_S.LOADING_SAVE .. " s")
+        fail("slot '" .. boot.slot .. "' did not appear in the save list in " .. TIMEOUT_S.LOADING_SAVE .. " s")
     end
 end
 
@@ -304,42 +312,24 @@ local function readCalendar(engine)
     return calendar
 end
 
-local function writeReadyMarker(engine, player)
-    local paused = nil
-    local okPaused, value = pcall(function() return player.bIsPlayerPaused end)
-    if okPaused then paused = value end
-
+local function writeReadyMarker(engine, clock)
     local cal = readCalendar(engine)
+    -- "paused" is true only because the game clock was measured as stopped (see stepPausing).
     local text = string.format(
-        '{"slot":%s,"time":%d,"seconds_since_start":%d,"paused":%s,"day":%s,"month":%s,"year":%s,"season":%s}\n',
-        jsonString(boot.slot), os.time(), os.time() - boot.started, tostring(paused),
+        '{"slot":%s,"time":%d,"seconds_since_start":%d,"paused":true,"clock":%s,"day":%s,"month":%s,"year":%s,"season":%s}\n',
+        jsonString(boot.slot), os.time(), os.time() - boot.started, tostring(clock),
         tostring(cal.day), tostring(cal.month), tostring(cal.Year), tostring(cal.Season))
     return writeAtomic(READY_FILE, text)
-end
-
--- The game is already paused after a load. Pause it only if it is not, so the harness
--- decides when time starts. The pawn function pauseGame is the one from the jmap findings.
-local function ensurePaused(player)
-    local okPaused, paused = pcall(function() return player.bIsPlayerPaused end)
-    if okPaused and paused == true then return end
-    log.info(TAG, "game is not paused; calling pauseGame")
-    local ok, err = pcall(function() player:pauseGame() end)
-    if not ok then log.warn(TAG, "pauseGame failed: " .. tostring(err)) end
 end
 
 local stablePolls = 0
 
 local function stepWaitingForReady()
-    local engine, player, checks = checkReady()
+    local _, _, checks = checkReady()
     if allTrue(checks) then
         stablePolls = stablePolls + 1
         if stablePolls >= READY_STABLE_POLLS then
-            ensurePaused(player)
-            if writeReadyMarker(engine, player) then
-                setState("READY")
-            else
-                fail("could not write ready.marker")
-            end
+            setState("PAUSING")
             return
         end
     else
@@ -351,6 +341,64 @@ local function stepWaitingForReady()
 end
 
 ---------------------------------------------------------------------------------------------
+-- Step: PAUSING
+-- The flag PawnCPP.bIsPlayerPaused is not reliable: it read true while game time was running.
+-- So this step calls pauseGame and then reads the game clock. The game is paused only when the
+-- clock stays still for several polls. If the clock still moves, pauseGame is called again.
+---------------------------------------------------------------------------------------------
+
+local pausing = { lastClock = nil, stoppedPolls = 0, lastCallAt = 0, calls = 0 }
+
+local function callPauseGame(engine)
+    local okPlayer, player = pcall(function() return engine.playerRef end)
+    if not okPlayer or not isValid(player) then
+        log.warn(TAG, "player pawn not available for pauseGame")
+        return
+    end
+    pausing.calls = pausing.calls + 1
+    pausing.lastCallAt = os.time()
+    log.info(TAG, "game clock is moving; calling pauseGame (call " .. pausing.calls .. ")")
+    local ok, err = pcall(function() player:pauseGame() end)
+    if not ok then log.warn(TAG, "pauseGame failed: " .. tostring(err)) end
+end
+
+local function stepPausing()
+    local engine = FindFirstOf("RTSMultiEngineCPP")
+    if not isValid(engine) then
+        fail("engine actor disappeared while pausing")
+        return
+    end
+
+    local okClock, clock = pcall(function() return engine:getGameTimeAdjusted() end)
+    if not okClock or type(clock) ~= "number" then
+        fail("cannot read the game clock: " .. tostring(clock))
+        return
+    end
+
+    local stopped = pausing.lastClock ~= nil and math.abs(clock - pausing.lastClock) < CLOCK_STOPPED_EPSILON
+    pausing.lastClock = clock
+
+    if stopped then
+        pausing.stoppedPolls = pausing.stoppedPolls + 1
+        if pausing.stoppedPolls >= CLOCK_STOPPED_POLLS then
+            if writeReadyMarker(engine, clock) then
+                setState("READY")
+            else
+                fail("could not write ready.marker")
+            end
+            return
+        end
+    else
+        pausing.stoppedPolls = 0
+        if os.time() - pausing.lastCallAt >= PAUSE_RETRY_S then callPauseGame(engine) end
+    end
+
+    if secondsInState() > TIMEOUT_S.PAUSING then
+        fail("game clock did not stop in " .. TIMEOUT_S.PAUSING .. " s (" .. pausing.calls .. " pauseGame calls)")
+    end
+end
+
+---------------------------------------------------------------------------------------------
 -- Main loop
 ---------------------------------------------------------------------------------------------
 
@@ -358,6 +406,7 @@ local STEPS = {
     WAITING_FOR_MENU = stepWaitingForMenu,
     LOADING_SAVE = stepLoadingSave,
     WAITING_FOR_READY = stepWaitingForReady,
+    PAUSING = stepPausing,
 }
 
 local function finished()
