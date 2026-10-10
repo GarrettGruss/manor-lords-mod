@@ -99,6 +99,9 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 
 ## Safety
 
+- Never call a game function that saves: `PawnCPP:requestSaveFile`, `SaveToDiskWithThumbnail`, `IoHandler:SaveGameToSlot`, `RequestMenuSave`, `Request Autosave`.
+  They write into the user's REAL save folder, even when a run has a private `LOCALAPPDATA`. A probe overwrote the user's `saveGame_9` this way (restored from the user's backup).
+  The launcher hashes the user's save folder before and after each run. That guard only reports a change after it happened.
 - Back up saves before tests: `%LOCALAPPDATA%\ManorLords\Saved\SaveGames`. Never write to the original test save.
 - Do not edit `UE4SS-settings.ini` or other game files unless the task needs it. Say what you changed.
 - Ask the user before you change files outside this repo, except the planned deploy folder.
