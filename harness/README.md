@@ -232,7 +232,7 @@ UE4SS auto reload is also on in this install, but it reloads only one mod when t
 Every run gives the game its own `LOCALAPPDATA` (`<run folder>\appdata`). The fixture (default `base`, a copy of the user's `saveGame_0`) is its `saveGame_0`.
 The user's save folder is never used by the game in a run. It is hashed before and after, and a change fails the run. The private folder is deleted in teardown.
 `--keep-open` leaves it in place and does not compare the user's save files. Stop the game with `harness\game-close.ps1`, then run
-`.venv\Scripts\python.exe harness	oolsixtures.py remove --appdata runs\<id>ppdata` (about 4 MB per run).
+`.venv\Scripts\python.exe harness\toolsixtures.py remove --appdata runs\<id>ppdata` (about 4 MB per run).
 A game crash writes its UE crash report into the user's REAL `Crashes` folder (not the private one). `collect` copies the reports of this game (matched by process id) into `crash/`,
 and `teardown` stops the `CrashReportClient.exe` that the crash leaves open. Test it with `python harness/run.py --scenario selftest-crash` (verdict `crash`, exit 2).
 
@@ -324,3 +324,11 @@ pakmod.py remove <name>      # or: remove --all. Deletes only manifest files who
 To check the effect: `run.py --scenario datatable-vanilla` with `HARNESS_EXPECT_ITEM_ROWS='{"17": {"Value": 0.75}}'` (new values) after a pak that changes them.
 Without a pak the scenario compares 24 `itemStats` rows with `harness/vanilla/itemStats.json` (about 50 s per run). Details: `docs/specs/09-asset-mods/implementation-notes/tooling.md`.
 Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_pakmod.py" -v` and `test_runlib_itemtable.py`.
+
+## Coverage of a feature (criteria and COVERS)
+The tool `harness/tools/coverage.py` measures how many criteria of spec 10 (Invasion Mode) have a verified test method. Data: `docs/specs/10-invasion-testability/criteria.json`.
+- Tag a scenario: add a module constant `COVERS = ["T1", "T2"]` (criterion ids). The tool reads it with `ast`. It never runs the scenario file. An unknown id is an error.
+- Mark a criterion verified: a scenario that covers it and has a passing run (newest `runs/*/summary.json` of that scenario with verdict `pass`) counts. A spike result counts too: set `method_verified` to true in `criteria.json` and list the evidence (note path or scenario name) in `verified_by`.
+- Run: `.venv\Scripts\python.exe harness\tools\coverage.py` (options: `--json`, `--min-verified 0.9`, `--runs-root`, `--criteria`, `--check-spec`). Exit code 0 is ok, 1 is a failed check, 2 is bad input.
+- Numbers: automatable share is (A + P) / all criteria. Verified share is the A and P criteria with a verified method / all A and P criteria. The target is 90%. Blocked criteria (missing game systems) stay in the count, so they lower the share. The gap list names A and P criteria with no scenario and no verification.
+- Tests: `.venv\Scripts\python.exe -m unittest harness/tests/test_coverage.py`.
