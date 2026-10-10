@@ -39,7 +39,7 @@ security review (see `review-checklist.md`) passing.
 - Fetch the package source into a scratch directory (not the game dir, not the repo).
   Run any Python on it with `-I`.
 - Review every Lua and Python file against `review-checklist.md`.
-- Output: `docs/specs/01-ue4ss-bridge/review-report.md` with verdict
+- Output: `docs/specs/01-ue4ss-bridge/implementation-notes/review-report.md` with verdict
   (approve / approve with patches / reject) and a list of required patches.
 - Gate: no unresolved High findings.
 
