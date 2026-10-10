@@ -16,6 +16,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Security review of ue4ss-bridge, with required patches P1 to P7.
 - Vendored `ue4ss-bridge` 1.2.1 (upstream a5eae1c): the `UEBridge` Lua mod in `mod/UEBridge/` and the MCP server in `mcp/ue4ss_bridge/`. See `vendor/ue4ss-bridge/PATCHES.md`.
 - Project MCP config `.mcp.json` (stdio) and `.claude/settings.json`. Eval is denied. Risky bridge tools ask first.
+- `HarnessLoadProbe` mod: press F8 in the main menu to load a save slot (default `saveGame_0`). It is a probe for spec 02.
 
 ### Changed
 - Vendored bridge: raw Lua eval is off by default, and it is gated in the Python server too.
