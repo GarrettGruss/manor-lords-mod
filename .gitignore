@@ -6,3 +6,6 @@ harness/pakmod.local.json
 
 # Working files
 modtools
+
+# Parallel game slots (spec 11)
+slots/
