@@ -29,3 +29,13 @@ so that each run writes to its own folder? A launch through Steam (`steam://rung
 - Direct launch with Steam closed.
 - Whether any Steam overlay or Steam feature is lost with a direct launch (the user does not need them for tests).
 - The folder `runs\direct-launch-test` is a test result and stays out of git (`runs/` is ignored).
+
+## Steam closed: not tested, on purpose (2026-10-10)
+The test needs Steam to be shut down (`steam.exe -shutdown`) and started again. A test script was written (shut down Steam, start the game directly with the
+harness environment, record whether it stays alive and whether `HarnessBoot` writes `boot.json`, stop the game, start Steam again with `-silent`).
+It was NOT run: the permission system refused the action, because it interferes with the user's running Steam session. The refusal was respected.
+
+What the harness does today: `preflight` checks that `steam.exe` is running and fails with a clear message if not (unit tested), so a run never
+starts the game without Steam. Whether the game itself would start without Steam (it may call Steam to restart itself, or exit) is unknown.
+To test it, the user can close Steam by hand and run: `.venv\Scripts\python.exe harness\run.py --scenario noop --skip-steam-check` (this option does not exist yet:
+add it only if the answer matters), or start the game executable directly with `HARNESS_RUN_DIR` set and look at `boot.json`.
