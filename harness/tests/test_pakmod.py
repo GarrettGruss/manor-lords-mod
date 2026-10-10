@@ -108,6 +108,8 @@ FAKE_UASSETGUI = textwrap.dedent('''
         exp = source[:-len(".uasset")] + ".uexp"
         document = {"engine": engine, "usmap": os.path.basename(usmap), "uasset": base64.b64encode(open(source, "rb").read()).decode(),
                     "uexp": base64.b64encode(open(exp, "rb").read()).decode() if os.path.exists(exp) else None}
+        if mode == "raw":
+            document["export"] = "UAssetAPI.ExportTypes.RawExport"
         if mode != "nofile":
             open(destination, "w").write(json.dumps(document) if mode != "empty" else "")
     elif command == "fromjson" and len(args) == 4:
@@ -468,6 +470,47 @@ class ConvertTests(PakTestCase):
         document = json.loads(target.read_text())
         self.assertEqual((document["engine"], document["usmap"]), ("5.5", "game.usmap"))
         self.assertEqual(self.log_entries("uassetgui")[0]["args"][0], "tojson")
+
+    def use_mapping_name(self, install_mapping=True, same_content=True):
+        """UAssetGUI 1.1.0 takes a mapping name and reads it from <LOCALAPPDATA>/UAssetGUI/Mappings."""
+        appdata = self.tmp / "appdata"
+        folder = appdata / "UAssetGUI" / "Mappings"
+        folder.mkdir(parents=True)
+        if install_mapping:
+            (folder / "GameMap.usmap").write_bytes(self.usmap.read_bytes() + (b"" if same_content else b"x"))
+        patch = mock.patch.dict(os.environ, {"LOCALAPPDATA": str(appdata)})
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.write_config(usmap_name="GameMap")
+
+    def test_tojson_passes_the_mapping_name_when_the_config_has_one(self):
+        self.extract()
+        self.use_mapping_name()
+        code, out, _ = self.run_main("tojson", ASSET + ".uasset")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.log_entries("uassetgui")[0]["args"][-1], "GameMap")
+
+    def test_tojson_refuses_when_the_mapping_is_not_installed_for_uassetgui(self):
+        self.extract()
+        self.use_mapping_name(install_mapping=False)
+        code, _, err = self.run_main("tojson", ASSET + ".uasset")
+        self.assertEqual(code, 1)
+        self.assertIn("mapping not installed", err)
+        self.assertEqual(self.log_entries("uassetgui"), [])
+
+    def test_tojson_refuses_an_installed_mapping_that_differs_from_the_usmap(self):
+        self.extract()
+        self.use_mapping_name(same_content=False)
+        code, _, err = self.run_main("tojson", ASSET + ".uasset")
+        self.assertEqual(code, 1)
+        self.assertIn("differs", err)
+
+    def test_tojson_fails_loudly_on_a_raw_export(self):
+        self.extract()
+        os.environ["FAKE_UASSET_MODE"] = "raw"
+        code, _, err = self.run_main("tojson", ASSET + ".uasset")
+        self.assertEqual(code, 1)
+        self.assertIn("RawExport", err)
 
     def test_fromjson_writes_the_asset_and_can_target_a_build_folder(self):
         self.extract()
