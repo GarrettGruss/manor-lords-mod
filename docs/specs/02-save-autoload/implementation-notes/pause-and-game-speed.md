@@ -96,3 +96,21 @@ If a run still shows a late restart, find the cause first. A hook on `RTSMultiEn
 ## Open
 - Which game code restarts the clock after the load? Not confirmed.
 - Is 8 s long enough in every launch? Check the next runs. Look at `boot.json` and at `mod.log` for a second `pauseGame` call.
+
+## Result of the third fix (run at 23:07, build with the 8 s hold)
+The game stays paused.
+
+`mod.log`:
+- `state -> PAUSING` at +8 s after the load call.
+- `game clock is moving; calling pauseGame (call 1)` at the same time.
+- `game clock is moving; calling pauseGame (call 2)` 5 s later. **The game did restart the clock after our first pause.** The hold caught it.
+- `state -> READY` 8 s after the second pause. `ready.marker`: `"clock":1.0835`, `seconds_since_start` 24.
+
+Checked with the bridge after `READY`, 8 readings over 24 s: the clock stayed at 1.084 (change 0.0 each time) and `gameSpeed` stayed 0.
+The user also saw the game paused.
+
+So the late restart is real. It happened again, about 5 s after the first pause. The 8 s hold is enough in this run (one run).
+The cause is still not known. Collect more runs before the window is trusted.
+
+## Launch log
+`mod.log` also shows a launch at 1791605143 with no end state (`WAITING_FOR_MENU` and then nothing). The game was probably closed before the menu appeared.
