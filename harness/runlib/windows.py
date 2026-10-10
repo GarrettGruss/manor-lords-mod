@@ -7,7 +7,7 @@ from ctypes import wintypes
 
 
 def list_windows() -> list[dict]:
-    """Return all top-level windows as dicts: hwnd, pid, title, visible, iconic, rect (left, top, right, bottom)."""
+    """Return all top-level windows as dicts: hwnd, pid, title, class, visible, iconic, rect (left, top, right, bottom)."""
     user32 = ctypes.windll.user32
     _make_process_dpi_aware()
     windows: list[dict] = []
@@ -21,10 +21,13 @@ def list_windows() -> list[dict]:
         user32.GetWindowRect(hwnd, ctypes.byref(rect))
         title = ctypes.create_unicode_buffer(256)
         user32.GetWindowTextW(hwnd, title, 256)
+        window_class = ctypes.create_unicode_buffer(128)
+        user32.GetClassNameW(hwnd, window_class, 128)
         windows.append({
             "hwnd": int(hwnd or 0),
             "pid": pid.value,
             "title": title.value,
+            "class": window_class.value,
             "visible": bool(user32.IsWindowVisible(hwnd)),
             "iconic": bool(user32.IsIconic(hwnd)),
             "rect": (rect.left, rect.top, rect.right, rect.bottom),
@@ -48,14 +51,34 @@ def _area(window: dict) -> int:
     return max(0, right - left) * max(0, bottom - top)
 
 
+GAME_WINDOW_CLASS = "UnrealWindow"  # the window class of an Unreal Engine game window
+# Windows of the game process that are not the game: the UE4SS debug GUI and the UE4SS console.
+OVERLAY_CLASSES = {"GLFW30": "UE4SS Debugging Tools", "ConsoleWindowClass": ""}
+
+
 def pick_game_window(windows: list[dict], pids: set[int]) -> dict:
-    """Return the largest visible, not minimized window of the given processes.
+    """Return the game window of the given processes.
+
+    The game window is the window of class UnrealWindow. The UE4SS debug GUI and console are windows of the
+    same process too: if the game window is minimized, the largest other window would be a debug window,
+    and the screenshot would show it by mistake. So when an UnrealWindow exists, only it can be picked.
+    If no UnrealWindow exists (another game, a changed class), fall back to the largest visible window.
 
     Raise LookupError with a reason if there is none.
     """
     own = [w for w in windows if w["pid"] in pids]
     if not own:
         raise LookupError(f"no window belongs to the game process {sorted(pids)}")
+
+    game = [w for w in own if w.get("class") == GAME_WINDOW_CLASS and _area(w) > 0]
+    if game:
+        window = max(game, key=_area)
+        if window["iconic"]:
+            raise LookupError("the game window is minimized")
+        if not window["visible"]:
+            raise LookupError("the game window is not visible")
+        return window
+
     visible = [w for w in own if w["visible"] and _area(w) > 0]
     if not visible:
         raise LookupError("the game has no visible window")
@@ -63,3 +86,23 @@ def pick_game_window(windows: list[dict], pids: set[int]) -> dict:
     if not shown:
         raise LookupError("the game window is minimized")
     return max(shown, key=_area)
+
+
+def overlay_windows(windows: list[dict], pids: set[int]) -> list[dict]:
+    """The visible debug windows of the game process (UE4SS GUI and console) that can cover the game in a screenshot."""
+    found = []
+    for window in windows:
+        if window["pid"] not in pids or not window["visible"] or window["iconic"] or _area(window) == 0:
+            continue
+        prefix = OVERLAY_CLASSES.get(window.get("class", ""))
+        if prefix is not None and window["title"].startswith(prefix):
+            found.append(window)
+    return found
+
+
+SW_MINIMIZE = 6
+
+
+def minimize_window(hwnd: int) -> None:
+    """Minimize a window without giving it the focus."""
+    ctypes.windll.user32.ShowWindow(hwnd, SW_MINIMIZE)
