@@ -1,0 +1,14 @@
+schema = 1
+
+[mod]
+id          = "ue4ss-bridge"
+name        = "UEBridge"
+version     = "1.2.1"
+author      = "Rabbit"
+description = "Lua side of the ue4ss-bridge live MCP bridge; game-agnostic, the server is the ue4ss_bridge Python package."
+
+[[lua]]
+name    = "UEBridge"
+source  = "."
+order   = 400
+enabled = true
