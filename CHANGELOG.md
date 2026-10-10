@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Coverage tool (spec 10, U8): `harness/tools/coverage.py` and `docs/specs/10-invasion-testability/criteria.json` (38 criteria of the Invasion Mode brief). It reads `COVERS = [...]` in scenarios with `ast`, finds the last passing run, and prints the verified share of A and P criteria against the 90% target (`--json`, `--min-verified`, `--check-spec`). Tests: `test_coverage.py`. Baseline: 0 of 37 verified.
 - Action `place_building(type_id, fx, fy)` (spec 07): places a building with a real OS mouse click on the game window (`harness/runlib/osinput.py`, tests `test_runlib_osinput.py`, scenario `place-building`). It uses the OS mouse and keyboard focus: do not use it while a person works on this computer. Verified in the real game with the HitchingPost; the earlier notes on why a faked mouse failed are in `building-placement.md`.
 - Clock restart cause (spec 02): found with a temporary hook probe (source kept in `docs/specs/02-save-autoload/implementation-notes/`). Note `clock-restart-cause.md`. Hidden scenario `probe-building` and the note `building-placement.md` (spec 07): no verified way to place a building. Second attempt (fake mouse hooks, raw spawn call) also failed; probe source kept in the notes, not deployed.
 - Fake game: `FakeGameClock(cinematic=(start, end))` models the intro cinematic. New boot test modes `cinematic`, `nocinematic`, `silentrestart`, `cinematicstuck`, and a check of the number of `pauseGame` calls.
@@ -29,6 +30,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Spec `docs/specs/02-save-autoload/` for the save auto-load and ready signal.
 - Spec `docs/specs/03-run-launcher/` for the run launcher and `summary.json`.
 - Spec `docs/specs/09-asset-mods/`: when and how to change game data with pak files. Deferred, because no planned feature needs it yet.
+- Spec `docs/specs/10-invasion-testability/`: the testability matrix of the Invasion Mode brief, the harness upgrades and spikes needed for about 90% automated verification.
 - Spec `docs/specs/07-feature-test-kit/`: actions for scenarios (give resources, change time or state, read letters) with checked effects.
 - `harness/run.py` and `harness/runlib/`: the run launcher core (run folder, lock, iteration cap, phase runner, `summary.json`) with fake phases for tests. Real game phases are not built yet.
 - Real run phases (`preflight`, `deploy`, `launch`, `boot`, `scenario`, `collect`, `teardown`) and `harness/run.py --scenario noop`: one complete iteration with the real game, crash detection, and a scenario registry (`harness/runlib/scenario.py`).
