@@ -6,6 +6,7 @@
 
 local log = require("HarnessLog")
 
+local VERSION = "1"
 local TAG = "LoadProbe"
 local POLL_MS = 500
 local POLL_LIMIT = 40 -- 40 polls of 500 ms = 20 s
@@ -115,4 +116,5 @@ RegisterKeyBind(Key.F8, function()
     end)
 end)
 
+log.info("HarnessLoadProbe", "loaded version " .. VERSION)
 log.say(TAG, "ready. Press F8 in the main menu to load slot '" .. targetSlot() .. "'.")

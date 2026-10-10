@@ -259,6 +259,14 @@ end
 
 function ExecuteInGameThread(fn) fg.queue[#fg.queue + 1] = fn end
 
+-- RestartMod only records the name. A test sets fg.on_restart(name) to act like the restarted mod
+-- (for example, to write its "loaded version" line). The real UE4SS gives the mod a new Lua state; this is not modeled.
+fg.restarts = {}
+function RestartMod(name)
+    fg.restarts[#fg.restarts + 1] = name
+    if fg.on_restart then fg.on_restart(name) end
+end
+
 local function add_loop(ms, fn, once)
     local seconds = math.max(ms / 1000, 0.001)
     local loop = { interval = seconds, due = fg.now + seconds, fn = fn, once = once, dead = false }

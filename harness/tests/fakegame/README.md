@@ -87,3 +87,8 @@ and once more later (`late_revert_after`). `PawnCPP.bIsPlayerPaused` is stuck at
 - `RegisterHook` never fires by itself. The test calls `fire_hook`. Hook registration on reload is not modeled.
 - `os.time` and `os.clock` are fake. `os.date` uses the fake time. `io`, `os.execute` and `os.getenv` are real.
 - Paths: `HarnessLog` runs `mkdir` through `os.execute` with Windows syntax, so the kit runs on Windows only.
+
+## Restart of a mod (spec 06, part A)
+
+`RestartMod(name)` only records the name in `game.fg.restarts`. A test can set `game.fg.on_restart` to a Lua function that acts like the
+restarted mod. See `harness/tests/test_fakegame_harnessreload.py`. The real UE4SS gives the mod a new Lua state; the kit does not model that.
