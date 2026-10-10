@@ -111,3 +111,21 @@ Run the unit tests (no game needed):
 ```powershell
 .venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib*.py" -v
 ```
+
+## Run launcher (real game)
+
+`harness/run.py --scenario <name>` runs one complete iteration with the real game (spec 03, step 2).
+Exactly one of `--scenario` and `--fake` is required. Steam must be running.
+
+```powershell
+.venv\Scripts\python.exe harness\run.py --scenario noop [--keep-open] [--run-id ID] [--max-runs N]
+```
+
+Phases: `preflight`, `deploy`, `launch`, `boot`, `scenario`, `collect`, `teardown`.
+The launcher starts `ManorLords-Win64-Shipping.exe` directly with `HARNESS_RUN_DIR`, `HARNESS_AUTOBOOT` and `HARNESS_TEST_SAVE`.
+`collect` and `teardown` always run. Teardown ends the game with a terminate, because the game ignores a close request.
+`--keep-open` leaves the game running and adds a note to the summary.
+A stale game process is stopped in `preflight` and recorded in `notes` of `summary.json`.
+A game that ends before teardown is a `crash` (exit code 2).
+Scenarios are functions registered in `harness/runlib/scenario.py`. The only one now is `noop`: it checks that the game is paused and the bridge works.
+The test save `saveGame_0` is only read (existence check and SHA-256).
