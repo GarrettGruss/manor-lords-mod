@@ -31,3 +31,12 @@ Run from the repo root. They need only `uv`.
 
 These checks use Lua 5.4 from the `lupa` package. They find syntax errors and wrong variable names.
 They cannot show that the real UE4SS API behaves like the fake one.
+
+## Note: HarnessBoot auto-load switch
+
+`HarnessBoot` loads the test save only when it is turned on.
+
+- The file `ue4ss\harness\autoboot.enable` (in the game's `Win64` folder) turns it on. It was created for the first in-game test.
+- While that file exists, every game launch that reaches the main menu loads `saveGame_0`.
+- Delete the file to get normal play back. Ask Claude to delete it if you prefer.
+- The run launcher (spec 03) will use the environment variable `HARNESS_AUTOBOOT=1` instead of this file.
