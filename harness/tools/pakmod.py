@@ -22,7 +22,6 @@ Safety:
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -31,13 +30,17 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from runlib.paks import (  # noqa: E402,F401 - the install code is shared with run.py --pak
+    EXIT_ERROR, MANIFEST_NAME, NAME_PATTERN, PAK_SUFFIX, PakError, built_pak_path, check_name, install_pak, is_inside,
+    list_paks, mods_dir_of, pak_file_name, paks_dir_of, read_manifest, remove, require_inside, sha256_of, write_manifest,
+)
+
 DEFAULT_GAME_DIR = Path(r"C:\Program Files (x86)\Steam\steamapps\common\Manor Lords")
 DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "pakmod.local.json"
-NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 ENV_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 PLACEHOLDER_PATTERN = re.compile(r"\{[a-z_]+\}")
-PAK_SUFFIX = "_P.pak"
-MANIFEST_NAME = ".harness-paks.json"
 RESERVED_FOLDERS = ("out", "extracted", "json", "fromjson", "roundtrip", ".index-cache")
 ASSET_EXTENSIONS = (".uasset", ".uexp", ".ubulk", ".uptnl")
 TOOLS = ("repak", "uassetgui")
@@ -49,7 +52,6 @@ REPAK_TIMEOUT_S = 300
 PACK_TIMEOUT_S = 300
 UASSETGUI_TIMEOUT_S = 120
 VERSION_TIMEOUT_S = 10
-EXIT_ERROR = 1
 EXIT_HASH_MISMATCH = 3
 EXIT_PAK_MISMATCH = 4
 
@@ -72,10 +74,7 @@ CONFIG_EXAMPLE = {
 }
 
 
-class PakModError(Exception):
-    """A clear, expected failure. The message says what to do."""
-
-    exit_code = EXIT_ERROR
+PakModError = PakError  # one error type for the library and the command line
 
 
 class ToolHashMismatch(PakModError):
@@ -88,43 +87,11 @@ class PakListMismatch(PakModError):
 
 # ---- names and paths ----
 
-def check_name(name: str) -> str:
-    if not isinstance(name, str) or not NAME_PATTERN.fullmatch(name):
-        raise PakModError(f"bad name {name!r}: use 1 to 40 characters from A-Z a-z 0-9 _ -")
-    return name
-
-
 def check_mod_name(name: str) -> str:
     """A mod name also must not clash with a work folder that has another job."""
     if check_name(name).lower() in RESERVED_FOLDERS:
         raise PakModError(f"name {name!r} is reserved for a work folder")
     return name
-
-
-def pak_file_name(name: str) -> str:
-    return check_name(name) + PAK_SUFFIX
-
-
-def is_inside(child: Path, parent: Path) -> bool:
-    try:
-        Path(child).resolve().relative_to(Path(parent).resolve())
-    except ValueError:
-        return False
-    return True
-
-
-def require_inside(child: Path, parent: Path, what: str) -> Path:
-    if not is_inside(child, parent):
-        raise PakModError(f"{what} is outside {parent}: {child}")
-    return child
-
-
-def mods_dir_of(game_dir: Path) -> Path:
-    return paks_dir_of(game_dir) / "~mods"
-
-
-def paks_dir_of(game_dir: Path) -> Path:
-    return Path(game_dir) / "ManorLords" / "Content" / "Paks"
 
 
 def clean_internal_path(text: str) -> str:
@@ -238,14 +205,6 @@ def write_pins(config_path: Path, pins: dict[str, str]) -> None:
 # ---- running the tools ----
 
 _HASH_MEMO: dict[tuple, str] = {}
-
-
-def sha256_of(path: Path) -> str:
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
 
 
 def tool_hash(path: Path) -> str:
@@ -680,110 +639,13 @@ def verify_pak_list(config: dict, pak: Path, expected: set[str]) -> None:
 
 # ---- manifest, install, remove ----
 
-def read_manifest(mods_dir: Path) -> dict:
-    path = mods_dir / MANIFEST_NAME
-    if not path.is_file():
-        return {"version": 1, "created_dir": False, "files": {}}
-    try:
-        manifest = json.loads(path.read_text(encoding="utf-8"))
-        files = manifest["files"]
-    except (OSError, ValueError, KeyError) as error:
-        raise PakModError(f"manifest is broken, fix or delete it by hand: {path} ({error})") from error
-    if not isinstance(files, dict):
-        raise PakModError(f"manifest 'files' must be an object: {path}")
-    manifest.setdefault("created_dir", False)
-    return manifest
-
-
-def write_manifest(mods_dir: Path, manifest: dict) -> None:
-    path = mods_dir / MANIFEST_NAME
-    temp = path.with_name(path.name + ".tmp")
-    temp.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    temp.replace(path)
-
-
 def install(work_dir: Path, game_dir: Path, name: str, dry_run: bool = False) -> Path:
     pak_name = pak_file_name(name)
-    source = work_dir / "out" / pak_name
+    source = built_pak_path(work_dir, name)
     require_inside(source, work_dir, "pak")
     if not source.is_file():
         raise PakModError(f"pak not built yet: {source}. Run build {name} first.")
-    mods_dir = mods_dir_of(game_dir)
-    target = mods_dir / pak_name
-    manifest = read_manifest(mods_dir)
-    if target.exists() and pak_name not in manifest["files"]:
-        raise PakModError(f"refusing to overwrite {target}: it is not in the harness manifest")
-    print(f"{'[dry-run] ' if dry_run else ''}install {pak_name} -> {target}")
-    if dry_run:
-        return target
-    created = not mods_dir.exists()
-    mods_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, target)
-    if sha256_of(target) != sha256_of(source):
-        raise PakModError(f"copy check failed for {target}")
-    manifest["files"][pak_name] = sha256_of(target)
-    manifest["created_dir"] = bool(manifest["created_dir"] or created)
-    write_manifest(mods_dir, manifest)
-    return target
-
-
-def remove_one(mods_dir: Path, manifest: dict, pak_name: str, dry_run: bool) -> bool:
-    """Delete one manifest-listed pak if its hash still matches. Return True if the manifest entry can go."""
-    target = mods_dir / pak_name
-    if Path(pak_name).name != pak_name or not pak_name.endswith(".pak"):
-        raise PakModError(f"manifest entry is not a plain pak file name: {pak_name!r}")
-    require_inside(target, mods_dir, "pak")
-    if not target.exists():
-        print(f"missing (already gone): {pak_name}")
-        return True
-    if sha256_of(target) != manifest["files"][pak_name]:
-        print(f"SKIPPED {pak_name}: the file changed since install, delete it by hand if you want")
-        return False
-    print(f"{'[dry-run] ' if dry_run else ''}deleted {pak_name}")
-    if not dry_run:
-        target.unlink()
-    return True
-
-
-def remove(game_dir: Path, names: list[str] | None, dry_run: bool = False) -> int:
-    """Remove the named paks, or all manifest paks if `names` is None. Return the number of skipped files."""
-    mods_dir = mods_dir_of(game_dir)
-    manifest = read_manifest(mods_dir)
-    wanted = list(manifest["files"]) if names is None else [pak_file_name(n) for n in names]
-    unknown = [pak for pak in wanted if pak not in manifest["files"]]
-    if unknown:
-        raise PakModError(f"not in the harness manifest, not touched: {', '.join(unknown)}")
-    skipped = 0
-    for pak_name in wanted:
-        if remove_one(mods_dir, manifest, pak_name, dry_run):
-            manifest["files"].pop(pak_name)
-        else:
-            skipped += 1
-    if not dry_run:
-        finish_remove(mods_dir, manifest)
-    return skipped
-
-
-def finish_remove(mods_dir: Path, manifest: dict) -> None:
-    manifest_path = mods_dir / MANIFEST_NAME
-    if manifest["files"]:
-        write_manifest(mods_dir, manifest)
-        return
-    manifest_path.unlink(missing_ok=True)
-    if manifest["created_dir"] and mods_dir.is_dir() and not any(mods_dir.iterdir()):
-        mods_dir.rmdir()
-        print("removed empty ~mods folder")
-
-
-def list_paks(game_dir: Path) -> list[str]:
-    mods_dir = mods_dir_of(game_dir)
-    manifest = read_manifest(mods_dir)
-    lines = []
-    for pak_name, expected in sorted(manifest["files"].items()):
-        target = mods_dir / pak_name
-        state = "missing" if not target.exists() else ("ok" if sha256_of(target) == expected else "CHANGED")
-        lines.append(f"{pak_name}  {state}  {expected}")
-    return lines
+    return install_pak(source, game_dir, pak_name, dry_run)
 
 
 # ---- command line ----
