@@ -1,52 +1,55 @@
 # Asset mod tooling (spec 09)
 
-Date: 2026-10-10, branch `feat/11-asset-mod-tool`.
+Date: 2026-10-10, branch `feat/15-pak-pipeline-repak`. Replaces the first design (UnrealPak response file), which is removed.
+Command line facts: `cli-reference.md`. First check that paks may not be needed: `datatable-check.md`.
 
 ## Verified and not verified
 
 | Part | State |
 |---|---|
-| `pakmod.py` config check, name and path guards, response file, command construction, packer failure and timeout | verified with unit tests and a fake packer (`harness/tests/test_pakmod.py`) |
-| `install`, `remove`, `list`, manifest rules, `--dry-run` | verified with unit tests in temp folders |
-| `uninstall.ps1 -Remove` removes harness paks | verified with a fake game folder (real PowerShell run in the test) |
-| Scenario `datatable-vanilla` in the real game | verified: 3 runs, all pass (see below) |
-| A real packer (UnrealPak, `retoc`) accepts the response file format and makes a pak the game loads | **NOT verified.** No tool is installed |
-| Response file format `"<file>" "<mount path>"` and mount point `../../../` | **NOT verified.** Taken from the UnrealPak convention (from memory), not checked against a tool |
-| The game loads a `_P.pak` from `~mods` and a changed `DT_Items` shows in `itemStats` | **NOT verified** |
-| AES key need | **NOT verified.** Unknown whether the shipped paks are encrypted. A key is needed to read them, probably not to add a patch pak |
-| A symlink in the asset folder is refused | the test is skipped when the system does not allow symlinks (it was skipped on this machine) |
-| Nothing was installed into the real game `Paks` folder | true; all tests use temp folders |
+| Config checks, pinned SHA-256 per tool, refusal on a mismatch (exit code 3), `check --pin` | verified with unit tests and fake tools (`harness/tests/test_pakmod.py`) |
+| `find` (case-insensitive, 50 results, index cache by size and mtime), `extract` (uasset, uexp, optional ubulk and uptnl), path traversal refusal | verified with a fake repak that reads a JSON fixture format of its own |
+| `tojson`, `fromjson`, failures, time limit, empty or missing output, `roundtrip` report (equal, different, first offset) | verified with a fake UAssetGUI (lossless and lossy variants) |
+| `build` (layout, `_P` suffix, mount point, pak version, list check, exit code 4 on a mismatch) | verified with the fake repak |
+| `install`, `remove`, `list`, manifest rules, `--dry-run`, `--game-dir` | verified in temp folders |
+| AES key from an environment variable; never in output, errors, dry-run text, config or work files | verified with the fake tool (the fake echoes its arguments on failure; the key is masked) |
+| `uninstall.ps1 -Remove` removes harness paks | verified with a fake game folder (real PowerShell) |
+| The real repak and UAssetGUI accept the command lines in `cli-reference.md` | **NOT verified.** Read from source and README only. No tool was downloaded or run |
+| `repak pack` output argument is a file path; `V11` is the right pak version for this game | **NOT verified** |
+| UAssetGUI `fromjson` writes the `.uexp`; it returns to the shell and sets an exit code | **NOT verified** |
+| A round trip of a real 5.5 asset is byte equal, or the result loads in the game | **NOT verified** (the spike decides) |
+| The game paks are encrypted; the internal path layout and the mount point `../../../` | **NOT verified** |
+| The game loads a `_P.pak` from `~mods` and a changed asset shows in the game | **NOT verified** |
+| The `.usmap` made by the UE4SS dumper is accepted by UAssetGUI | **NOT verified** |
+
+The fake tools prove the glue code only. They cannot show how the real tools behave.
 
 ## Design
 
-- Local config `harness/pakmod.local.json` (gitignored): `packer`, `packer_args` (a list with `{response}` and `{output}`), `work_dir`.
-  `check` lists each missing part. It does not run the packer.
-- `build <name>` uses `<work_dir>\<name>\` (edited asset files). It writes `<work_dir>\out\<name>.response.txt` (one line per file: full path and mount path `../../../<relative path>`),
-  runs the packer as a list without a shell (limit 300 s), and expects `<work_dir>\out\<name>_P.pak`. A packer that exits 0 without a pak is an error.
-- `install <name>` copies the pak to `<game>\ManorLords\Content\Paks\~mods\`, checks the copy hash, and records it in `~mods\.harness-paks.json`
-  (`{"version":1,"created_dir":bool,"files":{"<name>_P.pak":"<SHA-256>"}}`). It refuses to overwrite a file that is not in the manifest.
-- `remove` deletes only manifest files, only when the SHA-256 still matches. A changed file is skipped with a message. A manifest entry with a path part is refused.
-  The `~mods` folder is removed only if the harness created it and it is empty.
-- `deploy.ps1` is not changed (decision: a pak is built outside the repo, so `pakmod.py install` is the deploy step).
-- `uninstall.ps1 -Remove` has the same rules in PowerShell (plain pak file name, inside `~mods`, hash must match, pak manifest kept if a file was skipped).
-  Default mode (disable) does not touch paks.
+- Local config `harness/pakmod.local.json` (gitignored, example: `harness/pakmod.local.example.json`):
+  `repak` and `uassetgui` (`path`, `sha256`), `usmap`, `engine_version`, `work_dir`, optional `pak_version` (default `V11`), `mount_point` (default `../../../`),
+  `aes_key_env` (the NAME of an environment variable), `templates` (argument templates that replace the defaults).
+- Every tool call: the file must exist and match the pinned hash (hash remembered per file size and mtime). Then it runs as a list without a shell, with a time limit
+  (repak list and get 300 s, pack 300 s, UAssetGUI 120 s). A `.py` tool path is started with the current Python (used by tests only).
+- AES key: `--aes-key <key>` is added in front of the repak command only. The key is read from the environment at call time. Messages and tool output are scrubbed of it, and the dry-run command shows `***`.
+- Work folder layout: `extracted\<internal path>.uasset|uexp|ubulk|uptnl`, `json\<internal path>.json`, `fromjson\` (default target of `fromjson`) or `<mod name>\` (`fromjson --to`),
+  `roundtrip\` (second asset for the comparison), `out\<name>_P.pak`, `.index-cache\<pak name>.json`. These names cannot be used as a mod name.
+- `find` searches `*.pak` in `ManorLords\Content\Paks` only (not `~mods`). If several paks hold one asset, `extract` uses the last by name and says so.
+- `build` runs `repak pack`, then `repak list` on the result and compares it with the folder. A difference is reported and gives exit code 4.
+- Manifest, `install`, `remove`, `uninstall.ps1 -Remove`: unchanged from the first design (`~mods\.harness-paks.json` with `version`, `created_dir`, `files` as name to SHA-256;
+  no overwrite of a file that is not in the manifest; remove only when the hash still matches; a path part in an entry is refused).
 
-## Scenario datatable-vanilla
+## Exit codes
 
-- `harness/vanilla/itemStats.json` holds the row count 213 and 24 rows (every second existing id from -1 to 120) with `Weight`, `Value`, `spoilageRate`.
-  It was recorded once with the hidden scenario `datatable-record` in the real game without a pak. The values match the earlier check (row 16 Value 0, row 17 0.5, row 1 1.5).
-  `Weight` is 0 in all recorded rows.
-- The scenario reads each field through `ctx.actions.datatable_read` and compares with tolerance 1e-4 (73 checks: row count and 72 fields).
-- `HARNESS_EXPECT_ITEM_ROWS='{"17": {"Value": 0.75}}'` replaces the expected values of single fields. Use it for a pak that changes them.
-- Real runs, 2026-10-10: `20261010-092110-9587` 49.1 s, `20261010-092200-5e32` 48.7 s, `20261010-092249-590b` 48.6 s. All pass. The scenario phase takes about 14.6 s.
-- The user save folder guard of the launcher reported no change.
+0 ok. 1 error. 2 bad command line. 3 a tool does not match its pinned hash. 4 the built pak lists other files than the folder.
+`roundtrip` prints "equal" or "different" and exits 0 in both cases.
 
-## Bug found and fixed on the way
+## Scenario datatable-vanilla (unchanged)
 
-The first recording run (122 row reads) failed with `PermissionError` when Python read a result file while the mod still held it open.
-`CommandChannel` now retries on `PermissionError` and on partial JSON until the timeout (`_read_answer`).
+`harness/vanilla/itemStats.json` holds the row count 213 and 24 rows with `Weight`, `Value`, `spoilageRate`, recorded without a pak.
+`HARNESS_EXPECT_ITEM_ROWS='{"17": {"Value": 0.75}}'` replaces expected values. Real runs 2026-10-10: `20261010-092110-9587`, `20261010-092200-5e32`, `20261010-092249-590b`, all pass (~49 s).
 
-## What the user must supply to finish spec 09
+## What the user must supply
 
-A pak tool, an edited `DT_Items` asset in the work folder (made with FModel, UAssetGUI and the `.usmap`), possibly the AES key, and `harness/pakmod.local.json`.
-Then: `build`, `install`, `run.py --scenario datatable-vanilla` with `HARNESS_EXPECT_ITEM_ROWS`, `remove`, and a final `datatable-vanilla` run without it.
+The `repak` and `UAssetGUI` binaries (from their official release pages, reviewed by the user), a `.usmap` from the UE4SS dumper, and possibly the AES key. See `harness/README.md`, section "Asset mods".
+Then run the spike (spec 09, implementation plan item 4).

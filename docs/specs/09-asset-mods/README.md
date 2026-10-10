@@ -1,7 +1,7 @@
 # Spec 09: Asset mods (pak editing and repacking)
 
-Status: deferred item on the roadmap, by the user's decision (2026-10-10). The tooling is built and tested with a fake packer.
-The real pak build is NOT verified and is not pursued now: it waits for a feature that needs it (see "Deferred roadmap item" below, which lists what it unlocks).
+Status: in progress (since 2026-10-10). The user decided on the toolchain (repak and the UAssetGUI command line) and asked to begin implementation.
+The tooling is built and tested with fake tools. The real chain is NOT verified: it needs the tools, a `.usmap` and a first spike (see "Implementation plan").
 
 ## Goal
 Change game data that Lua cannot reach (data tables, assets) by editing and repacking `.pak` files, and test the change with the same harness.
@@ -31,6 +31,44 @@ Build it only when a feature spec shows that the data cannot be changed at runti
 4. A pak change needs a game restart. The run launcher already restarts the game for each run, so a scenario sees the change.
 5. A scenario verifies the change by reading the data at runtime (through the bridge) and comparing with the vanilla value.
 
+## Toolchain decision (2026-10-10, by the user)
+| Layer | Tool | Role |
+|---|---|---|
+| Archive (`.pak`) | **repak** (github.com/trumank/repak), command line | `list`, `info`, `get` (one file), `unpack`, `pack <folder>`, `hash-list`. Reads encrypted paks with `--aes-key`. Pak versions up to 11 |
+| Asset (`.uasset`, `.uexp`, `.umap`) | **UAssetGUI**, command line | `tojson <asset> <json> <engine version> [mappings]` and `fromjson <json> <asset> [mappings]`. It converts ONE asset. It does not read or write `.pak` files |
+| Mapping | A `.usmap` file | Made by the UE4SS dumper (the bridge has a `dump` tool). Passed to UAssetGUI. Must match the game build |
+| Test and verification | This harness | Scenarios, telemetry, suites, and (new) A/B variants |
+| Glue | `harness/tools/pakmod.py` | Finds, extracts, converts, round-trips, builds, installs and removes |
+
+Why repak and not the alternatives:
+- **Epic's UnrealPak** is the reference tool, but it only ships inside an Unreal Engine install (multi-gigabyte). It stays an option as a cross-check, and as the packer if UE 5.5 is installed for level C work.
+- **The third-party repository `allcoolthingsatoneplace/UnrealPakTool`** (a copy of UnrealPak 4.27 binaries committed by a third party) is **rejected**: the binaries cannot be verified (no releases, no hashes, the README links to another owner), it is a 4.27 tool for a 5.5.4 game, and redistributing Epic binaries has an unclear license.
+- **retoc** is for IoStore (`.utoc`/`.ucas`). The game uses plain `.pak` files.
+- **FModel** is optional: useful for a person to browse assets. It is not part of the agent loop.
+
+Rules for third-party tools: the user places the binaries (or approves a download from the official release page). `pakmod.py check` pins the SHA-256 of each tool in the local config
+and refuses to run a tool whose hash differs. Tools run without a shell, with a time limit, and never with a path outside the work folder and the game's `~mods` folder.
+
+## Pipeline (the agent loop)
+1. `pakmod find <asset>`: search the pak indexes of the game (`repak list` on each pak) and say which pak holds the asset. The jmap gives the package path of a DataTable.
+2. `pakmod extract <asset>`: `repak get` the `.uasset` and its `.uexp` into the work folder (never unpack a whole 700 MB pak).
+3. `pakmod roundtrip <asset>`: convert to JSON and back with UAssetGUI and compare with the original. Edit only when this matches (or the result still loads in the game).
+4. The agent edits the JSON (a text diff shows the change), and `pakmod fromjson` writes the asset.
+5. `pakmod build <name>`: build a folder with the game's exact internal path layout and run `repak pack`. The output is `<name>_P.pak` (the `_P` suffix gives it load priority).
+6. `pakmod install <name>`: copy it to `ManorLords\Content\Paks\~mods\` and record it in the manifest.
+7. `run.py --pak <name> --scenario <s>`: run the scenario with the pak installed for the run (installed in preflight, removed in teardown).
+8. Compare. For A/B: a suite entry with `"paks": ["name"]` and the same entry without paks, N runs each (see spec 08). The report shows both groups.
+9. `pakmod remove <name>` or `uninstall.ps1 -Remove`: back to vanilla.
+
+## Implementation plan (2026-10-10)
+1. Spec update. Done in this change.
+2. Done (2026-10-10, fake tools only). `pakmod.py` for repak and UAssetGUI: config with pinned hashes, `check`, `find`, `extract`, `tojson`, `fromjson`, `roundtrip`, `build` (folder and `repak pack`), `install`, `remove`, `list`. Unit tests with fake tools (small scripts that mimic the command lines). The old response-file packer path is removed.
+3. `run.py --pak <name>` and suite variants with an A/B report. Unit tests with fake runs. No game use in tests.
+4. Spike with the real tools (needs the user): repak and UAssetGUI in place, a `.usmap` made, then: find and extract `DT_units` (or another small table), round trip it, change one number, build and install a pak, run `datatable-vanilla` with the expected new value (`HARNESS_EXPECT_ITEM_ROWS` or its successor), run the A/B comparison, and remove the pak. Record the evidence in `implementation-notes/`.
+5. Docs, README, changelog.
+
+Open questions for the spike: the game's pak version, whether the game paks are encrypted, whether UAssetGUI round-trips this game's 5.5 assets and how it treats `.uexp`, the exact internal path layout and mount point, and whether the game loads a `_P.pak` from `~mods`.
+
 ## Decision log
 - 2026-10-10: deferred. Reason: the first features can use Lua and the bridge. No asset change is needed.
 - First check before building: read and write a `DataTable` row at runtime. If that works, most "data mods" do not need paks.
@@ -42,6 +80,8 @@ Build it only when a feature spec shows that the data cannot be changed at runti
 - 2026-10-10: tooling built in `feat/11-asset-mod-tool` (`harness/tools/pakmod.py`, `uninstall.ps1 -Remove` removes harness paks, scenario `datatable-vanilla`). Verified with a fake packer and temp folders, and `datatable-vanilla` passed 3 of 3 in the real game (no pak). NOT verified: a real packer, a real edited asset, a real pak in the game. The decision "Lua first" is unchanged.
   `deploy.ps1` is not changed: `pakmod.py install` does the copy and writes its own manifest (`~mods\.harness-paks.json`), because a pak is built outside the repo.
 
+
+- 2026-10-10: the user chose repak as the packer and the UAssetGUI command line for assets, and asked to begin implementation. The earlier decision to defer the real pak build is replaced by this one (the deferred item is now in progress). The third-party `UnrealPakTool` repository was reviewed and rejected (see the toolchain decision).
 
 ## Deferred roadmap item: the real pak build, and what it unlocks
 Decision by the user (2026-10-10): the real pak build is NOT pursued now. It stays on the roadmap as a deferred item. Reason: the first features can use Lua and the bridge,
@@ -81,7 +121,11 @@ tested with a fake packer. Only the step with a real packer, a real edited asset
 - A wrong pak can crash the game at start. The harness records that as a crash result and keeps the logs.
 - The game has no official mod support. Never commit extracted game assets or keys (the local config file is gitignored).
 
-## Acceptance criteria (for when it is built)
+## Acceptance criteria
+- (new) `pakmod roundtrip` shows that an untouched asset survives `tojson` then `fromjson`, or that the result still loads in the game.
+- (new) A trivial pak built with repak is installed in `~mods`, the game starts, and a scenario sees the changed value.
+- (new) An A/B comparison (same scenario, with and without the pak, N runs each) shows the difference in the report, and `pakmod remove` returns the game to vanilla.
+- (old criteria, still valid):
 - A trivial asset change (one number in one data row) is built into a pak, deployed, seen by a scenario, and removed by the uninstall script.
   Status: the pieces exist (`pakmod.py`, `datatable-vanilla` with `HARNESS_EXPECT_ITEM_ROWS`, `uninstall.ps1 -Remove`). The whole chain with a real pak is not run.
 - The tool refuses to write outside its work folder and the game's `~mods` folder.
