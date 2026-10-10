@@ -122,7 +122,8 @@ class PhaseBehaviourTest(RunnerCase):
 
     def test_seconds_are_recorded(self):
         summary = execute_run(self.run_folder, {}, [Phase("a", lambda ctx: time.sleep(0.2), 5)])
-        self.assertGreaterEqual(summary.phases[0].seconds, 0.2)
+        # time.sleep can return a little early on Windows (timer resolution), so allow some slack.
+        self.assertGreaterEqual(summary.phases[0].seconds, 0.15)
 
     def test_keyboard_interrupt_still_writes_summary_and_runs_teardown(self):
         torn_down = []
