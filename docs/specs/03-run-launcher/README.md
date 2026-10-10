@@ -1,6 +1,6 @@
 # Spec 03: Run launcher and run summary
 
-Status: draft. The key design question (how to pass settings to the game) is answered.
+Status: in progress. Step 1 (run folder, runner and summary with fake phases) is done. The key design question (how to pass settings to the game) is answered.
 Roadmap phase: 5 (outer harness).
 
 ## Goal
@@ -100,7 +100,7 @@ Keep it small (about 1 to 2 KB), so the agent can read it in one step.
 - Use per-run folders only. No state is shared between runs, except the run lock and the iteration counter.
 
 ## Plan
-1. Write the run folder, config and `summary.json` code, with fake phases and unit tests (no game).
+1. Write the run folder, config and `summary.json` code, with fake phases and unit tests (no game). **Done.** (`implementation-notes/step1-runlib-design.md`)
 2. Add `preflight`, `deploy`, `launch`, `boot` and `teardown` with the real game. Test: start, `READY`, stop. Test a stale game process.
 3. Add the scenario runner and a `smoke` scenario (unpause for a few game seconds, check that the clock moves, pause again).
 4. Add `collect`: screenshots, `UE4SS.log`, crash reports. Test with a deliberate crash (kill the game in the middle of the scenario).

@@ -12,6 +12,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Spec `docs/specs/01-ue4ss-bridge/` with a review checklist.
 - Spec `docs/specs/02-save-autoload/` for the save auto-load and ready signal.
 - Spec `docs/specs/03-run-launcher/` for the run launcher and `summary.json`.
+- `harness/run.py` and `harness/runlib/`: the run launcher core (run folder, lock, iteration cap, phase runner, `summary.json`) with fake phases for tests. Real game phases are not built yet.
+- `harness/requirements.in` and a hash-locked `harness/requirements.txt` (psutil).
 - Jmap findings for the game reflection data, in `docs/specs/02-save-autoload/implementation-notes/`.
 - `CLAUDE.md` with project rules, including one feature branch for each spec and Sonnet for subagents.
 - Security review of ue4ss-bridge, with required patches P1 to P7.

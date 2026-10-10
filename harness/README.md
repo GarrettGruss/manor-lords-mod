@@ -81,3 +81,33 @@ Notes:
 - `launch-series.ps1` needs the project venv (`.venv`, see `mcp\README.md`). It reads the clock through the bridge with `harness\tools\read_clock.py`.
 - In the first test, the game did not close after the close request (20 s), so `game-close.ps1` killed it. A kill can lose the end of `UE4SS.log`.
   `mod.log` is flushed on each line and is not affected.
+
+## Run launcher (fake mode)
+
+`harness/run.py` runs one test iteration and writes `runs/<id>/summary.json` (spec 03).
+Only fake phases exist now. They need no game. The real game phases come in the next step.
+
+Setup (once). The `runlib` package needs `psutil`:
+
+```powershell
+uv pip install --python .venv\Scripts\python.exe --require-hashes -r harness\requirements.txt
+```
+
+`harness\requirements.in` lists the packages. To lock them again:
+`uv pip compile harness\requirements.in --generate-hashes --python-version 3.12 -o harness\requirements.txt`
+
+Run a fake iteration. The outcome is `pass`, `fail`, `crash`, `timeout` or `harness_error`:
+
+```powershell
+.venv\Scripts\python.exe harness\run.py --fake pass [--run-id ID] [--runs-root DIR] [--max-runs N]
+```
+
+The script prints one line (run id, verdict, reason, path to `summary.json`).
+Exit code: 0 pass, 1 fail, 2 crash, 3 timeout, 4 harness error.
+The run lock is `runs\.lock`. The iteration counter is `runs\.iterations` (default cap: 20).
+
+Run the unit tests (no game needed):
+
+```powershell
+.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib*.py" -v
+```
