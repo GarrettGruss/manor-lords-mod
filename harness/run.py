@@ -20,7 +20,7 @@ from runlib.runfolder import (
 )
 from runlib.phases import build_real_phases
 from runlib.runner import Phase, execute_run
-from runlib.scenario import SCENARIOS
+from runlib.scenario import list_scenarios
 from runlib.summary import EXIT_CODES
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -31,7 +31,9 @@ TEST_SAVE = "saveGame_0"
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run one test iteration.")
     parser.add_argument("--fake", choices=OUTCOMES, help="use fake phases with this outcome (no game)")
-    parser.add_argument("--scenario", help=f"run the real game with this scenario. Known: {sorted(SCENARIOS)}")
+    parser.add_argument("--scenario", help=f"run the real game with this scenario. Known: {sorted(list_scenarios())}")
+    parser.add_argument("--list-scenarios", action="store_true", help="print the scenarios and their time limits, then exit")
+    parser.add_argument("--include-test-scenarios", action="store_true", help="with --list-scenarios: also list the hidden selftest scenarios")
     parser.add_argument("--keep-open", action="store_true", help="do not stop the game at the end")
     parser.add_argument("--run-id", help="use this run id instead of a generated one")
     parser.add_argument("--runs-root", type=Path, default=REPO_ROOT / "runs")
@@ -85,8 +87,16 @@ def run_one(args: argparse.Namespace) -> int:
     return EXIT_CODES[summary.verdict]
 
 
+def print_scenarios(include_hidden: bool) -> int:
+    for name, info in list_scenarios(include_hidden).items():
+        print(f"{name:<20} limit {info.limit_s:>5.0f} s  {info.summary}")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
+    if args.list_scenarios:
+        return print_scenarios(args.include_test_scenarios)
     if (args.fake is None) == (args.scenario is None):
         return fail_before_run("exactly one of --fake <outcome> and --scenario <name> is required.")
     return run_one(args)

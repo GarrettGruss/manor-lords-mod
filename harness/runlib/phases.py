@@ -27,7 +27,9 @@ from .game import (
 )
 from .runfolder import atomic_write_text, write_config
 from .runner import Phase, PhaseContext, PhaseFailed
-from .scenario import REPO_ROOT, configure_bridge_client, get_scenario
+from .scenario import REPO_ROOT, configure_bridge_client, get_limit_s, get_scenario
+from .scenario_context import ScenarioContext
+from .screenshot import capture_game_window
 
 BOOT_POLL_S = 1.0
 BOOT_DEADLINE_S = 230  # a little under the phase limit, so the message says what happened
@@ -147,14 +149,31 @@ def _boot(ctx: PhaseContext) -> str | None:
     raise PhaseFailed(f"boot did not finish in {BOOT_DEADLINE_S} s. Last state: {last_state}")
 
 
+# ---- screenshots ----
+
+def take_screenshot(ctx: PhaseContext, name: str) -> str | None:
+    """Save screenshots/<name>.png of the game window. A failure adds a note and the run goes on."""
+    pids = {process.pid for process in find_game_processes()}
+    if ctx.state.get("game_pid"):
+        pids.add(ctx.state["game_pid"])
+    path = ctx.run.screenshots_dir / f"{name}.png"
+    problem = capture_game_window(path, pids)
+    if problem:
+        ctx.state["notes"].append(f"screenshot {name} failed: {problem}")
+        return None
+    return path.name
+
+
 # ---- scenario ----
 
 def _scenario(install: GameInstall, scenario_name: str):
     def run(ctx: PhaseContext) -> str | None:
         scenario = get_scenario(scenario_name)
-        configure_bridge_client(ctx, install)
+        bridge = configure_bridge_client(ctx, install)
+        scenario_ctx = ScenarioContext(ctx, bridge, screenshot_fn=take_screenshot)
+        take_screenshot(ctx, "start")
         try:
-            result = scenario(ctx)
+            result = scenario(scenario_ctx)
         except Exception:
             ensure_game_alive(ctx, "scenario")  # a dead game explains the error: it is a crash
             raise
@@ -194,19 +213,40 @@ def copy_new_crash_dirs(install: GameInstall, crash_dir: Path, since_epoch: floa
     return copied
 
 
+def copy_new_dumps(install: GameInstall, crash_dir: Path, since_epoch: float) -> list[str]:
+    """Copy UE4SS crash dumps (*.dmp in the ue4ss folder) that are newer than `since_epoch`."""
+    ue4ss_dir = install.win64 / "ue4ss"
+    if not ue4ss_dir.is_dir():
+        return []
+    copied = []
+    for dump in sorted(ue4ss_dir.glob("*.dmp")):
+        if dump.stat().st_mtime > since_epoch:
+            shutil.copy2(dump, crash_dir / dump.name)
+            copied.append(f"{crash_dir.name}/{dump.name}")
+    return copied
+
+
 def list_logs(run_path: Path) -> list[str]:
     return sorted(path.name for path in run_path.glob("*.log"))
 
 
 def _collect(install: GameInstall):
     def run(ctx: PhaseContext) -> str | None:
+        # The game is still running here (teardown comes later), so this is the end screenshot.
+        # After a crash the game is gone, and the screenshot adds a note.
+        take_screenshot(ctx, "end")
+        since = ctx.state.get("run_started_epoch", 0.0)
         copy_ue4ss_log(install, ctx.run.path)
-        crash_dirs = copy_new_crash_dirs(
-            install, ctx.run.crash_dir, ctx.state.get("run_started_epoch", 0.0), ctx.state["notes"]
-        )
-        # Screenshots are added in spec 03 step 4. The list stays empty until then.
+        crash_dirs = copy_new_crash_dirs(install, ctx.run.crash_dir, since, ctx.state["notes"])
+        if crash_dirs:
+            ctx.state["notes"].append(f"{len(crash_dirs)} new UE crash report(s) were copied")
+        dumps = copy_new_dumps(install, ctx.run.crash_dir, since)
+        if dumps:
+            ctx.state["notes"].append(f"{len(dumps)} new UE4SS crash dump(s) were copied")
         screenshots = sorted(p.relative_to(ctx.run.path).as_posix() for p in ctx.run.screenshots_dir.iterdir())
-        ctx.state["artifacts"] = {"logs": list_logs(ctx.run.path), "crash": crash_dirs, "screenshots": screenshots}
+        ctx.state["artifacts"] = {
+            "logs": list_logs(ctx.run.path), "crash": crash_dirs + dumps, "screenshots": screenshots,
+        }
         return None
 
     return run
@@ -245,7 +285,7 @@ def build_real_phases(
         Phase("deploy", _deploy(install), 120),
         Phase("launch", _launch(install, test_save), 60),
         Phase("boot", _boot, 240),
-        Phase("scenario", _scenario(install, scenario_name), 90),
+        Phase("scenario", _scenario(install, scenario_name), get_limit_s(scenario_name)),
         Phase("collect", _collect(install), 60, always_run=True),
         Phase("teardown", _teardown(install, keep_open), 30, always_run=True),
     ]
