@@ -31,6 +31,7 @@ def _new_state() -> dict:
         "crash": None,
         "artifacts": {},
         "game_stop_requested": False,
+        "notes": [],  # phases add facts here, for example a stale process that was stopped
     }
 
 
@@ -93,7 +94,7 @@ def run_phases(phases: list[Phase], ctx: PhaseContext, results: list[PhaseResult
 
 
 def _build_notes(config: dict, phases: list[PhaseResult], state: dict) -> list[str]:
-    notes = list(config.get("start_notes", []))
+    notes = list(config.get("start_notes", [])) + list(state["notes"])
     notes += [f"phase {phase.name} was skipped" for phase in phases if phase.status == "skipped"]
     if state["boot"] is None:
         notes.append("no boot result")

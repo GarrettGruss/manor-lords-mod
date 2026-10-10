@@ -1,6 +1,6 @@
 """Run one test iteration and write runs/<id>/summary.json (spec 03).
 
-Only fake phases exist now. The real game phases come later.
+--scenario <name> runs the real game. --fake <outcome> runs fake phases without a game.
 """
 
 from __future__ import annotations
@@ -18,16 +18,21 @@ from runlib.runfolder import (
     create_run_folder,
     write_config,
 )
-from runlib.runner import execute_run
+from runlib.phases import build_real_phases
+from runlib.runner import Phase, execute_run
+from runlib.scenario import SCENARIOS
 from runlib.summary import EXIT_CODES
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MAX_RUNS = 20
+TEST_SAVE = "saveGame_0"
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run one test iteration.")
-    parser.add_argument("--fake", choices=OUTCOMES, help="use fake phases with this outcome (required for now)")
+    parser.add_argument("--fake", choices=OUTCOMES, help="use fake phases with this outcome (no game)")
+    parser.add_argument("--scenario", help=f"run the real game with this scenario. Known: {sorted(SCENARIOS)}")
+    parser.add_argument("--keep-open", action="store_true", help="do not stop the game at the end")
     parser.add_argument("--run-id", help="use this run id instead of a generated one")
     parser.add_argument("--runs-root", type=Path, default=REPO_ROOT / "runs")
     parser.add_argument("--max-runs", type=int, default=DEFAULT_MAX_RUNS, help="cap on runs in this runs folder")
@@ -40,23 +45,40 @@ def fail_before_run(message: str) -> int:
     return EXIT_CODES["harness_error"]
 
 
+def build_phases(args: argparse.Namespace) -> list[Phase]:
+    if args.fake:
+        return build_fake_phases(args.fake)
+    return build_real_phases(args.scenario, keep_open=args.keep_open, test_save=TEST_SAVE)
+
+
+def build_config(args: argparse.Namespace, run, phases: list[Phase], lock) -> dict:
+    return {
+        "run_id": run.run_id,
+        "scenario": f"fake-{args.fake}" if args.fake else args.scenario,
+        "fake_outcome": args.fake,
+        "test_save": None if args.fake else TEST_SAVE,
+        "keep_open": args.keep_open,
+        "limits_s": {phase.name: phase.time_limit_s for phase in phases},
+        "max_runs": args.max_runs,
+        "environment": {},
+        "start_notes": [f"took over a stale run lock from dead process {lock.took_over_pid}"]
+        if lock.took_over_pid
+        else [],
+    }
+
+
 def run_one(args: argparse.Namespace) -> int:
+    try:
+        phases = build_phases(args)  # a wrong scenario name fails here, before any lock or folder
+    except ValueError as error:
+        return fail_before_run(str(error))
     try:
         with RunLock(args.runs_root) as lock:
             bump_iterations(args.runs_root, args.max_runs)
             run = create_run_folder(args.runs_root, args.run_id)
-            config = {
-                "run_id": run.run_id,
-                "scenario": f"fake-{args.fake}",
-                "fake_outcome": args.fake,
-                "max_runs": args.max_runs,
-                "environment": {},
-                "start_notes": [f"took over a stale run lock from dead process {lock.took_over_pid}"]
-                if lock.took_over_pid
-                else [],
-            }
+            config = build_config(args, run, phases, lock)
             write_config(run, config)
-            summary = execute_run(run, config, build_fake_phases(args.fake))
+            summary = execute_run(run, config, phases)
     except (RunLockedError, IterationLimitError, FileExistsError) as error:
         return fail_before_run(str(error))
     print(f"{summary.run_id} {summary.verdict} reason={summary.reason or '-'} summary={run.summary_path}")
@@ -65,8 +87,8 @@ def run_one(args: argparse.Namespace) -> int:
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
-    if args.fake is None:
-        return fail_before_run("--fake <outcome> is required. The real game phases are not built yet.")
+    if (args.fake is None) == (args.scenario is None):
+        return fail_before_run("exactly one of --fake <outcome> and --scenario <name> is required.")
     return run_one(args)
 
 
