@@ -46,6 +46,8 @@ An agent uses the fastest layer that can answer its question. It moves to a slow
 | 07 | feature-test-kit | Helpers to give resources, place buildings, trigger events, advance time | done (15 checked actions, `ctx.actions`, helper mod for letters; building placement with the real OS mouse) |
 | 08 | regression-suite | Run many scenarios and saves, compare with baselines, find flaky tests | done (PR 6). Baselines are thin (2 to 4 runs) |
 | 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | in progress (since 2026-10-10): toolchain decided (repak, UAssetGUI command line, a `.usmap`); tooling and A/B variants are being built with fake tools; the real chain waits for the tools and a first spike |
+| 10 | invasion-testability | Make about 90% of the Invasion Mode brief testable: criteria matrix, spikes, upgrades, stand-in mods | in progress (since 2026-10-10); see `docs/specs/10-invasion-testability/README.md` |
+| 11 | parallel-game-slots | Run several game copies at the same time (slots) for A/B and soak runs | proposed (2026-10-10), nothing built |
 
 Order and reasons:
 - 03 comes first: every later spec needs a run folder and a summary.
