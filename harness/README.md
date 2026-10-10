@@ -13,6 +13,8 @@ Steam does not have to be running (tested 2026-10-10). If it is not, the run car
 ```
 
 Exit code: 0 pass, 1 fail, 2 crash, 3 timeout, 4 harness error.
+Run cap: `runs/.iterations` counts the runs. The default cap is 400. Change it with `--max-runs N` or the environment variable `HARNESS_MAX_RUNS`
+(the option wins). At the cap, `run.py` stops with `Iteration limit reached` and says how to raise it. Do not delete `runs/.iterations`; raise the cap instead.
 `run_series.py` runs the launcher N times, prints a table and writes `runs\series-<time>.json`. It exits 0 only if all runs pass.
 
 Setup (once). Install the locked packages (`psutil`, `mss`) into the project venv:
@@ -36,6 +38,12 @@ A scenario is a module in `harness/scenarios/` with `LIMIT_S` (hard time limit, 
 `ctx` gives `read_clock()`, `unpause()`, `pause()`, `read_calendar()`, `check(...)`, `check_range(...)`, `log.info(...)`, `run_dir` and `bridge`.
 `run` returns `ctx.result()`: `{"passed": bool, "asserts": [...]}`. It is also saved as `scenario.json`. The log is `scenario.log`.
 A scenario that is over its limit gives the verdict `timeout`.
+Limits: the default is 90 s. A limit up to 300 s needs nothing more. A limit above 300 s (a soak) needs a text `LONG_REASON` in the module that says why. The most is 4200 s.
+The suite runner and `run_series.py` give each run `LIMIT_S` plus 600 s (at least 900 s and 600 s), so their kill timer never ends a long scenario early (`suite.py --run-timeout-s` sets one fixed value).
+While a long run is active, `wait_for_run` answers `running` with `scenario_limit_s`: call it again until the summary appears.
+`ctx.run_until(predicate, timeout_s, what=, clock="wall"|"game", poll_s=, stall_s=, on_stall=, on_poll=)` waits for a condition (`runlib/waiting.py`).
+`timeout_s` counts wall seconds or game seconds. The stall detector watches the game clock: after `stall_s` wall seconds with no progress it calls `on_stall`, and if the clock still stands still after another `stall_s` it raises `GameStalled`.
+`WaitTimeout`, `GameStalled` and `TimeControlError` end the scenario with the verdict `fail` and a clear message (not a harness error).
 Scenarios: `noop`, `smoke`. Test scenarios (`selftest-fail`, `selftest-timeout`) show with `--list-scenarios --include-test-scenarios`.
 
 ### Time control (`ctx.time`)
@@ -43,7 +51,7 @@ Scenarios: `noop`, `smoke`. Test scenarios (`selftest-fail`, `selftest-timeout`)
 Each run function unpauses, sets the speed, waits, pauses, and checks that the clock stands still for 3 s. It returns
 `{clock_start, clock_end, wall_s, paused_at_end, speed}` (days also have `days_start`, `days_end`, `day_start`, `day_end`).
 It raises `TimeControlError` on a timeout, with a pause first. Days are counted with `daysTotal`, which does not wrap at the year end (365 days).
-`absolute_day(date)` gives a day number for date asserts. A game pop-up (for example "Hunger!") pauses the game and gives a `TimeControlError`.
+`absolute_day(date)` gives a day number for date asserts. A game pop-up (for example "Hunger!") pauses the game and gives a `TimeControlError`. Use `ctx.popups()` in a long run (see below).
 `set_speed` takes about 3 s, because it waits to see that the speed holds. Numbers: spec 04 `implementation-notes/time-measurements.md`.
 
 ### Telemetry
@@ -60,6 +68,11 @@ Not possible: choose raid type or size, steer a squad, read unit type or health 
 Telemetry: start the launcher with `HARNESS_TELEMETRY_UNITS=1` and every sample has `custom.units` (counts by side, loot totals).
 Scenarios: `raid-timer`, `raid-spawn`, `raid-loot`, `raid-load`. The hidden `probe-raids` scenario (`HARNESS_PROBE=s1|s1b|s2|s5|s10`) is the research tool of the spikes.
 The scenario limit cap is 300 s (it was 120 s). Notes: `docs/specs/10-invasion-testability/implementation-notes/`.
+
+### Pop-ups and soak runs (spec 10, S8 and Q1)
+An open pop-up ("Hunger!") pauses the game until Accept is pressed. `ctx.actions.close_popups()` (command `close_popups` of `HarnessActions`) presses Accept on every open pop-up, and the game goes on at the old speed.
+`ctx.popups()` does the same without checks and remembers the types (`ctx.popups.closed`). Use it as `on_poll` of `ctx.run_until`. `ctx.actions.popup_state()` only reads. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S8.md`.
+Scenario `soak-days` (COVERS Q1): 8x speed for 600 wall seconds (about 120 game days), pop-ups closed, then asserts on the game process, the days run, the clock rate while running and the process memory. `HARNESS_SOAK_WALL_S=3650` makes it a 2-game-year soak (about 1 hour; the scenario limit follows).
 
 ### Assertions (`ctx.expect`)
 `in_range`, `at_least`, `at_most`, `changed(name, before, after, min_delta, max_delta)`, `equals` and `eventually(name, fn, timeout_s)`.

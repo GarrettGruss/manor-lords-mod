@@ -606,9 +606,13 @@
       "U3",
       "U9"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "soak-days",
+      "docs/specs/10-invasion-testability/implementation-notes/spike-S8.md"
+    ],
+    "reason_human": "",
+    "spike_note": "method verified by 3 of 3 soak-days runs (about 120 game days each at 8x); a full 2-year run is extrapolated, see implementation-notes/soak-results.md"
   },
   {
     "id": "Q2",

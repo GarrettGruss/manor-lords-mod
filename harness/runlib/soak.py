@@ -8,6 +8,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Iterable
 
+from .waiting import ScenarioFailure
+
 MB = 1024 * 1024
 MIN_PROGRESS_S = 0.001  # a clock change below this is "no progress" (a pause or a pop-up)
 
@@ -18,6 +20,41 @@ class Sample:
     clock: float
     days_total: int
     rss_mb: float | None
+
+
+class GameOver(ScenarioFailure):
+    """The game reports a victory status other than "playing" (for example the defeat screen)."""
+
+
+VICTORY_STATUS_PLAYING = 0  # BP_MLGameInstance_C.currentGameVictoryStatus while the game goes on
+
+
+def check_game_over(status: int, days_total: int) -> None:
+    """Raise GameOver with a clear message when the status is not "playing". A defeat stops the clock for good."""
+    if status != VICTORY_STATUS_PLAYING:
+        raise GameOver(f"game over: currentGameVictoryStatus is {status} at daysTotal {days_total}. "
+                       "The settlement was defeated (starved), so a longer run is not possible without feeding it.")
+
+
+class Feeder:
+    """Callable for `on_poll`. Gives food every `every_days` game days, so the start village does not starve.
+
+    The base fixture starves and is defeated at about day 137 (spike S8). `give` adds the goods.
+    """
+
+    def __init__(self, every_days: int, give: Callable[[], None], first_day: int):
+        self._every = every_days
+        self._give = give
+        self._last = first_day
+        self.times = 0
+
+    def __call__(self, days_total: int) -> bool:
+        if days_total - self._last < self._every:
+            return False
+        self._give()
+        self._last = days_total
+        self.times += 1
+        return True
 
 
 def process_memory_mb(processes: Iterable) -> float | None:

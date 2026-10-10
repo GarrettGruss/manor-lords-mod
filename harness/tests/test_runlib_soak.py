@@ -75,6 +75,26 @@ class MemoryCheckTests(unittest.TestCase):
         self.assertFalse(expect.result()["passed"])
 
 
+class GameOverTests(unittest.TestCase):
+    def test_playing_is_fine(self):
+        soak.check_game_over(0, 50)
+
+    def test_other_status_raises_a_clear_scenario_failure(self):
+        from runlib.waiting import ScenarioFailure
+        with self.assertRaisesRegex(soak.GameOver, "game over: currentGameVictoryStatus is 2 at daysTotal 137") as caught:
+            soak.check_game_over(2, 137)
+        self.assertIsInstance(caught.exception, ScenarioFailure)
+
+
+class FeederTests(unittest.TestCase):
+    def test_feeds_every_n_days(self):
+        gave = []
+        feeder = soak.Feeder(10, lambda: gave.append(1), first_day=5)
+        results = [feeder(day) for day in (5, 9, 15, 16, 24, 25)]
+        self.assertEqual(results, [False, False, True, False, False, True])
+        self.assertEqual((len(gave), feeder.times), (2, 2))
+
+
 class ScenarioShapeTests(unittest.TestCase):
     def test_scenario_is_long_and_covers_q1(self):
         self.assertEqual(soak_days.COVERS, ["Q1"])

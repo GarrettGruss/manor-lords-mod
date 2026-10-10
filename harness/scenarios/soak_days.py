@@ -4,11 +4,12 @@ import os
 import time
 
 from runlib import soak
+from runlib.actions import CHEAT_MANAGER
 from runlib.game import find_game_processes
 from runlib.timectl import CLOCK_SECONDS_PER_DAY, SPEED_FACTOR
 
 NAME = "soak-days"
-DESCRIPTION = "Soak: 8x speed for 600 wall seconds (about 120 game days). Pop-ups are closed. No crash, no stall, a steady clock rate, and a memory range."
+DESCRIPTION = "Soak: 8x speed for 600 wall seconds (about 120 game days). Pop-ups are closed and the village is fed. No crash, no stall, a steady clock rate, and a memory range."
 COVERS = ["Q1"]
 SPEED = 3  # 8 game seconds for each wall second, 5 wall seconds a day
 SOAK_WALL_S = float(os.environ.get("HARNESS_SOAK_WALL_S", "600"))  # a longer soak is chosen by this variable
@@ -26,6 +27,10 @@ STALL_S = 20.0  # no clock progress for this long while the game should run: clo
 RUNNING_RATE_RANGE = (6.0, 9.0)
 # Share of the nominal days that must pass. Pop-ups and slow polls lower it.
 DAYS_SHARE_RANGE = (0.6, 1.1)
+# The start village starves and is defeated at about day 137 (spike S8). Fish is added to the stock of the player region.
+FEED_EVERY_DAYS = 10
+FEED_ITEM_ID = 30  # Fish (verified with GiveItemByID)
+FEED_AMOUNT = 100
 MAX_MEMORY_MB = 8192
 MAX_MEMORY_GROWTH_MB = 2048
 
@@ -38,11 +43,24 @@ def run(ctx) -> dict:
     sampler = soak.Sampler(time.monotonic, lambda: bridge.read_clock_value(engine),
                            lambda: bridge.read_property(calendar, "daysTotal"), lambda: soak.process_memory_mb(games()))
     first = sampler()
+    game_instance = "first:BP_MLGameInstance_C"
+
+    def feed() -> None:
+        bridge.call_function(CHEAT_MANAGER, "GiveItemByID", [FEED_ITEM_ID, FEED_AMOUNT])
+
+    feeder = soak.Feeder(FEED_EVERY_DAYS, feed, first.days_total)
+
+    def on_poll() -> None:
+        ctx.popups()
+        sample = sampler()
+        soak.check_game_over(bridge.read_property(game_instance, "currentGameVictoryStatus"), sample.days_total)
+        if feeder(sample.days_total):
+            ctx.log.info(f"fed {FEED_AMOUNT} of item {FEED_ITEM_ID} at daysTotal {sample.days_total}")
     ctx.time.set_speed(SPEED)
     started = time.monotonic()
     # The predicate is the wall budget. The popup guard runs at every poll, so a pop-up holds the game for about one poll.
     ctx.run_until(lambda: time.monotonic() - started >= SOAK_WALL_S, SOAK_WALL_S + 120, what=f"{SOAK_WALL_S:g} wall seconds of soak",
-                  poll_s=POLL_S, stall_s=STALL_S, on_stall=ctx.popups, on_poll=lambda: (ctx.popups(), sampler()))
+                  poll_s=POLL_S, stall_s=STALL_S, on_stall=ctx.popups, on_poll=on_poll)
     ctx.time.pause()
     last = sampler()
 
@@ -53,7 +71,7 @@ def run(ctx) -> dict:
     expect.in_range("game days run", days, nominal_days * DAYS_SHARE_RANGE[0], nominal_days * DAYS_SHARE_RANGE[1])
     rate = soak.running_rate(sampler.samples)
     expect.in_range("game clock rate while running (game s per wall s)", rate if rate is not None else -1, *RUNNING_RATE_RANGE)
-    record_numbers(ctx, sampler.samples, first, last, days)
+    record_numbers(ctx, sampler.samples, first, last, days, feeder)
     check_memory(expect, first, last)
     return ctx.result()
 
@@ -66,7 +84,7 @@ def check_memory(expect, first, last) -> None:
     expect.at_most("process memory growth in MB", last.rss_mb - first.rss_mb, MAX_MEMORY_GROWTH_MB)
 
 
-def record_numbers(ctx, samples, first, last, days) -> None:
+def record_numbers(ctx, samples, first, last, days, feeder) -> None:
     numbers = {
         "days_run": days,
         "game_s": round(last.clock - first.clock, 1),
@@ -74,6 +92,7 @@ def record_numbers(ctx, samples, first, last, days) -> None:
         "overall_rate": soak.overall_rate(samples),
         "running_rate": soak.running_rate(samples),
         "popups_closed": len(ctx.popups.closed),
+        "feedings": feeder.times,
         "stalled_polls": soak.stalled_gaps(samples),
         "longest_stall_s": soak.longest_stall_s(samples),
         "rss_start_mb": first.rss_mb,
