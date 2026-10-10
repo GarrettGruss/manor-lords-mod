@@ -13,6 +13,7 @@
 #
 # The fake game copies a real behavior: for a few seconds after the load the game holds the clock at 0.
 # Then it starts the clock itself, and that undoes any pause made too early.
+# Later the game undoes the pause once more (as seen in the real game, 2 to 4 s after the pause).
 # After READY the test lets 10 more seconds pass and checks that the clock did not move.
 import json
 import os
@@ -46,6 +47,8 @@ local ticksSinceLoad = 0
 local paused = false
 local held = true -- the game holds the clock at 0 for a few seconds after the load
 local GAME_START_TICK = 12 -- longer than the ready check, as in the real game (about 8 s)
+local LATE_REVERT_TICK = 17 -- the game restarts the clock once more, shortly after our pause
+local revertDone = false
 local clock = 0.0
 
 local function valid() return true end
@@ -112,6 +115,10 @@ function advance()
     if loadCalled and held and ticksSinceLoad >= GAME_START_TICK and MODE ~= "neverstarts" then
         held = false
         paused = false -- the game starts the clock itself and undoes an earlier pause
+    end
+    if loadCalled and ticksSinceLoad >= LATE_REVERT_TICK and not revertDone and not held and MODE ~= "pausefails" and MODE ~= "neverstarts" then
+        revertDone = true
+        paused = false -- the game undoes the pause once
     end
     if loadCalled and not held and not paused then clock = clock + 1.0 end
     return LOOP()
