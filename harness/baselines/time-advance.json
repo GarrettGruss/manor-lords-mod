@@ -1,0 +1,22 @@
+{
+  "scenario": "time-advance",
+  "metrics": {
+    "absolute day moved by 2": [
+      1.8,
+      2.2
+    ],
+    "daysTotal moved by 2": [
+      1.8,
+      2.2
+    ],
+    "duration_s": [
+      40.0,
+      90.0
+    ],
+    "wall seconds": [
+      9.0,
+      16.0
+    ]
+  },
+  "strict": []
+}

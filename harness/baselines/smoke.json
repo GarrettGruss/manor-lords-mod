@@ -1,0 +1,34 @@
+{
+  "scenario": "smoke",
+  "metrics": {
+    "calendar day is sane": [
+      54.9,
+      67.1
+    ],
+    "calendar month is sane": [
+      2.7,
+      3.3
+    ],
+    "calendar year is sane": [
+      0.9,
+      1.1
+    ],
+    "clock is stopped after boot": [
+      -0.001,
+      0.001
+    ],
+    "clock is stopped after pause": [
+      -0.001,
+      0.001
+    ],
+    "clock moves after unpause": [
+      0.3,
+      1.0
+    ],
+    "duration_s": [
+      30.0,
+      70.0
+    ]
+  },
+  "strict": []
+}
