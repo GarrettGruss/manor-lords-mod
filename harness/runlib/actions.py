@@ -403,6 +403,24 @@ class Actions:
         return self._record("set_unit_loot", {"side": side, "count": count, "amount": amount}, answer["changed"] == answer["wanted"],
                             answer["wanted"], answer["changed"])
 
+    # ---- pop-ups (spec 10, spike S8) ----
+
+    def popup_state(self) -> dict:
+        """Read the pop-up windows: {"widgets": n, "open": [types]}. Read only."""
+        return self._command("popup_state")
+
+    def close_popups(self) -> dict:
+        """Press Accept on every open pop-up ("Hunger!" and similar), then check that none is open. Safe to call at any time.
+
+        An open pop-up pauses the game. Pressing Accept resumes it at the old speed (verified at 8x, spike S8).
+        Nothing open is a valid answer: `before` and `after` are both 0 and `closed` is empty.
+        """
+        before = len(self.popup_state()["open"])
+        answer = self._command("close_popups")
+        after = len(self.popup_state()["open"])
+        return self._record("close_popups", {}, after == 0, before, after,
+                            note=f"closed {answer['closed']}" if answer["closed"] else "")
+
 
 def dead_count_delta(answer: dict) -> int:
     """Units that were counted dead by a kill command (before and after counts come from the mod)."""

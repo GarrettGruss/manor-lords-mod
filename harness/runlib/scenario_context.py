@@ -17,6 +17,7 @@ from .expectations import Expectations
 from . import osinput
 from .game import ensure_game_alive, find_game_processes
 from .modstate import ModState
+from .popups import PopupGuard
 from .runfolder import atomic_write_text
 from .runner import PhaseContext
 from .snapshot import snapshot
@@ -60,6 +61,8 @@ class ScenarioContext:
         self.commands = CommandChannel(self.run_dir / "commands", check_alive=self.ensure_alive)
         self.actions = Actions(bridge, self.expect, self.notes, self.log.info, self.ensure_alive, self.commands,
                                mouse_placer=self._place_with_mouse)
+        # ctx.popups() presses Accept on open pop-ups. Use it as on_poll or on_stall of ctx.run_until in a long scenario.
+        self.popups = PopupGuard(lambda: self.commands.send("close_popups"), self.log.info)
         self.mod_commands = ModCommandChannel(self.run_dir / "modcmd", check_alive=self.ensure_alive)
         self.mod = ModState(self)  # commands and metrics of mods, served by each mod itself (spec 10, U10)
 
