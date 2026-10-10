@@ -2,7 +2,8 @@
   "repak": {"path": "C:/modtools/repak.exe", "sha256": ""},
   "uassetgui": {"path": "C:/modtools/UAssetGUI.exe", "sha256": ""},
   "usmap": "C:/modwork/ManorLords.usmap",
-  "engine_version": "5.5",
+  "usmap_name": "ManorLords",
+  "engine_version": "VER_UE5_5",
   "work_dir": "C:/modwork",
   "pak_version": "V11",
   "aes_key_env": "MANORLORDS_AES_KEY"

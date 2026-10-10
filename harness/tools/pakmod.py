@@ -22,6 +22,7 @@ Safety:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -69,7 +70,8 @@ CONFIG_EXAMPLE = {
     "repak": {"path": "C:/tools/repak.exe", "sha256": ""},
     "uassetgui": {"path": "C:/tools/UAssetGUI.exe", "sha256": ""},
     "usmap": "C:/modwork/ManorLords.usmap",
-    "engine_version": "5.5",
+    "usmap_name": "ManorLords",
+    "engine_version": "VER_UE5_5",
     "work_dir": "C:/modwork",
 }
 
@@ -144,6 +146,9 @@ def option_problems(raw: dict) -> list[str]:
         # Do not echo the value: a user may have pasted the key here by mistake.
         if not isinstance(env_name, str) or not ENV_NAME_PATTERN.fullmatch(env_name) or len(env_name) >= 32:
             problems.append("config 'aes_key_env' must be the NAME of an environment variable, not the key")
+    name = raw.get("usmap_name")
+    if name is not None and (not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,40}", name)):
+        problems.append("config 'usmap_name' must be a plain file name without extension (letters, digits, _ and -)")
     templates = raw.get("templates", {})
     if not isinstance(templates, dict) or not all(
         isinstance(value, list) and all(isinstance(item, str) for item in value) for value in templates.values()
@@ -180,6 +185,7 @@ def load_config(path: Path) -> dict:
     config = {
         "config_path": Path(path),
         "usmap": Path(raw["usmap"]),
+        "usmap_name": raw.get("usmap_name"),
         "engine_version": raw["engine_version"],
         "work_dir": Path(raw["work_dir"]),
         "pak_version": raw.get("pak_version") or DEFAULT_PAK_VERSION,
@@ -270,7 +276,7 @@ def tool_command(config: dict, tool: str, command_name: str, values: dict[str, s
     if key_args and not show_key:
         key_args[1] = "***"
     values = {**values, "mount_point": config["mount_point"], "pak_version": config["pak_version"],
-              "engine_version": config["engine_version"], "usmap": str(config["usmap"])}
+              "engine_version": config["engine_version"], "usmap": config.get("usmap_name") or str(config["usmap"])}
     return launcher_of(config[tool]["path"]) + key_args + fill_template(config["templates"][command_name], values)
 
 
@@ -329,6 +335,29 @@ def check_tool(config: dict, name: str, pin: bool, dry_run: bool, pins: dict[str
     return []
 
 
+def uassetgui_mappings_file(config: dict) -> Path | None:
+    """UAssetGUI 1.1.0 takes a mapping NAME and reads `<LOCALAPPDATA>/UAssetGUI/Mappings/<name>.usmap`. It ignores a path."""
+    if not config.get("usmap_name"):
+        return None
+    return Path(os.environ.get("LOCALAPPDATA", "")) / "UAssetGUI" / "Mappings" / f"{config['usmap_name']}.usmap"
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def mapping_problem(config: dict) -> str | None:
+    """Without the right mapping, UAssetGUI 1.1.0 exits with 0 and writes raw bytes. So this is checked before each run."""
+    target = uassetgui_mappings_file(config)
+    if target is None:
+        return None
+    if not target.is_file():
+        return f"mapping not installed for UAssetGUI: copy {config['usmap']} to {target}"
+    if file_sha256(target) != file_sha256(config["usmap"]):
+        return f"mapping {target} differs from {config['usmap']}: copy the newer file"
+    return None
+
+
 def check(config_path: Path, game_dir: Path, pin: bool = False, dry_run: bool = False) -> int:
     problems = config_problems(config_path)
     if problems:
@@ -341,6 +370,8 @@ def check(config_path: Path, game_dir: Path, pin: bool = False, dry_run: bool = 
         problems += check_tool(config, name, pin, dry_run, pins)
     if not config["usmap"].is_file():
         problems.append(f"usmap file not found: {config['usmap']}. Make it with the UE4SS dumper (see harness/README.md).")
+    if config["usmap"].is_file() and mapping_problem(config):
+        problems.append(mapping_problem(config))
     if not paks_dir_of(game_dir).is_dir():
         problems.append(f"game Paks folder not found: {paks_dir_of(game_dir)}")
     if pins and not dry_run:
@@ -487,6 +518,8 @@ def relative_to_any(path: Path, folders: list[Path]) -> Path:
 def run_uassetgui(config: dict, command_name: str, source: Path, destination: Path) -> None:
     if not config["usmap"].is_file():
         raise PakModError(f"usmap file not found: {config['usmap']}")
+    if mapping_problem(config):
+        raise PakModError(mapping_problem(config))
     require_inside(destination, config["work_dir"], "output file")
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.unlink(missing_ok=True)  # an old file must not pass the output check
@@ -494,6 +527,8 @@ def run_uassetgui(config: dict, command_name: str, source: Path, destination: Pa
     run_tool(config, "uassetgui", command_name, values, UASSETGUI_TIMEOUT_S)
     if not destination.is_file() or destination.stat().st_size == 0:
         raise PakModError(f"uassetgui {command_name} ended without an error but wrote no usable file: {destination}")
+    if command_name == "tojson" and b"UAssetAPI.ExportTypes.RawExport" in destination.read_bytes():
+        raise PakModError(f"tojson wrote a RawExport (the mapping was not used, so no field can be edited): {destination}")
     print(f"  {destination} ({destination.stat().st_size} bytes)")
 
 
