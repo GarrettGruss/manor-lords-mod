@@ -4,7 +4,7 @@
     "title": "A raid is announced N days before it arrives, and it arrives within a tolerance of the announced day",
     "pillar": "threat",
     "mark": "A",
-    "method": "read the raid timer, read the inbox or alert, advance time, detect arrival",
+    "method": "write daysUntilNextRaid (holds, falls 1 a day, raid spawns on the day tick that reaches 0), count bandit units before and after. The base game does NOT announce the raid (InBox, quests unchanged; only the log list grows by 2 on arrival), so the announcement must come from the mod",
     "blocked_by": null,
     "spikes": [
       "S1"
@@ -16,14 +16,15 @@
     ],
     "method_verified": false,
     "verified_by": [],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "partial: timer write and arrival verified (raid-timer); announcement not observable in the base game"
   },
   {
     "id": "T2",
     "title": "The announced size is within 20% of the spawned size",
     "pillar": "threat",
     "mark": "A",
-    "method": "count units by side",
+    "method": "count units by side with units_census (bandit side); spawn_raid adds 18 units a squad",
     "blocked_by": null,
     "spikes": [
       "S1",
@@ -32,9 +33,14 @@
     "upgrades": [
       "U1"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "docs/specs/10-invasion-testability/implementation-notes/spike-S2.md",
+      "docs/specs/10-invasion-testability/implementation-notes/spike-S3.md",
+      "raid-spawn"
+    ],
+    "reason_human": "",
+    "spike_note": "counting verified; the announced size comes from the mod"
   },
   {
     "id": "T3",
@@ -51,7 +57,8 @@
     ],
     "method_verified": false,
     "verified_by": [],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "not verified: the census has side and role (all raiders are Soldier), unitTemp reads None and squad type is not readable (getSquadByID ends the game). Unit types need the mod to expose them"
   },
   {
     "id": "T4",
@@ -86,7 +93,8 @@
     ],
     "method_verified": false,
     "verified_by": [],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "partial: set_season and set_raid_timer work; the base game picks a new timer at random (208 and 353 seen) with no season rule found"
   },
   {
     "id": "O1",
@@ -179,7 +187,7 @@
     "title": "Loot carried per raider stays within the cap",
     "pillar": "raid",
     "mark": "A",
-    "method": "goods carried per unit (`ItemsLooted` or equivalent)",
+    "method": "write or read SMUnit.ItemsLooted per unit (units_census loot total and max)",
     "blocked_by": null,
     "spikes": [
       "S3"
@@ -188,9 +196,14 @@
       "U1",
       "U6"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "docs/specs/10-invasion-testability/implementation-notes/spike-S3.md",
+      "docs/specs/10-invasion-testability/implementation-notes/spike-S5.md",
+      "raid-loot"
+    ],
+    "reason_human": "",
+    "spike_note": "the unit of ItemsLooted (items or value) is unknown; natural raiders reached 5"
   },
   {
     "id": "R3",
@@ -207,7 +220,8 @@
     ],
     "method_verified": false,
     "verified_by": [],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "partial: kill_units works and the carried loot goes to 0, but no ground goods object, actor, or inventory change was found (spike-S5.md)"
   },
   {
     "id": "R4",
@@ -594,7 +608,7 @@
     "title": "A large battle keeps the game responsive (tick rate, no stall)",
     "pillar": "quality",
     "mark": "A",
-    "method": "game clock rate against wall time during 300-unit battles",
+    "method": "spawn_raid x8 then measure the clock rate at 1x with measure_clock; 8x rate measured in spike S10 only",
     "blocked_by": null,
     "spikes": [
       "S10"
@@ -603,9 +617,13 @@
       "U1",
       "U9"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "docs/specs/10-invasion-testability/implementation-notes/spike-S10.md",
+      "raid-load"
+    ],
+    "reason_human": "",
+    "spike_note": "1x stays at 1.02 up to 661 units; 8x falls from 8.2 (220 units) to 1.5 (550 units), not monotonic"
   },
   {
     "id": "Q3",

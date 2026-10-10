@@ -32,7 +32,9 @@ Status words: `verified` = the effect was read back in the real game. `partial` 
 | show a message (`playEventMessage`) | **not possible** (crash) | `show_message` raises | |
 | read item data (`getItem`) | **not possible** (crash) | `get_item_info` raises | |
 | remove all families | not possible (no effect seen) | `remove_all_families` raises | `MLCheatManager:RemoveAllFamilies` |
-| spawn raiders / bandit camp | not possible (no effect seen) | `spawn_raiders` raises | `SpawnRaidersOfType`, `spawnBanditCamp` |
+| spawn raiders / bandit camp | verified in spec 10: `spawnRaiders` +18 a squad, `spawnEliteRaiders` +54, `spawnBanditCamp` +18 (the cheat `SpawnRaidersOfType` still has no effect) | `spawn_raid`, `spawn_bandit_camp` | helper command, see spec 10 `spike-S2.md` |
+| raid timer | verified in spec 10: write holds, raid on the day tick that reaches 0 | `set_raid_timer` | `TemporalComponent.daysUntilNextRaid` |
+| kill units, write loot per unit, count units | verified in spec 10 | `kill_units`, `set_unit_loot`, `units_census` | helper commands, `spike-S3.md`, `spike-S5.md` |
 
 ## Answers to the open questions of the spec
 
