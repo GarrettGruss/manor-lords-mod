@@ -96,9 +96,16 @@ DEFAULT_TELEMETRY_INTERVAL_S = 5.0
 
 
 def build_game_environment(run_dir: Path, test_save: str, base_env: dict | None = None,
-                           telemetry_interval_s: float = DEFAULT_TELEMETRY_INTERVAL_S) -> dict:
-    """The environment for the game process. Each run has its own HARNESS_RUN_DIR."""
+                           telemetry_interval_s: float = DEFAULT_TELEMETRY_INTERVAL_S,
+                           appdata_dir: Path | None = None) -> dict:
+    """The environment for the game process. Each run has its own HARNESS_RUN_DIR.
+
+    With `appdata_dir` the game gets its own LOCALAPPDATA. Its saves, config and crash reports then live there,
+    and the user's save folder is never touched by the game.
+    """
     env = dict(os.environ if base_env is None else base_env)
+    if appdata_dir is not None:
+        env["LOCALAPPDATA"] = str(Path(appdata_dir).resolve())
     env["HARNESS_RUN_DIR"] = str(Path(run_dir).resolve())
     env["HARNESS_AUTOBOOT"] = "1"
     env["HARNESS_TEST_SAVE"] = test_save

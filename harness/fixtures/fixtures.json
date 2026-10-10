@@ -1,0 +1,22 @@
+{
+  "fixtures": {
+    "base": {
+      "description": "Copy of the user's saveGame_0 (Jagged_Cliffs). The main test save.",
+      "sha256": {
+        ".png": "8b91d71492056e224f00dada387f0b3246899702b178341568b629690890e155",
+        ".sav": "68220ae48b1c513d96573cba1916d59986a2866e573401ae53395547c3963e47",
+        "_coat_0.png": "c5fbce538912d42b2e37f904ce2475e80f1e9ba2384a59b832ecc30059020fa9",
+        "_coat_1.png": "535ebba0d098048b16aa784f58267da65dc14c79cb9ad98055aafdedb5953aba",
+        "_coat_2.png": "7416ca2896f0b82165b5bf3531d7f0c0b3281fb40e977eeec28dae2878f05aa2",
+        "_coat_3.png": "68770d58b258531501bbfa07af652aa769f57a8010b1ceaefca6ccac78ca2304",
+        "_coat_4.png": "1dd60af6ea493a341ac014b6aa505ce665a9aa3e8efc67341654a36fbac06796",
+        "_descr.sav": "08026cded425fed1c815379c882a05fefa496da75890c17d82e7b6b8a9c32326"
+      },
+      "source_slot": "saveGame_0",
+      "tags": [
+        "default",
+        "jagged-cliffs"
+      ]
+    }
+  }
+}

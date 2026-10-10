@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 import shutil
@@ -12,6 +13,7 @@ import subprocess
 import time
 from pathlib import Path
 
+from . import fixtures
 from .environment import gather_environment, hash_mods
 from .game import (
     DEFAULT_TELEMETRY_INTERVAL_S,
@@ -51,7 +53,27 @@ def _stop_stale_game(ctx: PhaseContext) -> None:
         ctx.state["notes"].append(f"stale game process PID {process.pid} was stopped")
 
 
-def _preflight(install: GameInstall, test_save: str):
+def _appdata_dir(ctx: PhaseContext) -> Path:
+    return ctx.run.path / fixtures.APPDATA_NAME
+
+
+def _private_install(install: GameInstall, ctx: PhaseContext) -> GameInstall:
+    """The install as the game sees it in this run: its saves, config and crash reports are in the run's appdata."""
+    return dataclasses.replace(install, saved_dir=fixtures.saved_dir_of(_appdata_dir(ctx)))
+
+
+def _prepare_appdata(install: GameInstall, ctx: PhaseContext, fixture: str) -> None:
+    """Build the private LOCALAPPDATA. Remember the user's save files, so teardown can compare."""
+    ctx.state["appdata_dir"] = _appdata_dir(ctx)  # set first: teardown removes the folder even if the copy fails half way
+    try:
+        result = fixtures.prepare_appdata(install.saved_dir, _appdata_dir(ctx), fixtures.load_manifest(), fixture)
+    except fixtures.FixtureError as error:
+        raise PhaseFailed(f"fixture {fixture}: {error}") from error
+    ctx.state["user_saves_snapshot"] = result.user_snapshot
+    ctx.config.setdefault("environment", {})["fixture"] = result.as_dict()
+
+
+def _preflight(install: GameInstall, test_save: str, fixture: str = fixtures.DEFAULT_FIXTURE):
     def run(ctx: PhaseContext) -> str | None:
         ctx.state["run_started_epoch"] = time.time()
         if not is_steam_running():
@@ -61,11 +83,13 @@ def _preflight(install: GameInstall, test_save: str):
             raise PhaseFailed(f"venv not found: {venv_python}")
         if not install.exe.exists():
             raise PhaseFailed(f"game exe not found: {install.exe}")
-        if not install.save_file(test_save).is_file():
-            raise PhaseFailed(f"test save not found: {install.save_file(test_save)}")
         _stop_stale_game(ctx)
+        _prepare_appdata(install, ctx, fixture)
+        private = _private_install(install, ctx)
+        if not private.save_file(test_save).is_file():
+            raise PhaseFailed(f"test save not found: {private.save_file(test_save)}")
         ctx.config.setdefault("environment", {}).update(
-            gather_environment(install, REPO_ROOT, ctx.run.path, test_save)
+            gather_environment(private, REPO_ROOT, ctx.run.path, test_save)
         )
         write_config(ctx.run, ctx.config)
         return None
@@ -103,7 +127,8 @@ def _deploy(install: GameInstall):
 
 def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float):
     def run(ctx: PhaseContext) -> str | None:
-        env = build_game_environment(ctx.run.path, test_save, telemetry_interval_s=telemetry_interval_s)
+        env = build_game_environment(ctx.run.path, test_save, telemetry_interval_s=telemetry_interval_s,
+                                     appdata_dir=ctx.state.get("appdata_dir"))
         # The working folder must be Win64, or UE4SS does not find its files.
         popen = subprocess.Popen(
             [str(install.exe)], cwd=install.win64, env=env,
@@ -246,7 +271,9 @@ def _collect(install: GameInstall):
         take_screenshot(ctx, "end")
         since = ctx.state.get("run_started_epoch", 0.0)
         copy_ue4ss_log(install, ctx.run.path)
-        crash_dirs = copy_new_crash_dirs(install, ctx.run.crash_dir, since, ctx.state["notes"])
+        # UE writes crash reports under the LOCALAPPDATA it sees: the run's appdata, when the run used one.
+        crash_install = _private_install(install, ctx) if ctx.state.get("appdata_dir") else install
+        crash_dirs = copy_new_crash_dirs(crash_install, ctx.run.crash_dir, since, ctx.state["notes"])
         if crash_dirs:
             ctx.state["notes"].append(f"{len(crash_dirs)} new UE crash report(s) were copied")
         dumps = copy_new_dumps(install, ctx.run.crash_dir, since)
@@ -264,12 +291,28 @@ def _collect(install: GameInstall):
 
 # ---- teardown ----
 
+def _finish_appdata(install: GameInstall, ctx: PhaseContext) -> str | None:
+    """Compare the user's save files with the snapshot of preflight, then delete the run's appdata copy."""
+    appdata = ctx.state.get("appdata_dir")
+    if not appdata:
+        return None
+    problems = fixtures.describe_difference(
+        ctx.state.get("user_saves_snapshot", {}), fixtures.snapshot_user_files(install.saved_dir / "SaveGames"))
+    removed = fixtures.remove_appdata(appdata)
+    if problems:
+        raise PhaseFailed(f"the user's save files changed during the run: {'; '.join(problems[:10])}")
+    ctx.state["notes"].append(f"private appdata removed ({removed} files); the user's save files did not change")
+    return f"appdata removed ({removed} files), user saves unchanged"
+
+
 def _teardown(install: GameInstall, keep_open: bool):
     def run(ctx: PhaseContext) -> str | None:
         # Set first, so the end of the process is not read as a crash.
         ctx.state["game_stop_requested"] = True
         if keep_open:
             ctx.state["notes"].append("--keep-open: the game was left running")
+            if ctx.state.get("appdata_dir"):
+                ctx.state["notes"].append(f"private appdata is still in place: {ctx.state['appdata_dir']}")
             return "teardown: game left running (--keep-open)"
         running = find_game_processes()
         stop_processes(running)
@@ -280,19 +323,22 @@ def _teardown(install: GameInstall, keep_open: bool):
         if copy_ue4ss_log(install, ctx.run.path):
             ctx.state["artifacts"]["logs"] = list_logs(ctx.run.path)
         pids = [process.pid for process in running]
-        return f"teardown: game stopped (PID {pids})" if pids else "teardown: game stopped (none was running)"
+        stopped = f"teardown: game stopped (PID {pids})" if pids else "teardown: game stopped (none was running)"
+        appdata_detail = _finish_appdata(install, ctx)
+        return f"{stopped}; {appdata_detail}" if appdata_detail else stopped
 
     return run
 
 
 def build_real_phases(
     scenario_name: str, keep_open: bool = False, install: GameInstall | None = None, test_save: str = DEFAULT_TEST_SAVE,
-    telemetry_interval_s: float = DEFAULT_TELEMETRY_INTERVAL_S,
+    telemetry_interval_s: float = DEFAULT_TELEMETRY_INTERVAL_S, fixture: str | None = None,
 ) -> list[Phase]:
     get_scenario(scenario_name)  # fail before any game starts if the name is wrong
     install = install or GameInstall()
+    fixture = fixtures.check_name(fixture or fixtures.DEFAULT_FIXTURE)  # a bad name fails before any game starts
     return [
-        Phase("preflight", _preflight(install, test_save), 60),
+        Phase("preflight", _preflight(install, test_save, fixture), 60),
         Phase("deploy", _deploy(install), 120),
         Phase("launch", _launch(install, test_save, telemetry_interval_s), 60),
         Phase("boot", _boot, 240),
