@@ -280,6 +280,48 @@ class CollectTest(TempTestCase):
         self.assertEqual(self.ctx.state["artifacts"]["crash"], [])
         self.assertTrue(any("big" in note for note in self.ctx.state["notes"]))
 
+    def write_context(self, folder, pid):
+        (folder / phases.CRASH_CONTEXT_FILE).write_text(f"<root><ProcessId>{pid}</ProcessId></root>", encoding="utf-8")
+
+    def use_private_appdata(self):
+        """A run with a private appdata: the private Saved folder differs from the real one."""
+        private = self.temp / "run-appdata"
+        self.ctx.state["appdata_dir"] = private
+        return GameInstall(root=self.temp / "game", saved_dir=self.temp / "real-saved"), phases._private_install
+
+    def test_crash_report_in_the_real_folder_is_copied_for_a_private_run(self):
+        # UE writes the report into the user's real Crashes folder, not into the private appdata.
+        install, _ = self.use_private_appdata()
+        real = self.make_crash(install, "real-crash", age_s=-5)
+        self.write_context(real, 4242)
+        self.ctx.state.update(run_started_epoch=time.time() - 60, game_pid=4242)
+        phases._collect(install)(self.ctx)
+        self.assertEqual(self.ctx.state["artifacts"]["crash"], ["crash/real-crash"])
+        self.assertTrue(any("crash report" in note for note in self.ctx.state["notes"]))
+
+    def test_crash_report_of_another_process_is_not_copied(self):
+        install, _ = self.use_private_appdata()
+        other = self.make_crash(install, "other-crash", age_s=-5)
+        self.write_context(other, 1111)
+        self.ctx.state.update(run_started_epoch=time.time() - 60, game_pid=4242)
+        phases._collect(install)(self.ctx)
+        self.assertEqual(self.ctx.state["artifacts"]["crash"], [])
+
+    def test_crash_report_in_the_private_folder_is_still_copied(self):
+        install, private_of = self.use_private_appdata()
+        private = private_of(install, self.ctx)
+        self.make_crash(private, "private-crash", age_s=-5)
+        self.ctx.state.update(run_started_epoch=time.time() - 60, game_pid=4242)
+        phases._collect(install)(self.ctx)
+        self.assertEqual(self.ctx.state["artifacts"]["crash"], ["crash/private-crash"])
+
+    def test_report_process_id_is_read(self):
+        folder = self.temp / "report"
+        folder.mkdir()
+        self.assertIsNone(phases.read_crash_process_id(folder))
+        self.write_context(folder, 77)
+        self.assertEqual(phases.read_crash_process_id(folder), 77)
+
     def test_missing_log_and_crash_folder_are_fine(self):
         install = GameInstall(root=self.temp / "none", saved_dir=self.temp / "none")
         phases._collect(install)(self.ctx)
@@ -312,6 +354,24 @@ class TeardownTest(TempTestCase):
         ):
             with self.assertRaisesRegex(PhaseFailed, "remains"):
                 phases._teardown(self.install(), keep_open=False)(self.ctx)
+
+    def test_crash_reporter_of_the_game_is_stopped(self):
+        class Reporter(FakeProcess):
+            def __init__(self, pid, parent):
+                super().__init__(pid)
+                self.parent = parent
+
+            def ppid(self):
+                return self.parent
+
+        mine, foreign = Reporter(10, parent=1234), Reporter(11, parent=999)
+        self.ctx.state.update(game_pid=1234, artifacts={})
+        with mock.patch.object(phases, "find_game_processes", return_value=[]), mock.patch.object(
+            phases, "find_crash_reporters", return_value=[mine, foreign]
+        ), mock.patch.object(phases, "stop_processes") as stop:
+            phases._teardown(self.install(), keep_open=False)(self.ctx)
+        stop.assert_called_with([mine])
+        self.assertTrue(any("CrashReportClient" in note for note in self.ctx.state["notes"]))
 
     def test_keep_open_does_not_stop(self):
         with mock.patch.object(phases, "stop_processes") as stop:
