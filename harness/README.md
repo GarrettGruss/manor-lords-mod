@@ -72,7 +72,7 @@ The scenario limit cap is 300 s (it was 120 s). Notes: `docs/specs/10-invasion-t
 ### Pop-ups and soak runs (spec 10, S8 and Q1)
 An open pop-up ("Hunger!") pauses the game until Accept is pressed. `ctx.actions.close_popups()` (command `close_popups` of `HarnessActions`) presses Accept on every open pop-up, and the game goes on at the old speed.
 `ctx.popups()` does the same without checks and remembers the types (`ctx.popups.closed`). Use it as `on_poll` of `ctx.run_until`. `ctx.actions.popup_state()` only reads. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S8.md`.
-Scenario `soak-days` (COVERS Q1): 8x speed for 600 wall seconds (about 120 game days), pop-ups closed, then asserts on the game process, the days run, the clock rate while running and the process memory. `HARNESS_SOAK_WALL_S=3650` makes it a 2-game-year soak (about 1 hour; the scenario limit follows).
+Scenario `soak-days` (COVERS Q1): 8x speed for 600 wall seconds (about 120 game days), pop-ups closed, 100 Fish every 10 game days (the start village is defeated at day 137 without food), `GameOver` on a defeat, then asserts on the game process, the days run, the clock rate while running and the process memory. `HARNESS_SOAK_WALL_S` (60 to 3900) sets the wall time and the scenario limit follows. A 2-year soak (3650 s) cannot finish on the start village: it is defeated in its first winter at about day 350 (`implementation-notes/soak-results.md`).
 
 ### Assertions (`ctx.expect`)
 `in_range`, `at_least`, `at_most`, `changed(name, before, after, min_delta, max_delta)`, `equals` and `eventually(name, fn, timeout_s)`.
