@@ -9,6 +9,11 @@
 #   noslot     the wanted slot never appears; FAILED after the time limit
 #   missing    DoesSaveGameExist is false; FAILED before the menu is touched
 #   pausefails pauseGame has no effect; FAILED because the clock never stops
+#   neverstarts the game never starts its clock; FAILED because the clock never started
+#
+# The fake game copies a real behavior: for a few seconds after the load the game holds the clock at 0.
+# Then it starts the clock itself, and that undoes any pause made too early.
+# After READY the test lets 10 more seconds pass and checks that the clock did not move.
 import json
 import os
 import pathlib
@@ -17,7 +22,7 @@ import tempfile
 
 from lupa import LuaRuntime
 
-ALL_MODES = ["happy", "slotlate", "noslot", "missing", "pausefails"]
+ALL_MODES = ["happy", "slotlate", "noslot", "missing", "pausefails", "neverstarts"]
 
 # What each mode must end with: (state, text that the failure reason must contain)
 EXPECTED = {
@@ -26,6 +31,7 @@ EXPECTED = {
     "noslot": ("FAILED", "did not appear in the save list"),
     "missing": ("FAILED", "does not exist"),
     "pausefails": ("FAILED", "clock did not stop"),
+    "neverstarts": ("FAILED", "clock never started"),
 }
 
 FAKE_GAME = r"""
@@ -38,7 +44,9 @@ local tick = 0
 local loadCalled, switched = false, false
 local ticksSinceLoad = 0
 local paused = false
-local clock = 100.0
+local held = true -- the game holds the clock at 0 for a few seconds after the load
+local GAME_START_TICK = 12 -- longer than the ready check, as in the real game (about 8 s)
+local clock = 0.0
 
 local function valid() return true end
 
@@ -101,9 +109,14 @@ function advance()
     fakeNow = fakeNow + 1
     if switched then ticksSinceSwitch = ticksSinceSwitch + 1 end
     if loadCalled then ticksSinceLoad = ticksSinceLoad + 1 end
-    if loadCalled and not paused then clock = clock + 1.0 end -- the game runs until it is paused
+    if loadCalled and held and ticksSinceLoad >= GAME_START_TICK and MODE ~= "neverstarts" then
+        held = false
+        paused = false -- the game starts the clock itself and undoes an earlier pause
+    end
+    if loadCalled and not held and not paused then clock = clock + 1.0 end
     return LOOP()
 end
+function getclock() return clock end
 """
 
 
@@ -127,12 +140,16 @@ def run_mode(mode):
 
     boot = json.loads(pathlib.Path(out, "boot.json").read_text())
     marker = pathlib.Path(out, "ready.marker")
+    clock_at_ready = lua.globals().getclock()
+    for _ in range(10):
+        advance()
+    clock_after = lua.globals().getclock()
     calls = list(lua.globals().calls.values())
-    return boot, (marker.read_text().strip() if marker.exists() else None), calls, ticks
+    return boot, (marker.read_text().strip() if marker.exists() else None), calls, ticks, (clock_at_ready, clock_after)
 
 
 def check(mode):
-    boot, marker, calls, ticks = run_mode(mode)
+    boot, marker, calls, ticks, clocks = run_mode(mode)
     want_state, want_reason = EXPECTED[mode]
     problems = []
     if boot["state"] != want_state:
@@ -146,6 +163,8 @@ def check(mode):
             problems.append("ready.marker does not say paused")
         if "pauseGame" not in calls:
             problems.append("pauseGame was never called")
+        if clocks[0] != clocks[1]:
+            problems.append(f"the clock moved after READY ({clocks[0]} -> {clocks[1]}): the game was not really paused")
     elif marker is not None:
         problems.append("ready.marker exists after a failure")
     if mode == "missing" and calls:
