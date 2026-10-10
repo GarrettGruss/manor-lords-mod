@@ -2,6 +2,8 @@
 .SYNOPSIS
   Closes Manor Lords. Asks the game to close first. Kills it only if it does not close in time.
 .DESCRIPTION
+  NOTE: harness\run.py is the normal way to run the game for a test. This script is for manual use only.
+  It starts the game through Steam, so it cannot pass per-run settings to the game.
   1. Sends a close request to the game window (like the user clicking the close button).
   2. Waits up to -GraceSeconds for the game to exit.
   3. If it is still running, kills it (unless -NoForce is set).
