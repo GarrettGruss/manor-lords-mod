@@ -57,3 +57,21 @@ Ran the tool functions with the real game from this worktree (not a Claude Code 
 - The default run cap shown by the tool was 20 and is now 100, like `run.py`.
 
 Still not checked: a real Claude Code session that lists and calls the tools (needs a new session so that `.mcp.json` is loaded), and a run that survives the MCP server closing.
+
+## Check in a real Claude Code session (2026-10-10)
+A fresh headless Claude Code session (`claude -p`, version 2.1.296, model Sonnet) was started in the repo with
+`--mcp-config .mcp.json --strict-mcp-config` and only the read-only tools allowed:
+`mcp__manor-harness__list_scenarios`, `game_status` and `list_runs`.
+
+Result: the `manor-harness` server started from `.mcp.json` (stdio, `PYTHONPATH=mcp;harness` worked on Windows), the session found and
+called all three tools, and the answers were correct (the scenario list, "game not running, no lock, 72 of 100 runs used",
+and the 3 newest runs with their verdicts and durations). So the registration, the permissions (read-only tools allowed) and the
+server work in a real client.
+
+Two defects were found and fixed:
+- `list_scenarios` showed no descriptions. It read the function docstring. It now uses the registry summary.
+- `list_scenarios` listed the hidden test scenarios (selftest-*, probe-actions). They are now hidden, and `run_scenario` refuses them
+  as unknown. Three tests cover this (`test_harness_tools_scenarios.py`).
+
+Not checked: `run_scenario` and `stop_game` in a real client (they ask for permission, so a headless session cannot approve them),
+and a client time limit for long calls (the start and poll design avoids long calls).
