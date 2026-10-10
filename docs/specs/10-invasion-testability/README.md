@@ -110,20 +110,25 @@ When the real mod exists, the same scenarios run against it. A blocked criterion
 
 ## Capability spikes (real game; each result goes to `implementation-notes/`)
 Each spike answers one "can the harness do this" question on the base game, with before and after numbers. A stand-in is used where the mod does not exist.
-- **S1 Raid timer:** read and write `TemporalComponent.daysUntilNextRaid` and `daysSinceLastRaid`, and the raid ID lists (`defaultRaidIDs`, `eliteRaidIDs`). Does a raid spawn when the timer is zero? What arrives (units, count, side)?
-- **S2 Raid spawn function:** find the signature of `spawnRaiderForce` in the jmap and call it through the helper mod. Compare with the verified `SpawnBanditSquad` (+18 units).
-- **S3 Observation of units:** read side, type, role, state, position and carried goods of units. Find what `ItemsLooted` holds.
+- **S1 Raid timer (done, partial, `spike-S1.md`):** read and write `TemporalComponent.daysUntilNextRaid` and `daysSinceLastRaid`, and the raid ID lists (`defaultRaidIDs`, `eliteRaidIDs`). Does a raid spawn when the timer is zero? What arrives (units, count, side)?
+- **S2 Raid spawn function (done, `spike-S2.md`):** find the signature of `spawnRaiderForce` in the jmap and call it through the helper mod. Compare with the verified `SpawnBanditSquad` (+18 units).
+- **S3 Observation of units (done, partial, `spike-S3.md`):** read side, type, role, state, position and carried goods of units. Find what `ItemsLooted` holds.
 - **S4 Steering:** can a spawned squad be ordered or steered (squad component functions, `targetSquad`, `lastSquadTargetPosition`), or only observed?
-- **S5 Loot drop:** kill a unit that carries goods and read the ground goods.
+- **S5 Loot drop (done, partial, `spike-S5.md`):** kill a unit that carries goods and read the ground goods.
 - **S6 Sack primitives:** destroy or burn a building (`onFire`), remove goods from a building's inventory, remove people, count each. Find what works and what has no effect.
 - **S7 Unit data:** list the rows of `DT_units`, extend the data helper to safe numeric fields, and check that a changed value changes behavior (for example hit points).
 - **S8 Pop-ups and stalls:** find the function that closes the "Hunger!" and similar pop-ups, or a way to prevent them, so long scenarios do not stall.
 - **S9 UI countdown:** can a widget be created from Lua, or can the alert system carry a countdown text? What custom text is possible without a pak?
-- **S10 Performance:** spawn 300 units and measure the game clock rate at 1x and 8x.
+- **S10 Performance (done, `spike-S10.md`):** spawn 300 units and measure the game clock rate at 1x and 8x.
 
 ## Plan
 1. DONE: this spec, `criteria.json` and the coverage tool (U8), so progress is measurable from day one. Start value: `implementation-notes/coverage-baseline.md`.
-2. Spikes S1 to S10 in the real game (one agent at a time uses the game), with results in notes. Update the matrix marks and `METHOD_VERIFIED` for each criterion.
+2. PARTLY DONE (2026-10-10): spikes S1, S2, S3, S5 and S10 ran on the base game (notes `spike-S1.md`, `spike-S2.md`, `spike-S3.md`, `spike-S5.md`, `spike-S10.md`).
+   Results: the raid timer can be written and a raid of 18 units spawns on the day tick that brings it to 0; `spawnRaiders`, `spawnEliteRaiders` and `spawnBanditCamp` work with a plain Vector table;
+   units can be counted by side, role, region and loot in about 10 ms; units can be killed with `just_die`; 1x clock rate stays at 1.02 up to 661 units.
+   Not possible: unit type or template, raider versus bandit split, unit health, choosing raid type or size, announcement of a raid in the base game, loot on the ground (not found).
+   S4, S6 to S9 are still open. Coverage after these spikes: 3 of 37 A and P criteria verified (T2, R2, Q2), see `coverage-after-raids.md`.
+   Spikes S1 to S10 in the real game (one agent at a time uses the game), with results in notes. Update the matrix marks and `METHOD_VERIFIED` for each criterion.
 3. Build U1 to U6, U9 and U10 in order of what the spikes show works. Unit tests with fake bridges. Each gets a real scenario on a stand-in.
 4. Reference scenarios (stand-ins on the base game) for every A and P criterion that has a method, each tagged with `COVERS`.
    - U4 built (2026-10-10): `run.py --pak/--env`, suite `variants`, `suitelib/stats.py`, the A/B report and the `expect` rule, `ctx.metric`. Unit tested with a seeded stand-in; NOT verified: a real A/B on the game and a real pak in a run. Notes: `implementation-notes/ab-statistics.md`.
@@ -132,7 +137,7 @@ Each spike answers one "can the harness do this" question on the base game, with
 6. When the mod exists: run the same scenarios against it (a later spec).
 
 ## Open questions
-- Does the base game accept writes to the raid timer and raid ID lists, or only reads?
+- Does the base game accept writes to the raid timer and raid ID lists, or only reads? Answered for the timer: it accepts writes and holds them. The ID lists were only read.
 - Can an agent steer enemy units, or only spawn and observe them? This decides R1, R4, R6 and R5.
 - Is there any way to found an AI village at runtime (O1 to O4, S4)? If not, the brief must change or a native mod is needed.
 - Which time scale keeps a raid cycle inside a scenario of a few minutes?

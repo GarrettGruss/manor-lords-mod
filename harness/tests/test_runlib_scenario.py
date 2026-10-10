@@ -13,6 +13,9 @@ from runlib.scenario import SCENARIO_INFO, get_limit_s, list_scenarios, register
 from runlib.scenario_context import ScenarioContext
 from scenarios import selftest_fail, smoke
 
+# Raised from 120 to 300 s for the raid scenarios of spec 10: a raid cycle needs several game days (5 s each at speed 3).
+LIMIT_CAP_S = 300
+
 ENGINE = "Map.Map:PersistentLevel.RTSGameManager"
 PLAYER = "Map.Map:PersistentLevel.MyPawnCPP_BP3_C_77"
 CALENDAR = ENGINE + ".TemporalComponent"
@@ -199,8 +202,9 @@ class RealScenarioTest(ContextTestCase):
 class RegistryTest(unittest.TestCase):
     def test_hidden_scenarios_are_not_listed_by_default(self):
         self.assertEqual(sorted(list_scenarios()), [
-            "autosave-protection", "datatable-vanilla", "letter-delivery", "noop", "silver-change", "smoke",
-            "standin-captives", "standin-outposts", "standin-tribute", "telemetry-sanity", "time-advance", "winter-region"])
+            "autosave-protection", "datatable-vanilla", "letter-delivery", "noop", "raid-load", "raid-loot",
+            "raid-spawn", "raid-timer", "silver-change", "smoke", "standin-captives", "standin-outposts",
+            "standin-tribute", "telemetry-sanity", "time-advance", "winter-region"])
         self.assertIn("selftest-timeout", list_scenarios(include_hidden=True))
         self.assertIn("selftest-action", list_scenarios(include_hidden=True))
         self.assertIn("selftest-crash", list_scenarios(include_hidden=True))
@@ -209,7 +213,7 @@ class RegistryTest(unittest.TestCase):
 
     def test_every_scenario_has_a_limit_under_the_cap(self):
         for name, info in list_scenarios(include_hidden=True).items():
-            self.assertTrue(0 < info.limit_s <= 120, name)
+            self.assertTrue(0 < info.limit_s <= LIMIT_CAP_S, name)
         self.assertEqual(get_limit_s("selftest-timeout"), 5)
         self.assertEqual(get_limit_s("unknown"), 90)
 

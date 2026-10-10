@@ -16,6 +16,14 @@
 --   {"id":"0007","command":"datatable_write","row":"name","field":"Value","value":5}  change one number field
 --   {"id":"0008","command":"ModName.command","args":{...}}   a command that another mod registered in HarnessCommands
 --   {"id":"0009","command":"harness.list_commands"}           the registered commands and their argument schemas
+--   Raid and unit commands (spec 10, see mod/shared/HarnessRaids):
+--   {"command":"raid_state"}                                   read the raid timer, the setup and the raid id lists
+--   {"command":"units_census","sample":10}                     counts of units by side, role, state, region
+--   {"command":"spawn_raiders","squads":2,"x":0,"y":0,"z":0}  RTSMultiEngineCPP:spawnRaiders (x, y, z optional)
+--   {"command":"spawn_elite_raiders"}  {"command":"spawn_bandit_camp"}
+--   {"command":"kill_units","side":"bandit","count":5}         SMUnit:just_die on live units of one side
+--      kill_units also takes "with_loot":1 (only units that carry loot) and "actors":1 (report new actor classes)
+--   {"command":"set_unit_loot","side":"bandit","count":3,"amount":5}   write ItemsLooted
 -- Result: {"id","command","ok","error",...fields of the command}. A HarnessCommands command answers {"ok","result"}.
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
 
@@ -24,8 +32,9 @@ local json = require("HarnessJson")
 local autosave = require("HarnessAutosave")
 local datatable = require("HarnessDataTable")
 local commands = require("HarnessCommands")
+local raids = require("HarnessRaids")
 
-local VERSION = "3"
+local VERSION = "4"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -84,6 +93,17 @@ local function parseRequest(raw)
         row = raw:match('"row"%s*:%s*"([%w_ %-]+)"'),
         field = raw:match('"field"%s*:%s*"([%w_]+)"'),
         value = tonumber(raw:match('"value"%s*:%s*(-?[%d%.]+)')),
+        squads = tonumber(raw:match('"squads"%s*:%s*(%d+)')),
+        count = tonumber(raw:match('"count"%s*:%s*(%d+)')),
+        sample = tonumber(raw:match('"sample"%s*:%s*(%d+)')),
+        amount = tonumber(raw:match('"amount"%s*:%s*(%d+)')),
+        trace = tonumber(raw:match('"trace"%s*:%s*(%d+)')),
+        with_loot = tonumber(raw:match('"with_loot"%s*:%s*(%d+)')),
+        actors = tonumber(raw:match('"actors"%s*:%s*(%d+)')),
+        x = tonumber(raw:match('"x"%s*:%s*(-?[%d%.]+)')),
+        y = tonumber(raw:match('"y"%s*:%s*(-?[%d%.]+)')),
+        z = tonumber(raw:match('"z"%s*:%s*(-?[%d%.]+)')),
+        side = raw:match('"side"%s*:%s*"(%a+)"'),
     }
 end
 
@@ -149,6 +169,13 @@ local COMMANDS = {
     datatable_info = datatableInfo,
     datatable_read = datatableRead,
     datatable_write = datatableWrite,
+    raid_state = raids.raid_state,
+    units_census = raids.units_census,
+    spawn_raiders = raids.spawn_raiders,
+    spawn_elite_raiders = raids.spawn_elite_raiders,
+    spawn_bandit_camp = raids.spawn_bandit_camp,
+    kill_units = raids.kill_units,
+    set_unit_loot = raids.set_unit_loot,
 }
 
 local function runCommand(number, raw)
