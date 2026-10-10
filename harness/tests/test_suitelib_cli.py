@@ -52,8 +52,9 @@ class SuiteCliTest(unittest.TestCase):
         return subprocess.run(command, capture_output=True, text=True, env=env, timeout=timeout)
 
     def report(self):
-        # Suite folder names start with a UTC time stamp, so the last one is the newest.
-        folder = sorted(self.runs_root.glob("suite-2*"))[-1]
+        # Folder names only have a one second time stamp and a random suffix, so two suites started in the
+        # same second would sort in a random order. Pick the newest by file time instead.
+        folder = max(self.runs_root.glob("suite-2*"), key=lambda f: (f / "report.json").stat().st_mtime_ns)
         return json.loads((folder / "report.json").read_text()), folder
 
     def test_all_pass(self):
