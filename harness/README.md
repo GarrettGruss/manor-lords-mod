@@ -297,29 +297,36 @@ A game crash while a letter is sent (plain strings instead of `FName` values) is
 Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_actions.py" -v` and, with lupa, `test_fakegame_harnessactions.py`.
 
 ## Asset mods (spec 09)
-`harness/tools/pakmod.py` builds, installs and removes `.pak` files. **Status: tested with a fake packer only. A real pak build is not verified.**
+`harness/tools/pakmod.py` finds and extracts assets from the game paks, converts them to JSON and back, builds a patch pak, and installs and removes it.
+Tools: repak (paks) and the UAssetGUI command line (one asset). **Status: tested with fake tools only. The real tools are not run yet.**
 Use Lua first. Build a pak only when the data cannot be changed at runtime (`docs/specs/09-asset-mods/README.md`).
 
-Setup (only you can do this; the repo has no pak tools and no AES key):
-1. Get a pak tool, for example UnrealPak (from an Unreal Engine install) or `retoc`. Put it anywhere outside the repo.
-2. Make a work folder outside the repo, for example `C:\modwork`. Put the edited asset files in `C:\modwork\<name>\`, with the in-game folder layout,
-   for example `C:\modwork\myedit\ManorLords\Content\NotStronghold\Data\DT_Items.uasset`. The tool writes the mount path `../../../ManorLords/Content/...` for each file.
-   Exports from FModel, `.usmap` files and AES keys stay outside the repo. Never commit them.
-3. Write `harness\pakmod.local.json` (it is in `.gitignore`):
-   ```json
-   {"packer": "C:/tools/UnrealPak/UnrealPak.exe", "packer_args": ["-Create={response}", "{output}"], "work_dir": "C:/modwork"}
-   ```
-   `{response}` is replaced with the response file path, `{output}` with `<work_dir>\out\<name>_P.pak`. Change `packer_args` to what your tool needs. Give the AES key as an argument there only if the tool needs it, and keep the file out of git.
-4. Run `.venv\Scripts\python.exe harness\tools\pakmod.py check`. It lists what is missing.
+Setup (only you can do this; the repo has no tools and no AES key):
+1. Get `repak.exe` (github.com/trumank/repak releases) and `UAssetGUI.exe` v1.1.1 or later (github.com/atenfyr/UAssetGUI releases). Review them. Put them outside the repo, for example `C:\modtools\`.
+2. Make the `.usmap`: start the game with UE4SS, then call the bridge tool `dump` with `kind: "usmap"` (UE4SS dumper). The file lands in the `ue4ss` folder. Copy it to the work folder. It must match the game build.
+3. Make a work folder outside the repo, for example `C:\modwork`. Exports, `.usmap` files and AES keys stay outside the repo. Never commit them.
+4. Copy `harness\pakmod.local.example.json` to `harness\pakmod.local.json` (it is in `.gitignore`) and set the paths, `usmap`, `engine_version` (`5.5`) and `work_dir`.
+   Leave `sha256` empty. If the game paks are encrypted, set the environment variable named in `aes_key_env` (the key itself never goes into a file).
+5. Run `.venv\Scripts\python.exe harness\tools\pakmod.py check --pin`. It writes the SHA-256 of both tools into the config and prints them. This is a reviewed action: only pin files you trust.
+   Later `check` runs refuse (exit code 3) when a tool file changed.
 
-Commands (all accept `--dry-run` and `--game-dir`; the name matches `^[A-Za-z0-9_-]{1,40}$`):
+Commands (all accept `--dry-run` and `--game-dir`; a mod name matches `^[A-Za-z0-9_-]{1,40}$`):
 ```
-pakmod.py check
-pakmod.py build <name>       # writes <work_dir>\out\<name>_P.pak
-pakmod.py install <name>     # copies it to ManorLords\Content\Paks\~mods\ and records its SHA-256 in ~mods\.harness-paks.json
+pakmod.py check [--pin]       # config, tool hashes, tool versions, usmap, work folder, game Paks folder
+pakmod.py find <text>         # case-insensitive search in the index of every game pak (max 50, index cached in <work_dir>\.index-cache)
+pakmod.py extract <asset>     # ManorLords/Content/.../Name -> <work_dir>\extracted\...\Name.uasset/.uexp (+ .ubulk/.uptnl if present)
+pakmod.py tojson <asset>      # UAssetGUI -> <work_dir>\json\...\Name.json
+pakmod.py fromjson <json> [--to <name>]   # JSON -> asset in <work_dir>\fromjson\ or in the build folder <work_dir>\<name>\
+pakmod.py roundtrip <asset>   # extract, tojson, fromjson, then compare bytes with the original (a difference is reported, not an error)
+pakmod.py build <name>        # repak pack <work_dir>\<name>\ -> <work_dir>\out\<name>_P.pak, then checks the pak list against the folder
+pakmod.py install <name>      # copies it to ManorLords\Content\Paks\~mods\ and records its SHA-256 in ~mods\.harness-paks.json
 pakmod.py list
-pakmod.py remove <name>      # or: remove --all. Deletes only manifest files whose hash still matches
+pakmod.py remove <name>       # or: remove --all. Deletes only manifest files whose hash still matches
 ```
+Exit codes: 0 ok, 1 error, 3 a tool does not match its pinned hash, 4 the built pak lists other files than the folder.
+The build folder `<work_dir>\<name>\` holds the edited files in the game layout, for example `ManorLords\Content\NotStronghold\Data\DT_Items.uasset`.
+The config can override the argument templates (key `templates`), because the real tools may differ by version. Command facts: `docs/specs/09-asset-mods/implementation-notes/cli-reference.md`.
+
 `uninstall.ps1 -Remove` also removes the manifest paks. Restart the game after install or remove (the launcher starts a new game for each run anyway).
 To check the effect: `run.py --scenario datatable-vanilla` with `HARNESS_EXPECT_ITEM_ROWS='{"17": {"Value": 0.75}}'` (new values) after a pak that changes them.
 Without a pak the scenario compares 24 `itemStats` rows with `harness/vanilla/itemStats.json` (about 50 s per run). Details: `docs/specs/09-asset-mods/implementation-notes/tooling.md`.

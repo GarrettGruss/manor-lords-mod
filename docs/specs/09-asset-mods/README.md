@@ -62,7 +62,7 @@ and refuses to run a tool whose hash differs. Tools run without a shell, with a 
 
 ## Implementation plan (2026-10-10)
 1. Spec update. Done in this change.
-2. `pakmod.py` for repak and UAssetGUI: config with pinned hashes, `check`, `find`, `extract`, `tojson`, `fromjson`, `roundtrip`, `build` (folder and `repak pack`), `install`, `remove`, `list`. Unit tests with fake tools (small scripts that mimic the command lines). The old response-file packer path is removed.
+2. Done (2026-10-10, fake tools only). `pakmod.py` for repak and UAssetGUI: config with pinned hashes, `check`, `find`, `extract`, `tojson`, `fromjson`, `roundtrip`, `build` (folder and `repak pack`), `install`, `remove`, `list`. Unit tests with fake tools (small scripts that mimic the command lines). The old response-file packer path is removed.
 3. `run.py --pak <name>` and suite variants with an A/B report. Unit tests with fake runs. No game use in tests.
 4. Spike with the real tools (needs the user): repak and UAssetGUI in place, a `.usmap` made, then: find and extract `DT_units` (or another small table), round trip it, change one number, build and install a pak, run `datatable-vanilla` with the expected new value (`HARNESS_EXPECT_ITEM_ROWS` or its successor), run the A/B comparison, and remove the pak. Record the evidence in `implementation-notes/`.
 5. Docs, README, changelog.
