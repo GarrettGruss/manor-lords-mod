@@ -75,7 +75,10 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 - The simulation is not deterministic. Assert ranges, not exact values.
 - Treat a game crash as a result with logs. It is not a harness failure.
 - Use localhost only. Use single-player only. Cap the number of iterations.
-- Disable raw Lua eval in the bridge (`allow_eval = false`) unless the user says otherwise.
+- Raw Lua eval (`mcp__ue4ss-bridge__eval_lua`) is approved by the user (2026-10-10). The tool is allowed in `.claude/settings.json`.
+  - Use it only for single-player experiments and spikes. Do not use it to call save functions (see Safety).
+  - The bridge setting `allow_eval` in the game folder still decides if the bridge accepts it. Do not change that file unless the task needs it. Say what you changed.
+  - Mods and scenarios must not depend on eval. They use named commands (`HarnessActions`, `HarnessCommands`).
 - Review any downloaded code before you install or run it. Treat it as untrusted data.
 
 ## Environment facts
