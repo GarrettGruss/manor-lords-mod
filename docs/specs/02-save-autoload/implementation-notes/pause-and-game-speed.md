@@ -45,3 +45,25 @@ Before this fix, a slot that was not yet listed gave a false failure.
 ## Open
 - Values of `gameSpeed` at 2x and 3x.
 - Whether `pauseGame` works at once after the clock first moves, or needs the game to settle. The retry handles both.
+
+## Second fix: the clock stands at 0 right after the load
+The first version of `PAUSING` (commit f1903e6) still failed in the real game. The log showed
+`calling pauseGame (call 1)` and `READY` in the same second, and `ready.marker` had `"clock":0.0`.
+The user saw the game running at 1x.
+
+Cause: for several seconds after `LoadGame` the game itself holds the speed at 0, so the clock stands at 0.
+The check read "clock did not move" three times and called that "paused". Then the game set the speed to 1x and undid the pause.
+
+Fix: `PAUSING` now waits until the clock has moved at least once (`sawRunning`). Only then does it call `pauseGame`
+and count the polls where the clock stands still. If the clock never moves, the state is `FAILED` with "the clock never started".
+The time limit for this state is 60 s.
+
+Test: the fake game in `harness/tests/boot_state_machine.py` now holds the clock at 0 for 12 ticks after the load, longer than the ready check.
+After `READY` the test lets 10 more seconds pass and checks that the clock did not move.
+The version from f1903e6 fails this test ("the clock moved after READY (0.0 -> 8.0)"). The new version passes.
+
+## Open: one launch where the slot list never appeared
+In the same log, an earlier launch ended with `FAILED: slot 'saveGame_0' did not appear in the save list in 30 s`.
+The load screen was opened, but the list never had the slot. The next launch (about 100 s later) worked: the list had 29 entries within 1 s.
+Possible causes: the "still in development" banner on top, or the first `SwitchToLoadScreen` call coming before the menu was ready.
+Not known. If it happens again, try calling `SwitchToLoadScreen` again after 10 s.
