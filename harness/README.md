@@ -40,3 +40,24 @@ They cannot show that the real UE4SS API behaves like the fake one.
 - While that file exists, every game launch that reaches the main menu loads `saveGame_0`.
 - Delete the file to get normal play back. Ask Claude to delete it if you prefer.
 - The run launcher (spec 03) will use the environment variable `HARNESS_AUTOBOOT=1` instead of this file.
+
+## Disable or remove the harness
+
+`uninstall.ps1` (PowerShell 5.1) has two modes. Both support `-DryRun` and `-GameDir`. Running twice is safe.
+
+- Default (disable): deletes `ue4ss\harness\autoboot.enable` and sets every harness mod to `Name : 0` in `mods.txt`.
+  All files stay. Run `deploy.ps1` to enable the harness again.
+- `-Remove` (full uninstall): also deletes the files listed in the manifest, the harness lines in `mods.txt`,
+  the manifest, and the folders `ue4ss\bridge` and `ue4ss\harness`.
+  `mods.txt.harness.bak` is kept. The script prints its path, so you can restore it by hand.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File harness\uninstall.ps1 -DryRun   # preview
+powershell -ExecutionPolicy Bypass -File harness\uninstall.ps1           # disable
+powershell -ExecutionPolicy Bypass -File harness\uninstall.ps1 -Remove   # full uninstall
+```
+
+The script never touches UE4SS, `dwmapi.dll`, stock mods, `UE4SS-settings.ini` or the game saves.
+If the game is running, the script warns. Changes take effect at the next game start.
+To turn UE4SS off for one launch, use the Steam launch option `--disable-ue4ss`.
+To turn UE4SS off fully, rename `dwmapi.dll`. The script does neither.

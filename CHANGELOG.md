@@ -19,6 +19,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `HarnessLoadProbe` mod: press F8 in the main menu to load a save slot (default `saveGame_0`). It is a probe for spec 02.
 - `HarnessBoot` mod: loads the test save from the main menu, pauses the game (checked with the game clock), and writes `boot.json` and `ready.marker`. It is off unless `HARNESS_AUTOBOOT=1` or `ue4ss/harness/autoboot.enable` exists.
 - `harness/tests/` with a Lua syntax check and a state machine test that need no game.
+- `harness/uninstall.ps1`: disables the harness (mods set to 0, autoboot switch removed) or removes everything `deploy.ps1` installed with `-Remove`.
 
 ### Changed
 - Vendored bridge: raw Lua eval is off by default, and it is gated in the Python server too.
