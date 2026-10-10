@@ -1,6 +1,8 @@
 # Spec 00: Harness overview and roadmap
 
-Status: draft. This spec holds the plan for all other specs. Update it when a spec is finished or changes.
+Status: all specs in the roadmap are built, tested with the real game, and merged (spec 09 is deferred on purpose).
+This spec holds the plan for all other specs. Update it when a spec is finished or changes.
+Follow-up items are listed at the end of this file.
 
 ## Purpose
 Let an AI agent develop and test Manor Lords mods in a loop, with no human in the loop:
@@ -36,14 +38,14 @@ An agent uses the fastest layer that can answer its question. It moves to a slow
 | Spec | Name | Goal | Status |
 |---|---|---|---|
 | 01 | ue4ss-bridge | Live control channel into the running game | done (PR 1) |
-| 02 | save-autoload | Load a fixed save and report ready, with the game paused | done (PR 2). Open: save copy, dialog test |
-| 03 | run-launcher | One command makes one run folder with `summary.json` | in progress |
-| 04 | telemetry-and-assertions | Sample game state, assert ranges, define the scenario format, control game time | planned |
-| 05 | agent-tools | MCP tools so the agent drives the harness directly | planned |
+| 02 | save-autoload | Load a fixed save and report ready, with the game paused | done (PR 2). The save copy is solved in spec 06 |
+| 03 | run-launcher | One command makes one run folder with `summary.json` | done (PR 3). `harness/run.py`, scenarios, screenshots, crash and timeout cases |
+| 04 | telemetry-and-assertions | Sample game state, assert ranges, define the scenario format, control game time | done (PR 4). `ctx.time`, `ctx.expect`, `HarnessTelemetry` |
+| 05 | agent-tools | MCP tools so the agent drives the harness directly | done (PR 5). Open: a check in a real Claude Code session |
 | 06 | dev-loop-and-fixtures | Hot reload without a game restart, a reusable mock kit, several test saves | done (hot reload, mock kit, fixtures through a private LOCALAPPDATA) |
 | 07 | feature-test-kit | Helpers to give resources, place buildings, trigger events, advance time | done (14 checked actions, `ctx.actions`, helper mod for letters; no building placement) |
-| 08 | regression-suite | Run many scenarios and saves, compare with baselines, find flaky tests | planned |
-| 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | only if a feature needs it |
+| 08 | regression-suite | Run many scenarios and saves, compare with baselines, find flaky tests | done (PR 6). Baselines are thin (2 to 4 runs) |
+| 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | deferred on purpose (PR 7). The spec says when to build it |
 
 Order and reasons:
 - 03 comes first: every later spec needs a run folder and a summary.
@@ -85,6 +87,13 @@ Then update the status here and in the changelog.
 - The game restarts its clock once after our first pause. The harness holds the pause (spec 02).
 - A direct launch of the game executable passes environment variables, so each run can have its own folder (spec 03).
 - Game state is readable: calendar, region approval, public order, wealth, food, population, player silver, letters (`InBox`).
+- One command (`python harness/run.py --scenario <name>`) runs a full iteration in 40 to 90 s and writes a `summary.json` under 4 KB (spec 03). Verdicts: pass, fail, crash, timeout, harness error.
+- A scenario can control game speed (1x, 4x, 8x) and run N game days, sample state every 5 s, and assert ranges (spec 04). One game day is 40 game seconds.
+- An agent can start a run, wait for it, and read results through MCP tools without shell commands (spec 05, tested with the tool functions and a real run).
+- A suite of scenarios runs with one command, with baselines, drift and flake detection (spec 08). The `core` suite (5 runs) takes about 280 s.
+- A Lua change reaches the running game in about 2 s (spec 06). A mod can be tested without the game with the fake game kit.
+- Each run has a private save folder (`LOCALAPPDATA` redirect). The game's saves are copies of the fixture, and the user's save folder is hashed before and after every run.
+- A scenario can change game state with checked actions: silver, influence, the day, regional wealth, items, settlement level, bandits, letters (spec 07).
 
 ## Main risks and unknowns
 
@@ -97,10 +106,14 @@ Then update the status here and in the changelog.
 | The game restarts its clock after a load, and the cause is unknown | The pause can fail in a new case | Hold the pause and check the clock. Find the cause later (optional) |
 | Steam must be running for a direct launch | A run fails to start | Spec 03 checks it in `preflight` and fails with a clear message |
 | Agent cost grows with many runs | Budget | Use the fastest layer, cap iterations, use Sonnet for agent work (see `CLAUDE.md`) |
+| A game function that saves writes into the user's REAL save folder, even with the private `LOCALAPPDATA` (it overwrote `saveGame_9` once) | Loss of user data | Never call save functions (`CLAUDE.md`). The launcher hashes the user's saves before and after a run and fails the run, but only after the write. The user's backup folder allowed a bit-exact restore |
+| The game's own autosave may also write to the real folder in a long run | Changed user save | Runs are short and the guard would fail a run that changed a save. Disabling autosave at boot (`SetAutosavePeriod`) is untested |
+| A game pop-up (for example 'Hunger!') pauses the clock and cannot be closed through the bridge | A long time-advance scenario stalls | Keep scenarios short. Detect a stopped clock and fail with a clear reason |
+| Cheat based actions depend on the stock `CheatManagerEnablerMod` | Actions stop working if it is removed | Keep it in `mods.txt`. The catalog notes this |
 
 ## Open decisions
-- Which features will be built first? The scenarios in spec 04 and the kit in spec 07 should fit them.
-- Which test saves are needed (famine, raid, trade, many buildings)? Who creates them, and how are they stored without writing to the user's saves?
+- Which features will be built first? Write each feature spec with acceptance criteria as state ranges, then use the feature workflow above.
+- Which test saves are needed (famine, raid, trade, many buildings)? Saves can now be used without touching the user's saves (private `LOCALAPPDATA`), but a new situation still needs a save made by hand, because `requestSaveFile` writes to the real folder and is forbidden.
 - Should a nightly regression run be started by a scheduled task? This needs an unlocked desktop session.
 - Is a second machine or user account for the game worth it, so the harness does not take over the user's screen?
 
@@ -108,3 +121,13 @@ Then update the status here and in the changelog.
 - Each spec in the roadmap exists, and its status here matches its real state.
 - For every feature spec, at least 90% of the criteria are marked automated, or the reason is written down.
 - A new agent can follow the "Feature workflow" with no help from the user, using the harness commands and tools.
+
+## Follow-up items (not blocking)
+- Check the `manor-harness` MCP tools in a real Claude Code session. `.mcp.json` is read when a session starts, so this needs a new session (spec 05).
+- Disable the game's autosave at boot, or prove that it never writes to the real save folder in a long run (spec 06 and 07 notes).
+- Crash reports in the private folder (`<run>/appdata/.../Crashes`): only a unit test covers it. Force a real crash and check the copy (spec 06).
+- Direct launch with Steam closed, a minimized game window, another monitor, and the `--keep-open` option (spec 03).
+- Find what restarts the game clock after a load, and what makes the game drop back to 1x after `changeGameSpeed` (specs 02 and 04).
+- Thicker baselines: run the `core` suite more times before trusting the timing ranges (spec 08).
+- Building placement and raids have no verified action. Search the jmap for the function behind each UI action when a feature needs it (spec 07).
+- Spec 09: when a feature needs a pak change, first test reading and writing a `DataTable` row at runtime.
