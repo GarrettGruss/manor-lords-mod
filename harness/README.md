@@ -277,6 +277,7 @@ Helpers in the bridge client: `write_property`, `count_objects`, `region_paths`,
 ### Autosave protection
 The game's autosave timer runs in real time, also while the game is paused, and an autosave writes into the user's REAL save folder.
 `HarnessBoot` has a step `DISABLING_AUTOSAVE` before `PAUSING`: it restarts the timer with a one year period (`MLGameInstance:SetAutosavePeriodOnPawn`) and fails the boot if the timer is not far away.
+`PAUSING` does not call `pauseGame` while the intro cinematic plays (`PawnCPP.currentUIMode ~= 0`): its end restores 1x and would undo the pause (spec 02, `clock-restart-cause.md`). The 8 s hold stays as a safety net.
 `ctx.actions.autosave_status()` reads the timer. Scenario `autosave-protection` checks it over 60 game seconds. Notes: `docs/specs/06-dev-loop-and-fixtures/implementation-notes/autosave.md`.
 
 ### DataTable commands (spec 09 first check)
@@ -290,7 +291,7 @@ A game crash while a letter is sent (plain strings instead of `FName` values) is
 
 ### Scenarios of spec 07
 `silver-change` (set, add and take silver; checks the player value, the telemetry and the HUD, about 50 s), `winter-region` (winter, forced Approval and wealth, 3 game days, about 65 s),
-`letter-delivery` (a letter into the InBox, about 40 s). Hidden: `selftest-action` (an impossible action, must fail with a clear message) and `probe-actions`
+`letter-delivery` (a letter into the InBox, about 40 s). Hidden: `selftest-action` (an impossible action, must fail with a clear message) and `probe-actions`, `probe-building` (HARNESS_PROBE_B: read, mode, click, scan)
 (the probe; choose a group with `HARNESS_PROBE`: money, time, region, cheat, cheat2, cheat3, weather, hud, mail, helper; the groups `message`, `items` and `names` end the game on purpose).
 Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_actions.py" -v` and, with lupa, `test_fakegame_harnessactions.py`.
 

@@ -39,7 +39,7 @@ Status words: `verified` = the effect was read back in the real game. `partial` 
   It exists because the stock UE4SS mod `CheatManagerEnablerMod` is on in `ue4ss\Mods\mods.txt` (`UE4SS.log`: "Constructed CheatManager").
   **Caveat:** if that mod is turned off, the cheat manager actions fail. The console command `EnableCheats` did not create one (it was there already, so this is not proof).
 - Do setters on `Approval` hold? Not always. See the region rows below.
-- Is there a reflected function that places a building or starts a raid? No function for a building was found. `RTSMultiEngineCPP:spawnRaiders(NumSquads, ArmyCenter struct)` exists, but it was not called (struct parameter). The cheat `SpawnRaidersOfType("Bandit")` changed nothing.
+- Is there a reflected function that places a building or starts a raid? No function that places a building from a bridge call was found (second search and probe: `building-placement.md`). `RTSMultiEngineCPP:spawnRaiders(NumSquads, ArmyCenter struct)` exists, but it was not called (struct parameter). The cheat `SpawnRaidersOfType("Bandit")` changed nothing.
 
 ## Player values (probe-money)
 

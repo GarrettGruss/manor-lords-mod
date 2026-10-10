@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Clock restart cause (spec 02): found with a temporary hook probe (source kept in `docs/specs/02-save-autoload/implementation-notes/`). Note `clock-restart-cause.md`. Hidden scenario `probe-building` and the note `building-placement.md` (spec 07): no verified way to place a building.
+- Fake game: `FakeGameClock(cinematic=(start, end))` models the intro cinematic. New boot test modes `cinematic`, `nocinematic`, `silentrestart`, `cinematicstuck`, and a check of the number of `pauseGame` calls.
 - Asset mod tooling (spec 09): `harness/tools/pakmod.py` (`check`, `build`, `install`, `remove`, `list`, all with `--dry-run` and `--game-dir`), configured by the local file `harness/pakmod.local.json` (not committed). `uninstall.ps1 -Remove` also removes harness paks (only files in `~mods\.harness-paks.json` whose hash matches). Tested with a fake packer; a real pak build is not verified (needs UnrealPak or `retoc` from the user).
 - Scenario `datatable-vanilla` and the file `harness/vanilla/itemStats.json` (24 vanilla `itemStats` rows, row count 213): the scenario compares the rows read in the game with the vanilla values. `HARNESS_EXPECT_ITEM_ROWS` states new values for a data pak. Hidden scenario `datatable-record` writes the vanilla file. Actions `ctx.actions.datatable_info()` and `ctx.actions.datatable_read(row, field)`.
 - Autosave protection (spec 06): `HarnessBoot` state `DISABLING_AUTOSAVE` restarts the pawn autosave timer with a one year period before READY (shared module `HarnessAutosave`, `MLGameInstance:SetAutosavePeriodOnPawn`). The timer ran in real time, also in a paused game. `HarnessActions` commands `autosave_status` and `disable_autosave`, action `ctx.actions.autosave_status()`, scenario `autosave-protection`, and fake game support for the timer (`boot_state_machine.py` mode `autosavefails`).
@@ -50,6 +52,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `harness/suite.py` and `harness/suitelib/`: the regression suite. It runs a suite through `run.py`, retries failures to find flaky scenarios, writes `report.json` and `report.md`, compares metrics with baselines, and writes baselines only on request. Suites are in `harness/suites/` (`smoke`, `core`, `soak`, `selftest`). Real baselines for `smoke`, `time-advance` and `telemetry-sanity` are in `harness/baselines/`. After a run timeout the suite kills `run.py` and closes the game (found in a real run: the game stayed open).
 
 ### Changed
+- `HarnessBoot` waits for the end of the intro cinematic (`PawnCPP.currentUIMode ~= 0`) before it calls `pauseGame`, so the game does not undo the pause. One `pauseGame` call in each boot (5 of 5 smoke runs, before: two); the 8 s hold stays as a safety net.
+- Fake clock: `late_revert_after` is off by default (the intro cinematic is the default restart).
 - `summary.json` is smaller: it drops empty fields, keeps only the seconds of good phases, and has a short environment (the full mod hashes are in `config.json`). Assertion records use `rule` instead of `range`.
 - Vendored bridge: raw Lua eval is off by default, and it is gated in the Python server too.
 - Vendored bridge: the bridge folder follows `HARNESS_RUN_DIR`.
