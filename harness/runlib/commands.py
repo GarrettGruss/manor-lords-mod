@@ -80,3 +80,75 @@ class CommandChannel:
                 raise CommandError(
                     f"no answer to command {command} ({name}) in {self._timeout_s:.0f} s. Is the mod HarnessActions loaded?")
             self._sleep(POLL_S)
+
+
+class ModDidNotAnswer(CommandError):
+    """A mod did not answer in time. The mod may not be loaded. `mod` is the name of the mod."""
+
+    def __init__(self, mod: str, message: str):
+        super().__init__(f"mod did not answer: {mod}. {message}")
+        self.mod = mod
+
+
+class ModCommandChannel:
+    """The client side of the command channel of a mod (HarnessCommands, spec 10).
+
+    Each mod serves its own folder `<run>/modcmd/<ModName>/` in its own Lua state. A request is `<number>.json`
+    with `{"command", "args"}`. The answer is `<number>.result.json` with `{"ok", "result" | "error"}`.
+    The mod creates its folder when it registers its first command or metric. A missing folder means the mod is not loaded.
+    """
+
+    def __init__(self, folder: Path, timeout_s: float = ANSWER_TIMEOUT_S, sleep: Callable[[float], None] = time.sleep,
+                 monotonic: Callable[[], float] = time.monotonic, check_alive: Callable[[], None] = lambda: None):
+        self.folder = Path(folder)
+        self._timeout_s = timeout_s
+        self._sleep = sleep
+        self._monotonic = monotonic
+        self._check_alive = check_alive
+        self._numbers: dict[str, int] = {}
+
+    def send(self, mod: str, command: str, args: dict | None = None) -> dict:
+        """Send one command to a mod and wait for its answer.
+
+        Raise ModDidNotAnswer when there is no folder or no answer. Raise CommandRefused when the mod says ok=false.
+        """
+        mod_folder = self.folder / mod
+        started = self._monotonic()
+        self._wait_for_folder(mod, command, mod_folder, started)
+        name = f"{self._next_number(mod, mod_folder):04d}"
+        self._write_request(mod_folder, name, {"command": command, "args": args or {}})
+        answer = self._wait_for_answer(mod, command, mod_folder / f"{name}.result.json", name, started)
+        if not answer.get("ok"):
+            raise CommandRefused(command, str(answer.get("error")))
+        return answer
+
+    def _wait_for_folder(self, mod: str, command: str, mod_folder: Path, started: float) -> None:
+        while not mod_folder.is_dir():
+            self._check_alive()
+            if self._monotonic() - started > self._timeout_s:
+                raise ModDidNotAnswer(mod, f"There is no folder {mod_folder} for command {command}. Is the mod {mod} loaded and does it register a command?")
+            self._sleep(POLL_S)
+
+    def _next_number(self, mod: str, mod_folder: Path) -> int:
+        """Continue after the highest request that is already in the folder, so a second client never reuses a number."""
+        if mod not in self._numbers:
+            existing = [int(path.stem) for path in mod_folder.glob("*.json") if path.stem.isdigit()]
+            self._numbers[mod] = max(existing, default=0)
+        self._numbers[mod] += 1
+        return self._numbers[mod]
+
+    @staticmethod
+    def _write_request(mod_folder: Path, name: str, body: dict) -> None:
+        temp = mod_folder / f"{name}.tmp"
+        temp.write_text(json.dumps(body), encoding="utf-8")
+        os.replace(temp, mod_folder / f"{name}.json")
+
+    def _wait_for_answer(self, mod: str, command: str, path: Path, name: str, started: float) -> dict:
+        while True:
+            self._check_alive()
+            answer = CommandChannel._read_answer(path)
+            if answer is not None:
+                return answer
+            if self._monotonic() - started > self._timeout_s:
+                raise ModDidNotAnswer(mod, f"No answer to command {command} ({name}) in {self._timeout_s:.0f} s. Is the mod {mod} loaded?")
+            self._sleep(POLL_S)

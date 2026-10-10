@@ -40,7 +40,7 @@ A mod that samples game state on the game thread and appends one JSON line per s
 - Each field is read with a guard. A field that cannot be read is `null`, and the error is counted in `errors`. A bad field never stops sampling.
 - The mod works while the game is paused (it samples wall-time, not game-time).
 - Lines are flushed one by one, like HarnessLog.
-- A mod can add its own metrics: `HarnessTelemetry.register(name, fn)` adds a field to every sample. `fn` runs on the game thread.
+- A mod can add its own metrics: `HarnessTelemetry.register(name, fn)` adds a field to every sample. `fn` runs on the game thread. It only works for code in the Lua state of the telemetry mod: UE4SS gives every mod its own Lua state (found 2026-10-10). A metric that a scenario reads belongs in `HarnessCommands.metric` (spec 10, U10).
 
 ### Part C: snapshots and assertions (Python, `harness/runlib/snapshot.py` and `expectations.py`)
 - `snapshot(ctx)`: read the same fields now through the bridge. Returns a dict with the same shape as one telemetry sample.

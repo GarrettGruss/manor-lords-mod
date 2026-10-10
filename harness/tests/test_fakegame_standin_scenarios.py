@@ -1,9 +1,9 @@
 """The three stand-in scenarios and ModState, run against the REAL Lua files in the fake game kit (spec 10, U10).
 
-The chain is: scenario code -> ModState -> command files -> the real HarnessActions mod -> the real HarnessCommands registry ->
-the real InvasionStandIn mod, and back through the real HarnessTelemetry sampler and telemetry.jsonl.
-Only the game is fake: the engine, the clock and the game days. This checks the logic of the scenarios without the game.
-It does NOT prove that the real game loads the mods or shares the registry between mod states.
+The chain is: scenario code -> ModState -> ModCommandChannel -> request files in modcmd/InvasionStandIn/ -> the poller of the real
+HarnessCommands module inside the Lua state of the real InvasionStandIn mod, and back through the result files.
+Every mod runs in its own Lua state (separate_states), as in UE4SS. Only the game is fake: the engine, the clock and the game days.
+This checks the logic of the scenarios without the game. It does NOT prove that the real game loads the mods.
 """
 
 import unittest
@@ -11,14 +11,12 @@ import unittest
 import fakegame_path  # noqa: F401
 import runlib_path  # noqa: F401
 from fakegame import FakeGame
-from modstate_support import build_engine, set_days, sleep_in
-from runlib.commands import CommandChannel
+from modstate_support import build_engine, mod_channel, set_days, sleep_in
 from runlib.expectations import Expectations
+from runlib.commands import ModDidNotAnswer
 from runlib.modstate import ModCommandError, ModState
-from runlib.telemetry import TelemetryReader
 from scenarios import standin_captives, standin_outposts, standin_tribute
 
-TELEMETRY_INTERVAL_S = 1
 GAME_DAY_FAKE_SECONDS = 5  # one game day at speed 3 takes 5 wall seconds in the real game
 
 
@@ -29,8 +27,7 @@ class StackContext:
         sleep = sleep_in(game)
         self._new_expectations = lambda: Expectations(sleep=sleep, monotonic=game.now)
         self.expect = self._new_expectations()
-        self.commands = CommandChannel(game.run_dir / "commands", timeout_s=10, sleep=sleep, monotonic=game.now)
-        self.telemetry = TelemetryReader(game.run_dir)
+        self.mod_commands = mod_channel(game)
         self.mod = ModState(self, sleep=sleep, monotonic=game.now)
         self.time = FakeTime(game)
         self.ensure_alive = lambda where="scenario": None
@@ -39,7 +36,7 @@ class StackContext:
         return self.expect.result()
 
     def next_scenario(self):
-        """The mod counts the command files, so a second scenario in the same game must use the same channel."""
+        """The mod counts the request files, so a second scenario in the same game must use the same channel."""
         self.expect = self._new_expectations()
 
 
@@ -62,7 +59,7 @@ class FakeTime:
 
 def running_game():
     """A fake game with the three real mods loaded in the order of the real mods folder."""
-    game = FakeGame(env={"HARNESS_TELEMETRY_INTERVAL_S": str(TELEMETRY_INTERVAL_S)})
+    game = FakeGame(separate_states=True)
     game.start()
     build_engine(game)
     for name in ("HarnessActions", "HarnessTelemetry", "InvasionStandIn"):
@@ -116,24 +113,20 @@ class StandInScenarioFailureTests(unittest.TestCase):
     def run_broken(self, module, lua_patch):
         game = running_game()
         self.addCleanup(game.close)
-        game.exec(lua_patch)
+        game.exec(lua_patch, state="InvasionStandIn")
         return module.run(StackContext(game))
 
     def test_a_mod_that_does_not_register_its_commands_fails_the_outposts_scenario_loudly(self):
-        game = FakeGame(env={"HARNESS_TELEMETRY_INTERVAL_S": "1"})
+        game = FakeGame(separate_states=True)
         game.start()
         self.addCleanup(game.close)
         build_engine(game)
         for name in ("HarnessActions", "HarnessTelemetry"):
             game.load_mod(name)
         game.advance(1)
-        ctx = StackContext(game)
-        result_asserts = []
-        with self.assertRaises(Exception) as caught:
-            result_asserts = standin_outposts.run(ctx)
-        self.assertEqual(result_asserts, [])
-        self.assertIn("stand-in commands are registered", [a["name"] for a in ctx.expect.records])
-        self.assertIn("InvasionStandIn.reset", str(caught.exception))
+        with self.assertRaises(ModDidNotAnswer) as caught:
+            standin_outposts.run(StackContext(game))
+        self.assertIn("mod did not answer: InvasionStandIn", str(caught.exception))
 
     def test_a_blind_outpost_that_still_sees_fails_the_scenario(self):
         result = self.run_broken(standin_outposts, """
@@ -156,7 +149,7 @@ class StandInScenarioFailureTests(unittest.TestCase):
                 return { treasury = 1000, paid_total = 0, hostages_given = 0, vassal = false, yearly_amount = 0, years_paid = 0,
                          year_days = 2, pending = "none" }
             end, {})
-        """)
+        """, state="InvasionStandIn")
         ctx = StackContext(game)
         with self.assertRaises(ModCommandError):  # the broken mod leaves the offer pending, so the next offer is refused
             standin_tribute.run(ctx)
@@ -164,7 +157,7 @@ class StandInScenarioFailureTests(unittest.TestCase):
 
     def test_a_metric_that_stays_zero_fails_the_captives_scenario(self):
         result = self.run_broken(standin_captives, """
-            require("HarnessTelemetry").register("InvasionStandIn.captives", function() return 0 end)
+            require("HarnessCommands").metric("InvasionStandIn.captives", function() return 0 end)
         """)
         failed = [a["name"] for a in result["asserts"] if not a["ok"]]
         self.assertIn("R5 metric captives is 5", failed)

@@ -3,7 +3,8 @@
 -- Why: the real Invasion Mode mod adds systems that the base game does not have. This stand-in proves that the
 -- harness can drive and observe mod-defined state (spec 10, U10) before that mod exists. The real mod replaces it.
 --
--- What it does: it registers commands in HarnessCommands (as InvasionStandIn.<name>) and metrics in HarnessTelemetry.
+-- What it does: it registers commands and metrics in HarnessCommands (as InvasionStandIn.<name>).
+-- HarnessCommands serves them from this mod's own Lua state (UE4SS gives each mod its own state).
 -- What it does not do: it changes no game object, adds no hook and no loop. The state lives in plain Lua tables.
 -- The only game read is the day counter (TemporalComponent.daysTotal). It moves the toy rules forward.
 -- Use it on a developer machine only. Do not ship it. Deploy it only for the stand-in scenarios.
@@ -19,9 +20,8 @@
 
 local log = require("HarnessLog")
 local commands = require("HarnessCommands")
-local telemetry = require("HarnessTelemetry")
 
-local VERSION = "1"
+local VERSION = "2"
 local TAG = "InvasionStandIn"
 
 local REGION_COUNT = 8
@@ -352,7 +352,7 @@ local METRICS = {
 }
 
 local function defineMetric(name, read)
-    telemetry.register("InvasionStandIn." .. name, function()
+    commands.metric("InvasionStandIn." .. name, function()
         syncTime()
         return read()
     end)
