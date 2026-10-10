@@ -120,10 +120,11 @@ Each spike answers one "can the harness do this" question on the base game, with
 - **S8 Pop-ups and stalls:** find the function that closes the "Hunger!" and similar pop-ups, or a way to prevent them, so long scenarios do not stall.
 - **S9 UI countdown:** can a widget be created from Lua, or can the alert system carry a countdown text? What custom text is possible without a pak?
 - **S10 Performance:** spawn 300 units and measure the game clock rate at 1x and 8x.
+- **S11 Baron model:** the base game has a baron that acts as a hostile off-map AI (user note, 2026-10-10). Find how it decides, sends and controls its forces (demands, claims, armies, diplomacy state). Can invaders reuse it as the adversary model (a new baron or faction with its own objectives)? This could replace a custom raid AI (S1, S4) and give outposts a base model (O1 to O4). Write findings to `implementation-notes/baron-model.md`.
 
 ## Plan
 1. DONE: this spec, `criteria.json` and the coverage tool (U8), so progress is measurable from day one. Start value: `implementation-notes/coverage-baseline.md`.
-2. Spikes S1 to S10 in the real game (one agent at a time uses the game), with results in notes. Update the matrix marks and `METHOD_VERIFIED` for each criterion.
+2. Spikes S1 to S11 in the real game (one agent at a time uses the game), with results in notes. Update the matrix marks and `METHOD_VERIFIED` for each criterion.
 3. Build U1 to U6, U9 and U10 in order of what the spikes show works. Unit tests with fake bridges. Each gets a real scenario on a stand-in.
 4. Reference scenarios (stand-ins on the base game) for every A and P criterion that has a method, each tagged with `COVERS`.
    - U4 built (2026-10-10): `run.py --pak/--env`, suite `variants`, `suitelib/stats.py`, the A/B report and the `expect` rule, `ctx.metric`. Unit tested with a seeded stand-in; NOT verified: a real A/B on the game and a real pak in a run. Notes: `implementation-notes/ab-statistics.md`.
