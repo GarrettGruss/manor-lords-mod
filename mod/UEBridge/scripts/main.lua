@@ -655,7 +655,16 @@ local function requireWrites(what)
     end
 end
 
+-- PATCH P8 (harness): indexing a UObject with a nil or non-string key crashes the game (access
+-- violation inside UE4SS). Check each property or function name from a request before it reaches a UObject.
+local function requireName(what, name)
+    if type(name) ~= "string" or name == "" then
+        error(what .. " needs a non-empty string name, got " .. type(name))
+    end
+end
+
 function UEB.get(ref, prop)
+    requireName("get", prop) -- PATCH P8 (harness)
     local obj = UEB.resolve(ref)
     requireProperty(obj, prop)
     return obj[prop]
@@ -664,6 +673,7 @@ end
 -- Returns { previous, current }; previous is what a caller restores from.
 function UEB.set(ref, prop, value)
     requireWrites("set")
+    requireName("set", prop) -- PATCH P8 (harness)
     local obj = UEB.resolve(ref)
     requireProperty(obj, prop)
     local okPrev, prev = pcall(function() return obj[prop] end)
@@ -680,6 +690,7 @@ end
 
 function UEB.call(ref, fname, args)
     requireWrites("call")
+    requireName("call", fname) -- PATCH P8 (harness)
     local obj = UEB.resolve(ref)
     local fn = obj[fname]
     if fn == nil then error("no function " .. fname .. " on " .. obj:GetFullName()) end
