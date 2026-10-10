@@ -67,3 +67,32 @@ In the same log, an earlier launch ended with `FAILED: slot 'saveGame_0' did not
 The load screen was opened, but the list never had the slot. The next launch (about 100 s later) worked: the list had 29 entries within 1 s.
 Possible causes: the "still in development" banner on top, or the first `SwitchToLoadScreen` call coming before the menu was ready.
 Not known. If it happens again, try calling `SwitchToLoadScreen` again after 10 s.
+
+## Third fix: the game restarts the clock after our pause
+Run with the second fix (commit 1578d7c), 2026-10-09 23:03. `boot.json` said `READY`. `ready.marker` had `"clock":0.433`,
+so the pause worked at that moment: the clock had started, `pauseGame` was called, and the clock stood still.
+About 2 s after `READY` the clock ran again. The user saw 1x. The bridge confirmed: the clock changed by 3.08 per 3 s, `gameSpeed` 1.
+
+Measurements afterwards, with `PawnCPP:pauseGame()` called by hand in the middle of the game:
+
+| Time after `pauseGame` | clock change in 2 s | `gameSpeed` |
+|---|---|---|
+| 2 s to 14 s (7 readings) | 0.0 each time | 0 |
+
+So `pauseGame` holds when it is called later. Something undoes the pause only in the first seconds after a load.
+Other values read at the time: `gameSpeedScheduled` = 1, `isGameSpeedScheduled` = false, `gameSpeedBeforePause` = 0.
+
+The cause is not known. A candidate: the main menu closes about 10 s after `LoadGame`, and `mainMenu_widget_C` has a function named
+`unpauseAndResetDLSS`. This is a guess. It was not tested. The game might also apply the scheduled speed `gameSpeedScheduled`.
+
+Fix: `PAUSING` now needs the clock to stand still for 8 seconds in a row (`CLOCK_STOPPED_SECONDS`).
+If the clock moves again, it calls `pauseGame` again and starts to count from zero.
+The test now includes a late restart of the clock (the fake game undoes the pause once, 17 ticks after the load).
+The previous version fails it ("the clock moved after READY (1.0 -> 11.0)"). The new version passes.
+
+The 8 s window is a guess based on one run (the clock restarted about 4 s after the pause).
+If a run still shows a late restart, find the cause first. A hook on `RTSMultiEngineCPP:setGameSpeed` would show who sets the speed.
+
+## Open
+- Which game code restarts the clock after the load? Not confirmed.
+- Is 8 s long enough in every launch? Check the next runs. Look at `boot.json` and at `mod.log` for a second `pauseGame` call.
