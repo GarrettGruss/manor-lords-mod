@@ -45,7 +45,7 @@ An agent uses the fastest layer that can answer its question. It moves to a slow
 | 06 | dev-loop-and-fixtures | Hot reload without a game restart, a reusable mock kit, several test saves | done (hot reload, mock kit, fixtures through a private LOCALAPPDATA) |
 | 07 | feature-test-kit | Helpers to give resources, place buildings, trigger events, advance time | done (15 checked actions, `ctx.actions`, helper mod for letters; building placement with the real OS mouse) |
 | 08 | regression-suite | Run many scenarios and saves, compare with baselines, find flaky tests | done (PR 6). Baselines are thin (2 to 4 runs) |
-| 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | deferred item by the user's decision (2026-10-10). Tooling built and tested with a fake packer (`feat/11-asset-mod-tool`). The real pak build is on the roadmap as a deferred item: capabilities and un-defer triggers are in spec 09 |
+| 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | in progress (since 2026-10-10): toolchain decided (repak, UAssetGUI command line, a `.usmap`); tooling and A/B variants are being built with fake tools; the real chain waits for the tools and a first spike |
 
 Order and reasons:
 - 03 comes first: every later spec needs a run folder and a summary.
@@ -139,6 +139,6 @@ Items that are on the roadmap on purpose but not built, with the condition that 
 
 | Item | What it unlocks | Starts when | Needs from the user |
 |---|---|---|---|
-| Real pak build (spec 09) | Edit data tables beyond plain numbers, add rows, change start values before the world exists, text and localization, textures, meshes, sounds, widgets, changes that survive a restart, and mods that work without UE4SS. Not native C++ logic, not runtime spawning | A feature needs one of those (see spec 09, "Un-defer triggers") | A packer (UnrealPak, `retoc` or `repak`), FModel and UAssetGUI, the `.usmap`, the AES key if the paks are encrypted, about 1 to 2 hours of setup, and `harness/pakmod.local.json` |
+| Real pak build (spec 09), IN PROGRESS since 2026-10-10 | Edit data tables beyond plain numbers, add rows, change start values before the world exists, text and localization, textures, meshes, sounds, widgets, changes that survive a restart, and mods that work without UE4SS. Not native C++ logic, not runtime spawning | A feature needs one of those (see spec 09, "Un-defer triggers") | A packer (UnrealPak, `retoc` or `repak`), FModel and UAssetGUI, the `.usmap`, the AES key if the paks are encrypted, about 1 to 2 hours of setup, and `harness/pakmod.local.json` |
 | Another monitor and other window sizes or DPI scales | Screenshots and the real-mouse building placement on other screens | A second screen or another DPI scale is available | The hardware |
 | Other building types with the real-mouse placement | More situations for scenarios (the HitchingPost is verified) | A feature needs them | None (give goods first for types that cost goods) |
