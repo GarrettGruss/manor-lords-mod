@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "ue4ss-bridge": {
+      "type": "stdio",
+      "command": ".venv\\Scripts\\python.exe",
+      "args": ["-m", "ue4ss_bridge"],
+      "env": {
+        "PYTHONPATH": "mcp",
+        "UE4SS_BRIDGE_GAME_DIR": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Manor Lords\\ManorLords\\Binaries\\Win64"
+      }
+    }
+  }
+}

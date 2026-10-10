@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": ["mcp__ue4ss-bridge__eval_lua"],
+    "ask": [
+      "mcp__ue4ss-bridge__set_property",
+      "mcp__ue4ss-bridge__call_function",
+      "mcp__ue4ss-bridge__console_command",
+      "mcp__ue4ss-bridge__hook_function",
+      "mcp__ue4ss-bridge__dump"
+    ]
+  }
+}

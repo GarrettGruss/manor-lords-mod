@@ -39,14 +39,15 @@ security review (see `review-checklist.md`) passing.
 - Fetch the package source into a scratch directory (not the game dir, not the repo).
   Run any Python on it with `-I`.
 - Review every Lua and Python file against `review-checklist.md`.
-- Output: `docs/specs/01-ue4ss-bridge/review-report.md` with verdict
+- Output: `docs/specs/01-ue4ss-bridge/implementation-notes/review-report.md` with verdict
   (approve / approve with patches / reject) and a list of required patches.
 - Gate: no unresolved High findings.
 
 ### Step 2: Vendor and patch
-- Copy the reviewed Lua mod into `mod/ue4ss-bridge/` (pinned to a commit hash,
-  recorded in `mod/ue4ss-bridge/VERSION`).
-- Apply required patches as a documented diff in `mod/ue4ss-bridge/PATCHES.md`.
+- Copy the reviewed Lua mod into `mod/UEBridge/` and the MCP server into `mcp/ue4ss_bridge/`.
+  The folder must be named `UEBridge`. The pinned upstream commit is in `vendor/ue4ss-bridge/VERSION`.
+- Apply the required patches. Each one is marked `PATCH P<n> (harness)` in the code and listed in
+  `vendor/ue4ss-bridge/PATCHES.md`.
 - Adapt paths for the new layout (`ue4ss\bridge\`), and make the bridge
   directory configurable via `HARNESS_RUN_DIR` when set, so each run has its
   own request/response files.
