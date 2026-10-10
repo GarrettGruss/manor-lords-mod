@@ -52,6 +52,15 @@ N is `--telemetry-interval` of `run.py` (default 5, 0 = off, saved in `config.js
 `ctx.telemetry.window(start_clock, end_clock)`. `ctx.snapshot()` reads the same fields now through the bridge (a failed field is null and listed in `errors`).
 Samples use wall time, so a short run at speed 3 has few samples. Other mods can add a metric with `HarnessTelemetry.register(name, fn)`.
 
+### Raids and units (spec 10)
+Actions (need the mod HarnessActions): `set_raid_timer(days_until, days_since=None)`, `spawn_raid(squads=1, elite=False)` (+18 units a squad, elite +54),
+`spawn_bandit_camp()`, `kill_units(side, count, with_loot=False)`, `set_unit_loot(side, count, amount)`, `units_census(sample=0)` and `raid_state()`.
+Sides: `player`, `ai`, `bandit` (raiders and bandits), `civil`. `harness/runlib/units.py` has helpers for the census (`side_count`, `loot_total`, ...).
+Not possible: choose raid type or size, steer a squad, read unit type or health (`choose_raid_type`, `steer_squad` raise `ActionNotPossible`).
+Telemetry: start the launcher with `HARNESS_TELEMETRY_UNITS=1` and every sample has `custom.units` (counts by side, loot totals).
+Scenarios: `raid-timer`, `raid-spawn`, `raid-loot`, `raid-load`. The hidden `probe-raids` scenario (`HARNESS_PROBE=s1|s1b|s2|s5|s10`) is the research tool of the spikes.
+The scenario limit cap is 300 s (it was 120 s). Notes: `docs/specs/10-invasion-testability/implementation-notes/`.
+
 ### Assertions (`ctx.expect`)
 `in_range`, `at_least`, `at_most`, `changed(name, before, after, min_delta, max_delta)`, `equals` and `eventually(name, fn, timeout_s)`.
 Each adds `{name, ok, value, rule}`. Use ranges for simulation numbers. A failed assertion gives the verdict `fail`. `ctx.check` and `ctx.check_range` still work.

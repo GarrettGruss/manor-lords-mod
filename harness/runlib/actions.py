@@ -16,6 +16,7 @@ from typing import Any, Callable
 
 from .bridge_client import Bridge
 from .commands import CommandChannel
+from .units import ELITE_RAID_UNITS, SQUAD_UNITS, side_count
 
 CHEAT_MANAGER = "first:MLCheatManager"
 # Mid-season days. The calendar maps day of the year to the season (measured: 10 winter, 100 spring, 200 summer, 300 autumn).
@@ -41,8 +42,10 @@ NOT_POSSIBLE = {
     "show_message": "PawnCPP:playEventMessage crashed the game when called through the bridge (spec 07 catalog).",
     "get_item_info": "RTSMultiEngineCPP:getItem crashed the game when called through the bridge (spec 07 catalog).",
     "remove_all_families": "MLCheatManager:RemoveAllFamilies changed no population or family count in the probe.",
-    "spawn_raiders": "MLCheatManager:SpawnRaidersOfType and RTSMultiEngineCPP:spawnBanditCamp changed no unit count in the probe, "
-                     "and the valid type names are unknown. Use spawn_bandit_squad.",
+    "spawn_raiders": "MLCheatManager:SpawnRaidersOfType changed no unit count (checked again in spec 10). Use spawn_raid.",
+    "choose_raid_type": "spawnRaiders and spawnEliteRaiders take no type or size: a squad is always 18 units. The raid id lists "
+                        "(RaidSettings.defaultRaidIDs) were read but not written (spec 10, spike S2).",
+    "steer_squad": "no way to order a spawned squad was verified (spec 10).",
 }
 
 
@@ -330,3 +333,77 @@ class Actions:
             raise ActionNotPossible("autosave_status: no command channel to the mod HarnessActions in this context")
         self._precondition()
         return self._commands.send("autosave_status")["status"]
+
+    # ---- raids and units (through the helper mod HarnessActions, spec 10) ----
+
+    def _command(self, name: str, **fields) -> dict:
+        if self._commands is None:
+            raise ActionNotPossible(f"{name}: no command channel to the mod HarnessActions in this context")
+        self._precondition()
+        return self._commands.send(name, **fields)
+
+    def _raid_timer(self) -> dict:
+        calendar = self._bridge.calendar_path()
+        return {name: self._bridge.read_property(calendar, name) for name in ("daysUntilNextRaid", "daysSinceLastRaid")}
+
+    def set_raid_timer(self, days_until: int, days_since: int | None = None) -> dict:
+        """Write TemporalComponent.daysUntilNextRaid (and daysSinceLastRaid). Verified: the value holds, falls by 1 each game day,
+        and a raid spawns on the day tick that brings it to 0 (set 3: raid on the 3rd day tick). The game then sets a new timer.
+        """
+        calendar = self._bridge.calendar_path()
+
+        def call() -> None:
+            self._bridge.write_property(calendar, "daysUntilNextRaid", int(days_until))
+            if days_since is not None:
+                self._bridge.write_property(calendar, "daysSinceLastRaid", int(days_since))
+
+        def check(before: dict, after: dict) -> bool:
+            return after["daysUntilNextRaid"] == days_until and (days_since is None or after["daysSinceLastRaid"] == days_since)
+
+        return self._perform("set_raid_timer", {"days_until": days_until, "days_since": days_since}, self._raid_timer, call, check)
+
+    def raid_state(self) -> dict:
+        """Read the raid timer, the raid setup (yearsUntilFirstRaid, raidingFrequency, ...), the raid id lists and list sizes."""
+        return self._command("raid_state")
+
+    def units_census(self, sample: int = 0) -> dict:
+        """Count the units by side, role, state and region (and `sample` rows of non-civil units). Read only. About 10 ms in the game."""
+        return self._command("units_census", sample=sample)["census"]
+
+    def _spawn(self, action: str, command: str, expected: int, **fields) -> dict:
+        answer = self._command(command, **fields)
+        before, after = side_count(answer["before"], "bandit"), side_count(answer["after"], "bandit")
+        return self._record(action, fields, after - before == expected, before, after, note=f"bandit units, expected +{expected}")
+
+    def spawn_raid(self, squads: int = 1, elite: bool = False) -> dict:
+        """Spawn raider squads at the position of the player pawn (RTSMultiEngineCPP:spawnRaiders). Verified: +18 units a squad.
+
+        elite=True calls spawnEliteRaiders: +54 units. Size and type cannot be chosen (see NOT_POSSIBLE choose_raid_type).
+        The raiders are side "bandit". They appear a few thousand units away and walk on their own.
+        """
+        if elite:
+            return self._spawn("spawn_raid", "spawn_elite_raiders", ELITE_RAID_UNITS, elite=True)
+        return self._spawn("spawn_raid", "spawn_raiders", SQUAD_UNITS * squads, squads=squads)
+
+    def spawn_bandit_camp(self) -> dict:
+        """RTSMultiEngineCPP:spawnBanditCamp: one squad of 18 at a random place. Verified: +18 units."""
+        return self._spawn("spawn_bandit_camp", "spawn_bandit_camp", SQUAD_UNITS)
+
+    def kill_units(self, side: str = "bandit", count: int = 1, with_loot: bool = False) -> dict:
+        """Kill live units of one side with SMUnit:just_die. Verified: the units get dead=true and their loot goes to 0."""
+        answer = self._command("kill_units", side=side, count=count, with_loot=int(with_loot))
+        killed = answer["killed"]
+        dead = dead_count_delta(answer)
+        return self._record("kill_units", {"side": side, "count": count}, killed >= 1 and dead == killed, 0, dead,
+                            note=f"killed {killed}, loot carried {answer['loot_carried']}")
+
+    def set_unit_loot(self, side: str = "bandit", count: int = 1, amount: int = 1) -> dict:
+        """Write SMUnit.ItemsLooted on live units of one side. Verified: the value holds. The unit of the number is not known."""
+        answer = self._command("set_unit_loot", side=side, count=count, amount=amount)
+        return self._record("set_unit_loot", {"side": side, "count": count, "amount": amount}, answer["changed"] == answer["wanted"],
+                            answer["wanted"], answer["changed"])
+
+
+def dead_count_delta(answer: dict) -> int:
+    """Units that were counted dead by a kill command (before and after counts come from the mod)."""
+    return answer["after"]["dead"] - answer["before"]["dead"]
