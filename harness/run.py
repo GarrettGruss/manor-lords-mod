@@ -25,7 +25,7 @@ from runlib.scenario import list_scenarios
 from runlib.summary import EXIT_CODES
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_MAX_RUNS = 20
+DEFAULT_MAX_RUNS = 100  # a safety rail for unattended loops. Delete runs/.iterations to reset the counter.
 TEST_SAVE = "saveGame_0"
 
 
