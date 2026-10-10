@@ -1,7 +1,8 @@
 # Spec 09: Asset mods (pak editing and repacking)
 
 Status: in progress (since 2026-10-10). The user decided on the toolchain (repak and the UAssetGUI command line) and asked to begin implementation.
-The tooling is built and tested with fake tools. The real chain is NOT verified: it needs the tools, a `.usmap` and a first spike (see "Implementation plan").
+The tooling is built and tested with fake tools. The real chain is VERIFIED by the first spike (2026-10-10, `implementation-notes/pak-spike-findings.md`): a round trip of `DT_Items` is byte-identical, a pak with one changed number is loaded by the game, and the A/B with `--pak` shows the change.
+Still open: other field types (strings, soft objects, new rows), other tables, and an A/B with N runs per side.
 
 ## Goal
 Change game data that Lua cannot reach (data tables, assets) by editing and repacking `.pak` files, and test the change with the same harness.
@@ -122,11 +123,11 @@ tested with a fake packer. Only the step with a real packer, a real edited asset
 - The game has no official mod support. Never commit extracted game assets or keys (the local config file is gitignored).
 
 ## Acceptance criteria
-- (new) `pakmod roundtrip` shows that an untouched asset survives `tojson` then `fromjson`, or that the result still loads in the game.
-- (new) A trivial pak built with repak is installed in `~mods`, the game starts, and a scenario sees the changed value.
-- (new) An A/B comparison (same scenario, with and without the pak, N runs each) shows the difference in the report, and `pakmod remove` returns the game to vanilla.
+- [x] (new) `pakmod roundtrip` shows that an untouched asset survives `tojson` then `fromjson`, or that the result still loads in the game. Proven for `DT_Items` (byte-identical, 2026-10-10).
+- [x] (new) A trivial pak built with repak is installed in `~mods`, the game starts, and a scenario sees the changed value. Proven: item 17 `Value` 0.75 (run `20261010-190411-ad07`).
+- [ ] (new) An A/B comparison (same scenario, with and without the pak, N runs each) shows the difference in the report, and `pakmod remove` returns the game to vanilla. Partly proven: one run per side differs (0.75 vs 0.5) and the pak is removed after the run. N runs with the suite report are not done.
 - (old criteria, still valid):
 - A trivial asset change (one number in one data row) is built into a pak, deployed, seen by a scenario, and removed by the uninstall script.
-  Status: the pieces exist (`pakmod.py`, `datatable-vanilla` with `HARNESS_EXPECT_ITEM_ROWS`, `uninstall.ps1 -Remove`). The whole chain with a real pak is not run.
+  Status: the whole chain ran with a real pak on 2026-10-10 (`pak-spike-findings.md`). `uninstall.ps1 -Remove` is not run on a real pak (`run.py` removed it).
 - The tool refuses to write outside its work folder and the game's `~mods` folder.
 - Nothing from FModel exports or AES keys is committed.

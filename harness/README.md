@@ -307,12 +307,15 @@ Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_
 
 ## Asset mods (spec 09)
 `harness/tools/pakmod.py` finds and extracts assets from the game paks, converts them to JSON and back, builds a patch pak, and installs and removes it.
-Tools: repak (paks) and the UAssetGUI command line (one asset). **Status: tested with fake tools only. The real tools are not run yet.**
+Tools: repak (paks) and the UAssetGUI command line (one asset). **Status: verified with the real tools and the real game (spike 2026-10-10, `docs/specs/09-asset-mods/implementation-notes/pak-spike-findings.md`).**
 Use Lua first. Build a pak only when the data cannot be changed at runtime (`docs/specs/09-asset-mods/README.md`).
 
 Setup (only you can do this; the repo has no tools and no AES key):
-1. Get `repak.exe` (github.com/trumank/repak releases) and `UAssetGUI.exe` v1.1.1 or later (github.com/atenfyr/UAssetGUI releases). Review them. Put them outside the repo, for example `C:\modtools\`.
+1. Get `repak.exe` (github.com/trumank/repak releases) and `UAssetGUI.exe` (v1.1.0 is verified) (github.com/atenfyr/UAssetGUI releases). Review them. Put them outside the repo, for example `C:\modtools\`.
 2. Make the `.usmap`: start the game with UE4SS, then call the bridge tool `dump` with `kind: "usmap"` (UE4SS dumper). The file lands in the `ue4ss` folder. Copy it to the work folder. It must match the game build.
+   The bridge MCP server reaches only a game that uses its own bridge folder. For a game that `run.py --keep-open` started, call `ue4ss_bridge.server.one('dump', timeout=600, kind='usmap')` from Python with `UE4SS_BRIDGE_GAME_DIR` (the `Win64` folder) and `UE4SS_BRIDGE_DATA_DIR` (the `bridge` folder of that run) set.
+   UAssetGUI 1.1.0 reads a mapping by NAME from `%LOCALAPPDATA%\UAssetGUI\Mappings\<name>.usmap`. Copy the file there as well, and set `usmap_name` in the config. `check` compares both files.
+   Use `engine_version` `VER_UE5_5` (the text `5.5` does not work in 1.1.0). The game paks are encrypted: set `aes_key_env` and fill that variable from your key file in the shell.
 3. Make a work folder outside the repo, for example `C:\modwork`. Exports, `.usmap` files and AES keys stay outside the repo. Never commit them.
 4. Copy `harness\pakmod.local.example.json` to `harness\pakmod.local.json` (it is in `.gitignore`) and set the paths, `usmap`, `engine_version` (`5.5`) and `work_dir`.
    Leave `sha256` empty. If the game paks are encrypted, set the environment variable named in `aes_key_env` (the key itself never goes into a file).
@@ -337,7 +340,7 @@ The build folder `<work_dir>\<name>\` holds the edited files in the game layout,
 The config can override the argument templates (key `templates`), because the real tools may differ by version. Command facts: `docs/specs/09-asset-mods/implementation-notes/cli-reference.md`.
 
 `uninstall.ps1 -Remove` also removes the manifest paks. Restart the game after install or remove (the launcher starts a new game for each run anyway).
-To check the effect: `run.py --scenario datatable-vanilla` with `HARNESS_EXPECT_ITEM_ROWS='{"17": {"Value": 0.75}}'` (new values) after a pak that changes them.
+To check the effect: set `HARNESS_EXPECT_ITEM_ROWS='{"17": {"Value": 0.75}}'` in the shell, then run `run.py --scenario datatable-vanilla --pak <name>`. It passes with the pak and fails without it (verified). `fromjson` needs an absolute path for the JSON file.
 Without a pak the scenario compares 24 `itemStats` rows with `harness/vanilla/itemStats.json` (about 50 s per run). Details: `docs/specs/09-asset-mods/implementation-notes/tooling.md`.
 Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_pakmod.py" -v` and `test_runlib_itemtable.py`.
 
