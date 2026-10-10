@@ -21,6 +21,15 @@ class CommandError(Exception):
     """The mod did not answer, or it answered with ok=false. The message says why."""
 
 
+class CommandRefused(CommandError):
+    """The mod answered with ok=false. `reason` is the text of the mod, without the harness wording."""
+
+    def __init__(self, command: str, reason: str):
+        super().__init__(f"command {command} was refused by the game: {reason}")
+        self.command = command
+        self.reason = reason
+
+
 class CommandChannel:
     """`sleep` and `monotonic` are parameters so tests can use a fake clock."""
 
@@ -40,7 +49,7 @@ class CommandChannel:
         self._write_request(name, {"id": name, "command": command, **fields})
         answer = self._wait_for_answer(name, command)
         if not answer.get("ok"):
-            raise CommandError(f"command {command} was refused by the game: {answer.get('error')}")
+            raise CommandRefused(command, str(answer.get("error")))
         return answer
 
     def _write_request(self, name: str, body: dict) -> None:

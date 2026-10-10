@@ -14,13 +14,16 @@
 --   {"id":"0005","command":"datatable_info"}       row count and names of the item table (read only)
 --   {"id":"0006","command":"datatable_read","row":"name","field":"Value"}              one number field of one row
 --   {"id":"0007","command":"datatable_write","row":"name","field":"Value","value":5}  change one number field
--- Result: {"id","command","ok","error",...fields of the command}.
+--   {"id":"0008","command":"ModName.command","args":{...}}   a command that another mod registered in HarnessCommands
+--   {"id":"0009","command":"harness.list_commands"}           the registered commands and their argument schemas
+-- Result: {"id","command","ok","error",...fields of the command}. A HarnessCommands command answers {"ok","result"}.
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
 
 local log = require("HarnessLog")
 local json = require("HarnessJson")
 local autosave = require("HarnessAutosave")
 local datatable = require("HarnessDataTable")
+local commands = require("HarnessCommands")
 
 local VERSION = "3"
 local TAG = "HarnessActions"
@@ -76,7 +79,7 @@ end
 local function parseRequest(raw)
     return {
         id = raw:match('"id"%s*:%s*"([%w_]+)"'),
-        command = raw:match('"command"%s*:%s*"([%w_]+)"'),
+        command = raw:match('"command"%s*:%s*"([%w_%.]+)"'),
         sender = tonumber(raw:match('"sender"%s*:%s*(%d+)')),
         row = raw:match('"row"%s*:%s*"([%w_ %-]+)"'),
         field = raw:match('"field"%s*:%s*"([%w_]+)"'),
@@ -154,6 +157,8 @@ local function runCommand(number, raw)
     local handler = request.command and COMMANDS[request.command]
     if not request.id or request.id ~= idOf(number) then
         result = { ok = false, error = "request id must be " .. idOf(number) }
+    elseif not handler and commands.isName(request.command) then
+        result = commands.handleRequest(request.command, raw)
     elseif not handler then
         result = { ok = false, error = "unknown command: " .. tostring(request.command) }
     else

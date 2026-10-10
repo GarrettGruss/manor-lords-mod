@@ -100,7 +100,9 @@
       "U10"
     ],
     "method_verified": false,
-    "verified_by": [],
+    "verified_by": [
+      "planned: scenario standin-outposts (stand-in mod; real-game run pending)"
+    ],
     "reason_human": ""
   },
   {
@@ -115,7 +117,9 @@
       "U10"
     ],
     "method_verified": false,
-    "verified_by": [],
+    "verified_by": [
+      "planned: scenario standin-outposts (stand-in mod; real-game run pending)"
+    ],
     "reason_human": ""
   },
   {
@@ -130,7 +134,9 @@
       "U10"
     ],
     "method_verified": false,
-    "verified_by": [],
+    "verified_by": [
+      "planned: scenario standin-outposts (stand-in mod; real-game run pending)"
+    ],
     "reason_human": ""
   },
   {
@@ -145,7 +151,9 @@
       "U10"
     ],
     "method_verified": false,
-    "verified_by": [],
+    "verified_by": [
+      "planned: scenario standin-outposts (stand-in mod; real-game run pending)"
+    ],
     "reason_human": ""
   },
   {
@@ -232,7 +240,9 @@
       "U10"
     ],
     "method_verified": false,
-    "verified_by": [],
+    "verified_by": [
+      "planned: scenario standin-captives (stand-in mod; real-game run pending)"
+    ],
     "reason_human": ""
   },
   {
@@ -401,7 +411,9 @@
       "U10"
     ],
     "method_verified": false,
-    "verified_by": [],
+    "verified_by": [
+      "planned: scenario standin-outposts (stand-in mod; real-game run pending)"
+    ],
     "reason_human": ""
   },
   {
@@ -416,7 +428,9 @@
       "U10"
     ],
     "method_verified": false,
-    "verified_by": [],
+    "verified_by": [
+      "planned: scenario standin-tribute (stand-in mod; real-game run pending)"
+    ],
     "reason_human": ""
   },
   {
