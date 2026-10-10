@@ -34,6 +34,10 @@ Build it only when a feature spec shows that the data cannot be changed at runti
 ## Decision log
 - 2026-10-10: deferred. Reason: the first features can use Lua and the bridge. No asset change is needed.
 - First check before building: read and write a `DataTable` row at runtime. If that works, most "data mods" do not need paks.
+- 2026-10-10: first check done (`implementation-notes/datatable-check.md`). In the real game a Lua mod read 213 rows of `RTSMultiEngineCPP.itemStats` (`GetRowNames`, `FindRow`)
+  and changed the number field `Value` of row 17 (0.5 -> 0.75, read back, restored to 0.5). So paks are still **not needed** for number changes. Spec 09 stays deferred.
+  Limits found: the bridge cannot read rows (`RowStruct` read and `getItem` crash the game, because `Item` has a `SoftClassProperty`), so rows are read by field name in a Lua mod only.
+  Not verified: that game logic uses the changed value, persistence over a new load, strings and soft fields.
 
 ## Acceptance criteria (for when it is built)
 - A trivial asset change (one number in one data row) is built into a pak, deployed, seen by a scenario, and removed by the uninstall script.

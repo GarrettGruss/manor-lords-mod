@@ -163,7 +163,7 @@ The probe does not call `requestSaveFile` any more. The same risk applies to any
 Make fixtures with `harness/tools/fixtures.py` instead. The launcher guard worked as designed.
 
 ### playEventMessage
-`PawnCPP:playEventMessage("Default", "Probe title", "Probe text")` ended the game process (no crash report). Not tried again.
+`PawnCPP:playEventMessage("Default", "Probe title", "Probe text")` ended the game process. A crash report exists (access violation in `push_nameproperty`: a string was given for a `Name` parameter). The scenario `selftest-crash` uses it on purpose.
 
 ### getItem and DT_Items
 `RTSMultiEngineCPP:getItem(1)` (returns a struct) and reading the properties of `DT_Items` both ended the game process. Not tried again.
@@ -175,5 +175,6 @@ No effect on the numbers that were read. They may need a selection, a valid type
 
 - Return values that are structs come back as dicts (the Letter in the InBox). A call that returns a struct can crash the game (`getItem`).
 - `console` works for exec functions: `ChangeTreasury 77` changed silver. A direct call on `first:MLCheatManager` also works and is simpler to check.
-- A game crash gives no crash report in the run folder. The launcher still finds it: the verdict is `crash` and `mod.log` and `UE4SS.log` stay.
+- A game crash gives the verdict `crash`; `mod.log` and `UE4SS.log` stay. The UE crash report lands in the user's REAL `Crashes` folder and is now copied into `<run>/crash/` (found on 2026-10-10, see `03-run-launcher/implementation-notes/real-crash-report.md`).
+  Causes: `getItem` crashes UE4SS on the `SoftClassProperty` of the returned `Item`. `playEventMessage` crashes because a plain string was given for a `Name` parameter (needs `FName`).
 - One probe run takes 40 to 110 s, mostly the boot (about 30 s).

@@ -107,7 +107,7 @@ Then update the status here and in the changelog.
 | Steam must be running for a direct launch | A run fails to start | Spec 03 checks it in `preflight` and fails with a clear message |
 | Agent cost grows with many runs | Budget | Use the fastest layer, cap iterations, use Sonnet for agent work (see `CLAUDE.md`) |
 | A game function that saves writes into the user's REAL save folder, even with the private `LOCALAPPDATA` (it overwrote `saveGame_9` once) | Loss of user data | Never call save functions (`CLAUDE.md`). The launcher hashes the user's saves before and after a run and fails the run, but only after the write. The user's backup folder allowed a bit-exact restore |
-| The game's own autosave may also write to the real folder in a long run | Changed user save | Runs are short and the guard would fail a run that changed a save. Disabling autosave at boot (`SetAutosavePeriod`) is untested |
+| The game's own autosave may also write to the real folder in a long run | Changed user save | `HarnessBoot` now pushes the autosave timer one year away before READY (`SetAutosavePeriodOnPawn`). Checked: timer 600 s -> 31,535,386 s, stays after 60 game seconds, save folder unchanged. The timer ran also in the paused game (about 10 min after the load) before this fix. See `06-dev-loop-and-fixtures/implementation-notes/autosave.md` |
 | A game pop-up (for example 'Hunger!') pauses the clock and cannot be closed through the bridge | A long time-advance scenario stalls | Keep scenarios short. Detect a stopped clock and fail with a clear reason |
 | Cheat based actions depend on the stock `CheatManagerEnablerMod` | Actions stop working if it is removed | Keep it in `mods.txt`. The catalog notes this |
 
@@ -124,10 +124,10 @@ Then update the status here and in the changelog.
 
 ## Follow-up items (not blocking)
 - Check the `manor-harness` MCP tools in a real Claude Code session. `.mcp.json` is read when a session starts, so this needs a new session (spec 05).
-- Disable the game's autosave at boot, or prove that it never writes to the real save folder in a long run (spec 06 and 07 notes).
-- Crash reports in the private folder (`<run>/appdata/.../Crashes`): only a unit test covers it. Force a real crash and check the copy (spec 06).
-- Direct launch with Steam closed, a minimized game window, another monitor, and the `--keep-open` option (spec 03).
+- CLOSED (done on 2026-10-10 in feat/10-roadmap-followups): Disable the game's autosave at boot. `HarnessBoot` state `DISABLING_AUTOSAVE`, scenario `autosave-protection` (timer far away at READY and after 60 running game seconds, real save folder identical, 204 files). Not verified: a run longer than 10 minutes, a second pawn after a second load, the native `SetAutosavePeriod` (not called on purpose). Notes: `06-dev-loop-and-fixtures/implementation-notes/autosave.md`.
+- CLOSED (done on 2026-10-10 in feat/10-roadmap-followups): Crash report in a real crash. Scenario `selftest-crash`: verdict `crash`, exit 2, summary written, collect and teardown ran. The report is in the user's REAL `Crashes` folder, not in the private appdata. Bug fixed: collect now searches both (matched by process id), and teardown stops the orphan `CrashReportClient.exe`. Notes: `03-run-launcher/implementation-notes/real-crash-report.md`.
+- PARTLY CLOSED (done on 2026-10-10 in feat/10-roadmap-followups): `--keep-open` with the real game: the launcher exits with the game running and paused, the lock is released, the private appdata stays until `fixtures.py remove --appdata` (documented, 4 MB per run). Notes: `03-run-launcher/implementation-notes/keep-open.md`. Still open: direct launch with Steam closed, a minimized game window, another monitor.
 - Find what restarts the game clock after a load, and what makes the game drop back to 1x after `changeGameSpeed` (specs 02 and 04).
 - Thicker baselines: run the `core` suite more times before trusting the timing ranges (spec 08).
 - Building placement and raids have no verified action. Search the jmap for the function behind each UI action when a feature needs it (spec 07).
-- Spec 09: when a feature needs a pak change, first test reading and writing a `DataTable` row at runtime.
+- CLOSED (done on 2026-10-10 in feat/10-roadmap-followups): Spec 09 first check. A Lua mod reads and writes number fields of `itemStats` rows (213 rows, `FindRow`), so a pak is not needed for numbers. The bridge cannot read rows (`RowStruct` read and `getItem` crash the game). Not verified: that game logic uses a changed value, persistence over a load, string and soft fields. Notes: `09-asset-mods/implementation-notes/datatable-check.md`.
