@@ -8,6 +8,14 @@
         "PYTHONPATH": "mcp",
         "UE4SS_BRIDGE_GAME_DIR": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Manor Lords\\ManorLords\\Binaries\\Win64"
       }
+    },
+    "manor-harness": {
+      "type": "stdio",
+      "command": ".venv\\Scripts\\python.exe",
+      "args": ["-m", "harness_tools"],
+      "env": {
+        "PYTHONPATH": "mcp;harness"
+      }
     }
   }
 }
