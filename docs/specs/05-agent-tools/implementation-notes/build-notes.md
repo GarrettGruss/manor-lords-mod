@@ -47,3 +47,13 @@
 - `run.py` is not changed, so it does not release the claim. A dead launcher pid is the release rule.
 - `game_status` shows `active_run_id`. `stop_game` refuses while a live claim exists.
 - Tests added: second call refused, stale claim replaced, live claim refuses, `Popen` failure releases the claim, status and stop, two threads (one starts).
+
+## Real check with the game (2026-10-10)
+Ran the tool functions with the real game from this worktree (not a Claude Code session):
+- `run_scenario("time-advance")` returned in 0.07 s with `status: started`.
+- A second `run_scenario` call at once was refused: "A launcher is already starting or running (run ...). Use wait_for_run ...". The race is fixed.
+- `wait_for_run` reported `running` with the phase (`boot`, then `scenario`) and then the finished summary after 55 s (summary 1.3 KB).
+- `list_screenshots` listed `screenshots/start.png` and `screenshots/end.png`. `read_log` returned the tail of `mod.log`. `game_status` showed no game and no lock after the run.
+- The default run cap shown by the tool was 20 and is now 100, like `run.py`.
+
+Still not checked: a real Claude Code session that lists and calls the tools (needs a new session so that `.mcp.json` is loaded), and a run that survives the MCP server closing.
