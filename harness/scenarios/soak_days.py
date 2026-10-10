@@ -19,7 +19,8 @@ if not 60 <= SOAK_WALL_S <= MAX_SOAK_WALL_S:
 # Room for the speed change (about 10 s), the final pause (about 5 s), and slow bridge calls.
 LIMIT_S = SOAK_WALL_S + 300
 LONG_REASON = (f"A soak needs real time: {SOAK_WALL_S:g} wall seconds at 8x are about {SOAK_WALL_S * SPEED_FACTOR[SPEED] / CLOCK_SECONDS_PER_DAY:.0f} game days. "
-               "730 days (2 game years) take about 1 hour: set HARNESS_SOAK_WALL_S=3650 for that.")
+               "730 days (2 game years) would take about 1 hour (HARNESS_SOAK_WALL_S=3650), but the unmanaged start village is defeated in its first winter, "
+               "at about day 350 (soak-results.md). Longer than about 1700 s needs a managed settlement.")
 
 POLL_S = 2.0
 STALL_S = 20.0  # no clock progress for this long while the game should run: close pop-ups, then fail
