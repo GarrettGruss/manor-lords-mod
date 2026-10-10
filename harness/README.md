@@ -178,7 +178,7 @@ Each run is a separate `run.py` process, so a crash in one run does not stop the
 .venv\Scripts\python.exe harness\suite.py --update-baseline <scenario> [--from-last N]
 ```
 
-Suites are files `harness\suites\<name>.json`: `smoke` (1 run), `core` and `soak` (smoke x10).
+Suites are files `harness\suites\<name>.json`: `smoke` (1 run), `core` (smoke x2, time-advance x2, telemetry-sanity x1; about 4.7 minutes), `soak` (smoke x10) and `selftest` (a failing, a timing-out and a passing scenario; it checks the suite itself and exits 2 on purpose).
 Each entry has `scenario`, `repeat`, and optional `fixture` and `optional`. An `optional` entry is skipped, with a note, when its scenario does not exist yet.
 The suite file has `time_budget_s` and `flake_retries`. A failed run is retried up to `flake_retries` times. A scenario that fails and then passes is marked `flaky`.
 
@@ -189,6 +189,9 @@ If several apply, the order is 4, 3, 2, 1.
 Baselines are in `harness\baselines\<scenario>.json`: `{"metrics": {"duration_s": [lo, hi]}, "strict": [...]}`.
 A metric outside its range is `drift`. Drift fails the suite only for metrics listed in `strict` (add them by hand).
 Only `--update-baseline` writes a baseline file. It uses the last N passing runs and widens min and max by 20% of the spread (at least 10% of the largest value). Review the file before you commit it.
+
+Real baselines are in the repository. With only 2 to 4 runs, `--update-baseline` gives ranges that are too tight for timing metrics. Widen `duration_s`, `wall seconds` and sample counts by hand after you read the proposal.
+On a run timeout the suite kills the `run.py` process tree and then runs `game-close.ps1`, so no game stays open. This cleanup is off when a custom launcher is used.
 
 Test the suite without the game: `HARNESS_SUITE_LAUNCHER` (or `--launcher-command`) replaces `run.py`.
 

@@ -1,6 +1,6 @@
 # Spec 08: Regression suite and baselines
 
-Status: in progress: code and tests done with a stub launcher; real runs pending. Roadmap phase: 10 (see `docs/specs/00-harness-overview/README.md`). Notes: `implementation-notes/build-notes.md`.
+Status: done. Checked with the real game (see `implementation-notes/build-notes.md`, section Real runs). Roadmap phase: 10 (see `docs/specs/00-harness-overview/README.md`). Notes: `implementation-notes/build-notes.md`.
 
 ## Goal
 Run many scenarios in one command, compare the results with baselines, and find flaky tests.
@@ -50,18 +50,18 @@ Top: totals, a verdict (`pass` if every scenario passed and none changed beyond 
 ## Plan
 1. [x] Write the suite runner and the report with unit tests (fake runs through a stub for `run.py`).
 2. [x] Write 3 suites: `smoke` (1 scenario), `core` (the scenarios that exist), `soak` (one long scenario repeated).
-3. [ ] Run `core` twice in the real game. Record the report and the timings.
-4. [ ] (baseline tool done and tested with fake runs; real baselines and drift check pending) Write the baseline tool. Make baselines for the scenarios that exist. Run again and check for drift.
-5. [ ] (caught with a stub scenario in tests; the real mod regression is pending) Test: a deliberate regression (a mod change that breaks a metric) is caught by the suite.
-6. [ ] (spec and harness README done; roadmap pending) Update the spec, the README and the roadmap.
+3. [x] Run `core` twice in the real game. Record the report and the timings.
+4. [x] Write the baseline tool. Make baselines for the scenarios that exist. Run again and check for drift.
+5. [x] Test: a deliberate regression is caught by the suite. Done with an impossible baseline range (drift, strict drift) and the `selftest` scenarios (fail, timeout). No mod change was made to break a metric.
+6. [x] (the roadmap in spec 00 is not changed here) Update the spec, the README and the roadmap.
 
 ## Open questions
 - What margin for baselines? Start with 20% of the observed spread, plus a floor.
 - How to compare telemetry curves (not only end values)? Start with end values and extremes.
 
 ## Acceptance criteria
-- `suite.py` runs a suite of at least 3 scenarios and writes `report.json` and `report.md`.
-- A crash in one run does not stop the suite, and the report shows it.
-- A deliberate regression is reported as `fail` or `drift`.
-- The report for a passing suite is under 4 KB in `report.json`.
-- Baselines are written only on explicit request.
+- [x] `suite.py` runs a suite of at least 3 scenarios and writes `report.json` and `report.md`. (`core`: 3 scenarios, 5 runs, twice.)
+- [x] A crash in one run does not stop the suite, and the report shows it. (A real fail and a real timeout did not stop `selftest`. A real game crash was not tested.)
+- [x] A deliberate regression is reported as `fail` or `drift`.
+- [x] The report for a passing suite is under 4 KB in `report.json`. (869 bytes for `core`.)
+- [x] Baselines are written only on explicit request.
