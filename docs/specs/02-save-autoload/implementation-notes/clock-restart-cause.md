@@ -61,3 +61,21 @@ Not verified: a tutorial timer (`Start Tutorials if Enabled` sets a timer at +5 
 ## Not verified
 - Behavior with the intro switched off in the game settings (no run). HarnessBoot then pauses at once (tested only in the fake game).
 - Other saves or maps. All runs used `saveGame_0`.
+
+## The 1x fallback: more tests (2026-10-10, probe scenario `probe-tutorial-speed`)
+The hidden scenario `harness/scenarios/probe_tutorial_speed.py` unpauses, calls `changeGameSpeed(3)` and samples `gameSpeed` and the clock every
+0.25 to 0.9 s for 10 s. It was run in the real game with the private save folder (no hook mod).
+
+- The game has a tutorial system. The engine actor holds `tutorialsLeftToShow` (32 names, starting with `tutorial_beginnings`, `tutorial_growth`,
+  `tutorial_gameSpeed`). The player has `tutorialsShown`, `TutorialMessages` and `tutorialTimerHandle`. The settings `useTutorials` and `showTutorials` exist
+  in the jmap but were not found on the game instance, the player or the engine.
+- **Hypothesis 1, rejected: the tutorial queue.** With `engine.tutorialsLeftToShow` set to an empty list (the write worked), the speed still fell from 8 to 1
+  about 1.5 to 1.9 s after the change, at a game clock of about 20 to 22.
+- **Hypothesis 2, rejected: a letter arrival.** `PawnCPP.InBox` and `TutorialMessages` stayed at length 0 during the samples, also in runs with a drop.
+- **The fallback is intermittent.** Six controlled trials (3 with extra reads of `InBox` and `TutorialMessages` in the samples, 3 without): the speed fell back to 1x in 2 of 6
+  trials (one with the reads, one without). When it fell, it was at a game clock of about 17 to 22 s (1.5 to 1.9 s after the change). In the other 4 trials the speed held at 8
+  for the full 10 s. Earlier runs that used `time-advance` saw it in 6 of 6 runs when the change came 27 to 28 s after the load, so the rate also depends on the situation.
+- So the cause is not known. It is not the tutorial queue, not a new letter, and not the probe's own reads. It looks like a game event around game clock 17 to 22 s that
+  lowers the speed one time (two `decreaseGameSpeed` calls in one instant, caller unknown, see above). `TimeControl.set_speed` retries and holds on the second call.
+- Decision: close the question as "intermittent, handled by the retry". A scenario must not assume that the first `changeGameSpeed` holds. If a later feature needs the
+  cause, hook `decreaseGameSpeed` with a stack or caller identification (UE4SS hooks give no stack): try a native hook on the speed UI function, or watch the HUD speed widget.
