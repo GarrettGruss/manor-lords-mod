@@ -60,6 +60,14 @@
 --   {"command":"manor_assign_worker"}                        assign one family without a workplace (or "family":N) to the manor module
 --   {"command":"manor_unassign_workers"}                     take every family off the manor module
 --   {"command":"manor_worker_state"}                         slots, job, assigned families and goods of the manor modules (read only)
+--   AI lord commands (spec 10, spike S11, see mod/shared/HarnessLords). A lord is 1.. in FindAllOf("PawnCPP_AI") order; target 0 is the player:
+--   {"command":"lords_state","log":12}                      every lord: traits, influence, enemies, squads with position and orders; challenges; AI logs
+--   {"command":"lord_declare_war","lord":1,"target":0}      declareWar     {"command":"lord_declare_peace","lord":1,"target":0}   declarePeace
+--   {"command":"lord_set_influence","lord":1,"value":500}   write the influence of the lord
+--   {"command":"lord_challenge","lord":1,"target":0}        initChallenge over the target's current region
+--   {"command":"lord_claim","lord":1,"target":0}            layClaim on the target's current region
+--   {"command":"lord_spawn_army","lord":1,"template":"spearMilitia","count":2,"dx":0,"dy":0}   spawnArmy with the lord as owner
+--   {"command":"spawn_ai_lord","name":"Norse Warlord"}      spawnNewAILord      {"command":"lord_start_ai","lord":5,"value":1}   startAI
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -75,8 +83,9 @@ local battle = require("HarnessBattle")
 local ui = require("HarnessUi")
 local build = require("HarnessBuild")
 local manor = require("HarnessManor")
+local lordsCmd = require("HarnessLords")
 
-local VERSION = "13"
+local VERSION = "14"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -169,6 +178,10 @@ local function parseRequest(raw)
         subtext = raw:match('"subtext"%s*:%s*"([^"]*)"'),
         dx = tonumber(raw:match('"dx"%s*:%s*(-?[%d%.]+)')),
         dy = tonumber(raw:match('"dy"%s*:%s*(-?[%d%.]+)')),
+        lord = tonumber(raw:match('"lord"%s*:%s*(%d+)')),
+        target = tonumber(raw:match('"target"%s*:%s*(%d+)')),
+        log = tonumber(raw:match('"log"%s*:%s*(%d+)')),
+        name = raw:match('"name"%s*:%s*"([%w_ ]+)"'),
     }
 end
 
@@ -320,6 +333,15 @@ local COMMANDS = {
     show_message = ui.show_message,
     read_message = ui.read_message,
     list_messages = ui.list_messages,
+    lords_state = lordsCmd.lords_state,
+    lord_declare_war = lordsCmd.lord_declare_war,
+    lord_declare_peace = lordsCmd.lord_declare_peace,
+    lord_set_influence = lordsCmd.lord_set_influence,
+    lord_challenge = lordsCmd.lord_challenge,
+    lord_claim = lordsCmd.lord_claim,
+    lord_spawn_army = lordsCmd.lord_spawn_army,
+    spawn_ai_lord = lordsCmd.spawn_ai_lord,
+    lord_start_ai = lordsCmd.lord_start_ai,
 }
 
 local function runCommand(number, raw)

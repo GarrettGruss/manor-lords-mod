@@ -759,6 +759,49 @@ class Actions:
         """Per manor module: `max_slots`, `job`, `assigned` (families), `workers` (people), `is_storage`, plus `goods` and `total`. Read only."""
         return self._command("manor_worker_state")
 
+    # ---- AI lords (spec 10, spike S11, implementation-notes/baron-model.md) ----
+    # A lord is a number from 1 in FindAllOf("PawnCPP_AI") order (lord 1 was the baron in every run). Target 0 is the player.
+    # The game's AI moves the armies; these calls steer its inputs. There is no direct move order.
+
+    def lords_state(self, log: int = 12) -> dict:
+        """Every AI lord (traits, influence, silver, enemies, relation tags with the player, squads with `realPos` center and target),
+        the challenges and the last `log` lines of the three AI debug logs. Read only."""
+        return self._command("lords_state", log=log)
+
+    def lord_declare_war(self, lord: int, target: int = 0) -> dict:
+        """PawnCPP:declareWar. Verified: the relation gets the tag `at_war` and the target joins the lord's `enemies`."""
+        return self._command("lord_declare_war", lord=lord, target=target)
+
+    def lord_declare_peace(self, lord: int, target: int = 0) -> dict:
+        """PawnCPP:declarePeace. Not run in the real game yet."""
+        return self._command("lord_declare_peace", lord=lord, target=target)
+
+    def lord_set_influence(self, lord: int, value: int) -> dict:
+        """Write the lord's influence (0 to 10000). Verified: with 2000 the baron claimed a region by itself."""
+        return self._command("lord_set_influence", lord=lord, value=value)
+
+    def lord_challenge(self, lord: int, target: int = 0) -> dict:
+        """RTSMultiEngineCPP:initChallenge over the target's current region. Verified: the lord's AI moves its army to the area,
+        fights an army there, and takes the region when it wins."""
+        return self._command("lord_challenge", lord=lord, target=target)
+
+    def lord_claim(self, lord: int, target: int = 0) -> dict:
+        """PawnCPP:layClaim on the target's current region. Not run in the real game yet."""
+        return self._command("lord_claim", lord=lord, target=target)
+
+    def lord_spawn_army(self, lord: int, template: str, count: int = 1, dx: float = 0, dy: float = 0) -> dict:
+        """spawnArmy with the lord as owner, dx and dy from the player pawn. The lord's AI commands the squads."""
+        return self._command("lord_spawn_army", lord=lord, template=template, count=count, dx=dx, dy=dy)
+
+    def spawn_ai_lord(self, name: str) -> dict:
+        """RTSMultiEngineCPP:spawnNewAILord (no portrait, cannot build). Returns `lord`, the number of the new lord.
+        Verified: with war, an army, a challenge and `lord_start_ai`, its AI marched the army to the challenge area."""
+        return self._command("spawn_ai_lord", name=name)
+
+    def lord_start_ai(self, lord: int, speed: float = 1) -> dict:
+        """PawnCPP_AI:startAI(speed, canBuild false). Needed for a lord made with spawn_ai_lord."""
+        return self._command("lord_start_ai", lord=lord, value=speed)
+
     # ---- UI banner (spec 10, spike S9, criterion T4) ----
 
     def show_message(self, text: str, subtext: str = "") -> dict:
