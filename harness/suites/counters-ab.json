@@ -1,0 +1,16 @@
+{
+  "name": "counters-ab",
+  "scenarios": [
+    {
+      "scenario": "counters-ab",
+      "repeat": 4,
+      "variants": [
+        {"name": "spear-vs-sword", "env": {"COUNTERS_PLAYER": "spearMilitia", "COUNTERS_BANDIT": "militiaFoot", "COUNTERS_ROUNDS": "3"}},
+        {"name": "heavy-vs-sword", "env": {"COUNTERS_PLAYER": "retinue_tier3", "COUNTERS_BANDIT": "militiaFoot", "COUNTERS_ROUNDS": "3"}}
+      ],
+      "expect": {"metric": "player_loss_rate", "direction": "lower", "min_rel_diff": 0.3}
+    }
+  ],
+  "time_budget_s": 2400,
+  "flake_retries": 0
+}
