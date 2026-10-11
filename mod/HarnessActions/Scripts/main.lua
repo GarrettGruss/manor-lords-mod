@@ -72,6 +72,11 @@
 --   Dynamic lords (spike S13): {"command":"regions_state"}   every region: owner, settled, type, level, buildings, families (read only)
 --   {"command":"lord_relations","lord":3}                    addPawnRelations (a new lord has no relation rows)
 --   {"command":"lord_take_region","lord":3,"region":"Goldhof"}  write Region.ownerPawn
+--   {"command":"claim_region","target":0,"region":"Eichenhau","finalize":1}  layClaim, then finalizeClaim (target 0 = player, N = lord)
+--   {"command":"region_clear_owner","region":"Goldhof"}  write Region.ownerPawn = nil (spike S13 part 2)
+--   {"command":"lord_receive_region","lord":3,"region":"Goldhof"}  clear the owner, then the lord claims: the lord builds there
+--   {"command":"lord_found_village","lord":3,"region":"Goldhof","type":1,"supply":0}  the lord claims and settles a free region
+--   {"command":"settle_region","target":0,"region":"Eichenhau","type":1,"supply":0}  settleRegion (owned region only; x, y, z, outpost optional)
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -89,7 +94,7 @@ local build = require("HarnessBuild")
 local manor = require("HarnessManor")
 local lordsCmd = require("HarnessLords")
 
-local VERSION = "15"
+local VERSION = "16"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -188,6 +193,9 @@ local function parseRequest(raw)
         name = raw:match('"name"%s*:%s*"([%w_ ]+)"'),
         region = raw:match('"region"%s*:%s*"([%w_]+)"'),
         build = tonumber(raw:match('"build"%s*:%s*(%d+)')),
+        finalize = tonumber(raw:match('"finalize"%s*:%s*(%d+)')),
+        supply = tonumber(raw:match('"supply"%s*:%s*(%d+)')),
+        outpost = raw:match('"outpost"%s*:%s*"([%w_]+)"'),
     }
 end
 
@@ -351,6 +359,11 @@ local COMMANDS = {
     regions_state = lordsCmd.regions_state,
     lord_relations = lordsCmd.lord_relations,
     lord_take_region = lordsCmd.lord_take_region,
+    claim_region = lordsCmd.claim_region,
+    settle_region = lordsCmd.settle_region,
+    lord_receive_region = lordsCmd.lord_receive_region,
+    lord_found_village = lordsCmd.lord_found_village,
+    region_clear_owner = lordsCmd.region_clear_owner,
 }
 
 local function runCommand(number, raw)

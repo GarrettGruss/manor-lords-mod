@@ -813,8 +813,32 @@ class Actions:
 
     def lord_take_region(self, lord: int, region: str) -> dict:
         """Write Region.ownerPawn = lord (region by object name, as regions_state prints). Verified (S13): the owner changes and the
-        village stays. There is no settleRegion action: it crashed the game 3 of 3 times."""
+        village stays. The lord does NOT build there (use lord_receive_region for that)."""
         return self._command("lord_take_region", lord=lord, region=region)
+
+    def claim_region(self, region: str, target: int = 0, finalize: bool = True) -> dict:
+        """PawnCPP:layClaim and finalizeClaim (target 0 is the player, N a lord). Verified (S13 part 2): a free region gets the owner
+        and a CityPlanningComponent at once; no 14 day wait."""
+        return self._command("claim_region", target=target, region=region, finalize=1 if finalize else 0)
+
+    def settle_region(self, region: str, target: int = 0, settlement_type: int = 1, supply: int = 0) -> dict:
+        """PawnCPP:settleRegion for a region the pawn owns (claim it first). Gives the starter village (4 buildings, 5 families).
+        Verified (S13 part 2). It crashed the game 3 of 3 times for a region without an owner, so the command refuses that."""
+        return self._command("settle_region", target=target, region=region, type=settlement_type, supply=supply)
+
+    def region_clear_owner(self, region: str) -> dict:
+        """Write Region.ownerPawn = nil. The buildings stay. First step of lord_receive_region."""
+        return self._command("region_clear_owner", region=region)
+
+    def lord_receive_region(self, lord: int, region: str) -> dict:
+        """Clear the owner, then the lord claims the region. Verified (S13 part 2): the lord builds there (10 to 15 AI_build lines in 20
+        game days, 4 to 14 buildings), also in a village that the player settled. lord_take_region alone does not make the lord build."""
+        return self._command("lord_receive_region", lord=lord, region=region)
+
+    def lord_found_village(self, lord: int, region: str, settlement_type: int = 1, supply: int = 0) -> dict:
+        """The lord claims and settles a free region. Verified (S13 part 2): the lord then builds on its own. supply 2 gave
+        more resources (no 'lacks resources' lines in 20 cycles)."""
+        return self._command("lord_found_village", lord=lord, region=region, type=settlement_type, supply=supply)
 
     # ---- UI banner (spec 10, spike S9, criterion T4) ----
 

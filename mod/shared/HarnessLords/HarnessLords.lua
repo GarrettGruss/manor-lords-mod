@@ -425,6 +425,7 @@ local function regionRow(region)
         settled = read(function() return region.isSettled end), settlement_type = read(function() return region.settlementType end),
         level = read(function() return region.settlementLevel end), town_center = shortName(read(function() return region.townCenter end)),
         manor = shortName(read(function() return region.manor end)), buildings = buildingCount(region),
+        planning = shortName(read(function() return region.CityPlanningComponent end)),
         families = read(function() return region:getTotalNumFamilies() end),
     }
 end
@@ -451,8 +452,76 @@ function M.lord_relations(request)
              with_player = relationTags(engineObject, lord, player(engineObject)) }
 end
 
--- PawnCPP:settleRegion is NOT offered: called from Lua it crashed the game 3 of 3 times (access violation at 0x34c, with a new
--- lord, with the player pawn, and with an outpost region). See docs/specs/10-invasion-testability/implementation-notes/dynamic-lords.md.
+-- PawnCPP:layClaim(region, false, false), then PawnCPP:finalizeClaim(region, false) when request.finalize == 1.
+-- Spike S13 part 2: the game may create the owner data of a region (for example its CityPlanningComponent) in this path.
+-- The pawn is request.target: 0 is the player, N is a lord.
+function M.claim_region(request)
+    local engineObject = engine()
+    if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
+    local pawn, problem = checkedTarget(request, engineObject)
+    if not pawn then return { ok = false, error = problem } end
+    local region, why = checkedRegion(request, engineObject)
+    if not region then return { ok = false, error = why } end
+    local before = regionRow(region)
+    local ok, err = pcall(function() pawn:layClaim(region, false, false) end)
+    if not ok then return { ok = false, error = "layClaim: " .. tostring(err) } end
+    local middle = regionRow(region)
+    if request.finalize == 1 then
+        local done, failure = pcall(function() pawn:finalizeClaim(region, false) end)
+        if not done then return { ok = false, error = "finalizeClaim: " .. tostring(failure), after_claim = middle } end
+    end
+    return { ok = true, before = before, after_claim = middle, after = regionRow(region),
+             open_claims = read(function() return engineObject.openClaims:GetArrayNum() end) }
+end
+
+-- CityPlanningComponent:ResetAIBuildingOptions is NOT offered: called from Lua it crashed the game 2 of 2 times (access violation at
+-- 0x50, S13 part 2): once on a player region before startAI, once on a region that a lord held after startAI.
+
+-- Write Region.ownerPawn = nil. A later finalizeClaim then sees a region without an owner (S13 part 2). The buildings stay.
+function M.region_clear_owner(request)
+    local engineObject = engine()
+    if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
+    local region, why = checkedRegion(request, engineObject)
+    if not region then return { ok = false, error = why } end
+    local before = regionRow(region)
+    local ok, err = pcall(function() region.ownerPawn = nil end)
+    if not ok then return { ok = false, error = "write ownerPawn: " .. tostring(err) } end
+    return { ok = true, before = before, after = regionRow(region) }
+end
+
+local MAX_SETTLEMENT_TYPE = 5 -- ESettlementType: 1 Town, 2 FarmingVillage, 3 ForestVillage, 4 MiningOutpost, 5 Outpost
+
+-- PawnCPP:settleRegion(region, camp transform, supply, type, outpostToRegion). It crashed the game 3 of 3 times with an
+-- UNOWNED region (S13 part 1). This command refuses a region that the pawn does not own.
+-- Camp: request.x, y, z, or the settled center of the region.
+function M.settle_region(request)
+    local engineObject = engine()
+    if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
+    local pawn, problem = checkedTarget(request, engineObject)
+    if not pawn then return { ok = false, error = problem } end
+    local region, why = checkedRegion(request, engineObject)
+    if not region then return { ok = false, error = why } end
+    if shortName(read(function() return region.ownerPawn end)) ~= shortName(pawn) then
+        return { ok = false, error = "the pawn does not own the region (claim it first)" }
+    end
+    local settlementType = request.type or 1
+    if settlementType < 1 or settlementType > MAX_SETTLEMENT_TYPE then
+        return { ok = false, error = "type must be 1 to " .. MAX_SETTLEMENT_TYPE .. " (ESettlementType)" }
+    end
+    local outpost
+    if request.outpost then
+        outpost = checkedRegion({ region = request.outpost }, engineObject)
+        if not outpost then return { ok = false, error = "no region named " .. tostring(request.outpost) } end
+    end
+    local at = (request.x and { X = request.x, Y = request.y, Z = request.z or 0 })
+        or read(function() return region:getSettledRegionCenter() end) or location(region)
+    if not at then return { ok = false, error = "no camp position" } end
+    local camp = { Rotation = { X = 0, Y = 0, Z = 0, W = 1 }, Translation = { X = at.X, Y = at.Y, Z = at.Z }, Scale3D = { X = 1, Y = 1, Z = 1 } }
+    local before = regionRow(region)
+    local ok, err = pcall(function() pawn:settleRegion(region, camp, request.supply or 0, settlementType, outpost) end)
+    if not ok then return { ok = false, error = "settleRegion: " .. tostring(err) } end
+    return { ok = true, camp = { x = math.floor(at.X), y = math.floor(at.Y), z = math.floor(at.Z) }, before = before, after = regionRow(region) }
+end
 
 -- Write Region.ownerPawn = lord (the change a won challenge made in spike S11).
 function M.lord_take_region(request)
@@ -466,6 +535,59 @@ function M.lord_take_region(request)
     local ok, err = pcall(function() region.ownerPawn = lord end)
     if not ok then return { ok = false, error = "write ownerPawn: " .. tostring(err) } end
     return { ok = true, before = before, after = regionRow(region) }
+end
+
+-- Run the steps in order. Stop at the first step that fails and say which step it was.
+local function runSteps(steps)
+    local done = {}
+    for _, step in ipairs(steps) do
+        local answer = step.run()
+        if not answer.ok then return { ok = false, error = step.name .. ": " .. tostring(answer.error), steps_done = done } end
+        done[#done + 1] = step.name
+    end
+    return nil, done
+end
+
+-- Hand a region (settled or not, owned by anyone) to a lord so that the lord's construction AI runs there.
+-- Why these steps (S13 part 2): a plain write of Region.ownerPawn left the lord without construction (0 build lines in 17 days).
+-- With the owner cleared first, the lord's own layClaim + finalizeClaim made it build (3 of 3 lords, 10 to 15 build lines in 20 days).
+function M.lord_receive_region(request)
+    local engineObject = engine()
+    if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
+    local lord, problem = checkedLord(request)
+    if not lord then return { ok = false, error = problem } end
+    local region, why = checkedRegion(request, engineObject)
+    if not region then return { ok = false, error = why } end
+    local failure, done = runSteps({
+        { name = "clear owner", run = function() return M.region_clear_owner(request) end },
+        { name = "claim", run = function() return M.claim_region({ target = request.lord, region = request.region, finalize = 1 }) end },
+    })
+    if failure then return failure end
+    local row = regionRow(region)
+    if row.owner ~= shortName(lord) or not row.planning then
+        return { ok = false, error = "the lord is not the owner or the region has no planning component", region = row, steps_done = done }
+    end
+    return { ok = true, region = row, steps_done = done }
+end
+
+-- A lord founds a village in a free region: claim, finalize, settle. The lord builds on its own afterwards (S13 part 2).
+function M.lord_found_village(request)
+    local engineObject = engine()
+    if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
+    local lord, problem = checkedLord(request)
+    if not lord then return { ok = false, error = problem } end
+    local region, why = checkedRegion(request, engineObject)
+    if not region then return { ok = false, error = why } end
+    if isValid(read(function() return region.ownerPawn end)) then return { ok = false, error = "the region already has an owner" } end
+    local failure, done = runSteps({
+        { name = "claim", run = function() return M.claim_region({ target = request.lord, region = request.region, finalize = 1 }) end },
+        { name = "settle", run = function()
+            return M.settle_region({ target = request.lord, region = request.region, type = request.type, supply = request.supply,
+                                     x = request.x, y = request.y, z = request.z })
+        end },
+    })
+    if failure then return failure end
+    return { ok = true, region = regionRow(region), steps_done = done }
 end
 
 return M
