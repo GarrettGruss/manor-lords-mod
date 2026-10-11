@@ -16,6 +16,7 @@ from typing import Any, Callable
 
 from .bridge_client import Bridge
 from .commands import CommandChannel
+from . import sack
 from .units import ELITE_RAID_UNITS, SQUAD_UNITS, side_count
 
 CHEAT_MANAGER = "first:MLCheatManager"
@@ -402,6 +403,112 @@ class Actions:
         answer = self._command("set_unit_loot", side=side, count=count, amount=amount)
         return self._record("set_unit_loot", {"side": side, "count": count, "amount": amount}, answer["changed"] == answer["wanted"],
                             answer["wanted"], answer["changed"])
+
+    # ---- sack: take buildings, goods and people from the village (spec 10, spike S6; HarnessActions version 8) ----
+
+    def sack_census(self) -> dict:
+        """Read the village of the player: buildings by state, stock, stores (buildings with goods), families and people. Read only."""
+        return self._command("sack_census")["census"]
+
+    def sack_buildings(self, percent: int | None = None, count: int | None = None, method: str = "collapse") -> dict:
+        """Burn ("fire") or collapse standing buildings: `count`, or `percent` of the standing ones (rounded half up).
+
+        Verified: both turn a building into rubble (IsRubble, type 75). A collapse is at once. A fire burns for about 50 game seconds
+        and destroys the goods inside. The building stays in the list until it is demolished. Checked with the rubble count.
+        """
+        fields = self._sack_fields(percent, count)
+        fields["method"] = sack.check_method(method)
+        answer = self._command("sack_buildings", **fields)
+        before, after = answer["before"], answer["after"]
+        ok = answer["hit"] == answer["wanted"] and sack.rubble(after) - sack.rubble(before) == answer["hit"]
+        return self._record("sack_buildings", fields, ok, sack.rubble(before), sack.rubble(after),
+                            note=f"rubble buildings, wanted {answer['wanted']}, hit {answer['hit']}, method {method}")
+
+    def sack_goods(self, percent: int | None = None, good: int | None = None, amount: int | None = None, store: int | None = None) -> dict:
+        """Remove goods. `percent`: that share of every good (of one store when `store` is given). `good` and `amount`: units of one good.
+
+        Verified: the stock total falls by the units removed. The unit is one item (one call of consumeGoodNoCheck).
+        """
+        fields = self._goods_fields(percent, good, amount, store)
+        answer = self._command("sack_goods", **fields)
+        before, after = sack.stock_total(answer["before"]), sack.stock_total(answer["after"])
+        return self._record("sack_goods", fields, before - after == answer["removed"], before, after,
+                            note=f"stock total, removed {answer['removed']}")
+
+    def sack_people(self, percent: int | None = None, count: int | None = None) -> dict:
+        """Kill every member of `count` families, or of `percent` of them (rounded half up). Verified: SMUnit:just_die on each member.
+
+        Checked with the family count, which falls at once (the population count follows at once too).
+        """
+        fields = self._sack_fields(percent, count)
+        answer = self._command("sack_people", **fields)
+        before, after = answer["before"], answer["after"]
+        ok = sack.families(before) - sack.families(after) == answer["families"] and answer["families"] == answer["wanted"]
+        return self._record("sack_people", fields, ok, sack.population(before), sack.population(after),
+                            note=f"population, families {sack.families(before)} -> {sack.families(after)}, people killed {answer['people']}")
+
+    def sack_village(self, buildings_pct: int, stock_pct: int, people_pct: int, method: str = "collapse") -> dict:
+        """The three sack steps in one command: goods first, then people, then buildings. Returns the answer of the mod.
+
+        The record is checked against the rounding rule: each count falls by share(total, percent).
+        """
+        fields = {"buildings_pct": sack.check_percent("buildings_pct", buildings_pct), "stock_pct": sack.check_percent("stock_pct", stock_pct),
+                  "people_pct": sack.check_percent("people_pct", people_pct), "method": sack.check_method(method)}
+        answer = self._command("sack_village", **fields)
+        before, after = answer["before"], answer["after"]
+        ok = (sack.rubble(after) - sack.rubble(before) == sack.share(sack.standing(before), buildings_pct)
+              and sack.families(before) - sack.families(after) == sack.share(sack.families(before), people_pct))
+        self._record("sack_village", fields, ok, sack.stock_total(before), sack.stock_total(after),
+                     note=f"stock total; buildings hit {answer['buildings_hit']}, families removed {answer['families_removed']}")
+        return answer
+
+    @staticmethod
+    def _sack_fields(percent: int | None, count: int | None) -> dict:
+        if (percent is None) == (count is None):
+            raise sack.SackError("give exactly one of percent and count")
+        return {"percent": sack.check_percent("percent", percent)} if percent is not None else {"count": sack.check_positive("count", count)}
+
+    @staticmethod
+    def _goods_fields(percent: int | None, good: int | None, amount: int | None, store: int | None) -> dict:
+        if (percent is None) == (good is None):
+            raise sack.SackError("give exactly one of percent and good")
+        fields = {} if store is None else {"store": sack.check_positive("store", store)}
+        if percent is not None:
+            return {**fields, "percent": sack.check_percent("percent", percent)}
+        return {**fields, "good": sack.check_positive("good", good), "amount": sack.check_positive("amount", amount or 0)}
+
+    # ---- loot on the ground: a stand-in ledger, because the base game has none (spec 10, spike R3) ----
+
+    def drop_loot(self, count: int, good: int, side: str = "bandit") -> dict:
+        """Kill `count` units that carry loot. A pile (place, amount, good) is recorded for each death in the ledger of HarnessLoot.
+
+        The base game leaves nothing on the ground (spike S5, R3). The ledger shows that a mod-defined pile can be driven and read.
+        The record has the answer of the mod under "answer": {"killed", "piles"}. It is ok when every wanted unit died and has a pile.
+        """
+        fields = {"count": sack.check_positive("count", count), "good": sack.check_positive("good", good), "side": side}
+        answer = self._command("drop_loot", **fields)
+        record = self._record("drop_loot", fields, answer["killed"] == count and len(answer["piles"]) == count, count, answer["killed"])
+        record["answer"] = answer
+        return record
+
+    def loot_piles(self) -> list[dict]:
+        """The piles of the ledger (id, x, y, amount, good). Read only."""
+        return self._command("loot_piles")["piles"]
+
+    def recover_loot(self, pile: int) -> dict:
+        """A peasant brings a pile home: its goods go into the stock (cheat manager GiveItemByID), the pile leaves the ledger.
+
+        Checked with the stock of that good in the player region (+ the amount of the pile). The walk of a peasant is not modelled.
+        """
+        piles = {entry["id"]: entry for entry in self.loot_piles()}
+        if pile not in piles:
+            raise sack.SackError(f"no pile with id {pile} in the ledger ({sorted(piles)})")
+        target = piles[pile]
+        region = self._region(None)
+        stock = lambda: self._bridge.call_function(region, "getStockOfGood", [target["good"], False, False])  # noqa: E731
+        call = lambda: self._command("recover_loot", pile=pile)  # noqa: E731
+        return self._perform("recover_loot", {"pile": pile, "good": target["good"], "amount": target["amount"]}, stock, call,
+                             changed_by(target["amount"]), note="instant: no peasant walks")
 
     # ---- pop-ups (spec 10, spike S8) ----
 
