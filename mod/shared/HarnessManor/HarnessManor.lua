@@ -10,6 +10,15 @@
 --   `consumeGoodNoCheck(good)` removes one unit. The base game does not treat the Keep as a store (`isStorageTypeBuilding` is false),
 --   so this is a mod-defined store on top of the building inventory. The capacity (M.CAPACITY) is a mod rule.
 --
+--
+-- Worker slots (spec 12, question Q7, see implementation-notes/worker-slots.md):
+--   The base game takes the number of worker families (`getMaxWorkerFamilies`) and the role (`getJobType`) of a building from the DataTable
+--   `/Game/NotStronghold/Data/buildingStats`. The row name is the building type id. Fields: `workerTypes.Y` (slots), `job` (EJobType), `isWork`,
+--   `buildingFunction`, `storageLimitGeneric`. A Storehouse (72) has job 45 and 3 slots, a Granary (80) job 44 and 3 slots, the Keep (57) none.
+--   `worker_slot` writes the row of the Keep so that it has such slots (in memory only, it is lost when the game ends).
+--   `assign_worker` calls `Region:assignFamily(familyID, building)`. The family id is the zero-based index in `Region.workerFamilies`.
+--   The worker then carries goods into the Keep (seen in the real game). The slot, the role and the assignment are base game; the write is a mod-defined change.
+--
 -- Rules: call only on the game thread. No save function. Every input is checked. A change is read back.
 
 local sack = require("HarnessSack")
@@ -20,6 +29,13 @@ M.MAX_GOOD = 200
 M.MAX_AMOUNT = 1000
 M.CAPACITY = 200   -- units of goods that one manor module holds through put (mod rule)
 M.MAX_ROWS = 20
+M.BUILDING_STATS = "/Game/NotStronghold/Data/buildingStats.buildingStats"
+M.MAX_SLOTS = 6
+-- EJobType values of storage workers, with the EBuildingFunction and the storage limit that a building of that role has in the base game.
+M.STORAGE_JOBS = {
+    [45] = { name = "WarehouseWorker", buildingFunction = 6, limitField = "storageLimitGeneric", limit = 250 },
+    [44] = { name = "GranaryWorker", buildingFunction = 5, limitField = "storageLimitPantry", limit = 500 },
+}
 -- EBuildingType values of the manor and its modules: Walls, Keep Lv1, TaxOffice, Palace/Gatehouse/Keep Lv3, Gate Lv1, Palace Lv1,
 -- OuterTower Lv1, Palace Lv2, Keep Lv2, stone walls, Gate Lv2, OuterTower Lv2.
 M.MANOR_TYPES = { [50] = true, [57] = true, [58] = true, [81] = true, [82] = true, [83] = true, [95] = true, [98] = true,
@@ -208,6 +224,137 @@ function M.manor_take(request)
     end
     return { ok = true, id = idOf(manor), good = good, before = before, after = amountOf(manor, good), wanted = amount,
              stock_before = stockBefore, stock_after = read(function() return region:getStockOfGood(good, false, false) end) }
+end
+
+-- ---------------------------------------------------------------------------------------------
+-- Worker slots
+-- ---------------------------------------------------------------------------------------------
+
+local function statsRow(kind)
+    local stats = StaticFindObject(M.BUILDING_STATS)
+    if not isValid(stats) then return nil, "the DataTable buildingStats is not loaded" end
+    local ok, row = pcall(function() return stats:FindRow(tostring(kind)) end)
+    if not ok or row == nil then return nil, "no buildingStats row " .. tostring(kind) end
+    return row
+end
+
+local function workerReads(building)
+    local assigned = read(function() return building.assignedFamilyIDs:GetArrayNum() end) or 0
+    local workers = read(function() return #listOf(building:getAllWorkers()) end) or 0
+    return { max_slots = read(function() return building:getMaxWorkerFamilies() end), job = read(function() return building:getJobType() end),
+             assigned = assigned, workers = workers, is_storage = read(function() return building:isStorageTypeBuilding() end) == true }
+end
+
+local function workerRow(building, region)
+    local out = row(building, region)
+    for key, value in pairs(workerReads(building)) do out[key] = value end
+    return out
+end
+
+-- The built manor module (or the one with this id) for a worker command.
+local function pickBuilt(region, request)
+    local manor, problem = pick(region, { manor = request.building or request.manor })
+    if not manor then return nil, problem end
+    if not isBuilt(manor) then return nil, "the manor module is not built" end
+    return manor
+end
+
+-- Give the manor module the worker slots of a Storehouse (job 45) or a Granary (job 44).
+function M.worker_slot(request)
+    local region, problem = sack.playerRegion()
+    if not region then return { ok = false, error = problem } end
+    local job = M.STORAGE_JOBS[request.job]
+    if not job then return { ok = false, error = "job must be 45 (WarehouseWorker) or 44 (GranaryWorker)" } end
+    local slots = request.slots
+    if slots == nil or slots < 1 or slots > M.MAX_SLOTS then return { ok = false, error = "slots must be from 1 to " .. M.MAX_SLOTS } end
+    local manor, pickProblem = pickBuilt(region, request)
+    if not manor then return { ok = false, error = pickProblem } end
+    local kind = typeOf(manor)
+    local stats, statsProblem = statsRow(kind)
+    if not stats then return { ok = false, error = statsProblem } end
+    local before = workerReads(manor)
+    local written, err = pcall(function()
+        stats.isWork = true
+        stats.job = request.job
+        stats.workerTypes.Y = slots + 0.0
+        stats.buildingFunction = job.buildingFunction
+        stats[job.limitField] = job.limit
+        manor.buildingFunction = job.buildingFunction
+        manor[job.limitField] = job.limit
+    end)
+    if not written then return { ok = false, error = "write buildingStats: " .. tostring(err) } end
+    local after = workerReads(manor)
+    if after.max_slots ~= slots or after.job ~= request.job then
+        return { ok = false, error = "the building reads " .. tostring(after.max_slots) .. " slots and job " .. tostring(after.job) .. " after the write" }
+    end
+    return { ok = true, id = idOf(manor), type = kind, job_name = job.name, before = before, after = after }
+end
+
+local function isAssigned(family)
+    local target = read(function() return family.assignedTo end)
+    return isValid(target)
+end
+
+-- Assign one family to the manor module. Without `family` the first family with no workplace is taken.
+function M.assign_worker(request)
+    local region, problem = sack.playerRegion()
+    if not region then return { ok = false, error = problem } end
+    local manor, pickProblem = pickBuilt(region, request)
+    if not manor then return { ok = false, error = pickProblem } end
+    local reads = workerReads(manor)
+    if (reads.max_slots or 0) < 1 then return { ok = false, error = "the manor module has no worker slot (use worker_slot first)" } end
+    if reads.assigned >= reads.max_slots then return { ok = false, error = "all " .. reads.max_slots .. " worker slots are taken" } end
+    local families = listOf(region.workerFamilies)
+    local index = request.family
+    if index == nil then
+        for i, family in ipairs(families) do
+            if not isAssigned(family) then index = i - 1; break end
+        end
+        if index == nil then return { ok = false, error = "no family without a workplace" } end
+    elseif index < 0 or index >= #families then
+        return { ok = false, error = "family must be from 0 to " .. (#families - 1) }
+    elseif isAssigned(families[index + 1]) then
+        return { ok = false, error = "family " .. index .. " already has a workplace" }
+    end
+    local ok, err = pcall(function() region:assignFamily(index, manor) end)
+    if not ok then return { ok = false, error = "assignFamily: " .. tostring(err) } end
+    local now = workerReads(manor)
+    local target = read(function() return families[index + 1].assignedTo end)
+    local held = isValid(target) and idOf(target) == idOf(manor)
+    if not held or now.assigned ~= reads.assigned + 1 then
+        return { ok = false, error = "the family is not assigned after assignFamily (assigned " .. now.assigned .. ")" }
+    end
+    return { ok = true, id = idOf(manor), family = index, before = reads, after = now }
+end
+
+-- Take every family off the manor module (the control step of a test).
+function M.unassign_workers(request)
+    local region, problem = sack.playerRegion()
+    if not region then return { ok = false, error = problem } end
+    local manor, pickProblem = pickBuilt(region, request)
+    if not manor then return { ok = false, error = pickProblem } end
+    local before = workerReads(manor)
+    for i, family in ipairs(listOf(region.workerFamilies)) do
+        local target = read(function() return family.assignedTo end)
+        if isValid(target) and idOf(target) == idOf(manor) then
+            local ok, err = pcall(function() region:unassignFamily(i - 1) end)
+            if not ok then return { ok = false, error = "unassignFamily: " .. tostring(err) } end
+        end
+    end
+    local after = workerReads(manor)
+    if after.assigned ~= 0 then return { ok = false, error = "families are still assigned: " .. after.assigned } end
+    return { ok = true, id = idOf(manor), before = before, after = after }
+end
+
+-- The worker slots, the role and the goods of the manor modules. Read only.
+function M.worker_state(request)
+    local region, problem = sack.playerRegion()
+    if not region then return { ok = false, error = problem } end
+    local rows = {}
+    for _, building in ipairs(manorBuildings(region)) do
+        if #rows < M.MAX_ROWS then rows[#rows + 1] = workerRow(building, region) end
+    end
+    return { ok = true, count = #rows, modules = rows, unassigned_families = read(function() return region:getNumUnassignedFamilies() end) }
 end
 
 return M

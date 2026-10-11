@@ -46,6 +46,8 @@ MAX_BUILDING_TYPE = 300  # same limits as mod/shared/HarnessBuild
 MAX_GOOD_ID = 200
 RUIN_METHODS = ("fire", "collapse")
 MAX_MANOR_AMOUNT = 1000  # same limits as mod/shared/HarnessManor
+MAX_WORKER_SLOTS = 6  # same limit as mod/shared/HarnessManor
+STORAGE_JOBS = (44, 45)  # EJobType: GranaryWorker, WarehouseWorker
 
 NOT_POSSIBLE = {
     "save_state": "PawnCPP:requestSaveFile writes into the user's real save folder, even when the run has a private LOCALAPPDATA. "
@@ -710,6 +712,53 @@ class Actions:
                 return next((entry["amount"] for entry in module["goods"] if entry["good"] == good), 0)
         raise ActionError(f"manor_stock: no {'built ' if manor is None else ''}manor module{'' if manor is None else f' with id {manor}'}")
 
+    def manor_worker_slot(self, job: int = 45, slots: int = 3, manor: int | None = None) -> dict:
+        """Give the manor module the worker slots of a Storehouse (job 45, WarehouseWorker) or a Granary (job 44, GranaryWorker).
+
+        The base game reads the slots and the role of a building from its row in the DataTable buildingStats. The mod writes that row
+        (in memory only), so this is a mod-defined change of a base game table. Verified when the building reads back the slots and the job.
+        """
+        check_worker_slot(job, slots)
+        fields = {} if manor is None else {"manor": manor}
+        answer = self._command("manor_worker_slot", job=job, slots=slots, **fields)
+        after = answer["after"]
+        ok = after["max_slots"] == slots and after["job"] == job
+        record = self._record("manor_worker_slot", {"job": job, "slots": slots}, ok, answer["before"]["max_slots"], after["max_slots"],
+                              note=f"{answer['job_name']}: job {answer['before']['job']} -> {after['job']}")
+        record["answer"] = answer
+        return record
+
+    def manor_assign_worker(self, family: int | None = None, manor: int | None = None) -> dict:
+        """Assign one family to the manor module (Region:assignFamily). Without `family` the first family with no workplace is used.
+
+        Verified when the number of assigned families on the building rises by one.
+        """
+        fields = {}
+        if family is not None:
+            if not isinstance(family, int) or isinstance(family, bool) or family < 0:
+                raise ActionError(f"family must be a whole number, 0 or more, got {family!r}")
+            fields["family"] = family
+        if manor is not None:
+            fields["manor"] = manor
+        answer = self._command("manor_assign_worker", **fields)
+        ok = answer["after"]["assigned"] == answer["before"]["assigned"] + 1
+        record = self._record("manor_assign_worker", {"family": answer["family"]}, ok, answer["before"]["assigned"], answer["after"]["assigned"],
+                              note=f"workers (people) {answer['after']['workers']}")
+        record["answer"] = answer
+        return record
+
+    def manor_unassign_workers(self, manor: int | None = None) -> dict:
+        """Take every family off the manor module. Verified when no family is assigned any more."""
+        fields = {} if manor is None else {"manor": manor}
+        answer = self._command("manor_unassign_workers", **fields)
+        record = self._record("manor_unassign_workers", {}, answer["after"]["assigned"] == 0, answer["before"]["assigned"], answer["after"]["assigned"])
+        record["answer"] = answer
+        return record
+
+    def manor_worker_state(self) -> dict:
+        """Per manor module: `max_slots`, `job`, `assigned` (families), `workers` (people), `is_storage`, plus `goods` and `total`. Read only."""
+        return self._command("manor_worker_state")
+
     # ---- UI banner (spec 10, spike S9, criterion T4) ----
 
     def show_message(self, text: str, subtext: str = "") -> dict:
@@ -741,6 +790,13 @@ def check_manor_goods(good: int, amount: int) -> None:
         raise ActionError(f"good must be an item number from 0 to {MAX_GOOD_ID}, got {good!r}")
     if not isinstance(amount, int) or isinstance(amount, bool) or not 1 <= amount <= MAX_MANOR_AMOUNT:
         raise ActionError(f"amount must be a whole number from 1 to {MAX_MANOR_AMOUNT}, got {amount!r}")
+
+
+def check_worker_slot(job: int, slots: int) -> None:
+    if job not in STORAGE_JOBS or isinstance(job, bool):
+        raise ActionError(f"job must be one of {STORAGE_JOBS} (44 GranaryWorker, 45 WarehouseWorker), got {job!r}")
+    if not isinstance(slots, int) or isinstance(slots, bool) or not 1 <= slots <= MAX_WORKER_SLOTS:
+        raise ActionError(f"slots must be a whole number from 1 to {MAX_WORKER_SLOTS}, got {slots!r}")
 
 
 def check_building_type(type_id: int) -> int:
