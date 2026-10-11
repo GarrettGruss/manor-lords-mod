@@ -14,6 +14,8 @@
 --   {"id":"0005","command":"datatable_info"}       row count and names of the item table (read only)
 --   {"id":"0006","command":"datatable_read","row":"name","field":"Value"}              one number field of one row
 --   {"id":"0007","command":"datatable_write","row":"name","field":"Value","value":5}  change one number field
+--      The three datatable commands take "table":"items" (default) or "table":"units" (DT_UnitTemplates, spec 10 spike S7).
+--   {"command":"datatable_rows","table":"units"}               every row with every allowed number field (read only)
 --   {"command":"popup_state"}                                  read the pop-up windows of the game (read only)
 --   {"command":"close_popups"}                                 press Accept on every pop-up that is open ("Hunger!" and similar)
 --   Raid and unit commands (spec 10, see mod/shared/HarnessRaids):
@@ -34,6 +36,13 @@
 --   {"command":"drop_loot","side":"bandit","count":3,"good":17}   kill looters; a pile (place, amount, good) is recorded for each
 --   {"command":"loot_piles"}                                    the piles
 --   {"command":"recover_loot","pile":1}                         the goods of the pile go into the stock; the pile is gone
+--   Unit and mercenary commands (spec 10, spikes S7, P5, C1, C2, see mod/shared/HarnessBattle):
+--   {"command":"spawn_units","side":"player","template":"spearMilitia","count":1,"dx":0,"dy":0}   spawnArmy with a chosen template; dx, dy from the player pawn
+--   {"command":"battle_state","detail":1}                      living units, experience and casualties of the squads that this mod spawned or hired
+--   {"command":"clear_battle","side":"bandit"}                 kill the units of those squads (of one side if "side" is given) and forget them
+--   {"command":"set_squad_experience","squad":8,"value":20}    write combatExperience on the living units of one of those squads
+--   {"command":"mercenary_offers"}                             the companies that can be hired (read only)
+--   {"command":"hire_mercenaries","company":"greencaps"}       hireMercs for one offered company; refused when the silver is below the cost
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -45,8 +54,9 @@ local datatable = require("HarnessDataTable")
 local raids = require("HarnessRaids")
 local sack = require("HarnessSack")
 local loot = require("HarnessLoot")
+local battle = require("HarnessBattle")
 
-local VERSION = "8"
+local VERSION = "9"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -124,6 +134,13 @@ local function parseRequest(raw)
         good = tonumber(raw:match('"good"%s*:%s*(%d+)')),
         store = tonumber(raw:match('"store"%s*:%s*(%d+)')),
         pile = tonumber(raw:match('"pile"%s*:%s*(%d+)')),
+        table = raw:match('"table"%s*:%s*"(%a+)"'),
+        template = raw:match('"template"%s*:%s*"([%w_]+)"'),
+        company = raw:match('"company"%s*:%s*"([%w_]+)"'),
+        squad = tonumber(raw:match('"squad"%s*:%s*(%d+)')),
+        detail = tonumber(raw:match('"detail"%s*:%s*(%d+)')),
+        dx = tonumber(raw:match('"dx"%s*:%s*(-?[%d%.]+)')),
+        dy = tonumber(raw:match('"dy"%s*:%s*(-?[%d%.]+)')),
     }
 end
 
@@ -159,15 +176,21 @@ local function disableAutosave()
     return { ok = true, changes = changes }
 end
 
-local function datatableInfo()
-    local info, problem = datatable.info()
+local function datatableInfo(request)
+    local info, problem = datatable.info(request.table)
     if not info then return { ok = false, error = problem } end
     return { ok = true, info = info }
 end
 
+local function datatableRows(request)
+    local rows, problem = datatable.read_all(request.table)
+    if not rows then return { ok = false, error = problem } end
+    return { ok = true, table = request.table or datatable.DEFAULT_KIND, row_count = #rows, rows = rows }
+end
+
 local function datatableRead(request)
     if not request.row or not request.field then return { ok = false, error = "row and field are required" } end
-    local values, problem = datatable.read_row(request.row, { request.field })
+    local values, problem = datatable.read_row(request.row, { request.field }, request.table)
     if not values then return { ok = false, error = problem } end
     return { ok = true, row = request.row, values = values }
 end
@@ -176,7 +199,7 @@ local function datatableWrite(request)
     if not request.row or not request.field or not request.value then
         return { ok = false, error = "row, field and value are required" }
     end
-    local change, problem = datatable.write_number(request.row, request.field, request.value)
+    local change, problem = datatable.write_number(request.row, request.field, request.value, request.table)
     if not change then return { ok = false, error = problem } end
     return { ok = true, row = request.row, field = request.field, change = change }
 end
@@ -232,6 +255,13 @@ local COMMANDS = {
     datatable_info = datatableInfo,
     datatable_read = datatableRead,
     datatable_write = datatableWrite,
+    datatable_rows = datatableRows,
+    spawn_units = battle.spawn_units,
+    battle_state = battle.battle_state,
+    clear_battle = battle.clear_battle,
+    set_squad_experience = battle.set_squad_experience,
+    mercenary_offers = battle.mercenary_offers,
+    hire_mercenaries = battle.hire_mercenaries,
     raid_state = raids.raid_state,
     units_census = raids.units_census,
     spawn_raiders = raids.spawn_raiders,

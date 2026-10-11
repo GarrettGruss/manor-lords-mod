@@ -128,6 +128,18 @@ class ScenarioContext:
         self.ensure_alive()
         return snapshot(self.bridge)
 
+    # ---- A/B variant options ----
+    def variant_option(self, name: str, default: str) -> str:
+        """The value of `run.py --env NAME=VALUE` for this run, or `default`.
+
+        The same value goes to the game process, but a Python scenario cannot read the game environment. A suite variant uses this
+        to choose the units of a fight (spec 10, scenario counters-ab). A secret-looking name is masked in the config and is not available.
+        """
+        value = (self.phase.config.get("env") or {}).get(name, default)
+        if not isinstance(value, str) or value == "***":
+            raise ValueError(f"variant option {name} has no usable value: {value!r}")
+        return value
+
     # ---- metrics for A/B statistics ----
     def metric(self, name: str, value: float) -> None:
         """Record one number of this run (for example `ticks` or `losses`) in <run>/metrics.json.

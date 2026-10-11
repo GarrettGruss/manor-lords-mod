@@ -78,6 +78,18 @@ Loot: the base game has no loot on the ground, so `drop_loot(count, good)`, `loo
 Scenarios: `sack-village` (S1), `sack-ruins` (the ruin state of R8; not tagged, because the rebuild cost is not verified), `sack-store-trip` (R7), `loot-drop-recovery` (R3). Helpers: `harness/runlib/sack.py`.
 Tests: `test_runlib_sack.py`, `test_fakegame_harnesssack.py`, `test_fakegame_sack_scenarios.py`. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S6.md` and `spike-R3.md`.
 
+### Unit data, typed units, fights and mercenaries (spec 10, spikes S7, P5, C1 and C2)
+Actions (need `HarnessActions` version 9): `datatable_info(table)`, `datatable_read(row, field, table)`, `datatable_rows(table="units")` and `datatable_write(row, field, value, table="units")`.
+`table` is `"items"` (DT_Items, the default for old calls) or `"units"` (DT_UnitTemplates; the game has no `DT_units`). Unit fields: `cost`, `maxSize`, `minMeleeTraining`, `minArcheryTraining`, `minHouseLv`, `combatExperience`.
+A write changes the table in memory only (no file) and lasts until the game ends: restore the value at the end of a scenario. Writing `maxSize` changes the size of the next squad of that template.
+`spawn_units(side, template, count=1, dx=0, dy=0)` calls `spawnArmy` with a row of DT_UnitTemplates. `side` is `"player"` or `"bandit"` (the owner pawn gives the side); the place is the player pawn plus (dx, dy).
+The module `HarnessBattle` keeps a registry of the squads it spawned or hired, so `battle_state(detail=False)` gives the start size, the living units and the experience per squad, per side and per template (`runlib/battle.py` has the helpers: `casualties`, `casualty_rate`, `mean_experience`, `unit_experience`).
+`clear_battle(side=None)` kills the units of those squads. `set_squad_experience(squad, value)` writes `combatExperience`.
+`mercenary_offers()` lists the companies that can be hired (name, cost, days until arrival, unit templates). `hire_mercenaries(company)` hires one: the silver cost is paid, the squads are there at once. The game itself does not check the cost, so the action refuses when the silver is below it.
+`runlib/fights.py` `run_fight(ctx)` runs the game at speed 3 until one side is gone, nothing changes for 10 wall seconds, or 90 wall seconds pass, then pauses. `ctx.variant_option(name, default)` reads a `run.py --env` value in a scenario.
+Scenarios: `unit-data` (C3), `mercenary-hire` (P5), `veterancy` (C2), `counters-ab` (C1). Suite `harness/suites/counters-ab.json` compares a spear squad and a heavy squad against the same bandit squad (`player_loss_rate`).
+The base game has no horse unit in its templates, so C1 covers the templates that exist (spear, sword, polearm, bow, heavy retinue). Tests: `test_runlib_battle.py`, `test_fakegame_harnessbattle.py`, `test_fakegame_battle_scenarios.py`. Notes: `spike-S7.md`, `spike-P5.md`, `spike-C2.md`, `spike-C1.md`.
+
 ### Pop-ups and soak runs (spec 10, S8 and Q1)
 An open pop-up ("Hunger!") pauses the game until Accept is pressed. `ctx.actions.close_popups()` (command `close_popups` of `HarnessActions`) presses Accept on every open pop-up, and the game goes on at the old speed.
 `ctx.popups()` does the same without checks and remembers the types (`ctx.popups.closed`). Use it as `on_poll` of `ctx.run_until`. `ctx.actions.popup_state()` only reads. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S8.md`.

@@ -16,7 +16,7 @@ from typing import Any, Callable
 
 from .bridge_client import Bridge
 from .commands import CommandChannel
-from . import sack
+from . import battle, sack
 from .units import ELITE_RAID_UNITS, SQUAD_UNITS, side_count
 
 CHEAT_MANAGER = "first:MLCheatManager"
@@ -36,6 +36,7 @@ DEFAULT_PLACE_FX = 0.65  # open meadow right of the start camp; the middle (0.5,
 DEFAULT_PLACE_FY = 0.65
 FLOAT_TOLERANCE = 0.01  # property floats are 32 bit
 MAX_NOTE_CHARS = 140
+DATATABLES = ("items", "units")
 
 NOT_POSSIBLE = {
     "save_state": "PawnCPP:requestSaveFile writes into the user's real save folder, even when the run has a private LOCALAPPDATA. "
@@ -45,7 +46,7 @@ NOT_POSSIBLE = {
     "remove_all_families": "MLCheatManager:RemoveAllFamilies changed no population or family count in the probe.",
     "spawn_raiders": "MLCheatManager:SpawnRaidersOfType changed no unit count (checked again in spec 10). Use spawn_raid.",
     "choose_raid_type": "spawnRaiders and spawnEliteRaiders take no type or size: a squad is always 18 units. The raid id lists "
-                        "(RaidSettings.defaultRaidIDs) were read but not written (spec 10, spike S2).",
+                        "(RaidSettings.defaultRaidIDs) were read but not written (spec 10, spike S2). To get a chosen unit type on a side, use spawn_units (spike S7).",
     "steer_squad": "no way to order a spawned squad was verified (spec 10).",
 }
 
@@ -309,16 +310,36 @@ class Actions:
         check = lambda before, after: after["count"] == before["count"] + 1 and after["last"] == list(paragraphs)  # noqa: E731
         return self._perform("send_letter", {"paragraphs": list(paragraphs), "sender": sender}, self._inbox_state, call, check)
 
-    # ---- item table (spec 09, read only, through the helper mod HarnessActions) ----
+    # ---- data tables (spec 09 item table, spec 10 spike S7 unit table; through the helper mod HarnessActions) ----
 
-    def datatable_info(self) -> dict:
-        """Row count, the first row names and the row struct of `itemStats`. It changes nothing."""
-        return self._send_datatable("datatable_info")["info"]
+    @staticmethod
+    def _table_fields(table: str) -> dict:
+        if table not in DATATABLES:
+            raise ActionNotPossible(f"datatable: unknown table {table!r}. Use one of {list(DATATABLES)}.")
+        return {} if table == "items" else {"table": table}
 
-    def datatable_read(self, row: str | int, field: str) -> float:
-        """Read one number field (Weight, Value, spoilageRate) of one `itemStats` row. It changes nothing."""
-        answer = self._send_datatable("datatable_read", row=str(row), field=field)
+    def datatable_info(self, table: str = "items") -> dict:
+        """Row count, the first row names and the row struct of a table ("items" = `itemStats`, "units" = DT_UnitTemplates). It changes nothing."""
+        return self._send_datatable("datatable_info", **self._table_fields(table))["info"]
+
+    def datatable_read(self, row: str | int, field: str, table: str = "items") -> float:
+        """Read one number field of one row. Items: Weight, Value, spoilageRate. Units: cost, maxSize, minMeleeTraining, minArcheryTraining,
+        minHouseLv, combatExperience. It changes nothing."""
+        answer = self._send_datatable("datatable_read", row=str(row), field=field, **self._table_fields(table))
         return answer["values"][field]
+
+    def datatable_rows(self, table: str = "units") -> list[dict]:
+        """Every row with every allowed number field: [{"row", "values": {field: number}}]. Separator rows ("-----") are left out. Read only."""
+        return self._send_datatable("datatable_rows", **self._table_fields(table))["rows"]
+
+    def datatable_write(self, row: str, field: str, value: float, table: str = "units") -> dict:
+        """Write one number field of one row in memory and read it back. Verified for units: maxSize 32 -> 12 changed the size of the next
+        spawned squad (spike S7). The change lasts until the game ends or the value is written again: restore it at the end of a scenario."""
+        fields = {"row": str(row), "field": field, "value": value, **self._table_fields(table)}
+        answer = self._send_datatable("datatable_write", **fields)
+        change = answer["change"]
+        return self._record("datatable_write", {"table": table, "row": str(row), "field": field, "value": value},
+                            change["after"] is not None and abs(change["after"] - value) <= FLOAT_TOLERANCE, change["before"], change["after"])
 
     def _send_datatable(self, command: str, **fields) -> dict:
         if self._commands is None:
@@ -509,6 +530,68 @@ class Actions:
         call = lambda: self._command("recover_loot", pile=pile)  # noqa: E731
         return self._perform("recover_loot", {"pile": pile, "good": target["good"], "amount": target["amount"]}, stock, call,
                              changed_by(target["amount"]), note="instant: no peasant walks")
+
+    # ---- typed units, battles and mercenaries (spec 10, spikes S7, P5, C1, C2; HarnessActions version 9) ----
+
+    def spawn_units(self, side: str, template: str, count: int = 1, dx: float = 0, dy: float = 0) -> dict:
+        """Spawn `count` squads of a unit template (a row of DT_UnitTemplates) with RTSMultiEngineCPP:spawnArmy.
+
+        side "player": the units belong to the player pawn. side "bandit": they belong to the bandit pawn and fight the player.
+        The place is the player pawn plus (dx, dy) game units. Verified: spearMilitia gave 32 units, militiaFoot 32, retinue_tier3 36, Brigands 18.
+        The start size follows the field maxSize of the row (see datatable_write). The answer has the squad ids and sizes in the key "answer".
+        """
+        fields = {"side": battle.check_side(side), "template": battle.check_name("template", template), "count": battle.check_count(count),
+                  "dx": battle.check_offset("dx", dx), "dy": battle.check_offset("dy", dy)}
+        answer = self._command("spawn_units", **fields)
+        record = self._record("spawn_units", fields, answer["units"] > 0 and all(squad["units"] > 0 for squad in answer["squads"]),
+                              0, answer["units"], note=f"{side} {template} x{count}, squads {[squad['id'] for squad in answer['squads']]}")
+        record["answer"] = answer
+        return record
+
+    def battle_state(self, detail: bool = False) -> dict:
+        """The living units, experience and casualties of the squads that spawn_units and hire_mercenaries made. Read only.
+
+        detail=True adds one row (uid, xp) for each living unit (at most 64 a squad). See runlib/battle.py for the shape.
+        """
+        return self._command("battle_state", detail=int(detail))
+
+    def clear_battle(self, side: str | None = None) -> dict:
+        """Kill the living units of those squads (of one side if `side` is given) and forget the squads. The ids of later squads are new."""
+        fields = {} if side is None else {"side": battle.check_side(side)}
+        answer = self._command("clear_battle", **fields)
+        return self._record("clear_battle", fields, True, 0, answer["killed"], note=f"squads forgotten {answer['squads_forgotten']}")
+
+    def set_squad_experience(self, squad: int, value: float) -> dict:
+        """Write combatExperience on every living unit of one squad of the battle registry. Checked per unit by the mod."""
+        fields = {"squad": int(squad), "value": battle.check_experience(value)}
+        answer = self._command("set_squad_experience", **fields)
+        return self._record("set_squad_experience", fields, answer["alive"] > 0 and answer["changed"] == answer["alive"],
+                            answer["alive"], answer["changed"])
+
+    def mercenary_offers(self) -> dict:
+        """The companies that can be hired: {"offers": [{"name", "cost", "arrives_in", "units"}], "silver", "hired"}. Read only."""
+        return self._command("mercenary_offers")
+
+    def hire_mercenaries(self, company: str) -> dict:
+        """Hire one offered company with RTSMultiEngineCPP:hireMercs. Verified: silver falls by the cost, the offer leaves the list,
+        and the units are there at once (a company of 3 templates gave 3 squads and 108 units). The game itself does not check the cost
+        (silver went to -100 in a probe), so the mod and this action refuse when the silver is below the cost.
+
+        The answer of the mod is under "answer". The record compares silver before and after with the cost.
+        """
+        battle.check_name("company", company)
+        offers = self.mercenary_offers()
+        offer = battle.find_offer(offers["offers"], company)
+        if offers["silver"] < offer["cost"]:
+            raise battle.BattleError(f"not enough silver to hire {company}: {offers['silver']} is below the cost {offer['cost']}")
+        answer = self._command("hire_mercenaries", company=company)
+        paid = answer["silver_before"] - answer["silver_after"]
+        ok = (paid == offer["cost"] and answer["units"] > 0 and answer["offers_after"] == len(offers["offers"]) - 1
+              and (answer["hired_after"] or 0) == (answer["hired_before"] or 0) + 1)
+        record = self._record("hire_mercenaries", {"company": company}, ok, answer["silver_before"], answer["silver_after"],
+                              note=f"cost {offer['cost']}, paid {paid}, units {answer['units']}")
+        record["answer"] = answer
+        return record
 
     # ---- pop-ups (spec 10, spike S8) ----
 
