@@ -43,6 +43,9 @@
 --   {"command":"set_squad_experience","squad":8,"value":20}    write combatExperience on the living units of one of those squads
 --   {"command":"mercenary_offers"}                             the companies that can be hired (read only)
 --   {"command":"hire_mercenaries","company":"greencaps"}       hireMercs for one offered company; refused when the silver is below the cost
+--   UI banner (spec 10, spike S9, see mod/shared/HarnessUi):
+--   {"command":"show_message","text":"Raid in 3 days","subtext":"Prepare"}   playEventMessage; answers with the text that the widget holds
+--   {"command":"read_message"}  the text of the banner that show_message made last    {"command":"list_messages"}  every banner in memory (read only)
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -55,8 +58,9 @@ local raids = require("HarnessRaids")
 local sack = require("HarnessSack")
 local loot = require("HarnessLoot")
 local battle = require("HarnessBattle")
+local ui = require("HarnessUi")
 
-local VERSION = "9"
+local VERSION = "10"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -139,6 +143,8 @@ local function parseRequest(raw)
         company = raw:match('"company"%s*:%s*"([%w_]+)"'),
         squad = tonumber(raw:match('"squad"%s*:%s*(%d+)')),
         detail = tonumber(raw:match('"detail"%s*:%s*(%d+)')),
+        text = raw:match('"text"%s*:%s*"([^"]*)"'),
+        subtext = raw:match('"subtext"%s*:%s*"([^"]*)"'),
         dx = tonumber(raw:match('"dx"%s*:%s*(-?[%d%.]+)')),
         dy = tonumber(raw:match('"dy"%s*:%s*(-?[%d%.]+)')),
     }
@@ -277,6 +283,9 @@ local COMMANDS = {
     sack_goods = sack.sack_goods,
     sack_people = sack.sack_people,
     sack_village = sack.sack_village,
+    show_message = ui.show_message,
+    read_message = ui.read_message,
+    list_messages = ui.list_messages,
 }
 
 local function runCommand(number, raw)

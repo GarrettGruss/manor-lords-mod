@@ -12,6 +12,7 @@ Call actions while the game is paused. A running game changes silver and stock b
 
 from __future__ import annotations
 
+import re
 from typing import Any, Callable
 
 from .bridge_client import Bridge
@@ -37,11 +38,14 @@ DEFAULT_PLACE_FY = 0.65
 FLOAT_TOLERANCE = 0.01  # property floats are 32 bit
 MAX_NOTE_CHARS = 140
 DATATABLES = ("items", "units")
+# The banner text goes into the game as a string. The mod checks the same rules (mod/shared/HarnessUi).
+BANNER_TEXT_PATTERN = re.compile(r"^[A-Za-z0-9 ,.!:\-]+$")
+MAX_BANNER_TEXT = 60
+MAX_BANNER_SUBTEXT = 80
 
 NOT_POSSIBLE = {
     "save_state": "PawnCPP:requestSaveFile writes into the user's real save folder, even when the run has a private LOCALAPPDATA. "
                   "It overwrote the user's saveGame_9 in the probe. Make fixtures with harness/tools/fixtures.py instead.",
-    "show_message": "PawnCPP:playEventMessage crashed the game when called through the bridge (spec 07 catalog).",
     "get_item_info": "RTSMultiEngineCPP:getItem crashed the game when called through the bridge (spec 07 catalog).",
     "remove_all_families": "MLCheatManager:RemoveAllFamilies changed no population or family count in the probe.",
     "spawn_raiders": "MLCheatManager:SpawnRaidersOfType changed no unit count (checked again in spec 10). Use spawn_raid.",
@@ -610,6 +614,42 @@ class Actions:
         after = len(self.popup_state()["open"])
         return self._record("close_popups", {}, after == 0, before, after,
                             note=f"closed {answer['closed']}" if answer["closed"] else "")
+
+    # ---- UI banner (spec 10, spike S9, criterion T4) ----
+
+    def show_message(self, text: str, subtext: str = "") -> dict:
+        """Show a banner ("Raid in 3 days") with PawnCPP:playEventMessage and read the text back from the widget.
+
+        Verified in the real game: a new `genericAchievement_EventMessage_C` appears and its `Text` and `main_txt` hold the text.
+        The screenshot shows the banner at the top of the screen. The old banners stay in memory for a while, so the mod
+        returns the new widget. Allowed characters: letters, digits, space and , . ! : - (the mod refuses others).
+        """
+        check_banner_text("text", text, MAX_BANNER_TEXT, required=True)
+        check_banner_text("subtext", subtext, MAX_BANNER_SUBTEXT, required=False)
+        answer = self._command("show_message", text=text, subtext=subtext)
+        ok = answer["shown"] and answer.get("text") == text and answer.get("main_text") == text
+        record = self._record("show_message", {"text": text}, ok, None, answer.get("main_text"), note=f"banner {text!r}")
+        record["answer"] = answer
+        return record
+
+    def read_message(self) -> dict:
+        """The text of the banner that show_message made last: {"alive", "text", "subtext", "main_text", "finished"}. Read only."""
+        return self._command("read_message")
+
+    def list_messages(self) -> dict:
+        """The banners that are still in memory: {"count", "messages"}. Read only."""
+        return self._command("list_messages")
+
+
+def check_banner_text(label: str, value: str, max_chars: int, required: bool) -> None:
+    if not value:
+        if required:
+            raise ActionError(f"show_message: {label} is required")
+        return
+    if len(value) > max_chars:
+        raise ActionError(f"show_message: {label} is longer than {max_chars} characters")
+    if not BANNER_TEXT_PATTERN.match(value):
+        raise ActionError(f"show_message: {label} may use only letters, digits, space and , . ! : -")
 
 
 def dead_count_delta(answer: dict) -> int:
