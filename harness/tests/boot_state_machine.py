@@ -15,6 +15,7 @@
 #   nocinematic there is no intro; pauseGame is called once, at once
 #   silentrestart the game restarts the clock with no sign (old behavior); the hold calls pauseGame twice; READY
 #   cinematicstuck the cinematic never ends; pauseGame is called after the wait limit; READY
+#   newgame    LoadGame starts a new game (savefileToLoad empty, the bug before 2026-10-11); FAILED, not READY
 #
 # The fake game is the kit in harness/tests/fakegame. It copies a real behavior: for a few seconds after the load the game holds the clock at 0.
 # Then it starts the clock itself, and that undoes any pause made too early.
@@ -27,7 +28,7 @@ import fakegame_path  # noqa: F401  (makes the fakegame package importable)
 from fakegame import FakeGame, FakeGameClock, build_manor_lords_state
 
 ALL_MODES = ["happy", "slotlate", "noslot", "missing", "pausefails", "neverstarts", "autosavefails",
-             "cinematic", "nocinematic", "silentrestart", "cinematicstuck"]
+             "cinematic", "nocinematic", "silentrestart", "cinematicstuck", "newgame"]
 
 # What each mode must end with: (state, text that the failure reason must contain)
 EXPECTED = {
@@ -42,6 +43,7 @@ EXPECTED = {
     "nocinematic": ("READY", None),
     "silentrestart": ("READY", None),
     "cinematicstuck": ("READY", None),
+    "newgame": ("FAILED", "did not load slot"),
 }
 # Exact number of pauseGame calls, where a mode checks it.
 PAUSE_CALLS = {"happy": 1, "cinematic": 1, "nocinematic": 1, "silentrestart": 2}
@@ -76,6 +78,8 @@ def state_options(mode):
     options["clock"] = FakeGameClock(**clock)
     if mode == "autosavefails":
         options["autosave_works"] = False
+    if mode == "newgame":
+        options["load_starts_new_game"] = True
     return options
 
 

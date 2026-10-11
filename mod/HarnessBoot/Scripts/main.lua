@@ -106,11 +106,32 @@ local function asText(value)
     return nil
 end
 
--- A TArray element can be a wrapper that needs :get(). Unwrap it only if that works.
-local function unwrap(element)
-    local ok, inner = pcall(function() return element:get() end)
-    if ok and inner ~= nil then return inner end
+-- The game instance keeps the slot name of the save it loads (`savefileToLoad`). The menu's load writes it, and the
+-- loaded map reads it. A boot that left it empty started a NEW game on the slot's map (found 2026-10-11: harness runs
+-- before this were fresh starts, not the wanted save). The field keeps the name after the load, so it also proves it.
+-- The usable form of an array element. The real game hands out the struct itself, and :get() on a struct element is not
+-- safe (spike S11). So the element is used as it is when a known field reads directly; only otherwise is it a wrapper
+-- (RemoteUnrealParam, as in some UE4SS builds and the mock kit) and unwrapped with :get().
+local function structOf(element, knownField)
+    local ok, value = pcall(function() return element[knownField] end)
+    if ok and value ~= nil then return element end
+    local okGet, inner = pcall(function() return element:get() end)
+    if okGet and inner ~= nil then return inner end
     return element
+end
+
+local function gameInstance()
+    local found = FindFirstOf("MLGameInstance") -- finds BP_MLGameInstance_C, as HarnessAutosave does
+    if found ~= nil and found:IsValid() then return found end
+    return nil
+end
+
+local function loadedSlot()
+    local instance = gameInstance()
+    if not instance then return nil end
+    local ok, value = pcall(function() return instance.savefileToLoad end)
+    if ok then return asText(value) end
+    return nil
 end
 
 local function isValid(object)
@@ -188,7 +209,7 @@ local function findSlotEntry(screen, wanted)
     local slots = screen.SortedSlotsByDate
     local count = slots:GetArrayNum()
     for i = 1, count do
-        local entry = unwrap(slots[i])
+        local entry = structOf(slots[i], "Descriptor")
         local okDescr, descr = pcall(function() return entry.Descriptor end)
         if okDescr and isValid(descr) and asText(descr.saveSlot) == wanted then
             log.info(TAG, string.format("found '%s' in a list of %d (position %d, SlotIndex %s, level %s)",
@@ -205,7 +226,7 @@ local function listSlotNames(screen)
     local okAll = pcall(function()
         local slots = screen.SortedSlotsByDate
         for i = 1, slots:GetArrayNum() do
-            local descr = unwrap(slots[i]).Descriptor
+            local descr = structOf(slots[i], "Descriptor").Descriptor
             names[#names + 1] = isValid(descr) and tostring(asText(descr.saveSlot)) or "<invalid>"
         end
     end)
@@ -263,7 +284,17 @@ local function stepLoadingSave()
         local entry = nil
         if count > 0 then entry = findSlotEntry(screen, boot.slot) end
         if entry ~= nil then
-            log.info(TAG, "calling LoadGame")
+            local instance = gameInstance()
+            if not instance then
+                fail("no MLGameInstance to tell which save to load")
+                return
+            end
+            local okSet, errSet = pcall(function() instance.savefileToLoad = boot.slot end)
+            if not okSet then
+                fail("cannot write savefileToLoad: " .. tostring(errSet))
+                return
+            end
+            log.info(TAG, "savefileToLoad = " .. tostring(loadedSlot()) .. "; calling LoadGame")
             local okLoad, errLoad = pcall(function() widget:LoadGame(entry) end)
             if not okLoad then
                 fail("LoadGame failed: " .. tostring(errLoad))
@@ -302,7 +333,7 @@ local function checkReady()
         checks.regions = okCount and count > 0
         if checks.regions then
             for i = 1, count do
-                local region = unwrap(regions[i])
+                local region = structOf(regions[i], "isSettled")
                 local okSettled, settled = pcall(function() return region.isSettled end)
                 if okSettled and settled == true then
                     checks.settled = true
@@ -352,6 +383,12 @@ local function stepWaitingForReady()
     if allTrue(checks) then
         stablePolls = stablePolls + 1
         if stablePolls >= READY_STABLE_POLLS then
+            local loaded = loadedSlot()
+            if loaded ~= boot.slot then
+                fail("the game did not load slot '" .. boot.slot .. "' (savefileToLoad is '" .. tostring(loaded) .. "'); it may have started a new game")
+                return
+            end
+            log.info(TAG, "loaded slot confirmed: savefileToLoad = " .. loaded)
             setState("DISABLING_AUTOSAVE")
             return
         end

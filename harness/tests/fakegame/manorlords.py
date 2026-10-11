@@ -40,7 +40,7 @@ class FakeAutosaveTimer:
 def _build_autosave(game, player, works):
     timer = FakeAutosaveTimer(game, works=works)
     player["autosaveHandle"] = timer.handle
-    instance = game.obj("MLGameInstance", Settings=game.struct(autosavePeriod=AUTOSAVE_PERIOD_S))
+    instance = game.obj("MLGameInstance", Settings=game.struct(autosavePeriod=AUTOSAVE_PERIOD_S), savefileToLoad=game.text(""))
     timer.instance = instance
     game.method(instance, "SetAutosavePeriodOnPawn", lambda _self, seconds: timer.restart(seconds))
     library = game.obj("KismetSystemLibrary", _path=TIMER_LIBRARY_PATH)
@@ -73,7 +73,7 @@ def _build_in_game(game, clock, autosave_works):
 
 def build_manor_lords_state(game, *, save_slot="saveGame_0", wanted_slot_listed=True,
                             save_exists=True, menu_delay=2.0, slot_list_delay=0.0,
-                            engine_delay=2.0, clock=None, autosave_works=True):
+                            engine_delay=2.0, clock=None, autosave_works=True, load_starts_new_game=False):
     """Create the menu and the game and wire them like the real game.
 
     save_slot: the slot name that the load screen lists.
@@ -84,6 +84,7 @@ def build_manor_lords_state(game, *, save_slot="saveGame_0", wanted_slot_listed=
     engine_delay: seconds after LoadGame until the engine actor exists.
     clock: a FakeGameClock (default: the real-game behavior).
     autosave_works: False makes SetAutosavePeriodOnPawn answer true but leave the timer as it was.
+    load_starts_new_game: True copies the real bug seen before 2026-10-11: LoadGame clears savefileToLoad and a new game starts.
     Returns a namespace: clock, calls (names of the menu calls), widget, screen, engine, player, ...
     """
     clock = clock or FakeGameClock()
@@ -112,6 +113,8 @@ def build_manor_lords_state(game, *, save_slot="saveGame_0", wanted_slot_listed=
     def load_game(_self, entry):
         state.loaded_at = game.now()
         state.calls.append(f"LoadGame:{entry['SlotIndex']}")
+        if load_starts_new_game:
+            state.autosave.instance["savefileToLoad"] = game.text("")
         clock.start_load()
 
     state.widget = game.obj("mainMenu_widget_C")
