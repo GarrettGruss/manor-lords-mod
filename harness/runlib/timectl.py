@@ -5,6 +5,9 @@ Facts measured in the real game (docs/specs/04-telemetry-and-assertions/implemen
   - One game day is 40 game seconds.
   - `daysTotal` counts days without a wrap. `day` is the day of the year (1 to 365) and wraps with `Year`.
   - A pop-up (for example "Hunger!") pauses the game until a player closes it. The clock then stands still.
+  - When an army is spotted, the game sets the speed to 1x. An army in a forest is hidden and seen again quickly, so this
+    repeats many times while armies march (user note and spike S11, 2026-10-11: 19 drops in 110 s). A run therefore checks
+    the speed about once a second and sets it again.
 """
 
 from __future__ import annotations
@@ -26,6 +29,7 @@ SETTLE_S = 3.0
 SPEED_ATTEMPTS = 3
 LIMIT_FACTOR = 3  # the wall time limit is this many times the expected time (spec 04, Part A)
 LIMIT_EXTRA_S = 10.0
+HOLD_CHECK_S = 1.0  # how often a run checks that the game kept the speed
 
 
 class TimeControlError(ScenarioFailure):
@@ -132,18 +136,30 @@ class TimeControl:
         clock_start = self._bridge.read_clock_value(engine)
         started = self._monotonic()
         self.set_speed(speed)
+        resets = 0
+        last_check = self._monotonic()
         while not done(self._bridge.read_clock_value(engine)):
             self._check_alive()
             if self._monotonic() - started > limit_s:
                 self._pause_after_timeout()
                 raise TimeControlError(f"timeout: {what} at speed {speed} were not done in {limit_s:.0f} wall seconds")
+            if self._monotonic() - last_check >= HOLD_CHECK_S:
+                last_check = self._monotonic()
+                resets += self._hold_speed(speed)
             self._sleep(POLL_S)
         wall_s = self._monotonic() - started
         paused = self.pause()
         record = {"clock_start": clock_start, "clock_end": paused["clock"], "wall_s": round(wall_s, 1),
-                  "paused_at_end": paused["paused"], "speed": speed}
+                  "paused_at_end": paused["paused"], "speed": speed, "speed_resets": resets}
         self._log(f"run {what}: {record}")
         return record
+
+    def _hold_speed(self, speed: int) -> int:
+        """Set the speed again if the game dropped it (an army was spotted). Returns 1 for a reset, else 0."""
+        if self._bridge.read_game_speed() == SPEED_FACTOR[speed]:
+            return 0
+        self._bridge.call_on_player("changeGameSpeed", [speed, False])
+        return 1
 
     def _pause_after_timeout(self) -> None:
         # Never leave the game running after a timeout. A failed pause must not hide the timeout error.

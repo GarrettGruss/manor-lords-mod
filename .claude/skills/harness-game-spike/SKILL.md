@@ -18,12 +18,18 @@ A spike answers one question about the engine with evidence. Write the question 
 - Do not read struct values with soft object fields (`getItem`, `RowStruct`) through the bridge: it crashes the game.
 - Touch UObjects only on the game thread. The bridge does this for you.
 - One agent uses the game at a time. End every game process you start. Check `tasklist`.
+- Read elements of a property array directly. Never call `:get()` on a struct element of a property array, and do not read a struct that a function returns by value (`getSquadByID`): both crashed the game inside UE4SS, and a pcall cannot catch it. Call `:get()` only on function return values (spike S11).
 - Never write to the user's saves. Runs use a private copy of a fixture save.
 
 ## Method
 - Change one thing, read before and after, write both numbers down. Count things (units, buildings, stock) instead of trusting a return value.
 - Repeat a surprising result. A first-run effect can be a timing effect (the intro cinematic ends about 13 s after load and resets the speed).
 - A game day is 40 game seconds. `getGameTimeAdjusted` is the reliable clock, not `bIsPlayerPaused`.
+- A `--keep-open` run leaves the game paused. Unpause with `unPauseGame`, then `changeGameSpeed(3, false)` on the player pawn.
+- The game drops to 1x when an army is spotted (often, when armies march through forest). Set the speed again every second during a spike; `ctx.time.run_game_*` does it for scenarios.
+- Unit positions: read `SMUnit.realPos`. The actor location of a unit does not move.
+- The bridge `call` passes only JSON values. A call that needs an object (a pawn, a region) needs a named mod command.
+- The AI lords write their decisions to `RTSMultiEngineCPP.debugLog_AI_general`, `_tactics` and `_construction` (command `lords_state`).
 - Time-box each primitive. If it does not work after a reasonable try, record what was tried. "Not possible from Lua, because ..." is a valid result.
 
 ## Turn it into a test
