@@ -677,8 +677,8 @@
   },
   {
     "id": "M1",
-    "title": "The manor can store goods: goods can be put in, kept and read back from the manor",
-    "method": "stock per manor module before and after a put and a take; stock survives game days",
+    "title": "The manor can store goods: goods can be put in, kept and read back from the manor, and a storehouse or granary worker serves the store",
+    "method": "stock per manor module before and after a put and a take; stock survives game days; the manor storage building has a worker slot with the same role as a storehouse or granary worker, a family is assigned, and that worker carries goods in or out of the store",
     "pillar": "defense",
     "mark": "A",
     "blocked_by": null,
@@ -689,10 +689,12 @@
     "method_verified": true,
     "verified_by": [
       "scenario manor-storage (hidden, real mouse; 3 of 3 real runs: manor-storage-1, -2, -3)",
-      "docs/specs/12-manor-exploration/implementation-notes/storage-m1.md"
+      "scenario manor-storage-workers (hidden, real mouse; 3 of 3 real runs: manor-storage-workers-v2-1, -2, -3)",
+      "docs/specs/12-manor-exploration/implementation-notes/storage-m1.md",
+      "docs/specs/12-manor-exploration/implementation-notes/worker-slots.md"
     ],
     "reason_human": "",
-    "spike_note": "Base game: the Keep (type 57) can be placed, has an Inventory, and goods added to it count in the region stock. Harness shortcut: the test village cannot finish a Keep (40 builder units needed), so finish_manor_site writes Data.constructed and calls setRegionsManor. Mod-defined: the put and take commands and the 200 unit capacity; the base game does not use the Keep as a store. Method verified on the Keep alone, not on a full castle with modules."
+    "spike_note": "Base game: the Keep (type 57) can be placed and has an Inventory; goods added to it count in the region stock; a worker slot, its role and the assignment come from the DataTable buildingStats and Region:assignFamily, and a worker carries goods into a store. Harness shortcut: the test village cannot finish a Keep (40 builder units needed), so finish_manor_site writes Data.constructed and calls setRegionsManor. Mod-defined: the put and take commands and the 200 unit capacity; the write of the Keep row in buildingStats (job 45 WarehouseWorker, 3 slots, as a Storehouse; in memory only, the base game gives the Keep no worker). Verified with a control: with the slot and no worker no goods arrive, with one assigned family 7 to 8 units arrive in 3 game days with no harness put (the worker chooses the good: rubble or planks). Method verified on the Keep alone, not on a full castle with modules, and not for carrying goods out of the Keep."
   },
   {
     "id": "M2",

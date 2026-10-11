@@ -56,6 +56,10 @@
 --   {"command":"finish_manor_site","type":57}               harness shortcut: finish a Keep site at once and register it as the region manor
 --   {"command":"manor_put","good":27,"amount":20}           add goods to a built manor module (refused above the capacity of 200 units)
 --   {"command":"manor_take","good":27,"amount":5}           remove goods from a manor module (refused when it holds less)
+--   {"command":"manor_worker_slot","job":45,"slots":3}       give the manor module the worker slots of a Storehouse (job 45) or a Granary (job 44)
+--   {"command":"manor_assign_worker"}                        assign one family without a workplace (or "family":N) to the manor module
+--   {"command":"manor_unassign_workers"}                     take every family off the manor module
+--   {"command":"manor_worker_state"}                         slots, job, assigned families and goods of the manor modules (read only)
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -72,7 +76,7 @@ local ui = require("HarnessUi")
 local build = require("HarnessBuild")
 local manor = require("HarnessManor")
 
-local VERSION = "12"
+local VERSION = "13"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -150,6 +154,10 @@ local function parseRequest(raw)
         good = tonumber(raw:match('"good"%s*:%s*(%d+)')),
         store = tonumber(raw:match('"store"%s*:%s*(%d+)')),
         manor = tonumber(raw:match('"manor"%s*:%s*(%d+)')),
+        job = tonumber(raw:match('"job"%s*:%s*(%d+)')),
+        slots = tonumber(raw:match('"slots"%s*:%s*(%d+)')),
+        family = tonumber(raw:match('"family"%s*:%s*(%d+)')),
+        building = tonumber(raw:match('"building"%s*:%s*(%d+)')),
         pile = tonumber(raw:match('"pile"%s*:%s*(%d+)')),
         table = raw:match('"table"%s*:%s*"(%a+)"'),
         template = raw:match('"template"%s*:%s*"([%w_]+)"'),
@@ -305,6 +313,10 @@ local COMMANDS = {
     finish_manor_site = manor.finish_site,
     manor_put = manor.manor_put,
     manor_take = manor.manor_take,
+    manor_worker_slot = manor.worker_slot,
+    manor_assign_worker = manor.assign_worker,
+    manor_unassign_workers = manor.unassign_workers,
+    manor_worker_state = manor.worker_state,
     show_message = ui.show_message,
     read_message = ui.read_message,
     list_messages = ui.list_messages,
