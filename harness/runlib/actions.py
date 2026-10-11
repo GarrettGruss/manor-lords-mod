@@ -42,6 +42,9 @@ DATATABLES = ("items", "units")
 BANNER_TEXT_PATTERN = re.compile(r"^[A-Za-z0-9 ,.!:\-]+$")
 MAX_BANNER_TEXT = 60
 MAX_BANNER_SUBTEXT = 80
+MAX_BUILDING_TYPE = 300  # same limits as mod/shared/HarnessBuild
+MAX_GOOD_ID = 200
+RUIN_METHODS = ("fire", "collapse")
 
 NOT_POSSIBLE = {
     "save_state": "PawnCPP:requestSaveFile writes into the user's real save folder, even when the run has a private LOCALAPPDATA. "
@@ -615,6 +618,50 @@ class Actions:
         return self._record("close_popups", {}, after == 0, before, after,
                             note=f"closed {answer['closed']}" if answer["closed"] else "")
 
+    # ---- construction sites and ruins (spec 10, spike R8) ----
+
+    def building_sites(self, type_id: int | None = None) -> dict:
+        """The buildings of the village (one type if given): each with `built`, `rubble`, `burning` and `needs` (goods a site still needs).
+
+        `counts` (when a type is given) has built, sites and rubble. Read only. Placing a site needs place_building (real OS mouse).
+        """
+        fields = {} if type_id is None else {"type": check_building_type(type_id)}
+        return self._command("building_sites", **fields)
+
+    def ruin_building(self, type_id: int, method: str = "fire") -> dict:
+        """Burn or collapse the first built building of a type. Verified: it becomes Rubble (type 75) and the counts change by one."""
+        check_building_type(type_id)
+        if method not in RUIN_METHODS:
+            raise ActionError(f"ruin_building: method must be one of {RUIN_METHODS}")
+        answer = self._command("ruin_building", type=type_id, method=method)
+        ok = answer["after"]["built"] == answer["before"]["built"] - 1 and answer["after"]["rubble"] == answer["before"]["rubble"] + 1
+        record = self._record("ruin_building", {"type_id": type_id, "method": method}, ok, answer["before"]["built"], answer["after"]["built"],
+                              note=f"rubble {answer['before']['rubble']} -> {answer['after']['rubble']}")
+        record["answer"] = answer
+        return record
+
+    def demolish_ruins(self) -> dict:
+        """Demolish every ruin of the village. Verified: the rubble count falls to 0 and the place is free for a new site."""
+        answer = self._command("demolish_ruins")
+        record = self._record("demolish_ruins", {}, answer["after"] == 0, answer["before"], answer["after"])
+        record["answer"] = answer
+        return record
+
+    def set_site_cost(self, type_id: int, good: int, amount: int) -> dict:
+        """Lower the amount of one good that a construction site needs (never raise it). Verified: the builders then use the lower amount
+        (4 planks -> 2: the stock fell by 2 when the building was built). This is the base for a partial rebuild cost."""
+        check_building_type(type_id)
+        if not isinstance(good, int) or not 0 <= good <= MAX_GOOD_ID:
+            raise ActionError(f"set_site_cost: good must be an item number from 0 to {MAX_GOOD_ID}")
+        if not isinstance(amount, int) or amount < 0:
+            raise ActionError("set_site_cost: amount must be a whole number, 0 or more")
+        answer = self._command("set_site_cost", type=type_id, good=good, amount=amount)
+        now = {need["good"]: need["amount"] for need in answer["needs"]}
+        record = self._record("set_site_cost", {"type_id": type_id, "good": good, "amount": amount}, now.get(good) == amount,
+                              answer["before"], now.get(good))
+        record["answer"] = answer
+        return record
+
     # ---- UI banner (spec 10, spike S9, criterion T4) ----
 
     def show_message(self, text: str, subtext: str = "") -> dict:
@@ -639,6 +686,12 @@ class Actions:
     def list_messages(self) -> dict:
         """The banners that are still in memory: {"count", "messages"}. Read only."""
         return self._command("list_messages")
+
+
+def check_building_type(type_id: int) -> int:
+    if not isinstance(type_id, int) or isinstance(type_id, bool) or not 0 <= type_id <= MAX_BUILDING_TYPE:
+        raise ActionError(f"building type must be a number from 0 to {MAX_BUILDING_TYPE}, got {type_id!r}")
+    return type_id
 
 
 def check_banner_text(label: str, value: str, max_chars: int, required: bool) -> None:

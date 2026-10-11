@@ -46,6 +46,11 @@
 --   UI banner (spec 10, spike S9, see mod/shared/HarnessUi):
 --   {"command":"show_message","text":"Raid in 3 days","subtext":"Prepare"}   playEventMessage; answers with the text that the widget holds
 --   {"command":"read_message"}  the text of the banner that show_message made last    {"command":"list_messages"}  every banner in memory (read only)
+--   Build commands (spec 10, spike R8, see mod/shared/HarnessBuild):
+--   {"command":"building_sites","type":121}                the buildings of the village (one type if given): built, rubble, goods a site needs
+--   {"command":"ruin_building","type":121,"method":"fire"}   burn or collapse the first built building of that type (it becomes Rubble)
+--   {"command":"demolish_ruins"}                            demolish every ruin of the village
+--   {"command":"set_site_cost","type":121,"good":17,"amount":2}   lower the amount of a good that a construction site needs (never raise)
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -59,8 +64,9 @@ local sack = require("HarnessSack")
 local loot = require("HarnessLoot")
 local battle = require("HarnessBattle")
 local ui = require("HarnessUi")
+local build = require("HarnessBuild")
 
-local VERSION = "10"
+local VERSION = "11"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -143,6 +149,7 @@ local function parseRequest(raw)
         company = raw:match('"company"%s*:%s*"([%w_]+)"'),
         squad = tonumber(raw:match('"squad"%s*:%s*(%d+)')),
         detail = tonumber(raw:match('"detail"%s*:%s*(%d+)')),
+        type = tonumber(raw:match('"type"%s*:%s*(%d+)')),
         text = raw:match('"text"%s*:%s*"([^"]*)"'),
         subtext = raw:match('"subtext"%s*:%s*"([^"]*)"'),
         dx = tonumber(raw:match('"dx"%s*:%s*(-?[%d%.]+)')),
@@ -283,6 +290,10 @@ local COMMANDS = {
     sack_goods = sack.sack_goods,
     sack_people = sack.sack_people,
     sack_village = sack.sack_village,
+    building_sites = build.building_sites,
+    ruin_building = build.ruin_building,
+    demolish_ruins = build.demolish_ruins,
+    set_site_cost = build.set_site_cost,
     show_message = ui.show_message,
     read_message = ui.read_message,
     list_messages = ui.list_messages,
