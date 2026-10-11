@@ -281,22 +281,30 @@ UE4SS auto reload is also on in this install, but it reloads only one mod when t
 
 ## Save fixtures
 
-Every run gives the game its own `LOCALAPPDATA` (`<run folder>\appdata`). The fixture (default `base`, a copy of the user's `saveGame_0`) is its `saveGame_0`.
-The user's save folder is never used by the game in a run. It is hashed before and after, and a change fails the run. The private folder is deleted in teardown.
-`--keep-open` leaves it in place and does not compare the user's save files. Stop the game with `harness\game-close.ps1`, then run
-`.venv\Scripts\python.exe harness\toolsixtures.py remove --appdata runs\<id>ppdata` (about 4 MB per run).
+Spec 06, part D (2026-10-11). The game lists and loads saves only from the user's REAL save folder, and before this date every run
+started a NEW game instead of the fixture (`docs/specs/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md`).
+- A fixture's files are kept in `harness\fixtures\saves\<name>\` (`slot.sav`, `slot_descr.sav`, images). Git ignores that folder.
+  `harness\fixtures\fixtures.json` keeps the hashes, the description and the tags.
+- A run copies the fixture into the user's save folder under the next free name (`saveGame_<max+1>`), rewrites `saveSlot` in the copied
+  descriptor, and loads it. `HarnessBoot` sets `MLGameInstance.savefileToLoad` and fails the boot if the game did not load that slot.
+- Teardown deletes the installed files (only those whose hash matches the ledger `runs\.installed-slots.json`), then compares the user's
+  save folder with the preflight snapshot. A change fails the run. `--keep-open` leaves the slot; the next run removes it.
+- The run still gives the game its own `LOCALAPPDATA` (`<run folder>\appdata`) for config, logs and crash reports. Remove it after
+  `--keep-open` with `harness\tools\fixtures.py remove --appdata runs\<id>\appdata`.
 A game crash writes its UE crash report into the user's REAL `Crashes` folder (not the private one). `collect` copies the reports of this game (matched by process id) into `crash/`,
 and `teardown` stops the `CrashReportClient.exe` that the crash leaves open. Test it with `python harness/run.py --scenario selftest-crash` (verdict `crash`, exit 2).
 
-`python harness\tools\fixtures.py list | record <name> --source-slot <slot> | install <name> --appdata DIR | remove --appdata DIR` (spec 06, part C).
-`harness\fixtures\fixtures.json` lists fixtures: name, source slot, SHA-256 of each source file, description, tags. It holds no save data.
-`run.py --fixture <name>` picks a fixture. A source that no longer matches its SHA-256 fails the preflight (run `record` to accept the new files).
-The game lists only `autosave` and `saveGame_0` to `saveGame_27`, which is why a fixture is always installed as `saveGame_0` in the private folder.
-Details and measurements: `docs/specs/06-dev-loop-and-fixtures/implementation-notes/fixtures.md`.
+Commands:
+- `harness\tools\load_save.py <fixture | path\to\saveGame_N.sav>`: start the game with that save and leave it open (paused).
+- `run.py --fixture <name>` or `run.py --save <path to .sav>`: any scenario on that save.
+- `harness\tools\fixtures.py import <name> --source-slot saveGame_28` (or `--from <path to .sav>`) `--description ... --tags a,b`.
+- `harness\tools\fixtures.py list | uninstall | remove --appdata DIR | record` (`record`: the old kind, an entry that points to a user slot).
+- Fixtures now: `base` (the user's `saveGame_0`: day 266, 24 buildings, 10 families) and `manor-bailey` (`saveGame_28`: day 106, manor with gate and bailey).
 
 ```powershell
+.venv\Scripts\python.exe harness\tools\load_save.py manor-bailey
 .venv\Scripts\python.exe harness\run.py --scenario smoke --fixture base
-.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_fixtures.py" -v
+.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_*slot*.py" -v
 ```
 
 ## Actions (`ctx.actions`)

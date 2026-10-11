@@ -1,7 +1,8 @@
 {
   "fixtures": {
     "base": {
-      "description": "Copy of the user's saveGame_0 (Jagged_Cliffs). The main test save.",
+      "description": "Copy of the user's saveGame_0 (Jagged_Cliffs). The main test save. Before 2026-10-11 runs did not load it (they started a new game, see spec 06 fixture-load-bug.md).",
+      "origin": "user slot saveGame_0",
       "sha256": {
         ".png": "8b91d71492056e224f00dada387f0b3246899702b178341568b629690890e155",
         ".sav": "68220ae48b1c513d96573cba1916d59986a2866e573401ae53395547c3963e47",
@@ -12,10 +13,30 @@
         "_coat_4.png": "1dd60af6ea493a341ac014b6aa505ce665a9aa3e8efc67341654a36fbac06796",
         "_descr.sav": "08026cded425fed1c815379c882a05fefa496da75890c17d82e7b6b8a9c32326"
       },
-      "source_slot": "saveGame_0",
+      "stored": true,
       "tags": [
         "default",
         "jagged-cliffs"
+      ]
+    },
+    "manor-bailey": {
+      "description": "Hochweg village (Jagged_Cliffs map) with a manor house (type 98, Manor_Palace_Lv1) built by the builders, a wooden gatehouse, 3 wooden wall segments (Road wallType 2) around an empty bailey. Region manor set. Helped: 120 planks from the cheat manager (GiveItemByID 17). Food 0 at save (hunger pop-up likely). Game day Apr 16. Built in run manor-fixture-1, 2026-10-11.",
+      "origin": "user slot saveGame_28",
+      "sha256": {
+        ".png": "4b5d8bd20ff92e0f616f2f48541951f805bd4af5e78cf76527bb6ad36ee0f4e2",
+        ".sav": "2f3a61afccd627911e1ccca1cb8bcb41f46efab51c97ffe3f65c21853538c132",
+        "_coat_1.png": "42bad97529e18d9949b29d8d3da29da6233cb550c0d1fa06cd359e98487c9d97",
+        "_coat_2.png": "5d6ee2bc22590992a87aa4f7fd3d4f0f8e6777d91bd517df55717bbfd7093a4c",
+        "_coat_3.png": "8664deadfac0433338f9de53533963be7675b0943222c42c210dc2391d3c3eeb",
+        "_coat_4.png": "77ab23f1e637cceb42d38ba865658b2505b7490b39b530b3727c0d3111f6e2e2",
+        "_descr.sav": "42ff7106b53d0aae612ee5e292f2fd0b12e8a51c572c6d4f5276f36ead71c611"
+      },
+      "stored": true,
+      "tags": [
+        "jagged-cliffs",
+        "manor",
+        "bailey",
+        "helped"
       ]
     }
   }
