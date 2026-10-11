@@ -1,6 +1,16 @@
 # Spec 12: Manor exploration (the manor system and its building rule)
 
-Status: proposed (2026-10-11). Idea and bug report from the user. Only the pak names in "Background" were checked. Nothing else is verified.
+Status: spike done (2026-10-11, branch `feat/33-manor-spike`). M1 (storage) method verified, 3 of 3 real runs. M2 (building inside the manor area) NOT verified.
+Findings are in `implementation-notes/` (`manor-survey.md`, `rule-search.md`, `storage-m1.md`, `workaround-m2.md`).
+
+### Answers (short)
+- Q1: no manor class. The manor is `SMBuildingMaster` actors per module (Keep type 57 and others). The `BM_SG_Manor_*` Blueprints are empty mesh actors. The area is the "bailey" polygon of committed planner modules (Keep alone: 49 m2).
+- Q2: the rule is in C++. No data column, no Blueprint logic, and 9 hooks on candidate natives got 0 events (a control hook got 720).
+- Q3: the Keep has an `Inventory` and `addToInventory` works (region stock follows), but the base game does not use it as a store.
+- Q4: not tested inside a bailey (none could be built). Over a Keep footprint a normal building is refused; collision off and an empty `finalBorder` did not change that.
+- Q5: `Region.manor` is one reference; a second Keep is refused while a type 57 building exists (C++ count; clearing `Region.manor` did not help).
+- Q6: not found from Lua (see `rule-search.md`).
+- M1 way: a mod-defined store on the Keep inventory, with a harness shortcut to finish the Keep (5 families cannot build it: 40 builder units).
 
 ## Goal
 Understand how the manor (the castle in the UI) works, and find out if it can be changed with the tools of this project (Lua mods, data tables, paks):
@@ -71,16 +81,16 @@ Q6. Collision: what does the placement check use for blocking (collision channel
 These are part of the Invasion Mode goal (spec 10, criteria M1 and M2). The current castle design does not allow a real defense. Meet at least one of the two scenarios; both is better.
 
 **Scenario 1 (M1): storage in the manor.** Goods can be stored within the manor.
-- [ ] A scenario (COVERS M1) puts goods into the manor (or a manor module, or a storage building that is part of the manor), reads the stock back, takes some out, and reads the stock after game days. It passes 3 of 3 real-game runs.
-- [ ] The way is named: the manor gets an inventory, or a granary or storehouse can be built as part of the manor, or a Lua storage layer is tied to the manor. The notes say which, and why the others failed.
+- [x] A scenario (COVERS M1, `manor-storage`, runs `manor-storage-1` to `-3`) puts goods into the manor (or a manor module, or a storage building that is part of the manor), reads the stock back, takes some out, and reads the stock after game days. It passes 3 of 3 real-game runs.
+- [x] The way is named (a Lua store on the Keep inventory; the others failed, see `storage-m1.md`): the manor gets an inventory, or a granary or storehouse can be built as part of the manor, or a Lua storage layer is tied to the manor. The notes say which, and why the others failed.
 
 **Scenario 2 (M2): normal buildings inside the manor.** The player can wall in the city.
 - [ ] A scenario (COVERS M2, exclusive, real mouse) builds a manor that covers a test area, then places a burgage plot and an industry building inside it. With the workaround the placement succeeds; without it, it is refused (A/B). It passes 3 of 3 real-game runs.
 - [ ] The workaround is named: a data change, a property switch (collision off on manor parts), a hooked placement check, several manors per region, or a smaller area. The notes say which, and show that normal building outside the manor still works.
 
 **Survey and hygiene**
-- [ ] Notes answer Q1 to Q6, each with evidence (class names, property names, values) or a clear "not possible, because".
-- [ ] A class tree of the manor and its modules is recorded (names only, no assets in git).
-- [ ] The placement test shows if normal buildings are refused inside the manor area, and the refusing check is named if it can be found.
+- [x] Notes answer Q1 to Q6, each with evidence (class names, property names, values) or a clear "not possible, because".
+- [x] A class tree of the manor and its modules is recorded (names only, no assets in git).
+- [ ] (partly: over the Keep only; no bailey) The placement test shows if normal buildings are refused inside the manor area, and the refusing check is named if it can be found.
 - [ ] If neither scenario is possible, the notes explain why with evidence, and criteria M1 and M2 are marked blocked with that reason.
-- [ ] No game asset, key or copy of game data is in git.
+- [x] No game asset, key or copy of game data is in git.

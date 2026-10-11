@@ -1,6 +1,6 @@
 # Storage in the manor (Q3, criterion M1)
 
-Date: 2026-10-11. Real game, bridge eval. The scenario result is added at the end when it is done.
+Date: 2026-10-11. Real game, bridge eval, then the scenario `manor-storage`.
 
 ## What the Keep has
 - `SMBuildingMaster.Inventory` (array of `Good {Type, amt}`) exists on the Keep. A site holds the goods that were carried to it (15:10, 16:10, 17:15).
@@ -20,3 +20,14 @@ the planner has only four module cards and the manor module Blueprints have no s
 - Base game: the Keep, its `Inventory`, `addToInventory`, `consumeGoodNoCheck`, the region stock that includes it.
 - Harness shortcut: finishing the Keep (`Data.constructed = true`, `setRegionsManor`), because 5 families cannot build it.
 - Mod-defined: put and take commands, the capacity, the rule that goods in the manor stay there.
+
+## Result
+Scenario `manor-storage` (COVERS M1, hidden, real mouse, about 70 s), real game, 3 of 3 passed: `manor-storage-1`, `-2`, `-3`.
+Each run: give goods, place a Keep (site, not built), finish it with the shortcut, put 20 stone (module 0 to 20, region stock +20), take 5 (module 15, region stock +15 net),
+a put of 500 and a take of 16 are refused and change nothing, and after 2 game days at 8x the module still holds 15 and the region stock is the same.
+Stone (item 27) is used because the Keep does not need it, so the builders do not move it.
+
+## Not verified
+- A full castle with committed modules (only the Keep was used). A Granary placed inside a bailey.
+- That the base game ever uses the Keep stock (workers do not carry to or from it). The real mod must define that.
+- That a Keep finished by the game (not by the shortcut) behaves the same. The shortcut leaves `isManor()` false.
