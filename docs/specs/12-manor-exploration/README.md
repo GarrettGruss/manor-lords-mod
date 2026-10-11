@@ -68,10 +68,19 @@ Q6. Collision: what does the placement check use for blocking (collision channel
 - The mod is for single-player. Nothing is done for multiplayer.
 
 ## Acceptance criteria
+These are part of the Invasion Mode goal (spec 10, criteria M1 and M2). The current castle design does not allow a real defense. Meet at least one of the two scenarios; both is better.
+
+**Scenario 1 (M1): storage in the manor.** Goods can be stored within the manor.
+- [ ] A scenario (COVERS M1) puts goods into the manor (or a manor module, or a storage building that is part of the manor), reads the stock back, takes some out, and reads the stock after game days. It passes 3 of 3 real-game runs.
+- [ ] The way is named: the manor gets an inventory, or a granary or storehouse can be built as part of the manor, or a Lua storage layer is tied to the manor. The notes say which, and why the others failed.
+
+**Scenario 2 (M2): normal buildings inside the manor.** The player can wall in the city.
+- [ ] A scenario (COVERS M2, exclusive, real mouse) builds a manor that covers a test area, then places a burgage plot and an industry building inside it. With the workaround the placement succeeds; without it, it is refused (A/B). It passes 3 of 3 real-game runs.
+- [ ] The workaround is named: a data change, a property switch (collision off on manor parts), a hooked placement check, several manors per region, or a smaller area. The notes say which, and show that normal building outside the manor still works.
+
+**Survey and hygiene**
 - [ ] Notes answer Q1 to Q6, each with evidence (class names, property names, values) or a clear "not possible, because".
 - [ ] A class tree of the manor and its modules is recorded (names only, no assets in git).
 - [ ] The placement test shows if normal buildings are refused inside the manor area, and the refusing check is named if it can be found.
-- [ ] A storage test shows if a manor module can hold and report goods.
-- [ ] Stretch: at least one workaround is tested with a scenario (3 of 3 real-game runs) or the notes explain why none is possible with Lua, data and paks.
+- [ ] If neither scenario is possible, the notes explain why with evidence, and criteria M1 and M2 are marked blocked with that reason.
 - [ ] No game asset, key or copy of game data is in git.
-- [ ] New criteria are added to `docs/specs/10-invasion-testability/criteria.json` only if the work changes the Invasion Mode plan, with COVERS tags on the scenarios.

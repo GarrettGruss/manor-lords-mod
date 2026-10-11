@@ -676,6 +676,38 @@
     "spike_note": "method verified on the raid stand-in mod (3 of 3 real-game runs, 2026-10-10); the real mod still has to pass"
   },
   {
+    "id": "M1",
+    "title": "The manor can store goods: goods can be put in, kept and read back from the manor",
+    "method": "stock per manor module before and after a put and a take; stock survives game days",
+    "pillar": "defense",
+    "mark": "A",
+    "blocked_by": null,
+    "spikes": [
+      "S12"
+    ],
+    "upgrades": [],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": "",
+    "spike_note": "spec 12: the manor survey and workaround spikes are not done yet"
+  },
+  {
+    "id": "M2",
+    "title": "Normal buildings (burgage plots, industry) can be built inside the manor area, so the player can wall in the city",
+    "method": "placement inside the manor area succeeds with the workaround and is refused without it (A/B)",
+    "pillar": "defense",
+    "mark": "A",
+    "blocked_by": null,
+    "spikes": [
+      "S12"
+    ],
+    "upgrades": [],
+    "method_verified": false,
+    "verified_by": [],
+    "reason_human": "",
+    "spike_note": "spec 12: the manor survey and workaround spikes are not done yet"
+  },
+  {
     "id": "Q1",
     "title": "The game does not crash over a simulated 2-year run",
     "pillar": "quality",
