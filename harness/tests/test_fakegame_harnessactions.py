@@ -197,6 +197,74 @@ class HarnessActionsTests(unittest.TestCase):
             self.assertTrue(any(pattern.search(line) for line in game.log_lines()), game.log_lines())
 
 
+def add_banner_maker(game, player, fail=False):
+    """playEventMessage creates a banner widget like the real one: Text, textSecondary and two text blocks with GetText."""
+    made = []
+
+    def play(pawn, msg_type, primary, secondary):
+        made.append(msg_type.fname)
+        if fail:
+            return
+        main = game.obj("TextBlock")
+        bottom = game.obj("TextBlock")
+        game.method(main, "GetText", lambda _o, value=primary: game.text(value))
+        game.method(bottom, "GetText", lambda _o, value=secondary: game.text(value))
+        game.obj("genericAchievement_EventMessage_C", Text=game.text(primary), textSecondary=game.text(secondary),
+                 main_txt=main, bottomTxt=bottom, animFinished=False)
+
+    game.method(player, "playEventMessage", play)
+    return made
+
+
+class BannerTests(unittest.TestCase):
+    def test_show_message_calls_the_game_with_a_name_and_reads_the_widget_back(self):
+        with FakeGame() as game:
+            player, _ = start(game)
+            made = add_banner_maker(game, player)
+            send(game, 1, {"command": "show_message", "text": "Raid in 3 days", "subtext": "Prepare"})
+            answer = result(game, 1)
+            self.assertEqual((answer["ok"], answer["shown"], answer["text"], answer["main_text"]), (True, True, "Raid in 3 days", "Raid in 3 days"))
+            self.assertEqual((answer["subtext"], answer["bottom_text"]), ("Prepare", "Prepare"))
+            self.assertEqual(made, ["Default"])
+
+    def test_a_second_banner_is_the_new_widget_and_read_message_follows_it(self):
+        with FakeGame() as game:
+            player, _ = start(game)
+            add_banner_maker(game, player)
+            send(game, 1, {"command": "show_message", "text": "Raid in 3 days"})
+            send(game, 2, {"command": "show_message", "text": "Raid in 2 days"})
+            self.assertEqual(result(game, 2)["text"], "Raid in 2 days")
+            send(game, 3, {"command": "read_message"})
+            self.assertEqual((result(game, 3)["alive"], result(game, 3)["text"]), (True, "Raid in 2 days"))
+            send(game, 4, {"command": "list_messages"})
+            self.assertEqual(result(game, 4)["count"], 2)
+
+    def test_no_new_widget_is_reported_as_not_shown(self):
+        with FakeGame() as game:
+            player, _ = start(game)
+            add_banner_maker(game, player, fail=True)
+            send(game, 1, {"command": "show_message", "text": "Raid in 3 days"})
+            answer = result(game, 1)
+            self.assertEqual((answer["ok"], answer["shown"]), (True, False))
+
+    def test_read_message_without_a_banner_says_not_alive(self):
+        with FakeGame() as game:
+            start(game)
+            send(game, 1, {"command": "read_message"})
+            self.assertEqual((result(game, 1)["ok"], result(game, 1)["alive"]), (True, False))
+
+    def test_bad_text_is_refused_before_any_game_call(self):
+        with FakeGame() as game:
+            player, _ = start(game)
+            made = add_banner_maker(game, player)
+            bodies = [{"command": "show_message"}, {"command": "show_message", "text": "<b>x</b>"},
+                      {"command": "show_message", "text": "x" * 61}, {"command": "show_message", "text": "ok", "subtext": "bad;"}]
+            for number, body in enumerate(bodies, start=1):
+                send(game, number, body)
+                self.assertFalse(result(game, number)["ok"], body)
+            self.assertEqual(made, [])
+
+
 class NoEvalTests(unittest.TestCase):
     def test_the_mod_never_runs_text_as_code(self):
         source = MAIN_LUA.read_text(encoding="utf-8")
