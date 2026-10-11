@@ -55,7 +55,16 @@ Village: base fixture, a built Storehouse (72), Granary (80), Keep (57, finished
 3. **Only the Keep has a worker** (family 2): the Storehouse stays at 15:50, the Keep gets rubble 4, 10, 15 and food 216 6 to 9 over 3 steps, the crate falls by the same amount. 2 more steps: rubble 16, 20, then 25. About 5 units of rubble per 2 game days.
 4. The Keep worker with `buildingFunction` set back to 0 (`isStorageTypeBuilding` false): it still carries (216: 15 to 20 and rubble 15 to 16 in 2 steps). So the worker slot and the assignment are what matter, not the function flag.
 Goods that did not move in any step: wood 16, planks 17, stone 27 and 78 in crate 1 (100 each, put there by `give_item`), also with `storageLimitLarge` 250 on the Keep. Rubble (15) and food (216, 6, 172) moved.
-The reason is not known (it may be a rule of the worker for which goods count). The scenario uses rubble and counts only goods that arrive without a harness put.
+The reason is not known (it may be a rule of the worker for which goods count). In a later run the Keep worker did carry planks (17). The scenario counts all goods that arrive without a harness put.
+
+## Scenario result (`manor-storage-workers`)
+Mod: `HarnessManor` (`worker_slot`, `assign_worker`, `unassign_workers`, `worker_state`), `HarnessActions` version 13. Hidden scenario, real mouse, about 90 s.
+Steps: place a Keep and finish it (shortcut), check slots 0 and job 0, write the slots (3, job 45), wait 2 game days (the builders' last deliveries), control 2 game days with the slot and no worker (total goods unchanged),
+assign a family, wait 3 game days, check that 4 or more units arrived with no harness put, the family is still assigned, the region stock of the counted goods is unchanged, and take one unit of a carried good out.
+- First real run `manor-storage-workers-1`: failed the control (4 rubble arrived in the first 2 game days). A second probe (`workers-spike-2`) showed why: rubble 3 then 6 arrived with no slot (builders), then nothing for 6 more game days.
+  With the worker, planks (17) rose 1, 4, 7, 9, 12 and rubble stayed at 6. So the worker picks the good (planks here, rubble in the first spike). The test counts all goods and waits first.
+- 3 of 3 passed: `manor-storage-workers-v2-1` (7 units hauled), `-2` (7), `-3` (8). The control total stayed the same each time.
+Runs used by this work: 6 (2 probe runs, 1 failed scenario run, 3 passing runs; the counter went from 202 to 208).
 
 ## The other idea: a Storehouse or Granary as part of the manor
 A real Storehouse with a worker carries goods by the base rules (point 1: rubble 50, built and assigned with `assignFamily`). It needs no change. Membership in the manor is mod-defined (`HarnessManor`: a Storehouse or Granary

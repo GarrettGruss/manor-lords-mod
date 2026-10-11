@@ -686,13 +686,15 @@
       "S12"
     ],
     "upgrades": [],
-    "method_verified": false,
+    "method_verified": true,
     "verified_by": [
       "scenario manor-storage (hidden, real mouse; 3 of 3 real runs: manor-storage-1, -2, -3)",
-      "docs/specs/12-manor-exploration/implementation-notes/storage-m1.md"
+      "scenario manor-storage-workers (hidden, real mouse; 3 of 3 real runs: manor-storage-workers-v2-1, -2, -3)",
+      "docs/specs/12-manor-exploration/implementation-notes/storage-m1.md",
+      "docs/specs/12-manor-exploration/implementation-notes/worker-slots.md"
     ],
     "reason_human": "",
-    "spike_note": "requirement extended 2026-10-11: worker slot with storehouse/granary role; not yet verified"
+    "spike_note": "Base game: the Keep (type 57) can be placed and has an Inventory; goods added to it count in the region stock; a worker slot, its role and the assignment come from the DataTable buildingStats and Region:assignFamily, and a worker carries goods into a store. Harness shortcut: the test village cannot finish a Keep (40 builder units needed), so finish_manor_site writes Data.constructed and calls setRegionsManor. Mod-defined: the put and take commands and the 200 unit capacity; the write of the Keep row in buildingStats (job 45 WarehouseWorker, 3 slots, as a Storehouse; in memory only, the base game gives the Keep no worker). Verified with a control: with the slot and no worker no goods arrive, with one assigned family 7 to 8 units arrive in 3 game days with no harness put (the worker chooses the good: rubble or planks). Method verified on the Keep alone, not on a full castle with modules, and not for carrying goods out of the Keep."
   },
   {
     "id": "M2",
