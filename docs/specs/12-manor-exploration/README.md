@@ -1,6 +1,6 @@
 # Spec 12: Manor exploration (the manor system and its building rule)
 
-Status: spike done (2026-10-11, branch `feat/33-manor-spike`). M1 (storage) method verified, 3 of 3 real runs. M2 (building inside the manor area) NOT verified.
+Status: spike done (2026-10-11, branch `feat/33-manor-spike`). Requirement added 2026-10-11 (branch `feat/34-manor-storage-workers`): M1 also needs a worker slot with the storehouse or granary role (Q7); M1 is NOT verified again until that is tested. M1 (storage) method verified, 3 of 3 real runs. M2 (building inside the manor area) NOT verified.
 Findings are in `implementation-notes/` (`manor-survey.md`, `rule-search.md`, `storage-m1.md`, `workaround-m2.md`).
 
 ### Answers (short)
@@ -54,6 +54,7 @@ Q3. Storage: does the manor have an inventory or storage component? Does the kee
 Q4. Reuse: can a normal granary or storehouse be placed inside the manor area today (placement action, spec 07), or does the placement check refuse it?
 Q5. Per region: how many manors does a region allow? Where is that limit (a count on the region, a flag on the building type, a unique-building rule)?
 Q6. Collision: what does the placement check use for blocking (collision channels, overlap volumes, a "no build" mask, a navmesh or terrain tool)? Can it be switched off for parts of the manor from Lua (a property on the module, a component that can be disabled)?
+Q7. Worker slots: the game may need worker slots on storage buildings. Can a worker slot with the role of a storehouse or granary worker be created on the manor storage building (the Keep)? Can a family be assigned, and does that worker carry goods in or out of the store? If not, can a Storehouse or Granary count as part of the manor (mod-defined) and use its normal worker slots?
 
 ## Plan
 1. **Read-only survey (no game change).** With the bridge: list the manor classes and their functions and properties (`list_types`, `list_functions`, `find_objects`), and read the manor actor and its modules in a save that has a manor (check the fixtures; if none has one, build a fixture, see "Open"). Record the class tree and the footprint. Answers Q1 and Q3.
@@ -82,6 +83,7 @@ These are part of the Invasion Mode goal (spec 10, criteria M1 and M2). The curr
 
 **Scenario 1 (M1): storage in the manor.** Goods can be stored within the manor.
 - [x] A scenario (COVERS M1, `manor-storage`, runs `manor-storage-1` to `-3`) puts goods into the manor (or a manor module, or a storage building that is part of the manor), reads the stock back, takes some out, and reads the stock after game days. It passes 3 of 3 real-game runs.
+- [ ] (added 2026-10-11, spec 12 branch `feat/34-manor-storage-workers`) A worker slot with the storehouse or granary role exists on the manor storage building, a family is assigned to it, and that worker moves goods into or out of it within a few game days (ranges, not exact values). The same scenario (or `manor-storage-workers`) passes 3 of 3 real-game runs. If the Keep cannot get such a slot, the notes say so, and the alternative (a Storehouse or Granary treated as part of the manor, with its normal slots) is tried. Notes: `implementation-notes/worker-slots.md`.
 - [x] The way is named (a Lua store on the Keep inventory; the others failed, see `storage-m1.md`): the manor gets an inventory, or a granary or storehouse can be built as part of the manor, or a Lua storage layer is tied to the manor. The notes say which, and why the others failed.
 
 **Scenario 2 (M2): normal buildings inside the manor.** The player can wall in the city.

@@ -86,7 +86,7 @@ The current castle (manor) system does not allow a real defense (user note, 2026
 These two criteria are the acceptance scenarios of spec 12. Either one may be met; both is better.
 | ID | Criterion | Mark | Method needed |
 |---|---|---|---|
-| M1 | The manor can store goods: goods can be put in, kept and read back from the manor | A | stock per manor module before and after a put and a take; stock survives game days |
+| M1 | The manor can store goods: goods can be put in, kept and read back from the manor, and a storehouse or granary worker serves the store | A | stock per manor module before and after a put and a take; stock survives game days; the manor storage building has a worker slot with the same role as a storehouse or granary worker, a family is assigned, and that worker carries goods in or out of the store |
 | M2 | Normal buildings (burgage plots, industry) can be built inside the manor area, so the player can wall in the city | A | placement inside the manor area succeeds with the workaround and is refused without it (A/B) |
 
 ### Quality and feel
