@@ -30,7 +30,7 @@ Status words: `verified` = the effect was read back in the real game. `partial` 
 | read InBox / outbox | verified (read only) | `ctx.bridge.read_property` | `get InBox` |
 | read the HUD silver number | verified | `ctx.bridge.hud_treasury_text()` | `TreasuryNumeric:GetText()` |
 | save state to a new fixture | **not possible** | `save_state` raises | `PawnCPP:requestSaveFile` |
-| show a message (`playEventMessage`) | **not possible** (crash) | `show_message` raises | |
+| show a message (`playEventMessage`) | see the row "show a banner text" below (the first try crashed: a plain string was given for a `Name`) | `show_message` | |
 | read item data (`getItem`) | **not possible** (crash) | `get_item_info` raises | |
 | remove all families | not possible (no effect seen) | `remove_all_families` raises | `MLCheatManager:RemoveAllFamilies` |
 | spawn raiders / bandit camp | verified in spec 10: `spawnRaiders` +18 a squad, `spawnEliteRaiders` +54, `spawnBanditCamp` +18 (the cheat `SpawnRaidersOfType` still has no effect) | `spawn_raid`, `spawn_bandit_camp` | helper command, see spec 10 `spike-S2.md` |
@@ -43,7 +43,9 @@ Status words: `verified` = the effect was read back in the real game. `partial` 
 | spawn units of a chosen template on a side | verified: `spearMilitia` 32 units, `retinue_tier3` 36, `Brigands` 18; side `player` or `bandit` by the owner pawn | `spawn_units(side, template, count, dx, dy)` | `RTSMultiEngineCPP:spawnArmy` from Lua with the player or bandit pawn |
 | count living units, casualties and experience of those squads | verified (registry by squad id; `unitTemp` of a unit still reads None) | `battle_state(detail)`, `clear_battle(side)`, `set_squad_experience(squad, value)` | `spike-C1.md`, `spike-C2.md` |
 | hire a mercenary company | verified: silver falls by the cost, the offer leaves the list, units are there at once. The game does not check the cost; the action does | `mercenary_offers()`, `hire_mercenaries(company)` | `RTSMultiEngineCPP:hireMercs(company, pawn)` from Lua; `spike-P5.md` |
-| rebuild cost of a ruin | not possible from Lua: no reflected function and no loaded table gives a building cost (`spike-S6.md`) | none | |
+| rebuild cost of a ruin | verified in spec 10 (`rebuild-cost`, 3 of 3). No cost table can be read, but a construction site lists its goods: `building_sites(type)` gives `needs` (Dunghill: Planks 4). A rebuild is "demolish the ruin, place again" and costs the full amount in the base game. Needs `HarnessActions` version 11 | `building_sites`, `ruin_building(type, method)`, `demolish_ruins`, `set_site_cost(type, good, amount)` | helper commands; `constructionGoods`, `StartFire`, `demolish(true)`; `spike-R8.md` |
+| lower the goods a construction site needs | verified: `amt` 4 -> 2 on a site, the builders used 2 planks. Lower only | `set_site_cost` | write `constructionGoods[i].amt` |
+| show a banner text and read it back | verified: `playEventMessage(FName("Default"), text, text2)` creates `genericAchievement_EventMessage_C`; `Text` and `main_txt` hold the text. The banner fades. Needs `HarnessActions` version 10. Replaces the old "not possible (crash)" row: the crash came from a plain string for the Name parameter | `show_message(text, subtext)`, `read_message()`, `list_messages()` | helper command; `spike-S9.md` |
 
 ## Answers to the open questions of the spec
 

@@ -3,7 +3,7 @@
 Date: 2026-10-10. Branch `feat/27-sack-primitives`. Game: real game, base fixture (`saveGame_0`, Jagged_Cliffs), game paused unless noted.
 Tools: a keep-open game (run `s6-explore`) with the bridge for the first questions, then Lua in the new shared modules `HarnessSack` and `HarnessLoot` (hot reloaded), then the scenarios.
 Verdict: **all three primitives work from Lua, and every one is counted before and after with a read command.**
-S1 (a share is removed), R7 (loss per store is observed) and R3 (stand-in ledger) have a verified test method. R8 is verified for the ruin state only. The rebuild cost cannot be read.
+S1 (a share is removed), R7 (loss per store is observed) and R3 (stand-in ledger) have a verified test method. R8 was verified for the ruin state only here. The rebuild cost was read later, from a construction site (see `spike-R8.md`).
 
 ## The start village (base fixture)
 4 or 5 buildings (it differs between runs): one HitchingPost (type 30), two Supplies crates (type 88, they hold the goods), one HomelessTents (87), sometimes one more.

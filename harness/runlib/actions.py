@@ -12,6 +12,7 @@ Call actions while the game is paused. A running game changes silver and stock b
 
 from __future__ import annotations
 
+import re
 from typing import Any, Callable
 
 from .bridge_client import Bridge
@@ -37,11 +38,17 @@ DEFAULT_PLACE_FY = 0.65
 FLOAT_TOLERANCE = 0.01  # property floats are 32 bit
 MAX_NOTE_CHARS = 140
 DATATABLES = ("items", "units")
+# The banner text goes into the game as a string. The mod checks the same rules (mod/shared/HarnessUi).
+BANNER_TEXT_PATTERN = re.compile(r"^[A-Za-z0-9 ,.!:\-]+$")
+MAX_BANNER_TEXT = 60
+MAX_BANNER_SUBTEXT = 80
+MAX_BUILDING_TYPE = 300  # same limits as mod/shared/HarnessBuild
+MAX_GOOD_ID = 200
+RUIN_METHODS = ("fire", "collapse")
 
 NOT_POSSIBLE = {
     "save_state": "PawnCPP:requestSaveFile writes into the user's real save folder, even when the run has a private LOCALAPPDATA. "
                   "It overwrote the user's saveGame_9 in the probe. Make fixtures with harness/tools/fixtures.py instead.",
-    "show_message": "PawnCPP:playEventMessage crashed the game when called through the bridge (spec 07 catalog).",
     "get_item_info": "RTSMultiEngineCPP:getItem crashed the game when called through the bridge (spec 07 catalog).",
     "remove_all_families": "MLCheatManager:RemoveAllFamilies changed no population or family count in the probe.",
     "spawn_raiders": "MLCheatManager:SpawnRaidersOfType changed no unit count (checked again in spec 10). Use spawn_raid.",
@@ -610,6 +617,92 @@ class Actions:
         after = len(self.popup_state()["open"])
         return self._record("close_popups", {}, after == 0, before, after,
                             note=f"closed {answer['closed']}" if answer["closed"] else "")
+
+    # ---- construction sites and ruins (spec 10, spike R8) ----
+
+    def building_sites(self, type_id: int | None = None) -> dict:
+        """The buildings of the village (one type if given): each with `built`, `rubble`, `burning` and `needs` (goods a site still needs).
+
+        `counts` (when a type is given) has built, sites and rubble. Read only. Placing a site needs place_building (real OS mouse).
+        """
+        fields = {} if type_id is None else {"type": check_building_type(type_id)}
+        return self._command("building_sites", **fields)
+
+    def ruin_building(self, type_id: int, method: str = "fire") -> dict:
+        """Burn or collapse the first built building of a type. Verified: it becomes Rubble (type 75) and the counts change by one."""
+        check_building_type(type_id)
+        if method not in RUIN_METHODS:
+            raise ActionError(f"ruin_building: method must be one of {RUIN_METHODS}")
+        answer = self._command("ruin_building", type=type_id, method=method)
+        ok = answer["after"]["built"] == answer["before"]["built"] - 1 and answer["after"]["rubble"] == answer["before"]["rubble"] + 1
+        record = self._record("ruin_building", {"type_id": type_id, "method": method}, ok, answer["before"]["built"], answer["after"]["built"],
+                              note=f"rubble {answer['before']['rubble']} -> {answer['after']['rubble']}")
+        record["answer"] = answer
+        return record
+
+    def demolish_ruins(self) -> dict:
+        """Demolish every ruin of the village. Verified: the rubble count falls to 0 and the place is free for a new site."""
+        answer = self._command("demolish_ruins")
+        record = self._record("demolish_ruins", {}, answer["after"] == 0, answer["before"], answer["after"])
+        record["answer"] = answer
+        return record
+
+    def set_site_cost(self, type_id: int, good: int, amount: int) -> dict:
+        """Lower the amount of one good that a construction site needs (never raise it). Verified: the builders then use the lower amount
+        (4 planks -> 2: the stock fell by 2 when the building was built). This is the base for a partial rebuild cost."""
+        check_building_type(type_id)
+        if not isinstance(good, int) or not 0 <= good <= MAX_GOOD_ID:
+            raise ActionError(f"set_site_cost: good must be an item number from 0 to {MAX_GOOD_ID}")
+        if not isinstance(amount, int) or amount < 0:
+            raise ActionError("set_site_cost: amount must be a whole number, 0 or more")
+        answer = self._command("set_site_cost", type=type_id, good=good, amount=amount)
+        now = {need["good"]: need["amount"] for need in answer["needs"]}
+        record = self._record("set_site_cost", {"type_id": type_id, "good": good, "amount": amount}, now.get(good) == amount,
+                              answer["before"], now.get(good))
+        record["answer"] = answer
+        return record
+
+    # ---- UI banner (spec 10, spike S9, criterion T4) ----
+
+    def show_message(self, text: str, subtext: str = "") -> dict:
+        """Show a banner ("Raid in 3 days") with PawnCPP:playEventMessage and read the text back from the widget.
+
+        Verified in the real game: a new `genericAchievement_EventMessage_C` appears and its `Text` and `main_txt` hold the text.
+        The screenshot shows the banner at the top of the screen. The old banners stay in memory for a while, so the mod
+        returns the new widget. Allowed characters: letters, digits, space and , . ! : - (the mod refuses others).
+        """
+        check_banner_text("text", text, MAX_BANNER_TEXT, required=True)
+        check_banner_text("subtext", subtext, MAX_BANNER_SUBTEXT, required=False)
+        answer = self._command("show_message", text=text, subtext=subtext)
+        ok = answer["shown"] and answer.get("text") == text and answer.get("main_text") == text
+        record = self._record("show_message", {"text": text}, ok, None, answer.get("main_text"), note=f"banner {text!r}")
+        record["answer"] = answer
+        return record
+
+    def read_message(self) -> dict:
+        """The text of the banner that show_message made last: {"alive", "text", "subtext", "main_text", "finished"}. Read only."""
+        return self._command("read_message")
+
+    def list_messages(self) -> dict:
+        """The banners that are still in memory: {"count", "messages"}. Read only."""
+        return self._command("list_messages")
+
+
+def check_building_type(type_id: int) -> int:
+    if not isinstance(type_id, int) or isinstance(type_id, bool) or not 0 <= type_id <= MAX_BUILDING_TYPE:
+        raise ActionError(f"building type must be a number from 0 to {MAX_BUILDING_TYPE}, got {type_id!r}")
+    return type_id
+
+
+def check_banner_text(label: str, value: str, max_chars: int, required: bool) -> None:
+    if not value:
+        if required:
+            raise ActionError(f"show_message: {label} is required")
+        return
+    if len(value) > max_chars:
+        raise ActionError(f"show_message: {label} is longer than {max_chars} characters")
+    if not BANNER_TEXT_PATTERN.match(value):
+        raise ActionError(f"show_message: {label} may use only letters, digits, space and , . ! : -")
 
 
 def dead_count_delta(answer: dict) -> int:

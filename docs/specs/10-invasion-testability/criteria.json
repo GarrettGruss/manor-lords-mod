@@ -77,9 +77,13 @@
     "upgrades": [
       "U7"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "scenario ui-countdown (3 of 3 real runs: ui-countdown-1, -2, -3)",
+      "implementation-notes/spike-S9.md"
+    ],
+    "reason_human": "",
+    "spike_note": "test method verified (2026-10-10): PawnCPP:playEventMessage(FName, text, text2) shows the banner 'Raid in N days'; the widget text is read back and a screenshot shows it. Partly human: how it looks is Q4. The banner fades after a few seconds, so the mod must show it again for each day. The real mod still has to call it"
   },
   {
     "id": "T5",
@@ -334,10 +338,14 @@
     "upgrades": [
       "U1"
     ],
-    "method_verified": false,
-    "verified_by": [],
+    "method_verified": true,
+    "verified_by": [
+      "scenario rebuild-cost (hidden, real mouse; 3 of 3 real runs: rebuild-cost-1, -2, -3)",
+      "scenario sack-ruins (ruin state)",
+      "implementation-notes/spike-R8.md"
+    ],
     "reason_human": "",
-    "spike_note": "state half verified, rebuild cost NOT (sack-ruins, 3 of 3 runs, 2026-10-10): fire makes a building rubble (type 75, IsRubble, hp 0), it stays in the list and its goods are gone. No reflected function or loaded table gives the rebuild cost of a building, and a construction site needs a building placed with the OS mouse (spike-S6.md). Stays unverified until the cost can be read"
+    "spike_note": "verified (2026-10-10): fire makes rubble (type 75); the rebuild is 'demolish the ruin, place the building again'; the new site lists its goods in constructionGoods (Dunghill: Planks 4, same as the first build); the mod can lower the amount (4 -> 2) and the builders then use the lower amount. The base game has no discount: the discount rule is the mod's. Needs the real OS mouse, so the scenario is hidden"
   },
   {
     "id": "C1",
@@ -547,7 +555,8 @@
     "upgrades": [],
     "method_verified": false,
     "verified_by": [],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "NOT verified (2026-10-10, spike-P3.md): no refugee function or event exists. Region:growPopulation() changed nothing in the start village (no housing, living space -5), and housing (burgage plots) cannot be placed with one click. A save with a built village or a plot-placing action is needed"
   },
   {
     "id": "P4",
