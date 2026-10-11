@@ -347,16 +347,22 @@
     "method": "casualties by type, N-run A/B",
     "blocked_by": null,
     "spikes": [
-      "S3"
+      "S3",
+      "S7"
     ],
     "upgrades": [
       "U1",
       "U4",
       "U6"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "counters-ab",
+      "suite counters-ab",
+      "docs/specs/10-invasion-testability/implementation-notes/spike-C1.md"
+    ],
+    "reason_human": "",
+    "spike_note": "method verified in the real game (counters-ab, 3 of 3 runs, and the suite counters-ab: 8 runs, spear squad against sword squad versus heavy squad against sword squad, player loss rate 0.72 against 0.15, different, p 0.029, expectation met, 2026-10-10): typed squads on both sides with spawnArmy, casualties by template and side, N-run A/B. LIMIT: the base game has no horse or horse archer template (no template has a mount), so spearmen against horse cannot be tested; the method covers the templates that exist (spear, sword, polearm, bow, heavy retinue, brigands, mercenaries). The mod must add its own horse templates (pak) and the same scenario then runs with them"
   },
   {
     "id": "C2",
@@ -366,14 +372,19 @@
     "method": "`combatExperience` before and after",
     "blocked_by": null,
     "spikes": [
-      "S3"
+      "S3",
+      "S7"
     ],
     "upgrades": [
       "U1"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "veterancy",
+      "docs/specs/10-invasion-testability/implementation-notes/spike-C2.md"
+    ],
+    "reason_human": "",
+    "spike_note": "method verified in the real game (veterancy, 3 of 3 runs, 2026-10-10): combatExperience rises in a fight (mean 0.4 to 0.6 after fight 1, 0.9 to 1.3 after fight 2 for the same units by unit id), is kept for a game day, and can be written. Fresh units start at 0 whatever the template row says"
   },
   {
     "id": "C3",
@@ -389,9 +400,13 @@
       "U2",
       "U7"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "unit-data",
+      "docs/specs/10-invasion-testability/implementation-notes/spike-S7.md"
+    ],
+    "reason_human": "",
+    "spike_note": "method verified in the real game (unit-data, 3 of 3 runs, 2026-10-10): DT_UnitTemplates (there is no DT_units) is listed with 6 number fields on 25 rows; writing maxSize 32 -> 10 changed the next squad to 10 units. There is no hit point field. Numbers only; strings, arrays and a pak change of this table are not tried"
   },
   {
     "id": "S1",
@@ -560,15 +575,20 @@
     "method": "hire action (`HiredMercenaryCompanies`), units",
     "blocked_by": null,
     "spikes": [
-      "S2"
+      "S2",
+      "S7"
     ],
     "upgrades": [
       "U2",
       "U7"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "mercenary-hire",
+      "docs/specs/10-invasion-testability/implementation-notes/spike-P5.md"
+    ],
+    "reason_human": "",
+    "spike_note": "method verified in the real game (mercenary-hire, 3 of 3 runs, 2026-10-10): hireMercs on an offered company pays exactly the cost, removes the offer and adds its squads at once (36 to 72 units). The game does not check the cost; the action does. Upkeep is not verified"
   },
   {
     "id": "P6",
