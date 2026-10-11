@@ -81,6 +81,14 @@ Legend: A automatable, P partly, H human. "Method" is what the harness must be a
 | D2 | A warlord who escaped returns stronger | A | state carried between raids |
 | D3 | At top tier raiders retreat only when the leader dies | A | force and observe |
 
+### Defense and the manor
+The current castle (manor) system does not allow a real defense (user note, 2026-10-11): it cannot store goods, and normal buildings cannot be built inside it, so the player cannot wall in the city.
+These two criteria are the acceptance scenarios of spec 12. Either one may be met; both is better.
+| ID | Criterion | Mark | Method needed |
+|---|---|---|---|
+| M1 | The manor can store goods: goods can be put in, kept and read back from the manor | A | stock per manor module before and after a put and a take; stock survives game days |
+| M2 | Normal buildings (burgage plots, industry) can be built inside the manor area, so the player can wall in the city | A | placement inside the manor area succeeds with the workaround and is refused without it (A/B) |
+
 ### Quality and feel
 | ID | Criterion | Mark | Method needed |
 |---|---|---|---|
@@ -124,6 +132,7 @@ Each spike answers one "can the harness do this" question on the base game, with
 - **S8 Pop-ups and stalls (done, `spike-S8.md`):** find the function that closes the "Hunger!" and similar pop-ups, or a way to prevent them, so long scenarios do not stall. Result: the Accept handler of `popupMessageWidget_C` closes the pop-up and the game resumes at the old speed (action `close_popups`). Feeding the village prevents the hunger pop-up. A village that is not fed is defeated at day 137 (the clock then stops for good). Two types seen: `hunger`, `cold`.
 - **S9 UI countdown:** can a widget be created from Lua, or can the alert system carry a countdown text? What custom text is possible without a pak?
 - **S10 Performance (done, `spike-S10.md`):** spawn 300 units and measure the game clock rate at 1x and 8x.
+- **S12 Manor (spec 12):** survey the manor system (modules, planner, the building rule, storage) and test the workarounds for criteria M1 and M2. Findings go to the notes of spec 12.
 - **S11 Baron model:** the base game has a baron that acts as a hostile off-map AI (user note, 2026-10-10). Find how it decides, sends and controls its forces (demands, claims, armies, diplomacy state). Can invaders reuse it as the adversary model (a new baron or faction with its own objectives)? This could replace a custom raid AI (S1, S4) and give outposts a base model (O1 to O4). Write findings to `implementation-notes/baron-model.md`.
 
 ## Plan
@@ -133,7 +142,7 @@ Each spike answers one "can the harness do this" question on the base game, with
    units can be counted by side, role, region and loot in about 10 ms; units can be killed with `just_die`; 1x clock rate stays at 1.02 up to 661 units.
    Not possible: unit type or template, raider versus bandit split, unit health, choosing raid type or size, announcement of a raid in the base game, loot on the ground (not found).
    S4, S7 and S9 are still open (S6 is done, see below; S8 is done). Coverage after these spikes: 3 of 37 A and P criteria verified (T2, R2, Q2), see `coverage-after-raids.md`.
-   Spikes S1 to S11 in the real game (one agent at a time uses the game), with results in notes. Update the matrix marks and `METHOD_VERIFIED` for each criterion.
+   Spikes S1 to S12 in the real game (one agent at a time uses the game), with results in notes. Update the matrix marks and `METHOD_VERIFIED` for each criterion.
 3. Build U1 to U6, U9 and U10 in order of what the spikes show works. Unit tests with fake bridges. Each gets a real scenario on a stand-in.
 4. Reference scenarios (stand-ins on the base game) for every A and P criterion that has a method, each tagged with `COVERS`.
    - U4 built (2026-10-10): `run.py --pak/--env`, suite `variants`, `suitelib/stats.py`, the A/B report and the `expect` rule, `ctx.metric`. Unit tested with a seeded stand-in; NOT verified: a real A/B on the game and a real pak in a run. Notes: `implementation-notes/ab-statistics.md`.
