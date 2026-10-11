@@ -19,7 +19,7 @@ A spike answers one question about the engine with evidence. Write the question 
 - Touch UObjects only on the game thread. The bridge does this for you.
 - One agent uses the game at a time. End every game process you start. Check `tasklist`.
 - Read elements of a property array directly. Never call `:get()` on a struct element of a property array, and do not read a struct that a function returns by value (`getSquadByID`): both crashed the game inside UE4SS, and a pcall cannot catch it. Call `:get()` only on function return values (spike S11).
-- Never write to the user's saves. Runs use a private copy of a fixture save.
+- Never write to the user's saves. A run installs its fixture as a new slot and removes it again (spec 06, part D); do not touch other slots.
 
 ## Method
 - Change one thing, read before and after, write both numbers down. Count things (units, buildings, stock) instead of trusting a return value.
