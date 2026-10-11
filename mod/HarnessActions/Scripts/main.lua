@@ -67,7 +67,11 @@
 --   {"command":"lord_challenge","lord":1,"target":0}        initChallenge over the target's current region
 --   {"command":"lord_claim","lord":1,"target":0}            layClaim on the target's current region
 --   {"command":"lord_spawn_army","lord":1,"template":"spearMilitia","count":2,"dx":0,"dy":0}   spawnArmy with the lord as owner
---   {"command":"spawn_ai_lord","name":"Norse Warlord"}      spawnNewAILord      {"command":"lord_start_ai","lord":5,"value":1}   startAI
+--   {"command":"spawn_ai_lord","name":"Norse Warlord","build":1}   spawnNewAILord ("build":1 = can build)
+--   {"command":"lord_start_ai","lord":5,"value":1,"build":1}       startAI
+--   Dynamic lords (spike S13): {"command":"regions_state"}   every region: owner, settled, type, level, buildings, families (read only)
+--   {"command":"lord_relations","lord":3}                    addPawnRelations (a new lord has no relation rows)
+--   {"command":"lord_take_region","lord":3,"region":"Goldhof"}  write Region.ownerPawn
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -85,7 +89,7 @@ local build = require("HarnessBuild")
 local manor = require("HarnessManor")
 local lordsCmd = require("HarnessLords")
 
-local VERSION = "14"
+local VERSION = "15"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -182,6 +186,8 @@ local function parseRequest(raw)
         target = tonumber(raw:match('"target"%s*:%s*(%d+)')),
         log = tonumber(raw:match('"log"%s*:%s*(%d+)')),
         name = raw:match('"name"%s*:%s*"([%w_ ]+)"'),
+        region = raw:match('"region"%s*:%s*"([%w_]+)"'),
+        build = tonumber(raw:match('"build"%s*:%s*(%d+)')),
     }
 end
 
@@ -342,6 +348,9 @@ local COMMANDS = {
     lord_spawn_army = lordsCmd.lord_spawn_army,
     spawn_ai_lord = lordsCmd.spawn_ai_lord,
     lord_start_ai = lordsCmd.lord_start_ai,
+    regions_state = lordsCmd.regions_state,
+    lord_relations = lordsCmd.lord_relations,
+    lord_take_region = lordsCmd.lord_take_region,
 }
 
 local function runCommand(number, raw)
