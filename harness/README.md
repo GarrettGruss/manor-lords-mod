@@ -90,6 +90,12 @@ The module `HarnessBattle` keeps a registry of the squads it spawned or hired, s
 Scenarios: `unit-data` (C3), `mercenary-hire` (P5), `veterancy` (C2), `counters-ab` (C1). Suite `harness/suites/counters-ab.json` compares a spear squad and a heavy squad against the same bandit squad (`player_loss_rate`).
 The base game has no horse unit in its templates, so C1 covers the templates that exist (spear, sword, polearm, bow, heavy retinue). Tests: `test_runlib_battle.py`, `test_fakegame_harnessbattle.py`, `test_fakegame_battle_scenarios.py`. Notes: `spike-S7.md`, `spike-P5.md`, `spike-C2.md`, `spike-C1.md`.
 
+### Banner text, construction sites and ruins (spec 10, S9 and R8)
+`ctx.actions.show_message(text, subtext)` shows a banner (`PawnCPP:playEventMessage` with an `FName` type) and reads the text back from the widget; `read_message()` and `list_messages()` only read. Text: letters, digits, space and `, . ! : -`, at most 60 characters.
+Scenario `ui-countdown` (COVERS T4): "Raid in N days" for N = 4, 3, 2, widget text read back, screenshot for each N. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S9.md`.
+`building_sites(type)` lists the goods that a construction site needs; `ruin_building(type, method)` burns or collapses a built building; `demolish_ruins()`; `set_site_cost(type, good, amount)` lowers the cost of a site.
+Scenario `rebuild-cost` (COVERS R8, hidden: it uses the real OS mouse through `place_building`, run it alone with `run.py --scenario rebuild-cost` and a visible game window, about 85 s). Notes: `spike-R8.md`.
+
 ### Pop-ups and soak runs (spec 10, S8 and Q1)
 An open pop-up ("Hunger!") pauses the game until Accept is pressed. `ctx.actions.close_popups()` (command `close_popups` of `HarnessActions`) presses Accept on every open pop-up, and the game goes on at the old speed.
 `ctx.popups()` does the same without checks and remembers the types (`ctx.popups.closed`). Use it as `on_poll` of `ctx.run_until`. `ctx.actions.popup_state()` only reads. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S8.md`.
@@ -309,7 +315,7 @@ A failed read-back also adds a failed assertion, so the verdict is `fail`. Call 
 | `place_building(type_id, fx=0.65, fy=0.65)` | One more building of that type in the player region. **Uses the OS mouse and keyboard focus: do not use it while a person works on this computer.** The window comes to the front, the real cursor clicks the ground at that fraction of the window, and the cursor goes back. Aborts with an error if the game is not the foreground window or no ground is under the cursor. The player needs the goods of the building (HitchingPost 30 is free); a spot that overlaps another building places nothing. Scenario `place-building`. Code: `harness/runlib/osinput.py` |
 | `send_letter(["welcome_from_hildebolt"], sender=1)` | an AI lord sends a letter. Needs the mod `HarnessActions` |
 
-`save_state`, `show_message`, `get_item_info`, `remove_all_families` and `spawn_raiders` raise `ActionNotPossible` with the reason. An unknown name does too.
+`save_state`, `get_item_info`, `remove_all_families` and `spawn_raiders` raise `ActionNotPossible` with the reason. An unknown name does too.
 The runner turns it into a failed scenario (assertion `action is possible`), not a crash. `ctx.actions.available()` lists the names.
 Status, numbers and caveats of every action: `docs/specs/07-feature-test-kit/implementation-notes/actions-catalog.md`.
 
