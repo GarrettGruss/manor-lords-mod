@@ -32,8 +32,30 @@ function(fg)
         fg.set_method(region, "getTotalNumFamilies", function() return 0 end)
     end
     world.empty = empty
-    local player = fg.object("MyPawnCPP_BP3_C", { isMainPlayer = true, currentRegion = home, enemies = fg.array({}, { wrap = false }) })
+    -- Like the real game (S13 part 2): finalizeClaim sets the owner and makes a planning component only for a region without an owner.
+    local function claimMethods(pawn)
+        fg.set_method(pawn, "layClaim", function(self, region) fg.array_add(self.claims, { Region = region, DaysLeft = 14 }) end)
+        fg.set_method(pawn, "finalizeClaim", function(self, region)
+            if region.ownerPawn == nil then
+                region.ownerPawn = self
+                region.CityPlanningComponent = fg.object("CityPlanningComponent", {})
+                world.planningMade = world.planningMade + 1
+            end
+        end)
+        fg.set_method(pawn, "settleRegion", function(self, region, camp, supply, kind, outpost)
+            world.settled = { camp = camp, supply = supply, kind = kind }
+            region.isSettled = true
+            region.settlementType = kind
+        end)
+    end
+    world.planningMade = 0
+    for _, region in ipairs({ home, empty }) do
+        fg.set_method(region, "getSettledRegionCenter", function() return { X = 10.0, Y = 20.0, Z = 30.0 } end)
+    end
+    local player = fg.object("MyPawnCPP_BP3_C", { isMainPlayer = true, currentRegion = home, enemies = fg.array({}, { wrap = false }),
+                                                   claims = fg.array({}, { wrap = false }) })
     fg.set_method(player, "K2_GetActorLocation", function() return { X = 0.0, Y = 0.0, Z = 0.0 } end)
+    claimMethods(player)
 
     local withPlayer
     local lord
@@ -47,7 +69,7 @@ function(fg)
         end)
         fg.set_method(pawn, "declarePeace", function(self, target) withPlayer.Tags = fg.array({}, { wrap = false }) end)
         fg.set_method(pawn, "startAI", function(self, speed, canBuild) world.startedAt = speed end)
-        fg.set_method(pawn, "layClaim", function(self, region) fg.array_add(self.claims, { Region = region, DaysLeft = 5 }) end)
+        claimMethods(pawn)
         return pawn
     end
     local baron = lord("Hildebolt von Berenreute", { "off_map_lord", "villain" })
@@ -188,7 +210,7 @@ class SteeringTests(LordsTestCase):
 
 
 class DynamicLordTests(LordsTestCase):
-    """Spike S13. The real game crashed on settleRegion from Lua (3 of 3), so only the safe commands are tested here."""
+    """Spike S13. The real game crashed on settleRegion for a region without an owner (3 of 3), so the command refuses that."""
 
     def test_regions_state_lists_owner_and_settled(self):
         rows = {row["region"]: row for row in self.send("regions_state")["regions"]}
@@ -206,6 +228,38 @@ class DynamicLordTests(LordsTestCase):
         taken = self.send("lord_take_region", lord=answer["lord"], region=empty)
         self.assertTrue(taken["ok"], taken)
         self.assertEqual(taken["after"]["owner"], answer["object"])
+
+    def test_a_lord_receives_a_region_of_the_player_and_gets_a_new_owner_claim(self):
+        lord = self.send("spawn_ai_lord", name="Receiver", build=1)["lord"]
+        self.assertTrue(self.send("claim_region", target=0, region=self.empty_name(), finalize=1)["ok"])
+        self.assertEqual(self.world.planningMade, 1)
+        answer = self.send("lord_receive_region", lord=lord, region=self.empty_name())
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["steps_done"], ["clear owner", "claim"])
+        self.assertEqual(self.world.planningMade, 2)
+        self.assertIsNotNone(answer["region"]["owner"])
+        self.assertNotEqual(answer["region"]["owner"], self.send("regions_state")["regions"][0].get("owner"))
+
+    def test_a_lord_founds_a_village_in_a_free_region_only(self):
+        lord = self.send("spawn_ai_lord", name="Founder", build=1)["lord"]
+        answer = self.send("lord_found_village", lord=lord, region=self.empty_name(), type=1, supply=2)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["steps_done"], ["claim", "settle"])
+        self.assertTrue(answer["region"]["settled"])
+        self.assertEqual((self.world.settled.supply, self.world.settled.kind), (2, 1))
+        self.assertEqual((self.world.settled.camp.Translation.X, self.world.settled.camp.Translation.Y), (10, 20))
+        again = self.send("lord_found_village", lord=lord, region=self.empty_name())
+        self.assertIn("already has an owner", again["error"])
+
+    def test_settle_is_refused_for_a_region_the_pawn_does_not_own(self):
+        answer = self.send("settle_region", target=0, region=self.empty_name())
+        self.assertIn("does not own", answer["error"])
+        self.assertIsNone(getattr(self.world, "settled", None))
+        self.send("claim_region", target=0, region=self.empty_name(), finalize=1)
+        self.assertIn("type must be", self.send("settle_region", target=0, region=self.empty_name(), type=9)["error"])
+
+    def empty_name(self):
+        return self.send("regions_state")["regions"][1]["region"]
 
     def test_an_unknown_region_is_refused(self):
         self.assertIn("no region named", self.send("lord_take_region", lord=1, region="Nowhere")["error"])
