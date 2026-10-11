@@ -45,6 +45,7 @@ MAX_BANNER_SUBTEXT = 80
 MAX_BUILDING_TYPE = 300  # same limits as mod/shared/HarnessBuild
 MAX_GOOD_ID = 200
 RUIN_METHODS = ("fire", "collapse")
+MAX_MANOR_AMOUNT = 1000  # same limits as mod/shared/HarnessManor
 
 NOT_POSSIBLE = {
     "save_state": "PawnCPP:requestSaveFile writes into the user's real save folder, even when the run has a private LOCALAPPDATA. "
@@ -662,6 +663,53 @@ class Actions:
         record["answer"] = answer
         return record
 
+    # ---- manor (spec 12, criterion M1) ----
+
+    def manor_state(self) -> dict:
+        """The manor modules of the village: `modules` (id, type, built, goods, total, capacity, is_region_manor) and `region_manor_id`. Read only."""
+        return self._command("manor_state")
+
+    def finish_manor_site(self, type_id: int = 57) -> dict:
+        """Harness shortcut, NOT a base game action: finish a Keep site at once and register it as the manor of the region.
+
+        The test village (5 families) never finishes a Keep by itself: the game says "not_enough_workers" (it needs 40 builder units).
+        The mod writes `Data.constructed = true` and calls `setRegionsManor`. Checked: the module reads as built and is the region manor.
+        """
+        check_building_type(type_id)
+        answer = self._command("finish_manor_site", type=type_id)
+        module = answer["module"]
+        return self._record("finish_manor_site", {"type_id": type_id}, module["built"] and module["is_region_manor"], False, module["built"],
+                            note="shortcut: Data.constructed + setRegionsManor")
+
+    def manor_put(self, good: int, amount: int, manor: int | None = None) -> dict:
+        """Put goods into a built manor module (mod-defined store on the building inventory). Verified when the module and the region stock both rise by `amount`."""
+        check_manor_goods(good, amount)
+        fields = {} if manor is None else {"manor": manor}
+        answer = self._command("manor_put", good=good, amount=amount, **fields)
+        ok = answer["after"] == answer["before"] + amount and answer["stock_after"] == answer["stock_before"] + amount
+        record = self._record("manor_put", {"good": good, "amount": amount}, ok, answer["before"], answer["after"],
+                              note=f"region stock {answer['stock_before']} -> {answer['stock_after']}")
+        record["answer"] = answer
+        return record
+
+    def manor_take(self, good: int, amount: int, manor: int | None = None) -> dict:
+        """Take goods out of a manor module. Verified when the module and the region stock both fall by `amount`."""
+        check_manor_goods(good, amount)
+        fields = {} if manor is None else {"manor": manor}
+        answer = self._command("manor_take", good=good, amount=amount, **fields)
+        ok = answer["after"] == answer["before"] - amount and answer["stock_after"] == answer["stock_before"] - amount
+        record = self._record("manor_take", {"good": good, "amount": amount}, ok, answer["before"], answer["after"],
+                              note=f"region stock {answer['stock_before']} -> {answer['stock_after']}")
+        record["answer"] = answer
+        return record
+
+    def manor_stock(self, good: int, manor: int | None = None) -> int:
+        """Units of one good in a manor module (the first built one, or the one with this id). Read only."""
+        for module in self.manor_state()["modules"]:
+            if (manor is None and module["built"]) or module["id"] == manor:
+                return next((entry["amount"] for entry in module["goods"] if entry["good"] == good), 0)
+        raise ActionError(f"manor_stock: no {'built ' if manor is None else ''}manor module{'' if manor is None else f' with id {manor}'}")
+
     # ---- UI banner (spec 10, spike S9, criterion T4) ----
 
     def show_message(self, text: str, subtext: str = "") -> dict:
@@ -686,6 +734,13 @@ class Actions:
     def list_messages(self) -> dict:
         """The banners that are still in memory: {"count", "messages"}. Read only."""
         return self._command("list_messages")
+
+
+def check_manor_goods(good: int, amount: int) -> None:
+    if not isinstance(good, int) or isinstance(good, bool) or not 0 <= good <= MAX_GOOD_ID:
+        raise ActionError(f"good must be an item number from 0 to {MAX_GOOD_ID}, got {good!r}")
+    if not isinstance(amount, int) or isinstance(amount, bool) or not 1 <= amount <= MAX_MANOR_AMOUNT:
+        raise ActionError(f"amount must be a whole number from 1 to {MAX_MANOR_AMOUNT}, got {amount!r}")
 
 
 def check_building_type(type_id: int) -> int:

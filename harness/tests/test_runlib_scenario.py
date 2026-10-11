@@ -212,6 +212,7 @@ class RegistryTest(unittest.TestCase):
         self.assertIn("selftest-action", list_scenarios(include_hidden=True))
         self.assertIn("selftest-crash", list_scenarios(include_hidden=True))
         self.assertIn("probe-actions", list_scenarios(include_hidden=True))
+        self.assertIn("manor-storage", list_scenarios(include_hidden=True))  # real mouse: hidden
         self.assertIn("place-building", list_scenarios(include_hidden=True))  # takes over the real mouse: hidden on purpose
 
     def test_every_scenario_has_a_limit_under_the_cap(self):

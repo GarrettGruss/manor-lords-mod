@@ -155,6 +155,10 @@ function array_mt.__index(self, key)
     if key == nil then error("indexed a TArray with a nil key", 2) end
     local d = array_store[self]
     if key == "GetArrayNum" then return function() return array_count(d) end end
+    if key == "Empty" then
+        -- As in the game (seen on a building border array): the array keeps its place and loses its items.
+        return function() for i = #d.items, 1, -1 do d.items[i] = nil end end
+    end
     if key == "ForEach" then
         -- As in the game, the callback gets (index, wrapper). Returning true stops the loop.
         return function(_, callback)

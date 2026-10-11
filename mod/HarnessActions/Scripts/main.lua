@@ -51,6 +51,11 @@
 --   {"command":"ruin_building","type":121,"method":"fire"}   burn or collapse the first built building of that type (it becomes Rubble)
 --   {"command":"demolish_ruins"}                            demolish every ruin of the village
 --   {"command":"set_site_cost","type":121,"good":17,"amount":2}   lower the amount of a good that a construction site needs (never raise)
+--   Manor commands (spec 12, criterion M1, see mod/shared/HarnessManor):
+--   {"command":"manor_state"}                               the manor modules of the village: built, goods, capacity, region manor
+--   {"command":"finish_manor_site","type":57}               harness shortcut: finish a Keep site at once and register it as the region manor
+--   {"command":"manor_put","good":27,"amount":20}           add goods to a built manor module (refused above the capacity of 200 units)
+--   {"command":"manor_take","good":27,"amount":5}           remove goods from a manor module (refused when it holds less)
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -65,8 +70,9 @@ local loot = require("HarnessLoot")
 local battle = require("HarnessBattle")
 local ui = require("HarnessUi")
 local build = require("HarnessBuild")
+local manor = require("HarnessManor")
 
-local VERSION = "11"
+local VERSION = "12"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -143,6 +149,7 @@ local function parseRequest(raw)
         people_pct = tonumber(raw:match('"people_pct"%s*:%s*(%d+)')),
         good = tonumber(raw:match('"good"%s*:%s*(%d+)')),
         store = tonumber(raw:match('"store"%s*:%s*(%d+)')),
+        manor = tonumber(raw:match('"manor"%s*:%s*(%d+)')),
         pile = tonumber(raw:match('"pile"%s*:%s*(%d+)')),
         table = raw:match('"table"%s*:%s*"(%a+)"'),
         template = raw:match('"template"%s*:%s*"([%w_]+)"'),
@@ -294,6 +301,10 @@ local COMMANDS = {
     ruin_building = build.ruin_building,
     demolish_ruins = build.demolish_ruins,
     set_site_cost = build.set_site_cost,
+    manor_state = manor.manor_state,
+    finish_manor_site = manor.finish_site,
+    manor_put = manor.manor_put,
+    manor_take = manor.manor_take,
     show_message = ui.show_message,
     read_message = ui.read_message,
     list_messages = ui.list_messages,
