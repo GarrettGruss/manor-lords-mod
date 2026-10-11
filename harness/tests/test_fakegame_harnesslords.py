@@ -23,7 +23,15 @@ function(fg)
     fg.set_method(dataTable, "GetRowStruct", function() return fg.object("ScriptStruct", {}, "/Script/ManorLords.UnitTemplate") end)
     fg.set_method(dataTable, "FindRow", function(self, name) return rows[name] end)
 
-    local home = fg.object("BP_Region_C", { regionName = "Wilde Wand" }, "/Game/Fake/Eichenhau")
+    local home = fg.object("BP_Region_C", { regionName = "Wilde Wand", isSettled = true, settlementType = 1, settlementLevel = 0 },
+                           "/Game/Fake/Eichenhau")
+    local empty = fg.object("BP_Region_C", { regionName = "Hochweg", isSettled = false, settlementType = 0, settlementLevel = 0 },
+                            "/Game/Fake/Goldhof")
+    for _, region in ipairs({ home, empty }) do
+        fg.set_method(region, "GetBuildings", function() return fg.array({}, { wrap = false }) end)
+        fg.set_method(region, "getTotalNumFamilies", function() return 0 end)
+    end
+    world.empty = empty
     local player = fg.object("MyPawnCPP_BP3_C", { isMainPlayer = true, currentRegion = home, enemies = fg.array({}, { wrap = false }) })
     fg.set_method(player, "K2_GetActorLocation", function() return { X = 0.0, Y = 0.0, Z = 0.0 } end)
 
@@ -59,6 +67,7 @@ function(fg)
     local challenges = fg.array({}, { wrap = false })
     local engine = fg.object("RTSMultiEngineCPP", {
         playerRef = player, relations = relations, challenges = challenges, openClaims = fg.array({}, { wrap = false }),
+        regions = fg.array({ home, empty }, { wrap = false }),
         spawnAIPlayers = false, declareWarInstant = false, AI_canBuild = true,
         debugLog_AI_general = fg.array({ "Hildebolt von Berenreute (2) claimRegions: not enough influence" }, { wrap = false }),
         debugLog_AI_tactics = fg.array({ "Outlaws (1) Tactics_AI: Num commanded armies = 1" }, { wrap = false }),
@@ -85,7 +94,13 @@ function(fg)
         end
         return ids
     end)
-    fg.set_method(engine, "spawnNewAILord", function(self, name) return lord(name, {}) end)
+    fg.set_method(engine, "spawnNewAILord", function(self, name, female, portrait, canBuild)
+        world.lastCanBuild = canBuild
+        return lord(name, {})
+    end)
+    fg.set_method(engine, "addPawnRelations", function(self, pawn)
+        relation(player, pawn, {})
+    end)
     return world
 end
 """
@@ -169,6 +184,31 @@ class SteeringTests(LordsTestCase):
         self.assertIn("count must be", self.send("lord_spawn_army", lord=1, template="spearMilitia", count=9)["error"])
         self.assertIn("name must be", self.send("spawn_ai_lord")["error"])
         self.assertEqual(self.world.challengeCalls, 0)
+
+
+
+class DynamicLordTests(LordsTestCase):
+    """Spike S13. The real game crashed on settleRegion from Lua (3 of 3), so only the safe commands are tested here."""
+
+    def test_regions_state_lists_owner_and_settled(self):
+        rows = {row["region"]: row for row in self.send("regions_state")["regions"]}
+        self.assertEqual(set(rows), {"BP_Region_C_" + key.split("_")[-1] for key in rows})
+        settled = [row for row in rows.values() if row["settled"]]
+        self.assertEqual([row["name"] for row in settled], ["Wilde Wand"])
+
+    def test_a_building_lord_gets_relations_and_a_region(self):
+        answer = self.send("spawn_ai_lord", name="Hochweg Lord", build=1)
+        self.assertTrue(answer["can_build"])
+        self.assertTrue(self.world.lastCanBuild)
+        relations = self.send("lord_relations", lord=answer["lord"])
+        self.assertEqual(relations["relations_after"], relations["relations_before"] + 1)
+        empty = self.send("regions_state")["regions"][1]["region"]
+        taken = self.send("lord_take_region", lord=answer["lord"], region=empty)
+        self.assertTrue(taken["ok"], taken)
+        self.assertEqual(taken["after"]["owner"], answer["object"])
+
+    def test_an_unknown_region_is_refused(self):
+        self.assertIn("no region named", self.send("lord_take_region", lord=1, region="Nowhere")["error"])
 
 
 if __name__ == "__main__":

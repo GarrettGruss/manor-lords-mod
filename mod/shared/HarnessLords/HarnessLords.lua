@@ -355,7 +355,7 @@ function M.lord_spawn_army(request)
              commanded = squadHandles(read(function() return lord.commandedSquads end)) }
 end
 
--- RTSMultiEngineCPP:spawnNewAILord(name, isFemale false, no portrait, canBuild false). Returns the new lord number.
+-- RTSMultiEngineCPP:spawnNewAILord(name, isFemale false, no portrait, canBuild = request.build == 1). Returns the new lord number.
 function M.spawn_ai_lord(request)
     local engineObject = engine()
     if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
@@ -364,14 +364,15 @@ function M.spawn_ai_lord(request)
         return { ok = false, error = "name must be 1 to " .. M.MAX_NAME_CHARS .. " characters" }
     end
     local before = #lords()
-    local ok, pawn = pcall(function() return engineObject:spawnNewAILord(name, false, nil, false) end)
+    local canBuild = request.build == 1
+    local ok, pawn = pcall(function() return engineObject:spawnNewAILord(name, false, nil, canBuild) end)
     if not ok then return { ok = false, error = "spawnNewAILord: " .. tostring(pawn) } end
     local after = lords()
     local number
     for i, found in ipairs(after) do
         if isValid(pawn) and shortName(found) == shortName(pawn) then number = i end
     end
-    return { ok = true, lords_before = before, lords_after = #after, lord = number, object = shortName(pawn) }
+    return { ok = true, lords_before = before, lords_after = #after, lord = number, object = shortName(pawn), can_build = canBuild }
 end
 
 -- PawnCPP_AI:startAI(speed, canBuild) on the lord. A new lord may need it to run its timers.
@@ -380,9 +381,91 @@ function M.lord_start_ai(request)
     if not lord then return { ok = false, error = problem } end
     local speed = request.value or 1
     if speed <= 0 or speed > 100 then return { ok = false, error = "value (speed) must be above 0 and at most 100" } end
-    local ok, err = pcall(function() lord:startAI(speed, false) end)
+    local canBuild = request.build == 1
+    local ok, err = pcall(function() lord:startAI(speed, canBuild) end)
     if not ok then return { ok = false, error = "startAI: " .. tostring(err) } end
-    return { ok = true, speed = speed }
+    return { ok = true, speed = speed, can_build = canBuild }
+end
+
+---------------------------------------------------------------------------------------------
+-- Regions (spike S13: dynamic lords)
+---------------------------------------------------------------------------------------------
+
+
+local function regions(engineObject)
+    local out = {}
+    local list = read(function() return engineObject.regions end)
+    local count = read(function() return list:GetArrayNum() end) or 0
+    for i = 1, count do
+        local region = read(function() return list[i] end)
+        if isValid(region) then out[#out + 1] = region end
+    end
+    return out
+end
+
+-- A region named by its object name (for example "Goldhof"), the same name lords_state prints.
+local function checkedRegion(request, engineObject)
+    if type(request.region) ~= "string" or request.region == "" then return nil, "region (an object name) is required" end
+    for _, region in ipairs(regions(engineObject)) do
+        if shortName(region) == request.region then return region end
+    end
+    return nil, "no region named " .. request.region
+end
+
+local function buildingCount(region)
+    local list = read(function() return region:GetBuildings() end)
+    if list == nil then return nil end
+    return read(function() return list:GetArrayNum() end) or read(function() return #list end)
+end
+
+local function regionRow(region)
+    return {
+        region = shortName(region), name = textOf(read(function() return region.regionName end)),
+        owner = shortName(read(function() return region.ownerPawn end)),
+        settled = read(function() return region.isSettled end), settlement_type = read(function() return region.settlementType end),
+        level = read(function() return region.settlementLevel end), town_center = shortName(read(function() return region.townCenter end)),
+        manor = shortName(read(function() return region.manor end)), buildings = buildingCount(region),
+        families = read(function() return region:getTotalNumFamilies() end),
+    }
+end
+
+-- Every region: owner, settled, settlement type and level, town center, manor, buildings, families. Read only.
+function M.regions_state()
+    local engineObject = engine()
+    if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
+    local rows = {}
+    for _, region in ipairs(regions(engineObject)) do rows[#rows + 1] = regionRow(region) end
+    return { ok = true, regions = rows }
+end
+
+-- RTSMultiEngineCPP:addPawnRelations(lord): a lord made by spawnNewAILord had no relation row with anyone.
+function M.lord_relations(request)
+    local engineObject = engine()
+    if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
+    local lord, problem = checkedLord(request)
+    if not lord then return { ok = false, error = problem } end
+    local before = read(function() return engineObject.relations:GetArrayNum() end)
+    local ok, err = pcall(function() engineObject:addPawnRelations(lord) end)
+    if not ok then return { ok = false, error = "addPawnRelations: " .. tostring(err) } end
+    return { ok = true, relations_before = before, relations_after = read(function() return engineObject.relations:GetArrayNum() end),
+             with_player = relationTags(engineObject, lord, player(engineObject)) }
+end
+
+-- PawnCPP:settleRegion is NOT offered: called from Lua it crashed the game 3 of 3 times (access violation at 0x34c, with a new
+-- lord, with the player pawn, and with an outpost region). See docs/specs/10-invasion-testability/implementation-notes/dynamic-lords.md.
+
+-- Write Region.ownerPawn = lord (the change a won challenge made in spike S11).
+function M.lord_take_region(request)
+    local engineObject = engine()
+    if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
+    local lord, problem = checkedLord(request)
+    if not lord then return { ok = false, error = problem } end
+    local region, why = checkedRegion(request, engineObject)
+    if not region then return { ok = false, error = why } end
+    local before = regionRow(region)
+    local ok, err = pcall(function() region.ownerPawn = lord end)
+    if not ok then return { ok = false, error = "write ownerPawn: " .. tostring(err) } end
+    return { ok = true, before = before, after = regionRow(region) }
 end
 
 return M

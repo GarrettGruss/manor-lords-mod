@@ -793,14 +793,28 @@ class Actions:
         """spawnArmy with the lord as owner, dx and dy from the player pawn. The lord's AI commands the squads."""
         return self._command("lord_spawn_army", lord=lord, template=template, count=count, dx=dx, dy=dy)
 
-    def spawn_ai_lord(self, name: str) -> dict:
-        """RTSMultiEngineCPP:spawnNewAILord (no portrait, cannot build). Returns `lord`, the number of the new lord.
-        Verified: with war, an army, a challenge and `lord_start_ai`, its AI marched the army to the challenge area."""
-        return self._command("spawn_ai_lord", name=name)
+    def spawn_ai_lord(self, name: str, can_build: bool = False) -> dict:
+        """RTSMultiEngineCPP:spawnNewAILord (no portrait). Returns `lord`, the number of the new lord.
+        Verified: with war, an army, a challenge and `lord_start_ai`, its AI marched the army to the challenge area (S11).
+        With can_build its AI still did not build (S13, dynamic-lords.md)."""
+        return self._command("spawn_ai_lord", name=name, build=1 if can_build else 0)
 
-    def lord_start_ai(self, lord: int, speed: float = 1) -> dict:
-        """PawnCPP_AI:startAI(speed, canBuild false). Needed for a lord made with spawn_ai_lord."""
-        return self._command("lord_start_ai", lord=lord, value=speed)
+    def lord_start_ai(self, lord: int, speed: float = 1, can_build: bool = False) -> dict:
+        """PawnCPP_AI:startAI(speed, canBuild). Needed for a lord made with spawn_ai_lord."""
+        return self._command("lord_start_ai", lord=lord, value=speed, build=1 if can_build else 0)
+
+    def regions_state(self) -> dict:
+        """Every region: object name, name, owner, settled, settlement type and level, town center, manor, buildings, families."""
+        return self._command("regions_state")
+
+    def lord_relations(self, lord: int) -> dict:
+        """RTSMultiEngineCPP:addPawnRelations(lord). Verified (S13): a new lord gets relation rows, with no tags towards the player."""
+        return self._command("lord_relations", lord=lord)
+
+    def lord_take_region(self, lord: int, region: str) -> dict:
+        """Write Region.ownerPawn = lord (region by object name, as regions_state prints). Verified (S13): the owner changes and the
+        village stays. There is no settleRegion action: it crashed the game 3 of 3 times."""
+        return self._command("lord_take_region", lord=lord, region=region)
 
     # ---- UI banner (spec 10, spike S9, criterion T4) ----
 
