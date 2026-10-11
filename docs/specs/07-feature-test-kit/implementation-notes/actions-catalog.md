@@ -36,6 +36,9 @@ Status words: `verified` = the effect was read back in the real game. `partial` 
 | spawn raiders / bandit camp | verified in spec 10: `spawnRaiders` +18 a squad, `spawnEliteRaiders` +54, `spawnBanditCamp` +18 (the cheat `SpawnRaidersOfType` still has no effect) | `spawn_raid`, `spawn_bandit_camp` | helper command, see spec 10 `spike-S2.md` |
 | raid timer | verified in spec 10: write holds, raid on the day tick that reaches 0 | `set_raid_timer` | `TemporalComponent.daysUntilNextRaid` |
 | kill units, write loot per unit, count units | verified in spec 10 | `kill_units`, `set_unit_loot`, `units_census` | helper commands, `spike-S3.md`, `spike-S5.md` |
+| count and take a share of buildings, goods and families (burn or collapse, remove goods, kill families) | verified in spec 10 (`sack-village` and others, 3 of 3 real runs). Needs `HarnessActions` version 8 | `sack_census`, `sack_buildings`, `sack_goods`, `sack_people`, `sack_village` | `StartFire`, `collapseBuilding`, `consumeGoodNoCheck`, `SMUnit:just_die` on a family; see `spike-S6.md` |
+| loot on the ground | **no such thing in the base game.** A stand-in ledger (piles as Lua tables, recovery with `GiveItemByID`) is verified in spec 10 | `drop_loot`, `loot_piles`, `recover_loot` | helper commands, `spike-R3.md` |
+| rebuild cost of a ruin | not possible from Lua: no reflected function and no loaded table gives a building cost (`spike-S6.md`) | none | |
 
 ## Answers to the open questions of the spec
 

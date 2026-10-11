@@ -69,6 +69,15 @@ Telemetry: start the launcher with `HARNESS_TELEMETRY_UNITS=1` and every sample 
 Scenarios: `raid-timer`, `raid-spawn`, `raid-loot`, `raid-load`. The hidden `probe-raids` scenario (`HARNESS_PROBE=s1|s1b|s2|s5|s10`) is the research tool of the spikes.
 The scenario limit cap is 300 s (it was 120 s). Notes: `docs/specs/10-invasion-testability/implementation-notes/`.
 
+### Sack primitives and the loot stand-in (spec 10, spikes S6 and R3)
+Actions (need `HarnessActions` version 8): `sack_census()` (read only: buildings by state, stock, stores, families, people of the player village),
+`sack_buildings(percent= or count=, method="collapse"|"fire")`, `sack_goods(percent= or good=+amount=, store=)`, `sack_people(percent= or count=)`,
+`sack_village(buildings_pct, stock_pct, people_pct, method)`. A percent of a count is rounded half up. Inputs are checked in Python (`SackError`) and again in Lua; there is no eval.
+Fire burns for about 50 game seconds, then the building is rubble (type 75) and its goods are gone. A collapse is rubble at once and keeps the goods. Goods are removed one unit at a time (`consumeGoodNoCheck`), at most 5000 per call.
+Loot: the base game has no loot on the ground, so `drop_loot(count, good)`, `loot_piles()` and `recover_loot(pile)` drive a stand-in ledger (module `HarnessLoot`): the piles are Lua tables, and a recovery adds the goods with `GiveItemByID`.
+Scenarios: `sack-village` (S1), `sack-ruins` (the ruin state of R8; not tagged, because the rebuild cost is not verified), `sack-store-trip` (R7), `loot-drop-recovery` (R3). Helpers: `harness/runlib/sack.py`.
+Tests: `test_runlib_sack.py`, `test_fakegame_harnesssack.py`, `test_fakegame_sack_scenarios.py`. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S6.md` and `spike-R3.md`.
+
 ### Pop-ups and soak runs (spec 10, S8 and Q1)
 An open pop-up ("Hunger!") pauses the game until Accept is pressed. `ctx.actions.close_popups()` (command `close_popups` of `HarnessActions`) presses Accept on every open pop-up, and the game goes on at the old speed.
 `ctx.popups()` does the same without checks and remembers the types (`ctx.popups.closed`). Use it as `on_poll` of `ctx.run_until`. `ctx.actions.popup_state()` only reads. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S8.md`.
