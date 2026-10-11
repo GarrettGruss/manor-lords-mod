@@ -24,6 +24,16 @@
 --   {"command":"kill_units","side":"bandit","count":5}         SMUnit:just_die on live units of one side
 --      kill_units also takes "with_loot":1 (only units that carry loot) and "actors":1 (report new actor classes)
 --   {"command":"set_unit_loot","side":"bandit","count":3,"amount":5}   write ItemsLooted
+--   Sack commands (spec 10, spike S6, see mod/shared/HarnessSack):
+--   {"command":"sack_census"}                                  buildings by state, stock, stores, families and people of the player village
+--   {"command":"sack_buildings","percent":50,"method":"collapse"}   burn ("fire") or collapse standing buildings ("count" instead of "percent" works too)
+--   {"command":"sack_goods","percent":50}                      remove a share of every good; or "good":15,"amount":5,"store":<building id>
+--   {"command":"sack_people","percent":40}                     kill every member of a share of the families ("count" works too)
+--   {"command":"sack_village","buildings_pct":50,"stock_pct":50,"people_pct":40,"method":"collapse"}   all three
+--   Loot stand-in (spec 10, spike R3, see mod/shared/HarnessLoot): the base game has no ground loot, so piles are a ledger
+--   {"command":"drop_loot","side":"bandit","count":3,"good":17}   kill looters; a pile (place, amount, good) is recorded for each
+--   {"command":"loot_piles"}                                    the piles
+--   {"command":"recover_loot","pile":1}                         the goods of the pile go into the stock; the pile is gone
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -33,8 +43,10 @@ local json = require("HarnessJson")
 local autosave = require("HarnessAutosave")
 local datatable = require("HarnessDataTable")
 local raids = require("HarnessRaids")
+local sack = require("HarnessSack")
+local loot = require("HarnessLoot")
 
-local VERSION = "6"
+local VERSION = "8"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -104,6 +116,14 @@ local function parseRequest(raw)
         y = tonumber(raw:match('"y"%s*:%s*(-?[%d%.]+)')),
         z = tonumber(raw:match('"z"%s*:%s*(-?[%d%.]+)')),
         side = raw:match('"side"%s*:%s*"(%a+)"'),
+        method = raw:match('"method"%s*:%s*"(%a+)"'),
+        percent = tonumber(raw:match('"percent"%s*:%s*(%d+)')),
+        buildings_pct = tonumber(raw:match('"buildings_pct"%s*:%s*(%d+)')),
+        stock_pct = tonumber(raw:match('"stock_pct"%s*:%s*(%d+)')),
+        people_pct = tonumber(raw:match('"people_pct"%s*:%s*(%d+)')),
+        good = tonumber(raw:match('"good"%s*:%s*(%d+)')),
+        store = tonumber(raw:match('"store"%s*:%s*(%d+)')),
+        pile = tonumber(raw:match('"pile"%s*:%s*(%d+)')),
     }
 end
 
@@ -219,6 +239,14 @@ local COMMANDS = {
     spawn_bandit_camp = raids.spawn_bandit_camp,
     kill_units = raids.kill_units,
     set_unit_loot = raids.set_unit_loot,
+    drop_loot = loot.drop_loot,
+    loot_piles = loot.loot_piles,
+    recover_loot = loot.recover_loot,
+    sack_census = sack.sack_census,
+    sack_buildings = sack.sack_buildings,
+    sack_goods = sack.sack_goods,
+    sack_people = sack.sack_people,
+    sack_village = sack.sack_village,
 }
 
 local function runCommand(number, raw)

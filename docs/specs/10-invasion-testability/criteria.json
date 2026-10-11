@@ -231,10 +231,13 @@
     "upgrades": [
       "U2"
     ],
-    "method_verified": false,
-    "verified_by": [],
+    "method_verified": true,
+    "verified_by": [
+      "loot-drop-recovery",
+      "docs/specs/10-invasion-testability/implementation-notes/spike-R3.md"
+    ],
     "reason_human": "",
-    "spike_note": "partial: kill_units works and the carried loot goes to 0, but no ground goods object, actor, or inventory change was found (spike-S5.md)"
+    "spike_note": "method verified on a stand-in ledger (loot-drop-recovery, 3 of 3 runs, 2026-10-10): the base game has NO ground loot (spike-R3.md, spike-S5.md). A kill reports place and carried loot, a recovery adds the goods to the stock, both read back. A real pile and a walking peasant are mod-defined and NOT verified"
   },
   {
     "id": "R4",
@@ -310,9 +313,13 @@
     "upgrades": [
       "U5"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "sack-store-trip",
+      "docs/specs/10-invasion-testability/implementation-notes/spike-S6.md"
+    ],
+    "reason_human": "",
+    "spike_note": "observation method verified in the real game (sack-store-trip, 3 of 3 runs, 2026-10-10): the stock of each named store is read and removed with a loss factor. The base game has no guard or lock: they are rules of the mod; the scenario models them with the loss factor"
   },
   {
     "id": "R8",
@@ -329,7 +336,8 @@
     ],
     "method_verified": false,
     "verified_by": [],
-    "reason_human": ""
+    "reason_human": "",
+    "spike_note": "state half verified, rebuild cost NOT (sack-ruins, 3 of 3 runs, 2026-10-10): fire makes a building rubble (type 75, IsRubble, hp 0), it stays in the list and its goods are gone. No reflected function or loaded table gives the rebuild cost of a building, and a construction site needs a building placed with the OS mouse (spike-S6.md). Stays unverified until the cost can be read"
   },
   {
     "id": "C1",
@@ -401,9 +409,13 @@
       "U5",
       "U6"
     ],
-    "method_verified": false,
-    "verified_by": [],
-    "reason_human": ""
+    "method_verified": true,
+    "verified_by": [
+      "sack-village",
+      "docs/specs/10-invasion-testability/implementation-notes/spike-S6.md"
+    ],
+    "reason_human": "",
+    "spike_note": "method verified in the real game (sack-village, 3 of 3 runs, 2026-10-10): burn or collapse buildings, remove goods, kill families, counted before and after; the percent rule is checked on the start village (4 or 5 buildings, 79 items, 5 families). The real mod must define what a lost battle takes"
   },
   {
     "id": "S2",
