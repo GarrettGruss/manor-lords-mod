@@ -125,7 +125,25 @@ class RunTest(unittest.TestCase):
         self.assertTrue(record["paused_at_end"])
         self.assertGreaterEqual(moved, 20)
         self.assertLess(moved, 20 + 8 * 3)  # a few polls of overshoot
-        self.assertEqual(set(record), {"clock_start", "clock_end", "wall_s", "paused_at_end", "speed"})
+        self.assertEqual(set(record), {"clock_start", "clock_end", "wall_s", "paused_at_end", "speed", "speed_resets"})
+        self.assertEqual(record["speed_resets"], 0)
+
+    def test_a_run_sets_the_speed_again_when_an_army_drops_it_to_1x(self):
+        game = FakeGame()
+        control = make_time(game)
+        real_sleep = game.sleep
+
+        def sleep_with_armies(seconds):
+            real_sleep(seconds)
+            if game.wall > 12 and game.factor > 1 and int(game.wall) % 3 == 0:
+                game.factor = 1.0  # an army was spotted
+
+        control._sleep = sleep_with_armies
+        control._bridge._sleep = sleep_with_armies
+        record = control.run_game_days(3, speed=3)
+        self.assertGreaterEqual(record["speed_resets"], 1)
+        self.assertEqual(record["days_end"] - record["days_start"], 3)
+        self.assertEqual(game.factor, 0.0)
 
     def test_wall_time_follows_speed(self):
         slow = make_time(FakeGame()).run_game_seconds(16, 1)["wall_s"]
