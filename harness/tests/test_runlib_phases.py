@@ -158,7 +158,8 @@ class StalePreflightTest(TempTestCase):
         install = GameInstall(root=self.temp / "game", saved_dir=self.temp / "saved")
         install.exe.parent.mkdir(parents=True)
         install.exe.write_text("")
-        with mock.patch.object(phases, "is_steam_running", return_value=True):
+        # _stop_stale_game is patched: unpatched, this test stopped a real game that ran at the same time.
+        with mock.patch.object(phases, "is_steam_running", return_value=True), mock.patch.object(phases, "_stop_stale_game"):
             with self.assertRaisesRegex(PhaseFailed, "fixture base"):
                 phases._preflight(install, "saveGame_0")(self.ctx)
 
