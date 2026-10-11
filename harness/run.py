@@ -30,7 +30,6 @@ from runlib.summary import EXIT_CODES
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PAK_CONFIG = Path(__file__).resolve().parent / "pakmod.local.json"
-TEST_SAVE = "saveGame_0"
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -41,8 +40,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--list-scenarios", action="store_true", help="print the scenarios and their time limits, then exit")
     parser.add_argument("--include-test-scenarios", action="store_true", help="with --list-scenarios: also list the hidden selftest scenarios")
     parser.add_argument("--fixture", default=DEFAULT_FIXTURE,
-                        help="save fixture to start from (harness/fixtures/fixtures.json, default %(default)s). "
-                             "It is copied into the private appdata folder of the run, never next to the user's saves")
+                        help="save fixture to start from (harness/fixtures/fixtures.json, default %(default)s). A stored fixture "
+                             "is installed into the user's save folder under a free slot name and removed at the end (spec 06, part D)")
+    parser.add_argument("--save", type=Path,
+                        help="start from this save file (<slot>.sav, with its <slot>_descr.sav next to it) instead of a fixture. "
+                             "It is installed like a stored fixture and removed at the end")
     parser.add_argument("--pak", action="append", default=[], metavar="NAME",
                         help="install the built harness pak NAME (from the pakmod work folder) before the game starts and "
                              "remove it at the end, also after a crash. Repeatable (spec 10, A/B variants)")
@@ -73,6 +75,8 @@ def check_variant_options(args: argparse.Namespace) -> None:
     args.pak_names = [paks.check_name(name) for name in args.pak]
     if len(set(args.pak_names)) != len(args.pak_names):
         raise paks.PakError("a --pak name is given twice")
+    if args.save is not None and (args.fake or not args.save.is_file()):
+        raise ValueError(f"--save needs --scenario and an existing file: {args.save}")
     if args.fake and (args.pak_names or args.extra_env):
         raise ValueError("--pak and --env need --scenario. A fake run has no game.")
 
@@ -81,9 +85,9 @@ def build_phases(args: argparse.Namespace) -> list[Phase]:
     if args.fake:
         return build_fake_phases(args.fake)
     work_dir = paks.work_dir_from_config(args.pak_config) if args.pak_names else None
-    return build_real_phases(args.scenario, keep_open=args.keep_open, test_save=TEST_SAVE,
+    return build_real_phases(args.scenario, keep_open=args.keep_open,
                              telemetry_interval_s=args.telemetry_interval, fixture=args.fixture,
-                             pak_names=args.pak_names, pak_work_dir=work_dir, extra_env=args.extra_env)
+                             pak_names=args.pak_names, pak_work_dir=work_dir, extra_env=args.extra_env, save_path=args.save)
 
 
 def build_config(args: argparse.Namespace, run, phases: list[Phase], lock) -> dict:
@@ -91,7 +95,8 @@ def build_config(args: argparse.Namespace, run, phases: list[Phase], lock) -> di
         "run_id": run.run_id,
         "scenario": f"fake-{args.fake}" if args.fake else args.scenario,
         "fake_outcome": args.fake,
-        "test_save": None if args.fake else TEST_SAVE,
+        "test_save": None,  # chosen in preflight: an installed slot or the fixture's source slot
+        "save_file": str(args.save) if args.save else None,
         "fixture": None if args.fake else args.fixture,
         "private_appdata": not args.fake,
         "keep_open": args.keep_open,
