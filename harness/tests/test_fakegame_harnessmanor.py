@@ -415,7 +415,7 @@ class ManorStorageWorkersScenarioTests(unittest.TestCase):
     def test_passes_with_the_rules_of_the_real_game(self):
         result, ctx = self.run_scenario()
         self.assertEqual(self.failed(result), [])
-        self.assertEqual(ctx.metrics, {"manor_rubble_hauled": 6})
+        self.assertEqual(ctx.metrics, {"manor_goods_hauled": 6})
 
     def test_goods_that_arrive_without_a_worker_fail_the_control(self):
         result, _ = self.run_scenario(haul="always")
@@ -423,7 +423,7 @@ class ManorStorageWorkersScenarioTests(unittest.TestCase):
 
     def test_a_worker_that_carries_nothing_fails_the_scenario(self):
         result, _ = self.run_scenario(haul="never")
-        self.assertIn("the worker carried rubble into the Keep in 3 game days (units)", self.failed(result))
+        self.assertIn("the worker carried goods into the Keep in 3 game days (units)", self.failed(result))
 
     def test_a_game_that_places_no_keep_stops_loudly(self):
         with self.assertRaisesRegex(CommandRefused, "no unfinished manor module of type 57"):
