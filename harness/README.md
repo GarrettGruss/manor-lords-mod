@@ -94,6 +94,7 @@ The base game has no horse unit in its templates, so C1 covers the templates tha
 `ctx.actions.show_message(text, subtext)` shows a banner (`PawnCPP:playEventMessage` with an `FName` type) and reads the text back from the widget; `read_message()` and `list_messages()` only read. Text: letters, digits, space and `, . ! : -`, at most 60 characters.
 Scenario `ui-countdown` (COVERS T4): "Raid in N days" for N = 4, 3, 2, widget text read back, screenshot for each N. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S9.md`.
 `building_sites(type)` lists the goods that a construction site needs; `ruin_building(type, method)` burns or collapses a built building; `demolish_ruins()`; `set_site_cost(type, good, amount)` lowers the cost of a site.
+Manor (spec 12): `manor_state()`, `finish_manor_site(type)` (harness shortcut: the test village cannot finish a Keep), `manor_put(good, amount)`, `manor_take(good, amount)`, `manor_stock(good)`. Scenario `manor-storage` (COVERS M1, hidden: real mouse, run it alone with a visible game window, about 70 s).
 Scenario `rebuild-cost` (COVERS R8, hidden: it uses the real OS mouse through `place_building`, run it alone with `run.py --scenario rebuild-cost` and a visible game window, about 85 s). Notes: `spike-R8.md`.
 
 ### Pop-ups and soak runs (spec 10, S8 and Q1)
