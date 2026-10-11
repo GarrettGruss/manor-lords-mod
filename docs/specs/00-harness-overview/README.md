@@ -48,6 +48,7 @@ An agent uses the fastest layer that can answer its question. It moves to a slow
 | 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | in progress (since 2026-10-10): toolchain decided (repak, UAssetGUI command line, a `.usmap`); tooling and A/B variants are being built with fake tools; the real chain waits for the tools and a first spike |
 | 10 | invasion-testability | Make about 90% of the Invasion Mode brief testable: criteria matrix, spikes, upgrades, stand-in mods | in progress (since 2026-10-10); see `docs/specs/10-invasion-testability/README.md` |
 | 11 | parallel-game-slots | Run several game copies at the same time (slots) for A/B and soak runs | proposed (2026-10-10), nothing built |
+| 12 | manor-exploration | Understand the manor (castle) system, storage in it, and a workaround for the soft-lock where normal buildings cannot be placed inside a large manor | proposed (2026-10-11), nothing built |
 
 Order and reasons:
 - 03 comes first: every later spec needs a run folder and a summary.

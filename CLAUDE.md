@@ -60,6 +60,11 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 - Add each user-visible change under `Unreleased` in the same commit as the change.
 - Use these groups: Added, Changed, Deprecated, Removed, Fixed, Security.
 
+## Skills
+
+- Project skills are in `.claude/skills/`. Start with `harness-overview`. It lists the skills for running scenarios, writing scenarios, mod state, game spikes, A/B tests, pak mods, debugging runs, coverage, delegating to agents and the git workflow.
+- Update a skill in the same commit when you change the way the harness works.
+
 ## Architecture
 
 1. **Game mods** (`mod/`): Lua mods for RE-UE4SS. They hook reflected UFunctions and read UObject properties.
