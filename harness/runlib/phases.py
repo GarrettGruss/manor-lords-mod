@@ -13,7 +13,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from . import fixtures
+from . import fixtures, saveslots
 from .actions import ActionNotPossible
 from .environment import gather_environment, hash_mods
 from .pak_phases import install_paks, remove_paks_phase
@@ -68,7 +68,7 @@ def _private_install(install: GameInstall, ctx: PhaseContext) -> GameInstall:
     return dataclasses.replace(install, saved_dir=fixtures.saved_dir_of(_appdata_dir(ctx)))
 
 
-def _prepare_appdata(install: GameInstall, ctx: PhaseContext, fixture: str) -> None:
+def _prepare_appdata(install: GameInstall, ctx: PhaseContext, fixture: str) -> fixtures.AppdataResult:
     """Build the private LOCALAPPDATA. Remember the user's save files, so teardown can compare."""
     ctx.state["appdata_dir"] = _appdata_dir(ctx)  # set first: teardown removes the folder even if the copy fails half way
     try:
@@ -77,10 +77,39 @@ def _prepare_appdata(install: GameInstall, ctx: PhaseContext, fixture: str) -> N
         raise PhaseFailed(f"fixture {fixture}: {error}") from error
     ctx.state["user_saves_snapshot"] = result.user_snapshot
     ctx.config.setdefault("environment", {})["fixture"] = result.as_dict()
+    return result
+
+
+def _remove_stale_slots(install: GameInstall, ctx: PhaseContext) -> None:
+    """Remove slots that an earlier run installed and left (for example a --keep-open run). The game is stopped here."""
+    for result in saveslots.uninstall_all(install.saved_dir / "SaveGames"):
+        ctx.state["notes"].append(f"removed the slot {result['slot']} of an earlier run: {len(result['removed'])} files"
+                                  + (f"; kept {result['kept']}" if result["kept"] else ""))
+
+
+def _choose_slot(install: GameInstall, ctx: PhaseContext, appdata: fixtures.AppdataResult, save_path: Path | None) -> str:
+    """The slot the game loads. A stored fixture or a --save file is installed under a free name; an old fixture uses its source slot."""
+    if save_path is not None:
+        try:
+            sources, label = fixtures.files_of_save(save_path), save_path.stem
+        except fixtures.FixtureError as error:
+            raise PhaseFailed(f"--save {save_path}: {error}") from error
+    elif appdata.stored:
+        sources, label = appdata.sources, appdata.fixture
+    else:
+        return appdata.source_slot
+    try:
+        installed = saveslots.install(install.saved_dir / "SaveGames", sources, label)
+    except saveslots.SlotError as error:
+        raise PhaseFailed(f"install of the save failed: {error}") from error
+    ctx.state["installed_slot"] = installed.slot
+    ctx.config.setdefault("environment", {})["installed_slot"] = {"slot": installed.slot, "label": label,
+                                                                  "files": len(installed.files)}
+    return installed.slot
 
 
 def _preflight(install: GameInstall, test_save: str, fixture: str = fixtures.DEFAULT_FIXTURE,
-               pak_names: list[str] | None = None, pak_work_dir: Path | None = None):
+               pak_names: list[str] | None = None, pak_work_dir: Path | None = None, save_path: Path | None = None):
     def run(ctx: PhaseContext) -> str | None:
         ctx.state["run_started_epoch"] = time.time()
         if not is_steam_running():
@@ -93,12 +122,15 @@ def _preflight(install: GameInstall, test_save: str, fixture: str = fixtures.DEF
         if not install.exe.exists():
             raise PhaseFailed(f"game exe not found: {install.exe}")
         _stop_stale_game(ctx)
-        _prepare_appdata(install, ctx, fixture)
-        private = _private_install(install, ctx)
-        if not private.save_file(test_save).is_file():
-            raise PhaseFailed(f"test save not found: {private.save_file(test_save)}")
+        _remove_stale_slots(install, ctx)
+        appdata = _prepare_appdata(install, ctx, fixture)
+        slot = _choose_slot(install, ctx, appdata, save_path)
+        ctx.state["test_save"] = slot
+        ctx.config["test_save"] = slot
+        if not install.save_file(slot).is_file():  # the game loads from the user's real save folder
+            raise PhaseFailed(f"test save not found: {install.save_file(slot)}")
         ctx.config.setdefault("environment", {}).update(
-            gather_environment(private, REPO_ROOT, ctx.run.path, test_save)
+            gather_environment(install, REPO_ROOT, ctx.run.path, slot)  # the save that the game loads is in the real folder
         )
         write_config(ctx.run, ctx.config)
         if pak_names:
@@ -138,7 +170,7 @@ def _deploy(install: GameInstall):
 
 def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float, extra_env: dict[str, str] | None = None):
     def run(ctx: PhaseContext) -> str | None:
-        env = build_game_environment(ctx.run.path, test_save, telemetry_interval_s=telemetry_interval_s,
+        env = build_game_environment(ctx.run.path, ctx.state.get("test_save", test_save), telemetry_interval_s=telemetry_interval_s,
                                      appdata_dir=ctx.state.get("appdata_dir"), extra_env=extra_env)
         # The working folder must be Win64, or UE4SS does not find its files.
         popen = subprocess.Popen(
@@ -345,11 +377,22 @@ def _collect(install: GameInstall):
 
 # ---- teardown ----
 
+def _remove_installed_slot(ctx: PhaseContext) -> None:
+    """Delete the slot this run installed, before the user's save folder is compared with the preflight snapshot."""
+    slot = ctx.state.pop("installed_slot", None)
+    if slot is None:
+        return
+    result = saveslots.uninstall_slot(slot)
+    ctx.state["notes"].append(f"installed slot {slot} removed ({len(result['removed'])} files)"
+                              + (f"; kept {result['kept']}" if result["kept"] else ""))
+
+
 def _finish_appdata(install: GameInstall, ctx: PhaseContext) -> str | None:
-    """Compare the user's save files with the snapshot of preflight, then delete the run's appdata copy."""
+    """Remove the installed slot, compare the user's save files with the snapshot of preflight, then delete the run's appdata."""
     appdata = ctx.state.get("appdata_dir")
     if not appdata:
         return None
+    _remove_installed_slot(ctx)
     problems = fixtures.describe_difference(
         ctx.state.get("user_saves_snapshot", {}), fixtures.snapshot_user_files(install.saved_dir / "SaveGames"))
     removed = fixtures.remove_appdata(appdata)
@@ -379,6 +422,9 @@ def _teardown(install: GameInstall, keep_open: bool):
             ctx.state["notes"].append("--keep-open: the game was left running")
             if ctx.state.get("appdata_dir"):
                 ctx.state["notes"].append(f"private appdata is still in place: {ctx.state['appdata_dir']}")
+                if ctx.state.get("installed_slot"):
+                    ctx.state["notes"].append(f"installed slot {ctx.state['installed_slot']} is still in the user's save folder; "
+                                              "the next run removes it, or run: harness/tools/fixtures.py uninstall")
                 ctx.state["notes"].append("the user's save files were not compared (--keep-open). "
                                           "Stop the game with harness/game-close.ps1, then delete the appdata with "
                                           "harness/tools/fixtures.py remove --appdata <that folder>")
@@ -404,12 +450,13 @@ def build_real_phases(
     scenario_name: str, keep_open: bool = False, install: GameInstall | None = None, test_save: str = DEFAULT_TEST_SAVE,
     telemetry_interval_s: float = DEFAULT_TELEMETRY_INTERVAL_S, fixture: str | None = None,
     pak_names: list[str] | None = None, pak_work_dir: Path | None = None, extra_env: dict[str, str] | None = None,
+    save_path: Path | None = None,
 ) -> list[Phase]:
     get_scenario(scenario_name)  # fail before any game starts if the name is wrong
     install = install or GameInstall()
     fixture = fixtures.check_name(fixture or fixtures.DEFAULT_FIXTURE)  # a bad name fails before any game starts
     phases = [
-        Phase("preflight", _preflight(install, test_save, fixture, pak_names, pak_work_dir), 60),
+        Phase("preflight", _preflight(install, test_save, fixture, pak_names, pak_work_dir, save_path), 60),
         Phase("deploy", _deploy(install), 120),
         Phase("launch", _launch(install, test_save, telemetry_interval_s, extra_env), 60),
         Phase("boot", _boot, 240),

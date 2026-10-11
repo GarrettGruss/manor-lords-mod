@@ -32,7 +32,7 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 - UE 5.5.4 shipping game. Game folder `C:\Program Files (x86)\Steam\steamapps\common\Manor Lords`. The game runs without Steam.
 - A game day is 40 game seconds. Speeds 1x/4x/8x. Intro cinematic ends about 13 s after load.
 - The simulation is not deterministic: assert ranges, and use A/B runs for stochastic behavior.
-- Never call a function that saves (CLAUDE.md Safety). Runs use a private `LOCALAPPDATA` with a fixture save; the user's saves are hashed before and after.
+- Never call a function that saves (CLAUDE.md Safety). A run installs its fixture save into the user's save folder under a free slot name, loads it, and removes it at the end; the user's saves are hashed before and after (spec 06, part D). `harness/tools/load_save.py <fixture | .sav path>` opens the game on a save.
 - Building placement works only with a real OS mouse click (hidden scenario `place-building`).
 - Raw Lua eval through the bridge is approved for experiments only (2026-10-10).
 - Shells: Git Bash has no `python3` and no `gh` on the PATH. Use `.venv\Scripts\python.exe`, `uv run --no-project --with lupa python ...` for fake-game tests, and `C:\Program Files\GitHub CLI\gh.exe`. Bash heredocs mangle quotes: use the Write tool for files.

@@ -42,7 +42,7 @@ An agent uses the fastest layer that can answer its question. It moves to a slow
 | 03 | run-launcher | One command makes one run folder with `summary.json` | done (PR 3). `harness/run.py`, scenarios, screenshots, crash and timeout cases |
 | 04 | telemetry-and-assertions | Sample game state, assert ranges, define the scenario format, control game time | done (PR 4). `ctx.time`, `ctx.expect`, `HarnessTelemetry` |
 | 05 | agent-tools | MCP tools so the agent drives the harness directly | done (PR 5). Open: a check in a real Claude Code session |
-| 06 | dev-loop-and-fixtures | Hot reload without a game restart, a reusable mock kit, several test saves | done (hot reload, mock kit, fixtures through a private LOCALAPPDATA) |
+| 06 | dev-loop-and-fixtures | Hot reload without a game restart, a reusable mock kit, several test saves | done (hot reload, mock kit); fixtures redone 2026-10-11 (part D: local fixture files installed as a slot; before, runs started a new game) |
 | 07 | feature-test-kit | Helpers to give resources, place buildings, trigger events, advance time | done (15 checked actions, `ctx.actions`, helper mod for letters; building placement with the real OS mouse) |
 | 08 | regression-suite | Run many scenarios and saves, compare with baselines, find flaky tests | done (PR 6). Baselines are thin (2 to 4 runs) |
 | 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | in progress (since 2026-10-10): toolchain decided (repak, UAssetGUI command line, a `.usmap`); tooling and A/B variants are being built with fake tools; the real chain waits for the tools and a first spike |
@@ -95,7 +95,7 @@ Then update the status here and in the changelog.
 - An agent can start a run, wait for it, and read results through MCP tools without shell commands (spec 05, tested with the tool functions and a real run).
 - A suite of scenarios runs with one command, with baselines, drift and flake detection (spec 08). The `core` suite (5 runs) takes about 280 s.
 - A Lua change reaches the running game in about 2 s (spec 06). A mod can be tested without the game with the fake game kit.
-- Each run has a private save folder (`LOCALAPPDATA` redirect). The game's saves are copies of the fixture, and the user's save folder is hashed before and after every run.
+- Each run installs its fixture into the user's save folder as a new slot, loads it (checked by `HarnessBoot`), and removes it; the user's save folder is hashed before and after every run (spec 06, part D). Config, logs and crash reports go to a private `LOCALAPPDATA`.
 - A scenario can change game state with checked actions: silver, influence, the day, regional wealth, items, settlement level, bandits, letters (spec 07).
 
 ## Main risks and unknowns

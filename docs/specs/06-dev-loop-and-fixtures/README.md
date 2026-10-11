@@ -1,6 +1,6 @@
 # Spec 06: Dev loop, mock kit and save fixtures
 
-Status: done. Part A (hot reload), part B (mock kit) and part C (fixtures through a private LOCALAPPDATA) are built and tested in the real game. Roadmap phase: 8 (see `docs/specs/00-harness-overview/README.md`).
+Status: part D in progress (2026-10-11). Part A (hot reload) and part B (mock kit) are done. **Part C was wrong:** no run ever loaded the fixture; every run started a new game (`implementation-notes/fixture-load-bug.md`). Part D replaces it. Roadmap phase: 8 (see `docs/specs/00-harness-overview/README.md`).
 
 ## Goal
 Make iteration fast and the test situations repeatable:
@@ -43,6 +43,19 @@ New design: the launcher sets `LOCALAPPDATA=<run folder>\appdata` for the game p
 - `python harness/tools/fixtures.py list|record|install <name> --appdata DIR|remove --appdata DIR`.
 - More fixtures are made by the agent through scenarios that save a game state (`PawnCPP:requestSaveFile`), spec 07.
 
+**Correction (2026-10-11):** part C never worked. The game lists and loads saves only from the user's REAL save folder, so the copy in the private folder was never read. Worse, `HarnessBoot` passed the list entry through `:get()`, the menu's `LoadGame` then got no usable slot, and the game started a NEW game on the slot's map. The boot still reached READY, so the runs looked fine. Evidence and the fix: `implementation-notes/fixture-load-bug.md`.
+
+### Part D: local fixture files and a slot install (user request, 2026-10-11)
+Goal: keep save fixtures as files in the repo folder and load any of them with one command.
+- Store: `harness/fixtures/saves/<name>/` holds the slot files under the stem `slot` (`slot.sav`, `slot_descr.sav`, `slot.png`, `slot_coat_<n>.png`). The folder is in `.gitignore` (save files are user data and a few MB). The manifest `fixtures.json` keeps the SHA-256 of each stored file, the description and the tags.
+- `fixtures.py import <name> --source-slot <slot>` copies a slot of the user's save folder into the store. `--from <path to a .sav>` copies a slot from any folder.
+- Install (`runlib/saveslots.py`): a run copies the stored files into the user's save folder under the next free name `saveGame_<max+1>` (the load screen lists only `saveGame_<n>` with numbers up to the highest one). It rewrites `saveSlot` in the copy of `_descr.sav` to the new name, because the game takes the slot name from that file, not from the file name. `saveName` (the name in the load list) becomes `harness <name>`. It never overwrites a file. A ledger `runs/.installed-slots.json` lists each copy with its hashes.
+- Load: `HarnessBoot` loads that slot. It writes `MLGameInstance.savefileToLoad` before `LoadGame`, and it fails the boot when the field does not hold the wanted slot after the load (the bug above).
+- Remove: teardown deletes exactly the installed files whose hashes still match the ledger, before it compares the user's save folder with the preflight snapshot. A file that changed is kept and reported. Preflight removes copies that an earlier run left (for example after `--keep-open`); `fixtures.py uninstall` does it by hand.
+- Command: `python harness/tools/load_save.py <fixture name | path to a .sav>` starts the game with that save and leaves it open (a `noop` run with `--keep-open`). `run.py --save <path>` does the same for any scenario.
+- A fixture with no stored files (`source_slot` only, the old kind) is loaded from its source slot by name, read only.
+- Safety: this writes into the user's save folder, which the user asked for. Only new files with a free name are written, and only files that the ledger lists are deleted.
+
 ## Plan
 1. [x] Test the hot reload options in the real game. Record the results (what works, how long, side effects like double hooks). (Done: `implementation-notes/hot-reload.md`.)
 2. [x] Build `reload_mods.py` for the working option, with tests. Measure the loop time. (Done: 2.1 to 2.3 s.)
@@ -57,10 +70,18 @@ New design: the launcher sets `LOCALAPPDATA=<run folder>\appdata` for the game p
 - How is a fixture loaded then? The game gets a private `LOCALAPPDATA`, and the fixture is its `saveGame_0`. This works: boot reaches READY in about 31 s, the same as before.
 
 ## Open questions
+- Does the load list keep working when the installed number is far above the user's slots? Only `max+1` is used, so this is not needed.
 - Crash reports in the private folder (expected in `<run>\appdata\ManorLords\Saved\Crashes`; not tested, no crash was forced).
 - Steam cloud or achievements with a redirected folder (not tested).
 
 ## Acceptance criteria
+Part D:
+- [x] `load_save.py manor-bailey` starts the game on day 106 with the manor (`manor_state`: region manor set), from files in `harness/fixtures/saves/manor-bailey/` (run `load-save-2`).
+- [x] A run with `--fixture manor-bailey` passes 3 times; after each, the user's save folder equals the preflight snapshot (the installed copy is gone). Runs `manor-load-1` to `-3`.
+- [x] A boot that starts a new game instead of the wanted slot ends in FAILED (mock kit mode `newgame`).
+- [x] The `base` fixture is imported from `saveGame_0` and its runs load it (boot log `loaded slot confirmed`; run `base-load-1`: day 266, 24 buildings, 10 families).
+
+Part A to C:
 - [x] A Lua change reaches the running game in under 30 s, checked with a version line in `mod.log`, 3 times in a row. (2.3 s, 2.1 s, 2.1 s.)
 - [x] A new mod can be tested with the mock kit in under 30 lines, shown by two tests.
 - [x] The fixture `base` is installed, loaded by the launcher (`READY`, paused) and removed, and no user save file changed (SHA-256 before and after). 3 runs with `--fixture base` passed; 204 user files identical; the private folder was deleted each time.

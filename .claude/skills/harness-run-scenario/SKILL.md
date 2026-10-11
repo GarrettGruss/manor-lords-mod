@@ -15,7 +15,7 @@ A run starts the game, loads a test save, runs one scenario, collects logs, and 
 
 ## Ways to run
 - MCP tools (`manor-harness`): `run_scenario(name)`, then `wait_for_run(run_id)` until it returns a summary. If a new scenario is "unknown", the MCP server holds old code: ask the user to run `/mcp` and reconnect, or use `run.py`.
-- Direct: `.venv\Scripts\python.exe harness\run.py --scenario <name> [--run-id ID] [--keep-open] [--fixture NAME] [--pak NAME] [--env KEY=VALUE]`.
+- Direct: `.venv\Scripts\python.exe harness\run.py --scenario <name> [--run-id ID] [--keep-open] [--fixture NAME | --save PATH.sav] [--pak NAME] [--env KEY=VALUE]`. The boot log line `loaded slot confirmed` proves the save loaded. To only open the game on a save: `harness\tools\load_save.py <fixture | path>`.
 - Repeat: `.venv\Scripts\python.exe harness\run_series.py --scenario <name> --runs 3`.
 - Suite with baselines and A/B variants: `.venv\Scripts\python.exe harness\suite.py --suite <name>` (`--list` shows them).
 - List scenarios: `run.py --list-scenarios` (add `--include-test-scenarios` for hidden ones).

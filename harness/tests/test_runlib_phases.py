@@ -159,7 +159,8 @@ class StalePreflightTest(TempTestCase):
         install.exe.parent.mkdir(parents=True)
         install.exe.write_text("")
         # _stop_stale_game is patched: unpatched, this test stopped a real game that ran at the same time.
-        with mock.patch.object(phases, "is_steam_running", return_value=True), mock.patch.object(phases, "_stop_stale_game"):
+        # The store and the ledger point to temp files: the real ones must never be used by a test.
+        with mock.patch.object(phases, "is_steam_running", return_value=True), mock.patch.object(phases, "_stop_stale_game"),                 mock.patch.object(phases.fixtures, "STORE_DIR", self.temp / "store"),                 mock.patch.object(phases.saveslots, "LEDGER_PATH", self.temp / "ledger.json"):
             with self.assertRaisesRegex(PhaseFailed, "fixture base"):
                 phases._preflight(install, "saveGame_0")(self.ctx)
 
