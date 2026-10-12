@@ -12,7 +12,7 @@ Each changed place in the code has a comment `PATCH P<n> (harness)`. Search for 
 | P2 | `mcp/ue4ss_bridge/server.py` | `eval_lua` and the CLI `eval` verb work only if `UE4SS_BRIDGE_ALLOW_EVAL=1`. The eval timeout is at most 60 s. |
 | P8 | `mod/UEBridge/scripts/main.lua` | `get`, `set` and `call` refuse a name that is not a non-empty string. A nil name crashed the game (see `smoke-test-log.md`). |
 | P3 | none | The Lua mod lives in `mod/UEBridge/`, so `harness/deploy.ps1` deploys it as `Mods\UEBridge`. |
-| P7 | `mcp/requirements.txt`, `.mcp.json`, `.claude/settings.json` | `mcp` is pinned. Stdio only. Eval is denied. Risky tools ask first. |
+| P7 | `pyproject.toml` and `uv.lock` (was `mcp/requirements.txt`), `.mcp.json`, `.claude/settings.json` | `mcp` is pinned. Stdio only. Eval is denied. Risky tools ask first. |
 
 ## Known limits of the patches
 - In-game tests so far: see `docs/specs/01-ue4ss-bridge/implementation-notes/smoke-test-log.md`. No Lua interpreter exists on the dev machine, so the Lua is checked only by reading it and by running it in the game.
