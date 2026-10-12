@@ -44,6 +44,7 @@ MAX_BANNER_TEXT = 60
 MAX_BANNER_SUBTEXT = 80
 MAX_BUILDING_TYPE = 300  # same limits as mod/shared/HarnessBuild
 MAX_GOOD_ID = 200
+WALL_TYPES = (2, 3, 4)  # wooden, stone low, stone high (a fence, 1, gets no mesh)
 RUIN_METHODS = ("fire", "collapse")
 MAX_MANOR_AMOUNT = 1000  # same limits as mod/shared/HarnessManor
 MAX_WORKER_SLOTS = 6  # same limit as mod/shared/HarnessManor
@@ -758,6 +759,38 @@ class Actions:
     def manor_worker_state(self) -> dict:
         """Per manor module: `max_slots`, `job`, `assigned` (families), `workers` (people), `is_storage`, plus `goods` and `total`. Read only."""
         return self._command("manor_worker_state")
+
+    # ---- walls outside the manor system (spec 14, implementation-notes/free-walls.md) ----
+    # Steps for a free wall: road_mode(True), click the road points with the real mouse (the road preview shows), road_commit(),
+    # wall_make(road_id, 2). No manor, goods or builders are needed (verified in the real game).
+
+    def wall_state(self) -> dict:
+        """Every wall road (roadType 3 or a wallType): id, wall_name, blueprint, meshes, length, middle. `counts` has one number for each wall name. Read only."""
+        return self._command("wall_state")
+
+    def road_mode(self, on: bool) -> dict:
+        """Turn the road tool of the player on or off. Verified: `road_mode` in the answer follows."""
+        if not isinstance(on, bool):
+            raise ActionError("road_mode: on must be true or false")
+        return self._command("road_mode", on=1 if on else 0)
+
+    def road_commit(self) -> dict:
+        """Commit the road that the player has drawn (2 or more points). Returns `road`, the id of the new road (a plain road, wall_name none)."""
+        return self._command("road_commit")
+
+    def wall_make(self, road_id: int, wall_type: int = 2) -> dict:
+        """Make a committed road a wall: 2 wooden palisade, 3 stone low, 4 stone high. Verified: the road gets roadType 3 and wall meshes at once, with no cost."""
+        if not isinstance(road_id, int) or isinstance(road_id, bool) or road_id <= 0:
+            raise ActionError("wall_make: road_id must be a road id from road_commit or wall_state")
+        if wall_type not in WALL_TYPES:
+            raise ActionError(f"wall_make: wall_type must be one of {WALL_TYPES}")
+        return self._command("wall_make", road=road_id, wall_type=wall_type)
+
+    def wall_remove(self, road_id: int) -> dict:
+        """Remove a wall road with the game's removeRoad. Verified: the meshes and the spline are gone, and wall_state no longer lists it."""
+        if not isinstance(road_id, int) or isinstance(road_id, bool) or road_id <= 0:
+            raise ActionError("wall_remove: road_id must be a road id from wall_state")
+        return self._command("wall_remove", road=road_id)
 
     # ---- AI lords (spec 10, spike S11, implementation-notes/baron-model.md) ----
     # A lord is a number from 1 in FindAllOf("PawnCPP_AI") order (lord 1 was the baron in every run). Target 0 is the player.
