@@ -19,7 +19,7 @@ A suite is `harness/suites/<name>.json`: `name`, `scenarios` (a list), `time_bud
 ```
 Examples: `ab-example.json`, `raid-size-ab.json`, `counters-ab.json`. Runs are interleaved (A, B, A, B) to cancel drift. An optional `expect` rule turns an A/B result into pass or fail (exit code 1).
 ```
-.venv\Scripts\python.exe harness\suite.py --suite raid-size-ab
+uv run python harness\suite.py --suite raid-size-ab
 ```
 Outputs: `runs/suite-<stamp>/report.json` (an `ab` section: the 8 metrics with the largest effect) and `report.md` (a table).
 

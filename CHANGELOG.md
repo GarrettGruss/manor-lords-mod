@@ -6,9 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Removed
+- `harness/requirements.in`, `harness/requirements.txt`, `mcp/requirements.in` and `mcp/requirements.txt`. `pyproject.toml` and `uv.lock` replace them.
 - The UnrealPak response-file packer path of `pakmod.py` and its config keys `packer` and `packer_args` (spec 09 uses repak and UAssetGUI).
 
 ### Changed
+- The repo is a uv project (`pyproject.toml`, `uv.lock`, `.python-version` 3.12; lupa is a dev dependency). Every Python command starts
+  with `uv run python`; the docs and skills no longer call `.venv\Scripts\python.exe` or `uv run --no-project --with lupa`.
 - Criterion M1 now also needs a worker slot with the storehouse or granary role on the manor storage building, served by a real worker. M1 was set to not verified and is verified again: `manor-storage-workers` passed 3 of 3 real runs (`manor-storage-workers-v2-1` to `-3`).
 - Spec 10 has two new criteria for the manor (castle): M1 (the manor can store goods) and M2 (normal buildings can be built inside the manor area so the player can wall in the city), with spike S12. The A and P total is now 39, so the 90% target needs 36 verified (33 now, 85%). Spec 12 acceptance criteria are now these two scenarios.
 - Run cap (spec 10, U3): the default cap of `run.py` is now 400 runs (it was 100). The environment variable `HARNESS_MAX_RUNS` changes the default, `--max-runs` still wins, and a bad value fails with a clear message. `runs/.iterations` is kept. The MCP tool `game_status` uses the same default.

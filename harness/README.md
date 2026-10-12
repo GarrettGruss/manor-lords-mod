@@ -7,9 +7,9 @@ and writes `runs/<id>/summary.json` (spec 03). Read `summary.json` first. Open s
 Steam does not have to be running (tested 2026-10-10). If it is not, the run carries a note. The game must not be started by hand.
 
 ```powershell
-.venv\Scripts\python.exe harness\run.py --list-scenarios
-.venv\Scripts\python.exe harness\run.py --scenario smoke [--keep-open] [--run-id ID] [--max-runs N]
-.venv\Scripts\python.exe harness\run_series.py --scenario smoke --runs 5
+uv run python harness\run.py --list-scenarios
+uv run python harness\run.py --scenario smoke [--keep-open] [--run-id ID] [--max-runs N]
+uv run python harness\run_series.py --scenario smoke --runs 5
 ```
 
 Exit code: 0 pass, 1 fail, 2 crash, 3 timeout, 4 harness error.
@@ -17,14 +17,13 @@ Run cap: `runs/.iterations` counts the runs. The default cap is 400. Change it w
 (the option wins). At the cap, `run.py` stops with `Iteration limit reached` and says how to raise it. Do not delete `runs/.iterations`; raise the cap instead.
 `run_series.py` runs the launcher N times, prints a table and writes `runs\series-<time>.json`. It exits 0 only if all runs pass.
 
-Setup (once). Install the locked packages (`psutil`, `mss`) into the project venv:
+Setup (once). From the repo root, make the venv from the lock file (`pyproject.toml`, `uv.lock`):
 
 ```powershell
-uv pip install --python .venv\Scripts\python.exe --require-hashes -r harness\requirements.txt
+uv sync
 ```
 
-To lock again after a change of `harness\requirements.in`:
-`uv pip compile harness\requirements.in --generate-hashes --python-version 3.12 -o harness\requirements.txt`
+`uv run python ...` also syncs the venv before it runs. To add a package: `uv add <name>` (test-only: `uv add --dev <name>`).
 
 ### Phases
 `preflight`, `deploy`, `launch`, `boot`, `scenario`, `collect`, `teardown`. `collect` and `teardown` always run.
@@ -123,7 +122,7 @@ Screenshots show the screen area of the game window. Windows in front of the gam
 
 ### Unit tests (no game)
 ```powershell
-.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib*.py" -v
+uv run python -m unittest discover -s harness/tests -p "test_runlib*.py" -v
 ```
 
 ## deploy.ps1
@@ -150,9 +149,9 @@ If the game is running a warning is printed and the deploy continues (UE4SS hot 
 
 Run from the repo root. They need only `uv`.
 
-- Syntax of all mods: `uv run --no-project --python 3.12 --with lupa python harness/tests/lua_syntax.py`
+- Syntax of all mods: `uv run python harness/tests/lua_syntax.py`
 - HarnessBoot state machine against a fake game API:
-  `uv run --no-project --python 3.12 --with lupa python harness/tests/boot_state_machine.py happy`
+  `uv run python harness/tests/boot_state_machine.py happy`
   Other modes: `noslot` (slot not in the list) and `missing` (save file missing).
 
 These checks use Lua 5.4 from the `lupa` package. They find syntax errors and wrong variable names.
@@ -207,7 +206,7 @@ The old `launch-series.ps1` was removed. Use `run_series.py`.
 ## Agent tools
 
 `mcp/harness_tools/` is an MCP server (`manor-harness`, spec 05). An agent uses it instead of shell commands.
-It is registered in `.mcp.json`. To start it by hand: `$env:PYTHONPATH = "mcp;harness"; .venv\Scripts\python.exe -m harness_tools`.
+It is registered in `.mcp.json`. To start it by hand: `$env:PYTHONPATH = "mcp;harness"; uv run python -m harness_tools`.
 
 A run takes 1 to 3 minutes, so the tools start and poll:
 1. `run_scenario(name)` starts `harness/run.py` in the background and returns `{"status": "started", "run_id": ...}`.
@@ -217,7 +216,7 @@ A run takes 1 to 3 minutes, so the tools start and poll:
 Other tools: `list_scenarios`, `list_runs`, `game_status`, `stop_game` (refuses while a run holds the lock).
 The read-only tools are allowed in `.claude/settings.json`. `run_scenario` and `stop_game` ask first.
 `HARNESS_RUNS_ROOT` moves the runs folder. It is for tests only.
-Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_harness_tools*.py"`.
+Tests: `uv run python -m unittest discover -s harness/tests -p "test_harness_tools*.py"`.
 
 ## Regression suite
 
@@ -225,9 +224,9 @@ Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_
 Each run is a separate `run.py` process, so a crash in one run does not stop the suite.
 
 ```powershell
-.venv\Scripts\python.exe harness\suite.py --suite core [--max-minutes N] [--runs-root DIR]
-.venv\Scripts\python.exe harness\suite.py --list
-.venv\Scripts\python.exe harness\suite.py --update-baseline <scenario> [--from-last N]
+uv run python harness\suite.py --suite core [--max-minutes N] [--runs-root DIR]
+uv run python harness\suite.py --list
+uv run python harness\suite.py --update-baseline <scenario> [--from-last N]
 ```
 
 Suites are files `harness\suites\<name>.json`: `smoke` (1 run), `core` (smoke x2, time-advance x2, telemetry-sanity x1; about 4.7 minutes), `soak` (smoke x10) and `selftest` (a failing, a timing-out and a passing scenario; it checks the suite itself and exits 2 on purpose).
@@ -248,7 +247,7 @@ On a run timeout the suite kills the `run.py` process tree and then runs `game-c
 Test the suite without the game: `HARNESS_SUITE_LAUNCHER` (or `--launcher-command`) replaces `run.py`.
 
 ```powershell
-.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_suitelib*.py" -v
+uv run python -m unittest discover -s harness/tests -p "test_suitelib*.py" -v
 ```
 
 ## Mock kit (no game needed)
@@ -257,8 +256,8 @@ Test the suite without the game: `HARNESS_SUITE_LAUNCHER` (or `--launcher-comman
 Read `harness/tests/fakegame/README.md` for how to write one, and for what the fake does not cover.
 
 ```powershell
-uv run --no-project --python 3.12 --with lupa python -m unittest discover -s harness/tests -p "test_fakegame*.py" -v
-uv run --no-project --python 3.12 --with lupa python harness/tests/boot_state_machine.py [mode ...]
+uv run python -m unittest discover -s harness/tests -p "test_fakegame*.py" -v
+uv run python harness/tests/boot_state_machine.py [mode ...]
 
 ## Hot reload (no game restart)
 
@@ -274,9 +273,9 @@ A syntax error is not in `mod.log`; look at `ue4ss\UE4SS.log` (`Error loading sc
 UE4SS auto reload is also on in this install, but it reloads only one mod when two change together, so the tool does not rely on it.
 
 ```powershell
-.venv\Scripts\python.exe harness\run.py --scenario noop --keep-open     # leaves the game running
-.venv\Scripts\python.exe harness\tools\reload_mods.py                   # after you edit a mod
-.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_reload_mods.py" -v
+uv run python harness\run.py --scenario noop --keep-open     # leaves the game running
+uv run python harness\tools\reload_mods.py                   # after you edit a mod
+uv run python -m unittest discover -s harness/tests -p "test_reload_mods.py" -v
 ```
 
 ## Save fixtures
@@ -302,9 +301,9 @@ Commands:
 - Fixtures now: `base` (the user's `saveGame_0`: day 266, 24 buildings, 10 families) and `manor-bailey` (`saveGame_28`: day 106, manor with gate and bailey).
 
 ```powershell
-.venv\Scripts\python.exe harness\tools\load_save.py manor-bailey
-.venv\Scripts\python.exe harness\run.py --scenario smoke --fixture base
-.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_*slot*.py" -v
+uv run python harness\tools\load_save.py manor-bailey
+uv run python harness\run.py --scenario smoke --fixture base
+uv run python -m unittest discover -s harness/tests -p "test_runlib_*slot*.py" -v
 ```
 
 ## Actions (`ctx.actions`)
@@ -354,7 +353,7 @@ A game crash while a letter is sent (plain strings instead of `FName` values) is
 `silver-change` (set, add and take silver; checks the player value, the telemetry and the HUD, about 50 s), `winter-region` (winter, forced Approval and wealth, 3 game days, about 65 s),
 `letter-delivery` (a letter into the InBox, about 40 s), `place-building` (hidden, so the MCP tools and suites never start it: a real OS mouse click; do not run it while a person works on the computer). Hidden: `selftest-action` (an impossible action, must fail with a clear message) and `probe-actions`, `probe-building` (HARNESS_PROBE_B: read, mode, click, scan)
 (the probe; choose a group with `HARNESS_PROBE`: money, time, region, cheat, cheat2, cheat3, weather, hud, mail, helper; the groups `message`, `items` and `names` end the game on purpose).
-Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_actions.py" -v` and, with lupa, `test_fakegame_harnessactions.py`.
+Tests: `uv run python -m unittest discover -s harness/tests -p "test_runlib_actions.py" -v` and, with lupa, `test_fakegame_harnessactions.py`.
 
 ## Asset mods (spec 09)
 `harness/tools/pakmod.py` finds and extracts assets from the game paks, converts them to JSON and back, builds a patch pak, and installs and removes it.
@@ -370,7 +369,7 @@ Setup (only you can do this; the repo has no tools and no AES key):
 3. Make a work folder outside the repo, for example `C:\modwork`. Exports, `.usmap` files and AES keys stay outside the repo. Never commit them.
 4. Copy `harness\pakmod.local.example.json` to `harness\pakmod.local.json` (it is in `.gitignore`) and set the paths, `usmap`, `engine_version` (`5.5`) and `work_dir`.
    Leave `sha256` empty. If the game paks are encrypted, set the environment variable named in `aes_key_env` (the key itself never goes into a file).
-5. Run `.venv\Scripts\python.exe harness\tools\pakmod.py check --pin`. It writes the SHA-256 of both tools into the config and prints them. This is a reviewed action: only pin files you trust.
+5. Run `uv run python harness\tools\pakmod.py check --pin`. It writes the SHA-256 of both tools into the config and prints them. This is a reviewed action: only pin files you trust.
    Later `check` runs refuse (exit code 3) when a tool file changed.
 
 Commands (all accept `--dry-run` and `--game-dir`; a mod name matches `^[A-Za-z0-9_-]{1,40}$`):
@@ -393,15 +392,15 @@ The config can override the argument templates (key `templates`), because the re
 `uninstall.ps1 -Remove` also removes the manifest paks. Restart the game after install or remove (the launcher starts a new game for each run anyway).
 To check the effect: set `HARNESS_EXPECT_ITEM_ROWS='{"17": {"Value": 0.75}}'` in the shell, then run `run.py --scenario datatable-vanilla --pak <name>`. It passes with the pak and fails without it (verified). `fromjson` needs an absolute path for the JSON file.
 Without a pak the scenario compares 24 `itemStats` rows with `harness/vanilla/itemStats.json` (about 50 s per run). Details: `docs/specs/09-asset-mods/implementation-notes/tooling.md`.
-Tests: `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_pakmod.py" -v` and `test_runlib_itemtable.py`.
+Tests: `uv run python -m unittest discover -s harness/tests -p "test_pakmod.py" -v` and `test_runlib_itemtable.py`.
 
 ## Coverage of a feature (criteria and COVERS)
 The tool `harness/tools/coverage.py` measures how many criteria of spec 10 (Invasion Mode) have a verified test method. Data: `docs/specs/10-invasion-testability/criteria.json`.
 - Tag a scenario: add a module constant `COVERS = ["T1", "T2"]` (criterion ids). The tool reads it with `ast`. It never runs the scenario file. An unknown id is an error.
 - Mark a criterion verified: a scenario that covers it and has a passing run (newest `runs/*/summary.json` of that scenario with verdict `pass`) counts. A spike result counts too: set `method_verified` to true in `criteria.json` and list the evidence (note path or scenario name) in `verified_by`.
-- Run: `.venv\Scripts\python.exe harness\tools\coverage.py` (options: `--json`, `--min-verified 0.9`, `--runs-root`, `--criteria`, `--check-spec`). Exit code 0 is ok, 1 is a failed check, 2 is bad input.
+- Run: `uv run python harness\tools\coverage.py` (options: `--json`, `--min-verified 0.9`, `--runs-root`, `--criteria`, `--check-spec`). Exit code 0 is ok, 1 is a failed check, 2 is bad input.
 - Numbers: automatable share is (A + P) / all criteria. Verified share is the A and P criteria with a verified method / all A and P criteria. The target is 90%. Blocked criteria (missing game systems) stay in the count, so they lower the share. The gap list names A and P criteria with no scenario and no verification.
-- Tests: `.venv\Scripts\python.exe -m unittest harness/tests/test_coverage.py`.
+- Tests: `uv run python -m unittest harness/tests/test_coverage.py`.
 
 ## A/B variants and statistics
 Combat is not deterministic, so a feature is judged over N runs per variant (spec 10, U4). Rules and limits: `docs/specs/10-invasion-testability/implementation-notes/ab-statistics.md`.
@@ -427,4 +426,4 @@ A mod can expose its own state to the harness (spec 10, U10). Full rules, an exa
   `raid-timeline` (T1, T3; waits real game days), `raid-seasons` (T5, P6), `raid-behavior` (R1, R4, R6), `raid-tiers` (D1, D2, D3; reports `tierN_mean_size` and `tierN_mean_raids` with `ctx.metric`),
   `raid-sack` (S2, S3), `raid-politics` (P1, P2, P4). The commands `set_day` and `advance_days` move the toy clock, `configure seed=N` makes a run repeatable. The helper package `harness/raidstandin/` is not a scenario package.
   The suite `raid-size-ab` runs `raid-tiers` with `RAID_STANDIN_SIZE_PERCENT` 100 and 150 as a real A/B example for the mod. Tested with the fake game kit only (`test_fakegame_raidstandin.py`, `test_fakegame_raid_scenarios.py`); the real-game run is pending.
-- Tests: `uv run --no-project --python 3.12 --with lupa python -m unittest discover -s harness/tests -p "test_fakegame*.py"` and `.venv\Scripts\python.exe -m unittest discover -s harness/tests -p "test_runlib_modstate.py"`.
+- Tests: `uv run python -m unittest discover -s harness/tests -p "test_fakegame*.py"` and `uv run python -m unittest discover -s harness/tests -p "test_runlib_modstate.py"`.

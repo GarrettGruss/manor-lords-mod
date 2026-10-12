@@ -1,7 +1,7 @@
 # Reads the game clock twice through ue4ss-bridge and prints one JSON line.
 # The game counts as paused when the clock did not change.
 # Run from the repo root with the project venv, with PYTHONPATH=mcp and UE4SS_BRIDGE_GAME_DIR set:
-#   .venv\Scripts\python.exe harness\tools\read_clock.py [seconds]
+#   uv run python harness\tools\read_clock.py [seconds]
 import json
 import sys
 import time

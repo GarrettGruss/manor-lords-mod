@@ -1,5 +1,5 @@
 # Runs mod/HarnessBoot against a fake game API (no game needed). Run from the repo root:
-#   uv run --no-project --python 3.12 --with lupa python harness/tests/boot_state_machine.py [mode ...]
+#   uv run python harness/tests/boot_state_machine.py [mode ...]
 # With no mode, all modes run. It checks the state machine and the output files.
 # It does not prove that the real game API behaves the same.
 #
