@@ -54,6 +54,19 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 - Do not commit unless the user asks.
 - Never skip hooks. Never force push.
 
+## GitHub issues
+
+- Every new feature has one GitHub issue that tracks its status. Create the issue when the spec is written.
+  - Title: `Spec <NN>: <feature name>`. Link the spec folder and the feature branch in the body.
+  - Keep the body current: what works, what is open, and the next step.
+- Create and manage issues with the `gh` CLI (`gh issue create`, `gh issue edit`, `gh issue comment`, `gh issue close`).
+- Show the status with these labels:
+  - `status: in progress`: work is ongoing.
+  - `status: blocked`: work cannot continue. Say what blocks it in a comment.
+  - `status: awaiting user`: the user must act or decide. Use it together with `status: blocked` when the user is the blocker.
+- Add a comment when the status changes, a spike ends, or a branch is merged. Close the issue when the feature is merged and done.
+- Reference the issue in commits and pull requests of the feature (`Refs #<n>`, or `Closes #<n>` in the final pull request).
+
 ## Changelog
 
 - Keep `CHANGELOG.md` current. Use the Keep a Changelog format.
