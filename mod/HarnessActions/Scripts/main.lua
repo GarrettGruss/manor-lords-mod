@@ -77,6 +77,12 @@
 --   {"command":"lord_receive_region","lord":3,"region":"Goldhof"}  clear the owner, then the lord claims: the lord builds there
 --   {"command":"lord_found_village","lord":3,"region":"Goldhof","type":1,"supply":0}  the lord claims and settles a free region
 --   {"command":"settle_region","target":0,"region":"Eichenhau","type":1,"supply":0}  settleRegion (owned region only; x, y, z, outpost optional)
+--   Wall commands (spec 14, see mod/shared/HarnessWalls): walls outside the manor system
+--   {"command":"wall_state"}                                every wall road (roadType 3 or wallType set): id, wall_name, blueprint, meshes, length, middle (read only)
+--   {"command":"road_mode","on":true}                       road tool on or off (clicks with the real mouse then place road points)
+--   {"command":"road_commit"}                               commit the drawn road; the answer has its id
+--   {"command":"wall_make","road":123,"wall_type":2}        make a committed road a wall: 2 wooden, 3 stone low, 4 stone high
+--   {"command":"wall_remove","road":123}                    remove a wall road (PawnCPP:removeRoad)
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -93,8 +99,9 @@ local ui = require("HarnessUi")
 local build = require("HarnessBuild")
 local manor = require("HarnessManor")
 local lordsCmd = require("HarnessLords")
+local walls = require("HarnessWalls")
 
-local VERSION = "16"
+local VERSION = "18"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -364,6 +371,11 @@ local COMMANDS = {
     lord_receive_region = lordsCmd.lord_receive_region,
     lord_found_village = lordsCmd.lord_found_village,
     region_clear_owner = lordsCmd.region_clear_owner,
+    wall_state = walls.wall_state,
+    road_mode = walls.road_mode,
+    road_commit = walls.road_commit,
+    wall_make = walls.wall_make,
+    wall_remove = walls.wall_remove,
 }
 
 local function runCommand(number, raw)
