@@ -83,6 +83,11 @@
 --   {"command":"road_commit"}                               commit the drawn road; the answer has its id
 --   {"command":"wall_make","road":123,"wall_type":2}        make a committed road a wall: 2 wooden, 3 stone low, 4 stone high
 --   {"command":"wall_remove","road":123}                    remove a wall road (PawnCPP:removeRoad)
+--   Policy commands (spec 16, see mod/shared/HarnessPolicies): the edicts of the player's region
+--   {"command":"policy_state"}                              policies in the slots, signed ids, available ids, slot count, approval and its factors, silver, influence (read only)
+--   {"command":"policy_enact","policy":12,"slot":0}         PawnCPP:enactPolicy; refused when the id is not available or the slot is outside the slot count
+--   {"command":"policy_sign","policy":12,"signed":false}   Region:setPolicySigned (the call the policy widget uses)
+--   {"command":"menu_probe_show","policy":12,"x":300,"y":300}   spike: put one game policy widget (policyWidget_C) on the screen; menu_probe_read polls its button; menu_probe_hide removes it
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -100,8 +105,9 @@ local build = require("HarnessBuild")
 local manor = require("HarnessManor")
 local lordsCmd = require("HarnessLords")
 local walls = require("HarnessWalls")
+local policies = require("HarnessPolicies")
 
-local VERSION = "18"
+local VERSION = "19"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -203,6 +209,9 @@ local function parseRequest(raw)
         finalize = tonumber(raw:match('"finalize"%s*:%s*(%d+)')),
         supply = tonumber(raw:match('"supply"%s*:%s*(%d+)')),
         outpost = raw:match('"outpost"%s*:%s*"([%w_]+)"'),
+        policy = tonumber(raw:match('"policy"%s*:%s*(%d+)')),
+        slot = tonumber(raw:match('"slot"%s*:%s*(%d+)')),
+        signed = ({ ["true"] = true, ["false"] = false })[raw:match('"signed"%s*:%s*(%a+)') or ""],
     }
 end
 
@@ -376,6 +385,12 @@ local COMMANDS = {
     road_commit = walls.road_commit,
     wall_make = walls.wall_make,
     wall_remove = walls.wall_remove,
+    policy_state = policies.policy_state,
+    policy_enact = policies.policy_enact,
+    policy_sign = policies.policy_sign,
+    menu_probe_show = policies.menu_probe_show,
+    menu_probe_read = policies.menu_probe_read,
+    menu_probe_hide = policies.menu_probe_hide,
 }
 
 local function runCommand(number, raw)
