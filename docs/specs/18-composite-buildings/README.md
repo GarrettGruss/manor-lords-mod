@@ -1,6 +1,6 @@
 # Spec 18: Custom composite buildings
 
-Status: spec written (2026-10-12). Spike not started. Issue: #69. Branch: `feat/18-composite-buildings`.
+Status: static part and Lua part-edit spikes done (2026-10-13). Pak steps (plan 3 and 4) BLOCKED: the AES key (MANORLORDS_AES_KEY) is not available. Issue: #69. Branch: `feat/18-composite-buildings`.
 
 ## Goal
 
@@ -28,8 +28,8 @@ From spec 15 notes (`tent-placement.md`, `burgage-placement-events.md`):
 
 1. Data: find where the parts of a building type are defined (data table, blueprint class, building stats). Find how each part mesh is chosen. Use the pak tools of spec 09 and spec 11 on exported data only. No game assets go in git.
 2. Run time: test if Lua can add or remove a part on a built master, in a test game.
-3. Pak: make a minimal pak that adds one new building type with its own part list. Check if it loads, shows in the build menu, and can be placed.
-4. Function: test if the new type can carry a building function, for example housing families like the tent.
+3. Pak (BLOCKED on the AES key, no extract or repack possible): make a minimal pak that adds one new building type with its own part list. Check if it loads, shows in the build menu, and can be placed.
+4. Function (BLOCKED, needs step 3): test if the new type can carry a building function, for example housing families like the tent.
 5. Write findings to `implementation-notes/`, one file per topic.
 
 ## Open questions
@@ -41,7 +41,13 @@ From spec 15 notes (`tent-placement.md`, `burgage-placement-events.md`):
 
 ## Acceptance criteria
 
-- [ ] A note names the asset or code that defines the parts of a building type, with evidence.
-- [ ] A note says if Lua can change the parts of a built master, with a test result.
-- [ ] A note says if a pak can add a new composite building type, with a test result or a clear reason why not.
+- [x] A note names the asset or code that defines the parts of a building type, with evidence. `implementation-notes/building-parts-static.md` (row -> `BM_*` class; link for tent and plot not read, partly open).
+- [x] A note says if Lua can change the parts of a built master, with a test result. `implementation-notes/part-edit-test.md`: append and unlink work in memory; a visible new part is not solved.
+- [ ] (BLOCKED, AES key) A note says if a pak can add a new composite building type, with a test result or a clear reason why not.
 - [ ] If the answer is no, the reason is recorded and the issue is closed as blocked or done.
+
+## Status (2026-10-13)
+- Done: static read (`implementation-notes/building-parts-static.md`) and the Lua part-edit test (`implementation-notes/part-edit-test.md`,
+  HarnessActions 38, commands `master_parts`, `master_part_add`, `master_part_remove`, probe `probe-composite`).
+- Blocked: plan steps 3 and 4 (pak with a new type, building function). They need the AES key to extract and repack. Resume when the key is set.
+- Open: spawn a visible part from a real `BM_*` class; read `BlueprintPath` of rows 87 and 3 safely.
