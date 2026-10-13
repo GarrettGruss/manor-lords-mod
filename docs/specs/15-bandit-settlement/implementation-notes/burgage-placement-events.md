@@ -77,3 +77,67 @@ Steps: snapshot the pawn, the user draws 2 points, diff; 2 more points (a closed
 - Homeless tents are removed by the game when homes are free. A mod that wants homeless people must keep free homes at 0.
 </content>
 </invoke>
+
+## How a built burgage plot is made up (2026-10-12, run `s65-burgage-inspect`, fixture `base`)
+The user hovered the house of a level 1 plot; `PawnCPP:getHitBuilding()` gave `SMBuildingMaster_2147466692`: `Data.bType` 3,
+constructed, `lv` 1, `buildingFunction` 1, `occupantFamilyIDs` [3] (one family). It is built like the homeless tent: one
+`SMBuildingMaster` with plain `SMBuilding` prop parts, each with one `StaticMeshComponent0`.
+- `buildings`: 35 parts. The house is ONE part, `SM_MERGED_C_SG_Cottage_Lv1_A_v4_UBeamFoudnations`. The others are props: a shed
+  (`SM_MERGED_C_SG_J_ShedA`), an outhouse, a gate, fence segments, stairs, a chest, a bag, a rope, barrels, a sitting log, stick heaps,
+  stone packs, 8 `GroundBlenderA` (ground blend meshes) and 3 grass clumps (`clump_short_2_wallMask`).
+- `Extensions`: 1 entry (`Extension` struct, `Type` 0 = the back garden). It has its own list of 33 parts (log walls, filler boards,
+  sitting logs, tools: hoe, hammer, shovel, 2 axes, a wagon wheel, a tub, fences, stones, stick heaps) and its own `dirtPlanes` mesh
+  components on the master.
+- So a plot is a building master + house mesh part + prop parts, and the garden extension is a second part list inside the same master.
+  The game picks the props. Not checked: whether plots placed with `plot_field_place` get the same parts.
+- A larger plot with a vegetable garden (`SMBuildingMaster_2147467363`, user hover): still `Data.bType` 3 and `lv` 1, but
+  `upgradesDone` = [12, 108] and `occupantFamilyIDs` = [4, 5] (two families). The house is two parts (`SM_MERGED_C_SG_Cottage_Lv1_C_UBeam`
+  and `SM_MERGED_C_SG_Cottage_LV1_BPart_C_UBeam`, the second family's part); 35 parts in all. The extension has `Type` 8 (vegetable
+  garden, 18 parts: 6 cabbages, beet bundles, carrot piles, baskets, a narrow shed). So plot upgrades do not change the building type:
+  they are listed in `upgradesDone` (12 is in row 3's `upgrades` list [2, 12]; 108 is likely the garden) and change the part lists and the
+  extension type. Lead: `PawnCPP:addUpgradeRequest` and `addExtensionChangeRequest` could add these without the mouse (not tested).
+
+## Garden upgrade through the panel (same session, user upgraded the small plot `SMBuildingMaster_2147466692`)
+- Hook: `PawnCPP:addExtensionChangeRequest(UpgradeRequest)` fired once (the panel call is reflected and hookable).
+  `UpgradeRequest` (16 bytes, jmap) is fully reflected: `buildingMaster` (SMBuildingMaster), `upgradeID` (int), `Slot` (int).
+  `PawnCPP:addUpgradeRequest` takes the same struct.
+- Plot diff: `upgradesDone` [] -> [108] (108 = vegetable garden), `Extensions[1].Type` 0 -> 8, `Data.constructed` true -> false,
+  `isBeingUpgraded` true, `constructionGoods` = 2 planks (item 17), the old yard parts removed (28 house-list parts, 14 extension parts),
+  18 `Resources` entries added, a field decal, `forceHarvest` true. Builders must finish the upgrade.
+- Lead (not tested): a mod calls `addExtensionChangeRequest({buildingMaster = plot, upgradeID = 108, Slot = 0})` for a garden, and
+  `addUpgradeRequest` with `upgradeID` 12 for the second family (row 3 `upgrades` [2, 12]).
+- Builders finished the garden (`Data.constructed` true, `isBeingUpgraded` false). Buying carrot seeds in the panel fired
+  `PawnCPP:addUpgradeRequest({buildingMaster = the plot, upgradeID = 30, Slot = 0})` (args read by the hook). `upgradesDone` became
+  [108, 30] (30 = carrot seeds). Regional wealth went 591 -> 559 over the same minutes (the seed price is part of it; not isolated).
+- **Upgrade without the mouse (HarnessActions 37, command `plot_upgrade`):** with the user's mouse over a plain plot
+  (`SMBuildingMaster_2147466768`, type 3, `upgradesDone` []), the command called `PawnCPP:addUpgradeRequest({buildingMaster = getHitBuilding(),
+  upgradeID = 12, Slot = 0})` from Lua (the hook saw it). A moment later: `upgradesDone` [12], `isBeingUpgraded` true, `Data.constructed`
+  false, `constructionGoods` 2 timber (item 16), families still [2]. So a Lua table with an object field is accepted as the struct.
+- **Upgrade ids** (engine `RTSMultiEngineCPP.upgrades`, 63 `Upgrade` structs: Name, cost, regionalWealth, upgradesInto, ...; also
+  `DT_Upgrades`): normal upgrade id = list position + 1 (WRONG, see the correction below), extension id = 100 + extension number. Checked against the panel:
+  12 = `BPart` (cost 2 timber: the second-family house part, user saw "2 logs"), 30 = `PlantCarrots` (32 regional wealth; the user bought
+  carrot seeds), 108 = `extension8` (2 planks, the vegetable garden, extension `Type` 8). Others: 2 peasant house, 3 townhouse,
+  28 to 33 the crops (beetroots, carrots, cabbages, quinces, apples, pears), 14 herbs_garden. `buildingStats` rows with the same numbers
+  are unrelated (row 108 is clay_furnace).
+- After `plot_upgrade upgrade=12` the plot showed "awaiting an extension" (user): the upgrade is under construction like the garden.
+- Result: after the builders finished the BPart upgrade (id 12) placed by `plot_upgrade`, the plot holds **2 families** (user). The user
+  says this plot is too small for the second-family upgrade in normal play; the panel does not offer it there. So the plot size check is
+  only in the UI: `addUpgradeRequest` from Lua does not enforce it (like `convertBlueprintsToBuildings` ignoring `maxInRegion`).
+  For refugee waves this gives a mouse-free way to add family slots to existing plots (2 timber each).
+- **Extensions take the plain extension number.** A first try sent `addExtensionChangeRequest` with `upgradeID` 108: the extension
+  `Type` became 108, `upgradesDone` got a 0, no build started, and the panel showed `upgradeID_208` (invalid). The panel's delete button
+  sent `addExtensionChangeRequest(upgradeID 0)` (hook): `Type` back to 0, the bad entry removed. Then `plot_upgrade upgrade=8
+  extension=true`: `Type` 8, `upgradesDone` [12, 108], `isBeingUpgraded` true, cost 2 planks. So the request uses the extension number
+  (0 = plain yard, 8 = vegetable garden) and the game stores number + 100 in `upgradesDone`.
+- Seeds without the mouse: after the garden was built (`constructed` true), `plot_upgrade upgrade=30` (`addUpgradeRequest`) gave
+  `upgradesDone` [12, 108, 30]; regional wealth 559 -> 527 (exactly 32, the `PlantCarrots` price). The user confirmed it in the panel.
+  Full mouse-free plot chain on one plot: wing (12, 2 timber) -> garden (extension 8, 2 planks) -> carrot seeds (30, 32 wealth).
+- **Correction: the id rule "list position + 1" is wrong.** Level 2: `plot_upgrade upgrade=3` (twice, the second time after the food
+  need was met) only added a stray 3 to `upgradesDone`; nothing was built. The user then clicked the level 2 upgrade in the panel: the hook
+  saw `addUpgradeRequest(upgradeID 2)`; the plot became `bType` 8 (peasant house), under construction, `upgradesDone` [12, 108, 30, 3, 2].
+  The stray 3 did not block it. So ids are not list positions in `RTSMultiEngineCPP.upgrades`; they are most likely the row keys of
+  `DT_Upgrades`. Ids confirmed from panel calls or effects: 2 = level 2 (peasant house, plot type 3 -> 8), 12 = second-family wing,
+  30 = carrot seeds (32 wealth), extension 8 = vegetable garden. Read `DT_Upgrades` row keys before using any other id.
+- A level-up needs the family's needs met first (the panel said "requirements not met": foraged goods, vegetables, grains or fruits);
+  after 50 each of berries (171), vegetables (230), wheat bread (172) and apples (296) and some game time, it was met.
+- Level 2 finished: `Data.bType` 8, constructed, `lv` 2, families [2, 10] (two), `upgradesDone` [12, 108, 30, 3, 2].

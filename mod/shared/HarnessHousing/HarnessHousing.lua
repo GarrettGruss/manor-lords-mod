@@ -339,6 +339,39 @@ local function checkPlotData(plots)
     return nil
 end
 
+-- Spike: a plot upgrade without the mouse. The building panel calls PawnCPP:addUpgradeRequest or addExtensionChangeRequest with
+-- UpgradeRequest {buildingMaster, upgradeID, Slot} (seen by hooks, 2026-10-12). Ids seen from the panel: 2 level 2 (peasant house),
+-- 12 second-family wing, 30 carrot seeds. They are not positions in RTSMultiEngineCPP.upgrades (likely DT_Upgrades row keys); a
+-- wrong id is only recorded in upgradesDone and builds nothing. An extension request takes the plain extension number (8 vegetable
+-- garden, 0 plain yard); the game stores it as number + 100 in upgradesDone. Sending 108 made an invalid extension.
+-- The game charges the normal costs but skips the panel's plot size check. The target is the building under the mouse.
+-- Request: upgrade (id), slot (default 0), extension (true/false).
+M.MAX_UPGRADE_ID = 1000
+
+local function intField(raw, name)
+    return tonumber((raw or ""):match('"' .. name .. '"%s*:%s*(%d+)'))
+end
+
+function M.plot_upgrade(_, raw)
+    local upgrade, slot = intField(raw, "upgrade"), intField(raw, "slot") or 0
+    if not upgrade or upgrade > M.MAX_UPGRADE_ID then return { ok = false, error = "upgrade must be an id from 0 to " .. M.MAX_UPGRADE_ID } end
+    local pawn = playerPawn()
+    if not pawn then return { ok = false, error = "no player pawn" } end
+    local building = read(function() return pawn:getHitBuilding() end)
+    if not isValid(building) then return { ok = false, error = "no building under the mouse" } end
+    local before = {}
+    for _, id in ipairs(listOf(read(function() return building.upgradesDone end))) do before[#before + 1] = id end
+    local request = { buildingMaster = building, upgradeID = upgrade, Slot = slot }
+    local extension = (raw or ""):match('"extension"%s*:%s*true') ~= nil
+    local ok, err = pcall(function()
+        if extension then pawn:addExtensionChangeRequest(request) else pawn:addUpgradeRequest(request) end
+    end)
+    if not ok then return { ok = false, error = "upgrade request: " .. tostring(err) } end
+    return { ok = true, building = read(function() return building:GetFullName() end), type = read(function() return building.Data.bType end),
+             call = extension and "addExtensionChangeRequest" or "addUpgradeRequest", upgrade = upgrade, slot = slot,
+             upgrades_before = before, being_upgraded = read(function() return building.isBeingUpgraded end) }
+end
+
 function M.plot_field_place(_, raw)
     local okDecode, decoded = pcall(json.decode, raw)
     if not okDecode or type(decoded) ~= "table" then return { ok = false, error = "request is not valid JSON" } end

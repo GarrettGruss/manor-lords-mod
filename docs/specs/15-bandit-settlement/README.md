@@ -1,4 +1,8 @@
-# Spec 15: Bandits who settle (negotiated immigration)
+# Spec 15: Refugee waves (bandit settlement and homeless refugees)
+
+Scope change (user, 2026-10-12): the spec covers refugee waves. Bandits who settle after a negotiation are one source of a wave.
+The folder keeps its old name (`15-bandit-settlement`) so links in issues, notes and the changelog stay valid.
+Feature section: "Feature: refugee waves" below. Open spike questions: #61.
 
 Status: spike done (2026-10-12), reverse-direction spike done (2026-10-12). Negotiation path found and commands added. With vacant home slots the letter `raider_suggestSettle` gave +1 family per squad (2 of 2 tries, control flat); the cheat `SettleRaiders` gave none. See `implementation-notes/bandit-settlement.md`.
 Tent spike (2026-10-12): a homeless tent (type 87) has no family slot in its stats. It could not be placed (no mouse-free call known, the real mouse did not reach the game). A mouse-free spot finder exists. See `implementation-notes/tent-placement.md`.
@@ -20,6 +24,60 @@ Find out how a bandit unit becomes families of the player's village, and make th
 Players report that when bandits are in their region, they can negotiate with them, and the bandit unit turns into families.
 The user confirmed in a local game: negotiation with the bandit faction is offered while bandit units are present.
 For the invasion mode this is a second outcome of a raid besides a fight: raiders who join the village as settlers.
+
+## Feature: refugee waves (status: draft, 2026-10-12)
+A mod event brings a wave of refugee families into the player's region. The refugees stay homeless and lower approval until the
+player houses them. If they stay homeless too long, they can turn on the player (the homeless rebellion below).
+
+User design (2026-10-12):
+- Refugees must not be housed by the mod. They arrive homeless. The pressure is the approval loss.
+- The player resolves the wave by building homes (burgage plots). Families move in by themselves when a plot is finished.
+- Every step the mod does must work without the mouse.
+- Sources of a wave: a settlement surge (`settleRegion`), bandits who settle after a negotiation (settle letter), and possibly
+  families who lose their homes (eject).
+
+### What we know (evidence in `implementation-notes/`)
+| Step | Method | Result | Note |
+|---|---|---|---|
+| Wave source: surge | `PawnCPP:settleRegion` on the player's own, settled region (`settle_region`, camp at `tent_find_spot`) | +5 families and a homeless tent per call; 2 calls: 10 -> 15 -> 20 families; no crash; owner, settled state and houses unchanged | `immigration-surge.md`. Only 3 of 5 new families were in the tent. |
+| Wave source: bandits | Settle letter to raid squads (`bandit_letter raider_suggestSettle+20`, tag `attacking`) | +1 family per squad with vacant slots (part 1); +7 families with 2 or 5 squads (part 8) | `bandit-settlement.md`, `refugee-cycle.md`. Needs a raid near the village. |
+| Wave source: eviction | `Region:SetFamilyHome(id, nil, suppress)` (`family_eject`) | Housed families become homeless at once; the game does not rehouse them by itself in 5 game days | `homeless-refugees.md`. Vacant slots did not rise (open). |
+| Pressure | Homeless families | Approval about -2 per game day: 71, 69, 67, 63, 62, 59 (3 homeless); 71 -> 61 in 5 days after a surge | `homeless-refugees.md`, `immigration-surge.md`. |
+| Natural growth | `Region:GetMonthlyPopGrowthModifiersWithValues` | Base 1, Approval 1 at approval 71; `NoBurgagePlotAvailability` blocks growth | Read by `family_state` (`growth`). |
+| Resolution by the player | Build burgage plots | Homeless families move into each plot when it is finished (5 -> 0 homeless in 12 game days); approval 54 -> 66 | `refugee-cycle.md`. |
+| Resolution by the mod | `Region:accomodateHomelessFamilies(nil)` (`accommodate_homeless`) | Rehoused 3 ejected families at once when slots existed | For tests or an event end. |
+| Bad outcome | Homeless rebellion (`homeless_rebel`, `rebel_raid_rally`) | Families become bandit squads that raid the village | `homeless-rebellion.md`. |
+| Test helper | Mouse-free burgage plots (`plot_field_place`, `runlib/plotgeom.py`) | Works | `burgage-placement-events.md`. |
+| Not usable | `Region:AddNewFamily` (`family_add`) | New homeless family, then a game crash 2 game days later | Do not use until #61 explains it. |
+| Not usable | Live `buildingStats` slot writes | Existing buildings ignore them | `tent-slot-limit.md`. |
+| Not usable | Placing a tent directly | No mouse-free call; the plot commit builds a burgage plot instead | `tent-placement.md`. `settleRegion` makes tents as a side effect. |
+| Detection | Construction, move in, deletes | Fire no hookable function; poll counts (`getBuildingCount`, `getNumHomelessFamilies`) | `burgage-placement-events.md`. |
+
+### Feature plan
+1. Event design with the user: trigger (date, approval, random, a letter), wave source and size (number of `settleRegion` calls,
+   settled bandits), the camp place (near the village, the woods or the map edge), the rebellion timer, and the message to the player.
+2. Mod `RefugeeWave` (own mod and Lua state, `HarnessCommands` registry): start a wave without the mouse, track the wave's families and
+   the homeless count each game day, end the wave when they are housed, start the rebellion when the timer runs out. No raw eval.
+   Game thread only.
+3. Telemetry and metrics: homeless count, approval, wave family ids, wave state.
+4. Scenarios: (a) wave, no homes: approval falls, the rebellion starts at the timer; (b) wave, the player builds plots (mouse-free in
+   the test): homeless reach 0, the wave ends, approval recovers. Fixtures `base` and `burgage-start`.
+5. First close the spike questions that block the design (#61): where the families outside the tent live, why vacant slots do not
+   rise after an eject, what happens after day 5.
+
+### Feature open questions
+- Trigger, source and size of a wave (user decision).
+- Does the feature need `family_eject`, or is `settleRegion` enough (it already makes homeless families)?
+- Do surge families count as normal families for food, work and taxes?
+- Does a save and load keep the wave state (families, tents)? The mod must not depend on its own memory across loads.
+- Is the rebellion timer better in game days or in approval (for example below 40)?
+
+### Feature acceptance criteria
+- [ ] The wave design is agreed with the user and written here.
+- [ ] A named command or mod call starts a wave without the mouse; a real run shows +N homeless families.
+- [ ] A scenario shows approval falling while the wave is homeless, and the wave ending when the player builds homes.
+- [ ] A scenario shows the rebellion starting when the timer ends.
+- [ ] Fake game tests cover the mod. No raw eval. No save function called. No game asset, key or save data in git.
 
 ## Reverse direction: homeless families become bandits
 Goal: an immigration event brings more people than homes. If the homeless stay unhoused too long, or approval is low, they turn on the player. Find out if the game does it, and make the mod able to show it.
@@ -63,10 +121,7 @@ User test idea: remove families, check the family count fell, then spawn a bandi
 
 6. Tent pipeline: place a tent (auto spot, then a click or a game call), check `vacant_slots`, send the settle letter, check that a family lives in the tent.
    Done: `tent_find_spot`, `housing_state`, `building_stat`. Open: a mouse-free placement call, and the pipeline run.
-9. Part 7, homeless refugees (user design 2026-10-12): make homeless families that stay homeless, with `Region:SetFamilyHome(id, nil, suppress)` (eject) and `Region:AddNewFamily` (new families). Status: eject DONE (`family_eject`, runs s15-f1, f2, f4); new families PARTLY (`family_add` crashed the game, run s15-f3); tent as home not tested. See `implementation-notes/homeless-refugees.md`.
-10. Part 8, refugee cycle (user design 2026-10-12): eject 5, settle letter, accommodate, 5 burgage plots without the mouse. Status: DONE (runs s15-cyc1, s15-cyc2). The settle letter gave +7 families (not 1 per squad); homeless families moved into each new plot by themselves. See `implementation-notes/refugee-cycle.md`.
-11. Part 9, immigration surge (user design 2026-10-12): call `settleRegion` on the player's own settled region, without raid and letter. Status: DONE (run s15-surge1). Each call added 5 families and a new homeless tent (type 87); 2 calls: 10 -> 20 families, 8 homeless, approval 71 -> 54 in 5 days; no crash, no harm seen. See `implementation-notes/immigration-surge.md`.
-
+7. Rally in the woods (part 3): `forest_spot`, spawn rebels in the woods, watch the rally, try a move order and a challenge, negotiate during the rally, build the fallback. Done (see the table in `homeless-rebellion.md`). Next: find why raid squads give families and `spawnArmy` squads do not; find a way to choose the rally point (a neighbour lord army as bait is a lead).
 8. DONE, result: not possible by a row write (see `implementation-notes/tent-slot-limit.md`). Tent as a home by a live slot limit (part 6, user design 2026-10-12). Idea: make the tent a real home for a short time, let
    immigration fill it, then take the slots away so the families become homeless again (the start of the homeless rebellion).
    - Add a test-only command `building_stat_write` (HarnessHousing): change one number field of one `buildingStats` row in memory,
@@ -81,7 +136,9 @@ User test idea: remove families, check the family count fell, then spawn a bandi
         or something else.
    - Fallback if live writes do nothing: the same change in a pak (`harness-pak-mod`), then compare a game with and without it.
    - Risk: native code treats type 87 specially (spawn on events, delete when homes are free, its families count as homeless).
-7. Rally in the woods (part 3): `forest_spot`, spawn rebels in the woods, watch the rally, try a move order and a challenge, negotiate during the rally, build the fallback. Done (see the table in `homeless-rebellion.md`). Next: find why raid squads give families and `spawnArmy` squads do not; find a way to choose the rally point (a neighbour lord army as bait is a lead).
+9. Part 7, homeless refugees (user design 2026-10-12): make homeless families that stay homeless, with `Region:SetFamilyHome(id, nil, suppress)` (eject) and `Region:AddNewFamily` (new families). Status: eject DONE (`family_eject`, runs s15-f1, f2, f4); new families PARTLY (`family_add` crashed the game, run s15-f3); tent as home not tested. See `implementation-notes/homeless-refugees.md`.
+10. Part 8, refugee cycle (user design 2026-10-12): eject 5, settle letter, accommodate, 5 burgage plots without the mouse. Status: DONE (runs s15-cyc1, s15-cyc2). The settle letter gave +7 families (not 1 per squad); homeless families moved into each new plot by themselves. See `implementation-notes/refugee-cycle.md`.
+11. Part 9, immigration surge (user design 2026-10-12): call `settleRegion` on the player's own settled region, without raid and letter. Status: DONE (run s15-surge1). Each call added 5 families and a new homeless tent (type 87); 2 calls: 10 -> 20 families, 8 homeless, approval 71 -> 54 in 5 days; no crash, no harm seen. See `implementation-notes/immigration-surge.md`.
 
 ## Open questions
 - Is the negotiation the same code path for raiders and for bandit camp squads?

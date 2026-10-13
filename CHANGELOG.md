@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- HarnessActions version 37 with the spike command `plot_upgrade` (spec 15): `PawnCPP:addUpgradeRequest` or `addExtensionChangeRequest` on
+  the building under the mouse. Real game: second-family wing (12), vegetable garden (extension 8) and carrot seeds (30) without the mouse,
+  at normal cost, also on a plot the panel says is too small. Level 2 is id 2 (seen from a panel click); a wrong id only adds a stray
+  entry to `upgradesDone`. Notes:
+  `docs/specs/15-bandit-settlement/implementation-notes/burgage-placement-events.md`.
 - HarnessActions version 36 with the spike command `manor_blueprint_add` (issue #63): plans a manor module without the mouse (a
   `StaticMeshActor` tagged `bType_<type>` added to the manor's `blueprints`, then `convertBlueprintsToBuildings`). Real game: a second tax
   office and a second garrison were built this way; the commit ignores `maxInRegion`. Notes: `docs/specs/14-free-walls/implementation-notes/free-walls.md`.
