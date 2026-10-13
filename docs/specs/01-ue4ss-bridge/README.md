@@ -1,6 +1,6 @@
 # Spec 01: ue4ss-bridge live control channel
 
-Status: draft (nothing installed yet). Roadmap phase: 2 (live control channel).
+Status: done (PR 1). The bridge is installed and used in every spike. Roadmap phase: 2 (live control channel).
 
 ## Goal
 Give the agent an on-demand, structured way to query and drive the running

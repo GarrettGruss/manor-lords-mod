@@ -1,6 +1,6 @@
 # Spec 10: Invasion Mode testability (harness upgrade for 90% automated verification)
 
-Status: draft (2026-10-10). Goal set by the user: improve the harness so that about 90% of the testing of the Invasion Mode brief can be done by agents.
+Status: done for the stated scope (2026-10-12): the criteria matrix, spikes, upgrades and stand-in mods are merged. Coverage: 36 of 39 A and P criteria have a verified method (92 %, target 90 %). Open: P3 (refugees), M2 (spec 12), Q4 (Cuman visuals), a full 730-day soak run, and the extra runs listed in `implementation-notes/open-items.md`. Goal set by the user: improve the harness so that about 90% of the testing of the Invasion Mode brief can be done by agents.
 Source brief: "Manor Lords: Invasion Mode (Design Brief)", 2026-10-10 (kept by the user; the criteria below are derived from it).
 Roadmap: continues `docs/specs/00-harness-overview/README.md` (the 90% goal), builds on specs 03 to 09.
 

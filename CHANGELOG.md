@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Docs housekeeping (issue #53): status lines of specs 00, 01, 02, 06, 09 and 10 are current; the spec 00 roadmap lists specs 13 to 16; the skills `harness-overview` and `harness-coverage` name the new specs, modules and the 36 of 39 coverage; new note `docs/specs/10-invasion-testability/implementation-notes/open-items.md`.
+- Unit tests for the action check helpers (`check_manor_goods`, `check_worker_slot`, `check_building_type`, `check_banner_text`, `dead_count_delta`).
 - Fresh start (spec 06, part E): `run.py --new-game [--map NAME]` and `load_save.py --new-game` start the game in a new game with no save.
   `HarnessBoot` has a new state `STARTING_NEW_GAME` (env `HARNESS_NEW_GAME`, `HARNESS_NEW_GAME_MAP`). It opens the map, pushes the autosave
   timer away and pauses. Real check: run `fresh-start-2`.
