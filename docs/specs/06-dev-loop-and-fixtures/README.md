@@ -1,6 +1,6 @@
 # Spec 06: Dev loop, mock kit and save fixtures
 
-Status: part D in progress (2026-10-11). Part A (hot reload) and part B (mock kit) are done. **Part C was wrong:** no run ever loaded the fixture; every run started a new game (`implementation-notes/fixture-load-bug.md`). Part D replaces it. Roadmap phase: 8 (see `docs/specs/00-harness-overview/README.md`).
+Status: done (2026-10-12). Part D merged (PR 46). Part A (hot reload) and part B (mock kit) are done. **Part C was wrong:** no run ever loaded the fixture; every run started a new game (`implementation-notes/fixture-load-bug.md`). Part D replaces it. Roadmap phase: 8 (see `docs/specs/00-harness-overview/README.md`).
 
 ## Goal
 Make iteration fast and the test situations repeatable:

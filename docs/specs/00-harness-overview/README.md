@@ -1,6 +1,6 @@
 # Spec 00: Harness overview and roadmap
 
-Status: all specs in the roadmap are built, tested with the real game, and merged (spec 09 is deferred on purpose).
+Status: current on 2026-10-12. Specs 01 to 08 are done. Specs 09 and 10 are done for their stated scope, with open items that need the game. Spec 11 is proposed (nothing built). Specs 12 to 16 are spikes with open questions.
 This spec holds the plan for all other specs. Update it when a spec is finished or changes.
 Follow-up items are listed at the end of this file.
 
@@ -41,14 +41,18 @@ An agent uses the fastest layer that can answer its question. It moves to a slow
 | 02 | save-autoload | Load a fixed save and report ready, with the game paused | done (PR 2). The save copy is solved in spec 06 |
 | 03 | run-launcher | One command makes one run folder with `summary.json` | done (PR 3). `harness/run.py`, scenarios, screenshots, crash and timeout cases |
 | 04 | telemetry-and-assertions | Sample game state, assert ranges, define the scenario format, control game time | done (PR 4). `ctx.time`, `ctx.expect`, `HarnessTelemetry` |
-| 05 | agent-tools | MCP tools so the agent drives the harness directly | done (PR 5). Open: a check in a real Claude Code session |
+| 05 | agent-tools | MCP tools so the agent drives the harness directly | done (PR 5). The check in a real Claude Code session is partly closed (see spec 05) |
 | 06 | dev-loop-and-fixtures | Hot reload without a game restart, a reusable mock kit, several test saves | done (hot reload, mock kit); fixtures redone 2026-10-11 (part D: local fixture files installed as a slot; before, runs started a new game) |
 | 07 | feature-test-kit | Helpers to give resources, place buildings, trigger events, advance time | done (15 checked actions, `ctx.actions`, helper mod for letters; building placement with the real OS mouse) |
 | 08 | regression-suite | Run many scenarios and saves, compare with baselines, find flaky tests | done (PR 6). Baselines are thin (2 to 4 runs) |
-| 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | in progress (since 2026-10-10): toolchain decided (repak, UAssetGUI command line, a `.usmap`); tooling and A/B variants are being built with fake tools; the real chain waits for the tools and a first spike |
-| 10 | invasion-testability | Make about 90% of the Invasion Mode brief testable: criteria matrix, spikes, upgrades, stand-in mods | in progress (since 2026-10-10); see `docs/specs/10-invasion-testability/README.md` |
+| 09 | asset-mods | Pak editing and repacking for changes that Lua cannot reach | done for the first scope (2026-10-12): the toolchain and a real round trip are verified. Open: other field types and tables, and a real A/B with N runs per side (needs the game) |
+| 10 | invasion-testability | Make about 90% of the Invasion Mode brief testable: criteria matrix, spikes, upgrades, stand-in mods | done for the stated scope (2026-10-12): 36 of 39 A and P criteria have a verified method (92 %). Open items: `docs/specs/10-invasion-testability/implementation-notes/open-items.md` |
 | 11 | parallel-game-slots | Run several game copies at the same time (slots) for A/B and soak runs | proposed (2026-10-10), nothing built |
-| 12 | manor-exploration | Understand the manor (castle) system, storage in it, and a workaround for the soft-lock where normal buildings cannot be placed inside a large manor | proposed (2026-10-11), nothing built |
+| 12 | manor-exploration | Understand the manor (castle) system, storage in it, and a workaround for the soft-lock where normal buildings cannot be placed inside a large manor | spike done (2026-10-11): M1 (storage in the manor) method verified; M2 (normal buildings in the manor area) not verified |
+| 13 | mod-inspection | Read community mods to find data fields and ideas | inspection done (2026-10-11); follow-up spikes proposed, none ran |
+| 14 | free-walls | Build walls without the usual limits | spike done for Q1 to Q5 (2026-10-11); Q6 open |
+| 15 | bandit-settlement | Settle raiders as families (refugee waves) through the negotiation letter | spike done (2026-10-12); commands added |
+| 16 | policy-edicts | Enact policies and show a policy card in a Lua screen | spike done for Q1 to Q5 (2026-10-12); `enactPolicy` returned false |
 
 Order and reasons:
 - 03 comes first: every later spec needs a run folder and a summary.

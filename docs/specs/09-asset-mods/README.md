@@ -2,7 +2,7 @@
 
 Status: in progress (since 2026-10-10). The user decided on the toolchain (repak and the UAssetGUI command line) and asked to begin implementation.
 The tooling is built and tested with fake tools. The real chain is VERIFIED by the first spike (2026-10-10, `implementation-notes/pak-spike-findings.md`): a round trip of `DT_Items` is byte-identical, a pak with one changed number is loaded by the game, and the A/B with `--pak` shows the change.
-Still open: other field types (strings, soft objects, new rows), other tables, and an A/B with N runs per side.
+Still open: other field types (strings, soft objects, new rows), other tables, and an A/B with N runs per side (needs the game; no real A/B suite ran yet).
 
 ## Goal
 Change game data that Lua cannot reach (data tables, assets) by editing and repacking `.pak` files, and test the change with the same harness.

@@ -1,6 +1,6 @@
 # RaidStandIn: a toy model of the raid logic of the Invasion Mode mod
 
-Status: built and unit tested in the fake game kit (2026-10-10). **NOT run in the real game yet.** The parent marks `method_verified` after real runs.
+Status: built and unit tested in the fake game kit (2026-10-10). The six scenarios were verified in the real game later (PR 36, branch `feat/26-raid-standin-verified`, `criteria.json` `verified_by`). The lines below that say "not run in the real game" are the state before that PR.
 Follow-up of U10 (`mod-state-contract.md`). Files: `mod/RaidStandIn/Scripts/main.lua`, `harness/raidstandin/client.py`, `harness/scenarios/raid_*.py`,
 `harness/suites/raid-size-ab.json`, tests `harness/tests/test_fakegame_raidstandin.py` and `test_fakegame_raid_scenarios.py`.
 
@@ -74,7 +74,7 @@ The in-run comparison inside `raid-tiers` is a second use of the statistics: it 
 
 - The rules and numbers are inventions of this fixture. They are not the balance of the real mod and not rules of the base game.
 - The toy shows that the observation and drive METHOD works: read per-raid state, force conditions, set the clock, replay seeded runs, compare tiers with statistics, read a meter against the clock.
-- NOT verified in the real game: all six scenarios. Only the fake game kit ran them (separate Lua states per mod, real `HarnessCommands`, real `ModState`).
+- Before PR 36: not verified in the real game; only the fake game kit ran them (separate Lua states per mod, real `HarnessCommands`, real `ModState`).
 - Not covered (need the real game): R3, R7, R8, S1, C1, C2, C3, P3, P5, T4, Q1, Q4. Also not covered: the announcement through the game UI, units in the real world, and the real raid timer of the base game (`raid-timer` covers the base timer).
 - In the real mod the retreat conditions, the target and the composition will come from game objects. The scenarios then need the real mod to expose the same commands or an adapter with the same names. That is a later spec.
 - `set_day` jumps the toy day without running the rules for the skipped days. A scheduled raid whose day lies before the new day arrives on the next day. Use `advance_days` to run the rules.

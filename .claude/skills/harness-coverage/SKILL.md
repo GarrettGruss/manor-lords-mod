@@ -5,7 +5,7 @@ description: Measure and update how much of the Invasion Mode brief is testable 
 
 # Coverage of the Invasion Mode criteria
 
-Source of truth: `docs/specs/10-invasion-testability/criteria.json` (38 criteria). The spec README has the same table. The tool: `harness/tools/coverage.py`.
+Source of truth: `docs/specs/10-invasion-testability/criteria.json` (40 criteria). The spec README has the same table. The tool: `harness/tools/coverage.py`.
 
 ## Commands
 ```
@@ -14,7 +14,7 @@ uv run python harness\tools\coverage.py --check-spec # criteria.json and the spe
 uv run python harness\tools\coverage.py --json
 uv run python harness\tools\coverage.py --min-verified 0.9   # exit code for a gate
 ```
-The goal is: at least 90% of the A and P criteria have a verified method (34 of 37 when Q3, a human judgment, is not counted).
+The goal is: at least 90% of the A and P criteria have a verified method (36 of 39 on 2026-10-12, 92 %; Q3, a human judgment, is not counted).
 
 ## Entry fields
 `id, title, pillar, mark (A automatable, P partly, H human), method, blocked_by, spikes, upgrades, method_verified, verified_by, reason_human, spike_note`.
