@@ -110,12 +110,14 @@
 --   {"command":"tent_find_spot"}                           up to 5 free spots for a tent (x, y, z) around the village centre; it does not place anything (read only)
 --   {"command":"forest_spot","min_dist":15000,"max_dist":40000}   up to 5 dense tree cells of the player region, best first (Resource actors with resType "tree"; read only)
 --   {"command":"plot_field_shift","dx":3000,"dy":0,"plots":true,"commit":true}   test only: move the drawn, closed plot outline of the pawn (plots: also extractedPlots), then commit it
+--   {"command":"plot_upgrade","upgrade":12,"slot":0,"extension":false}   spike: PawnCPP:addUpgradeRequest (or addExtensionChangeRequest) on the building under the mouse
 --   Walls (spec 14, see mod/shared/HarnessWalls):
 --   {"command":"wall_pieces","road":123,"step":200}         spawn blocking palisade pieces (GhostStaticMeshActor, type 470) along a road
 --   {"command":"wall_pieces_clear","road":123}              destroy the pieces that wall_pieces made for that road
 --   {"command":"path_state"}                                size of the global obstacle list and the path debug flag (read only)
 --   {"command":"building_stat","kind":470}                  spike, read only: scalar fields of one buildingStats row (with "kind": the spec 14 reader; with "type": the spec 15 reader)
 --   {"command":"building_health","building":123}            spike, read only: type, hp, maxHp, onFire, fireAmt, rubble, built of one building
+--   {"command":"manor_blueprint_add","type":58,"x":0,"y":0,"z":0,"yaw":0,"commit":true}   spike (#63): add a manor planner blueprint (mesh actor tagged bType_<type>) without the mouse, then convertBlueprintsToBuildings
 --   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
 --   Unsafe spike commands: refused unless the game runs with HARNESS_ALLOW_UNSAFE=1 (test games only)
 --   {"command":"construction_complete","building":123}      PawnCPP:constructionComplete on one building
@@ -142,7 +144,7 @@ local policies = require("HarnessPolicies")
 local bandits = require("HarnessBandits")
 local housing = require("HarnessHousing")
 
-local VERSION = "35"
+local VERSION = "37"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -461,10 +463,12 @@ local COMMANDS = {
     forest_spot = housing.forest_spot,
     plot_field_shift = housing.plot_field_shift,
     plot_field_place = housing.plot_field_place,
+    plot_upgrade = housing.plot_upgrade,
     wall_pieces = walls.wall_pieces,
     wall_pieces_clear = walls.wall_pieces_clear,
     path_state = walls.path_state,
     building_health = walls.building_health,
+    manor_blueprint_add = walls.manor_blueprint_add,
     mesh_users = walls.mesh_users,
     construction_complete = walls.construction_complete,
     path_obstacles_clear = walls.path_obstacles_clear,

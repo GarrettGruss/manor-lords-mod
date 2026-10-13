@@ -102,6 +102,13 @@ class StateTests(HousingTestCase):
         self.assertFalse(self.send("building_stat", type=999)["ok"])
         self.assertFalse(self.send("building_stat")["ok"])
 
+    def test_plot_upgrade_checks_the_id_and_needs_a_building_under_the_mouse(self):
+        self.assertIn("upgrade must be", self.send("plot_upgrade")["error"])
+        self.assertIn("upgrade must be", self.send("plot_upgrade", upgrade=5000)["error"])
+        answer = self.send("plot_upgrade", upgrade=12)
+        self.assertFalse(answer["ok"])
+        self.assertRegex(answer["error"], "no building under the mouse|no player pawn")
+
 
 class SpotTests(HousingTestCase):
     def test_spots_are_clear_of_buildings(self):

@@ -19,6 +19,23 @@
         "jagged-cliffs"
       ]
     },
+    "burgage-start": {
+      "description": "New game on Jagged Cliffs made live with the user on 2026-10-12: burgage plots placed by hand and without the mouse (spec 15 part 5). Saved by the user as saveGame_30.",
+      "origin": "user slot saveGame_30",
+      "sha256": {
+        ".png": "86eb2ebad162de524acc31e627f579bb7d3384269ca57ef7b50e32dd3cb4a763",
+        ".sav": "ef4d2d81de2ee53c2d74efd4e9cab0270b4896ad945c0ed996f62e76ad0a7b21",
+        "_coat_0.png": "5409a056048dca7a9645a74e78afd89c671b23f0065da0a6a532834480dedfc1",
+        "_coat_1.png": "2401e21e02e2246999b892ab8b0833a801015a74b13e6e8400d9ef454ed47140",
+        "_coat_2.png": "bd099781ebbbeef034323a8759af6ad8129dc812c9b7b79aab86128d59b37ea0",
+        "_descr.sav": "8aa5e0cee60a654e42575bc26b5c6f63c674eee13ce481ab96b5b8eb2c619d7e"
+      },
+      "stored": true,
+      "tags": [
+        "burgage",
+        "spec15"
+      ]
+    },
     "manor-bailey": {
       "description": "Hochweg village (Jagged_Cliffs map) with a manor house (type 98, Manor_Palace_Lv1) built by the builders, a wooden gatehouse, 3 wooden wall segments (Road wallType 2) around an empty bailey. Region manor set. Helped: 120 planks from the cheat manager (GiveItemByID 17). Food 0 at save (hunger pop-up likely). Game day Apr 16. Built in run manor-fixture-1, 2026-10-11.",
       "origin": "user slot saveGame_28",
