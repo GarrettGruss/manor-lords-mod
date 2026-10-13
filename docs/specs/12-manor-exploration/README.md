@@ -1,7 +1,7 @@
 # Spec 12: Manor exploration (the manor system and its building rule)
 
 Status: spike done (2026-10-11, branch `feat/33-manor-spike`). Requirement added 2026-10-11 (branch `feat/34-manor-storage-workers`): M1 also needs a worker slot with the storehouse or granary role (Q7). Done: scenario `manor-storage-workers`, 3 of 3 real runs, M1 method verified again. Notes: `implementation-notes/worker-slots.md`. M1 (storage) method verified, 3 of 3 real runs. M2 (building inside the manor area) NOT verified. Lead from spec 13 (2026-10-11, `../13-mod-inspection/implementation-notes/summary.md`): two community mods lift the one-Keep limit by the `buildingStats` field `maxInRegion`, and the same row has an untested field `placedWithin`; the next M2 spike tests both.
-Findings are in `implementation-notes/` (`bailey-buildings.md`, `manor-survey.md`, `rule-search.md`, `storage-m1.md`, `workaround-m2.md`).
+Findings are in `implementation-notes/` (`../17-bailey-buildings/implementation-notes/bailey-buildings.md`, `manor-survey.md`, `rule-search.md`, `storage-m1.md`, `workaround-m2.md`).
 
 ### Answers (short)
 - Q1: no manor class. The manor is `SMBuildingMaster` actors per module (Keep type 57 and others). The `BM_SG_Manor_*` Blueprints are empty mesh actors. The area is the "bailey" polygon of committed planner modules (Keep alone: 49 m2).
