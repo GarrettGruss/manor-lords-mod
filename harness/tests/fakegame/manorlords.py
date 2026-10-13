@@ -73,7 +73,8 @@ def _build_in_game(game, clock, autosave_works):
 
 def build_manor_lords_state(game, *, save_slot="saveGame_0", wanted_slot_listed=True,
                             save_exists=True, menu_delay=2.0, slot_list_delay=0.0,
-                            engine_delay=2.0, clock=None, autosave_works=True, load_starts_new_game=False):
+                            engine_delay=2.0, clock=None, autosave_works=True, load_starts_new_game=False,
+                            open_map_works=True, open_map_loads_slot=None):
     """Create the menu and the game and wire them like the real game.
 
     save_slot: the slot name that the load screen lists.
@@ -85,6 +86,8 @@ def build_manor_lords_state(game, *, save_slot="saveGame_0", wanted_slot_listed=
     clock: a FakeGameClock (default: the real-game behavior).
     autosave_works: False makes SetAutosavePeriodOnPawn answer true but leave the timer as it was.
     load_starts_new_game: True copies the real bug seen before 2026-10-11: LoadGame clears savefileToLoad and a new game starts.
+    open_map_works: False makes the console command `open` do nothing (the map never opens).
+    open_map_loads_slot: a slot name that `open` wrongly leaves in savefileToLoad (a save would load).
     Returns a namespace: clock, calls (names of the menu calls), widget, screen, engine, player, ...
     """
     clock = clock or FakeGameClock()
@@ -121,6 +124,17 @@ def build_manor_lords_state(game, *, save_slot="saveGame_0", wanted_slot_listed=
     game.method(state.widget, "SwitchToLoadScreen", switch_to_load_screen)
     game.method(state.widget, "LoadGame", load_game)
 
+    def console_command(_self, command, _write_to_log=False):
+        state.calls.append(f"ConsoleCommand:{command}")
+        if command.startswith("open ") and open_map_works and state.loaded_at is None:
+            state.loaded_at = game.now()
+            if open_map_loads_slot:
+                state.autosave.instance["savefileToLoad"] = game.text(open_map_loads_slot)
+            clock.start_load()
+
+    state.controller = game.obj("PlayerController")
+    game.method(state.controller, "ConsoleCommand", console_command)
+
     state.io_handler = game.obj("IoHandler", _path=IO_HANDLER_PATH)
     game.method(state.io_handler, "DoesSaveGameExist", lambda _self, _slot: save_exists)
 
@@ -130,5 +144,6 @@ def build_manor_lords_state(game, *, save_slot="saveGame_0", wanted_slot_listed=
                 lambda: state.screen if state.switched_at is not None and in_menu() else None)
     game.finder("RTSMultiEngineCPP",
                 lambda: state.engine if not in_menu() and game.now() - state.loaded_at >= engine_delay else None)
+    game.finder("PlayerController", lambda: state.controller)
     game.finder("PawnCPP", lambda: state.player if not in_menu() else None)
     return state
