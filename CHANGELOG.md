@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Suite `pak-ab` with hidden scenario `pak-item-value` (5 runs per side, real pak A/B passed; spec 09 criterion ticked). Hidden probes `probe-lord-village` and `probe-lord-diplomacy` and suite `lord-village-ab` for the S13 and S11 reruns (partly run, issue #53). `soak-days` option `HARNESS_SOAK_KEEP_APPROVAL=1`.
+
+### Fixed
+- `spawn_ai_lord` failed in the python API because the command field `name` clashed with the argument of `Actions._command`.
 - Hidden probe `probe-composite-pak` and sub-command `blueprint` of `s65_edit_json.py` (spec 18, #69). Result: a pak adds buildingStats rows 123 and 124 cloned from the tent, and a row 87 retarget to `BM_HuntingCamp_C` changes the tent part list (17 to 16 parts). Notes: `docs/specs/18-composite-buildings/implementation-notes/composite-pak.md`.
 - Spike #65 (spec 12): `manor_blueprint_add` takes an optional `mesh` asset path, and `harness/tools/s65_edit_json.py` clones a `buildingStats` row and retargets a planner card. Result: a pak adds a manor module row that the game loads and builds; planner card not yet checked (`implementation-notes/manor-module-pak.md`).
 - Mod `RefugeeWaves` (spec 15, #51): a monthly random event that sends a refugee wave (`settleRegion` calls, camp near the woods), ends when the player houses the families, and turns half of the homeless wave families into a raid after 30 game days or approval under 40. New scenario `refugee-wave` (3 of 3 real runs). Notes: `docs/specs/15-bandit-settlement/implementation-notes/refugee-waves-mod.md`.

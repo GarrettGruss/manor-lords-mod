@@ -2,7 +2,7 @@
 
 Status: in progress (since 2026-10-10). The user decided on the toolchain (repak and the UAssetGUI command line) and asked to begin implementation.
 The tooling is built and tested with fake tools. The real chain is VERIFIED by the first spike (2026-10-10, `implementation-notes/pak-spike-findings.md`): a round trip of `DT_Items` is byte-identical, a pak with one changed number is loaded by the game, and the A/B with `--pak` shows the change.
-Still open: other field types (strings, soft objects, new rows), other tables, and an A/B with N runs per side (needs the game; no real A/B suite ran yet).
+Still open: other field types (strings, soft objects, new rows) and other tables. The A/B with N runs per side passed (2026-10-13, `implementation-notes/ab-n-runs.md`).
 
 ## Goal
 Change game data that Lua cannot reach (data tables, assets) by editing and repacking `.pak` files, and test the change with the same harness.
@@ -125,7 +125,7 @@ tested with a fake packer. Only the step with a real packer, a real edited asset
 ## Acceptance criteria
 - [x] (new) `pakmod roundtrip` shows that an untouched asset survives `tojson` then `fromjson`, or that the result still loads in the game. Proven for `DT_Items` (byte-identical, 2026-10-10).
 - [x] (new) A trivial pak built with repak is installed in `~mods`, the game starts, and a scenario sees the changed value. Proven: item 17 `Value` 0.75 (run `20261010-190411-ad07`).
-- [ ] (new) An A/B comparison (same scenario, with and without the pak, N runs each) shows the difference in the report, and `pakmod remove` returns the game to vanilla. Partly proven: one run per side differs (0.75 vs 0.5) and the pak is removed after the run. N runs with the suite report are not done.
+- [x] (new) An A/B comparison (same scenario, with and without the pak, N runs each) shows the difference in the report, and `pakmod remove` returns the game to vanilla. Proven 2026-10-13: suite `pak-ab`, 5 runs per side, item 17 Value median 0.5 -> 0.75, verdict different (d 99, p 0.008), 10 of 10 runs passed, `pakmod list` shows no pak afterwards (`implementation-notes/ab-n-runs.md`).
 - (old criteria, still valid):
 - A trivial asset change (one number in one data row) is built into a pak, deployed, seen by a scenario, and removed by the uninstall script.
   Status: the whole chain ran with a real pak on 2026-10-10 (`pak-spike-findings.md`). `uninstall.ps1 -Remove` is not run on a real pak (`run.py` removed it).

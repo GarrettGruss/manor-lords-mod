@@ -1,0 +1,16 @@
+{
+  "name": "pak-ab",
+  "scenarios": [
+    {
+      "scenario": "pak-item-value",
+      "repeat": 5,
+      "variants": [
+        {"name": "vanilla"},
+        {"name": "itemvalue17-pak", "paks": ["itemvalue17"]}
+      ],
+      "expect": {"metric": "item17_value", "direction": "higher", "min_rel_diff": 0.3}
+    }
+  ],
+  "time_budget_s": 1200,
+  "flake_retries": 0
+}

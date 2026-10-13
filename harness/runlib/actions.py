@@ -377,7 +377,7 @@ class Actions:
 
     # ---- raids and units (through the helper mod HarnessActions, spec 10) ----
 
-    def _command(self, name: str, **fields) -> dict:
+    def _command(self, name: str, /, **fields) -> dict:  # positional only: a command field may be called "name" (spawn_ai_lord)
         if self._commands is None:
             raise ActionNotPossible(f"{name}: no command channel to the mod HarnessActions in this context")
         self._precondition()
