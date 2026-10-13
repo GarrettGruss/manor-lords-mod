@@ -121,6 +121,9 @@
 --   {"command":"building_health","building":123}            spike, read only: type, hp, maxHp, onFire, fireAmt, rubble, built of one building
 --   {"command":"manor_blueprint_add","type":58,"x":0,"y":0,"z":0,"yaw":0,"commit":true}   spike (#63): add a manor planner blueprint (mesh actor tagged bType_<type>) without the mouse, then convertBlueprintsToBuildings
 --   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
+--   {"command":"steer_state","squad":41}                    spike #59, read only: owner side, living units, centre and mean unit target of a squad
+--   {"command":"steer_move","squad":41,"x":0,"y":0,"half_width":300}   spike #59: PawnCPP:formALineArmy of the owner pawn, one squad, a line across the way to the point
+--   {"command":"steer_hook","functions":"/Script/ManorLords.PawnCPP:formALineArmy,/Script/ManorLords.PawnCPP:selectSquad"}   spike #59: record the calls of these functions; steer_hook_log reads (and clears) them
 --   Unsafe spike commands: refused unless the game runs with HARNESS_ALLOW_UNSAFE=1 (test games only)
 --   {"command":"construction_complete","building":123}      PawnCPP:constructionComplete on one building
 --   {"command":"path_obstacles_clear"}                      empty the global obstacle list (the next squad spawn crashed the game)
@@ -145,8 +148,9 @@ local walls = require("HarnessWalls")
 local policies = require("HarnessPolicies")
 local bandits = require("HarnessBandits")
 local housing = require("HarnessHousing")
+local steer = require("HarnessSteer")
 
-local VERSION = "39"
+local VERSION = "40"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -233,6 +237,10 @@ local function parseRequest(raw)
         template = raw:match('"template"%s*:%s*"([%w_]+)"'),
         company = raw:match('"company"%s*:%s*"([%w_]+)"'),
         squad = tonumber(raw:match('"squad"%s*:%s*(%d+)')),
+        half_width = tonumber(raw:match('"half_width"%s*:%s*(-?[%d%.]+)')),
+        formation = raw:match('"formation"%s*:%s*"([%w_]+)"'),
+        functions = raw:match('"functions"%s*:%s*"([^"]*)"'),
+        clear = ({ ["true"] = true, ["false"] = false })[raw:match('"clear"%s*:%s*(%a+)') or ""],
         detail = tonumber(raw:match('"detail"%s*:%s*(%d+)')),
         type = tonumber(raw:match('"type"%s*:%s*(%d+)')),
         text = raw:match('"text"%s*:%s*"([^"]*)"'),
@@ -478,6 +486,14 @@ local COMMANDS = {
     construction_complete = walls.construction_complete,
     path_obstacles_clear = walls.path_obstacles_clear,
     building_stat_write = walls.building_stat_write,
+    steer_state = steer.steer_state,
+    steer_move = steer.steer_move,
+    steer_select = steer.steer_select,
+    steer_cursor = steer.steer_cursor,
+    steer_mouse3d = steer.steer_mouse3d,
+    steer_rmb = steer.steer_rmb,
+    steer_hook = steer.steer_hook,
+    steer_hook_log = steer.steer_hook_log,
 }
 
 local function runCommand(number, raw)
