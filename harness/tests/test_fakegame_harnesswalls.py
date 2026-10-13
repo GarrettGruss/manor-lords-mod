@@ -57,8 +57,8 @@ end
 """
 
 
-def start():
-    game = FakeGame()
+def start(env=None):
+    game = FakeGame(env=env)
     game.start()
     world = game.lua.eval(WORLD)(game.fg)
     game.load_mod("HarnessActions")
@@ -152,6 +152,51 @@ class RemoveTests(WallTestCase):
 class StubBridge:
     def engine_path(self):
         return "engine"
+
+
+class BuildingHealthTests(WallTestCase):
+    def add_building(self, hp):
+        return self.game.lua.eval("""
+        function(fg, hp)
+            local b = fg.object("SMBuildingMaster", { Data = { bType = 98, hp = hp, maxHp = 100 }, onFire = true, fireAmt = 0.5 },
+                nil)
+            fg.set_method(b, "IsRubble", function() return false end)
+            fg.set_method(b, "IsConstructed", function() return true end)
+            fg.set_method(b, "GetCollapseChance", function() return 0.25 end)
+            return fg.counter
+        end""")(self.game.fg, hp)
+
+    def test_health_of_one_building_is_read(self):
+        number = self.add_building(60)
+        answer = self.send("building_health", building=number)
+        self.assertEqual((answer["ok"], answer["type"], answer["hp"], answer["max_hp"]), (True, 98, 60, 100))
+        self.assertEqual((answer["on_fire"], answer["rubble"], answer["built"], answer["collapse_chance"]), (True, False, True, 0.25))
+
+    def test_a_missing_building_is_refused(self):
+        self.assertIn("no building", self.send("building_health", building=5)["error"])
+        self.assertIn("building must be", self.send("building_health")["error"])
+
+
+UNSAFE_COMMANDS = ("path_obstacles_clear", "building_stat_write", "construction_complete")
+
+
+class UnsafeCommandTests(WallTestCase):
+    def test_unsafe_commands_are_refused_without_the_env(self):
+        for name in UNSAFE_COMMANDS:
+            answer = self.send(name)
+            self.assertFalse(answer["ok"], name)
+            self.assertIn("HARNESS_ALLOW_UNSAFE=1", answer["error"], name)
+
+
+class UnsafeCommandsAllowedTests(unittest.TestCase):
+    def setUp(self):
+        self.game, self.world = start(env={"HARNESS_ALLOW_UNSAFE": "1"})
+        self.addCleanup(self.game.close)
+
+    def test_unsafe_commands_run_their_own_checks_with_the_env(self):
+        self.assertIn("building must be", run_command(self.game, "construction_complete")["error"])
+        self.assertIn("kind must be", run_command(self.game, "building_stat_write")["error"])
+        self.assertNotIn("HARNESS_ALLOW_UNSAFE", str(run_command(self.game, "path_obstacles_clear").get("error")))
 
 
 class WallActionTests(unittest.TestCase):
