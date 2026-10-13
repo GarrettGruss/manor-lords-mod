@@ -296,6 +296,10 @@ and `teardown` stops the `CrashReportClient.exe` that the crash leaves open. Tes
 Commands:
 - `harness\tools\load_save.py <fixture | path\to\saveGame_N.sav>`: start the game with that save and leave it open (paused).
 - `run.py --fixture <name>` or `run.py --save <path to .sav>`: any scenario on that save.
+- `load_save.py --new-game [--map Jagged_Cliffs]` and `run.py --scenario <name> --new-game [--map NAME]`: a fresh new game, no save is loaded
+  (spec 06, part E). HarnessBoot (`HARNESS_NEW_GAME=1`) opens the map with `open /Game/NotStronghold/Maps/NewMapSets/<map>`, pushes the autosave
+  timer away, pauses, and writes READY. No slot is installed. The village is a random start region with 5 homeless families (day 61).
+  Not with `--save` or `--fixture`.
 - `harness\tools\fixtures.py import <name> --source-slot saveGame_28` (or `--from <path to .sav>`) `--description ... --tags a,b`.
 - `harness\tools\fixtures.py list | uninstall | remove --appdata DIR | record` (`record`: the old kind, an entry that points to a user slot).
 - Fixtures now: `base` (the user's `saveGame_0`: day 266, 24 buildings, 10 families) and `manor-bailey` (`saveGame_28`: day 106, manor with gate and bailey).

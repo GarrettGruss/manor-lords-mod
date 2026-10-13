@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Fresh start (spec 06, part E): `run.py --new-game [--map NAME]` and `load_save.py --new-game` start the game in a new game with no save.
+  `HarnessBoot` has a new state `STARTING_NEW_GAME` (env `HARNESS_NEW_GAME`, `HARNESS_NEW_GAME_MAP`). It opens the map, pushes the autosave
+  timer away and pauses. Real check: run `fresh-start-2`.
 - HarnessActions command `building_health` (read only: hp, maxHp, fire, rubble of one building, spec 14).
 - Unsafe spike commands `path_obstacles_clear`, `building_stat_write`, `construction_complete` and the memory write scripts in
   `docs/specs/14-free-walls/implementation-notes/tools/unsafe/`. All are refused unless `HARNESS_ALLOW_UNSAFE=1` is set (test games only).
