@@ -46,6 +46,7 @@ function(fg)
     fg.set_method(region, "setPolicySigned", function(self, id, signed) sign(id, signed) end)
     fg.set_method(player, "enactPolicy", function(self, target, slot, id)
         world.enact_calls = world.enact_calls + 1
+        if slot < 0 or slot >= world.slots then return false end
         sign(id, true)
         target.policies[slot + 1].ID = id
         target.policies[slot + 1].Name = fg.fstring("Policy " .. id)
@@ -138,6 +139,27 @@ class SignTests(PolicyTestCase):
 class StubBridge:
     def engine_path(self):
         return "engine"
+
+
+class SweepTests(unittest.TestCase):
+    def test_the_sweep_is_refused_without_the_unsafe_variable(self):
+        game, world = start()
+        self.addCleanup(game.close)
+        answer = run_command(game, "policy_enact_sweep")
+        self.assertIn("HARNESS_ALLOW_UNSAFE=1", answer["error"])
+        self.assertEqual(world["enact_calls"], 0)
+
+    def test_the_sweep_stops_at_the_first_true(self):
+        game = FakeGame(env={"HARNESS_ALLOW_UNSAFE": "1"})
+        game.start()
+        self.addCleanup(game.close)
+        world = game.lua.eval(WORLD)(game.fg)
+        game.load_mod("HarnessActions")
+        game.advance(1)
+        answer = run_command(game, "policy_enact_sweep")
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["calls"], 2)
+        self.assertEqual(answer["first_true"], {"id": 0, "slot": 0})
 
 
 class PolicyActionTests(unittest.TestCase):
