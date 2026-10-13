@@ -56,6 +56,34 @@ Goal: keep save fixtures as files in the repo folder and load any of them with o
 - A fixture with no stored files (`source_slot` only, the old kind) is loaded from its source slot by name, read only.
 - Safety: this writes into the user's save folder, which the user asked for. Only new files with a free name are written, and only files that the ledger lists are deleted.
 
+### Part E: fresh start, no save (user request, 2026-10-12)
+Goal: start the game in a NEW game with one command, so agents can test the first minutes of a village without a click on "New Game".
+Non-goals: choosing the start region, the family name or the difficulty. Loading a save (part D does that).
+- Launcher: `load_save.py --new-game [--map NAME]` and `run.py --scenario <name> --new-game [--map NAME]`. The default map is `Jagged_Cliffs`.
+  No fixture is installed and no slot is written. The run still uses the private `LOCALAPPDATA` and the save folder guard.
+- Boot mode: the launcher sets `HARNESS_NEW_GAME=1` and `HARNESS_NEW_GAME_MAP=<name>`. HarnessBoot then skips the load screen.
+  In the main menu it makes sure `MLGameInstance.savefileToLoad` is empty and opens the map `/Game/NotStronghold/Maps/NewMapSets/<map>`
+  with the console command `open`. This is the same effect as the load bug of part C (a map that opens with no slot starts a new game).
+- Then the normal steps run: wait for the map, push the autosave timer away, pause, write `ready.marker`. The autosave step is not optional:
+  a new game keeps the 10 minute autosave timer, which writes into the user's REAL save folder.
+- Check: after the map is ready, `savefileToLoad` must still be empty. A slot name there means a save was loaded: FAILED.
+- Map names: only letters, digits and `_` are allowed (checked in Python and in Lua).
+
+Plan for part E:
+1. [x] Write this part.
+2. [x] HarnessBoot mode `HARNESS_NEW_GAME`, with fake game tests (READY on a new game, FAILED on a timeout and on a loaded slot).
+3. [x] Launcher options `--new-game` and `--map`, with unit tests.
+4. [x] Real game check (2 launches): READY after 28 s, autosave pushed away, user saves unchanged. `PlayerController:ConsoleCommand` is not callable
+   from Lua (`attempt to call a TrivialObject`, run `fresh-start-1`); `KismetSystemLibrary:ExecuteConsoleCommand` works (run `fresh-start-2`).
+5. [x] Update `harness/README.md`, the skill `harness-run-scenario`, and `CHANGELOG.md`.
+
+Acceptance for part E:
+- [x] `load_save.py --new-game` reaches READY (paused) in the real game with no save loaded (run `fresh-start-2`, `savefileToLoad` empty).
+- [x] The village is a fresh start: day 61, March, year 1, region Hochweg with 5 homeless families and 10 people (telemetry). The autosave timer went
+  from 600 s to 31535400 s (boot log). `autosave_status` was not read: HarnessActions had no scenario in this run.
+- [x] The user's save folder is identical before and after the run (240 files, fingerprint `4d4304b366f5`, checked by hand because `--keep-open` skips the compare).
+- [x] Mock kit: a new game that starts gives READY. A map that never opens gives FAILED. A load of a slot gives FAILED.
+
 ## Plan
 1. [x] Test the hot reload options in the real game. Record the results (what works, how long, side effects like double hooks). (Done: `implementation-notes/hot-reload.md`.)
 2. [x] Build `reload_mods.py` for the working option, with tests. Measure the loop time. (Done: 2.1 to 2.3 s.)

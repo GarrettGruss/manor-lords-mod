@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -29,6 +30,8 @@ from runlib.scenario import list_scenarios
 from runlib.summary import EXIT_CODES
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_NEW_GAME_MAP = "Jagged_Cliffs"
+MAP_NAME = re.compile(r"^[A-Za-z0-9_]{1,64}$")
 DEFAULT_PAK_CONFIG = Path(__file__).resolve().parent / "pakmod.local.json"
 
 
@@ -45,6 +48,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--save", type=Path,
                         help="start from this save file (<slot>.sav, with its <slot>_descr.sav next to it) instead of a fixture. "
                              "It is installed like a stored fixture and removed at the end")
+    parser.add_argument("--new-game", action="store_true",
+                        help="start a NEW game with no save (spec 06, part E). No fixture is installed. Not with --save")
+    parser.add_argument("--map", default=None, metavar="NAME",
+                        help=f"with --new-game: the map to start on (default {DEFAULT_NEW_GAME_MAP})")
     parser.add_argument("--pak", action="append", default=[], metavar="NAME",
                         help="install the built harness pak NAME (from the pakmod work folder) before the game starts and "
                              "remove it at the end, also after a crash. Repeatable (spec 10, A/B variants)")
@@ -69,6 +76,20 @@ def fail_before_run(message: str) -> int:
     return EXIT_CODES["harness_error"]
 
 
+def check_new_game_options(args: argparse.Namespace) -> None:
+    """Check --new-game and --map. Store the map name (or None) on args.new_game_map."""
+    if args.map is not None and not args.new_game:
+        raise ValueError("--map needs --new-game")
+    args.new_game_map = None
+    if not args.new_game:
+        return
+    if args.fake or args.save is not None or args.fixture != DEFAULT_FIXTURE:
+        raise ValueError("--new-game needs --scenario and cannot be used with --save or --fixture")
+    args.new_game_map = args.map or DEFAULT_NEW_GAME_MAP
+    if not MAP_NAME.fullmatch(args.new_game_map):
+        raise ValueError(f"bad map name {args.new_game_map!r}: use letters, digits and '_' only")
+
+
 def check_variant_options(args: argparse.Namespace) -> None:
     """Check --pak and --env before any lock or folder exists. Store the parsed env on args."""
     args.extra_env = parse_env_options(args.env)
@@ -77,6 +98,7 @@ def check_variant_options(args: argparse.Namespace) -> None:
         raise paks.PakError("a --pak name is given twice")
     if args.save is not None and (args.fake or not args.save.is_file()):
         raise ValueError(f"--save needs --scenario and an existing file: {args.save}")
+    check_new_game_options(args)
     if args.fake and (args.pak_names or args.extra_env):
         raise ValueError("--pak and --env need --scenario. A fake run has no game.")
 
@@ -87,7 +109,8 @@ def build_phases(args: argparse.Namespace) -> list[Phase]:
     work_dir = paks.work_dir_from_config(args.pak_config) if args.pak_names else None
     return build_real_phases(args.scenario, keep_open=args.keep_open,
                              telemetry_interval_s=args.telemetry_interval, fixture=args.fixture,
-                             pak_names=args.pak_names, pak_work_dir=work_dir, extra_env=args.extra_env, save_path=args.save)
+                             pak_names=args.pak_names, pak_work_dir=work_dir, extra_env=args.extra_env, save_path=args.save,
+                             new_game_map=args.new_game_map)
 
 
 def build_config(args: argparse.Namespace, run, phases: list[Phase], lock) -> dict:
@@ -97,7 +120,8 @@ def build_config(args: argparse.Namespace, run, phases: list[Phase], lock) -> di
         "fake_outcome": args.fake,
         "test_save": None,  # chosen in preflight: an installed slot or the fixture's source slot
         "save_file": str(args.save) if args.save else None,
-        "fixture": None if args.fake else args.fixture,
+        "fixture": None if args.fake or args.new_game_map else args.fixture,
+        "new_game_map": args.new_game_map,
         "private_appdata": not args.fake,
         "keep_open": args.keep_open,
         "telemetry_interval_s": None if args.fake else args.telemetry_interval,

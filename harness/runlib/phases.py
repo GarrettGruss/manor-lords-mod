@@ -68,7 +68,7 @@ def _private_install(install: GameInstall, ctx: PhaseContext) -> GameInstall:
     return dataclasses.replace(install, saved_dir=fixtures.saved_dir_of(_appdata_dir(ctx)))
 
 
-def _prepare_appdata(install: GameInstall, ctx: PhaseContext, fixture: str) -> fixtures.AppdataResult:
+def _prepare_appdata(install: GameInstall, ctx: PhaseContext, fixture: str | None) -> fixtures.AppdataResult:
     """Build the private LOCALAPPDATA. Remember the user's save files, so teardown can compare."""
     ctx.state["appdata_dir"] = _appdata_dir(ctx)  # set first: teardown removes the folder even if the copy fails half way
     try:
@@ -109,7 +109,8 @@ def _choose_slot(install: GameInstall, ctx: PhaseContext, appdata: fixtures.Appd
 
 
 def _preflight(install: GameInstall, test_save: str, fixture: str = fixtures.DEFAULT_FIXTURE,
-               pak_names: list[str] | None = None, pak_work_dir: Path | None = None, save_path: Path | None = None):
+               pak_names: list[str] | None = None, pak_work_dir: Path | None = None, save_path: Path | None = None,
+               new_game: bool = False):
     def run(ctx: PhaseContext) -> str | None:
         ctx.state["run_started_epoch"] = time.time()
         if not is_steam_running():
@@ -123,11 +124,11 @@ def _preflight(install: GameInstall, test_save: str, fixture: str = fixtures.DEF
             raise PhaseFailed(f"game exe not found: {install.exe}")
         _stop_stale_game(ctx)
         _remove_stale_slots(install, ctx)
-        appdata = _prepare_appdata(install, ctx, fixture)
-        slot = _choose_slot(install, ctx, appdata, save_path)
+        appdata = _prepare_appdata(install, ctx, None if new_game else fixture)
+        slot = "" if new_game else _choose_slot(install, ctx, appdata, save_path)  # a fresh start loads no slot
         ctx.state["test_save"] = slot
         ctx.config["test_save"] = slot
-        if not install.save_file(slot).is_file():  # the game loads from the user's real save folder
+        if slot and not install.save_file(slot).is_file():  # the game loads from the user's real save folder
             raise PhaseFailed(f"test save not found: {install.save_file(slot)}")
         ctx.config.setdefault("environment", {}).update(
             gather_environment(install, REPO_ROOT, ctx.run.path, slot)  # the save that the game loads is in the real folder
@@ -168,10 +169,12 @@ def _deploy(install: GameInstall):
 
 # ---- launch ----
 
-def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float, extra_env: dict[str, str] | None = None):
+def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float, extra_env: dict[str, str] | None = None,
+            new_game_map: str | None = None):
     def run(ctx: PhaseContext) -> str | None:
         env = build_game_environment(ctx.run.path, ctx.state.get("test_save", test_save), telemetry_interval_s=telemetry_interval_s,
-                                     appdata_dir=ctx.state.get("appdata_dir"), extra_env=extra_env)
+                                     appdata_dir=ctx.state.get("appdata_dir"), extra_env=extra_env,
+                                     new_game_map=new_game_map)
         # The working folder must be Win64, or UE4SS does not find its files.
         popen = subprocess.Popen(
             [str(install.exe)], cwd=install.win64, env=env,
@@ -450,15 +453,15 @@ def build_real_phases(
     scenario_name: str, keep_open: bool = False, install: GameInstall | None = None, test_save: str = DEFAULT_TEST_SAVE,
     telemetry_interval_s: float = DEFAULT_TELEMETRY_INTERVAL_S, fixture: str | None = None,
     pak_names: list[str] | None = None, pak_work_dir: Path | None = None, extra_env: dict[str, str] | None = None,
-    save_path: Path | None = None,
+    save_path: Path | None = None, new_game_map: str | None = None,
 ) -> list[Phase]:
     get_scenario(scenario_name)  # fail before any game starts if the name is wrong
     install = install or GameInstall()
     fixture = fixtures.check_name(fixture or fixtures.DEFAULT_FIXTURE)  # a bad name fails before any game starts
     phases = [
-        Phase("preflight", _preflight(install, test_save, fixture, pak_names, pak_work_dir, save_path), 60),
+        Phase("preflight", _preflight(install, test_save, fixture, pak_names, pak_work_dir, save_path, new_game_map is not None), 60),
         Phase("deploy", _deploy(install), 120),
-        Phase("launch", _launch(install, test_save, telemetry_interval_s, extra_env), 60),
+        Phase("launch", _launch(install, test_save, telemetry_interval_s, extra_env, new_game_map), 60),
         Phase("boot", _boot, 240),
         Phase("scenario", _scenario(install, scenario_name), get_limit_s(scenario_name)),
         Phase("collect", _collect(install), 60, always_run=True),

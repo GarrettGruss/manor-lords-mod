@@ -10,7 +10,8 @@
 --   boot.json     current state and the history of state changes. Always up to date.
 --   ready.marker  written once, when the game is ready for a scenario.
 --
--- States: WAITING_FOR_MENU -> LOADING_SAVE -> WAITING_FOR_READY -> DISABLING_AUTOSAVE -> PAUSING -> READY.
+-- Fresh start (HARNESS_NEW_GAME=1, HARNESS_NEW_GAME_MAP): STARTING_NEW_GAME replaces LOADING_SAVE (spec 06, part E).
+-- States: WAITING_FOR_MENU -> LOADING_SAVE ->WAITING_FOR_READY -> DISABLING_AUTOSAVE -> PAUSING -> READY.
 -- Any wait can go to FAILED. READY means the game clock was measured as stopped.
 -- Rule: game objects are touched only on the game thread (ExecuteInGameThread).
 
@@ -19,10 +20,13 @@ local autosave = require("HarnessAutosave")
 
 local TAG = "HarnessBoot"
 local DEFAULT_SLOT = "saveGame_0"
+local DEFAULT_NEW_GAME_MAP = "Jagged_Cliffs"
+local MAP_FOLDER = "/Game/NotStronghold/Maps/NewMapSets/"
 
 local POLL_MS = 500
 local TIMEOUT_S = {
     WAITING_FOR_MENU = 120,
+    STARTING_NEW_GAME = 30,
     LOADING_SAVE = 30,
     WAITING_FOR_READY = 180,
     DISABLING_AUTOSAVE = 30,
@@ -67,6 +71,17 @@ local function targetSlot()
     local fromEnv = os.getenv and os.getenv("HARNESS_TEST_SAVE")
     if fromEnv and fromEnv ~= "" then return fromEnv end
     return DEFAULT_SLOT
+end
+
+-- Fresh start (spec 06, part E): HARNESS_NEW_GAME=1 opens a map with no save instead of loading a slot.
+local function isNewGameMode()
+    return os.getenv and os.getenv("HARNESS_NEW_GAME") == "1"
+end
+
+local function newGameMap()
+    local fromEnv = os.getenv and os.getenv("HARNESS_NEW_GAME_MAP")
+    if fromEnv and fromEnv ~= "" then return fromEnv end
+    return DEFAULT_NEW_GAME_MAP
 end
 
 ---------------------------------------------------------------------------------------------
@@ -144,9 +159,10 @@ end
 -- State and boot.json
 ---------------------------------------------------------------------------------------------
 
+local newGame = isNewGameMode()
 local boot = {
     state = "WAITING_FOR_MENU",
-    slot = targetSlot(),
+    slot = newGame and "" or targetSlot(), -- "" means: no save is loaded (fresh start)
     started = os.time(),
     reason = nil,
     history = {},
@@ -190,6 +206,10 @@ end
 local function stepWaitingForMenu()
     local widget = FindFirstOf("mainMenu_widget_C")
     if isValid(widget) then
+        if newGame then
+            setState("STARTING_NEW_GAME")
+            return
+        end
         setState("LOADING_SAVE")
         boot.loadPhase = "check_save"
         return
@@ -197,6 +217,56 @@ local function stepWaitingForMenu()
     if secondsInState() > TIMEOUT_S.WAITING_FOR_MENU then
         fail("main menu widget did not appear in " .. TIMEOUT_S.WAITING_FOR_MENU .. " s")
     end
+end
+
+---------------------------------------------------------------------------------------------
+-- Step: STARTING_NEW_GAME (only in the fresh start mode)
+-- A map that opens while savefileToLoad is empty starts a new game (the same effect as the load bug of 2026-10-11).
+-- The step opens the map with the console command "open". It calls no function that saves.
+---------------------------------------------------------------------------------------------
+
+local function isSafeMapName(name)
+    return name:match("^[%w_]+$") ~= nil
+end
+
+local function playerController()
+    local found = FindFirstOf("PlayerController")
+    if isValid(found) then return found end
+    return nil
+end
+
+local function stepStartingNewGame()
+    local map = newGameMap()
+    if not isSafeMapName(map) then
+        fail("map name '" .. map .. "' is not allowed (letters, digits and _ only)")
+        return
+    end
+    local pending = loadedSlot()
+    if pending ~= nil and pending ~= "" then
+        fail("savefileToLoad is '" .. pending .. "' before the new game; a save would load")
+        return
+    end
+    local controller = playerController()
+    if controller == nil then
+        if secondsInState() > TIMEOUT_S.STARTING_NEW_GAME then
+            fail("no PlayerController to open the map in " .. TIMEOUT_S.STARTING_NEW_GAME .. " s")
+        end
+        return
+    end
+    local command = "open " .. MAP_FOLDER .. map
+    log.info(TAG, "starting a new game: " .. command)
+    -- PlayerController:ConsoleCommand is not callable from Lua here (run fresh-start-1). UEBridge uses this library call.
+    local ok, err = pcall(function()
+        local library = StaticFindObject("/Script/Engine.Default__KismetSystemLibrary")
+        local world = FindFirstOf("World")
+        if not isValid(library) or not isValid(world) then error("no KismetSystemLibrary or World") end
+        library:ExecuteConsoleCommand(world, command, controller)
+    end)
+    if not ok then
+        fail("console command '" .. command .. "' failed: " .. tostring(err))
+        return
+    end
+    setState("WAITING_FOR_READY")
 end
 
 ---------------------------------------------------------------------------------------------
@@ -384,6 +454,16 @@ local function stepWaitingForReady()
         stablePolls = stablePolls + 1
         if stablePolls >= READY_STABLE_POLLS then
             local loaded = loadedSlot()
+            if newGame then
+                -- A fresh start must not have loaded a save. An unreadable field counts as empty.
+                if loaded ~= nil and loaded ~= "" then
+                    fail("a save was loaded in the fresh start mode (savefileToLoad is '" .. loaded .. "')")
+                    return
+                end
+                log.info(TAG, "new game confirmed: savefileToLoad is empty")
+                setState("DISABLING_AUTOSAVE")
+                return
+            end
             if loaded ~= boot.slot then
                 fail("the game did not load slot '" .. boot.slot .. "' (savefileToLoad is '" .. tostring(loaded) .. "'); it may have started a new game")
                 return
@@ -510,6 +590,7 @@ end
 
 local STEPS = {
     WAITING_FOR_MENU = stepWaitingForMenu,
+    STARTING_NEW_GAME = stepStartingNewGame,
     LOADING_SAVE = stepLoadingSave,
     WAITING_FOR_READY = stepWaitingForReady,
     DISABLING_AUTOSAVE = stepDisablingAutosave,
@@ -534,7 +615,11 @@ end
 
 -- A stale ready marker from an earlier run must never be read as a new "ready".
 os.remove(READY_FILE)
-log.say(TAG, "on; will load slot '" .. boot.slot .. "'; output in " .. OUT_DIR)
+if newGame then
+    log.say(TAG, "on; will start a NEW game on map '" .. newGameMap() .. "'; output in " .. OUT_DIR)
+else
+    log.say(TAG, "on; will load slot '" .. boot.slot .. "'; output in " .. OUT_DIR)
+end
 setState("WAITING_FOR_MENU")
 
 LoopAsync(POLL_MS, function()

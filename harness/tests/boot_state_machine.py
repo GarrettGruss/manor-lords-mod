@@ -16,6 +16,10 @@
 #   silentrestart the game restarts the clock with no sign (old behavior); the hold calls pauseGame twice; READY
 #   cinematicstuck the cinematic never ends; pauseGame is called after the wait limit; READY
 #   newgame    LoadGame starts a new game (savefileToLoad empty, the bug before 2026-10-11); FAILED, not READY
+#   freshstart     fresh start mode: the map opens with no slot; READY, no load screen touched
+#   freshnoopen    fresh start mode: the map never opens; FAILED, the game was not ready
+#   freshloadsslot fresh start mode: a slot name stays in savefileToLoad; FAILED
+#   freshbadmap    fresh start mode: a map name with a space is refused; FAILED before the console
 #
 # The fake game is the kit in harness/tests/fakegame. It copies a real behavior: for a few seconds after the load the game holds the clock at 0.
 # Then it starts the clock itself, and that undoes any pause made too early.
@@ -28,7 +32,8 @@ import fakegame_path  # noqa: F401  (makes the fakegame package importable)
 from fakegame import FakeGame, FakeGameClock, build_manor_lords_state
 
 ALL_MODES = ["happy", "slotlate", "noslot", "missing", "pausefails", "neverstarts", "autosavefails",
-             "cinematic", "nocinematic", "silentrestart", "cinematicstuck", "newgame"]
+             "cinematic", "nocinematic", "silentrestart", "cinematicstuck", "newgame",
+             "freshstart", "freshnoopen", "freshloadsslot", "freshbadmap"]
 
 # What each mode must end with: (state, text that the failure reason must contain)
 EXPECTED = {
@@ -44,7 +49,13 @@ EXPECTED = {
     "silentrestart": ("READY", None),
     "cinematicstuck": ("READY", None),
     "newgame": ("FAILED", "did not load slot"),
+    "freshstart": ("READY", None),
+    "freshnoopen": ("FAILED", "game was not ready"),
+    "freshloadsslot": ("FAILED", "a save was loaded"),
+    "freshbadmap": ("FAILED", "not allowed"),
 }
+# Modes of the fresh start (spec 06, part E): HARNESS_NEW_GAME=1, no slot is loaded.
+FRESH_MODES = {"freshstart", "freshnoopen", "freshloadsslot", "freshbadmap"}
 # Exact number of pauseGame calls, where a mode checks it.
 PAUSE_CALLS = {"happy": 1, "cinematic": 1, "nocinematic": 1, "silentrestart": 2}
 
@@ -80,12 +91,24 @@ def state_options(mode):
         options["autosave_works"] = False
     if mode == "newgame":
         options["load_starts_new_game"] = True
+    if mode == "freshnoopen":
+        options["open_map_works"] = False
+    if mode == "freshloadsslot":
+        options["open_map_loads_slot"] = "saveGame_3"
     return options
+
+
+def mode_env(mode):
+    env = {"HARNESS_AUTOBOOT": "1", "HARNESS_TEST_SAVE": "saveGame_0"}
+    if mode in FRESH_MODES:
+        env["HARNESS_NEW_GAME"] = "1"
+        env["HARNESS_NEW_GAME_MAP"] = "bad map!" if mode == "freshbadmap" else "Jagged_Cliffs"
+    return env
 
 
 def run_mode(mode, boot_script=None, **game_options):
     """boot_script: path of another main.lua (to prove that an old, buggy version is caught)."""
-    env = {"HARNESS_AUTOBOOT": "1", "HARNESS_TEST_SAVE": "saveGame_0"}
+    env = mode_env(mode)
     with FakeGame(env=env, **game_options) as game:
         state = build_manor_lords_state(game, **state_options(mode))
         if boot_script:
@@ -132,6 +155,13 @@ def check(mode, boot_script=None):
         problems.append("ready.marker exists after a failure")
     if mode == "missing" and calls:
         problems.append(f"menu was touched before the failure: {calls}")
+    if mode in FRESH_MODES:
+        if any(call.startswith(("LoadGame", "SwitchToLoadScreen")) for call in calls):
+            problems.append(f"the fresh start touched the load screen: {calls}")
+    if mode == "freshstart" and "ConsoleCommand:open /Game/NotStronghold/Maps/NewMapSets/Jagged_Cliffs" not in calls:
+        problems.append(f"the map was not opened as expected: {calls}")
+    if mode == "freshbadmap" and any(call.startswith("ConsoleCommand") for call in calls):
+        problems.append("a bad map name reached the console")
 
     history = [h["state"] for h in boot["history"]]
     print(f"{'PASS' if not problems else 'FAIL'}  {mode:10} seconds={seconds:5.1f} calls={calls} history={history}")

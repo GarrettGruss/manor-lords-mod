@@ -13,7 +13,8 @@ MAX_VALUE_CHARS = 256
 # A name that starts with one of these is refused: the harness owns these variables.
 FORBIDDEN_PREFIXES = ("HARNESS_RUN_DIR", "LOCALAPPDATA", "PATH", "UE4SS_BRIDGE")
 # The harness sets these in build_game_environment. They are refused too, so a variant cannot turn the harness off.
-HARNESS_OWNED = ("HARNESS_AUTOBOOT", "HARNESS_TEST_SAVE", "HARNESS_TELEMETRY_INTERVAL_S")
+HARNESS_OWNED = ("HARNESS_AUTOBOOT", "HARNESS_TEST_SAVE", "HARNESS_TELEMETRY_INTERVAL_S", "HARNESS_NEW_GAME",
+                 "HARNESS_NEW_GAME_MAP")
 SECRET_WORDS = ("KEY", "TOKEN", "SECRET", "PASSWORD")
 
 

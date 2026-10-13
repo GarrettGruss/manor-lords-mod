@@ -102,8 +102,11 @@ DEFAULT_TELEMETRY_INTERVAL_S = 5.0
 
 def build_game_environment(run_dir: Path, test_save: str, base_env: dict | None = None,
                            telemetry_interval_s: float = DEFAULT_TELEMETRY_INTERVAL_S,
-                           appdata_dir: Path | None = None, extra_env: dict[str, str] | None = None) -> dict:
+                           appdata_dir: Path | None = None, extra_env: dict[str, str] | None = None,
+                           new_game_map: str | None = None) -> dict:
     """The environment for the game process. Each run has its own HARNESS_RUN_DIR.
+
+    With `new_game_map` HarnessBoot starts a new game on that map and loads no save (spec 06, part E).
 
     With `appdata_dir` the game gets its own LOCALAPPDATA. Its saves, config and crash reports then live there,
     and the user's save folder is never touched by the game.
@@ -115,6 +118,11 @@ def build_game_environment(run_dir: Path, test_save: str, base_env: dict | None 
     env["HARNESS_RUN_DIR"] = str(Path(run_dir).resolve())
     env["HARNESS_AUTOBOOT"] = "1"
     env["HARNESS_TEST_SAVE"] = test_save
+    env.pop("HARNESS_NEW_GAME", None)  # a value from the parent shell must not turn the mode on
+    env.pop("HARNESS_NEW_GAME_MAP", None)
+    if new_game_map is not None:
+        env["HARNESS_NEW_GAME"] = "1"
+        env["HARNESS_NEW_GAME_MAP"] = new_game_map
     env["HARNESS_TELEMETRY_INTERVAL_S"] = f"{telemetry_interval_s:g}"  # 0 turns telemetry off
     return env
 

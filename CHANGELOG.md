@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Fresh start (spec 06, part E): `run.py --new-game [--map NAME]` and `load_save.py --new-game` start the game in a new game with no save.
+  `HarnessBoot` has a new state `STARTING_NEW_GAME` (env `HARNESS_NEW_GAME`, `HARNESS_NEW_GAME_MAP`). It opens the map, pushes the autosave
+  timer away and pauses. Real check: run `fresh-start-2`.
 - HarnessActions version 37 with the spike command `plot_upgrade` (spec 15): `PawnCPP:addUpgradeRequest` or `addExtensionChangeRequest` on
   the building under the mouse. Real game: second-family wing (12), vegetable garden (extension 8) and carrot seeds (30) without the mouse,
   at normal cost, also on a plot the panel says is too small. Level 2 is id 2 (seen from a panel click); a wrong id only adds a stray
