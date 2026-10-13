@@ -5,19 +5,16 @@ Vendored from upstream commit a5eae1c with harness patches. See
 
 ## Setup (from the repo root, with uv)
 
-1. Create the virtual environment: `uv venv --python 3.12 .venv`
-2. Install the locked dependencies (hashes are checked):
-   `uv pip install --python .venv\Scripts\python.exe --require-hashes -r mcp\requirements.txt`
-3. Claude Code starts the server from `.mcp.json` over stdio. To start it by hand:
-   `$env:PYTHONPATH = "mcp"; .venv\Scripts\python.exe -m ue4ss_bridge`
+1. Make the venv `.venv` from the lock file (`pyproject.toml`, `uv.lock`; `mcp==1.30.0` is pinned): `uv sync`
+2. Claude Code starts the server from `.mcp.json` over stdio. To start it by hand:
+   `$env:PYTHONPATH = "mcp"; uv run python -m ue4ss_bridge`
    Running `python mcp/ue4ss_bridge/__main__.py` directly does not work. The file uses relative imports.
 
 Use stdio only. Do not use `--http`.
 
 ## Change a dependency
 
-Edit `mcp/requirements.in`, then rebuild the lock file:
-`uv pip compile mcp\requirements.in --generate-hashes --python-version 3.12 -o mcp\requirements.txt`
+Use `uv add <name>` or `uv remove <name>` from the repo root. It updates `pyproject.toml` and `uv.lock`; commit both.
 
 ## Environment variables
 

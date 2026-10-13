@@ -10,7 +10,7 @@ except ImportError as error:  # lupa is not installed
     _MISSING = str(error)
 
     def _needs_lupa(*args, **kwargs):
-        raise ImportError(f"The fake game needs lupa. Run with: uv run --no-project --with lupa ... ({_MISSING})")
+        raise ImportError(f"The fake game needs lupa. Run with: uv run python -m unittest ... (lupa is a dev dependency)({_MISSING})")
 
     FakeGame = FakeGameClock = build_manor_lords_state = _needs_lupa
 

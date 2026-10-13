@@ -1,6 +1,6 @@
 # Tests for mod/shared/HarnessJson and mod/shared/HarnessTelemetry against a fake game API (no game needed).
 # Run from the repo root:
-#   uv run --no-project --python 3.12 --with lupa python -m unittest harness/tests/test_telemetry_mock.py -v
+#   uv run python -m unittest harness/tests/test_telemetry_mock.py -v
 # These tests do not prove that the real UE4SS API behaves like the fake one. The real game test is in spec 04.
 import json
 import os

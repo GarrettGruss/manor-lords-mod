@@ -1,5 +1,5 @@
 """Tests for the fake game kit itself. Run from the repo root:
-  uv run --no-project --python 3.12 --with lupa python -m unittest discover -s harness/tests -p "test_fakegame*.py"
+  uv run python -m unittest discover -s harness/tests -p "test_fakegame*.py"
 """
 
 import os

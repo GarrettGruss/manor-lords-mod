@@ -18,7 +18,7 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 - Engine version string is `VER_UE5_5`. JSON paths for the converter must be absolute.
 - The AES key is in `modtools\work\aes_key.txt`. Give it to tools ONLY through the environment variable `MANORLORDS_AES_KEY`, set from that file inside the command. Never print it, write it into a note, a commit, a changelog, a PR or chat. Before every commit: grep the diff for it.
 
-## Commands (`.venv\Scripts\python.exe harness\tools\pakmod.py ...`)
+## Commands (`uv run python harness\tools\pakmod.py ...`)
 `check [--pin]`, `find <text>`, `extract <asset>`, `tojson`, `fromjson <abs json> --to <name>`, `roundtrip <asset>`, `build <name>`, `install`, `remove [--all]`, `list`. Exit codes: 0 ok, 1 error, 3 hash mismatch, 4 pak list mismatch.
 
 ## Working sequence (verified 2026-10-10)

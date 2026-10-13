@@ -35,6 +35,7 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 - Never call a function that saves (CLAUDE.md Safety). A run installs its fixture save into the user's save folder under a free slot name, loads it, and removes it at the end; the user's saves are hashed before and after (spec 06, part D). `harness/tools/load_save.py <fixture | .sav path>` opens the game on a save.
 - Building placement works only with a real OS mouse click (hidden scenario `place-building`).
 - Raw Lua eval through the bridge is approved for experiments only (2026-10-10).
-- Shells: Git Bash has no `python3` and no `gh` on the PATH. Use `.venv\Scripts\python.exe`, `uv run --no-project --with lupa python ...` for fake-game tests, and `C:\Program Files\GitHub CLI\gh.exe`. Bash heredocs mangle quotes: use the Write tool for files.
+- Python: start every command with `uv run python` (scripts, `-m unittest`, fake-game tests). Never `python`, `python3`, `py` or `python -`: they are the Windows Store stub and hang. Dependencies: `pyproject.toml` and `uv.lock` (`uv add`).
+- Shells: Git Bash may have no `gh` on the PATH. Use `C:\Program Files\GitHub CLI\gh.exe`. Bash heredocs mangle quotes: use the Write tool for files.
 - Spec 10 (`docs/specs/10-invasion-testability/`) is the plan for testing the Invasion Mode brief. Spec 11 (parallel game slots) and spec 12 (manor exploration) are proposed.
 - Writing rules: simplified technical English, short sentences, one term per thing.

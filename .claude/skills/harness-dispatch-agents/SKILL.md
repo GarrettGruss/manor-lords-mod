@@ -13,13 +13,13 @@ Rules from CLAUDE.md: use `model: "sonnet"` for subagents when possible, do not 
 - Several agents may edit the same shared files (HarnessActions `main.lua`, `criteria.json`, `CHANGELOG.md`, the scenario list test). Expect merge conflicts there. Keep those edits small and tell agents to put new code in new files.
 
 ## Worktrees
-`git worktree add ../mlm-wtNN -b feat/NN-name origin/main`. Link the venv with a junction (`mklink /J .venv <main>\.venv`), and remove the junction with `cmd /c rmdir` before `git worktree remove`. The main worktree is the one the harness MCP tools and `run.py` deploy from: scenarios run from the code in the main worktree. To run a branch's scenarios in the real game, merge it to main (or check it out in the main worktree) first.
+`git worktree add ../mlm-wtNN -b feat/NN-name origin/main`. Link the venv with a junction (`mklink /J .venv <main>\.venv`), and remove the junction with `cmd /c rmdir` before `git worktree remove`. Without the junction, the first `uv run` makes a venv for the worktree from `uv.lock`. The main worktree is the one the harness MCP tools and `run.py` deploy from: scenarios run from the code in the main worktree. To run a branch's scenarios in the real game, merge it to main (or check it out in the main worktree) first.
 
 ## The prompt (a full prompt every time)
 1. Goal and the spec section or criteria ids it serves.
 2. Absolute file paths to read first (CLAUDE.md, the spec README, related notes and code).
 3. Branch name, "you may commit, atomic Conventional commits with the Co-Authored-By line, do NOT push or merge".
-4. How to run tests, with the exact commands (`uv run --no-project --with lupa ...` for fake-game tests).
+4. How to run tests, with the exact commands (`uv run python -m unittest ...` for fake-game tests). Say: "Start every Python command with `uv run python`. Never run `python`, `python3`, `py` or `python -` (Windows Store stub, hangs). No code through stdin."
 5. Limits: game use (only you / not at all), no save functions, key and modtools out of git, which worktrees not to touch, run cap.
 6. The output: notes in `implementation-notes/`, the final short report (verdicts, files, test counts, runs used, what is NOT verified).
 7. Say what to do when blocked: stop, report, do not work around a permission block.

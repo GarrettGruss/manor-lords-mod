@@ -9,10 +9,10 @@ Source of truth: `docs/specs/10-invasion-testability/criteria.json` (38 criteria
 
 ## Commands
 ```
-.venv\Scripts\python.exe harness\tools\coverage.py              # shares, blocked list, gap list
-.venv\Scripts\python.exe harness\tools\coverage.py --check-spec # criteria.json and the spec tables must agree
-.venv\Scripts\python.exe harness\tools\coverage.py --json
-.venv\Scripts\python.exe harness\tools\coverage.py --min-verified 0.9   # exit code for a gate
+uv run python harness\tools\coverage.py              # shares, blocked list, gap list
+uv run python harness\tools\coverage.py --check-spec # criteria.json and the spec tables must agree
+uv run python harness\tools\coverage.py --json
+uv run python harness\tools\coverage.py --min-verified 0.9   # exit code for a gate
 ```
 The goal is: at least 90% of the A and P criteria have a verified method (34 of 37 when Q3, a human judgment, is not counted).
 
