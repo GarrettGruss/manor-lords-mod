@@ -38,6 +38,23 @@
         "bailey",
         "helped"
       ]
+    },
+    "wall-u": {
+      "description": "New game (Jagged Cliffs, 0 AI lords), built manor (palace, type 98, no bailey), a built planner U wall (91 m, opening about 10-15 m) and a built straight planner wall (47 m) on open ground. Obstacle list 337 entries. Saved by the user as free-wall-test-10-11-26-v2 (spec 14).",
+      "origin": "user slot saveGame_31",
+      "sha256": {
+        ".png": "53a2dccfe55e7119423357238ae80cc25db79c364d39d60ec4615d3cb557f80b",
+        ".sav": "4ab91f5e3a635ee800e261206438f92d07405bfdb35b80ce87f3e254c0eaa59d",
+        "_coat_1.png": "07e45baab70c0982c28b3dbae41eb27bfea3a72b5d655f5f2ab62ead8cc50557",
+        "_coat_2.png": "203dae76a71ffb3c5b53fdf88c3c3d37779ed84ce41431154df0437a8ded658e",
+        "_descr.sav": "60183a6f3a30d8c9371aa00f5dabc37103691e39ae2117396461ad2996da1f99"
+      },
+      "stored": true,
+      "tags": [
+        "manor",
+        "walls",
+        "spec14"
+      ]
     }
   }
 }

@@ -105,6 +105,17 @@
 --   {"command":"tent_find_spot"}                           up to 5 free spots for a tent (x, y, z) around the village centre; it does not place anything (read only)
 --   {"command":"forest_spot","min_dist":15000,"max_dist":40000}   up to 5 dense tree cells of the player region, best first (Resource actors with resType "tree"; read only)
 --   {"command":"plot_field_shift","dx":3000,"dy":0,"plots":true,"commit":true}   test only: move the drawn, closed plot outline of the pawn (plots: also extractedPlots), then commit it
+--   Walls (spec 14, see mod/shared/HarnessWalls):
+--   {"command":"wall_pieces","road":123,"step":200}         spawn blocking palisade pieces (GhostStaticMeshActor, type 470) along a road
+--   {"command":"wall_pieces_clear","road":123}              destroy the pieces that wall_pieces made for that road
+--   {"command":"path_state"}                                size of the global obstacle list and the path debug flag (read only)
+--   {"command":"building_stat","kind":470}                  spike, read only: scalar fields of one buildingStats row (with "kind": the spec 14 reader; with "type": the spec 15 reader)
+--   {"command":"building_health","building":123}            spike, read only: type, hp, maxHp, onFire, fireAmt, rubble, built of one building
+--   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
+--   Unsafe spike commands: refused unless the game runs with HARNESS_ALLOW_UNSAFE=1 (test games only)
+--   {"command":"construction_complete","building":123}      PawnCPP:constructionComplete on one building
+--   {"command":"path_obstacles_clear"}                      empty the global obstacle list (the next squad spawn crashed the game)
+--   {"command":"building_stat_write","kind":30,"field":"isModule","value":true}  write one buildingStats field in memory
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -125,7 +136,7 @@ local walls = require("HarnessWalls")
 local bandits = require("HarnessBandits")
 local housing = require("HarnessHousing")
 
-local VERSION = "33"
+local VERSION = "34"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -338,6 +349,12 @@ local function closePopups()
     return { ok = true, widgets = #widgets, closed = closed, count = #closed }
 end
 
+-- Specs 14 and 15 each added a building_stat reader: spec 14 takes "kind", spec 15 takes "type". Keep both request forms.
+local function buildingStat(request, raw)
+    if type(raw) == "string" and raw:match('"kind"%s*:') then return walls.building_stat(request, raw) end
+    return housing.building_stat(request, raw)
+end
+
 local COMMANDS = {
     popup_state = popupState,
     close_popups = closePopups,
@@ -418,7 +435,7 @@ local COMMANDS = {
     homeless_rebel = bandits.homeless_rebel,
     rebel_raid_rally = bandits.rebel_raid_rally,
     bandit_kill_squads = bandits.bandit_kill_squads,
-    building_stat = housing.building_stat,
+    building_stat = buildingStat,
     building_stat_vector_write = housing.building_stat_vector_write,
     housing_state = housing.housing_state,
     accommodate_homeless = housing.accommodate_homeless,
@@ -429,6 +446,14 @@ local COMMANDS = {
     forest_spot = housing.forest_spot,
     plot_field_shift = housing.plot_field_shift,
     plot_field_place = housing.plot_field_place,
+    wall_pieces = walls.wall_pieces,
+    wall_pieces_clear = walls.wall_pieces_clear,
+    path_state = walls.path_state,
+    building_health = walls.building_health,
+    mesh_users = walls.mesh_users,
+    construction_complete = walls.construction_complete,
+    path_obstacles_clear = walls.path_obstacles_clear,
+    building_stat_write = walls.building_stat_write,
 }
 
 local function runCommand(number, raw)
