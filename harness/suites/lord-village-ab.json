@@ -1,0 +1,16 @@
+{
+  "name": "lord-village-ab",
+  "scenarios": [
+    {
+      "scenario": "probe-lord-village",
+      "repeat": 3,
+      "variants": [
+        {"name": "supply-0", "env": {"LORD_VILLAGE_SUPPLY": "0", "LORD_VILLAGE_TYPE": "1"}},
+        {"name": "supply-2", "env": {"LORD_VILLAGE_SUPPLY": "2", "LORD_VILLAGE_TYPE": "1"}},
+        {"name": "type-2-supply-2", "env": {"LORD_VILLAGE_SUPPLY": "2", "LORD_VILLAGE_TYPE": "2"}}
+      ]
+    }
+  ],
+  "time_budget_s": 3600,
+  "flake_retries": 0
+}

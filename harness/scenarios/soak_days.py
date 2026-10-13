@@ -32,6 +32,10 @@ DAYS_SHARE_RANGE = (0.6, 1.1)
 FEED_EVERY_DAYS = 10
 FEED_ITEM_ID = 30  # Fish (verified with GiveItemByID)
 FEED_AMOUNT = 100
+# The unmanaged start village is defeated by winter at about day 350 (its Approval falls to 0). This option writes the Approval every
+# poll so that a 730 day soak can finish. It tests the game process and the clock, not the economy.
+KEEP_APPROVAL = os.environ.get("HARNESS_SOAK_KEEP_APPROVAL") == "1"
+KEEP_APPROVAL_VALUE = 100
 MAX_MEMORY_MB = 8192
 MAX_MEMORY_GROWTH_MB = 2048
 
@@ -55,6 +59,8 @@ def run(ctx) -> dict:
         ctx.popups()
         sample = sampler()
         soak.check_game_over(bridge.read_property(game_instance, "currentGameVictoryStatus"), sample.days_total)
+        if KEEP_APPROVAL:
+            ctx.actions.set_region_value("Approval", KEEP_APPROVAL_VALUE)
         if feeder(sample.days_total):
             ctx.log.info(f"fed {FEED_AMOUNT} of item {FEED_ITEM_ID} at daysTotal {sample.days_total}")
     ctx.time.set_speed(SPEED)
