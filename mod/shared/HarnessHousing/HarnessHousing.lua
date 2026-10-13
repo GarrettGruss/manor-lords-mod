@@ -612,6 +612,49 @@ function M.family_state()
     return { ok = true, region = regionRow(region), housed_ids = housedIds(rows), growth = growthModifiers(region) }
 end
 
+-- Read only (spec 15, #61): who lives where. One row per family (index in workerFamilies, living members, roles, the building that
+-- Family.familyHome points to) and one row per building that lists occupant families (residential buildings and tents).
+-- Compare the two lists to find families that no building lists, and buildings that list a family twice.
+M.MAX_CENSUS_ROWS = 80
+
+local function familyRow(index, family)
+    local members, roles = 0, {}
+    for _, member in ipairs(listOf(family.familyMembers)) do
+        if isValid(member) and read(function() return member.dead end) ~= true then
+            members = members + 1
+            roles[#roles + 1] = read(function() return member.role end)
+        end
+    end
+    local home = read(function() return family.familyHome end)
+    local homeValid = isValid(home)
+    return { index = index - 1, living = members, roles = roles, has_home = homeValid,
+             home_id = homeValid and idOf(home) or nil, home_type = homeValid and typeOf(home) or nil }
+end
+
+local function occupantRow(building)
+    local row = buildingRow(building)
+    row.occupants = {}
+    for _, id in ipairs(listOf(read(function() return building.occupantFamilyIDs end))) do
+        if type(id) == "number" then row.occupants[#row.occupants + 1] = id end
+    end
+    return row
+end
+
+function M.family_census()
+    local region, problem = sack.playerRegion()
+    if not region then return { ok = false, error = problem } end
+    local families, buildings = {}, {}
+    for index, family in ipairs(listOf(region.workerFamilies)) do
+        if #families < M.MAX_CENSUS_ROWS then families[#families + 1] = familyRow(index, family) end
+    end
+    for _, building in ipairs(listOf(region:GetBuildings())) do
+        local isHome = isValid(building) and (read(function() return building:isResidentialBuilding() end) == true
+            or read(function() return building:isHomelessTent() end) == true)
+        if isHome and #buildings < M.MAX_CENSUS_ROWS then buildings[#buildings + 1] = occupantRow(building) end
+    end
+    return { ok = true, region = regionRow(region), families = families, buildings = buildings }
+end
+
 -- The first homeless tent of the region, or nil.
 local function regionTent(region)
     for _, building in ipairs(listOf(region:GetBuildings())) do
@@ -651,19 +694,27 @@ function M.family_eject(request, raw)
 end
 
 -- The first living member of a family that has more than one living member, never the only member.
-local function spareMember(region)
+M.CHILD_ROLE = 3
+
+-- With wantAdult, the member must not be a child (role 3). Spec 15 #61: the crash of the child path may come from the child.
+local function spareMember(region, wantAdult)
     for _, family in ipairs(listOf(region.workerFamilies)) do
         local living = {}
         for _, member in ipairs(listOf(family.familyMembers)) do
             if isValid(member) and read(function() return member.dead end) ~= true then living[#living + 1] = member end
         end
-        if #living >= 2 then return living[#living] end
+        if #living >= 2 then
+            for i = #living, 1, -1 do
+                if not wantAdult or read(function() return living[i].role end) ~= M.CHILD_ROLE then return living[i] end
+            end
+        end
     end
     return nil
 end
 
 -- A new family from a spare villager of an existing family. The new family has no home, so it is homeless.
-function M.family_add(request)
+function M.family_add(request, raw)
+    local wantAdult = rawBool(raw, "adult", false)
     local count = request.count or 1
     if count < 1 or count > M.MAX_FAMILY_CHANGE then
         return { ok = false, error = "count must be a whole number from 1 to " .. M.MAX_FAMILY_CHANGE }
@@ -673,8 +724,8 @@ function M.family_add(request)
     local before = regionRow(region)
     local added, errors = {}, {}
     for _ = 1, count do
-        local member = spareMember(region)
-        if not member then errors[#errors + 1] = "no family with 2 living members is left"; break end
+        local member = spareMember(region, wantAdult)
+        if not member then errors[#errors + 1] = "no family with 2 living members is left" .. (wantAdult and " (adult wanted)" or ""); break end
         local role = read(function() return member.role end)
         local okLeave, errLeave = pcall(function() member:removeFromFamilyIfHasOne(false) end)
         if not okLeave then errors[#errors + 1] = "removeFromFamilyIfHasOne: " .. tostring(errLeave); break end

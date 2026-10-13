@@ -22,8 +22,10 @@ function(fg)
         return b
     end
     local buildings = { house({ 11, 12 }), house({ 13 }) }
+    local units = {}
     local function unit()
         local u = fg.object("SMUnit", { dead = false, role = 1 })
+        units[#units + 1] = u
         fg.set_method(u, "removeFromFamilyIfHasOne", function() world.left = world.left + 1 end)
         return u
     end
@@ -51,6 +53,7 @@ function(fg)
         return 100 + #world.new_families
     end)
     fg.object("RTSMultiEngineCPP", { playerRef = player, regions = fg.array({ region }, { wrap = false }) })
+    world.set_roles = function(role) for _, u in ipairs(units) do u.role = role end end
     return world
 end
 """
@@ -141,6 +144,31 @@ class AddTests(FamilyTestCase):
     def test_add_refuses_a_bad_count(self):
         self.assertFalse(self.send("family_add", count=11)["ok"])
         self.assertEqual(len(self.world.new_families), 0)
+
+    def test_add_with_adult_takes_a_member_that_is_not_a_child(self):
+        answer = self.send("family_add", count=1, adult=True)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["added"][0]["role"], 1)
+
+    def test_add_with_adult_fails_when_only_children_are_spare(self):
+        self.world.set_roles(3)
+        answer = self.send("family_add", count=1, adult=True)
+        self.assertFalse(answer["ok"])
+        self.assertIn("adult", answer["error"])
+        self.assertEqual(self.world.left, 0)
+
+
+class CensusTests(FamilyTestCase):
+    def test_census_lists_each_family_with_members_and_roles(self):
+        census = self.send("family_census")
+        self.assertTrue(census["ok"], census)
+        self.assertEqual([row["living"] for row in census["families"]], [2, 1])
+        self.assertEqual(census["families"][0]["roles"], [1, 1])
+        self.assertEqual(census["families"][0]["index"], 0)
+
+    def test_census_lists_the_occupants_of_each_home(self):
+        census = self.send("family_census")
+        self.assertEqual([row["occupants"] for row in census["buildings"]], [[11, 12], [13]])
 
 
 if __name__ == "__main__":

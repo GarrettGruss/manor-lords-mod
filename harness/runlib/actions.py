@@ -963,11 +963,15 @@ class Actions:
             raise ActionError("family_eject: home must be none or tent")
         return self._command("family_eject", count=count, suppress=bool(suppress), home=home)
 
-    def family_add(self, count: int = 1) -> dict:
-        """A villager leaves a family of 2 or more and starts a new, homeless family (Region:AddNewFamily)."""
+    def family_census(self) -> dict:
+        """Who lives where (read only): one row per family (living members, roles, familyHome) and one row per home or tent with its occupant family ids."""
+        return self._command("family_census")
+
+    def family_add(self, count: int = 1, adult: bool = False) -> dict:
+        """A villager leaves a family of 2 or more and starts a new, homeless family (Region:AddNewFamily). With adult, the villager is not a child."""
         if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 10:
             raise ActionError("family_add: count must be a whole number from 1 to 10")
-        return self._command("family_add", count=count)
+        return self._command("family_add", count=count, adult=bool(adult))
 
     def plot_field_place(self, plots: list[dict]) -> dict:
         """Write burgage plots into the pawn (`extractedPlots`) without the mouse. Needs the build tool open: see `open_burgage_tool`.
