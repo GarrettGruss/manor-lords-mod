@@ -17,7 +17,7 @@ A suite is `harness/suites/<name>.json`: `name`, `scenarios` (a list), `time_bud
  "variants": [{"name": "size-100", "env": {"RAID_STANDIN_SIZE_PERCENT": "100"}},
               {"name": "size-150", "env": {"RAID_STANDIN_SIZE_PERCENT": "150"}}]}
 ```
-Examples: `ab-example.json`, `raid-size-ab.json`, `counters-ab.json`. Runs are interleaved (A, B, A, B) to cancel drift. An optional `expect` rule turns an A/B result into pass or fail (exit code 1).
+Examples: `ab-example.json`, `raid-size-ab.json`, `counters-ab.json`, `pak-ab.json` (hidden scenario `pak-item-value`, a real pak A/B), `lord-village-ab.json`. Runs are interleaved (A, B, A, B) to cancel drift. An optional `expect` rule turns an A/B result into pass or fail (exit code 1).
 ```
 uv run python harness\suite.py --suite raid-size-ab
 ```
@@ -25,7 +25,7 @@ Outputs: `runs/suite-<stamp>/report.json` (an `ab` section: the 8 metrics with t
 
 ## What a variant can change
 - `--env KEY=VALUE`: extra game environment variables. Names match `^[A-Z][A-Z0-9_]{0,63}$`. Reserved names are refused (`HARNESS_RUN_DIR`, `LOCALAPPDATA`, `PATH`, `UE4SS_BRIDGE*`, `HARNESS_AUTOBOOT`, `HARNESS_TEST_SAVE`, `HARNESS_TELEMETRY_INTERVAL_S`). Values of secret-looking names are masked. A mod reads the variable when it loads.
-- `--pak NAME`: install a built pak for the run, remove it after teardown (skill `harness-pak-mod`).
+- `--pak NAME`: install a built pak (it needs `harness/pakmod.local.json`; in a worktree copy it from the main checkout) for the run, remove it after teardown (skill `harness-pak-mod`).
 
 ## Reading the verdict (`harness/suitelib/stats.py`, stdlib only)
 n, min, median, max, mean, stdev, a 95% Wilson interval for pass rates, Cohen's d, range overlap, and a two-sided permutation test on the difference of means. Verdict: `different` needs p <= 0.1 and |d| >= 0.5. `same` needs p > 0.1 and |d| < 0.5. Fewer than 3 runs per variant is `inconclusive`. It is a heuristic for small samples. Say so when you report it, and give the numbers, not only the word.

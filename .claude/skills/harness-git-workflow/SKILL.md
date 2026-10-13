@@ -11,13 +11,14 @@ Rules are in CLAUDE.md: atomic Conventional commits, one feature branch per spec
 - Branch from an up-to-date `main`: `git checkout -b feat/<NN>-<name>` (or a worktree, see `harness-dispatch-agents`).
 - Commit: `<type>(<scope>): <summary>` in the imperative, under 72 characters. Types: feat, fix, docs, refactor, test, chore, build, ci. End with the attribution line the session gives (`Co-Authored-By: ...`).
 - One logical change per commit: mod code, harness code, scenarios, tests, docs and notes are separate commits when they can stand alone.
+- A releasable mod has its own `mod/<Name>/CHANGELOG.md` and `mod.json`. Change them in the same commit as a mod change that players see (skill `harness-release`).
 - Add each user-visible change to `CHANGELOG.md` under `Unreleased` (Added, Changed, Deprecated, Removed, Fixed, Security), in the same commit as the change.
 - When a note changes a decision, update the spec README in the same commit.
 
 ## Before you push
 - Run the suites you touched. The full set: `test_runlib*`, `test_suitelib*`, `test_harness_tools*`, `test_reload_mods`, `test_pakmod`, `test_coverage` (plain venv python), and `test_fakegame_*`, `test_telemetry_mock`, `lua_syntax.py`, `boot_state_machine.py` (through `uv run python ...`). Also `coverage.py --check-spec`.
 - Look at `git status` and `git diff --stat`. Nothing from `modtools/`, `runs/`, `slots/`, `harness/pakmod.local.json`, original game paks, extracts, `.usmap` files or the AES key may be staged (compiled mod paks `*_P.pak` may be staged; grep the diff for the key first). Never `git add -A` blindly after a merge conflict: check that no conflict markers (`<<<<<<<`) remain (`grep -c "^<<<<<<<"`).
-- Grep the diff for the AES key hex (read it from `modtools/work/aes_key.txt` into a shell variable; do not print it).
+- Grep the diff for the AES key hex (read it from `modtools/work/aes_key.txt` into a shell variable; do not print it). In a worktree the file is in the main checkout: `C:\Users\garre\development\manor-lords-mod\modtools\work\aes_key.txt`.
 - Never force push. Never skip hooks. If you committed something wrong that is not pushed, fix it with a new commit or reset your own local commits; if it was pushed, merge forward.
 
 ## Pull request
