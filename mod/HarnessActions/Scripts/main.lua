@@ -83,6 +83,16 @@
 --   {"command":"road_commit"}                               commit the drawn road; the answer has its id
 --   {"command":"wall_make","road":123,"wall_type":2}        make a committed road a wall: 2 wooden, 3 stone low, 4 stone high
 --   {"command":"wall_remove","road":123}                    remove a wall road (PawnCPP:removeRoad)
+--   {"command":"wall_pieces","road":123,"step":200}         spawn blocking palisade pieces (GhostStaticMeshActor, type 470) along a road
+--   {"command":"wall_pieces_clear","road":123}              destroy the pieces that wall_pieces made for that road
+--   {"command":"path_state"}                                size of the global obstacle list and the path debug flag (read only)
+--   {"command":"building_stat","kind":470}                  spike, read only: scalar fields of one buildingStats row
+--   {"command":"building_health","building":123}            spike, read only: type, hp, maxHp, onFire, fireAmt, rubble, built of one building
+--   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
+--   Unsafe spike commands: refused unless the game runs with HARNESS_ALLOW_UNSAFE=1 (test games only)
+--   {"command":"construction_complete","building":123}      PawnCPP:constructionComplete on one building
+--   {"command":"path_obstacles_clear"}                      empty the global obstacle list (the next squad spawn crashed the game)
+--   {"command":"building_stat_write","kind":30,"field":"isModule","value":true}  write one buildingStats field in memory
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -101,7 +111,7 @@ local manor = require("HarnessManor")
 local lordsCmd = require("HarnessLords")
 local walls = require("HarnessWalls")
 
-local VERSION = "18"
+local VERSION = "19"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -376,6 +386,15 @@ local COMMANDS = {
     road_commit = walls.road_commit,
     wall_make = walls.wall_make,
     wall_remove = walls.wall_remove,
+    wall_pieces = walls.wall_pieces,
+    wall_pieces_clear = walls.wall_pieces_clear,
+    path_state = walls.path_state,
+    building_stat = walls.building_stat,
+    building_health = walls.building_health,
+    mesh_users = walls.mesh_users,
+    construction_complete = walls.construction_complete,
+    path_obstacles_clear = walls.path_obstacles_clear,
+    building_stat_write = walls.building_stat_write,
 }
 
 local function runCommand(number, raw)
