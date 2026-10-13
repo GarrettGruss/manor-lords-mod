@@ -26,7 +26,7 @@ Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a 
 - `ctx.actions`: base-game actions (give goods, spawn raiders, sack, close pop-ups, and so on). The list is in `docs/specs/07-feature-test-kit/implementation-notes/actions-catalog.md`.
 - `ctx.mod`: commands and metrics of a mod that defines its own state (see the skill `harness-mod-state`).
 - `ctx.run_until(predicate, timeout_s, clock="wall"|"game", stall_s=..., on_poll=ctx.popups)`: wait with a stall detector.
-- `ctx.time`, `ctx.read_clock()`, `ctx.read_calendar()`, `ctx.pause()`, `ctx.unpause()`: game time. A game day is 40 game seconds. Speeds are index 1/2/3 = 1x/4x/8x.
+- `ctx.time`, `ctx.read_clock()`, `ctx.read_calendar()`, `ctx.pause()`, `ctx.unpause()`: game time. A game day is 40 game seconds. Speeds are index 1/2/3 = 1x/4x/8x. The game drops to 1x when an army is spotted: use `ctx.time.run_game_*` to hold the speed.
 - `ctx.metric(name, value)`: a number for A/B statistics (see `harness-ab-testing`).
 - `ctx.screenshot(name)`, `ctx.snapshot()`, `ctx.notes`, `ctx.fail(name, reason)`.
 
