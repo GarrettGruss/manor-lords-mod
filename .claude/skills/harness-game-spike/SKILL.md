@@ -20,6 +20,14 @@ A spike answers one question about the engine with evidence. Write the question 
 - One agent uses the game at a time. End every game process you start. Check `tasklist`.
 - Read elements of a property array directly. Never call `:get()` on a struct element of a property array, and do not read a struct that a function returns by value (`getSquadByID`): both crashed the game inside UE4SS, and a pcall cannot catch it. Call `:get()` only on function return values (spike S11).
 - Never write to the user's saves. A run installs its fixture as a new slot and removes it again (spec 06, part D); do not touch other slots.
+- A game started without HarnessBoot (for example a new game from the main menu) keeps the game's autosave timer (about 10 min). It wrote
+  `autosave.sav` into the REAL save folder during a spec 14 spike. Send `disable_autosave` (HarnessActions) right after the game starts and
+  check `autosave_status` (remaining time about one year).
+- Do not destroy actors that the game made for its own systems (for example the planner's `GhostStaticMeshActor` wall pieces). The game keeps
+  pointers to them: after `K2_DestroyActor` on the 92 pieces of a wall, opening the manor planner crashed the game (null read, spec 14).
+  Destroy only actors that the mod spawned itself.
+- Do not scan all components (`FindAllOf` over mesh components) right after the game destroys actors (a demolish): a scan then crashed inside
+  UE4SS (read 0x10). Let the game run a few seconds first, or read counts only.
 
 ## Method
 - Change one thing, read before and after, write both numbers down. Count things (units, buildings, stock) instead of trusting a return value.

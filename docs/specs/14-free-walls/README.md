@@ -1,6 +1,23 @@
 # Spec 14: Walls outside the manor system
 
-Status: spike done for Q1, Q2, Q4, Q5; Q3 and Q6 open (2026-10-11). See `implementation-notes/free-walls.md`.
+Status: spike done for Q1 to Q5; Q6 open (2026-10-11). See `implementation-notes/free-walls.md`.
+Fire and damage as a breach (2026-10-12): fire or collapse on the manor removes the whole wall (obstacles 337 -> 274); raiders did not damage it. See the same notes.
+Decision (user, 2026-10-12): losing the manor is too severe for a breach. Burning or collapsing the manor is not the breach method.
+A breach must open part of the wall and keep the manor. Unsafe spike commands and memory tools stay in the repo behind `HARNESS_ALLOW_UNSAFE=1`.
+Tracking issue: #52
+Result Q3 (run `s14-wallblock-1`): a free wall made by `wall_make` does not block units and still acts as a road for building snap.
+It is a look only. A real town wall needs another path (planner walls or a mod obstacle).
+The planner bailey wall of fixture `manor-bailey` does block units: bandits pathed around it to the gate (run `s14-bailey-block-1`).
+Its road holds only plan markers (`isBlueprint` true, `wallMarker` meshes). The planner also makes `GhostStaticMeshActor` pieces
+(`buildingType` 470 `WoodenWallPiece`, palisade mesh) at the commit; they are the construction plan, not the built wall.
+The mod command `wall_pieces` spawns the same pieces along any road; they look like the wall, but units walk through them.
+A built planner wall blocks even after its ghost pieces and its road are removed. The block appears while builders build, in step with new entries
+in the global obstacle list (`RTSMultiEngineCPP.SpatialComponent.Obstacles`, about one per 2 m). No reflected function adds such entries.
+Cause found (runs `s14-piece-1`, `s14-demolish-1`): each built wall piece is an `SMBuilding` actor owned by the manor `SMBuildingMaster`,
+and native code adds one `Obstacle2D` entry per built piece; path finding avoids these entries. Demolishing the manor removed the entries
+(337 -> 274), the wall and the block (8 of 8 bandits walked through). Fixture `wall-u` (manor, U wall, straight wall) holds a built wall.
+Confirmed in run `s14-tax-1` (memory writes, test game): making the two segments of the middle wall entries zero length in the live list lets
+bandits walk through the still standing wall; restoring them brings the block back. The per-tile copies do not decide it.
 
 ## Goal
 Find out whether the player (or the mod) can build defensive walls that are not part of the manor (castle planner), so a whole town can be

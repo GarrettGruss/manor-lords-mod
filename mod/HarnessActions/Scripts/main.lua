@@ -88,6 +88,39 @@
 --   {"command":"policy_enact","policy":12,"slot":0}         PawnCPP:enactPolicy; refused when the id is not available or the slot is outside the slot count
 --   {"command":"policy_sign","policy":12,"signed":false}   Region:setPolicySigned (the call the policy widget uses)
 --   {"command":"menu_probe_show","policy":12,"x":300,"y":300}   spike: put one game policy widget (policyWidget_C) on the screen; menu_probe_read polls its button; menu_probe_hide removes it
+--   Bandit negotiation (spec 15, see mod/shared/HarnessBandits):
+--   {"command":"bandit_state"}                              families, bandit units, silver, influence, relation tags with the bandit lord (read only)  (regions[] also give vacant_slots)
+--   {"command":"bandit_tag","tag":"attacking","remove":0}  add (or remove) a relation tag between the player and the bandit lord
+--   {"command":"bandit_letter","paragraphs":["raider_suggestSettle"]}   PawnCPP:sendLetter from the player to the bandit lord
+--   {"command":"settle_raiders"}                            MLCheatManager:SettleRaiders (developer cheat)
+--   Reverse direction (spec 15, homeless rebellion, see implementation-notes/homeless-rebellion.md):
+--   {"command":"bandit_spawn_at","x":0,"y":0,"z":0,"template":"Brigands","count":1}   bandit squads at a chosen point (spawnArmy, owner = bandit lord)
+--   {"command":"bandit_turn","count":3,"source":"squad"}  SMUnit:turnToBandit on units of player squads made by spawn_units ("source":"family": family members)
+--   {"command":"homeless_rebel","count":2,"families_per_squad":1,"template":"Brigands","mode":"home"}   remove families, then bandits appear at their homes ("mode":"raid": a real raid that targets the home)
+--   {"command":"rebel_raid_rally","count":2}   remove families, then one real raid aimed at a forest spot; the raiders stand at the AI waypoint for about 100 to 150 game seconds, then attack. The answer has the squad ids, the spot and the families before and after
+--   {"command":"bandit_kill_squads","squad":41,"count":2}   SMUnit:just_die on every living bandit unit of squads 41, 42 (to remove a raid and keep other squads)
+--   Housing (spec 15, see mod/shared/HarnessHousing):
+--   {"command":"building_stat","type":87}                   scalar fields of the buildingStats row of one building type (read only)
+--   {"command":"building_stat_vector_write","type":87,"field":"occupantTypes","component":"Y","value":5}   UNSAFE test command (needs HARNESS_ALLOW_UNSAFE=1): write one component of a Vector4 field of a buildingStats row, in memory
+--   {"command":"housing_state"}                             player region: families, homeless, living and vacant slots, tents, residential buildings (read only)
+--   {"command":"accommodate_homeless"}                      Region:accomodateHomelessFamilies(nil); the answer has the housing before and after
+--   {"command":"family_state"}                              housing numbers with approval and public order, and the ids of the housed families (read only)
+--   {"command":"family_eject","count":2,"suppress":true,"home":"none"}   Region:SetFamilyHome(id, nil, suppress): housed families leave their homes ("home":"tent": into the first homeless tent) (spec 15 part 7)
+--   {"command":"family_add","count":1}                      a villager leaves a family of 2 or more and starts a new family (Region:AddNewFamily); it has no home
+--   {"command":"tent_find_spot"}                           up to 5 free spots for a tent (x, y, z) around the village centre; it does not place anything (read only)
+--   {"command":"forest_spot","min_dist":15000,"max_dist":40000}   up to 5 dense tree cells of the player region, best first (Resource actors with resType "tree"; read only)
+--   {"command":"plot_field_shift","dx":3000,"dy":0,"plots":true,"commit":true}   test only: move the drawn, closed plot outline of the pawn (plots: also extractedPlots), then commit it
+--   Walls (spec 14, see mod/shared/HarnessWalls):
+--   {"command":"wall_pieces","road":123,"step":200}         spawn blocking palisade pieces (GhostStaticMeshActor, type 470) along a road
+--   {"command":"wall_pieces_clear","road":123}              destroy the pieces that wall_pieces made for that road
+--   {"command":"path_state"}                                size of the global obstacle list and the path debug flag (read only)
+--   {"command":"building_stat","kind":470}                  spike, read only: scalar fields of one buildingStats row (with "kind": the spec 14 reader; with "type": the spec 15 reader)
+--   {"command":"building_health","building":123}            spike, read only: type, hp, maxHp, onFire, fireAmt, rubble, built of one building
+--   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
+--   Unsafe spike commands: refused unless the game runs with HARNESS_ALLOW_UNSAFE=1 (test games only)
+--   {"command":"construction_complete","building":123}      PawnCPP:constructionComplete on one building
+--   {"command":"path_obstacles_clear"}                      empty the global obstacle list (the next squad spawn crashed the game)
+--   {"command":"building_stat_write","kind":30,"field":"isModule","value":true}  write one buildingStats field in memory
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -106,8 +139,10 @@ local manor = require("HarnessManor")
 local lordsCmd = require("HarnessLords")
 local walls = require("HarnessWalls")
 local policies = require("HarnessPolicies")
+local bandits = require("HarnessBandits")
+local housing = require("HarnessHousing")
 
-local VERSION = "19"
+local VERSION = "35"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -208,10 +243,17 @@ local function parseRequest(raw)
         build = tonumber(raw:match('"build"%s*:%s*(%d+)')),
         finalize = tonumber(raw:match('"finalize"%s*:%s*(%d+)')),
         supply = tonumber(raw:match('"supply"%s*:%s*(%d+)')),
+        tag = raw:match('"tag"%s*:%s*"([%w_]+)"'),
+        remove = tonumber(raw:match('"remove"%s*:%s*(%d+)')),
         outpost = raw:match('"outpost"%s*:%s*"([%w_]+)"'),
         policy = tonumber(raw:match('"policy"%s*:%s*(%d+)')),
         slot = tonumber(raw:match('"slot"%s*:%s*(%d+)')),
         signed = ({ ["true"] = true, ["false"] = false })[raw:match('"signed"%s*:%s*(%a+)') or ""],
+        mode = raw:match('"mode"%s*:%s*"(%a+)"'),
+        source = raw:match('"source"%s*:%s*"(%a+)"'),
+        families_per_squad = tonumber(raw:match('"families_per_squad"%s*:%s*(%d+)')),
+        min_dist = tonumber(raw:match('"min_dist"%s*:%s*(%d+)')),
+        max_dist = tonumber(raw:match('"max_dist"%s*:%s*(%d+)')),
     }
 end
 
@@ -316,6 +358,12 @@ local function closePopups()
     return { ok = true, widgets = #widgets, closed = closed, count = #closed }
 end
 
+-- Specs 14 and 15 each added a building_stat reader: spec 14 takes "kind", spec 15 takes "type". Keep both request forms.
+local function buildingStat(request, raw)
+    if type(raw) == "string" and raw:match('"kind"%s*:') then return walls.building_stat(request, raw) end
+    return housing.building_stat(request, raw)
+end
+
 local COMMANDS = {
     popup_state = popupState,
     close_popups = closePopups,
@@ -391,6 +439,36 @@ local COMMANDS = {
     menu_probe_show = policies.menu_probe_show,
     menu_probe_read = policies.menu_probe_read,
     menu_probe_hide = policies.menu_probe_hide,
+    bandit_state = bandits.bandit_state,
+    bandit_tag = bandits.bandit_tag,
+    bandit_letter = bandits.bandit_letter,
+    settle_raiders = bandits.settle_raiders,
+    bandit_mark = bandits.bandit_mark,
+    bandit_track = bandits.bandit_track,
+    bandit_spawn_at = bandits.bandit_spawn_at,
+    bandit_turn = bandits.bandit_turn,
+    homeless_rebel = bandits.homeless_rebel,
+    rebel_raid_rally = bandits.rebel_raid_rally,
+    bandit_kill_squads = bandits.bandit_kill_squads,
+    building_stat = buildingStat,
+    building_stat_vector_write = housing.building_stat_vector_write,
+    housing_state = housing.housing_state,
+    accommodate_homeless = housing.accommodate_homeless,
+    family_state = housing.family_state,
+    family_eject = housing.family_eject,
+    family_add = housing.family_add,
+    tent_find_spot = housing.tent_find_spot,
+    forest_spot = housing.forest_spot,
+    plot_field_shift = housing.plot_field_shift,
+    plot_field_place = housing.plot_field_place,
+    wall_pieces = walls.wall_pieces,
+    wall_pieces_clear = walls.wall_pieces_clear,
+    path_state = walls.path_state,
+    building_health = walls.building_health,
+    mesh_users = walls.mesh_users,
+    construction_complete = walls.construction_complete,
+    path_obstacles_clear = walls.path_obstacles_clear,
+    building_stat_write = walls.building_stat_write,
 }
 
 local function runCommand(number, raw)

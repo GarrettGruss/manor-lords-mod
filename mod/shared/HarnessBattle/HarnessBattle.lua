@@ -164,29 +164,49 @@ local function register(ids, side, templates, source)
 end
 
 -- spawnArmy(position, template names, owner pawn, company id 0, arrives in 0 days). One squad for each name.
+-- Spawn `count` squads of `template` for `side` at an absolute point. Used by spawn_units and by the rebellion command (spec 15).
+-- Returns { squads, units } or nil and a message.
+function M.spawn_at(side, template, count, point)
+    local engineObject = engine()
+    if not engineObject then return nil, "no RTSMultiEngineCPP" end
+    local owner = pawnOf(side, engineObject)
+    if not owner then return nil, "no pawn for side " .. side end
+    local names = {}
+    for i = 1, count do names[i] = FName(template) end
+    local ok, returned = pcall(function() return engineObject:spawnArmy({ X = point.x, Y = point.y, Z = point.z }, names, owner, 0, 0) end)
+    if not ok then return nil, "spawnArmy: " .. tostring(returned) end
+    local ids, why = squadIds(returned)
+    if not ids then return nil, why end
+    local templates = {}
+    for i = 1, #ids do templates[i] = template end
+    local squads = register(ids, side, templates, "spawn")
+    local total = 0
+    for _, squad in ipairs(squads) do total = total + squad.units end
+    return { squads = squads, units = total }
+end
+
 function M.spawn_units(request)
     local wanted, problem = checkedSpawn(request)
     if not wanted then return { ok = false, error = problem } end
     local engineObject = engine()
     if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
-    local owner = pawnOf(wanted.side, engineObject)
-    if not owner then return { ok = false, error = "no pawn for side " .. wanted.side } end
     local at = read(function() return engineObject.playerRef:K2_GetActorLocation() end)
     if not at then return { ok = false, error = "no player position" } end
-    local names = {}
-    for i = 1, wanted.count do names[i] = FName(wanted.template) end
-    local ok, returned = pcall(function()
-        return engineObject:spawnArmy({ X = at.X + wanted.dx, Y = at.Y + wanted.dy, Z = at.Z }, names, owner, 0, 0)
-    end)
-    if not ok then return { ok = false, error = "spawnArmy: " .. tostring(returned) } end
-    local ids, why = squadIds(returned)
-    if not ids then return { ok = false, error = why } end
-    local templates = {}
-    for i = 1, #ids do templates[i] = wanted.template end
-    local squads = register(ids, wanted.side, templates, "spawn")
-    local total = 0
-    for _, squad in ipairs(squads) do total = total + squad.units end
-    return { ok = true, squads = squads, units = total, center = { x = at.X + wanted.dx, y = at.Y + wanted.dy } }
+    local point = { x = at.X + wanted.dx, y = at.Y + wanted.dy, z = at.Z }
+    local spawned, why = M.spawn_at(wanted.side, wanted.template, wanted.count, point)
+    if not spawned then return { ok = false, error = why } end
+    return { ok = true, squads = spawned.squads, units = spawned.units, center = { x = point.x, y = point.y } }
+end
+
+-- The living units of the squads that this module spawned for one side (at most `limit`).
+function M.registered_units(side, limit)
+    local rows = {}
+    for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+        if #rows >= limit then break end
+        local id = isValid(unit) and read(function() return unit.assignedSquadID.Value end) or nil
+        if id ~= nil and registry[id] and registry[id].side == side and read(function() return unit.dead end) ~= true then rows[#rows + 1] = unit end
+    end
+    return rows
 end
 
 ---------------------------------------------------------------------------------------------

@@ -310,6 +310,87 @@ class LetterActionTest(unittest.TestCase):
             actions.send_letter(["welcome_from_hildebolt"])
 
 
+class BanditActionInputTest(unittest.TestCase):
+    """The checks run before any command is sent (spec 15)."""
+
+    def test_bad_inputs_are_refused_before_a_command_is_sent(self):
+        actions = Actions(FakeBridge())
+        with self.assertRaisesRegex(ActionError, "tag must be"):
+            actions.bandit_tag("peace_treaty")
+        for silver in (-1, 1000000, 2.5, True):
+            with self.assertRaisesRegex(ActionError, "silver must be"):
+                actions.bandit_settle_offer(silver)
+        with self.assertRaisesRegex(ActionError, "mode must be"):
+            actions.homeless_rebel(1, mode="fly")
+        for count in (0, 7, True):
+            with self.assertRaisesRegex(ActionError, "count must be"):
+                actions.homeless_rebel(count)
+        with self.assertRaisesRegex(ActionError, "source must be"):
+            actions.bandit_turn(1, source="sky")
+        with self.assertRaisesRegex(ActionError, "count must be"):
+            actions.bandit_spawn_at(0, 0, count=0)
+        with self.assertRaisesRegex(ActionError, "squad must be"):
+            actions.bandit_kill_squads(0)
+        with self.assertRaisesRegex(ActionError, "count must be"):
+            actions.bandit_kill_squads(5, count=11)
+        with self.assertRaisesRegex(ActionError, "max_dist must be"):
+            actions.forest_spot(min_dist=9000, max_dist=3000)
+        with self.assertRaisesRegex(ActionError, "min_dist must be"):
+            actions.forest_spot(min_dist=-1)
+
+
+class ScriptedChannel:
+    """Answers each command with a fixed dict and remembers what was sent."""
+
+    def __init__(self, answers):
+        self.answers = answers
+        self.sent = []
+
+    def send(self, command, **fields):
+        self.sent.append((command, fields))
+        return {"ok": True, **self.answers.get(command, {})}
+
+
+class RebelRallyTest(unittest.TestCase):
+    SPOTS = {"spots": [{"x": -35225, "y": -66708, "z": 5143, "trees": 10}, {"x": -26236, "y": -26266, "z": -154, "trees": 10}]}
+
+    def test_the_rally_uses_the_forest_spot_nearest_to_the_waypoint(self):
+        channel = ScriptedChannel({"forest_spot": self.SPOTS, "bandit_spawn_at": {"squads": [{"id": 32}]}})
+        actions = Actions(FakeBridge(), Expectations(), [], commands=channel)
+        answer = actions.rebel_rally(count=2)
+        self.assertEqual(answer["spot"]["x"], -26236)
+        self.assertEqual([name for name, _ in channel.sent], ["forest_spot", "sack_people", "bandit_spawn_at"])
+        self.assertEqual(channel.sent[1][1], {"count": 2})
+
+    def test_no_forest_spot_fails_loudly(self):
+        actions = Actions(FakeBridge(), Expectations(), [], commands=ScriptedChannel({"forest_spot": {"spots": []}}))
+        with self.assertRaisesRegex(ActionError, "no forest spot"):
+            actions.rebel_rally()
+
+    def test_the_fallback_kills_the_squad_then_sends_a_raid(self):
+        channel = ScriptedChannel({"bandit_kill_squads": {"killed": 18}})
+        actions = Actions(FakeBridge(), Expectations(), [], commands=channel)
+        answer = actions.rebel_fallback_attack(32)
+        self.assertEqual(answer["killed"], 18)
+        self.assertEqual([name for name, _ in channel.sent], ["bandit_kill_squads", "spawn_raiders"])
+
+
+class RebelRaidRallyTest(unittest.TestCase):
+    def test_it_sends_the_count(self):
+        channel = ScriptedChannel({"rebel_raid_rally": {"ok": True, "squads": [34]}})
+        actions = Actions(FakeBridge(), Expectations(), [], commands=channel)
+        self.assertEqual(actions.rebel_raid_rally(count=3)["squads"], [34])
+        self.assertEqual(channel.sent, [("rebel_raid_rally", {"count": 3})])
+
+    def test_bad_counts_are_refused_before_any_command(self):
+        channel = ScriptedChannel({})
+        actions = Actions(FakeBridge(), Expectations(), [], commands=channel)
+        for count in (0, 7, True, "2"):
+            with self.assertRaisesRegex(ActionError, "count must be"):
+                actions.rebel_raid_rally(count=count)
+        self.assertEqual(channel.sent, [])
+
+
 class DispatchTest(unittest.TestCase):
     def test_every_not_possible_name_raises_with_its_reason(self):
         actions, _, _, _ = make_actions()
