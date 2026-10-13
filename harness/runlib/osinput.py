@@ -17,6 +17,8 @@ from .windows import _make_process_dpi_aware
 
 MOUSEEVENTF_LEFTDOWN = 0x0002
 MOUSEEVENTF_LEFTUP = 0x0004
+MOUSEEVENTF_RIGHTDOWN = 0x0008
+MOUSEEVENTF_RIGHTUP = 0x0010
 SW_RESTORE = 9
 CLICK_HOLD_S = 0.15
 EDGE_MARGIN_PX = 20  # a click this close to the window border could hit the frame or the HUD edge
@@ -34,6 +36,7 @@ class InputApi(Protocol):
     def set_cursor(self, x: int, y: int) -> None: ...
     def release_cursor_clip(self) -> None: ...
     def button(self, down: bool) -> None: ...
+    def right_button(self, down: bool) -> None: ...
 
 
 def point_in_window(rect: tuple[int, int, int, int], fx: float, fy: float) -> tuple[int, int]:
@@ -98,6 +101,17 @@ def left_click(api: InputApi, hwnd: int, sleep: Callable[[float], None] = time.s
         api.button(False)  # never leave the button down
 
 
+def right_click(api: InputApi, hwnd: int, sleep: Callable[[float], None] = time.sleep, hold_s: float = CLICK_HOLD_S) -> None:
+    """Press and release the right button at the cursor (a move order for the selected squads). The cursor must be inside the game window."""
+    check_foreground(api, hwnd)
+    check_inside(api.window_rect(hwnd), api.get_cursor())
+    api.right_button(True)
+    try:
+        sleep(hold_s)
+    finally:
+        api.right_button(False)  # never leave the button down
+
+
 @dataclass
 class PlacementSteps:
     """The game calls that the placement needs. They are injected, so the logic is testable without a game."""
@@ -138,6 +152,25 @@ def place_with_mouse(api: InputApi, hwnd: int, steps: PlacementSteps, fx: float,
                 steps.pause()
         finally:
             steps.cancel()
+
+
+def order_with_mouse(api: InputApi, hwnd: int, ground_point: Callable[[], dict], fx: float | None, fy: float | None,
+                     sleep: Callable[[float], None] = time.sleep) -> dict:
+    """Send the selected squads to a point with a real right click at a fraction (fx, fy) of the game window (spike #59).
+
+    Returns the terrain point under the cursor (the game's own getMouse3d), read just before the click.
+    Raise InputError if the game window has no focus or the cursor is not over terrain. The cursor is restored.
+    """
+    focus_game(api, hwnd, sleep)
+    with cursor_restored(api):
+        if fx is not None and fy is not None:  # None: the cursor is already over the point (put there by the mod)
+            move_cursor(api, hwnd, point_in_window(api.window_rect(hwnd), fx, fy), sleep)
+        sleep(PREVIEW_WAIT_S)
+        point = ground_point()
+        if not is_ground_point(point):
+            raise InputError(f"no terrain under the cursor at window fraction ({fx}, {fy})")
+        right_click(api, hwnd, sleep)
+        return point
 
 
 GROUND_MIN_Z = -99999.0  # getMouse3d returns z = -100000 when no terrain is under the cursor
@@ -194,3 +227,6 @@ class Win32Input:
 
     def button(self, down: bool) -> None:
         self.user32.mouse_event(MOUSEEVENTF_LEFTDOWN if down else MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+
+    def right_button(self, down: bool) -> None:
+        self.user32.mouse_event(MOUSEEVENTF_RIGHTDOWN if down else MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
