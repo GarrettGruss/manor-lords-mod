@@ -106,6 +106,7 @@
 --   {"command":"accommodate_homeless"}                      Region:accomodateHomelessFamilies(nil); the answer has the housing before and after
 --   {"command":"family_state"}                              housing numbers with approval and public order, and the ids of the housed families (read only)
 --   {"command":"family_census"}                             one row per family (living members, roles, familyHome) and one row per home or tent with its occupant family ids (spec 15 #61; read only)
+--   {"command":"member_fields","count":0}                   property names (and plain values) of one member of the family with that zero-based index (spec 15 #61; read only)
 --   {"command":"family_eject","count":2,"suppress":true,"home":"none"}   Region:SetFamilyHome(id, nil, suppress): housed families leave their homes ("home":"tent": into the first homeless tent) (spec 15 part 7)
 --   {"command":"family_add","count":1,"adult":false}                      a villager leaves a family of 2 or more and starts a new family (Region:AddNewFamily); it has no home
 --   {"command":"tent_find_spot"}                           up to 5 free spots for a tent (x, y, z) around the village centre; it does not place anything (read only)
@@ -459,6 +460,7 @@ local COMMANDS = {
     accommodate_homeless = housing.accommodate_homeless,
     family_state = housing.family_state,
     family_census = housing.family_census,
+    member_fields = housing.member_fields,
     family_eject = housing.family_eject,
     family_add = housing.family_add,
     tent_find_spot = housing.tent_find_spot,

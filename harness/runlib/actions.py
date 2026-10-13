@@ -967,8 +967,14 @@ class Actions:
         """Who lives where (read only): one row per family (living members, roles, familyHome) and one row per home or tent with its occupant family ids."""
         return self._command("family_census")
 
+    def member_fields(self, family: int = 0) -> dict:
+        """Property names and plain values of the first member of the family with this zero-based index (read only)."""
+        if not isinstance(family, int) or isinstance(family, bool) or family < 0:
+            raise ActionError("member_fields: family must be a whole number of 0 or more")
+        return self._command("member_fields", count=family)
+
     def family_add(self, count: int = 1, adult: bool = False) -> dict:
-        """A villager leaves a family of 2 or more and starts a new, homeless family (Region:AddNewFamily). With adult, the villager is not a child."""
+        """A villager leaves a family of 2 or more and starts a new, homeless family (Region:AddNewFamily). With adult, the villager with the highest `Age` of its family is taken. On fixture `base` every member has Age 1 and role 3, so this changes nothing there (run s61-plots-add)."""
         if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 10:
             raise ActionError("family_add: count must be a whole number from 1 to 10")
         return self._command("family_add", count=count, adult=bool(adult))

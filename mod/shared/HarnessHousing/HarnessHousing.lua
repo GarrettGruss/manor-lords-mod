@@ -618,16 +618,17 @@ end
 M.MAX_CENSUS_ROWS = 80
 
 local function familyRow(index, family)
-    local members, roles = 0, {}
+    local members, roles, ages = 0, {}, {}
     for _, member in ipairs(listOf(family.familyMembers)) do
         if isValid(member) and read(function() return member.dead end) ~= true then
             members = members + 1
             roles[#roles + 1] = read(function() return member.role end)
+            ages[#ages + 1] = read(function() return member.Age end)
         end
     end
     local home = read(function() return family.familyHome end)
     local homeValid = isValid(home)
-    return { index = index - 1, living = members, roles = roles, has_home = homeValid,
+    return { index = index - 1, living = members, roles = roles, ages = ages, has_home = homeValid,
              home_id = homeValid and idOf(home) or nil, home_type = homeValid and typeOf(home) or nil }
 end
 
@@ -653,6 +654,45 @@ function M.family_census()
         if isHome and #buildings < M.MAX_CENSUS_ROWS then buildings[#buildings + 1] = occupantRow(building) end
     end
     return { ok = true, region = regionRow(region), families = families, buildings = buildings }
+end
+
+-- Read only (spec 15, #61): the property names of one family member with the value of the plain ones (number, bool, enum). The roles of
+-- all members are 3, so this looks for the field that tells an adult from a child. `count` is the zero-based family index.
+M.PLAIN_PROPERTY_KINDS = { IntProperty = true, FloatProperty = true, DoubleProperty = true, BoolProperty = true, ByteProperty = true,
+                           EnumProperty = true, Int64Property = true, UInt32Property = true }
+M.MAX_MEMBER_FIELDS = 200
+
+local function plainFields(member)
+    local fields = {}
+    local class = member:GetClass()
+    while class and #fields < M.MAX_MEMBER_FIELDS do
+        class:ForEachProperty(function(property)
+            local name = property:GetFName():ToString()
+            local kind = property:GetClass():GetFName():ToString()
+            local value = nil
+            if M.PLAIN_PROPERTY_KINDS[kind] then value = read(function() return member[name] end) end
+            fields[#fields + 1] = { name = name, kind = kind, value = value }
+        end)
+        class = class:GetSuperStruct()
+        if class and class:GetFName():ToString() == "Object" then break end
+    end
+    return fields
+end
+
+function M.member_fields(request)
+    local region, problem = sack.playerRegion()
+    if not region then return { ok = false, error = problem } end
+    local family = listOf(region.workerFamilies)[(request.count or 0) + 1]
+    if not family then return { ok = false, error = "no family with index " .. tostring(request.count or 0) } end
+    local rows = {}
+    for _, member in ipairs(listOf(family.familyMembers)) do
+        if isValid(member) and #rows < 1 then
+            local okFields, fields = pcall(plainFields, member)
+            rows[#rows + 1] = okFields and { class = textOf(read(function() return member:GetClass():GetFName():ToString() end)), fields = fields }
+                or { error = tostring(fields) }
+        end
+    end
+    return { ok = #rows > 0, error = #rows == 0 and "family has no member" or nil, members = rows }
 end
 
 -- The first homeless tent of the region, or nil.
@@ -694,20 +734,24 @@ function M.family_eject(request, raw)
 end
 
 -- The first living member of a family that has more than one living member, never the only member.
-M.CHILD_ROLE = 3
+-- With wantAdult, the member is the one with the highest `Age` of its family. Spec 15 #61: on fixture base all members have role 3 and Age 1, so
+-- neither field tells an adult from a child there.
+local function oldestOf(members)
+    local best, bestAge = members[#members], -1
+    for _, member in ipairs(members) do
+        local age = read(function() return member.Age end) or 0
+        if age > bestAge then best, bestAge = member, age end
+    end
+    return best
+end
 
--- With wantAdult, the member must not be a child (role 3). Spec 15 #61: the crash of the child path may come from the child.
 local function spareMember(region, wantAdult)
     for _, family in ipairs(listOf(region.workerFamilies)) do
         local living = {}
         for _, member in ipairs(listOf(family.familyMembers)) do
             if isValid(member) and read(function() return member.dead end) ~= true then living[#living + 1] = member end
         end
-        if #living >= 2 then
-            for i = #living, 1, -1 do
-                if not wantAdult or read(function() return living[i].role end) ~= M.CHILD_ROLE then return living[i] end
-            end
-        end
+        if #living >= 2 then return wantAdult and oldestOf(living) or living[#living] end
     end
     return nil
 end

@@ -5,9 +5,12 @@ Choose a mode with HARNESS_PROBE:
   surge_long   settle_region once, then 20 game days: families, homeless, approval, food per day (item 1, and item 2 census)
   surge_sites  settle_region at the woods (forest_spot), then with supply 1, each with a census (item 2)
   eject_census census, eject, census, wait, accommodate, census; then a 1-squad settle letter with a census (items 3 and 4)
+  eject_late   baseline 2 days, eject 3, census each day for 5 days, then eject 5 and a 1-squad settle letter (items 3 and 4)
   eject_tent   family_eject home=tent on a game with a house and a tent (item 5; fixture burgage-start or --new-game)
+  surge_eject_tent  settle_region (makes a tent), then family_eject home=tent for housed families (item 5 on fixture base)
   add_adult    family_add with an adult member, then 4 game days (item 6)
   bad_plots    burgage plots on bad ground, one try each (item 7)
+  plots_then_add  bad_plots, then add_adult last, because add_adult may crash the game
 """
 
 import json
@@ -53,7 +56,7 @@ class Probe:
         def read():
             region = self.ctx.actions.housing_state()["region"]
             row = {key: region[key] for key in ("families", "homeless", "residents", "vacant", "living", "approval", "public_order", "tents_built")}
-            row["stock"] = self.ctx.actions.sack_census()["census"]["stock"]
+            row["stock"] = self.ctx.actions.sack_census()["stock"]
             row["food"] = self.food()
             return row
         return self.attempt(step, read)
@@ -125,6 +128,7 @@ def surge_sites(probe) -> None:
         return
     probe.numbers("start")
     probe.census("start census")
+    probe.attempt("member fields", probe.ctx.actions.member_fields)
     woods = (probe.attempt("forest spots", probe.ctx.actions.forest_spot) or {}).get("spots") or []
     if woods:
         settle_at(probe, row, "settle woods", woods[0])
@@ -146,6 +150,24 @@ def eject_census(probe) -> None:
     probe.attempt("accommodate", actions.accommodate_homeless)
     probe.numbers("accommodate at once")
     probe.census("accommodate census")
+    letter_one_squad(probe)
+
+
+def eject_late(probe) -> None:
+    actions = probe.ctx.actions
+    probe.numbers("start")
+    watch(probe, "baseline", 2)
+    probe.census("baseline census")
+    probe.attempt("eject 3", lambda: actions.family_eject(3, True))
+    probe.numbers("eject at once")
+    probe.census("eject census")
+    for day in range(1, 6):
+        probe.ctx.time.run_game_days(1, speed=WATCH_SPEED)
+        probe.numbers(f"after eject day {day}")
+        probe.census(f"after eject census day {day}")
+    probe.attempt("eject 5 more", lambda: actions.family_eject(5, True))
+    probe.numbers("eject 5 at once")
+    probe.census("eject 5 census")
     letter_one_squad(probe)
 
 
@@ -172,6 +194,30 @@ def eject_tent(probe) -> None:
     probe.numbers("eject at once")
     probe.census("eject census")
     watch(probe, "after eject", 3, (3,))
+
+
+def surge_eject_tent(probe) -> None:
+    row, spot = player_region_row(probe), first_spot(probe)
+    if row is None or spot is None:
+        probe.note("stop", reason="no region row or no spot")
+        return
+    probe.numbers("start")
+    watch(probe, "baseline", 1)
+    settle_at(probe, row, "settle", spot)
+    watch(probe, "after settle", 3, (3,))
+    probe.attempt("eject 2 into the tent", lambda: actions_of(probe).family_eject(2, True, "tent"))
+    probe.numbers("eject at once")
+    probe.census("eject census")
+    watch(probe, "after eject", 5, (1, 5))
+
+
+def actions_of(probe):
+    return probe.ctx.actions
+
+
+def plots_then_add(probe) -> None:
+    bad_plots(probe)
+    add_adult(probe)
 
 
 def add_adult(probe) -> None:
@@ -213,8 +259,8 @@ def bad_plots(probe) -> None:
         try_plots(probe, "overlap centre", centre["x"], centre["y"], spots["z"] if spots else 0, (0, 1))
 
 
-MODES = {"surge_long": surge_long, "surge_sites": surge_sites, "eject_census": eject_census, "eject_tent": eject_tent,
-         "add_adult": add_adult, "bad_plots": bad_plots}
+MODES = {"surge_long": surge_long, "surge_sites": surge_sites, "eject_census": eject_census, "eject_late": eject_late, "eject_tent": eject_tent,
+         "add_adult": add_adult, "surge_eject_tent": surge_eject_tent, "plots_then_add": plots_then_add, "bad_plots": bad_plots}
 
 
 def run(ctx) -> dict:

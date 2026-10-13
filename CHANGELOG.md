@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- HarnessActions version 38 (spec 15, #61): command `family_census` (families with living members, roles and `familyHome`; homes and tents with their occupant family ids) and the option `adult` of `family_add`. New hidden probe `probe-refugee-followups`.
+- HarnessActions version 38 (spec 15, #61): commands `family_census` (families with living members, roles and `familyHome`; homes and tents with their occupant family ids) and the option `adult` of `family_add`. `member_fields` lists the properties of a family member. New hidden probe `probe-refugee-followups`; the answers to issue #61 are in `docs/specs/15-bandit-settlement/implementation-notes/refugee-followups.md`.
 - Fresh start (spec 06, part E): `run.py --new-game [--map NAME]` and `load_save.py --new-game` start the game in a new game with no save.
   `HarnessBoot` has a new state `STARTING_NEW_GAME` (env `HARNESS_NEW_GAME`, `HARNESS_NEW_GAME_MAP`). It opens the map, pushes the autosave
   timer away and pauses. Real check: run `fresh-start-2`.
