@@ -117,6 +117,7 @@
 --   {"command":"path_state"}                                size of the global obstacle list and the path debug flag (read only)
 --   {"command":"building_stat","kind":470}                  spike, read only: scalar fields of one buildingStats row (with "kind": the spec 14 reader; with "type": the spec 15 reader)
 --   {"command":"building_health","building":123}            spike, read only: type, hp, maxHp, onFire, fireAmt, rubble, built of one building
+--   {"command":"manor_blueprint_add","type":58,"x":0,"y":0,"z":0,"yaw":0,"commit":true}   spike (#63): add a manor planner blueprint (mesh actor tagged bType_<type>) without the mouse, then convertBlueprintsToBuildings
 --   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
 --   Unsafe spike commands: refused unless the game runs with HARNESS_ALLOW_UNSAFE=1 (test games only)
 --   {"command":"construction_complete","building":123}      PawnCPP:constructionComplete on one building
@@ -467,6 +468,7 @@ local COMMANDS = {
     wall_pieces_clear = walls.wall_pieces_clear,
     path_state = walls.path_state,
     building_health = walls.building_health,
+    manor_blueprint_add = walls.manor_blueprint_add,
     mesh_users = walls.mesh_users,
     construction_complete = walls.construction_complete,
     path_obstacles_clear = walls.path_obstacles_clear,

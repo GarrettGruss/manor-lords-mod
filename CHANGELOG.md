@@ -11,6 +11,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   at normal cost, also on a plot the panel says is too small. Level 2 is id 2 (seen from a panel click); a wrong id only adds a stray
   entry to `upgradesDone`. Notes:
   `docs/specs/15-bandit-settlement/implementation-notes/burgage-placement-events.md`.
+- HarnessActions version 36 with the spike command `manor_blueprint_add` (issue #63): plans a manor module without the mouse (a
+  `StaticMeshActor` tagged `bType_<type>` added to the manor's `blueprints`, then `convertBlueprintsToBuildings`). Real game: a second tax
+  office and a second garrison were built this way; the commit ignores `maxInRegion`. Notes: `docs/specs/14-free-walls/implementation-notes/free-walls.md`.
 - HarnessActions command `building_health` (read only: hp, maxHp, fire, rubble of one building, spec 14).
 - Unsafe spike commands `path_obstacles_clear`, `building_stat_write`, `construction_complete` and the memory write scripts in
   `docs/specs/14-free-walls/implementation-notes/tools/unsafe/`. All are refused unless `HARNESS_ALLOW_UNSAFE=1` is set (test games only).
