@@ -114,7 +114,7 @@ def condense_environment(environment: dict) -> dict:
     if not environment:
         return {}
     short: dict = {}
-    for key in ("game_build", "test_save"):
+    for key in ("game_build", "test_save", "mod_files"):
         if key in environment:
             short[key] = environment[key]
     if environment.get("test_save_sha256"):
