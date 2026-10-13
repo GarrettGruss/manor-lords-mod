@@ -1,6 +1,6 @@
 # Spec 18: Custom composite buildings
 
-Status: static part and Lua part-edit spikes done (2026-10-13). Pak steps (plan 3 and 4) BLOCKED: the AES key (MANORLORDS_AES_KEY) is not available. Issue: #69. Branch: `feat/18-composite-buildings`.
+Status: static, Lua part-edit and pak spikes done (2026-10-13). Placement of a new type id is open (needs the real mouse). Issue: #69. Branch: `feat/18-composite-buildings`.
 
 ## Goal
 
@@ -43,8 +43,8 @@ From spec 15 notes (`tent-placement.md`, `burgage-placement-events.md`):
 
 - [x] A note names the asset or code that defines the parts of a building type, with evidence. `implementation-notes/building-parts-static.md` (row -> `BM_*` class; link for tent and plot not read, partly open).
 - [x] A note says if Lua can change the parts of a built master, with a test result. `implementation-notes/part-edit-test.md`: append and unlink work in memory; a visible new part is not solved.
-- [ ] (BLOCKED, AES key) A note says if a pak can add a new composite building type, with a test result or a clear reason why not.
-- [ ] If the answer is no, the reason is recorded and the issue is closed as blocked or done.
+- [x] A note says if a pak can add a new composite building type. `implementation-notes/composite-pak.md`: rows 123 and 124 load; a new part list works by pointing row 87 at another `BM_*` class (17 to 16 parts in a real run); placing a new id is not tested (mouse only).
+- [ ] Placement of a new id and a visible new part list are open (real mouse, new cooked Blueprint). Issue stays open.
 
 ## Status (2026-10-13)
 - Done: static read (`implementation-notes/building-parts-static.md`) and the Lua part-edit test (`implementation-notes/part-edit-test.md`,
