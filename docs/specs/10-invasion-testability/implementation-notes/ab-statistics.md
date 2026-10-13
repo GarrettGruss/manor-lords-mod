@@ -1,6 +1,6 @@
 # A/B variants and statistics (U4)
 
-Status: built and unit tested with a seeded stand-in. NOT verified on the real game (no real A/B suite was run).
+Status: built and unit tested with a seeded stand-in. The spec 09 pak A/B ran once per side in the real game (0.75 vs 0.5). A real A/B suite with N runs per side is NOT done (open).
 
 ## Why
 Combat is not deterministic. One run per variant says little. A feature is judged over N runs per variant,

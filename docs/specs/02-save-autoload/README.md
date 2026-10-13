@@ -1,6 +1,6 @@
 # Spec 02: Save auto-load and in-game ready signal
 
-Status: in progress. The main path works in the real game (10 of 10 cold starts, see `implementation-notes/launch-series-results.md`). Open items are listed below.
+Status: done (PR 2). The acceptance criteria are met. The main path works in the real game (10 of 10 cold starts, see `implementation-notes/launch-series-results.md`). Items below that say "not tested" stay open (they need the game).
 Roadmap phase: 4 (deterministic start state).
 
 ## Goal
