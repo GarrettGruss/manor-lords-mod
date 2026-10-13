@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Hidden probe `probe-bailey` (spike #68): commits burgage plots inside and outside the manor bailey without the mouse. Result: the commit makes sites in both places; builders built none (control failed). Notes: `docs/specs/12-manor-exploration/implementation-notes/bailey-buildings.md`.
 - HarnessActions version 38 with the spec 18 commands `master_parts` (read only), `master_part_add` and `master_part_remove` (unsafe, need `HARNESS_ALLOW_UNSAFE=1`), module `HarnessParts`, hidden probe `probe-composite`. Real game: a part can be appended to or unlinked from a built tent or plot master; notes in `docs/specs/18-composite-buildings/implementation-notes/`.
 - HarnessActions version 40 (spike #59): commands `steer_state`, `steer_select`, `steer_cursor`, `steer_mouse3d`, `steer_move`, `steer_rmb`, `steer_hook`, `steer_hook_log` (module HarnessSteer), `osinput.right_click`, `ScenarioContext.order_with_mouse`, hidden probe `probe-steer`. Result: a player squad goes to a chosen point with one real right click; Lua-only orders do nothing. Notes: `docs/specs/10-invasion-testability/implementation-notes/unit-steering.md`.
 - HarnessActions version 39 (spec 16, #60): unsafe spike command `policy_enact_sweep` (95 `enactPolicy` calls, needs `HARNESS_ALLOW_UNSAFE=1`). New hidden probe `probe-policy-followups`, report tool `harness/tools/policy_ab_report.py`. Answers: `docs/specs/16-policy-edicts/implementation-notes/policy-followups.md`.
