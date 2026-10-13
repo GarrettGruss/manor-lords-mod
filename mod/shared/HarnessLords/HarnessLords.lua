@@ -9,6 +9,7 @@
 -- Rules: call only on the game thread. No save function. Every input is checked before it is used.
 
 local datatable = require("HarnessDataTable")
+local core = require("ManorCore")
 
 local M = {}
 
@@ -418,28 +419,11 @@ local function buildingCount(region)
     return read(function() return list:GetArrayNum() end) or read(function() return #list end)
 end
 
-local function regionRow(region)
-    return {
-        region = shortName(region), name = textOf(read(function() return region.regionName end)),
-        owner = shortName(read(function() return region.ownerPawn end)),
-        settled = read(function() return region.isSettled end), settlement_type = read(function() return region.settlementType end),
-        level = read(function() return region.settlementLevel end), town_center = shortName(read(function() return region.townCenter end)),
-        manor = shortName(read(function() return region.manor end)), buildings = buildingCount(region),
-        planning = shortName(read(function() return region.CityPlanningComponent end)),
-        families = read(function() return region:getTotalNumFamilies() end),
-    }
-end
+local regionRow = core.region_row
 
 -- Every region: owner, settled, settlement type and level, town center, manor, buildings, families. Read only.
-function M.regions_state()
-    local engineObject = engine()
-    if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
-    local rows = {}
-    for _, region in ipairs(regions(engineObject)) do rows[#rows + 1] = regionRow(region) end
-    return { ok = true, regions = rows }
-end
+M.regions_state = core.regions_state
 
--- RTSMultiEngineCPP:addPawnRelations(lord): a lord made by spawnNewAILord had no relation row with anyone.
 function M.lord_relations(request)
     local engineObject = engine()
     if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
@@ -499,28 +483,7 @@ function M.settle_region(request)
     if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
     local pawn, problem = checkedTarget(request, engineObject)
     if not pawn then return { ok = false, error = problem } end
-    local region, why = checkedRegion(request, engineObject)
-    if not region then return { ok = false, error = why } end
-    if shortName(read(function() return region.ownerPawn end)) ~= shortName(pawn) then
-        return { ok = false, error = "the pawn does not own the region (claim it first)" }
-    end
-    local settlementType = request.type or 1
-    if settlementType < 1 or settlementType > MAX_SETTLEMENT_TYPE then
-        return { ok = false, error = "type must be 1 to " .. MAX_SETTLEMENT_TYPE .. " (ESettlementType)" }
-    end
-    local outpost
-    if request.outpost then
-        outpost = checkedRegion({ region = request.outpost }, engineObject)
-        if not outpost then return { ok = false, error = "no region named " .. tostring(request.outpost) } end
-    end
-    local at = (request.x and { X = request.x, Y = request.y, Z = request.z or 0 })
-        or read(function() return region:getSettledRegionCenter() end) or location(region)
-    if not at then return { ok = false, error = "no camp position" } end
-    local camp = { Rotation = { X = 0, Y = 0, Z = 0, W = 1 }, Translation = { X = at.X, Y = at.Y, Z = at.Z }, Scale3D = { X = 1, Y = 1, Z = 1 } }
-    local before = regionRow(region)
-    local ok, err = pcall(function() pawn:settleRegion(region, camp, request.supply or 0, settlementType, outpost) end)
-    if not ok then return { ok = false, error = "settleRegion: " .. tostring(err) } end
-    return { ok = true, camp = { x = math.floor(at.X), y = math.floor(at.Y), z = math.floor(at.Z) }, before = before, after = regionRow(region) }
+    return core.settle_region(request, pawn)
 end
 
 -- Write Region.ownerPawn = lord (the change a won challenge made in spike S11).

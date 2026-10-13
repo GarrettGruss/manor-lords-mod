@@ -1,4 +1,6 @@
 -- HarnessSack: primitives to take a share of a village away: buildings, goods, people (spec 10, spike S6).
+local core = require("ManorCore")
+
 -- Each function takes a request table (numbers and words, already checked) and returns a result table.
 -- Every change is read back: the census of the player village is taken before and after.
 -- Rules: no eval, no save function, only the game calls listed here. Call only on the game thread.
@@ -59,20 +61,7 @@ end
 ---------------------------------------------------------------------------------------------
 
 -- The region whose owner is the player pawn. The region the pawn stands in can be an AI region.
-function M.playerRegion()
-    local engine = FindFirstOf("RTSMultiEngineCPP")
-    if not isValid(engine) then return nil, "no RTSMultiEngineCPP" end
-    local player = read(function() return engine.playerRef end)
-    if not isValid(player) then return nil, "no player pawn" end
-    local playerAddress = read(function() return player:GetAddress() end)
-    for _, region in ipairs(playerAddress and listOf(engine.regions) or {}) do
-        local owner = read(function() return region.ownerPawn end)
-        if isValid(region) and isValid(owner) and read(function() return owner:GetAddress() end) == playerAddress then return region end
-    end
-    local current = read(function() return player.currentRegion end)
-    if isValid(current) then return current end
-    return nil, "no region of the player"
-end
+M.playerRegion = core.player_region
 
 local function buildingId(building)
     local name = read(function() return building:GetFullName() end) or ""
@@ -290,20 +279,7 @@ function M.family_members(region, count, limit)
 end
 
 -- Kill every member of `count` families (the first ones in the list). Returns families and people removed.
-function M.remove_families(region, count)
-    local families = listOf(region.workerFamilies)
-    local removedFamilies, removedPeople = 0, 0
-    for _, family in ipairs(families) do
-        if removedFamilies >= count then break end
-        for _, member in ipairs(listOf(family.familyMembers)) do
-            if isValid(member) and read(function() return member.dead end) ~= true then
-                if pcall(function() member:just_die() end) then removedPeople = removedPeople + 1 end
-            end
-        end
-        removedFamilies = removedFamilies + 1
-    end
-    return removedFamilies, removedPeople
-end
+M.remove_families = core.remove_families
 
 ---------------------------------------------------------------------------------------------
 -- Commands (called by HarnessActions)

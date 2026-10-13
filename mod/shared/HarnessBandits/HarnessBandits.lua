@@ -18,6 +18,7 @@ local sack = require("HarnessSack")
 local datatable = require("HarnessDataTable")
 local raids = require("HarnessRaids")
 local housing = require("HarnessHousing")
+local core = require("ManorCore")
 
 local M = {}
 
@@ -379,8 +380,7 @@ function M.homeless_rebel(request)
              before = before, after = rebelState(region), bandit_units_before = banditsBefore, bandit_units_after = banditCount() }
 end
 
-M.AI_WAYPOINT = { x = -31000, y = -22500 }
-M.RALLY_MIN_DIST, M.RALLY_MAX_DIST = 15000, 40000
+M.AI_WAYPOINT, M.RALLY_MIN_DIST, M.RALLY_MAX_DIST = core.AI_WAYPOINT, core.RALLY_MIN_DIST, core.RALLY_MAX_DIST
 
 local function banditSquadIds()
     local ids = {}
@@ -398,37 +398,21 @@ local function newIds(before, after)
     return added
 end
 
--- The forest spot nearest to the AI waypoint. Why: the raid ignores its target, but the raiders pass the waypoint and wait there.
-local function rallySpot()
-    local answer = housing.forest_spot({ min_dist = M.RALLY_MIN_DIST, max_dist = M.RALLY_MAX_DIST })
-    if not answer.ok then return nil, answer.error end
-    local best, bestDist
-    for _, spot in ipairs(answer.spots) do
-        local dist = math.sqrt((spot.x - M.AI_WAYPOINT.x) ^ 2 + (spot.y - M.AI_WAYPOINT.y) ^ 2)
-        if not bestDist or dist < bestDist then best, bestDist = spot, dist end
-    end
-    if not best then return nil, "no forest spot between " .. M.RALLY_MIN_DIST .. " and " .. M.RALLY_MAX_DIST .. " units from the village" end
-    return best
-end
-
 -- Remove `count` families (they leave), then send one real raid (spawnRaiders) with a forest spot as the target.
 -- Measured (runs s15-p1 to p5): the raiders appear at the map edge, walk north and burn a few buildings on the way,
 -- stand at the AI waypoint (-31000,-22500, inside the player region) for about 100 to 150 game seconds, then attack the village.
 -- The target only sets where the raiders appear. The settle letter (bandit_tag attacking, bandit_letter raider_suggestSettle+20) while
 -- they stand at the waypoint removes them and gave +2 families in 2 of 2 clean tries. See "Raid aimed at the woods" in homeless-rebellion.md.
 function M.rebel_raid_rally(request)
-    local count = request.count or 1
-    if count < 1 or count > M.MAX_REBEL_FAMILIES then return { ok = false, error = "count must be 1 to " .. M.MAX_REBEL_FAMILIES } end
     local region, problem = sack.playerRegion()
     if not region then return { ok = false, error = problem } end
-    local spot, why = rallySpot()
-    if not spot then return { ok = false, error = why } end
     local before, squadsBefore, banditsBefore = rebelState(region), banditSquadIds(), banditCount()
-    local families, people = sack.remove_families(region, count)
-    local raid = raids.spawn_raiders({ squads = 1, x = spot.x, y = spot.y, z = spot.z })
-    if not raid.ok then return { ok = false, error = raid.error, families_removed = families } end
-    return { ok = true, families_removed = families, people_removed = people, spot = spot, squads = newIds(squadsBefore, banditSquadIds()),
-             before = before, after = rebelState(region), bandit_units_before = banditsBefore, bandit_units_after = banditCount() }
+    local answer = core.rebel_raid_rally(request)
+    if not answer.ok then return answer end
+    answer.squads = newIds(squadsBefore, banditSquadIds())
+    answer.before, answer.after = before, rebelState(region)
+    answer.bandit_units_before, answer.bandit_units_after = banditsBefore, banditCount()
+    return answer
 end
 
 return M
