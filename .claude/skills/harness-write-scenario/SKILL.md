@@ -19,6 +19,7 @@ def run(ctx) -> dict:
     ...
     return ctx.result()
 ```
+A hook sees only Blueprint (ProcessEvent) calls. Native UI actions (build mode, placement clicks) fire no hook: read the effect with a count instead.
 Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a test compares the full list).
 
 ## The context (`ctx`)
@@ -28,7 +29,8 @@ Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a 
 - `ctx.run_until(predicate, timeout_s, clock="wall"|"game", stall_s=..., on_poll=ctx.popups)`: wait with a stall detector.
 - `ctx.time`, `ctx.read_clock()`, `ctx.read_calendar()`, `ctx.pause()`, `ctx.unpause()`: game time. A game day is 40 game seconds. Speeds are index 1/2/3 = 1x/4x/8x. The game drops to 1x when an army is spotted: use `ctx.time.run_game_*` to hold the speed.
 - `ctx.metric(name, value)`: a number for A/B statistics (see `harness-ab-testing`).
-- `ctx.screenshot(name)`, `ctx.snapshot()`, `ctx.notes`, `ctx.fail(name, reason)`.
+- `ctx.order_with_mouse(...)`: a real right click that sends a player squad to a point (HarnessSteer, spec 10). Lua-only orders do nothing. Scenarios with it are `HIDDEN`.
+- `ctx.screenshot(name)` (a capture of the game window, `runlib.phases.capture_game_window`), `ctx.snapshot()`, `ctx.notes`, `ctx.fail(name, reason)`.
 
 ## Rules
 - The game is not deterministic. Assert ranges, not exact values, for anything stochastic. Use `equals` for flags and names.
@@ -41,5 +43,6 @@ Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a 
 ## Test it without the game
 Run it in the fake game kit (Lua mods in a Lua runtime, fake bridge). See `harness/tests/test_fakegame_standin_scenarios.py` and `harness/tests/modstate_support.py`. Include a broken-rule case that must make the scenario fail.
 `uv run python -m unittest discover -s harness/tests -p "test_fakegame_*.py"`
+A scenario for a releasable mod (RefugeeWaves) can be a release gate: list it in `gate_scenarios` of `mod/<Name>/mod.json` (skill `harness-release`).
 
 Then run it in the real game 3 of 3 (skill `harness-run-scenario`).
