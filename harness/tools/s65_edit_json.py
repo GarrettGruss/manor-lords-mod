@@ -4,6 +4,7 @@ Why a script: the edit is a clone of a row and a widget change, and must be repe
 The input and output JSON files are under the git-ignored pakmod work folder. Run it from the repo root:
   uv run python harness/tools/s65_edit_json.py stats <json> <source row> <new row>
   uv run python harness/tools/s65_edit_json.py planner <json> <widget name> <new id>
+  uv run python harness/tools/s65_edit_json.py blueprint <json> <row> <package path> <class name>
 """
 import copy
 import json
@@ -52,11 +53,30 @@ def retarget_widget(path, widget_name, new_id):
     print(f"ok: {widget_name} now has ID {new_id} and default visibility")
 
 
+def retarget_blueprint(path, row_name, package, asset):
+    data = load(path)
+    rows = data["Exports"][0]["Table"]["Data"]
+    hits = [r for r in rows if r["Name"] == row_name]
+    if len(hits) != 1:
+        raise SystemExit(f"error: expected one row {row_name}, found {len(hits)}")
+    props = [p for p in hits[0]["Value"] if p["Name"] == "BlueprintPath"]
+    soft_path = props[0]["Value"][0]["Value"]["AssetPath"]
+    soft_path["PackageName"] = package
+    soft_path["AssetName"] = asset
+    for name in (package, asset):
+        if name not in data["NameMap"]:
+            data["NameMap"].append(name)
+    save(path, data)
+    print(f"ok: row {row_name} BlueprintPath is now {package}.{asset}")
+
+
 def main(argv):
     if len(argv) == 5 and argv[1] == "stats":
         clone_stats_row(argv[2], argv[3], argv[4])
     elif len(argv) == 5 and argv[1] == "planner":
         retarget_widget(argv[2], argv[3], argv[4])
+    elif len(argv) == 6 and argv[1] == "blueprint":
+        retarget_blueprint(argv[2], argv[3], argv[4], argv[5])
     else:
         raise SystemExit(__doc__)
 
