@@ -26,7 +26,7 @@ Players report that when bandits are in their region, they can negotiate with th
 The user confirmed in a local game: negotiation with the bandit faction is offered while bandit units are present.
 For the invasion mode this is a second outcome of a raid besides a fight: raiders who join the village as settlers.
 
-## Feature: refugee waves (status: draft, 2026-10-12)
+## Feature: refugee waves (status: built as mod/RefugeeWaves, scenario refugee-wave passes 3 of 3, 2026-10-13)
 A mod event brings a wave of refugee families into the player's region. The refugees stay homeless and lower approval until the
 player houses them. If they stay homeless too long, they can turn on the player (the homeless rebellion below).
 
@@ -76,11 +76,11 @@ User design (2026-10-12):
 - Is the rebellion timer better in game days or in approval (for example below 40)?
 
 ### Feature acceptance criteria
-- [ ] The wave design is agreed with the user and written here.
-- [ ] A named command or mod call starts a wave without the mouse; a real run shows +N homeless families.
-- [ ] A scenario shows approval falling while the wave is homeless, and the wave ending when the player builds homes.
-- [ ] A scenario shows the rebellion starting when the timer ends.
-- [ ] Fake game tests cover the mod. No raw eval. No save function called. No game asset, key or save data in git.
+- [x] The wave design is agreed with the user and written here (accepted 2026-10-12 on #51; built as `mod/RefugeeWaves`, see `implementation-notes/refugee-waves-mod.md`).
+- [x] A named command or mod call starts a wave without the mouse; a real run shows +N homeless families (`RefugeeWaves.start_wave`; runs rw1 to rw3: +5 families, +3 homeless).
+- [x] A scenario shows approval falling while the wave is homeless, and the wave ending when the player builds homes (`refugee-wave` phase 1, 3 of 3).
+- [x] A scenario shows the rebellion starting when the timer ends (`refugee-wave` phase 2, 3 of 3).
+- [x] Fake game tests cover the mod (`test_fakegame_refugeewaves.py`). No raw eval. No save function called. No game asset, key or save data in git.
 
 ## Reverse direction: homeless families become bandits
 Goal: an immigration event brings more people than homes. If the homeless stay unhoused too long, or approval is low, they turn on the player. Find out if the game does it, and make the mod able to show it.
