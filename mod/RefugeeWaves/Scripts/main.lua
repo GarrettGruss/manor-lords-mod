@@ -1,14 +1,14 @@
 -- RefugeeWaves: a random event that sends homeless refugee families to the player village (spec 15, issue #51).
 -- Design (accepted by the user, 2026-10-12):
 --   Trigger: each game month, a chance (CONFIG.chance_percent) when the village is big enough and no wave is active.
---   Wave: 1 to 3 calls of PawnCPP:settleRegion on the player region (HarnessLords.settle_region). The camp is near the woods
+--   Wave: 1 to 3 calls of PawnCPP:settleRegion on the player region (ManorCore.settle_region). The camp is near the woods
 --     (forest_spot), else near the village (tent_find_spot). The game adds one family for each free home slot and puts up a tent
 --     (immigration-surge.md, refugee-followups.md). The mod never houses the refugees.
---   Message: the banner of PawnCPP:playEventMessage (HarnessUi). It is logged too.
+--   Message: the banner of PawnCPP:playEventMessage (ManorCore.show_banner). It is logged too.
 --   Pressure: the game itself. Homeless families lower approval by a one-time step (about 2 to 3 points each, in 3 game days).
 --   End: the wave ends when the homeless count is back at the count from before the wave (the player built homes).
 --   Bad outcome: refugees still homeless after CONFIG.homeless_days_limit game days, or approval under CONFIG.approval_floor.
---     Then a share of the wave families leaves and returns as a bandit raid (HarnessBandits.rebel_raid_rally). The game does nothing by itself.
+--     Then a share of the wave families leaves and returns as a bandit raid (ManorCore.rebel_raid_rally). The game does nothing by itself.
 --   Save and load: the mod keeps no state that the game cannot rebuild. A new Lua state after a load adopts the homeless families it finds
 --     on its first check as the active wave (start = that day).
 -- Rules: game objects are touched on the game thread only. No save function. No eval. No Region:AddNewFamily (it crashes the game).
