@@ -800,6 +800,34 @@ class Actions:
             raise ActionError("wall_remove: road_id must be a road id from wall_state")
         return self._command("wall_remove", road=road_id)
 
+    # ---- Policies (spec 16, implementation-notes/policies.md) ----
+    # The player's region has policy slots. policy_state reads them; policy_enact calls PawnCPP:enactPolicy.
+
+    def policy_state(self) -> dict:
+        """Policies in the slots (`policies`: slot, id, name), signed ids, available ids, `max_policies`, approval and its factors,
+        silver, influence, development points spent. Read only."""
+        return self._command("policy_state")
+
+    def policy_enact(self, policy: int, slot: int = 0) -> dict:
+        """PawnCPP:enactPolicy(region, slot, policy). The answer has `before`, `after` and the game's `returned` value.
+        Refused when the policy id is not in the available list or the slot is outside `max_policies`."""
+        self._check_policy_id("policy_enact", policy)
+        if not isinstance(slot, int) or isinstance(slot, bool) or slot < 0:
+            raise ActionError("policy_enact: slot must be a whole number from 0")
+        return self._command("policy_enact", policy=policy, slot=slot)
+
+    def policy_sign(self, policy: int, signed: bool) -> dict:
+        """Region:setPolicySigned(policy, signed). The answer has `before` and `after`."""
+        self._check_policy_id("policy_sign", policy)
+        if not isinstance(signed, bool):
+            raise ActionError("policy_sign: signed must be true or false")
+        return self._command("policy_sign", policy=policy, signed=signed)
+
+    @staticmethod
+    def _check_policy_id(name: str, policy: int) -> None:
+        if not isinstance(policy, int) or isinstance(policy, bool) or policy <= 0:
+            raise ActionError(f"{name}: policy must be a policy id from policy_state")
+
     # ---- Bandit negotiation (spec 15, implementation-notes/bandit-settlement.md) ----
 
     def bandit_state(self) -> dict:
