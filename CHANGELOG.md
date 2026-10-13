@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- HarnessActions version 39 (spec 16, #60): unsafe spike command `policy_enact_sweep` (95 `enactPolicy` calls, needs `HARNESS_ALLOW_UNSAFE=1`). New hidden probe `probe-policy-followups`, report tool `harness/tools/policy_ab_report.py`. Answers: `docs/specs/16-policy-edicts/implementation-notes/policy-followups.md`.
 - HarnessActions version 38 (spec 15, #61): commands `family_census` (families with living members, roles and `familyHome`; homes and tents with their occupant family ids) and the option `adult` of `family_add`. `member_fields` lists the properties of a family member. New hidden probe `probe-refugee-followups`; the answers to issue #61 are in `docs/specs/15-bandit-settlement/implementation-notes/refugee-followups.md`.
 - Docs housekeeping (issue #53): status lines of specs 00, 01, 02, 06, 09 and 10 are current; the spec 00 roadmap lists specs 13 to 16; the skills `harness-overview` and `harness-coverage` name the new specs, modules and the 36 of 39 coverage; new note `docs/specs/10-invasion-testability/implementation-notes/open-items.md`.
 - Unit tests for the action check helpers (`check_manor_goods`, `check_worker_slot`, `check_building_type`, `check_banner_text`, `dead_count_delta`).

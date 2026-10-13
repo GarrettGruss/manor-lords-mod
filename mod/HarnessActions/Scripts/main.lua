@@ -146,7 +146,7 @@ local policies = require("HarnessPolicies")
 local bandits = require("HarnessBandits")
 local housing = require("HarnessHousing")
 
-local VERSION = "38"
+local VERSION = "39"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -440,6 +440,7 @@ local COMMANDS = {
     policy_state = policies.policy_state,
     policy_enact = policies.policy_enact,
     policy_sign = policies.policy_sign,
+    policy_enact_sweep = policies.policy_enact_sweep,
     menu_probe_show = policies.menu_probe_show,
     menu_probe_read = policies.menu_probe_read,
     menu_probe_hide = policies.menu_probe_hide,

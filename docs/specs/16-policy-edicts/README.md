@@ -5,7 +5,13 @@ Status: spike done for Q1 to Q5 (2026-10-12). Policies exist (19 rows, 6 availab
 Decision (user, 2026-10-12): menu option b (Lua screen with game policy cards) or c (pak widget) are both acceptable. The spike branch is
 finished; open follow-ups: the effect of Strict fasting (12) during a food shortage, a real click on a Lua-placed card, why `enactPolicy` returns false.
 
-Tracking issue: #55
+Follow-ups (issue #60, 2026-10-12, notes in `implementation-notes/policy-followups.md`):
+- Strict fasting: no measurable effect on food use or approval in the base village (food use is about 0 there, so the test has no power). Open.
+- A real click on a Lua-placed game policy card works. It calls `Region:setPolicySigned(id, true)`, not `enactPolicy`.
+- `enactPolicy` still returns false for 95 slot and id combinations, with silver, influence, level and `availablePolicies` changed. The condition is not found.
+- Menu choice (b or c): still the user's decision. Evidence favors b as the first step (see the note).
+
+Tracking issues: #55, #60
 
 ## Goal
 Find out if the base game has a policy system, so that the player (or the mod) can enact a temporary edict such as rationing at a cost
