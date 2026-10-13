@@ -94,6 +94,21 @@ class Bridge:
         names = {"day": "day", "month": "month", "year": "Year"}
         return {key: self._result("get", ref=calendar_path, name=name) for key, name in names.items()}
 
+    def centre_camera_on(self, x: float, y: float, tries: int = 3) -> dict:
+        """Move the player pawn so that the screen centre looks at the world point (x, y). The camera follows the pawn with a lag, so repeat.
+        Returns the ground point under the screen centre after the last move."""
+        player = self.player_path()
+        hit = {}
+        for _ in range(tries):
+            hit = self._result("target", distance=300000)
+            if not hit.get("hit"):
+                raise RuntimeError("The camera trace hit nothing, so the camera cannot be centred.")
+            pawn = self._result("call", ref=player, function="K2_GetActorLocation", args=[])
+            ground = hit["impact_point"]
+            self._result("call", ref=player, function="K2_SetActorLocation",
+                         args=[{"X": pawn["X"] + x - ground["X"], "Y": pawn["Y"] + y - ground["Y"], "Z": pawn["Z"]}, False, {}, False])
+        return self._result("target", distance=300000)["impact_point"]
+
     def call_on_player(self, function: str, args: list | None = None) -> None:
         self._result("call", ref=self.player_path(), function=function, args=args or [])
 

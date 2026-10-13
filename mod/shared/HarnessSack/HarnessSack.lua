@@ -253,6 +253,42 @@ end
 -- People
 ---------------------------------------------------------------------------------------------
 
+-- Where the first `count` families live: the position of the family home, else of the first member (spec 15, rebellion).
+-- Same order as remove_families, so row i is the family that remove_families removes as number i.
+function M.family_homes(region, count)
+    local rows = {}
+    for _, family in ipairs(listOf(region.workerFamilies)) do
+        if #rows >= count then break end
+        local at = read(function() return family.familyHome:K2_GetActorLocation() end)
+        local source = "home"
+        if not at then
+            for _, member in ipairs(listOf(family.familyMembers)) do
+                at = isValid(member) and read(function() return member.realPos end) or nil
+                if at then source = "member"; break end
+            end
+        end
+        local x, y, z = at and read(function() return at.X end), at and read(function() return at.Y end), at and read(function() return at.Z end)
+        rows[#rows + 1] = x and { x = x, y = y, z = z, source = source } or { source = "unknown" }
+    end
+    return rows
+end
+
+-- The living members of the first `count` families, at most `limit` units (spec 15, turnToBandit on family members).
+function M.family_members(region, count, limit)
+    local rows, seen = {}, { families = 0, members = 0, dead = 0, invalid = 0 }
+    for index, family in ipairs(listOf(region.workerFamilies)) do
+        if index > count then break end
+        seen.families = seen.families + 1
+        for _, member in ipairs(listOf(family.familyMembers)) do
+            seen.members = seen.members + 1
+            if not isValid(member) then seen.invalid = seen.invalid + 1
+            elseif read(function() return member.dead end) == true then seen.dead = seen.dead + 1
+            elseif #rows < limit then rows[#rows + 1] = member end
+        end
+    end
+    return rows, seen
+end
+
 -- Kill every member of `count` families (the first ones in the list). Returns families and people removed.
 function M.remove_families(region, count)
     local families = listOf(region.workerFamilies)

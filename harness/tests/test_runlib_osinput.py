@@ -184,5 +184,52 @@ class PlaceBuildingActionTest(unittest.TestCase):
             Actions(FakeBridge()).place_building(30)
 
 
+class TentAutoPlaceTest(unittest.TestCase):
+    """tent_auto_place: the spot comes from the mod command, the click is the injected mouse placer (spec 15)."""
+
+    class Channel:
+        def __init__(self, spots):
+            self.spots = spots
+
+        def send(self, name, **fields):
+            assert name == "tent_find_spot"
+            return {"ok": True, "spots": self.spots}
+
+    class Bridge(FakeBridge):
+        def __init__(self):
+            super().__init__()
+            self.centred = []
+
+        def centre_camera_on(self, x, y):
+            self.centred.append((x, y))
+
+        def call_function(self, ref, function, args=None):
+            assert function == "getBuildingCount" and args == [87, False]
+            return self.count
+
+    def make(self, spots):
+        bridge, calls = self.Bridge(), []
+
+        def placer(type_id, fx, fy):
+            calls.append((type_id, fx, fy))
+            bridge.count += 1
+
+        actions = Actions(bridge, Expectations(), [], commands=self.Channel(spots), mouse_placer=placer)
+        return actions, bridge, calls
+
+    def test_the_camera_goes_to_the_first_spot_and_a_tent_is_placed(self):
+        actions, bridge, calls = self.make([{"x": 10, "y": 20, "z": 5}, {"x": 1, "y": 2, "z": 5}])
+        record = actions.tent_auto_place()
+        self.assertTrue(record["ok"])
+        self.assertEqual((bridge.centred, calls), ([(10, 20)], [(87, 0.5, 0.5)]))
+        self.assertEqual((record["before"], record["after"]), (3, 4))
+
+    def test_no_spot_is_not_possible(self):
+        actions, _, calls = self.make([])
+        with self.assertRaisesRegex(ActionNotPossible, "no free spot"):
+            actions.tent_auto_place()
+        self.assertEqual(calls, [])
+
+
 if __name__ == "__main__":
     unittest.main()

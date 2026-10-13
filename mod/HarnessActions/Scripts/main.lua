@@ -83,6 +83,28 @@
 --   {"command":"road_commit"}                               commit the drawn road; the answer has its id
 --   {"command":"wall_make","road":123,"wall_type":2}        make a committed road a wall: 2 wooden, 3 stone low, 4 stone high
 --   {"command":"wall_remove","road":123}                    remove a wall road (PawnCPP:removeRoad)
+--   Bandit negotiation (spec 15, see mod/shared/HarnessBandits):
+--   {"command":"bandit_state"}                              families, bandit units, silver, influence, relation tags with the bandit lord (read only)  (regions[] also give vacant_slots)
+--   {"command":"bandit_tag","tag":"attacking","remove":0}  add (or remove) a relation tag between the player and the bandit lord
+--   {"command":"bandit_letter","paragraphs":["raider_suggestSettle"]}   PawnCPP:sendLetter from the player to the bandit lord
+--   {"command":"settle_raiders"}                            MLCheatManager:SettleRaiders (developer cheat)
+--   Reverse direction (spec 15, homeless rebellion, see implementation-notes/homeless-rebellion.md):
+--   {"command":"bandit_spawn_at","x":0,"y":0,"z":0,"template":"Brigands","count":1}   bandit squads at a chosen point (spawnArmy, owner = bandit lord)
+--   {"command":"bandit_turn","count":3,"source":"squad"}  SMUnit:turnToBandit on units of player squads made by spawn_units ("source":"family": family members)
+--   {"command":"homeless_rebel","count":2,"families_per_squad":1,"template":"Brigands","mode":"home"}   remove families, then bandits appear at their homes ("mode":"raid": a real raid that targets the home)
+--   {"command":"rebel_raid_rally","count":2}   remove families, then one real raid aimed at a forest spot; the raiders stand at the AI waypoint for about 100 to 150 game seconds, then attack. The answer has the squad ids, the spot and the families before and after
+--   {"command":"bandit_kill_squads","squad":41,"count":2}   SMUnit:just_die on every living bandit unit of squads 41, 42 (to remove a raid and keep other squads)
+--   Housing (spec 15, see mod/shared/HarnessHousing):
+--   {"command":"building_stat","type":87}                   scalar fields of the buildingStats row of one building type (read only)
+--   {"command":"building_stat_vector_write","type":87,"field":"occupantTypes","component":"Y","value":5}   UNSAFE test command (needs HARNESS_ALLOW_UNSAFE=1): write one component of a Vector4 field of a buildingStats row, in memory
+--   {"command":"housing_state"}                             player region: families, homeless, living and vacant slots, tents, residential buildings (read only)
+--   {"command":"accommodate_homeless"}                      Region:accomodateHomelessFamilies(nil); the answer has the housing before and after
+--   {"command":"family_state"}                              housing numbers with approval and public order, and the ids of the housed families (read only)
+--   {"command":"family_eject","count":2,"suppress":true,"home":"none"}   Region:SetFamilyHome(id, nil, suppress): housed families leave their homes ("home":"tent": into the first homeless tent) (spec 15 part 7)
+--   {"command":"family_add","count":1}                      a villager leaves a family of 2 or more and starts a new family (Region:AddNewFamily); it has no home
+--   {"command":"tent_find_spot"}                           up to 5 free spots for a tent (x, y, z) around the village centre; it does not place anything (read only)
+--   {"command":"forest_spot","min_dist":15000,"max_dist":40000}   up to 5 dense tree cells of the player region, best first (Resource actors with resType "tree"; read only)
+--   {"command":"plot_field_shift","dx":3000,"dy":0,"plots":true,"commit":true}   test only: move the drawn, closed plot outline of the pawn (plots: also extractedPlots), then commit it
 -- Result: {"id","command","ok","error",...fields of the command}.
 -- Commands of other mods do not come through here: each mod serves its own in <run>/modcmd/<ModName>/ (see HarnessCommands).
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
@@ -100,8 +122,10 @@ local build = require("HarnessBuild")
 local manor = require("HarnessManor")
 local lordsCmd = require("HarnessLords")
 local walls = require("HarnessWalls")
+local bandits = require("HarnessBandits")
+local housing = require("HarnessHousing")
 
-local VERSION = "18"
+local VERSION = "33"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -202,7 +226,14 @@ local function parseRequest(raw)
         build = tonumber(raw:match('"build"%s*:%s*(%d+)')),
         finalize = tonumber(raw:match('"finalize"%s*:%s*(%d+)')),
         supply = tonumber(raw:match('"supply"%s*:%s*(%d+)')),
+        tag = raw:match('"tag"%s*:%s*"([%w_]+)"'),
+        remove = tonumber(raw:match('"remove"%s*:%s*(%d+)')),
         outpost = raw:match('"outpost"%s*:%s*"([%w_]+)"'),
+        mode = raw:match('"mode"%s*:%s*"(%a+)"'),
+        source = raw:match('"source"%s*:%s*"(%a+)"'),
+        families_per_squad = tonumber(raw:match('"families_per_squad"%s*:%s*(%d+)')),
+        min_dist = tonumber(raw:match('"min_dist"%s*:%s*(%d+)')),
+        max_dist = tonumber(raw:match('"max_dist"%s*:%s*(%d+)')),
     }
 end
 
@@ -376,6 +407,28 @@ local COMMANDS = {
     road_commit = walls.road_commit,
     wall_make = walls.wall_make,
     wall_remove = walls.wall_remove,
+    bandit_state = bandits.bandit_state,
+    bandit_tag = bandits.bandit_tag,
+    bandit_letter = bandits.bandit_letter,
+    settle_raiders = bandits.settle_raiders,
+    bandit_mark = bandits.bandit_mark,
+    bandit_track = bandits.bandit_track,
+    bandit_spawn_at = bandits.bandit_spawn_at,
+    bandit_turn = bandits.bandit_turn,
+    homeless_rebel = bandits.homeless_rebel,
+    rebel_raid_rally = bandits.rebel_raid_rally,
+    bandit_kill_squads = bandits.bandit_kill_squads,
+    building_stat = housing.building_stat,
+    building_stat_vector_write = housing.building_stat_vector_write,
+    housing_state = housing.housing_state,
+    accommodate_homeless = housing.accommodate_homeless,
+    family_state = housing.family_state,
+    family_eject = housing.family_eject,
+    family_add = housing.family_add,
+    tent_find_spot = housing.tent_find_spot,
+    forest_spot = housing.forest_spot,
+    plot_field_shift = housing.plot_field_shift,
+    plot_field_place = housing.plot_field_place,
 }
 
 local function runCommand(number, raw)
