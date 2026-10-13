@@ -177,6 +177,17 @@ class BuildingHealthTests(WallTestCase):
         self.assertIn("building must be", self.send("building_health")["error"])
 
 
+class ManorBlueprintTests(WallTestCase):
+    def test_missing_fields_are_refused(self):
+        self.assertIn("type, x, y and z are required", self.send("manor_blueprint_add", type=58)["error"])
+        self.assertIn("type, x, y and z are required", self.send("manor_blueprint_add", x=1, y=2, z=3)["error"])
+
+    def test_without_a_matching_manor_blueprint_nothing_is_spawned(self):
+        answer = self.send("manor_blueprint_add", type=58, x=-100, y=200, z=3, commit=True)
+        self.assertFalse(answer["ok"])
+        self.assertRegex(answer["error"], "no manor|no blueprint of type 58")
+
+
 UNSAFE_COMMANDS = ("path_obstacles_clear", "building_stat_write", "construction_complete")
 
 

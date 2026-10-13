@@ -273,6 +273,56 @@ only at the arm tips (<= 1.1 m) or none.
   planner, so the normal build mode probably cannot commit a manor building. Next: place it through the planner (user), then read the new
   building, its `buildingMaster` link and whether its parts add obstacles.
 
+### Tax office through the manor planner, live with the user (2026-10-12, run `s63-tax-live`, fixture `wall-u`, issue #63)
+The user opened the manor planner, placed a tax office, committed the plan and let the builders finish. The agent watched with hooks and
+pawn diffs (the run has its own bridge folder `runs/s63-tax-live/bridge`; the MCP bridge tools only watch the default folder, so a small
+script sent the ops there).
+| Step | Calls seen (hooks) | State |
+|---|---|---|
+| Open planner, pick the tax office | `PawnCPP:setPlannerMode(manor)` (manor = `SMBuildingMaster` type 98), `PawnCPP:setPlacedBuilding(58)` | pawn `inPlanningMode` true, `plannerModeBld` = the manor, `placeBuilding` 58 |
+| Click to place the blueprint | none (native) | the manor's `blueprints` list gets a `StaticMeshActor` with mesh `SM_MERGED_C_SG_TaxCollectorProper` (the palace blueprint is the same kind of actor) |
+| Commit the plan | `setPlacedBuilding(0)`, **`SMBuildingMaster:convertBlueprintsToBuildings(bOnlyBuildFirstBuilding)` on the manor**, `setPlannerMode(nil)` | `inPlanningMode` false; type 58 count 0 |
+| Builders finish | none | game message "manor is finished"; still **no type 58 building** (`getBuildingCount(58)` 0, no new `SMBuildingMaster`) |
+
+- The built tax office is an `SMBuilding` part (`SMBuilding_2147467196`, tax collector mesh) whose `buildingMaster` is the manor (type 98).
+  A `GhostStaticMeshActor` with the same mesh was the construction ghost. So the tax office is a module of the manor, built as part of the
+  manor's construction, like the planner walls. The manor showed no change in `upgradesDone`, `Extensions`, `moduleMasks`, `lv` (1) or workers.
+- This explains `s14-tax-1`: normal build mode cannot commit type 58, because type 58 is never its own building.
+- Mouse-free lead: the commit is a reflected call with one bool (`convertBlueprintsToBuildings(bOnlyBuildFirstBuilding)`). The open step is
+  the placement click, which adds the blueprint mesh actor to the manor's `blueprints` list in native code. Not tested: spawning that actor
+  from Lua and adding it to the list, then calling `convertBlueprintsToBuildings`.
+- Not checked yet: whether the tax office part adds path obstacles, and its worker slots (spec 12: job 47, no slots).
+- The blueprint actor is identified by its actor tag: `Tags` = ["bType_58"]. No owner, no other link.
+
+### Manor blueprint without the mouse (same session, HarnessActions 36, command `manor_blueprint_add`)
+- The command spawns a `StaticMeshActor` (copying the mesh of an existing blueprint of the same type on the manor), sets the tag
+  `bType_<type>`, appends it to the manor's `blueprints` list (4 -> 5) and can call `convertBlueprintsToBuildings(false)` on the manor.
+- Test: a second tax office (type 58), 15 m east of the first (x 12849, y -52304, z 2517), first without the commit. The user saw the second
+  blueprint in the world and the planner, although `maxInRegion` is 1.
+- Commit through the bridge (`convertBlueprintsToBuildings(false)` on the manor; the hook saw the call): tax collector mesh users went from
+  1 to 2 `GhostStaticMeshActor` (construction ghost) and 1 to 2 `SMBuilding` parts of the manor. So a mod can plan manor modules without the
+  mouse, and the commit does not enforce `maxInRegion`. User check: the scaffold appeared and families began the construction.
+- Garrison (keep, type 57) through the planner, same session: `setPlannerMode(manor)`, `setPlacedBuilding(57)`, the blueprint
+  `StaticMeshActor` with tag `bType_57` and mesh `SM_MERGED_C_SG_Manor_MainTower_Lv1_New`, commit `convertBlueprintsToBuildings` on the manor.
+  Cost: 5 rubble stone (item 15, `EItemType::Rubble`; rough stone is 27). After the builders finished: no type 57 building and no new
+  `SMBuildingMaster`; the garrison is a manor part like the tax office. `SMBuildingMaster:getModularGarrisonLimit()` on the manor returns 24
+  (not read before the garrison, so the change is not known). The game UI shows the garrison as 5/24 (user), so the limit read by
+  `getModularGarrisonLimit` is the garrison capacity shown to the player.
+- Second garrison without the mouse (`manor_blueprint_add type=57`, 18 m east of the first, commit in the same call): blueprints 6 -> 7,
+  the builders built it (user). `getModularGarrisonLimit()` stayed 24 and the UI stayed at 24 (user). So extra garrison modules do not add
+  capacity: the limit is not a sum over garrison parts (it may come from the first garrison, the manor level or the palace).
+- Guard tower through the planner (user): `setPlacedBuilding(472)`, blueprint tag `bType_472`, mesh `SM_MERGED_C_SG_Manor_Tower_Lv1_00`,
+  commit `convertBlueprintsToBuildings` on the manor; cost included rubble stone. After the builders finished: type 472 count 0, no new
+  `SMBuildingMaster`, `getModularGarrisonLimit()` still 24. So the tower is a manor part too and does not change the reported garrison limit.
+  Civilian garrison test (same session): 150 fish given (the village was starving), then one Brigands squad (squad 19, 18 units,
+  `bandit_spawn_at`) 30 m west of the tower at (7937, -50456). The village had 3 families (all homeless) and 5 retinue units.
+  For 2 minutes of play (polled every 10 s) bandit units stayed 36, player units 5, families 3; the user saw no civilian go into the tower.
+  Caveat: `spawnArmy` bandit squads wait at the AI waypoint for about 480 game seconds before they attack (spec 15 part 3), so no raid
+  alarm happened. A fair test needs a real raid (`spawn_raid`) or an alarm, and housed families. `hasModuleOfType(57)`, `(58)`, `(95)`, `(98)`, `(472)` all return false: that
+  call does not use building type numbers.
+- Limits: the mesh path of a module type with no blueprint on the manor is not known by the command (it copies from an existing blueprint).
+  The ground check, the manor area check and the cost were not checked for a mod-made blueprint.
+
 ### How walls are removed (for a future "bandits destroy walls" feature)
 - `SMBuildingMaster:demolish(false)` on the manor removes the whole manor with all wall pieces and their obstacle entries at once
   (337 -> 274). Too coarse for one breach.
