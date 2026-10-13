@@ -11,6 +11,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Suite `pak-ab` with hidden scenario `pak-item-value` (5 runs per side, real pak A/B passed; spec 09 criterion ticked). Hidden probes `probe-lord-village` and `probe-lord-diplomacy` and suite `lord-village-ab` for the S13 and S11 reruns (partly run, issue #53). `soak-days` option `HARNESS_SOAK_KEEP_APPROVAL=1`.
 
 ### Changed
+- Project skills refreshed for specs 15 to 19: ManorCore, HarnessSteer, HarnessParts, HarnessActions version 41 commands, mod releases, the AES key and fixture saves in worktrees, the Python bridge client, game close fallback, and the hook limit.
 - Rules: compiled mod paks (`*_P.pak`) may be committed. The AES key and the original game paks may not.
 - RefugeeWaves needs only `ManorCore`. `HarnessCommands` is optional (test commands exist only when it is present).
 

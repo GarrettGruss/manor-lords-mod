@@ -34,5 +34,6 @@ The base game lacks outposts, captives, tribute, raid objectives and more. The m
 2. Write the new numbers in a `coverage-after-<topic>.md` note in `implementation-notes/` and update the spec README status.
 3. Add a CHANGELOG line.
 
-## Planning the next step
+## Other specs
+Specs 12 to 19 have no `criteria.json`. Their status is in each spec README. Only spec 10 feeds the 90% goal. Check the number with the tool before you quote it.
 The gap list in the tool output is the work list. Prefer the primitive that unlocks several criteria (for example sack primitives unlock S1, R7, R8). Engine-dependent criteria need a real-game spike (skill `harness-game-spike`).
