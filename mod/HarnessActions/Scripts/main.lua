@@ -113,6 +113,10 @@
 --   {"command":"forest_spot","min_dist":15000,"max_dist":40000}   up to 5 dense tree cells of the player region, best first (Resource actors with resType "tree"; read only)
 --   {"command":"plot_field_shift","dx":3000,"dy":0,"plots":true,"commit":true}   test only: move the drawn, closed plot outline of the pawn (plots: also extractedPlots), then commit it
 --   {"command":"plot_upgrade","upgrade":12,"slot":0,"extension":false}   spike: PawnCPP:addUpgradeRequest (or addExtensionChangeRequest) on the building under the mouse
+--   Composite parts (spec 18, see mod/shared/HarnessParts):
+--   {"command":"master_parts","building":123,"limit":5}      parts and extensions of one building master (or "type":3: the first built one; read only)
+--   {"command":"master_part_remove","building":123,"index":1,"mode":"hide"}   UNSAFE: hide, destroy or unlink one part (needs HARNESS_ALLOW_UNSAFE=1)
+--   {"command":"master_part_add","building":123,"from":1,"dx":300}   UNSAFE: spawn a copy of part "from" and append it to the part list
 --   Walls (spec 14, see mod/shared/HarnessWalls):
 --   {"command":"wall_pieces","road":123,"step":200}         spawn blocking palisade pieces (GhostStaticMeshActor, type 470) along a road
 --   {"command":"wall_pieces_clear","road":123}              destroy the pieces that wall_pieces made for that road
@@ -148,9 +152,10 @@ local walls = require("HarnessWalls")
 local policies = require("HarnessPolicies")
 local bandits = require("HarnessBandits")
 local housing = require("HarnessHousing")
+local parts = require("HarnessParts")
 local steer = require("HarnessSteer")
 
-local VERSION = "40"
+local VERSION = "41"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -465,6 +470,9 @@ local COMMANDS = {
     bandit_kill_squads = bandits.bandit_kill_squads,
     building_stat = buildingStat,
     building_stat_vector_write = housing.building_stat_vector_write,
+    master_parts = parts.master_parts,
+    master_part_remove = parts.master_part_remove,
+    master_part_add = parts.master_part_add,
     housing_state = housing.housing_state,
     accommodate_homeless = housing.accommodate_homeless,
     family_state = housing.family_state,

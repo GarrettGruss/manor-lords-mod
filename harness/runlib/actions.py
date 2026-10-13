@@ -999,6 +999,25 @@ class Actions:
         """Region:accomodateHomelessFamilies(nil). Moves homeless families into free homes. The answer has the housing before and after."""
         return self._command("accommodate_homeless")
 
+    # ---- Composite building parts (spec 18, implementation-notes/part-edit-test.md) ----
+
+    def master_parts(self, building: int | None = None, type_id: int | None = None, limit: int = 5) -> dict:
+        """Parts (SMBuilding actors) and extensions of one building master, by id or by type (read only)."""
+        fields = {"limit": limit}
+        if building is not None:
+            fields["building"] = building
+        if type_id is not None:
+            fields["type"] = type_id
+        return self._command("master_parts", **fields)
+
+    def master_part_remove(self, building: int, index: int, mode: str = "hide") -> dict:
+        """UNSAFE test command (the game needs HARNESS_ALLOW_UNSAFE=1): hide, destroy or unlink part `index` (from 1) of a master."""
+        return self._command("master_part_remove", building=building, index=index, mode=mode)
+
+    def master_part_add(self, building: int, from_part: int = 1, dx: float = 0, dy: float = 0, dz: float = 0) -> dict:
+        """UNSAFE test command: spawn a copy of part `from_part` and append it to the part list of the master."""
+        return self._command("master_part_add", building=building, **{"from": from_part}, dx=dx, dy=dy, dz=dz)
+
     def family_state(self) -> dict:
         """Housing numbers with approval and public order, and the ids of the housed families (read only)."""
         return self._command("family_state")
