@@ -210,7 +210,7 @@ def list_fixtures(manifest: dict) -> list[dict]:
 
 @dataclass(frozen=True)
 class AppdataResult:
-    fixture: str
+    fixture: str | None
     stored: bool
     source_slot: str | None
     sources: dict
@@ -229,25 +229,29 @@ def saved_dir_of(appdata_dir: Path) -> Path:
     return appdata_dir / "ManorLords" / "Saved"
 
 
-def prepare_appdata(user_saved_dir: Path, appdata_dir: Path, manifest: dict, fixture: str,
+def prepare_appdata(user_saved_dir: Path, appdata_dir: Path, manifest: dict, fixture: str | None,
                     store_root: Path | None = None) -> AppdataResult:
     """Check the fixture files and build the game's private `LOCALAPPDATA` (a copy of the user's Config folder).
+
+    `fixture` None is the fresh start (spec 06, part E): no fixture is checked and no files are listed.
 
     `user_saved_dir` is `%LOCALAPPDATA%/ManorLords/Saved`. It is only read. The fixture is not copied here: the game does not
     read saves from the private folder. The run installs it into the user's folder (`runlib/saveslots.py`).
     """
     store_root = store_root or STORE_DIR  # looked up at call time, so tests can point it elsewhere
-    entry = get_entry(manifest, fixture)
+    entry = get_entry(manifest, fixture) if fixture is not None else None
     user_saves = user_saved_dir / "SaveGames"
     user_root = user_saved_dir.resolve()
     if appdata_dir.resolve() == user_root or user_root in appdata_dir.resolve().parents:
         raise FixtureError("the private appdata folder must not be inside the user's save folder")
     with guarded(user_saves) as record:
-        sources = fixture_files(entry, fixture, user_saves, store_root)
+        sources = fixture_files(entry, fixture, user_saves, store_root) if entry is not None else {}
         saved_dir_of(appdata_dir).joinpath("SaveGames").mkdir(parents=True, exist_ok=True)
         config = user_saved_dir / "Config"
         if config.is_dir():
             shutil.copytree(config, saved_dir_of(appdata_dir) / "Config", dirs_exist_ok=True)
+    if entry is None:
+        return AppdataResult(None, False, None, {}, "", record["user_files"], record["user_files_sha256"], record["snapshot"])
     return AppdataResult(fixture, is_stored(entry), entry.get("source_slot"), sources, entry["sha256"][".sav"],
                          record["user_files"], record["user_files_sha256"], record["snapshot"])
 

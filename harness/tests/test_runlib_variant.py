@@ -188,6 +188,35 @@ class RunPyOptionsTest(unittest.TestCase):
                 args = self.parse(*extra)
                 self.assertEqual(run_module.run_one(args), 4)
 
+    def test_new_game_options_store_the_map(self):
+        args = self.parse("--new-game")
+        run_module.check_variant_options(args)
+        self.assertEqual(args.new_game_map, "Jagged_Cliffs")
+        args = self.parse("--new-game", "--map", "Other_Map")
+        run_module.check_variant_options(args)
+        self.assertEqual(args.new_game_map, "Other_Map")
+        config = run_module.build_config(args, argparse.Namespace(run_id="r1"), [], argparse.Namespace(took_over_pid=None))
+        self.assertEqual((config["new_game_map"], config["fixture"]), ("Other_Map", None))
+
+    def test_bad_new_game_options_fail_before_a_run(self):
+        for extra in (("--map", "Jagged_Cliffs"), ("--new-game", "--map", "bad name"), ("--new-game", "--map", "a/b"),
+                      ("--new-game", "--fixture", "manor-bailey")):
+            with self.subTest(extra=extra):
+                self.assertEqual(run_module.run_one(self.parse(*extra)), 4)
+        fake = run_module.parse_args(["--fake", "pass", "--new-game"])
+        self.assertEqual(run_module.run_one(fake), 4)
+
+    def test_new_game_env_is_set_only_for_a_new_game(self):
+        env = build_game_environment(Path("run"), "", base_env={"HARNESS_NEW_GAME": "1"}, new_game_map="Jagged_Cliffs")
+        self.assertEqual((env["HARNESS_NEW_GAME"], env["HARNESS_NEW_GAME_MAP"]), ("1", "Jagged_Cliffs"))
+        env = build_game_environment(Path("run"), "slot", base_env={"HARNESS_NEW_GAME": "1", "HARNESS_NEW_GAME_MAP": "X"})
+        self.assertNotIn("HARNESS_NEW_GAME", env)
+        self.assertNotIn("HARNESS_NEW_GAME_MAP", env)
+
+    def test_env_option_cannot_set_the_new_game_mode(self):
+        with self.assertRaises(EnvOptionError):
+            parse_env_options(["HARNESS_NEW_GAME=1"])
+
     def test_fake_run_refuses_game_options(self):
         args = run_module.parse_args(["--fake", "pass", "--env", "A=1"])
         self.assertEqual(run_module.run_one(args), 4)

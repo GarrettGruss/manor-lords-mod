@@ -65,7 +65,7 @@ def gather_environment(install: GameInstall, repo_root: Path, run_path: Path, te
             "modified": datetime.fromtimestamp(exe_stat.st_mtime, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         },
         "test_save": test_save,
-        "test_save_sha256": sha256_of_file(install.save_file(test_save)),
+        "test_save_sha256": sha256_of_file(install.save_file(test_save)) if test_save else None,  # "" is a fresh start
         "python": platform.python_version(),
         "run_dir": str(run_path.resolve()),
         "harness_git": git_state(repo_root),

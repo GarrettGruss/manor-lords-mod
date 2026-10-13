@@ -107,6 +107,12 @@ class PrepareAppdataTest(UserSavesCase):
         self.assertEqual((result.source_slot, result.stored, len(result.sources), result.user_files), ("saveGame_3", False, 4, 6))
         self.assertEqual(set(result.user_snapshot), {p.name for p in self.saves.iterdir()})
 
+    def test_fresh_start_needs_no_fixture(self):
+        result = fixtures.prepare_appdata(self.saved, self.appdata, self.manifest, None)
+        self.assertEqual((result.fixture, result.stored, result.sources, result.user_files), (None, False, {}, 6))
+        self.assertEqual(set(result.user_snapshot), {p.name for p in self.saves.iterdir()})
+        self.assertTrue((fixtures.saved_dir_of(self.appdata) / "Config" / "Windows" / "GameUserSettings.ini").is_file())
+
     def test_user_files_are_not_changed(self):
         before = fixtures.snapshot_user_files(self.saves)
         fixtures.prepare_appdata(self.saved, self.appdata, self.manifest, "base")
