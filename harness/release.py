@@ -152,6 +152,10 @@ def release(args: argparse.Namespace) -> None:
     for result in run_gate(manifest, Path(args.runs_root), shared):
         print(f"ok: gate '{result.scenario}' passed in real run {result.run_id} ({result.started}) with the current mod files")
     check_committed_paks(mod_dir, args.aes_key_file)
+    for pak_file in sorted((mod_dir / build.PAK_FOLDER).glob("*.pak")):
+        warning = build.pak_size_warning(pak_file.name, pak_file.stat().st_size)
+        if warning:
+            print(warning)
     zip_path = build.build_zip(manifest, mod_root, shared, Path(args.out_dir), REPO_ROOT, Path(args.pak_dir) if args.pak_dir else None)
     print(f"ok: built {zip_path}")
     problems = scan.scan_zip(zip_path, read_key_or_fail(args.aes_key_file))

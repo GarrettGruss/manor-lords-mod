@@ -79,6 +79,13 @@ class BuildTests(ZipTestCase):
         self.assertEqual(scan.scan_bytes("demo_P.pak", (self.mod_root / "Demo/paks/demo_P.pak").read_bytes(), KEY),
                          ["the AES key text is in demo_P.pak"])
 
+    def test_a_pak_over_the_limit_gets_a_warning_with_name_size_and_lfs(self):
+        self.assertIsNone(build.pak_size_warning("a_P.pak", build.PAK_SIZE_WARNING_BYTES))
+        warning = build.pak_size_warning("big_P.pak", build.PAK_SIZE_WARNING_BYTES + 1024 * 1024)
+        self.assertIn("big_P.pak", warning)
+        self.assertIn("11.0 MB", warning)
+        self.assertIn("Git LFS", warning)
+
     def test_a_pak_from_a_build_folder_is_found_by_name(self):
         self.write("work/demo/out/demo_P.pak", b"PAKDATA", binary=True)
         manifest = dict(MANIFEST, pak={"name": "demo", "source": "build"})

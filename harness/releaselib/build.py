@@ -10,6 +10,15 @@ from .files import mod_files
 MODS_PREFIX = "ManorLords/Binaries/Win64/ue4ss/Mods"
 PAK_PREFIX = "ManorLords/Content/Paks/~mods"
 PAK_FOLDER = "paks"  # inside mod/<Name>/
+PAK_SIZE_WARNING_BYTES = 10 * 1024 * 1024  # a bigger pak gets a warning (not a failure)
+
+
+def pak_size_warning(name: str, size: int) -> str | None:
+    if size <= PAK_SIZE_WARNING_BYTES:
+        return None
+    return (f"WARNING: pak {name} is {size / (1024 * 1024):.1f} MB, over the {PAK_SIZE_WARNING_BYTES // (1024 * 1024)} MB limit "
+            "for a plain git file. Consider Git LFS before you commit it.")
+
 ZIP_DATE = (2026, 1, 1, 0, 0, 0)  # fixed, so the same files give the same zip bytes
 
 

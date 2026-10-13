@@ -37,6 +37,7 @@ Every mod we make can be released to play testers as a GitHub release. One relea
 
 ## Open questions
 - Compiled paks (decided by the user, 2026-10-13): compiled mod paks may be committed (CLAUDE.md Safety), also with modified game data. The AES key must never be committed. The release check scans each committed pak of the mod for the key text, and scans the zip again. Original game paks are never committed.
+- Pak size: `release.py` prints a WARNING (no failure) for a committed pak over 10 MB (`PAK_SIZE_WARNING_BYTES`), and suggests Git LFS. Git LFS is not set up.
 - `deploy.ps1` copies everything under `mod/<Name>/`, so a committed pak is also copied into the game `Mods` folder (harmless, but wasteful). A later change can skip `paks/`.
 - Version of UE4SS for testers: the zip does not carry UE4SS. The README tells the tester which build is needed.
 - Tag name rule: `<name-lower>-v<version>` (for example `refugeewaves-v0.1.0`).

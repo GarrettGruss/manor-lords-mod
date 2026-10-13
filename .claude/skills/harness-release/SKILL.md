@@ -24,5 +24,7 @@ Game-folder layout: `ManorLords/Binaries/Win64/ue4ss/Mods/<Name>/` (with `enable
 ## Paks
 Compiled mod paks may be committed (user decision 2026-10-13). Keep the pak at `mod/<Name>/paks/<pak>_P.pak` and set `"pak": {"name": "<pak>", "source": "file"}`. The release check scans each committed pak for the AES key text; the zip scan checks again. Never commit the key, original game paks, extracts or `.usmap` files. `source: "build"` takes the pak from `--pak-dir <folder>` (output of `pakmod.py build`) instead.
 
+A committed pak over 10 MB (`PAK_SIZE_WARNING_BYTES` in `releaselib/build.py`) gives a WARNING with its name and size, and suggests Git LFS. It does not fail the release.
+
 ## Failures
 Each failure prints `FAILED: <reason>` and exits 1. Gate failures name the scenario to run. A "other mod files" gate failure lists the files that differ from the last passing run.
