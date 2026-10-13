@@ -10,6 +10,9 @@ Spec 10 (upgrade U10) and `docs/specs/10-invasion-testability/implementation-not
 ## The fact that shapes the design
 UE4SS gives every Lua mod its own Lua state. A shared module (`mod/shared/<Name>/<Name>.lua`) is loaded again in each mod. Tables and functions do not cross between mods. Files and game objects do. Real-game proof: run `20261010-172028-008b` failed when the registry was shared.
 
+## Player-safe mods
+A mod that players install (RefugeeWaves) must not need harness-only modules. It requires `ManorCore` (`mod/shared/ManorCore/ManorCore.lua`: region, settle region, spot finders, rebel raid, banner, and a logger with a `print` fallback). The Harness modules (HarnessLords, HarnessHousing, HarnessSack, HarnessBandits) call ManorCore, so the code exists once. `HarnessCommands` is optional there: `pcall(require, "HarnessCommands")`, and the test commands exist only when it is present. Rules: skill `harness-release`.
+
 ## How a mod exposes commands
 ```lua
 local commands = (require("HarnessCommands"))   -- parentheses: require returns two values
@@ -32,8 +35,12 @@ ctx.mod.commands("MyMod")                            # the commands of one mod
 ```
 "mod did not answer: X" means the mod is not loaded or has no poller. Check `mod.log` for its `loaded version` line.
 
+## Commands of HarnessActions (base game)
+HarnessActions is version 41. Newer commands: `steer_state`, `steer_select`, `steer_cursor`, `steer_mouse3d`, `steer_move`, `steer_rmb`, `steer_hook`, `steer_hook_log` (module HarnessSteer); `master_parts` (read only), `master_part_add`, `master_part_remove` (module HarnessParts, unsafe: need `HARNESS_ALLOW_UNSAFE=1`); `family_census`, `member_fields`, `family_add` option `adult`; `policy_enact_sweep` (unsafe spike command); `manor_blueprint_add` option `mesh` (asset path). Catalog: `docs/specs/07-feature-test-kit/implementation-notes/actions-catalog.md`.
+
 ## Stand-in mods
-`mod/InvasionStandIn` (outposts, captives, tribute) and `mod/RaidStandIn` (raid timeline, seasons, behavior, tiers, sack, politics) are toy models. They prove the test method for rules the base game does not have. When the real mod exists, the same scenarios run against it (change the prefix). A criterion is "method verified" on the stand-in and "passing" only on the real mod. Say "a toy model" in every scenario description.
+`mod/InvasionStandIn` (outposts, captives, tribute) and `mod/RaidStandIn` (raid timeline, seasons, behavior, tiers, sack, politics) are toy models. They prove the test method for rules the base game does not have. RefugeeWaves (spec 15) is a real mod, not a stand-in. Its scenario is `refugee-wave`.
+When the real mod exists, the same scenarios run against it (change the prefix). A criterion is "method verified" on the stand-in and "passing" only on the real mod. Say "a toy model" in every scenario description.
 
 ## Tests
 `FakeGame(separate_states=True)` gives each mod its own Lua state, like the real game. Always use it for cross-mod tests. A test that passes only in one shared state proves nothing.

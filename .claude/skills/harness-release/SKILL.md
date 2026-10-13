@@ -8,6 +8,7 @@ description: Release a mod to play testers as a GitHub pre-release (manifest, ch
 A release is one zip for one mod version. Rules are in `docs/specs/19-mod-releases/README.md`.
 
 ## Make a mod releasable
+0. Example: `mod/RefugeeWaves` (version 0.1.0, needs only `ManorCore`; gate scenario `refugee-wave`).
 1. The mod must not need harness-only modules. Allowed: `ManorCore` (player-safe game calls and a logger that falls back to `print`) and shared modules that need nothing harness-only. Not allowed: `HarnessActions`, `HarnessBoot`, `HarnessLog`, `HarnessCommands`, `HarnessTelemetry`, `HarnessReload`, `HarnessAutosave`, `UEBridge`, stand-ins and probes. Need a game call that lives only in a Harness module? Move it into `mod/shared/ManorCore/ManorCore.lua` and let the Harness module call it. Keep the fake tests green.
 2. Optional dependencies use `pcall(require, "HarnessCommands")`. Only a plain `require("X")` counts as a hard dependency (the checker reads it).
 3. `mod/<Name>/mod.json`: `name` (the folder name), `version` (semver), `description`, `shared` (every hard-required shared module), `pak` (`null`, or `{name, source: "build"}` or `{name, source: "file", path}`), `tested` (`game`, `game_build`, `ue4ss`), `gate_scenarios`.
@@ -25,6 +26,9 @@ Game-folder layout: `ManorLords/Binaries/Win64/ue4ss/Mods/<Name>/` (with `enable
 Compiled mod paks may be committed (user decision 2026-10-13). Keep the pak at `mod/<Name>/paks/<pak>_P.pak` and set `"pak": {"name": "<pak>", "source": "file"}`. The release check scans each committed pak for the AES key text; the zip scan checks again. Never commit the key, original game paks, extracts or `.usmap` files. `source: "build"` takes the pak from `--pak-dir <folder>` (output of `pakmod.py build`) instead.
 
 A committed pak over 10 MB (`PAK_SIZE_WARNING_BYTES` in `releaselib/build.py`) gives a WARNING with its name and size, and suggests Git LFS. It does not fail the release.
+
+## In a worktree
+The zip scan needs the AES key. It is not in a worktree. Pass `--aes-key-file C:\Users\garre\development\manor-lords-mod\modtools\work\aes_key.txt`, or run the release from the main checkout. The gate needs real-game runs with `runs/<id>/mod_files.json`. Do not launch the game without the user's wish.
 
 ## Failures
 Each failure prints `FAILED: <reason>` and exits 1. Gate failures name the scenario to run. A "other mod files" gate failure lists the files that differ from the last passing run.
