@@ -177,6 +177,32 @@ function M.policy_enact(request)
     return { ok = true, returned = value, before = before, after = snapshot(pawn, region) }
 end
 
+-- Unsafe spike command (issue #60): call enactPolicy with many slots and ids and no pre-check, to find when it returns true.
+-- It stops at the first true. Test games only (HARNESS_ALLOW_UNSAFE=1).
+M.UNSAFE_ENV = "HARNESS_ALLOW_UNSAFE"
+M.SWEEP_SLOTS = { -1, 0, 1, 2, 3 }
+M.SWEEP_MAX_ID = 18
+
+function M.policy_enact_sweep()
+    if (os.getenv and os.getenv(M.UNSAFE_ENV)) ~= "1" then
+        return { ok = false, error = "policy_enact_sweep is an unsafe test command: start the game with " .. M.UNSAFE_ENV .. "=1 (test games only)" }
+    end
+    local pawn, region, problem = context()
+    if not pawn then return { ok = false, error = problem } end
+    local results, first_true = {}, nil
+    for id = 0, M.SWEEP_MAX_ID do
+        for _, slot in ipairs(M.SWEEP_SLOTS) do
+            local returned = pawn:enactPolicy(region, slot, id)
+            local value = read(function() return returned:get() end)
+            if value == nil then value = returned end
+            results[#results + 1] = { id = id, slot = slot, returned = value }
+            if value == true then first_true = { id = id, slot = slot }; break end
+        end
+        if first_true then break end
+    end
+    return { ok = true, calls = #results, first_true = first_true, results = results, after = snapshot(pawn, region) }
+end
+
 -- Set the signed state of a policy with Region:setPolicySigned (the call the policy widget uses).
 function M.policy_sign(request)
     local policy, problem = checkPolicyId(request.policy)

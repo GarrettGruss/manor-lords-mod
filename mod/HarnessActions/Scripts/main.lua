@@ -105,8 +105,10 @@
 --   {"command":"housing_state"}                             player region: families, homeless, living and vacant slots, tents, residential buildings (read only)
 --   {"command":"accommodate_homeless"}                      Region:accomodateHomelessFamilies(nil); the answer has the housing before and after
 --   {"command":"family_state"}                              housing numbers with approval and public order, and the ids of the housed families (read only)
+--   {"command":"family_census"}                             one row per family (living members, roles, familyHome) and one row per home or tent with its occupant family ids (spec 15 #61; read only)
+--   {"command":"member_fields","count":0}                   property names (and plain values) of one member of the family with that zero-based index (spec 15 #61; read only)
 --   {"command":"family_eject","count":2,"suppress":true,"home":"none"}   Region:SetFamilyHome(id, nil, suppress): housed families leave their homes ("home":"tent": into the first homeless tent) (spec 15 part 7)
---   {"command":"family_add","count":1}                      a villager leaves a family of 2 or more and starts a new family (Region:AddNewFamily); it has no home
+--   {"command":"family_add","count":1,"adult":false}                      a villager leaves a family of 2 or more and starts a new family (Region:AddNewFamily); it has no home
 --   {"command":"tent_find_spot"}                           up to 5 free spots for a tent (x, y, z) around the village centre; it does not place anything (read only)
 --   {"command":"forest_spot","min_dist":15000,"max_dist":40000}   up to 5 dense tree cells of the player region, best first (Resource actors with resType "tree"; read only)
 --   {"command":"plot_field_shift","dx":3000,"dy":0,"plots":true,"commit":true}   test only: move the drawn, closed plot outline of the pawn (plots: also extractedPlots), then commit it
@@ -123,6 +125,9 @@
 --   {"command":"building_health","building":123}            spike, read only: type, hp, maxHp, onFire, fireAmt, rubble, built of one building
 --   {"command":"manor_blueprint_add","type":58,"x":0,"y":0,"z":0,"yaw":0,"commit":true}   spike (#63): add a manor planner blueprint (mesh actor tagged bType_<type>) without the mouse, then convertBlueprintsToBuildings
 --   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
+--   {"command":"steer_state","squad":41}                    spike #59, read only: owner side, living units, centre and mean unit target of a squad
+--   {"command":"steer_move","squad":41,"x":0,"y":0,"half_width":300}   spike #59: PawnCPP:formALineArmy of the owner pawn, one squad, a line across the way to the point
+--   {"command":"steer_hook","functions":"/Script/ManorLords.PawnCPP:formALineArmy,/Script/ManorLords.PawnCPP:selectSquad"}   spike #59: record the calls of these functions; steer_hook_log reads (and clears) them
 --   Unsafe spike commands: refused unless the game runs with HARNESS_ALLOW_UNSAFE=1 (test games only)
 --   {"command":"construction_complete","building":123}      PawnCPP:constructionComplete on one building
 --   {"command":"path_obstacles_clear"}                      empty the global obstacle list (the next squad spawn crashed the game)
@@ -148,8 +153,9 @@ local policies = require("HarnessPolicies")
 local bandits = require("HarnessBandits")
 local housing = require("HarnessHousing")
 local parts = require("HarnessParts")
+local steer = require("HarnessSteer")
 
-local VERSION = "38"
+local VERSION = "41"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -236,6 +242,10 @@ local function parseRequest(raw)
         template = raw:match('"template"%s*:%s*"([%w_]+)"'),
         company = raw:match('"company"%s*:%s*"([%w_]+)"'),
         squad = tonumber(raw:match('"squad"%s*:%s*(%d+)')),
+        half_width = tonumber(raw:match('"half_width"%s*:%s*(-?[%d%.]+)')),
+        formation = raw:match('"formation"%s*:%s*"([%w_]+)"'),
+        functions = raw:match('"functions"%s*:%s*"([^"]*)"'),
+        clear = ({ ["true"] = true, ["false"] = false })[raw:match('"clear"%s*:%s*(%a+)') or ""],
         detail = tonumber(raw:match('"detail"%s*:%s*(%d+)')),
         type = tonumber(raw:match('"type"%s*:%s*(%d+)')),
         text = raw:match('"text"%s*:%s*"([^"]*)"'),
@@ -443,6 +453,7 @@ local COMMANDS = {
     policy_state = policies.policy_state,
     policy_enact = policies.policy_enact,
     policy_sign = policies.policy_sign,
+    policy_enact_sweep = policies.policy_enact_sweep,
     menu_probe_show = policies.menu_probe_show,
     menu_probe_read = policies.menu_probe_read,
     menu_probe_hide = policies.menu_probe_hide,
@@ -465,6 +476,8 @@ local COMMANDS = {
     housing_state = housing.housing_state,
     accommodate_homeless = housing.accommodate_homeless,
     family_state = housing.family_state,
+    family_census = housing.family_census,
+    member_fields = housing.member_fields,
     family_eject = housing.family_eject,
     family_add = housing.family_add,
     tent_find_spot = housing.tent_find_spot,
@@ -481,6 +494,14 @@ local COMMANDS = {
     construction_complete = walls.construction_complete,
     path_obstacles_clear = walls.path_obstacles_clear,
     building_stat_write = walls.building_stat_write,
+    steer_state = steer.steer_state,
+    steer_move = steer.steer_move,
+    steer_select = steer.steer_select,
+    steer_cursor = steer.steer_cursor,
+    steer_mouse3d = steer.steer_mouse3d,
+    steer_rmb = steer.steer_rmb,
+    steer_hook = steer.steer_hook,
+    steer_hook_log = steer.steer_hook_log,
 }
 
 local function runCommand(number, raw)

@@ -17,6 +17,7 @@ and deletes fire no hookable function (poll counts). See `implementation-notes/b
 The tent is an `SMBuildingMaster` of type 87 that holds the start families (`occupantFamilyIDs`) without slots in its stats row;
 a bandit camp is the same model with type 100 and the bandit lord as owner. The plot commit cannot make a tent (it builds a plot).
 `demolish(false)` removes the tent; the families stay homeless and wander, and no new tent appears. See `implementation-notes/tent-placement.md`.
+Follow-ups (2026-10-13, issue #61): homeless families wait without limit (approval is a one-time step), the settle letter fills every free home slot, `family_add` still crashes (0x3c1), plots on bad ground are accepted. See `implementation-notes/refugee-followups.md`.
 Tracking issue: #51 (https://github.com/GarrettGruss/manor-lords-mod/issues/51)
 
 ## Goal
@@ -39,16 +40,16 @@ User design (2026-10-12):
 ### What we know (evidence in `implementation-notes/`)
 | Step | Method | Result | Note |
 |---|---|---|---|
-| Wave source: surge | `PawnCPP:settleRegion` on the player's own, settled region (`settle_region`, camp at `tent_find_spot`) | +5 families and a homeless tent per call; 2 calls: 10 -> 15 -> 20 families; no crash; owner, settled state and houses unchanged | `immigration-surge.md`. Only 3 of 5 new families were in the tent. |
-| Wave source: bandits | Settle letter to raid squads (`bandit_letter raider_suggestSettle+20`, tag `attacking`) | +1 family per squad with vacant slots (part 1); +7 families with 2 or 5 squads (part 8) | `bandit-settlement.md`, `refugee-cycle.md`. Needs a raid near the village. |
-| Wave source: eviction | `Region:SetFamilyHome(id, nil, suppress)` (`family_eject`) | Housed families become homeless at once; the game does not rehouse them by itself in 5 game days | `homeless-refugees.md`. Vacant slots did not rise (open). |
-| Pressure | Homeless families | Approval about -2 per game day: 71, 69, 67, 63, 62, 59 (3 homeless); 71 -> 61 in 5 days after a surge | `homeless-refugees.md`, `immigration-surge.md`. |
+| Wave source: surge | `PawnCPP:settleRegion` on the player's own, settled region (`settle_region`, camp at `tent_find_spot`) | +5 families and a homeless tent per call; 2 calls: 10 -> 15 -> 20 families; no crash; owner, settled state and houses unchanged | `immigration-surge.md`, `refugee-followups.md`. The 5 families fill free houses first (2 here), the rest (3) go into the tent; a camp in the woods and supply 1 change nothing. |
+| Wave source: bandits | Settle letter to raid squads (`bandit_letter raider_suggestSettle+20`, tag `attacking`) | One new family for each FREE HOME SLOT, not per squad: +2 with 2 free slots, +7 and +10 with 7 and 10 (1, 2 or 5 squads) | `refugee-followups.md` (item 4). Needs a raid near the village. The old homeless stay homeless. |
+| Wave source: eviction | `Region:SetFamilyHome(id, nil, suppress)` (`family_eject`) | Housed families become homeless at once; the game does not rehouse them by itself in 5 game days (eject late, not in the first game day after a load) | `homeless-refugees.md`, `refugee-followups.md`. `home=tent` moves them into a tent (no capacity limit). The vacant counter is `living - families`, so an eject never changes it. |
+| Pressure | Homeless families | A one-time step of about 2 to 3 points per homeless family, reached in about 3 game days (3 homeless: 61, 5: 57, 8: 52 to 54), then flat or slightly up. 20 game days: no starving, no leaving, no rebellion | `refugee-followups.md` (item 1). A food shortage adds its own fall. |
 | Natural growth | `Region:GetMonthlyPopGrowthModifiersWithValues` | Base 1, Approval 1 at approval 71; `NoBurgagePlotAvailability` blocks growth | Read by `family_state` (`growth`). |
 | Resolution by the player | Build burgage plots | Homeless families move into each plot when it is finished (5 -> 0 homeless in 12 game days); approval 54 -> 66 | `refugee-cycle.md`. |
 | Resolution by the mod | `Region:accomodateHomelessFamilies(nil)` (`accommodate_homeless`) | Rehoused 3 ejected families at once when slots existed | For tests or an event end. |
 | Bad outcome | Homeless rebellion (`homeless_rebel`, `rebel_raid_rally`) | Families become bandit squads that raid the village | `homeless-rebellion.md`. |
-| Test helper | Mouse-free burgage plots (`plot_field_place`, `runlib/plotgeom.py`) | Works | `burgage-placement-events.md`. |
-| Not usable | `Region:AddNewFamily` (`family_add`) | New homeless family, then a game crash 2 game days later | Do not use until #61 explains it. |
+| Test helper | Mouse-free burgage plots (`plot_field_place`, `runlib/plotgeom.py`) | Works. The commit checks nothing: plots in the woods, in the air and on top of houses were all accepted and counted as unbuilt slots | `burgage-placement-events.md`, `refugee-followups.md` (item 7). |
+| Not usable | `Region:AddNewFamily` (`family_add`) | New homeless family, then a game crash 1 to 2 game days later (twice: s15-f3 and s61-plots-add with the `adult` option; all members have role 3, Age 1) | `refugee-followups.md` (item 6). Do not use. |
 | Not usable | Live `buildingStats` slot writes | Existing buildings ignore them | `tent-slot-limit.md`. |
 | Not usable | Placing a tent directly | No mouse-free call; the plot commit builds a burgage plot instead | `tent-placement.md`. `settleRegion` makes tents as a side effect. |
 | Detection | Construction, move in, deletes | Fire no hookable function; poll counts (`getBuildingCount`, `getNumHomelessFamilies`) | `burgage-placement-events.md`. |
@@ -69,7 +70,9 @@ User design (2026-10-12):
 - Trigger, source and size of a wave (user decision).
 - Does the feature need `family_eject`, or is `settleRegion` enough (it already makes homeless families)?
 - Do surge families count as normal families for food, work and taxes?
-- Does a save and load keep the wave state (families, tents)? The mod must not depend on its own memory across loads.
+- Does a save and load keep the wave state (families, tents)? The mod must not depend on its own memory across loads. (Not testable: save functions are banned.)
+- Answered in #61 (see `refugee-followups.md`): homeless families wait without limit, so the rebellion needs the mod's own timer; the settle letter fills all free slots, so cap the free slots before a letter.
+- Open: a whole-family `family_add`, a third `settle_region`, water and steep ground for plots, and whether bad plots are ever built.
 - Is the rebellion timer better in game days or in approval (for example below 40)?
 
 ### Feature acceptance criteria

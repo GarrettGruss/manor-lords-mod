@@ -79,6 +79,12 @@ class ScenarioContext:
         )
         osinput.place_with_mouse(osinput.Win32Input(), window["hwnd"], steps, fx, fy)
 
+    def order_with_mouse(self, fx: float | None = None, fy: float | None = None) -> dict:
+        """A real right click at a fraction of the game window: a move order for the selected squads (spike #59). Returns the terrain point."""
+        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        player = self.bridge.player_path()
+        return osinput.order_with_mouse(osinput.Win32Input(), window["hwnd"], lambda: self.bridge.call_function(player, "getMouse3d"), fx, fy)
+
     # ---- game helpers ----
     def ensure_alive(self, where: str = "scenario") -> None:
         ensure_game_alive(self.phase, where)

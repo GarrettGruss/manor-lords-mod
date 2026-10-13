@@ -897,6 +897,54 @@ class Actions:
             raise ActionError(f"bandit_kill_squads: count must be a whole number from 1 to {MAX_KILL_SQUADS}")
         return self._command("bandit_kill_squads", squad=squad, count=count)
 
+    def steer_state(self, squad: int) -> dict:
+        """Read only (spike #59): owner side, living units, centre and mean unit target of one squad."""
+        self._check_squad_id("steer_state", squad)
+        return self._command("steer_state", squad=squad)
+
+    def steer_move(self, squad: int, x: float, y: float, z: float = 0, half_width: float = 300, formation: str = "Line") -> dict:
+        """Order one squad to a point: PawnCPP:formALineArmy of the owner pawn (spike #59). The answer holds the squad centre before the order."""
+        self._check_squad_id("steer_move", squad)
+        for name, value in (("x", x), ("y", y), ("z", z), ("half_width", half_width)):
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                raise ActionError(f"steer_move: {name} must be a number")
+        return self._command("steer_move", squad=squad, x=x, y=y, z=z, half_width=half_width, formation=formation)
+
+    def steer_select(self, squad: int) -> dict:
+        """Select one squad for its owner pawn (PawnCPP:selectSquad). The next real right click orders it."""
+        self._check_squad_id("steer_select", squad)
+        return self._command("steer_select", squad=squad)
+
+    def steer_cursor(self, x: float, y: float, z: float = 0) -> dict:
+        """Put the cursor over the world point (PlayerController:SetMouseLocation). The point must be on screen. It moves the real cursor."""
+        for name, value in (("x", x), ("y", y), ("z", z)):
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                raise ActionError(f"steer_cursor: {name} must be a number")
+        return self._command("steer_cursor", x=x, y=y, z=z)
+
+    def steer_mouse3d(self) -> dict:
+        """The terrain point under the cursor (PawnCPP:getMouse3d). Read only."""
+        return self._command("steer_mouse3d")
+
+    def steer_rmb(self) -> dict:
+        """Call PawnCPP:RMB_BP_pressed and RMB_BP_released: the selected squads go to the terrain point under the cursor."""
+        return self._command("steer_rmb")
+
+    def steer_hook(self, functions: list[str]) -> dict:
+        """Record the calls of these functions (full paths such as /Script/ManorLords.PawnCPP:formALineArmy). Read them with steer_hook_log."""
+        if not functions or not all(isinstance(name, str) for name in functions):
+            raise ActionError("steer_hook: functions must be a list of function paths")
+        return self._command("steer_hook", functions=",".join(functions))
+
+    def steer_hook_log(self, clear: bool = False) -> dict:
+        """The recorded calls (path, count, arguments) and the call count of each hooked function."""
+        return self._command("steer_hook_log", clear=clear)
+
+    @staticmethod
+    def _check_squad_id(command: str, squad: int) -> None:
+        if not isinstance(squad, int) or isinstance(squad, bool) or squad < 1:
+            raise ActionError(f"{command}: squad must be a squad id (a whole number above 0)")
+
     def rebel_rally(self, count: int = 2) -> dict:
         """Rally of rebels in the woods near the AI waypoint: remove `count` families, then one Brigands squad appears at the forest spot
         that is nearest to the waypoint (-31000,-22500). The squad walks to the waypoint at once and waits there (about 480 game seconds),
@@ -982,11 +1030,21 @@ class Actions:
             raise ActionError("family_eject: home must be none or tent")
         return self._command("family_eject", count=count, suppress=bool(suppress), home=home)
 
-    def family_add(self, count: int = 1) -> dict:
-        """A villager leaves a family of 2 or more and starts a new, homeless family (Region:AddNewFamily)."""
+    def family_census(self) -> dict:
+        """Who lives where (read only): one row per family (living members, roles, familyHome) and one row per home or tent with its occupant family ids."""
+        return self._command("family_census")
+
+    def member_fields(self, family: int = 0) -> dict:
+        """Property names and plain values of the first member of the family with this zero-based index (read only)."""
+        if not isinstance(family, int) or isinstance(family, bool) or family < 0:
+            raise ActionError("member_fields: family must be a whole number of 0 or more")
+        return self._command("member_fields", count=family)
+
+    def family_add(self, count: int = 1, adult: bool = False) -> dict:
+        """A villager leaves a family of 2 or more and starts a new, homeless family (Region:AddNewFamily). With adult, the villager with the highest `Age` of its family is taken. On fixture `base` every member has Age 1 and role 3, so this changes nothing there (run s61-plots-add)."""
         if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 10:
             raise ActionError("family_add: count must be a whole number from 1 to 10")
-        return self._command("family_add", count=count)
+        return self._command("family_add", count=count, adult=bool(adult))
 
     def plot_field_place(self, plots: list[dict]) -> dict:
         """Write burgage plots into the pawn (`extractedPlots`) without the mouse. Needs the build tool open: see `open_burgage_tool`.
