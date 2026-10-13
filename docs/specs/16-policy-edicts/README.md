@@ -2,7 +2,10 @@
 
 Status: spike done for Q1 to Q5 (2026-10-12). Policies exist (19 rows, 6 available); enactPolicy returned false; setPolicySigned works but showed no effect; a Lua screen with a game policy card works. Notes: `implementation-notes/policies.md` and `implementation-notes/policy-menu.md`.
 
-Decision (user, 2026-10-12): menu option b (Lua screen with game policy cards) or c (pak widget) are both acceptable. The spike branch is
+Decision (user, 2026-10-13): menu option c, a pak widget. Acceptance criteria: the custom menu is created in the game, and a screenshot captures it.
+Plan: `implementation-notes/pak-widget-plan.md`. The UE 5.5 editor is required and is not installed. Status: blocked until the user installs UE 5.5.4.
+
+Earlier decision (user, 2026-10-12): menu option b (Lua screen with game policy cards) or c (pak widget) were both acceptable. The spike branch is
 finished; open follow-ups: the effect of Strict fasting (12) during a food shortage, a real click on a Lua-placed card, why `enactPolicy` returns false.
 
 Follow-ups (issue #60, 2026-10-12, notes in `implementation-notes/policy-followups.md`):
