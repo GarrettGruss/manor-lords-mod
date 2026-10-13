@@ -12,3 +12,4 @@ slots/
 
 # Save fixture files (spec 06, part D): user data, kept local
 harness/fixtures/saves/
+dist/

@@ -1,27 +1,25 @@
 -- RefugeeWaves: a random event that sends homeless refugee families to the player village (spec 15, issue #51).
 -- Design (accepted by the user, 2026-10-12):
 --   Trigger: each game month, a chance (CONFIG.chance_percent) when the village is big enough and no wave is active.
---   Wave: 1 to 3 calls of PawnCPP:settleRegion on the player region (HarnessLords.settle_region). The camp is near the woods
+--   Wave: 1 to 3 calls of PawnCPP:settleRegion on the player region (ManorCore.settle_region). The camp is near the woods
 --     (forest_spot), else near the village (tent_find_spot). The game adds one family for each free home slot and puts up a tent
 --     (immigration-surge.md, refugee-followups.md). The mod never houses the refugees.
---   Message: the banner of PawnCPP:playEventMessage (HarnessUi). It is logged too.
+--   Message: the banner of PawnCPP:playEventMessage (ManorCore.show_banner). It is logged too.
 --   Pressure: the game itself. Homeless families lower approval by a one-time step (about 2 to 3 points each, in 3 game days).
 --   End: the wave ends when the homeless count is back at the count from before the wave (the player built homes).
 --   Bad outcome: refugees still homeless after CONFIG.homeless_days_limit game days, or approval under CONFIG.approval_floor.
---     Then a share of the wave families leaves and returns as a bandit raid (HarnessBandits.rebel_raid_rally). The game does nothing by itself.
+--     Then a share of the wave families leaves and returns as a bandit raid (ManorCore.rebel_raid_rally). The game does nothing by itself.
 --   Save and load: the mod keeps no state that the game cannot rebuild. A new Lua state after a load adopts the homeless families it finds
 --     on its first check as the active wave (start = that day).
 -- Rules: game objects are touched on the game thread only. No save function. No eval. No Region:AddNewFamily (it crashes the game).
 
-local log = require("HarnessLog")
-local commands = require("HarnessCommands")
-local sack = require("HarnessSack")
-local housing = require("HarnessHousing")
-local lords = require("HarnessLords")
-local ui = require("HarnessUi")
-local bandits = require("HarnessBandits")
+-- This mod needs only ManorCore (a player-safe shared module). The harness command registry is optional:
+-- without it the mod runs by itself and only the test commands are missing.
+local core = require("ManorCore")
+local log = core.log
+local hasCommands, commands = pcall(require, "HarnessCommands")
 
-local VERSION = "1"
+local VERSION = "0.1.0"
 local TAG = "RefugeeWaves"
 local PREFIX = "RefugeeWaves."
 
@@ -69,7 +67,7 @@ local function monthKey()
 end
 
 local function regionNumbers()
-    local region, problem = sack.playerRegion()
+    local region, problem = core.player_region()
     if not region then return nil, problem end
     return {
         families = read(function() return region:getTotalNumFamilies() end),
@@ -85,19 +83,11 @@ end
 
 -- The first usable camp: near the woods, else near the village, else nil (the game uses the settled centre).
 local function campSpot()
-    local woods = read(function() return housing.forest_spot({}) end)
+    local woods = read(function() return core.forest_spot({}) end)
     if woods and woods.ok and woods.spots and woods.spots[1] then return woods.spots[1], "woods" end
-    local near = read(function() return housing.tent_find_spot() end)
+    local near = read(function() return core.tent_find_spot() end)
     if near and near.ok and near.spots and near.spots[1] then return near.spots[1], "village" end
     return nil, "centre"
-end
-
-local function playerRegionRow(name)
-    local state = lords.regions_state()
-    for _, row in ipairs(state.regions or {}) do
-        if row.name == name then return row end
-    end
-    return nil
 end
 
 -- How many settleRegion calls a village of this size gets, 1 to max_calls, chosen with the random generator.
@@ -107,20 +97,15 @@ local function callsFor(families)
 end
 
 local function announce()
-    local ok, answer = pcall(ui.show_message, { text = "Refugees have arrived",
-        subtext = "They camp near the village. House them before winter." })
-    if not ok then
-        log.warn(TAG, "banner failed: " .. tostring(answer))
-    elseif not (answer and answer.shown) then
-        log.warn(TAG, "banner call worked, but no widget appeared: " .. tostring(answer and answer.error))
-    end
+    local shown, problem = core.show_banner("Refugees have arrived", "They camp near the village. House them before winter.")
+    if not shown then log.warn(TAG, "banner failed: " .. tostring(problem)) end
     log.say(TAG, "Refugees have arrived and camp near the village. House them before winter.")
 end
 
 local function settleCall(row, spot)
     local request = { target = 0, region = row.region, type = row.settlement_type or 1, supply = 0 }
     if spot then request.x, request.y, request.z = spot.x, spot.y, spot.z end
-    return lords.settle_region(request)
+    return core.settle_region(request)
 end
 
 -- Start a wave of `calls` settleRegion calls. Returns the wave table, or nil and a message.
@@ -128,7 +113,7 @@ local function startWave(calls)
     if S.wave then return nil, "a wave is already active" end
     local before, problem = regionNumbers()
     if not before then return nil, problem end
-    local row = playerRegionRow(before.name)
+    local row = core.region_row_by_name(before.name)
     if not row then return nil, "no region row for " .. tostring(before.name) end
     local spot, place = campSpot()
     local done = 0
@@ -169,8 +154,8 @@ end
 
 local function startRebellion(numbers)
     local count = math.max(1, math.ceil(waveHomeless(numbers) * CONFIG.rebel_share_percent / 100))
-    count = math.min(count, bandits.MAX_REBEL_FAMILIES)
-    local answer = bandits.rebel_raid_rally({ count = count })
+    count = math.min(count, core.MAX_REBEL_FAMILIES)
+    local answer = core.rebel_raid_rally({ count = count })
     if not answer.ok then
         log.error(TAG, "rebellion failed (a known gap): " .. tostring(answer.error))
         finishWave("rebellion_failed")
@@ -286,11 +271,13 @@ local METRICS = {
     wave_homeless = function() local n = regionNumbers(); return S.wave and n and waveHomeless(n) or 0 end,
 }
 
-for name, definition in pairs(COMMANDS) do
-    commands.unregister(PREFIX .. name) -- a hot reload runs this file again
-    commands.register(PREFIX .. name, function(args) return definition.run(args) end, definition.schema)
+if hasCommands then
+    for name, definition in pairs(COMMANDS) do
+        commands.unregister(PREFIX .. name) -- a hot reload runs this file again
+        commands.register(PREFIX .. name, function(args) return definition.run(args) end, definition.schema)
+    end
+    for name, readValue in pairs(METRICS) do commands.metric(PREFIX .. name, readValue) end
 end
-for name, readValue in pairs(METRICS) do commands.metric(PREFIX .. name, readValue) end
 
 LoopAsync(CONFIG.tick_ms, function()
     ExecuteInGameThread(function() log.try(TAG, check) end)

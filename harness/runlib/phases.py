@@ -15,7 +15,7 @@ from pathlib import Path
 
 from . import fixtures, saveslots
 from .actions import ActionNotPossible
-from .environment import gather_environment, hash_mods
+from .environment import MOD_FILES_NAME, gather_environment, hash_mod_files, hash_mods
 from .pak_phases import install_paks, remove_paks_phase
 from .game import (
     DEFAULT_TELEMETRY_INTERVAL_S,
@@ -143,6 +143,13 @@ def _preflight(install: GameInstall, test_save: str, fixture: str = fixtures.DEF
 
 # ---- deploy ----
 
+def _record_mod_files(ctx: PhaseContext) -> None:
+    """Write the hash of every mod file next to the summary. The release gate reads it (spec 19)."""
+    files = hash_mod_files(REPO_ROOT / "mod")
+    (ctx.run.path / MOD_FILES_NAME).write_text(json.dumps(files, indent=1, sort_keys=True), encoding="utf-8")
+    ctx.config["environment"]["mod_files"] = MOD_FILES_NAME
+
+
 def _deploy(install: GameInstall):
     def run(ctx: PhaseContext) -> str | None:
         command = [
@@ -161,6 +168,7 @@ def _deploy(install: GameInstall):
         if not match or int(match.group(1)) != 0:
             raise PhaseFailed(f"deploy.ps1 did not report 0 errors: {summary_line}")
         ctx.config["environment"]["mods"] = hash_mods(REPO_ROOT / "mod")
+        _record_mod_files(ctx)
         write_config(ctx.run, ctx.config)
         return summary_line
 

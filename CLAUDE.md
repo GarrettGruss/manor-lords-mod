@@ -135,3 +135,4 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 - Back up saves before tests: `%LOCALAPPDATA%\ManorLords\Saved\SaveGames`. Never write to the original test save.
 - Do not edit `UE4SS-settings.ini` or other game files unless the task needs it. Say what you changed.
 - Ask the user before you change files outside this repo, except the planned deploy folder.
+- Compiled mod paks (`*_P.pak`) may be committed, also when they contain modified game data. The AES key must never be committed or written anywhere in the repo. Before every commit that adds a pak or a pak tool change, grep the diff for the key. Do not commit the original game paks from the game folder.

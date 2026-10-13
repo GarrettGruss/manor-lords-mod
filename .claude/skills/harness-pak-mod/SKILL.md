@@ -30,6 +30,6 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 
 ## Traps
 - UAssetGUI exits 0 on errors and can write a useless "RawExport" JSON that still round-trips. `tojson` now fails on it. A missing mapping is the usual cause.
-- Game assets, extracts and the key stay out of git. The work folder is `modtools\work` (git-ignored).
+- Compiled mod paks (`*_P.pak`) may be committed (user decision 2026-10-13). A mod keeps its pak at `mod/<Name>/paks/<pak>_P.pak`. Original game paks, extracts, `.usmap` files, `modtools/work` files and the AES key stay out of git. Grep the diff for the key before each commit. The work folder is `modtools/work` (git-ignored).
 - After a run killed by a timeout, check `pakmod.py list`.
 - Only number fields in one table are proven. Test strings, new rows and other tables with a round trip first.

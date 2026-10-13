@@ -16,7 +16,7 @@ Rules are in CLAUDE.md: atomic Conventional commits, one feature branch per spec
 
 ## Before you push
 - Run the suites you touched. The full set: `test_runlib*`, `test_suitelib*`, `test_harness_tools*`, `test_reload_mods`, `test_pakmod`, `test_coverage` (plain venv python), and `test_fakegame_*`, `test_telemetry_mock`, `lua_syntax.py`, `boot_state_machine.py` (through `uv run python ...`). Also `coverage.py --check-spec`.
-- Look at `git status` and `git diff --stat`. Nothing from `modtools/`, `runs/`, `slots/`, `harness/pakmod.local.json`, game assets or extracts may be staged. Never `git add -A` blindly after a merge conflict: check that no conflict markers (`<<<<<<<`) remain (`grep -c "^<<<<<<<"`).
+- Look at `git status` and `git diff --stat`. Nothing from `modtools/`, `runs/`, `slots/`, `harness/pakmod.local.json`, original game paks, extracts, `.usmap` files or the AES key may be staged (compiled mod paks `*_P.pak` may be staged; grep the diff for the key first). Never `git add -A` blindly after a merge conflict: check that no conflict markers (`<<<<<<<`) remain (`grep -c "^<<<<<<<"`).
 - Grep the diff for the AES key hex (read it from `modtools/work/aes_key.txt` into a shell variable; do not print it).
 - Never force push. Never skip hooks. If you committed something wrong that is not pushed, fix it with a new commit or reset your own local commits; if it was pushed, merge forward.
 

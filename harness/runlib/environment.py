@@ -35,6 +35,20 @@ def hash_mods(mod_dir: Path) -> dict[str, str]:
     return {folder.name: sha256_of_folder(folder) for folder in sorted(mod_dir.iterdir()) if folder.is_dir()}
 
 
+MOD_FILES_NAME = "mod_files.json"
+
+
+def hash_mod_files(mod_dir: Path) -> dict[str, str]:
+    """SHA-256 of every file under mod/, keyed by the path relative to mod/ (forward slashes).
+
+    The release gate (spec 19) compares these hashes with the current files.
+    """
+    return {
+        path.relative_to(mod_dir).as_posix(): sha256_of_file(path)
+        for path in sorted(p for p in mod_dir.rglob("*") if p.is_file() and "__pycache__" not in p.parts)
+    }
+
+
 def read_build_id(appmanifest: Path) -> str:
     match = re.search(r'"buildid"\s+"(\d+)"', appmanifest.read_text(encoding="utf-8", errors="replace"))
     if not match:
