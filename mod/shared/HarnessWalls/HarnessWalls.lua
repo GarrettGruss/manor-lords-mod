@@ -382,14 +382,31 @@ local function blueprintMeshOfType(manor, kind)
     return nil
 end
 
+-- A module type that the manor has no blueprint of (a type added by a pak) needs its mesh by asset path.
+local function meshByPath(path)
+    local name = path:match("([^/]+)$")
+    local found = read(function() return StaticFindObject(path .. "." .. name) end)
+    if isValid(found) then return found end
+    local loaded = read(function() return LoadAsset(path) end)
+    if isValid(loaded) then return loaded end
+    return nil
+end
+
 function M.manor_blueprint_add(_, raw)
     local kind = numberField(raw, "type")
     local x, y, z, yaw = signedField(raw, "x"), signedField(raw, "y"), signedField(raw, "z"), signedField(raw, "yaw") or 0
     if type(kind) ~= "number" or not x or not y or not z then return { ok = false, error = "type, x, y and z are required" } end
     local manor = playerManor()
     if not manor then return { ok = false, error = "the player has no manor (type 98)" } end
-    local mesh = blueprintMeshOfType(manor, kind)
-    if not isValid(mesh) then return { ok = false, error = "no blueprint of type " .. kind .. " on the manor to copy the mesh from" } end
+    local meshPath = (raw or ""):match('"mesh"%s*:%s*"(/Game/[%w_/]+)"')
+    local mesh
+    if meshPath then
+        mesh = meshByPath(meshPath)
+        if not isValid(mesh) then return { ok = false, error = "mesh not found: " .. meshPath } end
+    else
+        mesh = blueprintMeshOfType(manor, kind)
+    end
+    if not isValid(mesh) then return { ok = false, error = "no blueprint of type " .. kind .. " on the manor to copy the mesh from (or give mesh)" } end
     local statics = findObject("/Script/Engine.Default__GameplayStatics")
     local class = findObject("/Script/Engine.StaticMeshActor")
     if not statics or not class then return { ok = false, error = "GameplayStatics or StaticMeshActor class not found" } end

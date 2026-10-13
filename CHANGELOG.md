@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spike #65 (spec 12): `manor_blueprint_add` takes an optional `mesh` asset path, and `harness/tools/s65_edit_json.py` clones a `buildingStats` row and retargets a planner card. Result: a pak adds a manor module row that the game loads and builds; planner card not yet checked (`implementation-notes/manor-module-pak.md`).
 - Mod `RefugeeWaves` (spec 15, #51): a monthly random event that sends a refugee wave (`settleRegion` calls, camp near the woods), ends when the player houses the families, and turns half of the homeless wave families into a raid after 30 game days or approval under 40. New scenario `refugee-wave` (3 of 3 real runs). Notes: `docs/specs/15-bandit-settlement/implementation-notes/refugee-waves-mod.md`.
 - Hidden probe `probe-bailey` (spike #68): commits burgage plots inside and outside the manor bailey without the mouse. Result: the commit makes sites in both places; builders never build the inside plots; the mouse is refused inside. Notes: `docs/specs/17-bailey-buildings/implementation-notes/bailey-buildings.md`.
 - HarnessActions version 38 with the spec 18 commands `master_parts` (read only), `master_part_add` and `master_part_remove` (unsafe, need `HARNESS_ALLOW_UNSAFE=1`), module `HarnessParts`, hidden probe `probe-composite`. Real game: a part can be appended to or unlinked from a built tent or plot master; notes in `docs/specs/18-composite-buildings/implementation-notes/`.
