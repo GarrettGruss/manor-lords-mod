@@ -44,6 +44,14 @@ MAX_BANNER_TEXT = 60
 MAX_BANNER_SUBTEXT = 80
 MAX_BUILDING_TYPE = 300  # same limits as mod/shared/HarnessBuild
 MAX_GOOD_ID = 200
+MAX_REBEL_FAMILIES = 6  # same limit as the Lua module HarnessBandits
+MAX_REBEL_SQUADS = 6
+MAX_TURN_UNITS = 20
+MAX_KILL_SQUADS = 10  # same limit as the Lua module HarnessBandits
+REBEL_WAYPOINT = (-31000, -22500)  # where the Outlaws AI sends new squads on fixture base (spec 15, runs s15-h*, s15-w*)
+TENT_TYPE = 87  # EBuildingType homeless_tents (buildingStats row 87)
+BANDIT_TAGS = ("attacking", "acquainted", "at_war")
+MAX_SETTLE_SILVER = 999999
 WALL_TYPES = (2, 3, 4)  # wooden, stone low, stone high (a fence, 1, gets no mesh)
 RUIN_METHODS = ("fire", "collapse")
 MAX_MANOR_AMOUNT = 1000  # same limits as mod/shared/HarnessManor
@@ -792,6 +800,186 @@ class Actions:
             raise ActionError("wall_remove: road_id must be a road id from wall_state")
         return self._command("wall_remove", road=road_id)
 
+    # ---- Bandit negotiation (spec 15, implementation-notes/bandit-settlement.md) ----
+
+    def bandit_state(self) -> dict:
+        """Families, homeless families and vacant home slots (`regions[].vacant_slots`) of the player, bandit units, silver, influence and the relation tags with the bandit lord. Read only."""
+        return self._command("bandit_state")
+
+    def bandit_tag(self, tag: str, remove: bool = False) -> dict:
+        """Add (or remove) a relation tag between the player and the bandit lord. The settle paragraph needs the tag `attacking`."""
+        if tag not in BANDIT_TAGS:
+            raise ActionError(f"bandit_tag: tag must be one of {BANDIT_TAGS}")
+        return self._command("bandit_tag", tag=tag, remove=1 if remove else 0)
+
+    def bandit_settle_offer(self, silver: int) -> dict:
+        """Send the letter paragraph `raider_suggestSettle+<silver>` to the bandit lord (the Negotiation option of the diplomacy panel).
+        Verified: it needs the tag `attacking`; the silver is taken; the bandit units lose their squad at once and are deleted after a few game seconds."""
+        if not isinstance(silver, int) or isinstance(silver, bool) or not 0 <= silver <= MAX_SETTLE_SILVER:
+            raise ActionError(f"bandit_settle_offer: silver must be a whole number from 0 to {MAX_SETTLE_SILVER}")
+        return self._command("bandit_letter", paragraphs=[f"raider_suggestSettle+{silver}"])
+
+    def settle_raiders(self) -> dict:
+        """The developer cheat MLCheatManager:SettleRaiders. Verified: the bandit units lose their squad, then they are deleted. No families appear."""
+        return self._command("settle_raiders")
+
+    def bandit_mark(self) -> dict:
+        """Remember the bandit units, so that `bandit_track` can tell what happened to each of them."""
+        return self._command("bandit_mark")
+
+    def bandit_track(self) -> dict:
+        """Counts of the marked units: in a squad, without a squad, gone (deleted), dead."""
+        return self._command("bandit_track")
+
+    # ---- Reverse direction: families become bandits (spec 15, implementation-notes/homeless-rebellion.md) ----
+
+    def bandit_spawn_at(self, x: float, y: float, z: float = 0, template: str = "Brigands", count: int = 1) -> dict:
+        """Bandit squads at a chosen point (spawnArmy, owner = the bandit lord). Verified: 18 Brigands appear at the point; they then walk to a rally point and stay idle."""
+        if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= MAX_REBEL_SQUADS:
+            raise ActionError(f"bandit_spawn_at: count must be a whole number from 1 to {MAX_REBEL_SQUADS}")
+        return self._command("bandit_spawn_at", x=x, y=y, z=z, template=template, count=count)
+
+    def bandit_turn(self, count: int = 1, source: str = "squad") -> dict:
+        """SMUnit:turnToBandit on units. source "squad": units from spawn_units side=player (verified: no visible change).
+        source "family": members of the first families (verified: the unit leaves its family and gets the role Soldier; one run crashed the game later, cause not isolated)."""
+        if source not in ("squad", "family"):
+            raise ActionError("bandit_turn: source must be squad or family")
+        if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= MAX_TURN_UNITS:
+            raise ActionError(f"bandit_turn: count must be a whole number from 1 to {MAX_TURN_UNITS}")
+        return self._command("bandit_turn", count=count, source=source)
+
+    def homeless_rebel(self, count: int, mode: str = "home", families_per_squad: int = 1, template: str = "Brigands") -> dict:
+        """Remove `count` families (sack_people), then bandits appear for them. Verified: families 10 -> 8 for count=2, homeless stays 0.
+        mode "home": a Brigands squad (18 units) at the home of each family. The squads walk to a waypoint (-31000,-22500), wait there,
+        and about 650 game seconds (16 game days) after the spawn they march into the village and burn (runs s15-h1, h2, h3: 3 of 3).
+        mode "raid": a real raid (spawnRaiders) targets each home; the squad appears at the map edge and burns after about 215 game seconds."""
+        if mode not in ("home", "raid"):
+            raise ActionError("homeless_rebel: mode must be home or raid")
+        if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= MAX_REBEL_FAMILIES:
+            raise ActionError(f"homeless_rebel: count must be a whole number from 1 to {MAX_REBEL_FAMILIES}")
+        if not isinstance(families_per_squad, int) or isinstance(families_per_squad, bool) or not 1 <= families_per_squad <= MAX_REBEL_FAMILIES:
+            raise ActionError(f"homeless_rebel: families_per_squad must be a whole number from 1 to {MAX_REBEL_FAMILIES}")
+        return self._command("homeless_rebel", count=count, mode=mode, families_per_squad=families_per_squad, template=template)
+
+    def bandit_kill_squads(self, squad: int, count: int = 1) -> dict:
+        """SMUnit:just_die on every living bandit unit of the squads `squad`, `squad` + 1, ... (`count` squads). Removes a raid and keeps other squads."""
+        if not isinstance(squad, int) or isinstance(squad, bool) or squad < 1:
+            raise ActionError("bandit_kill_squads: squad must be a squad id (a whole number above 0)")
+        if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= MAX_KILL_SQUADS:
+            raise ActionError(f"bandit_kill_squads: count must be a whole number from 1 to {MAX_KILL_SQUADS}")
+        return self._command("bandit_kill_squads", squad=squad, count=count)
+
+    def rebel_rally(self, count: int = 2) -> dict:
+        """Rally of rebels in the woods near the AI waypoint: remove `count` families, then one Brigands squad appears at the forest spot
+        that is nearest to the waypoint (-31000,-22500). The squad walks to the waypoint at once and waits there (about 480 game seconds),
+        then it burns the village (about 650 game seconds after the spawn). The AI picks the wait point. A forest far from the waypoint
+        does not hold the squad: it walks through the village and burns on the way (run s15-w1). See "Rally in the woods" in
+        implementation-notes/homeless-rebellion.md."""
+        spots = self.forest_spot(min_dist=15000, max_dist=40000)["spots"]
+        if not spots:
+            raise ActionError("rebel_rally: no forest spot between 15000 and 40000 units from the village")
+        spot = min(spots, key=lambda s: (s["x"] - REBEL_WAYPOINT[0]) ** 2 + (s["y"] - REBEL_WAYPOINT[1]) ** 2)
+        self._command("sack_people", count=count)
+        spawned = self.bandit_spawn_at(spot["x"], spot["y"], spot["z"], count=1)
+        return {"spot": spot, "squads": spawned["squads"]}
+
+    def rebel_raid_rally(self, count: int = 2) -> dict:
+        """Homeless rebellion with a real raid: remove `count` families, then one raid (spawnRaiders) aimed at a forest spot.
+        The target only sets where the raiders appear (the map edge). They walk north, burn a few buildings on the way, stand at the AI
+        waypoint (-31000,-22500, inside the player region) for about 100 to 150 game seconds, then attack the village. The settle letter
+        while they stand there removes them and gave +2 families (runs s15-p2, p5). The answer has the squad ids, the spot and the
+        families before and after. See "Raid aimed at the woods" in implementation-notes/homeless-rebellion.md."""
+        if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= MAX_REBEL_FAMILIES:
+            raise ActionError(f"rebel_raid_rally: count must be a whole number from 1 to {MAX_REBEL_FAMILIES}")
+        return self._command("rebel_raid_rally", count=count)
+
+    def rebel_fallback_attack(self, squad: int, raid_squads: int = 1) -> dict:
+        """Mod-driven fallback for a rally that cannot be held: kill the rally squad, then send a real raid at the village.
+        Measured (run s15-w5): the first building burned 100 to 135 game seconds after the raid spawn."""
+        killed = self.bandit_kill_squads(squad)
+        return {"killed": killed["killed"], "raid": self._command("spawn_raiders", squads=raid_squads)}
+
+    def forest_spot(self, min_dist: int = 15000, max_dist: int = 40000) -> dict:
+        """Up to 5 dense tree groups of the player region, best first (read only). The trees are foliage instances, not Resource actors.
+        Distances are game units from the village centre (100 units = 1 m)."""
+        for name, value in (("min_dist", min_dist), ("max_dist", max_dist)):
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                raise ActionError(f"forest_spot: {name} must be a whole number of 0 or more")
+        if max_dist <= min_dist:
+            raise ActionError("forest_spot: max_dist must be larger than min_dist")
+        return self._command("forest_spot", min_dist=min_dist, max_dist=max_dist)
+
+    # ---- Housing and homeless tents (spec 15, implementation-notes/tent-placement.md) ----
+
+    def building_stat(self, type_id: int) -> dict:
+        """Scalar fields of the buildingStats row of one building type (read only). Type 87 is the homeless tent."""
+        return self._command("building_stat", type=type_id)
+
+    def housing_state(self) -> dict:
+        """Player region: families, homeless, living and vacant slots, tents and residential buildings, and the tents of the whole world (read only)."""
+        return self._command("housing_state")
+
+    def accommodate_homeless(self) -> dict:
+        """Region:accomodateHomelessFamilies(nil). Moves homeless families into free homes. The answer has the housing before and after."""
+        return self._command("accommodate_homeless")
+
+    def family_state(self) -> dict:
+        """Housing numbers with approval and public order, and the ids of the housed families (read only)."""
+        return self._command("family_state")
+
+    def family_eject(self, count: int, suppress: bool = True, home: str = "none") -> dict:
+        """Region:SetFamilyHome(id, nil, suppress) for `count` housed families: they become homeless (spec 15 part 7)."""
+        if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 10:
+            raise ActionError("family_eject: count must be a whole number from 1 to 10")
+        if home not in ("none", "tent"):
+            raise ActionError("family_eject: home must be none or tent")
+        return self._command("family_eject", count=count, suppress=bool(suppress), home=home)
+
+    def family_add(self, count: int = 1) -> dict:
+        """A villager leaves a family of 2 or more and starts a new, homeless family (Region:AddNewFamily)."""
+        if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 10:
+            raise ActionError("family_add: count must be a whole number from 1 to 10")
+        return self._command("family_add", count=count)
+
+    def plot_field_place(self, plots: list[dict]) -> dict:
+        """Write burgage plots into the pawn (`extractedPlots`) without the mouse. Needs the build tool open: see `open_burgage_tool`.
+        Plot data: see runlib/plotgeom.py. After this, call `commit_plots`."""
+        if not plots:
+            raise ActionError("plot_field_place: plots must not be empty")
+        return self._command("plot_field_place", plots=plots)
+
+    def open_burgage_tool(self) -> None:
+        """Set placePlotType 3 (burgage plot) and placeFieldMode on the player pawn. No click."""
+        player = self._bridge.player_path()
+        self._bridge.write_property(player, "placePlotType", 3)
+        self._bridge.write_property(player, "placeFieldMode", True)
+
+    def commit_plots(self) -> None:
+        """PawnCPP:addCommitFieldRequest(): the game builds the plots written by `plot_field_place`."""
+        self._bridge.call_function(self._bridge.player_path(), "addCommitFieldRequest")
+
+    def burgage_count(self, constructed_only: bool = True) -> int:
+        """Region:getBuildingCount(3, constructed_only) for burgage plots of the player region."""
+        return self._bridge.call_function(self._bridge.player_region_path(), "getBuildingCount", [3, constructed_only])
+
+    def tent_find_spot(self) -> dict:
+        """Up to 5 free spots (x, y, z) for a tent around the village centre. Read only: it does not place anything.
+        A spot is outside every building border (the game's own check) and at least 900 units from every building. Water and roads are not checked."""
+        return self._command("tent_find_spot")
+
+    def tent_auto_place(self) -> dict:
+        """Find a free spot, centre the camera on it and place a tent (type 87) with the REAL OS mouse.
+
+        TEST STEP ONLY. The final mod needs a mouse-free method, and none is known (the placement call takes a struct that Lua cannot fill).
+        The spot finder is mouse-free. The click is not. Checked with the number of tents of the player region (+1).
+        """
+        spots = self.tent_find_spot().get("spots") or []
+        if not spots:
+            raise ActionNotPossible("tent_auto_place: tent_find_spot found no free spot")
+        spot = spots[0]
+        self._bridge.centre_camera_on(spot["x"], spot["y"])
+        return self.place_building(TENT_TYPE, 0.5, 0.5)
+
     # ---- AI lords (spec 10, spike S11, implementation-notes/baron-model.md) ----
     # A lord is a number from 1 in FindAllOf("PawnCPP_AI") order (lord 1 was the baron in every run). Target 0 is the player.
     # The game's AI moves the armies; these calls steer its inputs. There is no direct move order.
@@ -854,10 +1042,15 @@ class Actions:
         and a CityPlanningComponent at once; no 14 day wait."""
         return self._command("claim_region", target=target, region=region, finalize=1 if finalize else 0)
 
-    def settle_region(self, region: str, target: int = 0, settlement_type: int = 1, supply: int = 0) -> dict:
+    def settle_region(self, region: str, target: int = 0, settlement_type: int = 1, supply: int = 0,
+                      x: float | None = None, y: float | None = None, z: float = 0) -> dict:
         """PawnCPP:settleRegion for a region the pawn owns (claim it first). Gives the starter village (4 buildings, 5 families).
-        Verified (S13 part 2). It crashed the game 3 of 3 times for a region without an owner, so the command refuses that."""
-        return self._command("settle_region", target=target, region=region, type=settlement_type, supply=supply)
+        Verified (S13 part 2). It crashed the game 3 of 3 times for a region without an owner, so the command refuses that.
+        x, y, z set the camp position (default: the settled center of the region)."""
+        fields = {"target": target, "region": region, "type": settlement_type, "supply": supply}
+        if x is not None and y is not None:
+            fields.update(x=x, y=y, z=z)
+        return self._command("settle_region", **fields)
 
     def region_clear_owner(self, region: str) -> dict:
         """Write Region.ownerPawn = nil. The buildings stay. First step of lord_receive_region."""

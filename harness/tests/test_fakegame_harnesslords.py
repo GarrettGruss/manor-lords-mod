@@ -251,6 +251,15 @@ class DynamicLordTests(LordsTestCase):
         again = self.send("lord_found_village", lord=lord, region=self.empty_name())
         self.assertIn("already has an owner", again["error"])
 
+    def test_settle_is_allowed_on_a_region_that_is_already_settled(self):
+        # Spec 15 part 9: the real game added families to a settled player region.
+        name = self.empty_name()
+        self.send("claim_region", target=0, region=name, finalize=1)
+        self.assertTrue(self.send("settle_region", target=0, region=name)["ok"])
+        answer = self.send("settle_region", target=0, region=name, x=5, y=6, z=7)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["camp"], {"x": 5, "y": 6, "z": 7})
+
     def test_settle_is_refused_for_a_region_the_pawn_does_not_own(self):
         answer = self.send("settle_region", target=0, region=self.empty_name())
         self.assertIn("does not own", answer["error"])
