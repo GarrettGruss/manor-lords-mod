@@ -27,6 +27,7 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 | Track the 90% goal for Invasion Mode | `harness-coverage` |
 | Split work between agents | `harness-dispatch-agents` |
 | Commit, PR, merge | `harness-git-workflow` |
+| Release a mod to play testers | `harness-release` |
 
 ## Facts that save time
 - UE 5.5.4 shipping game. Game folder `C:\Program Files (x86)\Steam\steamapps\common\Manor Lords`. The game runs without Steam.
