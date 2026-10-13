@@ -1,6 +1,6 @@
 """Run the launcher N times in a row and print a table (spec 03).
 
-  .venv\Scripts\python.exe harness\run_series.py --scenario smoke --runs 5
+  uv run python harness\run_series.py --scenario smoke --runs 5
 
 Writes runs/series-<time>.json. Exit code: 0 if every run passed, otherwise 1.
 """

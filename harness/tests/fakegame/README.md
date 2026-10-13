@@ -6,7 +6,7 @@ Findings and limits: `implementation-notes/mock-kit.md` in that spec.
 Run from the repo root:
 
 ```
-uv run --no-project --python 3.12 --with lupa python -m unittest discover -s harness/tests -p "test_fakegame*.py" -v
+uv run python -m unittest discover -s harness/tests -p "test_fakegame*.py" -v
 ```
 
 ## Write a mod test (under 30 lines)

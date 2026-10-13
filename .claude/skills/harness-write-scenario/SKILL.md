@@ -40,6 +40,6 @@ Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a 
 
 ## Test it without the game
 Run it in the fake game kit (Lua mods in a Lua runtime, fake bridge). See `harness/tests/test_fakegame_standin_scenarios.py` and `harness/tests/modstate_support.py`. Include a broken-rule case that must make the scenario fail.
-`uv run --no-project --with lupa python -m unittest discover -s harness/tests -p "test_fakegame_*.py"`
+`uv run python -m unittest discover -s harness/tests -p "test_fakegame_*.py"`
 
 Then run it in the real game 3 of 3 (skill `harness-run-scenario`).

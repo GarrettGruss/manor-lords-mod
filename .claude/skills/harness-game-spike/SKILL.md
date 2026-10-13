@@ -9,7 +9,7 @@ A spike answers one question about the engine with evidence. Write the question 
 
 ## Setup
 1. Read the existing notes in `docs/specs/*/implementation-notes/` for the same area (spike-S*.md, `actions-catalog.md`). Do not repeat a finished spike.
-2. Start a game that stays open: `.venv\Scripts\python.exe harness\run.py --scenario noop --keep-open --run-id <id>` (or a hidden `probe-*` scenario, see `harness/scenarios/probe_raids.py`).
+2. Start a game that stays open: `uv run python harness\run.py --scenario noop --keep-open --run-id <id>` (or a hidden `probe-*` scenario, see `harness/scenarios/probe_raids.py`).
 3. Talk to the game through the bridge (`ue4ss-bridge` MCP tools, or the bridge client from Python with the run's bridge folder; see `harness/README.md`). The MCP bridge tools may point to a different folder than a `--keep-open` run. Use the run's folder if they cannot reach it.
 4. Raw Lua eval (`eval_lua`) is approved by the user (2026-10-10) for single-player experiments only. Mods and scenarios must not depend on it.
 
