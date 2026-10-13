@@ -110,6 +110,7 @@
 --   {"command":"tent_find_spot"}                           up to 5 free spots for a tent (x, y, z) around the village centre; it does not place anything (read only)
 --   {"command":"forest_spot","min_dist":15000,"max_dist":40000}   up to 5 dense tree cells of the player region, best first (Resource actors with resType "tree"; read only)
 --   {"command":"plot_field_shift","dx":3000,"dy":0,"plots":true,"commit":true}   test only: move the drawn, closed plot outline of the pawn (plots: also extractedPlots), then commit it
+--   {"command":"plot_upgrade","upgrade":12,"slot":0,"extension":false}   spike: PawnCPP:addUpgradeRequest (or addExtensionChangeRequest) on the building under the mouse
 --   Walls (spec 14, see mod/shared/HarnessWalls):
 --   {"command":"wall_pieces","road":123,"step":200}         spawn blocking palisade pieces (GhostStaticMeshActor, type 470) along a road
 --   {"command":"wall_pieces_clear","road":123}              destroy the pieces that wall_pieces made for that road
@@ -142,7 +143,7 @@ local policies = require("HarnessPolicies")
 local bandits = require("HarnessBandits")
 local housing = require("HarnessHousing")
 
-local VERSION = "35"
+local VERSION = "37"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -461,6 +462,7 @@ local COMMANDS = {
     forest_spot = housing.forest_spot,
     plot_field_shift = housing.plot_field_shift,
     plot_field_place = housing.plot_field_place,
+    plot_upgrade = housing.plot_upgrade,
     wall_pieces = walls.wall_pieces,
     wall_pieces_clear = walls.wall_pieces_clear,
     path_state = walls.path_state,

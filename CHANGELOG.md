@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- HarnessActions version 37 with the spike command `plot_upgrade` (spec 15): `PawnCPP:addUpgradeRequest` or `addExtensionChangeRequest` on
+  the building under the mouse. Real game: second-family wing (12), vegetable garden (extension 8) and carrot seeds (30) without the mouse,
+  at normal cost, also on a plot the panel says is too small. Level 2 is id 2 (seen from a panel click); a wrong id only adds a stray
+  entry to `upgradesDone`. Notes:
+  `docs/specs/15-bandit-settlement/implementation-notes/burgage-placement-events.md`.
 - HarnessActions command `building_health` (read only: hp, maxHp, fire, rubble of one building, spec 14).
 - Unsafe spike commands `path_obstacles_clear`, `building_stat_write`, `construction_complete` and the memory write scripts in
   `docs/specs/14-free-walls/implementation-notes/tools/unsafe/`. All are refused unless `HARNESS_ALLOW_UNSAFE=1` is set (test games only).
