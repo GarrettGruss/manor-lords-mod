@@ -188,6 +188,12 @@ class ManorBlueprintTests(WallTestCase):
         self.assertRegex(answer["error"], "no manor|no blueprint of type 58")
 
 
+    def test_a_mesh_path_does_not_skip_the_manor_check(self):
+        answer = self.send("manor_blueprint_add", type=123, x=1, y=2, z=3, mesh="/Game/ManorLords/Buildings/Merged/SM_Test")
+        self.assertFalse(answer["ok"])
+        self.assertRegex(answer["error"], "no manor|mesh not found")
+
+
 UNSAFE_COMMANDS = ("path_obstacles_clear", "building_stat_write", "construction_complete")
 
 
