@@ -354,6 +354,66 @@ function M.building_health(_, raw)
     }
 end
 
+-- Spike (issue #63): a manor planner blueprint without the mouse. The planner click adds a StaticMeshActor with the module mesh and
+-- the tag "bType_<type>" to the manor's `blueprints` list; the commit is SMBuildingMaster:convertBlueprintsToBuildings(bool) on the manor.
+-- This command makes the same actor: it copies the mesh of an existing blueprint of the same type (or takes `mesh_from`, an actor id),
+-- spawns it at x, y, z with `yaw` (degrees), adds it to the list and, with "commit":true, calls the commit.
+local function signedField(raw, name)
+    return tonumber((raw or ""):match('"' .. name .. '"%s*:%s*(-?[%d%.]+)'))
+end
+
+local function playerManor()
+    for _, building in ipairs(FindAllOf("SMBuildingMaster") or {}) do
+        if isValid(building) and read(function() return building.Data.bType end) == 98
+            and read(function() return building.ownerPawn end) == player() then
+            return building
+        end
+    end
+    return nil
+end
+
+local function blueprintMeshOfType(manor, kind)
+    local list = manor.blueprints
+    for i = 1, (read(function() return list:GetArrayNum() end) or 0) do
+        local actor = list[i]
+        local tag = read(function() return actor.Tags[1]:ToString() end)
+        if tag == "bType_" .. kind then return read(function() return actor.StaticMeshComponent.StaticMesh end) end
+    end
+    return nil
+end
+
+function M.manor_blueprint_add(_, raw)
+    local kind = numberField(raw, "type")
+    local x, y, z, yaw = signedField(raw, "x"), signedField(raw, "y"), signedField(raw, "z"), signedField(raw, "yaw") or 0
+    if type(kind) ~= "number" or not x or not y or not z then return { ok = false, error = "type, x, y and z are required" } end
+    local manor = playerManor()
+    if not manor then return { ok = false, error = "the player has no manor (type 98)" } end
+    local mesh = blueprintMeshOfType(manor, kind)
+    if not isValid(mesh) then return { ok = false, error = "no blueprint of type " .. kind .. " on the manor to copy the mesh from" } end
+    local statics = findObject("/Script/Engine.Default__GameplayStatics")
+    local class = findObject("/Script/Engine.StaticMeshActor")
+    if not statics or not class then return { ok = false, error = "GameplayStatics or StaticMeshActor class not found" } end
+    local half = math.rad(yaw) / 2
+    local transform = { Translation = { X = x, Y = y, Z = z }, Rotation = { X = 0, Y = 0, Z = math.sin(half), W = math.cos(half) },
+                        Scale3D = { X = 1, Y = 1, Z = 1 } }
+    local before = read(function() return manor.blueprints:GetArrayNum() end)
+    local actor = statics:BeginDeferredActorSpawnFromClass(manor, class, transform, M.SPAWN_ALWAYS, nil, 0)
+    if not isValid(actor) then return { ok = false, error = "spawn gave no actor" } end
+    statics:FinishSpawningActor(actor, transform, 0)
+    actor.StaticMeshComponent:SetMobility(M.MOBILITY_MOVABLE)
+    actor.StaticMeshComponent:SetStaticMesh(mesh)
+    actor.Tags[1] = FName("bType_" .. kind)
+    manor.blueprints[before + 1] = actor
+    local result = { ok = true, actor = read(function() return actor:GetFullName() end), blueprints_before = before,
+                     blueprints_after = read(function() return manor.blueprints:GetArrayNum() end),
+                     tag = read(function() return actor.Tags[1]:ToString() end) }
+    if flagField(raw, "commit") then
+        manor:convertBlueprintsToBuildings(false)
+        result.committed = true
+    end
+    return result
+end
+
 -- Unsafe spike commands (spec 14, "Unsafe commands and tools"). They change game data outside the normal game flow (one crashed the
 -- game), so they are refused unless the game process was started with HARNESS_ALLOW_UNSAFE=1. Test games only, never a user save.
 M.UNSAFE_ENV = "HARNESS_ALLOW_UNSAFE"
