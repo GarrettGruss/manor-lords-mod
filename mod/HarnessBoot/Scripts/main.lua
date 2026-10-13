@@ -255,7 +255,13 @@ local function stepStartingNewGame()
     end
     local command = "open " .. MAP_FOLDER .. map
     log.info(TAG, "starting a new game: " .. command)
-    local ok, err = pcall(function() controller:ConsoleCommand(command, false) end)
+    -- PlayerController:ConsoleCommand is not callable from Lua here (run fresh-start-1). UEBridge uses this library call.
+    local ok, err = pcall(function()
+        local library = StaticFindObject("/Script/Engine.Default__KismetSystemLibrary")
+        local world = FindFirstOf("World")
+        if not isValid(library) or not isValid(world) then error("no KismetSystemLibrary or World") end
+        library:ExecuteConsoleCommand(world, command, controller)
+    end)
     if not ok then
         fail("console command '" .. command .. "' failed: " .. tostring(err))
         return

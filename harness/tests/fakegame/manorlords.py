@@ -47,6 +47,7 @@ def _build_autosave(game, player, works):
     game.method(library, "K2_TimerExistsHandle", lambda _self, _world, _handle: True)
     game.method(library, "K2_GetTimerRemainingTimeHandle", lambda _self, _world, _handle: timer.remaining())
     game.static(TIMER_LIBRARY_PATH, library)
+    timer.library = library
     return timer
 
 
@@ -132,8 +133,12 @@ def build_manor_lords_state(game, *, save_slot="saveGame_0", wanted_slot_listed=
                 state.autosave.instance["savefileToLoad"] = game.text(open_map_loads_slot)
             clock.start_load()
 
+    # The real PlayerController:ConsoleCommand is not callable from Lua (run fresh-start-1). The game uses the library call.
     state.controller = game.obj("PlayerController")
-    game.method(state.controller, "ConsoleCommand", console_command)
+    state.world = game.obj("World")
+    game.method(state.autosave.library, "ExecuteConsoleCommand",
+                lambda _self, _world, command, _controller=None: console_command(_self, command))
+    game.finder("World", lambda: state.world)
 
     state.io_handler = game.obj("IoHandler", _path=IO_HANDLER_PATH)
     game.method(state.io_handler, "DoesSaveGameExist", lambda _self, _slot: save_exists)
