@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 18 (#69): a pak adds composite building types 123 and 124 with a Blueprint made in UE 5.5.4 (3 engine meshes). The ids are placed and built in the real game. Note `siege-camp-and-bm.md`. Paks and `make_bm.py` are in `mod/HarnessActions/paks/` and `ue/`. The Siege Camp (row 483) shows in the build menu with `siege483_P.pak` and can be placed, but it is not built.
+- `s65_edit_json.py visible`: sets `bVisibleInUi` true on a `buildingStats` row (clears `IsZero`).
+- Command `load_pak_blueprint` and spike command `spawn_probe` (HarnessActions 47): load a Blueprint of a mod pak with the asset registry, and spawn it once to list its mesh parts.
 - `master_parts` (HarnessParts): argument `from` (first row), rows with `tags` and `btype` (#65). The call timed out in the game, so check it before use.
 - Spec 12 note `unused-assets.md` (#65): a finished level 3 manor (palace 81, gatehouse 82, keep/garrison 83) and level 2 rows exist in the paks and data but are hidden. Lists other unused assets and the cheapest ways to see them (static study).
 - Command `manor_planner` (HarnessWalls, spike #65): opens or closes the manor planner without the mouse. Hidden probe `probe-manor-module`.
@@ -17,6 +20,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Suite `pak-ab` with hidden scenario `pak-item-value` (5 runs per side, real pak A/B passed; spec 09 criterion ticked). Hidden probes `probe-lord-village` and `probe-lord-diplomacy` and suite `lord-village-ab` for the S13 and S11 reruns (partly run, issue #53). `soak-days` option `HARNESS_SOAK_KEEP_APPROVAL=1`.
 
 ### Changed
+- `MAX_TYPE` of `HarnessBuild` and `HarnessHousing` is 600 (was 300), so commands accept type 483. A running game keeps the old value until restart.
 - `deploy.ps1` and the release zip skip the source folders of a mod (`paks/`, `ue/`, `art/`). The game does not load them.
 - Project skills refreshed for specs 15 to 19: ManorCore, HarnessSteer, HarnessParts, HarnessActions version 41 commands, mod releases, the AES key and fixture saves in worktrees, the Python bridge client, game close fallback, and the hook limit.
 - Rules: compiled mod paks (`*_P.pak`) may be committed. The AES key and the original game paks may not.

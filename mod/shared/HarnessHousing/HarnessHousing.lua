@@ -13,7 +13,7 @@ local M = {}
 
 M.BUILDING_STATS = "/Game/NotStronghold/Data/buildingStats.buildingStats"
 M.TENT_TYPE = 87          -- buildingStats row "homeless_tents", function Temporary
-M.MAX_TYPE = 300
+M.MAX_TYPE = 600
 M.MAX_ROWS = 40
 -- Scalar fields of the buildingStats row that are safe to read (no soft object, no array of structs).
 M.STAT_FIELDS = { "bWorkInProgress", "isWork", "job", "bSize", "maxHp", "needsRoad", "collidesWithRoads", "canRelocate", "constructionCost",
