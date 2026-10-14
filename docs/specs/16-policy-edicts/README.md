@@ -60,3 +60,6 @@ in approval, and if the mod can show its own menu for policies.
 - [x] A read command `policy_state` exists, with a Python action and fake game tests.
 - [x] `policy_enact` and `policy_sign` exist with tests (enact returned false in the real game; sign works).
 - [x] No game asset, key or save data is in git. No save function was called.
+
+## Update 2026-10-13: pak widget spike (option c)
+A cooked Widget Blueprint in a mod pak was shown in the real game and a screenshot captured it. Findings and steps: `implementation-notes/pak-widget-spike.md`. Key facts: the widget tree is made headless from Python by copying a stock engine widget (the root widget is protected); `LoadAsset` does not load mod-pak assets but `AssetRegistryHelpers:GetAsset(FAssetData)` does. Open: click wiring, full policy list, clean source widget.

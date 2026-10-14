@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Pak widget spike (spec 16, #60): a Widget Blueprint cooked with UE 5.5.4 in `policymenu_P.pak` shows a custom policy menu in the real game. New `mod/PolicyMenu/` (UE project sources, pak), shared module `HarnessPolicyMenu`, commands `menu_pak_show/read/hide`, hidden scenario `probe-policy-menu-pak`. Notes: `pak-widget-spike.md`.
 - Mod releases (spec 19, #80): `harness/release.py --mod <Name> [--dry-run] [--publish]` checks the manifest (`mod/<Name>/mod.json`), the tag, the mod changelog, the fake tests and a real-game gate, builds `dist/<Name>-v<version>.zip` in game-folder layout, scans it (no harness module, no AES key) and can publish a GitHub pre-release. Runs now record `mod_files.json` (SHA-256 of every mod file). New skill `harness-release`. First releasable mod: RefugeeWaves 0.1.0.
 - Shared module `ManorCore`: player-safe game calls (region, settle region, spot finders, rebel raid, banner) and a logger with a `print` fallback. HarnessLords, HarnessHousing, HarnessSack and HarnessBandits call it.
 - Suite `pak-ab` with hidden scenario `pak-item-value` (5 runs per side, real pak A/B passed; spec 09 criterion ticked). Hidden probes `probe-lord-village` and `probe-lord-diplomacy` and suite `lord-village-ab` for the S13 and S11 reruns (partly run, issue #53). `soak-days` option `HARNESS_SOAK_KEEP_APPROVAL=1`.
