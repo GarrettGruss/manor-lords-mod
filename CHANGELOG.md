@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 12 note `unused-assets.md` (#65): a finished level 3 manor (palace 81, gatehouse 82, keep/garrison 83) and level 2 rows exist in the paks and data but are hidden. Lists other unused assets and the cheapest ways to see them (static study).
 - Command `manor_planner` (HarnessWalls, spike #65): opens or closes the manor planner without the mouse. Hidden probe `probe-manor-module`.
 - Spec 18 note `hidden-buildings.md` (#69): static list of hidden and unused buildings (Siege Camp 483, Bandit Camp 100, WIP rows, rows with no class, unused palisade) and how to test them. No mercenary or invasion camp building exists.
 - Mod PolicyMenu 0.1.0 (spec 16, #60): a policy menu from a cooked pak widget. It lists the available policies with game names, a real click signs or unsigns one (Lua polls `IsPressed`, calls `Region:setPolicySigned`), F7 opens and closes it. Gate scenario `policy-menu` (`--pak policymenu`). `ManorCore` has `policy_list`, `policy_name`, `set_policy_signed`. Scenario helpers `ctx.click_with_mouse`, `ctx.hover_with_mouse`, `ctx.press_key`. Removed `HarnessPolicyMenu`, `menu_pak_*` and `probe-policy-menu-pak`. Notes: `policy-menu-followups.md`.
