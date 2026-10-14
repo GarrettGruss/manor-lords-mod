@@ -7,11 +7,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - Mod PolicyMenu 0.1.0 (spec 16, #60): a policy menu from a cooked pak widget. It lists the available policies with game names, a real click signs or unsigns one (Lua polls `IsPressed`, calls `Region:setPolicySigned`), F7 opens and closes it. Gate scenario `policy-menu` (`--pak policymenu`). `ManorCore` has `policy_list`, `policy_name`, `set_policy_signed`. Scenario helpers `ctx.click_with_mouse`, `ctx.hover_with_mouse`, `ctx.press_key`. Removed `HarnessPolicyMenu`, `menu_pak_*` and `probe-policy-menu-pak`. Notes: `policy-menu-followups.md`.
+- UI art tools (spec 16): `harness/tools/genimage.py` makes images with the Gemini API (key from `GEMINI_API_KEY`, also read from the Windows user scope; never printed; max 4 images per call; every call logged in `runs/genimage/log.jsonl`). `make_policy_art.py` builds the policy icon set from one style prompt; `contact_sheet.py` lays images out for review. Pillow is a dev dependency. Art set: 17 policy icons and a menu panel in `mod/PolicyMenu/art/`.
 - Mod releases (spec 19, #80): `harness/release.py --mod <Name> [--dry-run] [--publish]` checks the manifest (`mod/<Name>/mod.json`), the tag, the mod changelog, the fake tests and a real-game gate, builds `dist/<Name>-v<version>.zip` in game-folder layout, scans it (no harness module, no AES key) and can publish a GitHub pre-release. Runs now record `mod_files.json` (SHA-256 of every mod file). New skill `harness-release`. First releasable mod: RefugeeWaves 0.1.0.
 - Shared module `ManorCore`: player-safe game calls (region, settle region, spot finders, rebel raid, banner) and a logger with a `print` fallback. HarnessLords, HarnessHousing, HarnessSack and HarnessBandits call it.
 - Suite `pak-ab` with hidden scenario `pak-item-value` (5 runs per side, real pak A/B passed; spec 09 criterion ticked). Hidden probes `probe-lord-village` and `probe-lord-diplomacy` and suite `lord-village-ab` for the S13 and S11 reruns (partly run, issue #53). `soak-days` option `HARNESS_SOAK_KEEP_APPROVAL=1`.
 
 ### Changed
+- `deploy.ps1` and the release zip skip the source folders of a mod (`paks/`, `ue/`, `art/`). The game does not load them.
 - Project skills refreshed for specs 15 to 19: ManorCore, HarnessSteer, HarnessParts, HarnessActions version 41 commands, mod releases, the AES key and fixture saves in worktrees, the Python bridge client, game close fallback, and the hook limit.
 - Rules: compiled mod paks (`*_P.pak`) may be committed. The AES key and the original game paks may not.
 - RefugeeWaves needs only `ManorCore`. `HarnessCommands` is optional (test commands exist only when it is present).
