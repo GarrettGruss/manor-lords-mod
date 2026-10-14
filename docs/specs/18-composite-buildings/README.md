@@ -44,9 +44,14 @@ From spec 15 notes (`tent-placement.md`, `burgage-placement-events.md`):
 - [x] A note names the asset or code that defines the parts of a building type, with evidence. `implementation-notes/building-parts-static.md` (row -> `BM_*` class; link for tent and plot not read, partly open).
 - [x] A note says if Lua can change the parts of a built master, with a test result. `implementation-notes/part-edit-test.md`: append and unlink work in memory; a visible new part is not solved.
 - [x] A note says if a pak can add a new composite building type. `implementation-notes/composite-pak.md`: rows 123 and 124 load; a new part list works by pointing row 87 at another `BM_*` class (17 to 16 parts in a real run); placing a new id is not tested (mouse only).
-- [ ] Placement of a new id and a visible new part list are open (real mouse, new cooked Blueprint). Issue stays open.
+- [x] A new composite type is placed and built in the real game with a new part list from a Blueprint made in UE 5.5.4. `implementation-notes/siege-camp-and-bm.md`: ids 123 and 124 (pak `bmcamp4`) placed with `activateBuildingMode` and a real click, built in 4 days, 3 parts (Cube, Cone, Sphere), screenshot `runs/s18sc-5/screenshots/built124.png`. Part names must start with `MainBld_` or `Bld_`.
+- [x] The hidden Siege Camp (row 483) shows in the Military tab with a pak and can be placed. It never builds (no region). Same note.
+- [ ] A build menu card for a new id (category, art, name text) is open.
 
-## Status (2026-10-13)
+## Status (2026-10-14)
+- Done: Siege Camp card and placement, new `BM_` class from UE with new meshes placed and built (see `implementation-notes/siege-camp-and-bm.md`). Open: menu card for a new id, Siege Camp build.
+
+## Earlier status (2026-10-13)
 - Done: static read (`implementation-notes/building-parts-static.md`) and the Lua part-edit test (`implementation-notes/part-edit-test.md`,
   HarnessActions 38, commands `master_parts`, `master_part_add`, `master_part_remove`, probe `probe-composite`).
 - Blocked: plan steps 3 and 4 (pak with a new type, building function). They need the AES key to extract and repack. Resume when the key is set.
