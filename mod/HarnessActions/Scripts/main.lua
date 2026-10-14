@@ -18,6 +18,7 @@
 --   {"command":"datatable_rows","table":"units"}               every row with every allowed number field (read only)
 --   {"command":"popup_state"}                                  read the pop-up windows of the game (read only)
 --   {"command":"close_popups"}                                 press Accept on every pop-up that is open ("Hunger!" and similar)
+--   {"command":"load_pak_blueprint","name":"BM_HarnessCamp"}   spec 18: load /Game/HarnessMod/<name> of a mod pak with the asset registry (LoadAsset cannot)
 --   Raid and unit commands (spec 10, see mod/shared/HarnessRaids):
 --   {"command":"raid_state"}                                   read the raid timer, the setup and the raid id lists
 --   {"command":"units_census","sample":10}                     counts of units by side, role, state, region
@@ -155,7 +156,7 @@ local housing = require("HarnessHousing")
 local parts = require("HarnessParts")
 local steer = require("HarnessSteer")
 
-local VERSION = "42"
+local VERSION = "47"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -381,9 +382,60 @@ local function buildingStat(request, raw)
     return housing.building_stat(request, raw)
 end
 
+-- Spec 18: load a Blueprint of a mod pak (/Game/HarnessMod/<name>) so that native code can find its class by path.
+-- LoadAsset does not load pak assets. The asset registry call does (spec 16 pak-widget-spike.md).
+local PAK_PACKAGE = "/Game/HarnessMod"
+local function loadPakBlueprint(_, raw)
+    local name = type(raw) == "string" and raw:match('"name"%s*:%s*"([%w_]+)"')
+    if not name then return { ok = false, error = "name must be letters, digits and underscores" } end
+    local registry = StaticFindObject("/Script/AssetRegistry.Default__AssetRegistryHelpers")
+    if not registry or not registry:IsValid() then return { ok = false, error = "AssetRegistryHelpers not found" } end
+    local classPath = PAK_PACKAGE .. "/" .. name .. "." .. name .. "_C"
+    local data = {
+        PackageName = FName(PAK_PACKAGE .. "/" .. name), PackagePath = FName(PAK_PACKAGE), AssetName = FName(name),
+        AssetClassPath = { PackageName = FName("/Script/Engine"), AssetName = FName("Blueprint") },
+    }
+    local ok, err = pcall(function() return registry:GetAsset(data) end)
+    if not ok then return { ok = false, error = "GetAsset: " .. tostring(err) } end
+    local found = StaticFindObject(classPath)
+    local loaded = found ~= nil and found:IsValid()
+    -- Why: a class that only the asset registry call loaded can be freed by the garbage collector. Try to keep it.
+    local rooted = false
+    if loaded then rooted = pcall(function() found:AddToRoot() end) end
+    return { ok = loaded, rooted = rooted, class = classPath, loaded = loaded, error = (not loaded) and "class not found after GetAsset; is the pak installed?" or nil }
+end
+
+-- Spec 18 spike: spawn the class of a BM_ Blueprint once (our own actor), list its components, destroy it.
+-- Why: native code made no parts from a pak class. This shows what an instance holds.
+local function spawnProbe(_, raw)
+    local classPath = type(raw) == "string" and raw:match('"class"%s*:%s*"([%w_/%.]+)"')
+    if not classPath then return { ok = false, error = "class must be a path like /Game/HarnessMod/BM_X.BM_X_C" } end
+    local class = StaticFindObject(classPath)
+    if not class or not class:IsValid() then return { ok = false, error = "class not loaded: " .. classPath } end
+    local world = FindFirstOf("PlayerController"):GetWorld()
+    local okSpawn, actor = pcall(function() return world:SpawnActor(class, { X = 0, Y = 0, Z = 100000 }, { Pitch = 0, Yaw = 0, Roll = 0 }) end)
+    if not okSpawn or not actor or not actor:IsValid() then return { ok = false, error = "spawn failed: " .. tostring(actor) } end
+    local out = { ok = true, actor = tostring(actor:GetFName():ToString()), components = {} }
+    local okAll, all = pcall(function() return actor:K2_GetComponentsByClass(StaticFindObject("/Script/Engine.StaticMeshComponent")) end)
+    if okAll and all then
+        for i = 1, #all do
+            local c = all[i]
+            if c.get then c = c:get() end
+            local mesh = pcall(function() return c.StaticMesh end) and c.StaticMesh
+            out.components[#out.components + 1] = tostring(c:GetFName():ToString()) .. " mesh=" .. tostring(mesh and mesh:IsValid() and mesh:GetFName():ToString() or "none")
+        end
+    else
+        out.components_error = tostring(all)
+    end
+    pcall(function() actor:K2_DestroyActor() end)
+    return out
+end
+
 local COMMANDS = {
     popup_state = popupState,
     close_popups = closePopups,
+    load_pak_blueprint = loadPakBlueprint,
+    spawn_probe = spawnProbe,
     ping = function() return { ok = true, version = VERSION } end,
     send_letter = sendLetter,
     autosave_status = autosaveStatus,

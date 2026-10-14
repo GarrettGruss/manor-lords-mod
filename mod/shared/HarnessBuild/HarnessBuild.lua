@@ -11,7 +11,7 @@ local sack = require("HarnessSack")
 
 local M = {}
 
-M.MAX_TYPE = 300
+M.MAX_TYPE = 600
 M.MAX_GOOD = 200
 M.MAX_ROWS = 40
 M.METHODS = { fire = "StartFire", collapse = "collapseBuilding" }
