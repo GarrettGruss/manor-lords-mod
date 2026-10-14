@@ -124,6 +124,62 @@ function M.master_parts(_, raw)
     return out
 end
 
+-- Issue 94: a placed Siege Camp (type 483) site has no Region and is never built. These two commands read a site (built or not) and
+-- write its Region. They change one property in memory and call no save function.
+local function findSite(raw)
+    local id, kind = numberField(raw, "building"), numberField(raw, "type")
+    if not id and not kind then return nil, "give building (id) or type" end
+    for _, building in ipairs(FindAllOf("SMBuildingMaster") or {}) do
+        if isValid(building) and not building:GetFullName():find("Default__", 1, true) then
+            if (id and idOf(building) == id) or (not id and typeOf(building) == kind) then return building end
+        end
+    end
+    return nil, "no matching building master"
+end
+
+local function nameOf(object)
+    if not isValid(object) then return "<invalid>" end
+    return read(function() return object:GetFName():ToString() end) or "<unnamed>"
+end
+
+local function listSize(field) return read(function() return field:GetArrayNum() end) end
+
+function M.master_site(_, raw)
+    local site, problem = findSite(raw)
+    if not site then return { ok = false, error = problem } end
+    local region = read(function() return site.Region end)
+    return { ok = true, building = idOf(site), type = typeOf(site), constructed = read(function() return site:IsConstructed() end),
+             region = nameOf(region), owner = nameOf(read(function() return site.ownerPawn end)),
+             goods = listSize(site.constructionGoods), resources = listSize(site.Resources), parts = listSize(site.buildings),
+             hp = read(function() return site.Data.hp end), max_hp = read(function() return site.Data.maxHp end),
+             builders = read(function() return region and region:getRegionBuilders() end),
+             function_id = read(function() return site.buildingFunction end) }
+end
+
+-- Write site.Region = the region the player pawn is in. Reads it back.
+function M.master_set_region(_, raw)
+    local site, problem = findSite(raw)
+    if not site then return { ok = false, error = problem } end
+    local pawn = FindFirstOf("MyPawnCPP_BP3_C")
+    local region = isValid(pawn) and read(function() return pawn.currentRegion end) or nil
+    if not isValid(region) then return { ok = false, error = "the player pawn has no current region" } end
+    local before = nameOf(read(function() return site.Region end))
+    local ok, err = pcall(function() site.Region = region end)
+    if not ok then return { ok = false, error = "write Region: " .. tostring(err), before = before } end
+    return { ok = true, building = idOf(site), before = before, after = nameOf(read(function() return site.Region end)) }
+end
+
+-- Harness shortcut for a Siege Camp site that no builder finishes: write Data.constructed = true and read it back.
+function M.master_finish(_, raw)
+    local site, problem = findSite(raw)
+    if not site then return { ok = false, error = problem } end
+    local ok, err = pcall(function() site.Data.constructed = true end)
+    if not ok then return { ok = false, error = "write constructed: " .. tostring(err) } end
+    local built = read(function() return site:IsConstructed() end)
+    if built ~= true then return { ok = false, error = "the site is still not constructed after the write" } end
+    return { ok = true, building = idOf(site), constructed = built }
+end
+
 local function unsafe(name, handler)
     return function(...)
         if (os.getenv and os.getenv(M.UNSAFE_ENV)) ~= "1" then
