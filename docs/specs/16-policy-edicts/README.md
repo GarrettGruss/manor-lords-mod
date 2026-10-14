@@ -61,5 +61,8 @@ in approval, and if the mod can show its own menu for policies.
 - [x] `policy_enact` and `policy_sign` exist with tests (enact returned false in the real game; sign works).
 - [x] No game asset, key or save data is in git. No save function was called.
 
+## Update 2026-10-14: policy menu follow-ups (issue #60)
+Click wiring (Lua poll, `Region:setPolicySigned`), the real policy list with game names, an F7 toggle, a clean widget and a releasable mod PolicyMenu 0.1.0 work in the real game. Gate scenario `policy-menu`. Notes: `implementation-notes/policy-menu-followups.md`. Open: publish the release (user decision).
+
 ## Update 2026-10-13: pak widget spike (option c)
 A cooked Widget Blueprint in a mod pak was shown in the real game and a screenshot captured it. Findings and steps: `implementation-notes/pak-widget-spike.md`. Key facts: the widget tree is made headless from Python by copying a stock engine widget (the root widget is protected); `LoadAsset` does not load mod-pak assets but `AssetRegistryHelpers:GetAsset(FAssetData)` does. Open: click wiring, full policy list, clean source widget.
