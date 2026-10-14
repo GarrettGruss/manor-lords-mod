@@ -1,6 +1,8 @@
 # Spec 15: Refugee waves (bandit settlement and homeless refugees)
 
 Scope change (user, 2026-10-12): the spec covers refugee waves. Bandits who settle after a negotiation are one source of a wave.
+
+Spec 13 lead (2026-10-14): MLHomelessTentMod places the game's own tent (row 87) by setting the pawn building id and using the normal preview, see `../13-mod-inspection/implementation-notes/ml-homeless-tent.md`.
 The folder keeps its old name (`15-bandit-settlement`) so links in issues, notes and the changelog stay valid.
 Feature section: "Feature: refugee waves" below. Open spike questions: #61.
 

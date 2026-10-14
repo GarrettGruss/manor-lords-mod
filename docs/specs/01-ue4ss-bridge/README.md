@@ -2,6 +2,8 @@
 
 Status: done (PR 1). The bridge is installed and used in every spike. Roadmap phase: 2 (live control channel).
 
+Spec 13 note (2026-10-14): the community package MLUE4SS 229 is the older UE4SS build 3.0.1-1136; ours is newer with other settings, so we keep ours: `../13-mod-inspection/implementation-notes/mlue4ss-229.md`.
+
 ## Goal
 Give the agent an on-demand, structured way to query and drive the running
 Manor Lords process (inspect objects, read/write properties, call UFunctions,
