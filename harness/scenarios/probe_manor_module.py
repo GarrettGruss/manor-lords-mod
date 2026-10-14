@@ -139,22 +139,39 @@ def open_planner(ctx, manor: str) -> None:
         ctx.screenshot(f"planner_scroll{step}")
     scroll_cards(ctx)
     if ctx.variant_option("HARNESS_PROBE", "planner") in ("lv3", "lv3place"):
-        place_lv3(ctx)
+        place_lv3(ctx, manor)
         return
     attempt(ctx, "planner close", lambda: ctx.actions._command("manor_planner", close=True))
 
 
-def place_lv3(ctx) -> None:
+def place_lv3(ctx, manor) -> None:
     """Pick the Lv3 keep card (slot ID 83, left card), move over the bailey, place with a real click, then Commit."""
-    attempt(ctx, "click card", lambda: ctx.click_with_mouse(0.83, 0.449))
-    for step, (fx, fy) in enumerate(((0.40, 0.55), (0.45, 0.60), (0.50, 0.62))):
+    if ctx.variant_option("HARNESS_DISMISS", "0") == "1":  # the "A New Message" banner may eat world clicks
+        attempt(ctx, "dismiss message", lambda: ctx.click_with_mouse(0.50, 0.306))
+        time.sleep(1)
+    attempt(ctx, "click card", lambda: ctx.click_with_mouse(float(ctx.variant_option("HARNESS_CARD_X", "0.83")), 0.449))
+    spots = ((0.40, 0.55), (0.45, 0.60), (0.50, 0.62))
+    if ctx.variant_option("HARNESS_GRID", "0") == "1":  # round 2: find a spot where the ghost is white
+        spots = ((0.35, 0.62), (0.45, 0.70), (0.40, 0.80), (0.50, 0.80), (0.30, 0.55), (0.55, 0.65))
+    chosen = ctx.variant_option("HARNESS_PLACE", "")  # "fx,fy": hover there and click Place
+    if chosen:
+        spots = (tuple(float(v) for v in chosen.split(",")),)
+    for step, (fx, fy) in enumerate(spots):
         attempt(ctx, "hover bailey", lambda a=fx, b=fy: ctx.hover_with_mouse(a, b))
         time.sleep(1.5)
         ctx.screenshot(f"lv3_ghost{step}")
-    attempt(ctx, "place click", lambda: ctx.click_with_mouse(0.50, 0.62))
+    attempt(ctx, "place click", lambda: ctx.click_with_mouse(*spots[-1]))
     time.sleep(2)
     ctx.screenshot("lv3_placed")
     attempt(ctx, "manor_state placed", ctx.actions.manor_state)
+    attempt(ctx, "canConstructCastle", lambda: ctx.bridge.call_function(manor, "canConstructCastle", [[]]))
+    attempt(ctx, "getBuildingArea", lambda: ctx.bridge.call_function(manor, "getBuildingArea"))
+    attempt(ctx, "blueprint ghosts", lambda: ctx.bridge.read_property(manor, "blueprintGhosts"))
+    attempt(ctx, "walls", lambda: ctx.bridge.read_property(manor, "walls"))
+    if ctx.variant_option("HARNESS_CLICKCOMMIT", "0") == "1":  # real click on the planner Commit button
+        attempt(ctx, "commit click", lambda: ctx.click_with_mouse(0.905, 0.89))
+        time.sleep(3)
+        ctx.screenshot("lv3_commit_click")
     attempt(ctx, "hover away", lambda: ctx.hover_with_mouse(0.30, 0.70))
     time.sleep(2)
     ctx.screenshot("lv3_after_move")

@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Probe `probe-manor-module` (#90): options HARNESS_DISMISS, HARNESS_PLACE, HARNESS_CARD_X, HARNESS_CLICKCOMMIT, HARNESS_GRID, and a `canConstructCastle` read. Round 2 notes in `manor-lv3.md`: the Lv3 module is placed with real clicks; Commit stays grey, not built.
 - Spec 18 (#69): a pak adds composite building types 123 and 124 with a Blueprint made in UE 5.5.4 (3 engine meshes). The ids are placed and built in the real game. Note `siege-camp-and-bm.md`. Paks and `make_bm.py` are in `mod/HarnessActions/paks/` and `ue/`. The Siege Camp (row 483) shows in the build menu with `siege483_P.pak` and can be placed, but it is not built.
 - `s65_edit_json.py visible`: sets `bVisibleInUi` true on a `buildingStats` row (clears `IsZero`).
 - Command `load_pak_blueprint` and spike command `spawn_probe` (HarnessActions 47): load a Blueprint of a mod pak with the asset registry, and spawn it once to list its mesh parts.
