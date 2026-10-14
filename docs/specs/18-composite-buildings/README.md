@@ -2,6 +2,8 @@
 
 Status: Siege Camp build spike (#94) done in part: the camp has no build path (notes `siege-camp-build.md`). static, Lua part-edit and pak spikes done (2026-10-13). Placement of a new type id is open (needs the real mouse). Hidden and unused buildings: `implementation-notes/hidden-buildings.md`. Issue: #69. Branch: `feat/18-composite-buildings`.
 
+Spec 13 lead (2026-10-14): MLArmyCampMod makes no buildable camp and no garrison (squad skills Encamp and Decamp by a native DLL; no row, no BM_ class), see `../13-mod-inspection/implementation-notes/ml-army-camp.md`. SwapShrine shows a Lua-only mesh swap on a finished building (`LoadAsset_Blocking` plus `SetStaticMesh`), see `../13-mod-inspection/implementation-notes/swap-shrine.md`.
+
 ## Goal
 
 Find out if we can make new composite buildings and ship them in a pak as new structures.

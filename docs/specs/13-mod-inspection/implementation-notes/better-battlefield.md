@@ -31,3 +31,8 @@ Pure Lua, no file or network access. It moves map actors for 500 ms; if the rest
 
 ## Test idea for the harness
 Scenario `battlefield-anchor`: with the mod installed (stand-in copy of the idea, not this file), run `lord_challenge` twice, once with a stand-in that moves all `battlefield_BP_C` to the player's manor and once without. Read `Challenge.Center` and the distance of the lord's army hold position to the manor (`SMUnit.realPos`). Assert, with ranges, that the distance is smaller with the move (A/B, 3 runs each).
+
+## Re-check 2026-10-14 (second download)
+The user downloaded the archive again. It is byte-equal to the first one: same name, 3,494 bytes, SHA-256 56654178f64d5c2180be221e77f220b0f256dfa98c871b3c705cc294642bad6b. Scripts/main.lua SHA-256 $lh (10,285 bytes). So version v2.3 (Nexus 306) is unchanged and the analysis above stands. Local copy (git-ignored): modtools/example-mods/better-battlefield-306/.
+Spec link: spec 10 (raids and combat; battle place lever for AI lord challenges). The lever is still unverified in the game. A cheap check for the 
+egion.Manor name case: read Region.manor and Region.Manor through the bridge; if both work, the case is not an issue.
