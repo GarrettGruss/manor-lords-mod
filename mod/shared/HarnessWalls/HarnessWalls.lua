@@ -436,12 +436,19 @@ end
 function M.manor_planner(_, raw)
     local pawn = player()
     if not isValid(pawn) then return { ok = false, error = "no player pawn" } end
+    local manor = playerManor()
+    if not manor then return { ok = false, error = "the player has no manor (type 98)" } end
+    if flagField(raw, "commit") then
+        -- Spike #90: the Commit button stayed grey, so commit the planned blueprints the same way as manor_blueprint_add.
+        local before = read(function() return manor.blueprints:GetArrayNum() end)
+        manor:convertBlueprintsToBuildings(false)
+        return { ok = true, committed = true, blueprints_before = before,
+                 blueprints_after = read(function() return manor.blueprints:GetArrayNum() end) }
+    end
     if flagField(raw, "close") then
         pawn:setPlannerMode(nil)
         return { ok = true, open = false }
     end
-    local manor = playerManor()
-    if not manor then return { ok = false, error = "the player has no manor (type 98)" } end
     pawn:setPlannerMode(manor)
     return { ok = true, open = true, in_planning_mode = read(function() return pawn.inPlanningMode end) }
 end
