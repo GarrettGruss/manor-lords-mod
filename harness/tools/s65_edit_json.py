@@ -5,6 +5,7 @@ The input and output JSON files are under the git-ignored pakmod work folder. Ru
   uv run python harness/tools/s65_edit_json.py stats <json> <source row> <new row>
   uv run python harness/tools/s65_edit_json.py planner <json> <widget name> <new id>
   uv run python harness/tools/s65_edit_json.py blueprint <json> <row> <package path> <class name>
+  uv run python harness/tools/s65_edit_json.py visible <json> <row>
 """
 import copy
 import json
@@ -70,6 +71,22 @@ def retarget_blueprint(path, row_name, package, asset):
     print(f"ok: row {row_name} BlueprintPath is now {package}.{asset}")
 
 
+def make_row_visible(path, row_name):
+    data = load(path)
+    rows = data["Exports"][0]["Table"]["Data"]
+    hits = [r for r in rows if r["Name"] == row_name]
+    if len(hits) != 1:
+        raise SystemExit(f"error: expected one row {row_name}, found {len(hits)}")
+    flags = [p for p in hits[0]["Value"] if p["Name"] == "bVisibleInUi"]
+    if len(flags) != 1:
+        raise SystemExit(f"error: row {row_name} has no bVisibleInUi field")
+    # IsZero tells the writer that the value is the default. Clear it, or the true value is not written.
+    flags[0]["IsZero"] = False
+    flags[0]["Value"] = True
+    save(path, data)
+    print(f"ok: row {row_name} has bVisibleInUi true")
+
+
 def main(argv):
     if len(argv) == 5 and argv[1] == "stats":
         clone_stats_row(argv[2], argv[3], argv[4])
@@ -77,6 +94,8 @@ def main(argv):
         retarget_widget(argv[2], argv[3], argv[4])
     elif len(argv) == 6 and argv[1] == "blueprint":
         retarget_blueprint(argv[2], argv[3], argv[4], argv[5])
+    elif len(argv) == 4 and argv[1] == "visible":
+        make_row_visible(argv[2], argv[3])
     else:
         raise SystemExit(__doc__)
 
