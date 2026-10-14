@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `master_parts` (HarnessParts): argument `from` (first row), rows with `tags` and `btype` (#65). The call timed out in the game, so check it before use.
 - Spec 12 note `unused-assets.md` (#65): a finished level 3 manor (palace 81, gatehouse 82, keep/garrison 83) and level 2 rows exist in the paks and data but are hidden. Lists other unused assets and the cheapest ways to see them (static study).
 - Command `manor_planner` (HarnessWalls, spike #65): opens or closes the manor planner without the mouse. Hidden probe `probe-manor-module`.
 - Spec 18 note `hidden-buildings.md` (#69): static list of hidden and unused buildings (Siege Camp 483, Bandit Camp 100, WIP rows, rows with no class, unused palisade) and how to test them. No mercenary or invasion camp building exists.

@@ -68,3 +68,18 @@ Screenshots (git-ignored run folders, not committed, 7 MB each): `runs/s65b-5/sc
 - Limits: `master_parts` lists at most 80 rows, so the two new parts are not in the list. The part count was read only before the commit in runs 3 and 4, and the 92 count was read in run 2 after the build. Not proven: that one of the two parts is the type 123 module and not a plan from the fixture. The same fixture has 3 old plans, so the 2 extra parts after the commit may be the old plans too.
 - Builders are random: runs 3 and 4 (same inputs) did not finish in 60 game days (rubble 18 and 20 left; manor `built` false). Run 2 finished in 4 days. The difference is not known.
 - Not done: a clean proof (mesh count of the gatehouse mesh before and after the module built, with a run that finishes).
+
+## Follow-up 3 (runs s65d-1 to s65d-3, 3 launches, fixture manor-bailey, paks mm123data and mm123ui)
+Date: 2026-10-14. Result: neither goal is proven. Paks removed, game closed, no save function called.
+
+### Goal 1: card 123 on screen (NOT shown)
+- Run s65d-1 collapsed the cards 57, 58, 50 and 472 (`SetVisibility(1)`): the card list became EMPTY, card 123 did not appear (`runs/s65d-1/screenshots/planner_card123.png`). Card 123 has Visibility 4.
+- Run s65d-2 collapsed in stages. After 57 and 58: 2 cards (`runs/s65d-2/screenshots/planner_card123_stage0.png`). After 50 and 472 also: empty (`planner_card123_stage1.png`). So the 2 cards were 50 and 472. Card 123 is not drawn although its Visibility is 4 (SelfHitTestInvisible). Cause not known. Guess: the planner filters the list by its own data, or the retargeted widget sets no art or size.
+- The 4 cards shown at first (`planner_a_paused.png`) are not card 123.
+- Next step: read the card widget properties (image, text, size) and call its init function; or retarget a visible card slot (the second 57) instead of the hidden slot `buildingWidget_5`.
+
+### Goal 2: finished module (NOT reached)
+- Same inputs as run s65c-2 (rubble, fish, berries, 60 timber given and 40 put in the manor, no planks). Runs s65d-2 and s65d-3 did not finish in 60 game days (rubble 18 and 16 of 24, goods unchanged for many days). Run s65d-1 ran the planner mode only (see trap). Of 6 builds of this type (s65c-1 to s65c-4, s65d-2, s65d-3) only s65c-2 finished. Cause not known.
+- The new part listing did not work. `master_parts` now has `from` (first row) and rows with `tags` and `btype`. The call timed out (no answer in 10 s) in run s65d-2 (40 rows) and run s65d-3 (8 rows), so the part list before and after could not be read. Reading `part.Tags` or `part.Data.bType` may be the cause: calls with 40 rows without these fields worked in run s65-1. Next step: read these fields in a separate command, test with `limit` 1 first.
+- Trap: a Python scenario reads `HARNESS_PROBE` only from `run.py --env HARNESS_PROBE=build`. A shell variable is ignored, so run s65d-1 ran the planner mode only.
+- 60 game days take about 35 min of real time.
