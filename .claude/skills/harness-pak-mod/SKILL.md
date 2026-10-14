@@ -39,3 +39,9 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 
 ## Widget pak (UI, spec 16)
 A cooked Widget Blueprint is a pak too. Sources: mod/PolicyMenu/ue/ (copy to the UE workspace C:\Users\garre\development\mlm-ue\ManorLords). Make the asset: UnrealEditor-Cmd.exe <uproject> -ExecutePythonScript=make_widget.py -unattended -nullrhi. Cook: -run=cook -targetplatform=Windows -unversioned -nopak -skipeditorcontent (20 s when cached). Copy the cooked .uasset and .uexp into the pak work folder, then run pakmod.py build. Load from Lua with AssetRegistryHelpers:GetAsset. Do not run the editor while a game screenshot is taken. Details: spec 16 policy-menu-followups.md.
+
+## UI art (images for a widget pak)
+- Make images with `uv run python harness/tools/genimage.py --prompt "..." --out <file.png>` (Gemini API, key from `GEMINI_API_KEY`; never print it). `--list-models` shows the image models. Every call is logged in `runs/genimage/log.jsonl`; keep a set small and check the spend.
+- Keep one shared style prompt per art set (see `harness/tools/make_policy_art.py`). Ask for "no text, no letters": the model still writes words sometimes, so look at every image.
+- Review a set with `harness/tools/contact_sheet.py OUT.png IN...` and read the sheet.
+- Originals stay in `runs/genimage/` (git-ignored). Commit only resized copies in `mod/<Name>/art/`. `art/`, `ue/` and `paks/` are not deployed and not zipped.

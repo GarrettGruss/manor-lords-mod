@@ -11,4 +11,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "lupa>=2.8",
+    "pillow>=12.3.0",
 ]

@@ -44,7 +44,10 @@ foreach ($top in Get-ChildItem -LiteralPath $modSrc -Directory | Sort-Object Nam
     $isShared = ($top.Name -ieq 'shared')
     if (-not $isShared) { $mods.Add($top.Name) }
     foreach ($f in Get-ChildItem -LiteralPath $top.FullName -Recurse -File) {
-        $rel = Join-Path $top.Name (Get-RelPath $top.FullName $f.FullName)
+        $inner = Get-RelPath $top.FullName $f.FullName
+        # Source folders of a mod (pak, UE project, art) are not Lua; the game does not need them.
+        if (-not $isShared -and ($inner.Split('\')[0] -in @('paks', 'ue', 'art'))) { continue }
+        $rel = Join-Path $top.Name $inner
         $desired[$rel] = $f.FullName
     }
 }

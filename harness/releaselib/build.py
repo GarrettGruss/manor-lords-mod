@@ -10,7 +10,7 @@ from .files import mod_files
 MODS_PREFIX = "ManorLords/Binaries/Win64/ue4ss/Mods"
 PAK_PREFIX = "ManorLords/Content/Paks/~mods"
 PAK_FOLDER = "paks"  # inside mod/<Name>/
-SOURCE_FOLDERS = (PAK_FOLDER, "ue")  # not part of the Lua mod folder in the zip (ue: UE project sources of the pak)
+SOURCE_FOLDERS = (PAK_FOLDER, "ue", "art")  # not part of the Lua mod folder in the zip (ue: UE project sources of the pak; art: image sources for UE)
 PAK_SIZE_WARNING_BYTES = 10 * 1024 * 1024  # a bigger pak gets a warning (not a failure)
 
 
