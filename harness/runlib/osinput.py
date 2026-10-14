@@ -21,6 +21,9 @@ MOUSEEVENTF_RIGHTDOWN = 0x0008
 MOUSEEVENTF_RIGHTUP = 0x0010
 SW_RESTORE = 9
 CLICK_HOLD_S = 0.15
+KEYEVENTF_KEYUP = 0x0002
+VK_F7 = 0x76
+KEY_HOLD_S = 0.1
 EDGE_MARGIN_PX = 20  # a click this close to the window border could hit the frame or the HUD edge
 
 
@@ -62,6 +65,8 @@ def check_foreground(api: InputApi, hwnd: int) -> None:
 
 def focus_game(api: InputApi, hwnd: int, sleep: Callable[[float], None] = time.sleep, settle_s: float = 0.5) -> None:
     """Bring the game window to the front. Raise InputError if it does not get the focus."""
+    if api.foreground_window() == hwnd:
+        return  # repeated focus tricks can open the Windows task switcher
     api.bring_to_front(hwnd)
     sleep(settle_s)
     check_foreground(api, hwnd)
@@ -173,6 +178,29 @@ def order_with_mouse(api: InputApi, hwnd: int, ground_point: Callable[[], dict],
         return point
 
 
+def click_at(api: InputApi, hwnd: int, fx: float, fy: float, sleep: Callable[[float], None] = time.sleep) -> tuple[int, int]:
+    """Left click at a fraction (fx, fy) of the game window (a UI button, spec 16). Returns the screen point. The cursor is restored."""
+    focus_game(api, hwnd, sleep)
+    with cursor_restored(api):
+        point = point_in_window(api.window_rect(hwnd), fx, fy)
+        move_cursor(api, hwnd, point, sleep)
+        focus_game(api, hwnd, sleep)  # another window can take the focus between the move and the click
+        left_click(api, hwnd, sleep)
+        sleep(0.2)
+        return point
+
+
+def press_key(api, hwnd: int, virtual_key: int, sleep: Callable[[float], None] = time.sleep, hold_s: float = KEY_HOLD_S) -> None:
+    """Press and release one key while the game window is in the foreground (a mod key bind, spec 16)."""
+    focus_game(api, hwnd, sleep)
+    api.key(virtual_key, True)
+    try:
+        sleep(hold_s)
+    finally:
+        api.key(virtual_key, False)  # never leave the key down
+    sleep(0.2)
+
+
 GROUND_MIN_Z = -99999.0  # getMouse3d returns z = -100000 when no terrain is under the cursor
 
 
@@ -230,3 +258,14 @@ class Win32Input:
 
     def right_button(self, down: bool) -> None:
         self.user32.mouse_event(MOUSEEVENTF_RIGHTDOWN if down else MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
+
+    def key(self, virtual_key: int, down: bool) -> None:
+        self.user32.keybd_event(virtual_key, 0, 0 if down else KEYEVENTF_KEYUP, 0)
+
+
+def hover_at(api, hwnd: int, fx: float, fy: float, sleep: Callable[[float], None] = time.sleep) -> tuple[int, int]:
+    """Move the real cursor to a fraction of the game window and leave it there (the caller restores it by clicking)."""
+    focus_game(api, hwnd, sleep)
+    point = point_in_window(api.window_rect(hwnd), fx, fy)
+    move_cursor(api, hwnd, point, sleep)
+    return point
