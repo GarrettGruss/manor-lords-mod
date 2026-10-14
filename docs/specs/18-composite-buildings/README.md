@@ -1,6 +1,6 @@
 # Spec 18: Custom composite buildings
 
-Status: static, Lua part-edit and pak spikes done (2026-10-13). Placement of a new type id is open (needs the real mouse). Hidden and unused buildings: `implementation-notes/hidden-buildings.md`. Issue: #69. Branch: `feat/18-composite-buildings`.
+Status: Siege Camp build spike (#94) done in part: the camp has no build path (notes `siege-camp-build.md`). static, Lua part-edit and pak spikes done (2026-10-13). Placement of a new type id is open (needs the real mouse). Hidden and unused buildings: `implementation-notes/hidden-buildings.md`. Issue: #69. Branch: `feat/18-composite-buildings`.
 
 ## Goal
 
