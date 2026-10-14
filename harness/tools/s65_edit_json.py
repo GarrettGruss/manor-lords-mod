@@ -6,6 +6,7 @@ The input and output JSON files are under the git-ignored pakmod work folder. Ru
   uv run python harness/tools/s65_edit_json.py planner <json> <widget name> <new id>
   uv run python harness/tools/s65_edit_json.py blueprint <json> <row> <package path> <class name>
   uv run python harness/tools/s65_edit_json.py visible <json> <row>
+  uv run python harness/tools/s65_edit_json.py enum <json> <row> <enum field> <value>   (issue 94: buildingFunction Siege -> Default)
 """
 import copy
 import json
@@ -87,6 +88,24 @@ def make_row_visible(path, row_name):
     print(f"ok: row {row_name} has bVisibleInUi true")
 
 
+def set_enum_field(path, row_name, field, value):
+    data = load(path)
+    rows = data["Exports"][0]["Table"]["Data"]
+    hits = [r for r in rows if r["Name"] == row_name]
+    if len(hits) != 1:
+        raise SystemExit(f"error: expected one row {row_name}, found {len(hits)}")
+    fields = [p for p in hits[0]["Value"] if p["Name"] == field and "EnumType" in p]
+    if len(fields) != 1:
+        raise SystemExit(f"error: row {row_name} has no enum field {field}")
+    before = fields[0]["Value"]
+    fields[0]["IsZero"] = False
+    fields[0]["Value"] = value
+    if value not in data["NameMap"]:
+        data["NameMap"].append(value)
+    save(path, data)
+    print(f"ok: row {row_name} {field}: {before} -> {value}")
+
+
 def main(argv):
     if len(argv) == 5 and argv[1] == "stats":
         clone_stats_row(argv[2], argv[3], argv[4])
@@ -96,6 +115,8 @@ def main(argv):
         retarget_blueprint(argv[2], argv[3], argv[4], argv[5])
     elif len(argv) == 4 and argv[1] == "visible":
         make_row_visible(argv[2], argv[3])
+    elif len(argv) == 6 and argv[1] == "enum":
+        set_enum_field(argv[2], argv[3], argv[4], argv[5])
     else:
         raise SystemExit(__doc__)
 

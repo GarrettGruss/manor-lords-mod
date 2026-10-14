@@ -116,6 +116,9 @@
 --   {"command":"plot_upgrade","upgrade":12,"slot":0,"extension":false}   spike: PawnCPP:addUpgradeRequest (or addExtensionChangeRequest) on the building under the mouse
 --   Composite parts (spec 18, see mod/shared/HarnessParts):
 --   {"command":"master_parts","building":123,"limit":5}      parts and extensions of one building master (or "type":3: the first built one; read only)
+--   {"command":"master_site","type":483}                    state of a site, built or not: Region, owner, goods, builders (issue 94, read only)
+--   {"command":"master_set_region","type":483}              write site.Region = the region of the player pawn (issue 94)
+--   {"command":"master_finish","type":483}                  write Data.constructed = true on a site, read it back (issue 94)
 --   {"command":"master_part_remove","building":123,"index":1,"mode":"hide"}   UNSAFE: hide, destroy or unlink one part (needs HARNESS_ALLOW_UNSAFE=1)
 --   {"command":"master_part_add","building":123,"from":1,"dx":300}   UNSAFE: spawn a copy of part "from" and append it to the part list
 --   Walls (spec 14, see mod/shared/HarnessWalls):
@@ -156,7 +159,7 @@ local housing = require("HarnessHousing")
 local parts = require("HarnessParts")
 local steer = require("HarnessSteer")
 
-local VERSION = "47"
+local VERSION = "48"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -523,6 +526,9 @@ local COMMANDS = {
     building_stat = buildingStat,
     building_stat_vector_write = housing.building_stat_vector_write,
     master_parts = parts.master_parts,
+    master_site = parts.master_site,
+    master_set_region = parts.master_set_region,
+    master_finish = parts.master_finish,
     master_part_remove = parts.master_part_remove,
     master_part_add = parts.master_part_add,
     housing_state = housing.housing_state,

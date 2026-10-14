@@ -77,5 +77,41 @@ class HideTests(PartsTests):
         self.assertIn("mode must be", self.send("master_part_remove", type=87, index=1, mode="boom")["error"])
 
 
+SITE_WORLD = """
+function(fg)
+    local region = fg.object("BP_Region_C", {})
+    fg.object("MyPawnCPP_BP3_C", { currentRegion = region })
+    local site = fg.object("SMBuildingMaster", { Data = { bType = 483, constructed = false }, buildings = fg.array({}, { wrap = false }),
+                                                  Resources = fg.array({}, { wrap = false }), constructionGoods = fg.array({}, { wrap = false }) })
+    fg.set_method(site, "IsConstructed", function(self) return self.Data.constructed == true end)
+end
+"""
+
+
+class SiteTests(PartsTests):
+    def setUp(self):
+        super().setUp()
+        self.game.lua.eval(SITE_WORLD)(self.game.fg)
+
+    def test_site_is_read_while_unbuilt(self):
+        answer = self.send("master_site", type=483)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual((answer["type"], answer["constructed"], answer["region"]), (483, False, "<invalid>"))
+
+    def test_region_write_is_read_back(self):
+        answer = self.send("master_set_region", type=483)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["before"], "<invalid>")
+        self.assertNotEqual(answer["after"], "<invalid>")
+
+    def test_finish_writes_constructed(self):
+        answer = self.send("master_finish", type=483)
+        self.assertTrue(answer["ok"], answer)
+        self.assertTrue(self.send("master_site", type=483)["constructed"])
+
+    def test_a_site_needs_an_id_or_a_type(self):
+        self.assertFalse(self.send("master_set_region")["ok"])
+
+
 if __name__ == "__main__":
     unittest.main()
