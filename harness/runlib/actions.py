@@ -1001,9 +1001,9 @@ class Actions:
 
     # ---- Composite building parts (spec 18, implementation-notes/part-edit-test.md) ----
 
-    def master_parts(self, building: int | None = None, type_id: int | None = None, limit: int = 5, start: int = 1) -> dict:
-        """Parts (SMBuilding actors) and extensions of one building master, by id or by type (read only)."""
-        fields = {"limit": limit, "from": start}
+    def master_parts(self, building: int | None = None, type_id: int | None = None, limit: int = 5, start: int = 1, detail: bool = False) -> dict:
+        """Parts (SMBuilding actors) and extensions of one building master, by id or by type (read only). detail=True adds tags and btype (slow in the real game)."""
+        fields = {"limit": limit, "from": start, "detail": int(detail)}
         if building is not None:
             fields["building"] = building
         if type_id is not None:

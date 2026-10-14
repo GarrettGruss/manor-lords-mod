@@ -81,7 +81,7 @@ def list_parts(ctx, manor_id) -> dict:
     parts = {}
     start = 1
     while True:
-        reply = ctx.actions.master_parts(building=manor_id, limit=PAGE, start=start)
+        reply = ctx.actions.master_parts(building=manor_id, limit=PAGE, start=start, detail=True)
         for row in reply.get("rows", []):
             parts[row.get("name") or f"index{row['index']}"] = row
         if start + PAGE > reply.get("parts", 0):
