@@ -155,7 +155,7 @@ local housing = require("HarnessHousing")
 local parts = require("HarnessParts")
 local steer = require("HarnessSteer")
 
-local VERSION = "41"
+local VERSION = "42"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
