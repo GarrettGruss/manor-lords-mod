@@ -431,6 +431,21 @@ function M.manor_blueprint_add(_, raw)
     return result
 end
 
+-- Spike (issue #65): open the manor planner without the mouse (`PawnCPP:setPlannerMode(manor)`), or close it with "close":true.
+-- An object argument cannot come through the JSON bridge, so the mod passes the manor itself. No commit happens here.
+function M.manor_planner(_, raw)
+    local pawn = player()
+    if not isValid(pawn) then return { ok = false, error = "no player pawn" } end
+    if flagField(raw, "close") then
+        pawn:setPlannerMode(nil)
+        return { ok = true, open = false }
+    end
+    local manor = playerManor()
+    if not manor then return { ok = false, error = "the player has no manor (type 98)" } end
+    pawn:setPlannerMode(manor)
+    return { ok = true, open = true, in_planning_mode = read(function() return pawn.inPlanningMode end) }
+end
+
 -- Unsafe spike commands (spec 14, "Unsafe commands and tools"). They change game data outside the normal game flow (one crashed the
 -- game), so they are refused unless the game process was started with HARNESS_ALLOW_UNSAFE=1. Test games only, never a user save.
 M.UNSAFE_ENV = "HARNESS_ALLOW_UNSAFE"

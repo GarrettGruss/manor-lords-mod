@@ -490,6 +490,7 @@ local COMMANDS = {
     path_state = walls.path_state,
     building_health = walls.building_health,
     manor_blueprint_add = walls.manor_blueprint_add,
+    manor_planner = walls.manor_planner,
     mesh_users = walls.mesh_users,
     construction_complete = walls.construction_complete,
     path_obstacles_clear = walls.path_obstacles_clear,

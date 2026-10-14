@@ -193,6 +193,11 @@ class ManorBlueprintTests(WallTestCase):
         self.assertFalse(answer["ok"])
         self.assertRegex(answer["error"], "no manor|mesh not found")
 
+    def test_planner_without_a_manor_is_refused(self):
+        answer = self.send("manor_planner")
+        self.assertFalse(answer["ok"])
+        self.assertRegex(answer["error"], "no manor|no player pawn")
+
 
 UNSAFE_COMMANDS = ("path_obstacles_clear", "building_stat_write", "construction_complete")
 
