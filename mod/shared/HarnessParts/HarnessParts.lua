@@ -68,19 +68,29 @@ local function meshNameOf(part)
     return isValid(mesh) and read(function() return mesh:GetFName():ToString() end) or nil
 end
 
+local function tagsOf(part)
+    local tags = {}
+    local array = read(function() return part.Tags end)
+    for i = 1, array and arrayCount(array) or 0 do
+        tags[#tags + 1] = read(function() return unwrap(array[i]):ToString() end)
+    end
+    return tags
+end
+
 local function partRow(index, part)
     if not isValid(part) then return { index = index, valid = false } end
     local at = read(function() return part:K2_GetActorLocation() end)
     return { index = index, valid = true, name = read(function() return part:GetFullName() end),
              class = read(function() return part:GetClass():GetFName():ToString() end), mesh = meshNameOf(part),
-             hidden = read(function() return part:IsHidden() end),
+             hidden = read(function() return part:IsHidden() end), tags = tagsOf(part),
+             btype = read(function() return part.Data.bType end),
              x = at and read(function() return math.floor(at.X) end), y = at and read(function() return math.floor(at.Y) end),
              z = at and read(function() return math.floor(at.Z) end) }
 end
 
-local function partRows(array, limit)
+local function partRows(array, limit, from)
     local rows = {}
-    for i = 1, math.min(arrayCount(array), limit) do rows[#rows + 1] = partRow(i, unwrap(array[i])) end
+    for i = from, math.min(arrayCount(array), from + limit - 1) do rows[#rows + 1] = partRow(i, unwrap(array[i])) end
     return rows
 end
 
@@ -99,7 +109,7 @@ function M.master_parts(_, raw)
     local limit = math.min(numberField(raw, "limit") or 5, M.MAX_PARTS)
     local out = { ok = true, building = idOf(master), type = typeOf(master), built = read(function() return master:IsConstructed() end),
                   parts = arrayCount(master.buildings), valid_parts = validCount(master.buildings),
-                  rows = partRows(master.buildings, limit), extensions = {} }
+                  rows = partRows(master.buildings, limit, math.max(numberField(raw, "from") or 1, 1)), extensions = {} }
     for i = 1, arrayCount(master.Extensions) do
         local extension = master.Extensions[i]
         out.extensions[#out.extensions + 1] = { index = i, type = read(function() return extension.Type end),

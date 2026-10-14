@@ -23,7 +23,8 @@ BUILD_DAYS = 60
 # Screen fractions: the gatehouse in the fixture view, then the screen centre.
 DOWN_ARROW = (0.741, 0.49)  # the planner card list scroll arrow, as a fraction of the window
 SCROLL_CLICKS = 0
-HIDE_CARDS = (57, 58, 50)  # the cards in front of card 123 (472, the outer tower, stays)
+HIDE_STAGES = ((57, 58),)  # run s65d-2: card 123 never shows, also with all other cards collapsed
+PAGE = 8  # master_parts rows per call. 40 rows did not answer in 10 s (run s65d-2)
 SPOT = (13000, -51163, 2500)  # the place used in run s65-1, inside the bailey area
 
 
@@ -75,15 +76,42 @@ def count_module_users(ctx, label: str) -> None:
                                                         if k in ("parts", "valid_parts", "built")})
 
 
+def list_parts(ctx, manor_id) -> dict:
+    """All parts of the manor, read in pages. Key: the actor name. Value: the compact row."""
+    parts = {}
+    start = 1
+    while True:
+        reply = ctx.actions.master_parts(building=manor_id, limit=PAGE, start=start)
+        for row in reply.get("rows", []):
+            parts[row.get("name") or f"index{row['index']}"] = row
+        if start + PAGE > reply.get("parts", 0):
+            return parts
+        start += PAGE
+
+
+def report_new_parts(ctx, manor_id, before: dict) -> None:
+    after = attempt(ctx, "parts after", lambda: list_parts(ctx, manor_id)) or {}
+    new = [row for name, row in after.items() if name not in before]
+    note(ctx, "parts diff", before=len(before), after=len(after), new=new)
+    typed = [row for row in new if row.get("btype") == MODULE_TYPE or f"bType_{MODULE_TYPE}" in (row.get("tags") or [])]
+    note(ctx, "type 123 parts", count=len(typed), rows=typed)
+    if new:
+        first = new[0]
+        attempt(ctx, "camera on new part", lambda: ctx.bridge.centre_camera_on(first["x"], first["y"]))
+        time.sleep(2)
+        ctx.screenshot("module_built")
+
+
 def scroll_cards(ctx) -> None:
-    """The card list is a WrapBox (no ScrollBox exists: run s65c-3). Collapse the cards in front so card 123 moves into view. Not run yet."""
-    found = attempt(ctx, "cards again", lambda: ctx.bridge._result("objects", class_name="buildingCardWidget_C", limit=60)["objects"]) or []
-    for ref in found:
-        path = object_path(ref)
-        if path.startswith("/Engine/Transient") and ctx.bridge.read_property(path, "ID") in HIDE_CARDS:
-            attempt(ctx, "collapse card", lambda p=path: ctx.bridge.call_function(p, "SetVisibility", [1]))
-    time.sleep(1)
-    ctx.screenshot("planner_card123")
+    """The card list is a WrapBox (no ScrollBox exists: run s65c-3). Collapse cards in stages and take a screenshot after each stage."""
+    for stage, ids in enumerate(HIDE_STAGES):
+        found = attempt(ctx, "cards again", lambda: ctx.bridge._result("objects", class_name="buildingCardWidget_C", limit=60)["objects"]) or []
+        for ref in found:
+            path = object_path(ref)
+            if path.startswith("/Engine/Transient") and ctx.bridge.read_property(path, "ID") in ids:
+                attempt(ctx, "collapse card", lambda p=path: ctx.bridge.call_function(p, "SetVisibility", [1]))
+        time.sleep(3)
+        ctx.screenshot(f"planner_card123_stage{stage}")
 
 
 def open_planner(ctx, manor: str) -> None:
@@ -147,13 +175,15 @@ def run(ctx) -> dict:
         return ctx.result()
     feed_builders(ctx)
     count_module_users(ctx, "before")
+    manor_id = (attempt(ctx, "manor id", actions.manor_state) or {}).get("region_manor_id")
+    parts_before = attempt(ctx, "parts before", lambda: list_parts(ctx, manor_id)) or {}
+    note(ctx, "parts before count", count=len(parts_before))
     attempt(ctx, "blueprint add", lambda: actions._command("manor_blueprint_add", type=MODULE_TYPE, x=SPOT[0], y=SPOT[1], z=SPOT[2],
                                                           yaw=0, mesh=MESH, commit=True))
     ctx.screenshot("committed")
     watch(ctx)
     count_module_users(ctx, "after")
-    manor_id = ((attempt(ctx, "manor id", actions.manor_state) or {}).get("region_manor_id"))
     attempt(ctx, "manor_state end", actions.manor_state)
-    attempt(ctx, "parts of manor", lambda: actions.master_parts(building=manor_id, limit=40))
     ctx.screenshot("end")
+    report_new_parts(ctx, manor_id, parts_before)
     return ctx.result()
