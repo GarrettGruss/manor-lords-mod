@@ -85,6 +85,24 @@ class ScenarioContext:
         player = self.bridge.player_path()
         return osinput.order_with_mouse(osinput.Win32Input(), window["hwnd"], lambda: self.bridge.call_function(player, "getMouse3d"), fx, fy)
 
+    def click_with_mouse(self, fx: float, fy: float) -> tuple[int, int]:
+        """A real left click at a fraction of the game window (a UI button, spec 16). Returns the screen point."""
+        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        point = osinput.click_at(osinput.Win32Input(), window["hwnd"], fx, fy)
+        self.log.info(f"click_with_mouse ({fx:.3f}, {fy:.3f}) -> screen {point}")
+        return point
+
+    def hover_with_mouse(self, fx: float, fy: float) -> tuple[int, int]:
+        """Move the real cursor to a fraction of the game window. The cursor stays there."""
+        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        return osinput.hover_at(osinput.Win32Input(), window["hwnd"], fx, fy)
+
+    def press_key(self, virtual_key: int) -> None:
+        """A real key press (for example osinput.VK_F7) in the game window."""
+        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        osinput.press_key(osinput.Win32Input(), window["hwnd"], virtual_key)
+        self.log.info(f"press_key {virtual_key:#x}")
+
     # ---- game helpers ----
     def ensure_alive(self, where: str = "scenario") -> None:
         ensure_game_alive(self.phase, where)

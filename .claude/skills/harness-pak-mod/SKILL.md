@@ -36,3 +36,6 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 - Spec 18 notes: a pak can add `buildingStats` rows cloned from the tent and retarget a row to another blueprint class (`docs/specs/18-composite-buildings/implementation-notes/composite-pak.md`). Spike #65: `harness/tools/s65_edit_json.py` clones a row (`manor-module-pak.md` in spec 12).
 - After a run killed by a timeout, check `pakmod.py list`.
 - Only number fields in one table are proven. Test strings, new rows and other tables with a round trip first.
+
+## Widget pak (UI, spec 16)
+A cooked Widget Blueprint is a pak too. Sources: mod/PolicyMenu/ue/ (copy to the UE workspace C:\Users\garre\development\mlm-ue\ManorLords). Make the asset: UnrealEditor-Cmd.exe <uproject> -ExecutePythonScript=make_widget.py -unattended -nullrhi. Cook: -run=cook -targetplatform=Windows -unversioned -nopak -skipeditorcontent (20 s when cached). Copy the cooked .uasset and .uexp into the pak work folder, then run pakmod.py build. Load from Lua with AssetRegistryHelpers:GetAsset. Do not run the editor while a game screenshot is taken. Details: spec 16 policy-menu-followups.md.

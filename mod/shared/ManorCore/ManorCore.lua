@@ -5,7 +5,8 @@
 --   - settle_region (PawnCPP:settleRegion, refused for a region the pawn does not own),
 --   - forest_spot and tent_find_spot (read only spot finders),
 --   - rebel_raid_rally (families leave and a raid starts),
---   - show_banner (PawnCPP:playEventMessage).
+--   - show_banner (PawnCPP:playEventMessage),
+--   - policy_list, policy_name and set_policy_signed (Region:setPolicySigned).
 -- The harness modules HarnessLords, HarnessHousing, HarnessSack and HarnessBandits call this module, so there is one copy of the code.
 -- Rules: call only on the game thread. No save function. No eval.
 
@@ -447,6 +448,66 @@ function M.show_banner(text, subtext)
     if not isValid(pawn) then return false, "the player pawn is not loaded" end
     local ok, err = pcall(function() pawn:playEventMessage(FName(M.BANNER_TYPE), text, subtext or "") end)
     if not ok then return false, tostring(err) end
+    return true
+end
+
+---------------------------------------------------------------------------------------------
+-- Policies (spec 16)
+---------------------------------------------------------------------------------------------
+
+-- Region:setPolicySigned(id, bool) is the call the game's own policy widget uses (enactPolicy returns false, see spec 16 notes).
+M.MAX_POLICY_ID = 40
+M.MAX_POLICIES = 40
+M.POLICY_TABLE_PATH = "/Game/NotStronghold/Data/DT_PolicyTypes.DT_PolicyTypes"
+
+-- Whole numbers from a TArray or a table. The elements may need :get().
+local function numberList(array)
+    local out = {}
+    for _, element in ipairs(listOf(array)) do
+        if type(element) == "number" then out[#out + 1] = element end
+    end
+    return out
+end
+
+-- The game name of a policy from the row Name of DT_PolicyTypes (row name = policy id).
+-- Only the field Name is read. The row also has a soft object field (Icon) that must never be read.
+function M.policy_name(id)
+    local ok, policyTable = pcall(StaticFindObject, M.POLICY_TABLE_PATH)
+    if not ok or not isValid(policyTable) then return nil end
+    local row = read(function() return policyTable:FindRow(tostring(id)) end)
+    if row == nil then return nil end
+    local text = textOf(read(function() return row.Name end))
+    if text == nil or text == "" then return nil end
+    return text
+end
+
+-- The policies the player can sign now: { policies = { {id, name, signed}, ... }, max_slots }, in id order.
+function M.policy_list()
+    local region, problem = M.player_region()
+    if not region then return nil, problem end
+    local available = read(function() return region:getAllAvailablePolicies() end)
+    local signedSet = {}
+    for _, id in ipairs(numberList(read(function() return region.policiesSigned end))) do signedSet[id] = true end
+    local ids = numberList(available)
+    table.sort(ids)
+    local entries = {}
+    for i = 1, math.min(#ids, M.MAX_POLICIES) do
+        local id = ids[i]
+        entries[#entries + 1] = { id = id, name = M.policy_name(id) or ("Policy " .. id), signed = signedSet[id] == true }
+    end
+    return { policies = entries, max_slots = read(function() return region:getMaxPolicies() end) }
+end
+
+-- Sign or unsign one policy.
+function M.set_policy_signed(id, signed)
+    if type(id) ~= "number" or id ~= math.floor(id) or id < 1 or id > M.MAX_POLICY_ID then
+        return false, "policy must be a whole number from 1 to " .. M.MAX_POLICY_ID
+    end
+    if type(signed) ~= "boolean" then return false, "signed must be true or false" end
+    local region, problem = M.player_region()
+    if not region then return false, problem end
+    local ok, err = pcall(function() region:setPolicySigned(id, signed) end)
+    if not ok then return false, "setPolicySigned: " .. tostring(err) end
     return true
 end
 
