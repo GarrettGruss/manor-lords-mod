@@ -39,3 +39,20 @@ Side effect to know: committing a module makes a finished manor a construction s
 
 ## Changes in the game folder
 - `Paks\~mods\mm123data_P.pak` and `mm123ui_P.pak` installed by `run.py`, removed after the test (`pakmod.py remove --all`; `~mods` removed). Deploy copied the mod `HarnessWalls` into `ue4ss\Mods` (normal deploy).
+
+## Follow-up (2026-10-14, runs s65b-1 to s65b-6, 6 launches, fixture manor-bailey, paks mm123data and mm123ui)
+Screenshots (git-ignored run folders, not committed, 7 MB each): `runs/s65b-5/screenshots/planner_a_paused.png`, `runs/s65b-6/screenshots/planner_a_paused.png`, `planner_scroll0.png`, `planner_scroll3.png`.
+
+### Goal 1: planner card 123 (partly done)
+- `PawnCPP:setPlannerMode(manor)` cannot be called through the bridge: an object argument does not pass JSON (`Value must be UObject or nil`, runs 1 and 2). New mod command `manor_planner` (HarnessWalls) passes the manor from Lua. `{"close":true}` closes the planner.
+- After the call the pawn reads `inPlanningMode` true, but the Castle Planner panel stays hidden. The live widget `MainUICPP_C...castlebuilderWidget` (class `castlePlanner_C`) has `Visibility` 1 (Collapsed) and is not in the viewport. `SetVisibility(0)` on it shows the panel (run 5).
+- The panel shows "Place Roads" and four cards with up and down arrows. No card could be identified as 123: the cards have no label, and my scroll clicks at the down arrow did not change the list (run 6, 4 clicks).
+- Result: the planner opens on a finished manor without a commit. Whether card 123 is shown is NOT decided. The retargeted card is `buildingWidget_5` (was collapsed). Next step: read the widget children (`ID`, `Visibility`) from Lua, or click a card with the real mouse and read `placeBuilding`.
+- A real click at the manor in the world made the clock stop (run 4: a pop-up held the pause). Avoid clicking in the world.
+
+### Goal 2: finished module (not done)
+- Scenario `probe-manor-module` has the build part (storehouse slot 45, 3 workers, timber/rubble/planks/fish/berries, blueprint type 123 with the gatehouse mesh `/Game/ManorLords/Buildings/Merged/SM_MERGED_C_SG_Gatehouse_Lv1_Ubeam`, commit, watch up to 60 days). It never ran: the 6 launches were used by the planner steps. Mode `both` was set with `--env`, which the Python scenario does not read. For the next run set `$env:HARNESS_PROBE = "build"` in the shell.
+- No unsafe launch was tried.
+
+### Changes in the game folder
+- Paks `mm123data_P.pak` and `mm123ui_P.pak` were installed and removed by `run.py` after each run. Normal deploy of the mods. The game is closed.
