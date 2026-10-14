@@ -17,13 +17,15 @@ LONG_REASON = "The probe waits several game days for builders."
 MANOR_TYPE = 98
 MODULE_TYPE = 123
 MESH = "/Game/ManorLords/Buildings/Merged/SM_MERGED_C_SG_Gatehouse_Lv1_Ubeam"
+LV3_TYPE = 83
+LV3_MESH = "/Game/NotStronghold/Buildings/Merged/SM_MERGED_C_SG_Tower_Lv3"
 TIMBER, RUBBLE, PLANKS = 16, 15, 17
 FOODS = (30, 171)
 BUILD_DAYS = 60
 # Screen fractions: the gatehouse in the fixture view, then the screen centre.
 DOWN_ARROW = (0.741, 0.49)  # the planner card list scroll arrow, as a fraction of the window
 SCROLL_CLICKS = 0
-HIDE_STAGES = ((57, 58),)  # run s65d-2: card 123 never shows, also with all other cards collapsed
+HIDE_STAGES = ((57, 58),) # spike #90: cards 81 and 83 are re-enabled by the mmlv3ui pak
 PAGE = 8  # master_parts rows per call. 40 rows did not answer in 10 s (run s65d-2)
 SPOT = (13000, -51163, 2500)  # the place used in run s65-1, inside the bailey area
 
@@ -136,7 +138,31 @@ def open_planner(ctx, manor: str) -> None:
         time.sleep(1)
         ctx.screenshot(f"planner_scroll{step}")
     scroll_cards(ctx)
+    if ctx.variant_option("HARNESS_PROBE", "planner") in ("lv3", "lv3place"):
+        place_lv3(ctx)
+        return
     attempt(ctx, "planner close", lambda: ctx.actions._command("manor_planner", close=True))
+
+
+def place_lv3(ctx) -> None:
+    """Pick the Lv3 keep card (slot ID 83, left card), move over the bailey, place with a real click, then Commit."""
+    attempt(ctx, "click card", lambda: ctx.click_with_mouse(0.83, 0.449))
+    for step, (fx, fy) in enumerate(((0.40, 0.55), (0.45, 0.60), (0.50, 0.62))):
+        attempt(ctx, "hover bailey", lambda a=fx, b=fy: ctx.hover_with_mouse(a, b))
+        time.sleep(1.5)
+        ctx.screenshot(f"lv3_ghost{step}")
+    attempt(ctx, "place click", lambda: ctx.click_with_mouse(0.50, 0.62))
+    time.sleep(2)
+    ctx.screenshot("lv3_placed")
+    attempt(ctx, "manor_state placed", ctx.actions.manor_state)
+    attempt(ctx, "hover away", lambda: ctx.hover_with_mouse(0.30, 0.70))
+    time.sleep(2)
+    ctx.screenshot("lv3_after_move")
+    # The Commit button stayed grey and a click removed the module (runs s90-3, s90-4). Commit by command, then close the planner.
+    if ctx.variant_option("HARNESS_PROBE", "planner") == "lv3":
+        attempt(ctx, "planner commit", lambda: ctx.actions._command("manor_planner", commit=True))
+    attempt(ctx, "planner close", lambda: ctx.actions._command("manor_planner", close=True))
+    time.sleep(2)
 
 
 def feed_builders(ctx) -> None:
@@ -173,13 +199,17 @@ def run(ctx) -> dict:
     open_planner(ctx, manor)
     if ctx.variant_option("HARNESS_PROBE", "planner") == "planner":
         return ctx.result()
+    if ctx.variant_option("HARNESS_PROBE", "planner") == "lv3place":
+        return ctx.result()
+    module_type, mesh = (LV3_TYPE, LV3_MESH) if ctx.variant_option("HARNESS_PROBE", "planner") == "lv3" else (MODULE_TYPE, MESH)
     feed_builders(ctx)
     count_module_users(ctx, "before")
     manor_id = (attempt(ctx, "manor id", actions.manor_state) or {}).get("region_manor_id")
     parts_before = attempt(ctx, "parts before", lambda: list_parts(ctx, manor_id)) or {}
     note(ctx, "parts before count", count=len(parts_before))
-    attempt(ctx, "blueprint add", lambda: actions._command("manor_blueprint_add", type=MODULE_TYPE, x=SPOT[0], y=SPOT[1], z=SPOT[2],
-                                                          yaw=0, mesh=MESH, commit=True))
+    if module_type != LV3_TYPE:  # the Lv3 module was planned in the planner and committed there
+        attempt(ctx, "blueprint add", lambda: actions._command("manor_blueprint_add", type=module_type, x=SPOT[0], y=SPOT[1], z=SPOT[2],
+                                                              yaw=0, mesh=mesh, commit=True))
     ctx.screenshot("committed")
     watch(ctx)
     count_module_users(ctx, "after")
