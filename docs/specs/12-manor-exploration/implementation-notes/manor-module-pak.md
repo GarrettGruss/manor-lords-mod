@@ -39,3 +39,32 @@ Side effect to know: committing a module makes a finished manor a construction s
 
 ## Changes in the game folder
 - `Paks\~mods\mm123data_P.pak` and `mm123ui_P.pak` installed by `run.py`, removed after the test (`pakmod.py remove --all`; `~mods` removed). Deploy copied the mod `HarnessWalls` into `ue4ss\Mods` (normal deploy).
+
+## Follow-up (2026-10-14, runs s65b-1 to s65b-6, 6 launches, fixture manor-bailey, paks mm123data and mm123ui)
+Screenshots (git-ignored run folders, not committed, 7 MB each): `runs/s65b-5/screenshots/planner_a_paused.png`, `runs/s65b-6/screenshots/planner_a_paused.png`, `planner_scroll0.png`, `planner_scroll3.png`.
+
+### Goal 1: planner card 123 (partly done)
+- `PawnCPP:setPlannerMode(manor)` cannot be called through the bridge: an object argument does not pass JSON (`Value must be UObject or nil`, runs 1 and 2). New mod command `manor_planner` (HarnessWalls) passes the manor from Lua. `{"close":true}` closes the planner.
+- After the call the pawn reads `inPlanningMode` true, but the Castle Planner panel stays hidden. The live widget `MainUICPP_C...castlebuilderWidget` (class `castlePlanner_C`) has `Visibility` 1 (Collapsed) and is not in the viewport. `SetVisibility(0)` on it shows the panel (run 5).
+- The panel shows "Place Roads" and four cards with up and down arrows. No card could be identified as 123: the cards have no label, and my scroll clicks at the down arrow did not change the list (run 6, 4 clicks).
+- Result: the planner opens on a finished manor without a commit. Whether card 123 is shown is NOT decided. The retargeted card is `buildingWidget_5` (was collapsed). Next step: read the widget children (`ID`, `Visibility`) from Lua, or click a card with the real mouse and read `placeBuilding`.
+- A real click at the manor in the world made the clock stop (run 4: a pop-up held the pause). Avoid clicking in the world.
+
+### Goal 2: finished module (not done)
+- Scenario `probe-manor-module` has the build part (storehouse slot 45, 3 workers, timber/rubble/planks/fish/berries, blueprint type 123 with the gatehouse mesh `/Game/ManorLords/Buildings/Merged/SM_MERGED_C_SG_Gatehouse_Lv1_Ubeam`, commit, watch up to 60 days). It never ran: the 6 launches were used by the planner steps. Mode `both` was set with `--env`, which the Python scenario does not read. For the next run set `$env:HARNESS_PROBE = "build"` in the shell.
+- No unsafe launch was tried.
+
+### Changes in the game folder
+- Paks `mm123data_P.pak` and `mm123ui_P.pak` were installed and removed by `run.py` after each run. Normal deploy of the mods. The game is closed.
+
+## Follow-up 2 (runs s65c-1 to s65c-4, 4 more launches, fixture manor-bailey)
+### Goal 1: which card is 123
+- The planner cards are 10 `buildingCardWidget_C` objects (`castlebuilderWidget.WidgetTree...buildingWidget_N`), listed by `objects` and read with `ID` and `Visibility`. After the panel is shown (and the pak is loaded): Visibility 4 (SelfHitTestInvisible, shown): `_1` ID 57, `_2` ID 58, `_5` ID **123**, `_6` ID 57, `_8` ID 50, `_9` ID 472. Visibility 1 (Collapsed): `_` ID 98, `_3` ID 83, `_4` ID 81, `_7` ID 95.
+- So card 123 (`buildingWidget_5`) is visible (the pak removed its Collapsed flag). The panel shows only 4 cards (three towers and a house shape): the list is a `WrapBox` (`ModulesWrapBox`) that clips. There is no ScrollBox (run s65c-3). Real clicks on the down arrow changed nothing. So card 123 is in the visible list but outside the 4 cards on screen. I did not get a screenshot of it. Next run: `scroll_cards` in the probe collapses cards 57, 58, 50 so 123 moves into view (written, not run).
+- Run s65c-4 used its launch with the older scroll code, so the collapse step has no screenshot.
+
+### Goal 2: finished module
+- Run s65c-2 (60 timber put into the manor, 60 rubble, fish, berries, no planks; the planks and rubble given before had filled the manor store to 200/200 in run s65c-1, so timber did not fit and builders did nothing for 60 days): the manor read `built` true on day 4 after the commit of type 123 (gatehouse mesh, at 13000, -51163, 2500), the game showed "Construction finished. (Manor)", and the manor `buildings` list had 92 parts (90 before the commit in runs s65c-3 and 4 with the same fixture). So the new module is a manor part (an `SMBuilding` in `buildings`), like the tower and the tax office. Screenshot: `runs/s65c-2/screenshots/end.png` (a new tower-like building at the top left of the bailey).
+- Limits: `master_parts` lists at most 80 rows, so the two new parts are not in the list. The part count was read only before the commit in runs 3 and 4, and the 92 count was read in run 2 after the build. Not proven: that one of the two parts is the type 123 module and not a plan from the fixture. The same fixture has 3 old plans, so the 2 extra parts after the commit may be the old plans too.
+- Builders are random: runs 3 and 4 (same inputs) did not finish in 60 game days (rubble 18 and 20 left; manor `built` false). Run 2 finished in 4 days. The difference is not known.
+- Not done: a clean proof (mesh count of the gatehouse mesh before and after the module built, with a run that finishes).
