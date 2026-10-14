@@ -35,3 +35,17 @@ Nothing was run, installed or copied into the repo. No mod gives a license, so w
 3. **R3 real loot:** read `GetEquippedID` of killed raiders and move goods with `addToInventory`. Claim to test: loot can follow the gear of dead units instead of a ledger.
 4. **Stances and battle place:** `SetBehaviourStance` on an AI squad, and moving `battlefield_BP_C` before `lord_challenge`. Claim to test: a mod can make a raid aggressive or defensive and choose where the battle is.
 5. **Unit growth by `spawnCompleteUnit`:** add units to a lord's army one squad at a time during a challenge.
+
+## Round 2 (2026-10-14): MLArmyCampMod, MLHomelessTentMod, SwapShrine, MLUE4SS 229, BetterBattlefieldMod
+Notes: `ml-army-camp.md`, `ml-homeless-tent.md`, `swap-shrine.md`, `mlue4ss-229.md`, `better-battlefield.md` (re-check). Nothing was run. Claims come from DLL strings and Lua source. None is tested in the game.
+
+| Lesson | Mod | Open issue | Status |
+|---|---|---|---|
+| No mod makes a buildable army or siege camp. "Encamp" is a squad skill (squad fields `camp`, `campLocation`, `rallyingStatus`) made by a native DLL. The pak is an empty shell. | MLArmyCampMod | #94 | Confirms that #94 needs a pak/data path (`siege-camp-build.md`). |
+| No garrison call in the army camp DLL (the only name is `SMUnit.garrisonedIn`). It does not reuse the manor garrison (type 57, `getModularGarrisonLimit`). | MLArmyCampMod | #90/#65, #68 | Negative result. A garrisoned camp must use the manor route (a row with `garrisonLimit`). |
+| The homeless tent is the game's own row 87. A mod places it by setting the pawn's building id and using the normal preview. | MLHomelessTentMod | spec 15 | Explains why our one-click `place_building` did not place a tent: use the preview and a real click. |
+| Lua-only visual swap of a finished building: `KismetSystemLibrary:LoadAsset_Blocking` plus `StaticMeshComponent:SetStaticMesh`. | SwapShrine | #68, #94 (look of parts) | Technique to test. Collision does not follow the new mesh. |
+| Same UE4SS build as zDev (3.0.1-1136). Ours is newer. Keep ours. | MLUE4SS 229 | none | No change. |
+| Battle place lever unchanged (same archive). | BetterBattlefieldMod | spec 10 | Still unverified. |
+
+No technique found for #90/#65 (manor commit) or #52 (walls). New spike proposals: (6) `tent-preview-place`: row 87 through the preview and a real click. (7) `building-mesh-swap`: `SetStaticMesh` on one building. (8) Read `Squad.camp` and `campLocation` while a baron army waits.

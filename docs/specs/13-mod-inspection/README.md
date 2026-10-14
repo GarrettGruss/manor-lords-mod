@@ -1,6 +1,6 @@
 # Spec 13: Inspection of existing community mods
 
-Status: inspection done (2026-10-11). Follow-up spikes are proposed in `implementation-notes/summary.md`; none ran yet.
+Status: inspection done (2026-10-11); 5 more mods added 2026-10-14. Follow-up spikes are proposed in `implementation-notes/summary.md`; none ran yet.
 
 ## Goal
 Learn from existing Manor Lords mods. The user downloaded 15 mods into `C:\Users\garre\Downloads` (already extracted next to their

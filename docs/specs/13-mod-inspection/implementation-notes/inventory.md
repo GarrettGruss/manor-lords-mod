@@ -108,3 +108,30 @@ Hashes (SHA-256):
 | zDev `MapGenBP/Content/MapGen/MapSpawnStruct.uasset` | 5,734 | 2f5977ca8e0db41a044019147b1138de4f78f8ebd9743ff9707c26f52e09462e |
 | zDev `MapGenBP/Content/MapGen/MeshStruct.uasset` | 3,796 | 074c41907987bd49289f3e54ffbdb24b39103fa9d4021a1965eb92ce93c32593 |
 | zDev `Mods/shared/Types.lua` | 57,252 | d246b8b26ee7ee38e8cd12bd7530e60b318dfd45e05260b8d75ea35bdb482a9b (same as ours) |
+
+## Round 2 (2026-10-14): 5 more archives
+Local copies are in the git-ignored `modtools/example-mods/<slug>/` (the mod files stay local; the mods belong to their authors). Nothing was run.
+
+| mod | version | target game version | type | files | size (zip) | author | license text |
+|---|---|---|---|---|---|---|---|
+| BetterBattlefieldMod (second download) | v2.3 (Nexus 306) | not stated | Lua | 2 (same as round 1) | 3,494 bytes | none given | none given |
+| MLArmyCampMod | 0.1.1-a.2 (Nexus 276) | 0.8.065, UE4SS 3.0.1-942 | native DLL + shell Blueprint pak | 11: manifests, `dlls/main.dll`, `ae_bp/*.pak`, `variant_steam/` copies, empty `main.lua` | 654,734 bytes | Psiae | none given |
+| MLHomelessTentMod | 1.0.1-alpha.2 (Nexus 262) | old build (2025-09), UE4SS 3.0.1-450 | native DLL | 4: `dlls/main.dll`, 2 manifests, `enabled.txt` | 1,085,080 bytes | Psiae | none given |
+| MLUE4SS 229 | 3.0.1-1136-g35d1795d (Nexus 229) | any UE game | UE4SS build, small package | 20 | 8,717,962 bytes | UE4SS-RE team | MIT |
+| SwapShrine | v2.09 (Nexus 398) | about 0.8.111 (2026-10) | Lua | 2: `Scripts/main.lua` (2,835 lines), `enabled.txt` | 24,716 bytes | none given | none given |
+
+| archive | SHA-256 |
+|---|---|
+| BetterBattlefieldMod-306 ... .zip | `56654178f64d5c2180be221e77f220b0f256dfa98c871b3c705cc294642bad6b` (same as round 1) |
+| MLArmyCampMod ... .zip | `9d2ab45811bbb7c7b2d1fe5b4d9bc1b753e9ac4ba1b8d2fbd1ce6c1bf9aeaabf` |
+| MLHomelessTentMod ... .zip | `f60bdad3f1914c8157783b2948d59bb203d0dd9bd35b1ec9fe628734fa16a5c9` |
+| MLUE4SS 229 ... .zip | `050948bdf6b4aae2ff8d834aaebadbf7535d4cb8478fbb579966a5ca3142f86a` |
+| SwapShrine ... .zip | `16c5765700684bd4617cab61cd8c96d6ff7703f381145c7254dcda4028749dcc` |
+
+| binary | size | SHA-256 |
+|---|---|---|
+| MLArmyCampMod `dlls/main.dll` | 828,928 | `f4edd7ba25a0953f19524c58add621548336dc25464cf8a1cd2b512a4f50dc6e` |
+| MLArmyCampMod `ae_bp/dev_psiae_MLArmyCampMod.pak` | 12,860 | `22b2c67b04dab09fcf5b2584811edda225d4aadcdff4fb1b3722d78f1dc63e5a` |
+| MLHomelessTentMod `dlls/main.dll` | 4,514,816 | `85bc19106460aeeb8ee8afccc45b229593a02126b55fc461c0b1f04c71ad76a5` |
+| MLUE4SS 229 `dwmapi.dll` | 279,552 | `2bd8edd80335c4cc1a64186b8ac9fb5764e0ff58669584b6c04131fc9f5e3842` |
+| MLUE4SS 229 `ue4ss/UE4SS.dll` | 20,567,040 | `d936fd2d66ae9287f0b32aec5f698aa81ff20ef744eac43bf62d8475469393df` |
