@@ -178,6 +178,27 @@ def main(argv):
         command_place(bridge, run_id, args, click=False)
     elif command == "place":
         command_place(bridge, run_id, args, click=True)
+    elif command in ("click", "hover"):  # issue 90: real mouse at window fractions
+        from runlib import osinput
+        from runlib.game import find_game_processes
+        from runlib.windows import list_windows, pick_game_window
+
+        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        action = osinput.click_at if command == "click" else osinput.hover_at
+        print(action(osinput.Win32Input(), window["hwnd"], float(args[0]), float(args[1])))
+    elif command == "call":  # call <player|path> <function> [int args...]
+        target = bridge.player_path() if args[0] == "player" else args[0]
+        print(bridge.call_function(target, args[1], [int(a) for a in args[2:]]))
+    elif command == "mouse3d":
+        print(bridge.call_function(bridge.player_path(), "getMouse3d"))
+    elif command == "unpause":
+        print(bridge.unpause())
+    elif command == "pause":
+        print(bridge.pause())
+    elif command == "prop":  # prop <object path or first:Class> <property>
+        target = bridge.player_path() if args[0] == "player" else args[0]
+        value = bridge.read_property(target, args[1])
+        print(f"len {len(value)}" if isinstance(value, list) else json.dumps(value, default=str)[:3000])
     elif command == "masters":
         command_masters(bridge, args)
     elif command == "give":
