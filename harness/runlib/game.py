@@ -172,3 +172,19 @@ def ensure_game_alive(ctx: PhaseContext, where: str) -> None:
 
 def sleep_until(deadline: float, step_s: float) -> None:
     time.sleep(max(0.0, min(step_s, deadline - time.monotonic())))
+
+
+GAME_ARGS_VARIABLE = "HARNESS_GAME_ARGS"
+ALLOWED_GAME_ARGS = ("-faketouches", "-windowed")
+
+
+def game_launch_args(env: dict) -> list[str]:
+    """Extra command line arguments for the game, from HARNESS_GAME_ARGS (space separated).
+
+    Only a short allow list is accepted, so a typo or a stray value never reaches the game.
+    """
+    args = (env.get(GAME_ARGS_VARIABLE) or "").split()
+    unknown = [arg for arg in args if arg not in ALLOWED_GAME_ARGS]
+    if unknown:
+        raise ValueError(f"{GAME_ARGS_VARIABLE} has arguments that are not allowed: {unknown}. Allowed: {list(ALLOWED_GAME_ARGS)}")
+    return args

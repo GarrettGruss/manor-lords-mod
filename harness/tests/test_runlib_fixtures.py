@@ -312,5 +312,20 @@ class RunPhasesTest(UserSavesCase):
             phases.build_real_phases("noop", fixture="bad_name")
 
 
+class GameLaunchArgsTest(unittest.TestCase):
+    def test_empty_gives_no_args(self):
+        from runlib.game import game_launch_args
+        self.assertEqual(game_launch_args({}), [])
+
+    def test_allowed_args_pass(self):
+        from runlib.game import game_launch_args
+        self.assertEqual(game_launch_args({"HARNESS_GAME_ARGS": "-faketouches -windowed"}), ["-faketouches", "-windowed"])
+
+    def test_unknown_arg_is_an_error(self):
+        from runlib.game import game_launch_args
+        with self.assertRaises(ValueError):
+            game_launch_args({"HARNESS_GAME_ARGS": "-exec=evil"})
+
+
 if __name__ == "__main__":
     unittest.main()
