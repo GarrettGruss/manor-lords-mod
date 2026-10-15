@@ -119,7 +119,7 @@ def scroll_cards(ctx) -> None:
 def open_planner(ctx, manor: str) -> None:
     player = ctx.bridge.player_path()
     attempt(ctx, "close popups", ctx.actions.close_popups)
-    attempt(ctx, "manor_planner", lambda: ctx.actions._command("manor_planner"))
+    attempt(ctx, "manor_planner", lambda: ctx.actions._command("manor_planner", ui=ctx.variant_option("HARNESS_UI", "0") == "1"))
     widgets = attempt(ctx, "planner widgets", lambda: ctx.bridge._result("objects", class_name="castlePlanner_C", limit=5)["objects"])
     for ref in widgets or []:
         path = object_path(ref)
@@ -138,7 +138,7 @@ def open_planner(ctx, manor: str) -> None:
         time.sleep(1)
         ctx.screenshot(f"planner_scroll{step}")
     scroll_cards(ctx)
-    if ctx.variant_option("HARNESS_PROBE", "planner") in ("lv3", "lv3place"):
+    if ctx.variant_option("HARNESS_PROBE", "planner") in ("lv3", "lv3place", "lv3build") or ctx.variant_option("HARNESS_PLANNER_PLACE", "0") == "1":
         place_lv3(ctx, manor)
         return
     attempt(ctx, "planner close", lambda: ctx.actions._command("manor_planner", close=True))
@@ -182,6 +182,11 @@ def place_lv3(ctx, manor) -> None:
     time.sleep(2)
 
 
+def read_garrison(ctx, manor: str, label: str) -> None:
+    attempt(ctx, label, lambda: ctx.bridge.call_function(manor, "getModularGarrisonLimit"))
+    attempt(ctx, f"{label} module types", lambda: ctx.bridge.call_function(manor, "getModuleTypes"))
+
+
 def feed_builders(ctx) -> None:
     actions = ctx.actions
     attempt(ctx, "manor slots", lambda: actions.manor_worker_slot(45, 3))
@@ -205,6 +210,25 @@ def watch(ctx) -> None:
             return
 
 
+def watch_lv3(ctx, manor: str) -> dict:
+    """After the real Commit: only advance days and read the manor state. No part or mesh reads."""
+    ctx.screenshot("committed")
+    feed_builders(ctx)
+    for day in range(1, BUILD_DAYS + 1):
+        ctx.time.run_game_days(1, speed=3)
+        ctx.popups()
+        state = attempt(ctx, f"day {day} manor", ctx.actions.manor_state)
+        modules = (state or {}).get("modules", [])
+        if day % 10 == 0:
+            ctx.screenshot(f"day{day}")
+        if len(modules) > 1 and all(m.get("built") for m in modules):  # the manor alone always reads built (run s90c-5)
+            note(ctx, "all modules built", day=day)
+            break
+    read_garrison(ctx, manor, "garrison after build")
+    ctx.screenshot("end")
+    return ctx.result()
+
+
 def run(ctx) -> dict:
     actions = ctx.actions
     attempt(ctx, "stat 123", lambda: actions.building_stat(MODULE_TYPE))
@@ -218,18 +242,25 @@ def run(ctx) -> dict:
         return ctx.result()
     if ctx.variant_option("HARNESS_PROBE", "planner") == "lv3place":
         return ctx.result()
-    module_type, mesh = (LV3_TYPE, LV3_MESH) if ctx.variant_option("HARNESS_PROBE", "planner") == "lv3" else (MODULE_TYPE, MESH)
+    mode = ctx.variant_option("HARNESS_PROBE", "planner")
+    module_type, mesh = (LV3_TYPE, LV3_MESH) if mode in ("lv3", "lv3build") else (MODULE_TYPE, MESH)
+    read_garrison(ctx, manor, "garrison before build")
     feed_builders(ctx)
+    if mode == "lv3build":  # run s90c-4 crashed after the real commit, in the part or mesh reads of the manor under construction
+        return watch_lv3(ctx, manor)
     count_module_users(ctx, "before")
     manor_id = (attempt(ctx, "manor id", actions.manor_state) or {}).get("region_manor_id")
     parts_before = attempt(ctx, "parts before", lambda: list_parts(ctx, manor_id)) or {}
     note(ctx, "parts before count", count=len(parts_before))
+    if mode == "build" and ctx.variant_option("HARNESS_PLANNER_PLACE", "0") == "1":
+        module_type = LV3_TYPE  # card 123 was placed and committed in the planner by real clicks
     if module_type != LV3_TYPE:  # the Lv3 module was planned in the planner and committed there
         attempt(ctx, "blueprint add", lambda: actions._command("manor_blueprint_add", type=module_type, x=SPOT[0], y=SPOT[1], z=SPOT[2],
                                                               yaw=0, mesh=mesh, commit=True))
     ctx.screenshot("committed")
     watch(ctx)
     count_module_users(ctx, "after")
+    read_garrison(ctx, manor, "garrison after build")
     attempt(ctx, "manor_state end", actions.manor_state)
     ctx.screenshot("end")
     report_new_parts(ctx, manor_id, parts_before)
