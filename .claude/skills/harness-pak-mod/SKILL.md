@@ -45,3 +45,11 @@ A cooked Widget Blueprint is a pak too. Sources: mod/PolicyMenu/ue/ (copy to the
 - Keep one shared style prompt per art set (see `harness/tools/make_policy_art.py`). Ask for "no text, no letters": the model still writes words sometimes, so look at every image.
 - Review a set with `harness/tools/contact_sheet.py OUT.png IN...` and read the sheet.
 - Originals stay in `runs/genimage/` (git-ignored). Commit only resized copies in `mod/<Name>/art/`. `art/`, `ue/` and `paks/` are not deployed and not zipped.
+
+## Generated meshes (spec 21)
+Workflow verified 2026-10-14 (note `docs/specs/21-mesh-generation/implementation-notes/spike-a-ladder.md`):
+1. Two reference views with `genimage.py` (plain background, no ground, no text). Then `uv run python harness/tools/genmesh.py multi --image a.png --image b.png --out runs/genmesh/<name> --polycount 2000` (key `MESHY_API_KEY`, never printed; caps 60 per call and 200 per day; log `runs/genmesh/log.jsonl`; `genmesh.py balance` shows credits). One textured call costs 30 credits.
+2. Import headless in the UE workspace: copy `mod/HarnessActions/ue/import_mesh.py`, set `MESH_FBX` and `MESH_NAME`, run `UnrealEditor-Cmd.exe <uproject> -ExecutePythonScript=import_mesh.py -unattended -nullrhi`. It logs size (cm), vertices and material. It caps textures (1024 colour and normal, 512 others) to keep the pak near 3 MB.
+3. `make_bm.py` with `BM_NAME` and `BM_PARTS` (JSON list of `[component name, mesh path, [x,y,z], [sx,sy,sz]]`). Use the prefixes `MainBld_`, `Bld_`, `clutter_`, `res_`.
+4. Cook (`-run=cook -targetplatform=Windows -unversioned -nopak -skipeditorcontent`), copy `BM_*` and `Meshes/` into `modtools/work/<pak>/ManorLords/Content/HarnessMod/`, add a `buildingStats` row (`s65_edit_json.py stats`, `blueprint`, `visible`) with a free id, `pakmod.py fromjson --to <pak>`, `pakmod.py build <pak>`.
+5. Run `run.py --scenario noop --keep-open --pak <pak>`, then `s94_drive.py` (`camera`, `ghost`, `place`, `days`), `s21_locate.py` and `s21_view.py` (wheel zoom and screenshot). Place only on a WHITE ghost. Close the game, then `pakmod.py remove --all`.

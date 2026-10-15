@@ -57,3 +57,11 @@ Use the same pipeline for a main tent part and a construction mesh for row 483. 
 - [ ] One Meshy mesh shows in the game as a building part, at the right scale (within 10 % of the expected size), base on the ground, no missing texture, at most 3000 triangles, in a harness screenshot.
 - [ ] The note records credits used, quality and problems, and a verdict (use Meshy, use Blender, or both).
 - [ ] The license decision for a public release is written down with its source.
+
+## Spike A result (2026-10-14)
+
+- [x] A note records the real cost and quality of the first spike (`implementation-notes/spike-a-ladder.md`: 30 credits, 2000-triangle target, 3500 vertices).
+- [x] One generated mesh shows in the game, at the right scale (about 3 m, within 10 percent of the plan), in a screenshot taken by the harness (`runs/s21a-1/screenshots/`, git-ignored). Base on the ground. No missing texture.
+- [ ] The license decision for a public release (open).
+- [x] No key in git (grep the diff). Spend is logged (`runs/genmesh/log.jsonl`) and capped (60 per call, 200 per day).
+- [ ] Frame time within noise (not measured).
