@@ -125,3 +125,34 @@ Note the traps from the siege notes: `bVisibleInUi` needs `IsZero` false; the `M
 
 ## Changes outside the repo
 - `modtools/work/` (git-ignored): extracted and JSON files of the classes listed above, `modtools/work/s104/*.txt`. No game file, no save, no setting was changed. The game was not started.
+
+## Game round (2026-10-15, issue #104, runs s104g-1 to s104g-3, 3 launches, fixture `base`)
+No save function was called. The AES key came only from the environment. The game is closed and `~mods` is removed. Screenshots are git-ignored: `runs/s104g-N/screenshots/` (worktree `agent-a0e941f6393cf399b`): `stable97_a.png` (baseline), `stable97_pak.png` (two sheds), `stable4_4oxen.png` (HUD shows 4 oxen).
+New tools: `s104_stable.py` (master, oxen, `animalSpaceCache`), `s104_order.py` (struct call, does NOT work), `s104_mouse_probe.py`, `s104_window_probe.py`, `s104_window_fit.py`, `s104_cursor_probe.py`.
+
+### Baseline (run s104g-1, no pak)
+- `base` already has a small stable (row 97) for the player (region Nusslohe) and hitching posts (row 30) for AI regions. So no hitching post was placed. The mouse blocker (below) made a new placement impossible.
+- Player stable: `animals` holds 2 `VAMP_Ox_C`, `oxen` is empty, `animalSpaceCache` `stableCurrent` 2, `stableMax` 2. `getMaxOxen` returns 0 (not the stable size). `Region:getTotalStableSpace` 2. Hitching posts: `stableMax` 1 and one animal each (ox or horse).
+- The animals are not standing at the building. They were 3.6 k to 9 k units away (field work). A kept-open run is paused, so nothing moves to a rest spot.
+- Real data: `master.animals` is the list of housed animals (not `oxen`). The building owns no per-ox spot.
+
+### Pak `stable4` (`mod/HarnessActions/paks/stable4_P.pak`, paths start with `ManorLords/Content/`)
+- Row 125 = clone of row 97: `stableSpace` 4 (a Byte field), `Bounds` 800 x 1500, `maxHp` 150, `bVisibleInUi` true, class `/Game/HarnessMod/BM_HarnessLargeStable`. Row 97 got the same changes (stableSpace, Bounds, maxHp, class). This lets a built stable of the save become the large stable without a mouse placement.
+- Blueprint `BM_HarnessLargeStable` (`mod/HarnessActions/ue/make_bm_stable.py`, UE 5.5.4): parts `MainBld_900`, `MainBld_901` (mesh `/Game/ManorLords/Buildings/Merged/SM_MERGED_C_SG_OxShed_UBeam`, 650 units apart in Y) and Scene `gathering`. The game mesh is not in the UE project. A stand-in copy of the engine Cube was made at the same path, and only the `BM_` files were packed. The cooked Blueprint then points at the real game mesh.
+- Load check: `building_stat kind=125` reads `bVisibleInUi` true and `maxHp` 150 (vanilla has no row 125). Row 97 reads `maxHp` 150.
+- Result: the player stable now has 2 parts (two real ox sheds side by side, `stable97_pak.png`) and `stableMax` 4. `Region:getTotalStableSpace` 4. So a data change of `stableSpace` alone raises the capacity at once, and the new class gives the two-shed look. A stable of an AI region (row 97) also reads `stableMax` 4.
+- Placing row 125 with the build mode: NOT done (blocker below).
+
+### 4 oxen (run s104g-3)
+- Command `plot_upgrade` now takes `type` (HarnessHousing): it sends `addUpgradeRequest` for the first own master of that type, no mouse. `upgrade=13` (order oxen) added ONE ox: `stableCurrent` 2 to 3 after about 3 game days (the ox walks in from the map edge, 100 k units, about 14 game days at speed 3). Three more orders (also after the ox arrived) added nothing. `orderLivestock(0)` returned true and added nothing. Reason not found (`regionalWealth` 85, price 1).
+- The 4th animal was added with `SMBuildingMaster:spawnAnimal(12)` (EUnitRole 12 = Ox). It is a harness spawn, not a purchase. `spawnAnimal(0)` spawned a `VAMP_DefaultUnit` (wrong role, a stray that stays in `animals`; it is not counted in `stableCurrent`).
+- End state: `stableCurrent` 4, `stableMax` 4, 4 `VAMP_Ox_C` in `animals`, HUD oxen counter 4 (`stable4_4oxen.png`). A new ox stands at the master origin (offset about (-15, +10) from the master location), the arrived bought ox at about (-10, -20) to (-35, -230). Others were away working. Positions are therefore not fixed spots: they come from the work AI. No evidence for per-ox stable slots; with 4 oxen at the stable, they did not stack in one point (distinct realPos, more than 50 units apart).
+
+### Blocker: the mouse does not reach the world (third round in a row)
+- `getMouse3d` returns Z -100000 in build mode (hitching post 30 and row 125) with the game unpaused, window moved to (0,0) 2000 x 1200 (it was partly off the 2560 x 1440 screen), a click on the window first, `SetCursorPos` plus relative `mouse_event` wiggles, the game in the foreground, the cursor over the game window. The build mode hints show, but no ghost. Probes `s104_mouse_probe.py`, `s104_window_probe.py`. Not solved. So no new building was placed, and "place with a real click on a white ghost" is open.
+- Workaround used: the pak overrides row 97, so the existing stable of the save becomes the large stable.
+
+### Verdict
+- Capacity and look: proven (stableMax 4, two sheds, 4 oxen housed, HUD 4).
+- New placeable card (row 125 by the mouse): not proven (mouse blocker).
+- Open: why repeated `order_oxen` adds nothing; where oxen rest when idle (run unpaused longer, at night).

@@ -116,6 +116,7 @@
 --   {"command":"forest_spot","min_dist":15000,"max_dist":40000}   up to 5 dense tree cells of the player region, best first (Resource actors with resType "tree"; read only)
 --   {"command":"plot_field_shift","dx":3000,"dy":0,"plots":true,"commit":true}   test only: move the drawn, closed plot outline of the pawn (plots: also extractedPlots), then commit it
 --   {"command":"plot_upgrade","upgrade":12,"slot":0,"extension":false}   spike: PawnCPP:addUpgradeRequest (or addExtensionChangeRequest) on the building under the mouse
+--   {"command":"plot_upgrade","upgrade":13,"type":97}   same, on the first own master of that building type (no mouse)
 --   Composite parts (spec 18, see mod/shared/HarnessParts):
 --   {"command":"master_parts","building":123,"limit":5}      parts and extensions of one building master (or "type":3: the first built one; read only)
 --   {"command":"master_site","type":483}                    state of a site, built or not: Region, owner, goods, builders (issue 94, read only)

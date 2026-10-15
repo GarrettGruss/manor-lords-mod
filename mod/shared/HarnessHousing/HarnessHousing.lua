@@ -353,12 +353,29 @@ local function intField(raw, name)
     return tonumber((raw or ""):match('"' .. name .. '"%s*:%s*(%d+)'))
 end
 
+-- Issue 104: the mouse may not reach the game, so an upgrade can name the building by type. Only a master of the player is taken.
+local function ownMasterOfType(pawn, wantedType)
+    for _, master in ipairs(FindAllOf("SMBuildingMaster") or {}) do
+        local owner = read(function() return master.ownerPawn end)
+        local sameOwner = isValid(owner) and read(function() return owner:GetFullName() == pawn:GetFullName() end)
+        if sameOwner and read(function() return master.Data.bType end) == wantedType then return master end
+    end
+    return nil
+end
+
 function M.plot_upgrade(_, raw)
     local upgrade, slot = intField(raw, "upgrade"), intField(raw, "slot") or 0
     if not upgrade or upgrade > M.MAX_UPGRADE_ID then return { ok = false, error = "upgrade must be an id from 0 to " .. M.MAX_UPGRADE_ID } end
     local pawn = playerPawn()
     if not pawn then return { ok = false, error = "no player pawn" } end
-    local building = read(function() return pawn:getHitBuilding() end)
+    local building
+    local wantedType = intField(raw, "type")
+    if wantedType then
+        building = ownMasterOfType(pawn, wantedType)
+        if not building then return { ok = false, error = "no own building of type " .. wantedType } end
+    else
+        building = read(function() return pawn:getHitBuilding() end)
+    end
     if not isValid(building) then return { ok = false, error = "no building under the mouse" } end
     local before = {}
     for _, id in ipairs(listOf(read(function() return building.upgradesDone end))) do before[#before + 1] = id end
