@@ -1,6 +1,6 @@
 # Spec 10: Invasion Mode testability (harness upgrade for 90% automated verification)
 
-Status: done for the stated scope (2026-10-12): the criteria matrix, spikes, upgrades and stand-in mods are merged. Coverage: 36 of 39 A and P criteria have a verified method (92 %, target 90 %). Open: M2 (moved to #68), Q4 (Cuman visuals), a full 730-day soak run, and the extra runs listed in `implementation-notes/open-items.md`. Goal set by the user: improve the harness so that about 90% of the testing of the Invasion Mode brief can be done by agents.
+Status: done for the stated scope (2026-10-12; 2026-10-15: a 3.3 h soak reached day 333 of 730 without a crash): the criteria matrix, spikes, upgrades and stand-in mods are merged. Coverage: 36 of 39 A and P criteria have a verified method (92 %, target 90 %). Open: M2 (moved to #68), Q4 (Cuman visuals), a full 730-day soak run, and the extra runs listed in `implementation-notes/open-items.md`. Goal set by the user: improve the harness so that about 90% of the testing of the Invasion Mode brief can be done by agents.
 
 Battlefield anchor (2026-10-15, issue #99, branch `feat/10-battlefield-anchor`): verified in the real game. Command `battlefield_anchor` moves all `battlefield_BP_C` actors to the manor while `initChallenge` runs; `Challenge.Center` was 757 units from the manor (7 runs) against 46 853 without it. Raid challenge check and the formal 3 against 3 A/B are still open: `implementation-notes/battlefield-anchor.md`.
 
@@ -121,7 +121,7 @@ When the real mod exists, the same scenarios run against it. A blocked criterion
 | U9 | **Performance and soak probes**: game clock rate against wall time, with unit counts; a 2-year soak scenario with periodic raids | Q1 Q2 | Q1 Q2 |
 
 Status of U3 and U9 (2026-10-10, branch `feat/23-scenario-control`):
-- **U3 built.** `ctx.run_until` (wall or game time, stall detector), scenario limits up to 4200 s (a limit above 300 s needs `LONG_REASON`), launcher and suite timeouts that follow the scenario limit, run cap 400 (`HARNESS_MAX_RUNS`), `close_popups` and `ctx.popups`. Real scenario: `soak-days`, 3 of 3 passed. Unit tests: `test_runlib_waiting.py`, `test_runlib_popups.py`. Not verified: a game-time `run_until` against the real game.
+- **U3 built.** `ctx.run_until` (wall or game time, stall detector), scenario limits up to 13500 s (a limit above 300 s needs `LONG_REASON`), launcher and suite timeouts that follow the scenario limit, run cap 400 (`HARNESS_MAX_RUNS`), `close_popups` and `ctx.popups`. Real scenario: `soak-days`, 3 of 3 passed. Unit tests: `test_runlib_waiting.py`, `test_runlib_popups.py`. Not verified: a game-time `run_until` against the real game.
 - **U9 partly built.** The soak scenario records clock rate and process memory at start and end and asserts ranges. The 2-year run is **not** possible on the unmanaged start village (defeat at about day 350), so Q1 is verified as a method over 120 to 350 days and the rest is extrapolated. Notes: `implementation-notes/soak-results.md`. Not built: a periodic raid in the soak.
 
 ## Capability spikes (real game; each result goes to `implementation-notes/`)
