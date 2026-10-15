@@ -234,3 +234,32 @@ No Lv3 module was built. The harness mouse did not reach the game in these runs,
 ### Tools added
 - `probe-manor-flow` scenario (options `HARNESS_CARD_X/Y`, `HARNESS_SPOTS`, `HARNESS_STOP=planner`, `HARNESS_DAYS`), `s94_drive.py` commands `click`, `hover`, `prop`, `call`, `mouse3d`, `pause`, `unpause`.
 - Next run: first prove `getMouse3d` is valid (hover in building mode) before any planner step; then pak B with `HARNESS_CARD_X=0.875`.
+
+## Round 9 (mouse-free, runs s90g-1 to s90g-4, 2026-10-15, fixture manor-closed, 4 launches)
+A Lv3 tower WAS built with no mouse and no planner. No save function was called. No crash. Screenshots (git-ignored): `C:/Users/garre/development/manor-lords-mod/.claude/worktrees/agent-a16cea4527b1b9441/runs/<run>/screenshots/`.
+
+### Flow that works (mouse-free, planner closed)
+1. `manor_blueprint_add` type 57 with `mesh` = `/Game/NotStronghold/Buildings/Merged/SM_MERGED_C_SG_Tower_Lv3`, at (13000, -51163, 2500) (inside the bailey). Blueprints 3 -> 4. `getCastleReconstructionCost(false)` is non-empty at once (timber 10, planks 15 and one more good: the goods of row 57).
+2. `manor_planner commit=true order=hand`: `setPlacedBuilding(0)`, then `manor:convertBlueprintsToBuildings(false)`. No `setPlannerMode`. The game did not crash. The other order (convert first) was not needed and was not run.
+3. Goods given (timber, planks, rubble, fish, berries). Builders built the tower within the first 10 game days. Day 10: `runs/s90g-3/screenshots/day10.png` (a tall stone tower with a pointed roof, not in `start.png`); end: `runs/s90g-3/screenshots/end.png`.
+- Pak: `s90pakB` (row 57 with Lv3 data, DT_ConstructionBPs 167 -> Lv3 tower). The pak loaded: the cost equals the goods of row 57.
+- The mesh given to `manor_blueprint_add` is the one the planner ghost would use (row 57 `constructionMeshAsset`).
+
+### Why earlier launches failed
+- s90g-1: `no blueprint of type 57 on the manor to copy the mesh from`. The manor has no keep blueprint, so `mesh` is required for type 57.
+- s90g-2: `mesh not found` for the Lv3 path. `LoadAsset(path)` needs the object path (`path.Name`). `meshByPath` now tries `path.Name` first. This also explains the round 1 "mesh not found".
+- The old crash of a commit by command (round 3) was not reproduced. Likely cause (not proven): the commit ran with the card still selected or the planner open, and the planner keeps pointers to the blueprint actors. The hand order (`setPlacedBuilding(0)` first, planner closed) was safe in 2 of 2 runs.
+
+### Control (run s90g-4, no pak, vanilla keep mesh `/Game/ManorLords/Buildings/Merged/SM_MERGED_C_SG_Manor_MainTower_Lv1_New`)
+- Same mouse-free flow. `IsConstructed` true on day 11. A wooden Lv1 keep is built (`runs/s90g-4/screenshots/end.png`). `getModularGarrisonLimit` 12 -> 24. So the method builds a vanilla keep.
+
+### Garrison (open)
+- Lv3 tower built with pak B: `getModularGarrisonLimit` stayed 12 (run s90g-3, read after 60 days). The vanilla keep gives 24. So the native +12 is not given for a tower with the Lv3 mesh and the tag bType_57. It is tied to something else (the real keep part).
+- The garrison hook did not add its bonus. The hook asks `manor_state` for a built module of the type, and `manor_state` lists only manor masters (type 98), never parts (control: only type 98). So HARNESS_GARRISON_MODULE_TYPE=57 or 83 can never match. The hook works only with type 98 (round 8). Next: detect the Lv3 tower differently (mesh users), or use type 98.
+- Garrison 36 is therefore NOT shown. Only the look and the build are shown.
+- `IsConstructed` is a UFunction. The first run read it as a property and never saw it. Fixed in `probe-manor-flow`.
+
+### Changes
+- `manor_blueprint_add` and `manor_planner commit` take `order` (`hand` default, `convert_first`, `convert_only`). `probe-manor-flow` has HARNESS_MOUSEFREE=1 (HARNESS_TYPE, HARNESS_SPOT, HARNESS_MESH, HARNESS_ORDER).
+- Run command: `run.py --scenario probe-manor-flow --fixture manor-closed --pak s90pakB --env HARNESS_MOUSEFREE=1 --env HARNESS_TYPE=57 --env HARNESS_MESH=<path> --env HARNESS_DAYS=60`.
+- Game closed, no pak installed, fixture slot removed after each run. One launch unused.
