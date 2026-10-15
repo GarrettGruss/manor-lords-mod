@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - Spec 17 retest on `manor-closed` (#68): tool `s17_plots.py`; notes in `bailey-buildings.md`. Mouse refused inside the ring ("Road Access obstructed"); plots inside never built, outside control built.
+- Spike #90 round 5 (static): note `manor-lv3.md` compares the Lv3 module and construction Blueprints with Lv1, finds the planner cost is native, and plans a type id swap pak. New read-only tools `s90_bm_compare.py`, `s90_cbp_compare.py`, `s90_bytecode_trace.py`, `s90_jmap_find.py`, `s90_row_diff.py`.
 - Lv3 keep data pak `mmlv3full`, `s65_edit_json.py copyfield|meshrow`, `s90_row_goods.py` (#90, #65): row data is not enough, the Lv3 keep is still not built (notes `manor-lv3.md` round 4).
 - Spec 18 spike #104 (static): note `access-points.md` on building access points (`gathering`, `workpos`, `res_` slots with `workPos_add*` tags), animal capacity (`stableSpace`), the hitching post and small stable data, and the plan for a 4-oxen stable. Read-only tools `harness/tools/s104_*.py` and `s104_unpack.ps1`.
 - Spec 21 (draft, research only): Meshy and Blender routes for generated meshes. Note `meshy-research.md` covers the API, credits, license, pipeline and a first spike.
