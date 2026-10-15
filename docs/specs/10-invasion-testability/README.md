@@ -2,6 +2,8 @@
 
 Status: done for the stated scope (2026-10-12): the criteria matrix, spikes, upgrades and stand-in mods are merged. Coverage: 36 of 39 A and P criteria have a verified method (92 %, target 90 %). Open: M2 (moved to #68), Q4 (Cuman visuals), a full 730-day soak run, and the extra runs listed in `implementation-notes/open-items.md`. Goal set by the user: improve the harness so that about 90% of the testing of the Invasion Mode brief can be done by agents.
 
+Battlefield anchor (2026-10-15, issue #99, branch `feat/10-battlefield-anchor`): verified in the real game. Command `battlefield_anchor` moves all `battlefield_BP_C` actors to the manor while `initChallenge` runs; `Challenge.Center` was 757 units from the manor (7 runs) against 46 853 without it. Raid challenge check and the formal 3 against 3 A/B are still open: `implementation-notes/battlefield-anchor.md`.
+
 Spec 13 lead (2026-10-14): BetterBattlefieldMod re-checked (battle place lever for lord challenges) and MLArmyCampMod shows the squad fields `camp` and `campLocation`: `../13-mod-inspection/implementation-notes/better-battlefield.md`, `../13-mod-inspection/implementation-notes/ml-army-camp.md`.
 Source brief: "Manor Lords: Invasion Mode (Design Brief)", 2026-10-10 (kept by the user; the criteria below are derived from it).
 Roadmap: continues `docs/specs/00-harness-overview/README.md` (the 90% goal), builds on specs 03 to 09.

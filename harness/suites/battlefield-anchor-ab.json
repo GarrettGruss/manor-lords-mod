@@ -1,0 +1,16 @@
+{
+  "name": "battlefield-anchor-ab",
+  "scenarios": [
+    {
+      "scenario": "battlefield-anchor",
+      "repeat": 3,
+      "variants": [
+        {"name": "control", "env": {"BATTLEFIELD_ANCHOR": "0"}},
+        {"name": "anchor", "env": {"BATTLEFIELD_ANCHOR": "1"}}
+      ],
+      "expect": {"metric": "center_dist", "direction": "lower", "min_rel_diff": 0.5}
+    }
+  ],
+  "time_budget_s": 3600,
+  "flake_retries": 0
+}
