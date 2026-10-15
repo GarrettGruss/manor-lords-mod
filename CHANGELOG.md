@@ -8,6 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Harness (#104): `HARNESS_GAME_ARGS` passes an allow-listed launch argument to the game. Spike note `mousefree-placement.md` (mouse-free normal placement not achieved).
 
+- Spike #104 and #115: opt-in mod `HarnessPlace` and tool `s104_place.py`. A late tick hook puts the placement ghost at a chosen world point without a mouse. The placement itself is still refused (native validity). Note `mousefree-preview-hook.md`.
+
 ### Changed
 - Soak (#53): `soak-days` accepts up to 13000 s of wall time (`MAX_LIMIT_S` 13500 s) and wider clock-rate (1.5 to 9) and days (0.2 to 1.1) ranges. A 3.3 h run reached day 333 of 730 with no crash and no memory growth; see spec 10 `open-items.md`.
 
