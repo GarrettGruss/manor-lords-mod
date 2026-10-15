@@ -4,6 +4,9 @@ Flow (recorded in a live test, 2026-10-14): open the planner, click a card, clic
 check that the manor `blueprints` list grew and the rebuild cost is not empty, then click Commit, give goods, run days.
 Use fixture manor-closed. Options (run.py --env): HARNESS_CARD_X, HARNESS_CARD_Y (card position), HARNESS_SPOTS ("fx,fy;fx,fy"),
 HARNESS_STAT_TYPE (building type to read), HARNESS_DAYS (build days, default 40).
+Mouse-free mode (HARNESS_MOUSEFREE=1, round 9): the planner stays closed. The probe adds the blueprint with `manor_blueprint_add`
+(HARNESS_TYPE default 57, HARNESS_SPOT "x,y,z", optional HARNESS_MESH), checks that `blueprints` grew and the cost is filled,
+then commits with `manor_planner commit` in the order HARNESS_ORDER (hand, convert_first, convert_only).
 It calls no save function. It never calls convertBlueprintsToBuildings: the Commit button does it.
 """
 
@@ -101,12 +104,34 @@ def watch_build(ctx, manor: str, days: int) -> bool:
     for day in range(1, days + 1):
         ctx.time.run_game_days(1, speed=3)
         ctx.popups()
-        built = attempt(ctx, f"day {day} IsConstructed", lambda: ctx.bridge.read_property(manor, "IsConstructed"))
+        built = attempt(ctx, f"day {day} IsConstructed", lambda: ctx.bridge.call_function(manor, "IsConstructed"))
         if day % 10 == 0:
             ctx.screenshot(f"day{day}")
         if built is True and day > 1:
             return True
     return False
+
+
+def mousefree_place(ctx, manor: str) -> bool:
+    option = ctx.variant_option
+    x, y, z = (float(v) for v in option("HARNESS_SPOT", "13000,-51163,2500").split(","))
+    args = {"type": int(option("HARNESS_TYPE", "57")), "x": x, "y": y, "z": z, "yaw": 0}
+    if option("HARNESS_MESH", ""):
+        args["mesh"] = option("HARNESS_MESH", "")
+    before = blueprint_count(ctx, manor)
+    attempt(ctx, "blueprint add", lambda: ctx.actions._command("manor_blueprint_add", **args))
+    after = blueprint_count(ctx, manor)
+    ctx.screenshot("mousefree_placed")
+    return before is not None and after is not None and after > before and cost_is_filled(ctx, manor)
+
+
+def mousefree_commit(ctx) -> None:
+    order = ctx.variant_option("HARNESS_ORDER", "hand")
+    note(ctx, "commit start", order=order)
+    attempt(ctx, "commit", lambda: ctx.actions._command("manor_planner", commit=True, order=order))
+    time.sleep(3)
+    ctx.ensure_alive("after commit")
+    ctx.screenshot("mousefree_committed")
 
 
 def parse_spots(text: str) -> list[tuple[float, float]]:
@@ -122,6 +147,11 @@ def run(ctx) -> dict:
         return ctx.fail("manor", "no manor master found")
     attempt(ctx, "close popups", ctx.actions.close_popups)
     attempt(ctx, "garrison before", lambda: ctx.bridge.call_function(manor, "getModularGarrisonLimit"))
+    if option("HARNESS_MOUSEFREE", "0") == "1":
+        if not mousefree_place(ctx, manor):
+            return ctx.fail("place", "the blueprint did not register or the cost is empty")
+        mousefree_commit(ctx)
+        return finish_build(ctx, manor)
     attempt(ctx, "open planner", lambda: ctx.actions._command("manor_planner", ui=True))
     time.sleep(2)
     ctx.screenshot("planner")
@@ -150,9 +180,16 @@ def run(ctx) -> dict:
     attempt(ctx, "commit click", lambda: ctx.click_with_mouse(*COMMIT_BUTTON))
     time.sleep(3)
     ctx.screenshot("committed")
+    return finish_build(ctx, manor)
+
+
+def finish_build(ctx, manor: str) -> dict:
+    option = ctx.variant_option
     feed_builders(ctx)
+    attempt(ctx, "unpause", ctx.bridge.unpause)
     built = watch_build(ctx, manor, int(option("HARNESS_DAYS", "40")))
     note(ctx, "build done", built=built)
-    attempt(ctx, "garrison after", lambda: ctx.bridge.call_function(manor, "getModularGarrisonLimit"))
+    attempt(ctx, "manor_state after", ctx.actions.manor_state)
+    attempt(ctx, "garrison after",lambda: ctx.bridge.call_function(manor, "getModularGarrisonLimit"))
     ctx.screenshot("end")
     return ctx.result()

@@ -387,9 +387,29 @@ local function meshByPath(path)
     local name = path:match("([^/]+)$")
     local found = read(function() return StaticFindObject(path .. "." .. name) end)
     if isValid(found) then return found end
-    local loaded = read(function() return LoadAsset(path) end)
-    if isValid(loaded) then return loaded end
+    -- Round 9: LoadAsset(path) alone gave "mesh not found" for a base game mesh; the object path with .Name is the full form.
+    for _, assetPath in ipairs({ path .. "." .. name, path }) do
+        local loaded = read(function() return LoadAsset(assetPath) end)
+        if isValid(loaded) then return loaded end
+    end
     return nil
+end
+
+-- Spike #90: the planner Commit button calls setPlacedBuilding(0), then convertBlueprintsToBuildings, then setPlannerMode(nil).
+-- "order" picks the sequence: "hand" (the button order, default), "convert_first" (convert, then clear the card) or "convert_only".
+M.COMMIT_ORDERS = { hand = true, convert_first = true, convert_only = true }
+
+local function commitBlueprints(manor, order)
+    local pawn = player()
+    if order == "hand" and isValid(pawn) then pawn:setPlacedBuilding(0) end
+    manor:convertBlueprintsToBuildings(false)
+    if order == "convert_first" and isValid(pawn) then pawn:setPlacedBuilding(0) end
+end
+
+local function commitOrderField(raw)
+    local order = (raw or ""):match('"order"%s*:%s*"([%w_]+)"') or "hand"
+    if not M.COMMIT_ORDERS[order] then return nil, "order must be hand, convert_first or convert_only" end
+    return order
 end
 
 function M.manor_blueprint_add(_, raw)
@@ -398,6 +418,8 @@ function M.manor_blueprint_add(_, raw)
     if type(kind) ~= "number" or not x or not y or not z then return { ok = false, error = "type, x, y and z are required" } end
     local manor = playerManor()
     if not manor then return { ok = false, error = "the player has no manor (type 98)" } end
+    local order, orderError = commitOrderField(raw)
+    if not order then return { ok = false, error = orderError } end
     local meshPath = (raw or ""):match('"mesh"%s*:%s*"(/Game/[%w_/]+)"')
     local mesh
     if meshPath then
@@ -425,8 +447,9 @@ function M.manor_blueprint_add(_, raw)
                      blueprints_after = read(function() return manor.blueprints:GetArrayNum() end),
                      tag = read(function() return actor.Tags[1]:ToString() end) }
     if flagField(raw, "commit") then
-        manor:convertBlueprintsToBuildings(false)
+        commitBlueprints(manor, order)
         result.committed = true
+        result.order = order
     end
     return result
 end
@@ -440,9 +463,11 @@ function M.manor_planner(_, raw)
     if not manor then return { ok = false, error = "the player has no manor (type 98)" } end
     if flagField(raw, "commit") then
         -- Spike #90: the Commit button stayed grey, so commit the planned blueprints the same way as manor_blueprint_add.
+        local order, orderError = commitOrderField(raw)
+        if not order then return { ok = false, error = orderError } end
         local before = read(function() return manor.blueprints:GetArrayNum() end)
-        manor:convertBlueprintsToBuildings(false)
-        return { ok = true, committed = true, blueprints_before = before,
+        commitBlueprints(manor, order)
+        return { ok = true, committed = true, order = order, blueprints_before = before,
                  blueprints_after = read(function() return manor.blueprints:GetArrayNum() end) }
     end
     if flagField(raw, "close") then
