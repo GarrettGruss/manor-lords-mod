@@ -106,7 +106,7 @@ def report_new_parts(ctx, manor_id, before: dict) -> None:
 
 def scroll_cards(ctx) -> None:
     """The card list is a WrapBox (no ScrollBox exists: run s65c-3). Collapse cards in stages and take a screenshot after each stage."""
-    for stage, ids in enumerate(HIDE_STAGES):
+    for stage, ids in enumerate(() if ctx.variant_option("HARNESS_NOHIDE", "0") == "1" else HIDE_STAGES):
         found = attempt(ctx, "cards again", lambda: ctx.bridge._result("objects", class_name="buildingCardWidget_C", limit=60)["objects"]) or []
         for ref in found:
             path = object_path(ref)
@@ -138,6 +138,9 @@ def open_planner(ctx, manor: str) -> None:
         time.sleep(1)
         ctx.screenshot(f"planner_scroll{step}")
     scroll_cards(ctx)
+    if ctx.variant_option("HARNESS_PROBE", "planner") == "control":
+        control(ctx, manor)
+        return
     if ctx.variant_option("HARNESS_PROBE", "planner") in ("lv3", "lv3place", "lv3build") or ctx.variant_option("HARNESS_PLANNER_PLACE", "0") == "1":
         place_lv3(ctx, manor)
         return
@@ -149,7 +152,7 @@ def place_lv3(ctx, manor) -> None:
     if ctx.variant_option("HARNESS_DISMISS", "0") == "1":  # the "A New Message" banner may eat world clicks
         attempt(ctx, "dismiss message", lambda: ctx.click_with_mouse(0.50, 0.306))
         time.sleep(1)
-    attempt(ctx, "click card", lambda: ctx.click_with_mouse(float(ctx.variant_option("HARNESS_CARD_X", "0.83")), 0.449))
+    attempt(ctx, "click card", lambda: ctx.click_with_mouse(float(ctx.variant_option("HARNESS_CARD_X", "0.83")), float(ctx.variant_option("HARNESS_CARD_Y", "0.449"))))
     spots = ((0.40, 0.55), (0.45, 0.60), (0.50, 0.62))
     if ctx.variant_option("HARNESS_GRID", "0") == "1":  # round 2: find a spot where the ghost is white
         spots = ((0.35, 0.62), (0.45, 0.70), (0.40, 0.80), (0.50, 0.80), (0.30, 0.55), (0.55, 0.65))
@@ -180,6 +183,36 @@ def place_lv3(ctx, manor) -> None:
         attempt(ctx, "planner commit", lambda: ctx.actions._command("manor_planner", commit=True))
     attempt(ctx, "planner close", lambda: ctx.actions._command("manor_planner", close=True))
     time.sleep(2)
+
+
+def read_costs(ctx, manor: str, label: str) -> None:
+    """Issue 90 round 6: the native cost and the rebuild rule, for the planner ghosts and for four type ids."""
+    attempt(ctx, f"{label} cost", lambda: ctx.bridge.call_function(manor, "getCastleReconstructionCost", [False]))
+    attempt(ctx, f"{label} afford", lambda: ctx.bridge.call_function(manor, "canAffordCastleReconstruction"))
+    for type_id in ():  # the bridge drops a nil Actor argument: "expected 3 parameters, received 2" (run s90e-1)
+        attempt(ctx, f"{label} needs reconstruction {type_id}",
+                lambda t=type_id: ctx.bridge.call_function(manor, "doesCastleModuleNeedReconstruction", [None, t, 0]))
+
+
+def control(ctx, manor: str) -> None:
+    """Control without a pak: place the vanilla outer tower and keep by the card id, read the planner cost."""
+    if ctx.variant_option("HARNESS_DISMISS", "0") == "1":
+        attempt(ctx, "dismiss message", lambda: ctx.click_with_mouse(0.50, 0.306))
+        time.sleep(1)
+    player = ctx.bridge.player_path()
+    read_costs(ctx, manor, "before")
+    # Card x fractions from run s90e-1 planner_a_paused.png: first 0.785 (keep 57 by the planner test), gatehouse 0.83, tower 0.875, hall 0.92. HIDE_STAGES collapses 57 and 58, so use HARNESS_NOHIDE=1.
+    for card, card_x, (fx, fy) in ((472, 0.875, (0.40, 0.62)), (57, 0.785, (0.55, 0.70))):
+        attempt(ctx, f"click card {card}", lambda x=card_x: ctx.click_with_mouse(x, 0.449))
+        time.sleep(1)
+        attempt(ctx, "hover", lambda a=fx, b=fy: ctx.hover_with_mouse(a, b))
+        time.sleep(1.5)
+        ctx.screenshot(f"control_{card}_ghost")
+        attempt(ctx, "place click", lambda a=fx, b=fy: ctx.click_with_mouse(a, b))
+        time.sleep(2)
+        ctx.screenshot(f"control_{card}_placed")
+        read_costs(ctx, manor, f"after {card}")
+    attempt(ctx, "planner close", lambda: ctx.actions._command("manor_planner", close=True))
 
 
 def read_garrison(ctx, manor: str, label: str) -> None:
@@ -238,7 +271,7 @@ def run(ctx) -> dict:
     if not manor:
         return ctx.fail("manor", "no manor master found")
     open_planner(ctx, manor)
-    if ctx.variant_option("HARNESS_PROBE", "planner") == "planner":
+    if ctx.variant_option("HARNESS_PROBE", "planner") in ("planner", "control"):
         return ctx.result()
     if ctx.variant_option("HARNESS_PROBE", "planner") == "lv3place":
         return ctx.result()

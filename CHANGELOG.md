@@ -7,6 +7,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - Spec 21 spike A: `genmesh.py` (Meshy API, caps, log), `import_mesh.py` (headless FBX import), `make_bm.py` part list, helpers `s21_locate.py` and `s21_view.py`, and pak `ladder140_P.pak` (type 140, a Meshy siege ladder). Note `spike-a-ladder.md`.
+- Spike #90 round 6 (game, 5 launches): pak `s90pakA` (row 57 retargeted to the Lv3 tower) built nothing, and a vanilla tower committed the same way is also not built, so the Lv3 data is not the blocker. Probe mode `control`, `s65_edit_json.py meshpath`. Notes `manor-lv3.md`.
+- Spec 17 retest on `manor-closed` (#68): tool `s17_plots.py`; notes in `bailey-buildings.md`. Mouse refused inside the ring ("Road Access obstructed"); plots inside never built, outside control built.
+- Spike #90 round 5 (static): note `manor-lv3.md` compares the Lv3 module and construction Blueprints with Lv1, finds the planner cost is native, and plans a type id swap pak. New read-only tools `s90_bm_compare.py`, `s90_cbp_compare.py`, `s90_bytecode_trace.py`, `s90_jmap_find.py`, `s90_row_diff.py`.
+- Lv3 keep data pak `mmlv3full`, `s65_edit_json.py copyfield|meshrow`, `s90_row_goods.py` (#90, #65): row data is not enough, the Lv3 keep is still not built (notes `manor-lv3.md` round 4).
+- Spec 18 spike #104 (static): note `access-points.md` on building access points (`gathering`, `workpos`, `res_` slots with `workPos_add*` tags), animal capacity (`stableSpace`), the hitching post and small stable data, and the plan for a 4-oxen stable. Read-only tools `harness/tools/s104_*.py` and `s104_unpack.ps1`.
 - Spec 21 (draft, research only): Meshy and Blender routes for generated meshes. Note `meshy-research.md` covers the API, credits, license, pipeline and a first spike.
 - Spike #94 (spec 18): why the Siege Camp (483) is never built. Note `siege-camp-build.md`. New HarnessActions commands `master_site`, `master_set_region`, `master_finish` (version 48), `s65_edit_json.py enum`, and the spike tools `s94_drive.py`, `s94_bridge.py`, `s94_propdiff.py`, `s94_row_compare.py`.
 - Probe `probe-manor-module` (#90): options HARNESS_DISMISS, HARNESS_PLACE, HARNESS_CARD_X, HARNESS_CLICKCOMMIT, HARNESS_GRID, and a `canConstructCastle` read. Round 2 notes in `manor-lv3.md`: the Lv3 module is placed with real clicks; Commit stays grey, not built.
