@@ -42,3 +42,16 @@ No save function was called. The AES key came only from the environment. Screens
 - Without the pak the click at the card position hit road mode, so no vanilla control was made.
 - Not done: committed and built module, garrison limit, the Lv3 palace placed and committed. Likely blocker: the 3 wooden wall segments do not form a closed, valid bailey. Next: build a fixture with a closed wall ring (or draw the ring in the planner with real clicks) and read `canConstructCastle` again.
 - Game folder: `~mods\mmlv3slot_P.pak` was installed and removed by run.py each run. The game is closed.
+
+## Round 3: fixture manor-closed (runs s90c-1 to s90c-6, 2026-10-14)
+6 launches. Pak `mmlv3slot`, fixture `manor-closed` (user save, closed palisade ring). No save function was called. Screenshots are in git-ignored `runs/<id>/screenshots/` of the agent worktree.
+- The earlier blocker is gone: `canConstructCastle` is TRUE and `getBuildingArea` is 11843194 (1,184 m2) on this fixture (s90c-1).
+- Root cause of the grey Commit and of the raw texts: the harness command `manor_planner` opened the planner with `PawnCPP:setPlannerMode(manor)`. That leaves "Bailey Area None (0m2)", `castle_level` and `constr_cost` unset and Commit grey (s90c-2). The real manor button ("Open the Castle Planner" in the manor panel) calls `PawnCPP:openCastlePlannerUI(manor)`. The command has a new option `ui` that calls it.
+- With `openCastlePlannerUI` (s90c-4, `lv3_placed.png`): "Castle Level: Large", "Bailey Area Large (1,184m2)", Commit ACTIVE after the Lv3 keep (card 83) was placed by real clicks (card click, then a click on empty ground in the bailey; the banner click needs the game window in the foreground, it failed once in s90c-1).
+- The planner showed "Construction Cost: No Construction Cost" for the keep. No requiredTech or settlement level refusal text appeared.
+- A real Commit click (s90c-4 `lv3_commit_click.png`) closed the planner and the manor became "Manor (under construction)" with a dashed outline. In s90c-4 the game then CRASHED (EXCEPTION_ACCESS_VIOLATION reading 0x10, same as s90-6) in the follow-up reads (`master_parts` or `mesh_users` on the manor under construction). Commit by command (`manor_planner commit`) crashed too (s90c-3).
+- s90c-5 and s90c-6 (no part or mesh reads): no crash. s90c-6 gave materials (rubble 60 and food, timber 40 into the manor store) and ran 54+ game days. The manor read "Manor" again (finished, `day50.png`), but NO Lv3 keep is visible and `getModularGarrisonLimit` stayed 12 before and after. `getModuleTypes` stayed empty. So the commit rebuilt the manor and did not build the Lv3 keep.
+- Likely reason (not proven): the pak only gives the slot ID 83. The module has no mesh or blueprint entry, and `manor_blueprint_add` type 83 earlier said "mesh not found". The Lv3 keep needs its data (mesh, tech) to be loaded.
+- `canConstructCastle` reason text: not read. The function takes an out array. The bridge cannot read an out array.
+- Result: #90 stays open. Placed and committed by real clicks; not built; garrison 12 -> 12. The Lv3 palace (81) and card 123 (#65) were not tried: launches ran out.
+- Game folder: `~mods\mmlv3slot_P.pak` was installed and removed by run.py each run. The game is closed.
