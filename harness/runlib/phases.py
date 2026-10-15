@@ -21,6 +21,7 @@ from .game import (
     DEFAULT_TELEMETRY_INTERVAL_S,
     DEFAULT_TEST_SAVE,
     GameInstall,
+    game_launch_args,
     build_game_environment,
     count_pause_calls,
     ensure_game_alive,
@@ -185,7 +186,7 @@ def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float, e
                                      new_game_map=new_game_map)
         # The working folder must be Win64, or UE4SS does not find its files.
         popen = subprocess.Popen(
-            [str(install.exe)], cwd=install.win64, env=env,
+            [str(install.exe), *game_launch_args(env)], cwd=install.win64, env=env,
             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         ctx.state["game_popen"] = popen

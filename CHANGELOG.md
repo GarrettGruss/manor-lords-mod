@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Harness (#104): `HARNESS_GAME_ARGS` passes an allow-listed launch argument to the game. Spike note `mousefree-placement.md` (mouse-free normal placement not achieved).
+
 ### Changed
 - Soak (#53): `soak-days` accepts up to 13000 s of wall time (`MAX_LIMIT_S` 13500 s) and wider clock-rate (1.5 to 9) and days (0.2 to 1.1) ranges. A 3.3 h run reached day 333 of 730 with no crash and no memory growth; see spec 10 `open-items.md`.
 
@@ -40,6 +43,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Mod releases (spec 19, #80): `harness/release.py --mod <Name> [--dry-run] [--publish]` checks the manifest (`mod/<Name>/mod.json`), the tag, the mod changelog, the fake tests and a real-game gate, builds `dist/<Name>-v<version>.zip` in game-folder layout, scans it (no harness module, no AES key) and can publish a GitHub pre-release. Runs now record `mod_files.json` (SHA-256 of every mod file). New skill `harness-release`. First releasable mod: RefugeeWaves 0.1.0.
 - Shared module `ManorCore`: player-safe game calls (region, settle region, spot finders, rebel raid, banner) and a logger with a `print` fallback. HarnessLords, HarnessHousing, HarnessSack and HarnessBandits call it.
 - Suite `pak-ab` with hidden scenario `pak-item-value` (5 runs per side, real pak A/B passed; spec 09 criterion ticked). Hidden probes `probe-lord-village` and `probe-lord-diplomacy` and suite `lord-village-ab` for the S13 and S11 reruns (partly run, issue #53). `soak-days` option `HARNESS_SOAK_KEEP_APPROVAL=1`.
+
+### Added
+- Harness (#104): `HARNESS_GAME_ARGS` passes an allow-listed launch argument to the game. Spike note `mousefree-placement.md` (mouse-free normal placement not achieved).
 
 ### Changed
 - `MAX_TYPE` of `HarnessBuild` and `HarnessHousing` is 600 (was 300), so commands accept type 483. A running game keeps the old value until restart.
@@ -78,6 +84,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Removed
 - `harness/requirements.in`, `harness/requirements.txt`, `mcp/requirements.in` and `mcp/requirements.txt`. `pyproject.toml` and `uv.lock` replace them.
 - The UnrealPak response-file packer path of `pakmod.py` and its config keys `packer` and `packer_args` (spec 09 uses repak and UAssetGUI).
+
+### Added
+- Harness (#104): `HARNESS_GAME_ARGS` passes an allow-listed launch argument to the game. Spike note `mousefree-placement.md` (mouse-free normal placement not achieved).
 
 ### Changed
 - The repo is a uv project (`pyproject.toml`, `uv.lock`, `.python-version` 3.12; lupa is a dev dependency). Every Python command starts
@@ -181,6 +190,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Scenarios `time-advance` and `telemetry-sanity`.
 - Spec 04 notes with real speed, calendar and telemetry measurements.
 - `harness/suite.py` and `harness/suitelib/`: the regression suite. It runs a suite through `run.py`, retries failures to find flaky scenarios, writes `report.json` and `report.md`, compares metrics with baselines, and writes baselines only on request. Suites are in `harness/suites/` (`smoke`, `core`, `soak`, `selftest`). Real baselines for `smoke`, `time-advance` and `telemetry-sanity` are in `harness/baselines/`. After a run timeout the suite kills `run.py` and closes the game (found in a real run: the game stayed open).
+
+### Added
+- Harness (#104): `HARNESS_GAME_ARGS` passes an allow-listed launch argument to the game. Spike note `mousefree-placement.md` (mouse-free normal placement not achieved).
 
 ### Changed
 - The scenario limit cap in the scenario test is now 300 s (was 120 s), for the raid scenarios of spec 10.
