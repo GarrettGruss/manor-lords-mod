@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Lv3 keep data pak `mmlv3full`, `s65_edit_json.py copyfield|meshrow`, `s90_row_goods.py` (#90, #65): row data is not enough, the Lv3 keep is still not built (notes `manor-lv3.md` round 4).
 - Spec 18 spike #104 (static): note `access-points.md` on building access points (`gathering`, `workpos`, `res_` slots with `workPos_add*` tags), animal capacity (`stableSpace`), the hitching post and small stable data, and the plan for a 4-oxen stable. Read-only tools `harness/tools/s104_*.py` and `s104_unpack.ps1`.
 - Spec 21 (draft, research only): Meshy and Blender routes for generated meshes. Note `meshy-research.md` covers the API, credits, license, pipeline and a first spike.
 - Spike #94 (spec 18): why the Siege Camp (483) is never built. Note `siege-camp-build.md`. New HarnessActions commands `master_site`, `master_set_region`, `master_finish` (version 48), `s65_edit_json.py enum`, and the spike tools `s94_drive.py`, `s94_bridge.py`, `s94_propdiff.py`, `s94_row_compare.py`.

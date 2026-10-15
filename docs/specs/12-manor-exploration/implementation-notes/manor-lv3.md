@@ -55,3 +55,36 @@ No save function was called. The AES key came only from the environment. Screens
 - `canConstructCastle` reason text: not read. The function takes an out array. The bridge cannot read an out array.
 - Result: #90 stays open. Placed and committed by real clicks; not built; garrison 12 -> 12. The Lv3 palace (81) and card 123 (#65) were not tried: launches ran out.
 - Game folder: `~mods\mmlv3slot_P.pak` was installed and removed by run.py each run. The game is closed.
+
+## Round 4 (runs s90d-1, s90d-2, 2026-10-14, fixture manor-closed, 2 launches)
+No Lv3 module was built. The garrison limit stayed 12. No save function was called. Screenshots are in git-ignored `runs/<id>/screenshots/` of the agent worktree.
+
+### Static comparison (script `harness/tools/s90_row_goods.py`)
+| Field | 83 keep Lv3 | 81 palace Lv3 | 57 keep Lv1 (works) | 472 tower Lv1 (works) |
+|---|---|---|---|---|
+| `constructionGoods` | timber 10 only | timber 10 only | timber 10, planks 15, rubble 10 | timber 4, rubble 8 |
+| `constructionMeshAsset` | `SM_MERGED_C_SG_Tower_Lv3` (set) | `SM_MERGED_C_SG_Manor_Lv3_Palace` (set) | set | set |
+| `requiredTech` | ID 123, tier 123 | empty | empty | empty |
+| `maxInRegion` | 1 | 1 | 1 | 0 |
+| `moduleCategory`, `buildingFunction`, `BlueprintPath` | Manor, Default, set | same | same | same |
+| row in `DT_BuildingMeshPathData` | none | none | yes | yes |
+| row in `DT_ConstructionBPs` | none | none | none | yes (`C_SG_Manor_Tower_Lv1_00`) |
+Other differences: bounds, garrisonLimit (83: 36, 81: 24, 57: 12), storage limits, panel images (83 has none). So the Lv3 rows are partly filled: row 83 has some cost and a construction mesh, and a strange `requiredTech` 123.
+
+### Data pak `mmlv3full` (in `mod/HarnessActions/paks/`)
+Row 83: goods copied from row 57 x1.6 (timber 16, planks 24, rubble 16), `requiredTech` cleared, mesh path row 83 added, plus the card slot change of `mmlv3slot`. New `s65_edit_json.py` commands `copyfield` and `meshrow`.
+
+### Result (run s90d-1)
+- The planner still shows "Construction Cost: No Construction Cost" after the keep is placed (`lv3_placed.png`). So the planner cost does not come from the `buildingStats` goods of the row, or it reads the cost of the placed ghost, which has none.
+- Real Commit click: the manor became "Manor (under construction)" (`lv3_commit_click.png`). With timber, rubble, fish and berries given, 60 game days (speed 3) passed. Manor back to "Manor" (`end.png`), manor goods unchanged (timber 40), `getModuleTypes` empty, garrison 12 -> 12. No keep built.
+- Conclusion: data in the row (goods, tech, mesh path) is not enough. The module needs something else: probably the module Blueprint `BM_SG_Manor_Tower_Lv3` (parts and cost per part) or a code path for Lv3 that is not finished in 0.8.111.
+
+### Card 123 on a drawn slot (run s90d-2, issue #65)
+Pak `mm123slot`: row 123 cloned from 472 plus widget `buildingWidget_9` ID 123. The planner still placed the big Lv3 keep ghost, "No Construction Cost" again, commit and 60 days built nothing (garrison 12 -> 12). The test is NOT clean: the pak used the git-ignored `castlePlanner.json` of the earlier slot pak, so the widget edit may not have reached the card that was clicked. Card 123 is not proven.
+
+### Next
+- Read the Blueprint `BM_SG_Manor_Tower_Lv3` JSON (parts, cost) and compare it with `BM_SG_Manor_Lv1_Keep`.
+- Repeat the 123 test from a clean `castlePlanner` extract.
+
+### Game folder
+`~mods\mmlv3full_P.pak` and `mm123slot_P.pak` were installed and removed by `run.py`. `~mods` is gone. The game is closed.
