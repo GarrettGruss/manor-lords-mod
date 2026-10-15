@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 21 spike A: `genmesh.py` (Meshy API, caps, log), `import_mesh.py` (headless FBX import), `make_bm.py` part list, helpers `s21_locate.py` and `s21_view.py`, and pak `ladder140_P.pak` (type 140, a Meshy siege ladder). Note `spike-a-ladder.md`.
 - Spike #90 round 6 (game, 5 launches): pak `s90pakA` (row 57 retargeted to the Lv3 tower) built nothing, and a vanilla tower committed the same way is also not built, so the Lv3 data is not the blocker. Probe mode `control`, `s65_edit_json.py meshpath`. Notes `manor-lv3.md`.
 - Spec 17 retest on `manor-closed` (#68): tool `s17_plots.py`; notes in `bailey-buildings.md`. Mouse refused inside the ring ("Road Access obstructed"); plots inside never built, outside control built.
 - Spike #90 round 5 (static): note `manor-lv3.md` compares the Lv3 module and construction Blueprints with Lv1, finds the planner cost is native, and plans a type id swap pak. New read-only tools `s90_bm_compare.py`, `s90_cbp_compare.py`, `s90_bytecode_trace.py`, `s90_jmap_find.py`, `s90_row_diff.py`.
