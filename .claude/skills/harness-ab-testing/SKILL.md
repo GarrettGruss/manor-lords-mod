@@ -24,6 +24,7 @@ uv run python harness\suite.py --suite raid-size-ab
 Outputs: `runs/suite-<stamp>/report.json` (an `ab` section: the 8 metrics with the largest effect) and `report.md` (a table).
 
 ## What a variant can change
+- A Python scenario cannot read `--env` values from `os.environ`: they go to the game process. Read them with `ctx.variant_option(name, default)`. Scenario `battlefield-anchor` is an example. (Run `20261015-123949-2a0a` was invalid for this reason.)
 - `--env KEY=VALUE`: extra game environment variables. Names match `^[A-Z][A-Z0-9_]{0,63}$`. Reserved names are refused (`HARNESS_RUN_DIR`, `LOCALAPPDATA`, `PATH`, `UE4SS_BRIDGE*`, `HARNESS_AUTOBOOT`, `HARNESS_TEST_SAVE`, `HARNESS_TELEMETRY_INTERVAL_S`). Values of secret-looking names are masked. A mod reads the variable when it loads.
 - `--pak NAME`: install a built pak (it needs `harness/pakmod.local.json`; in a worktree copy it from the main checkout) for the run, remove it after teardown (skill `harness-pak-mod`).
 
