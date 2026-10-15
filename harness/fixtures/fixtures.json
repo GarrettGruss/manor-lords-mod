@@ -56,6 +56,22 @@
         "helped"
       ]
     },
+    "manor-closed": {
+      "description": "New game on Jagged Cliffs made live with the user on 2026-10-14: a finished manor with a closed palisade ring (planner: Castle Level Large, Bailey Area 1,184 m2, Commit active for a new module). Saved by the user as saveGame_32. For #90 and #65.",
+      "origin": "user slot saveGame_32",
+      "sha256": {
+        ".png": "a81e19958b1338c295434ab18d974cedbdd8d077f05002ca13c4168202fe8369",
+        ".sav": "326912e306916fcdb174cfc52b59affc2f94a415436bebc8302438429a60a05c",
+        "_coat_1.png": "ec899c1fae66f7b73306b148e1683ec6fd2843026a274f023e7a4a6e10277d53",
+        "_descr.sav": "9846dfcb7689e0659aba9f2c3714675c17fc2666a856d4f2fdc7a4721cdf2038"
+      },
+      "stored": true,
+      "tags": [
+        "manor",
+        "bailey",
+        "fresh"
+      ]
+    },
     "wall-u": {
       "description": "New game (Jagged Cliffs, 0 AI lords), built manor (palace, type 98, no bailey), a built planner U wall (91 m, opening about 10-15 m) and a built straight planner wall (47 m) on open ground. Obstacle list 337 entries. Saved by the user as free-wall-test-10-11-26-v2 (spec 14).",
       "origin": "user slot saveGame_31",
