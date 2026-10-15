@@ -1,6 +1,6 @@
 # Spec 17: Buildings inside the manor bailey
 
-Status: spike in progress (2026-10-13). Result so far: the mouse is refused inside the bailey; mouse-free plot sites inside are never built (notes in `implementation-notes/bailey-buildings.md`). Issue: #68. Branch: `feat/17-bailey-buildings`. Criterion: M2 (spec 10), first explored in spec 12.
+Status: retest on manor-closed done (2026-10-14): same negative result on a valid castle (mouse refused with "Road Access obstructed"; plots inside never built, outside control built). Open: gate-free ring test; or fold into spec 12. Issue: #68. Branch: `feat/17-bailey-retest`. Criterion: M2 (spec 10), first explored in spec 12.
 
 ## Goal
 The player can place normal buildings (burgage plots, industry) inside the manor bailey. Then the city can be walled in.
