@@ -161,6 +161,7 @@ local housing = require("HarnessHousing")
 local parts = require("HarnessParts")
 local steer = require("HarnessSteer")
 local battlefield = require("HarnessBattlefield")
+local garrison = require("HarnessGarrison")
 
 local VERSION = "49"
 local TAG = "HarnessActions"
@@ -592,6 +593,7 @@ local function skipHandled()
 end
 
 skipHandled()
+log.try(TAG, garrison.install)
 
 LoopAsync(POLL_MS, function()
     local raw = readFile(requestPath(nextNumber))
