@@ -25,9 +25,9 @@ from .runner import PhaseContext
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_LIMIT_S = 90.0
 # A limit above LONG_LIMIT_S is for a soak or a multi-year run. It needs a written reason (LONG_REASON in the module).
-# MAX_LIMIT_S fits a 2-game-year soak: 730 days at 8x is about 3650 s, plus the boot.
+# MAX_LIMIT_S fits a 2-game-year soak: 730 days at the measured 2.5 game s per wall s is about 11700 s, plus the boot.
 LONG_LIMIT_S = 300.0
-MAX_LIMIT_S = 4200.0
+MAX_LIMIT_S = 13500.0
 # The limits of the other phases (preflight 60, deploy 120, launch 60, boot 240, collect 60, teardown 30) and some room.
 RUN_OVERHEAD_S = 600.0
 MIN_RUN_TIMEOUT_S = 900.0
