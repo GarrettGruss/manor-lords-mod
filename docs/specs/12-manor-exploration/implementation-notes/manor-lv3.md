@@ -182,3 +182,28 @@ The control failed too: a vanilla outer tower (card 472) placed and committed by
 ### Changes
 - `probe-manor-module`: mode `control`, options `HARNESS_NOHIDE`, `HARNESS_CARD_Y`; function `read_costs`. `s65_edit_json.py`: command `meshpath`.
 - Game folder: `~mods\s90pakA_P.pak` was installed and removed by `run.py` (`pakmod.py list`: none installed). The game is closed. Work folder `modtools/work/s90pakA` (git-ignored).
+
+## Round 7 (static): mesh and garrison source
+Date: 2026-10-15. No game launch. Sources: `getBuildingMeshForID` bytecode, `DT_ConstructionBPs`, `DT_BuildingMeshPathData`, pak A JSON, run `live-lv3a`.
+
+### What is proven
+- Pak A was installed in live test 2 (`runs/live-lv3a/config.json` lists `s90pakA`). Its JSON is right: row 57 has the Lv3 `BlueprintPath`, `constructionMeshAsset` Tower_Lv3 and `garrisonLimit` 36. The mesh path row 57 is Tower_Lv3 too.
+- `MyPawnCPP_BP3:getBuildingMeshForID(id)` (also `buildingCardWidget`, `RTSWidgetFunctions:commonGetBuildingMeshByID`) reads `buildingStats` row `<id>`, field `constructionMeshAsset`. A card click calls it, then `setBuildingMesh`. So the card ghost SHOULD show Tower_Lv3 after pak A. It showed the Lv1 keep.
+- `RTSMultiEngineCPP_BP:getConstructionBP(key)` reads `DT_ConstructionBPs` row `<key>`, field `constructionAsset`. The key is NOT the type id. It is the number in the module part name `MainBld_<key>` of the BM Blueprint: Lv1 keep `MainBld_167` -> `C_SG_Manor_MainTower_Lv1_New`; Lv3 tower `MainBld_421` -> `C_SG_Tower_Lv3`. `DT_BuildingMeshPathData` has no rows 167, 419, 420, 421, 81, 83.
+- `getModularGarrisonLimit` is native. Facts: 12 with no keep, 24 with one keep, 24 with two keeps (spec 14), 24 after pak A. It is not the sum of `garrisonLimit` fields.
+
+### Most likely source of each value (not proven)
+1. Planner ghost mesh: `buildingStats.constructionMeshAsset` by card ID (proven path above). That pak A did not change it means the retargeted row was not the row read. Open: the planner may read the mesh from a type switch in native code, or a cached row. A cheap check: bridge `building_stat type=57` in a pak A run. If it shows garrison 36, the table is loaded and the ghost source is native. If it shows 12, the pak did not take for row 57.
+2. Finished module mesh: `DT_ConstructionBPs` row from the BM `MainBld_<key>` (167 for the keep), not the row 57 `BlueprintPath`. Pak A changed the BM class but the built module stayed Lv1, so the module is likely rebuilt from the saved module data (`SavedCastleModule`: bType, mesh override, tags), where the mesh is the blueprint actor mesh taken from the ghost.
+3. Garrison: native. 12 per manor plus 12 once a keep exists; not read from row 57 `garrisonLimit`.
+
+### Next pak (pak B), cheapest first
+1. In the same game run, read `building_stat type=57` (confirms the row is loaded).
+2. Pak B, `DT_ConstructionBPs`: set row 167 `constructionAsset` to the value of row 421 (`C_SG_Tower_Lv3_C`). Keep pak A rows. This changes the finished Lv1 keep at its real source key. Tool: copy a field with `s65_edit_json.py` (add a `copyfield`-style edit if missing).
+3. Ghost: if the ghost is still Lv1, put the module through the mod command `manor_blueprint_add` with a loaded mesh, or set `meshOverride` through a saved module. The Lv3 mesh must be loaded first (`mesh not found` in round 1: load it with a pak asset reference or `LoadAsset` after a load order trick).
+4. Garrison 36: a Lua post-hook on `SMBuildingMaster:getModularGarrisonLimit` that adds 24 when the Lv3 module exists. Native code cannot be changed by a pak.
+
+### Card 123 (#65)
+- Card slot `buildingWidget_5` (ID 123) is not drawn (round "spike" of #65). Slots that are drawn take a new ID (pak `mmlv3slot` used `_9` and `_8`). So: set ID 123 on `buildingWidget_9` (drawn slot of 472) and keep 472 on a second slot, or retarget the second 57 card `_6`.
+- Row 123 is cloned from 472, so its key chain is `MainBld_472` -> `DT_ConstructionBPs` 472 (Lv1 outer tower). Give row 123 its own `constructionMeshAsset`, a `DT_BuildingMeshPathData` row 123 (none exists) and, for a different finished look, a BM with a new `MainBld_<key>` and a `DT_ConstructionBPs` row for that key.
+- Same open question as for card 57: confirm with `building_stat type=123` that the ghost mesh follows `constructionMeshAsset`.

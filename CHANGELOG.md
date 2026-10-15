@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - Spike #99 (spec 10): command `battlefield_anchor` and `battlefield_state` (module HarnessBattlefield, HarnessActions 49) move all `battlefield_BP_C` actors to the manor of the defending region while a challenge starts. Real game: `Challenge.Center` 757 units from the manor with the anchor, 46 853 without. `lords_state` challenges now show `center` and `battlefield_at`. Scenario `battlefield-anchor`, suite `battlefield-anchor-ab`, hidden probe `probe-raid-challenge`. Note `battlefield-anchor.md`.
+- Spec 12: static study of where the Lv3 module mesh and garrison come from (round 7, issue #90).
 - Spec 21 spike A: `genmesh.py` (Meshy API, caps, log), `import_mesh.py` (headless FBX import), `make_bm.py` part list, helpers `s21_locate.py` and `s21_view.py`, and pak `ladder140_P.pak` (type 140, a Meshy siege ladder). Note `spike-a-ladder.md`.
 - Spike #90 round 6 (game, 5 launches): pak `s90pakA` (row 57 retargeted to the Lv3 tower) built nothing, and a vanilla tower committed the same way is also not built, so the Lv3 data is not the blocker. Probe mode `control`, `s65_edit_json.py meshpath`. Notes `manor-lv3.md`.
 - Spec 17 retest on `manor-closed` (#68): tool `s17_plots.py`; notes in `bailey-buildings.md`. Mouse refused inside the ring ("Road Access obstructed"); plots inside never built, outside control built.
