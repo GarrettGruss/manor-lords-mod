@@ -37,3 +37,11 @@ The teardown note for `--keep-open` now prints these two commands.
 ## Not verified
 
 Direct launch with Steam closed, a minimized game window and another monitor (the other items of the spec 03 follow-up) were not tested.
+
+## Late crashes (2026-10-15)
+
+The collect phase copies crash reports once, at the end of the run. A kept-open game can crash later (run s104h-2 crashed 4 minutes after collect), and its report stayed only in the real `Crashes` folder.
+
+- The launch phase now writes `runs/<id>/game.json`: the game pid, the run start time and the private appdata folder.
+- `harness/tools/collect_crash.py runs/<id>` copies new crash folders of that pid and new UE4SS dumps into `runs/<id>/crash/`. It skips items already copied. It fails if `game.json` is missing (runs older than this change).
+
