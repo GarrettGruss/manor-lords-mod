@@ -52,6 +52,7 @@ From spec 15 notes (`tent-placement.md`, `burgage-placement-events.md`):
 
 ## Status (2026-10-14)
 - Done: Siege Camp card and placement, new `BM_` class from UE with new meshes placed and built (see `implementation-notes/siege-camp-and-bm.md`). Open: menu card for a new id, Siege Camp build.
+- Access points (#104, static): `gathering`, `workpos` and `res_<good>_<n>` + `workPos_add*` tags define entry and delivery; animal capacity is the row field `stableSpace`; no per-ox spot component found. Plan for a 4-oxen stable in `implementation-notes/access-points.md`.
 
 ## Earlier status (2026-10-13)
 - Done: static read (`implementation-notes/building-parts-static.md`) and the Lua part-edit test (`implementation-notes/part-edit-test.md`,
