@@ -449,7 +449,12 @@ function M.manor_planner(_, raw)
         pawn:setPlannerMode(nil)
         return { ok = true, open = false }
     end
-    pawn:setPlannerMode(manor)
+    if flagField(raw, "ui") then
+        -- Spike #90: the real manor button calls openCastlePlannerUI; setPlannerMode left the bailey texts and Commit unset.
+        pawn:openCastlePlannerUI(manor)
+    else
+        pawn:setPlannerMode(manor)
+    end
     return { ok = true, open = true, in_planning_mode = read(function() return pawn.inPlanningMode end) }
 end
 
