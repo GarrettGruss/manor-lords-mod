@@ -140,11 +140,14 @@ function M.battlefield_anchor(request)
     return answer
 end
 
--- Read only: where the battlefield actors are now, and the result of the last restore.
-function M.battlefield_state()
+-- Read only: where the battlefield actors are now, the result of the last restore, and the anchor that
+-- battlefield_anchor would use for the same request (x,y, region, or target; "anchor" is nil when none can be found).
+function M.battlefield_state(request)
     local rows = {}
     for _, actor in ipairs(battlefields()) do rows[#rows + 1] = round(location(actor)) end
-    return { ok = true, count = #rows, positions = rows, anchor_active = pending ~= nil, last_restore = lastRestore }
+    local at, kind = resolveAnchor(request or {})
+    return { ok = true, count = #rows, positions = rows, anchor_active = pending ~= nil, last_restore = lastRestore,
+             would_anchor = round(at), would_anchor_kind = at and kind or nil, would_anchor_problem = (not at) and kind or nil }
 end
 
 return M

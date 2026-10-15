@@ -1124,9 +1124,10 @@ class Actions:
                 fields[name] = value
         return self._command("battlefield_anchor", **fields)
 
-    def battlefield_state(self) -> dict:
-        """Where the battlefield actors are now, whether an anchor is active, and the result of the last restore. Read only."""
-        return self._command("battlefield_state")
+    def battlefield_state(self, target: int = 0) -> dict:
+        """Where the battlefield actors are now, whether an anchor is active, the result of the last restore, and the anchor
+        (`would_anchor`) that battlefield_anchor would use for the target's region. Read only."""
+        return self._command("battlefield_state", target=target)
 
     def lord_claim(self, lord: int, target: int = 0) -> dict:
         """PawnCPP:layClaim on the target's current region. Not run in the real game yet."""

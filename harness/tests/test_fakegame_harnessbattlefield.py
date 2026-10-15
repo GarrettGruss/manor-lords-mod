@@ -74,6 +74,11 @@ class AnchorTests(BattlefieldTestCase):
         challenge = self.send("lords_state", log=0)["challenges"][0]
         self.assertEqual(challenge["center"], {"x": 5000, "y": 6000})
 
+    def test_state_names_the_anchor_without_moving_anything(self):
+        state = self.send("battlefield_state", target=0)
+        self.assertEqual((state["would_anchor"]["x"], state["would_anchor"]["y"], state["would_anchor_kind"]), (5000, 6000, "manor"))
+        self.assertEqual(state["positions"][0], {"x": 100, "y": 200, "z": 10})
+
     def test_the_actors_go_back_after_the_delay(self):
         self.send("battlefield_anchor", x=10, y=20, delay_ms=5000)
         self.assertEqual(self.send("battlefield_state")["positions"][0], {"x": 10, "y": 20, "z": 0})
