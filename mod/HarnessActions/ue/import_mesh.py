@@ -34,3 +34,16 @@ size = box.max - box.min
 unreal.log("IMPORT size_cm %.1f %.1f %.1f min_z %.1f" % (size.x, size.y, size.z, box.min.z))
 unreal.log("IMPORT vertices %d" % unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem).get_number_verts(mesh, 0))
 unreal.log("IMPORT materials %s" % [str(m.material_interface.get_path_name()) for m in mesh.static_materials])
+
+# Keep the pak small: cap each texture. Base colour and normal 1024, the others 512 (set MESH_TEX_BIG / MESH_TEX_SMALL to change).
+BIG = int(os.environ.get("MESH_TEX_BIG", "1024"))
+SMALL = int(os.environ.get("MESH_TEX_SMALL", "512"))
+for asset_path in unreal.EditorAssetLibrary.list_assets(DEST, recursive=False):
+    texture = unreal.load_asset(asset_path)
+    if not isinstance(texture, unreal.Texture2D):
+        continue
+    name = texture.get_name()
+    limit = BIG if name in ("texture_0", "texture_0_normal") else SMALL
+    texture.set_editor_property("max_texture_size", limit)
+    unreal.EditorAssetLibrary.save_loaded_asset(texture)
+    unreal.log("IMPORT texture %s max %d" % (name, limit))
