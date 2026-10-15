@@ -107,6 +107,30 @@ def set_enum_field(path, row_name, field, value):
     print(f"ok: row {row_name} {field}: {before} -> {value}")
 
 
+def set_number_field(path, row_name, field, text):
+    """Issue 104: set a Byte, Int or Float field, or a Vector2D field written as X,Y. Clears IsZero."""
+    data = load(path)
+    row = find_row(data["Exports"][0]["Table"]["Data"], row_name)
+    hits = [p for p in row["Value"] if p["Name"] == field]
+    if len(hits) != 1:
+        raise SystemExit(f"error: row {row_name} needs exactly one field {field}, found {len(hits)}")
+    prop = hits[0]
+    prop["IsZero"] = False
+    if "Vector2D" in prop.get("StructType", ""):
+        x, y = (float(part) for part in text.split(","))
+        inner = prop["Value"][0]
+        inner["IsZero"] = False
+        inner["Value"]["X"], inner["Value"]["Y"] = x, y
+    elif isinstance(prop["Value"], int) and not isinstance(prop["Value"], bool):
+        prop["Value"] = int(float(text))
+    elif isinstance(prop["Value"], float):
+        prop["Value"] = float(text)
+    else:
+        raise SystemExit(f"error: field {field} is not a number or Vector2D")
+    save(path, data)
+    print(f"ok: row {row_name} {field} = {text}")
+
+
 def find_row(rows, name):
     hits = [r for r in rows if r["Name"] == name]
     if len(hits) != 1:
@@ -193,6 +217,8 @@ def main(argv):
         retarget_widget(argv[2], argv[3], argv[4])
     elif len(argv) == 6 and argv[1] == "blueprint":
         retarget_blueprint(argv[2], argv[3], argv[4], argv[5])
+    elif len(argv) == 6 and argv[1] == "setnum":
+        set_number_field(argv[2], argv[3], argv[4], argv[5])
     elif len(argv) == 4 and argv[1] == "visible":
         make_row_visible(argv[2], argv[3])
     elif len(argv) == 6 and argv[1] == "enum":
