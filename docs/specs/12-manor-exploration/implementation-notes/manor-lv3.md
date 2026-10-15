@@ -152,3 +152,33 @@ No game launch. Files were read with the repo pak tools and the jmap. The AES ke
    - Pak B (control for the type id): row 83 gets the paths of the Lv1 keep. If the cost is still empty, type 83 itself is blocked in code, and pak A is the only route.
 3. Lv3 palace: retarget row 98 (palace Lv1) to `BM_SG_Manor_Lv3_Palace`. The Lv1 palace BM has `res_` and `gathering` parts and the Lv3 palace BM has none, so storage and servants may not work. Test the keep first.
 4. If pak A fails too: disassemble `getCastleReconstructionCost` (RVA 0x4ACD960) in the shipping executable to read the rule. Treat any downloaded tool as untrusted.
+
+## Round 6 (runs s90e-1 to s90e-5, 2026-10-14, fixture manor-closed, 5 launches)
+No Lv3 module was built. Garrison stayed 12. No save function was called. Screenshots are in git-ignored `runs/<id>/screenshots/` of the agent worktree (`.claude/worktrees/agent-ade33fb887f1d1a89/runs/`).
+
+### Result in one line
+The control failed too: a vanilla outer tower (card 472) placed and committed by real clicks is also NOT built in 60 game days. So the missing Lv3 keep is not caused by the Lv3 data. The commit flow of the harness builds no module at all.
+
+### 1. Control (runs s90e-1 to s90e-3, no pak)
+- The native `getCastleReconstructionCost(false)` returns an empty array before and after placing the vanilla tower (472) and keep (57). The planner shows "No Construction Cost" for vanilla modules too (`s90e-3/screenshots/control_57_placed.png`). So an empty cost is NOT a sign of a blocked Lv3 type. Round 4 and 5 read it wrongly.
+- `canAffordCastleReconstruction` is true.
+- `doesCastleModuleNeedReconstruction(Actor, id, wallType)` cannot be called through the bridge: a nil Actor argument is dropped ("UFunction expected 3 parameters, received 2"). A named mod command would be needed. Not done.
+- `PawnCPP:setPlacedBuilding(id)` by the bridge gives only a flat white grid, not a module ghost. Real card clicks are needed.
+- Card layout of the vanilla planner (fractions of the window, y 0.449): 0.785 keep (57), 0.83 gatehouse (95), 0.875 outer tower (472), 0.92 hall (58). The probe collapsed 57 and 58 by default (`HIDE_STAGES`); the new option `HARNESS_NOHIDE=1` keeps them. Run s90e-2 clicked collapsed slots and hit the wrong cards.
+
+### 2. Pak A (run s90e-4)
+- Pak `s90pakA` (`mod/HarnessActions/paks/s90pakA_P.pak`), built from a clean extract of `buildingStats` and `DT_BuildingMeshPathData`: row 57 got `BlueprintPath` (`BM_SG_Manor_Tower_Lv3`), `constructionMeshAsset` and `garrisonLimit` 36 copied from row 83, and the mesh path row 57 now points to `SM_MERGED_C_SG_Tower_Lv3`. New `s65_edit_json.py meshpath`.
+- Card 57 placed by a real click: only a faint pillar ghost appeared (`s90e-4/screenshots/lv3_placed.png`), not a tower. `canConstructCastle` true, cost empty. Commit click worked (`lv3_commit_click.png`). 60 game days (`day50.png`): no keep, garrison 12 -> 12, `getModuleTypes` empty.
+
+### 3. Control commit (run s90e-5, no pak)
+- Vanilla outer tower (472) placed by real clicks: a large tower with an orange outline (`s90e-5/screenshots/lv3_placed.png`). Same steps as pak A: Commit click, timber, rubble, fish and berries given, 60 days at top speed.
+- Result: the manor was rebuilt, no tower exists (`end.png`, `day60.png`), garrison 12 -> 12, `getModuleTypes` empty. So the vanilla module is dropped as well.
+
+### Conclusions
+- The block is in the commit/build flow, for every module type, not in a Lv3 rule. Round 5's native-switch-on-type theory is not supported: a vanilla type behaves the same.
+- Open for the next round (fixture manor-closed): (a) read `blueprints` and `blueprintGhosts` after the Commit click to see if the ghost became a blueprint (many `GhostStaticMeshActor` objects exist after placing, `blueprints` stayed old); (b) find what a real player needs: builders on the manor site, and a cost that is not empty. An empty cost with a placed vanilla tower suggests the placement is not registered as a module; try a second click or the planner Place button; (c) pak B (row 83 with Lv1 paths) and the palace via row 98 were NOT run: they mean nothing until a vanilla module can be built.
+- Launch 6 was not used.
+
+### Changes
+- `probe-manor-module`: mode `control`, options `HARNESS_NOHIDE`, `HARNESS_CARD_Y`; function `read_costs`. `s65_edit_json.py`: command `meshpath`.
+- Game folder: `~mods\s90pakA_P.pak` was installed and removed by `run.py` (`pakmod.py list`: none installed). The game is closed. Work folder `modtools/work/s90pakA` (git-ignored).
