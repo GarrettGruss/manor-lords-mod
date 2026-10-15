@@ -399,10 +399,21 @@ end
 -- "order" picks the sequence: "hand" (the button order, default), "convert_first" (convert, then clear the card) or "convert_only".
 M.COMMIT_ORDERS = { hand = true, convert_first = true, convert_only = true }
 
+-- Why: after a commit the manor parts cannot be read safely (a read crashed the game), and manor_state lists only masters.
+-- So the mod remembers which module types it added and committed. HarnessGarrison reads this list.
+M.pending_types = {}
+M.committed_types = {}
+
+local function rememberCommit()
+    for kind in pairs(M.pending_types) do M.committed_types[kind] = true end
+    M.pending_types = {}
+end
+
 local function commitBlueprints(manor, order)
     local pawn = player()
     if order == "hand" and isValid(pawn) then pawn:setPlacedBuilding(0) end
     manor:convertBlueprintsToBuildings(false)
+    rememberCommit()
     if order == "convert_first" and isValid(pawn) then pawn:setPlacedBuilding(0) end
 end
 
@@ -443,6 +454,7 @@ function M.manor_blueprint_add(_, raw)
     actor.StaticMeshComponent:SetStaticMesh(mesh)
     actor.Tags[1] = FName("bType_" .. kind)
     manor.blueprints[before + 1] = actor
+    M.pending_types[kind] = true
     local result = { ok = true, actor = read(function() return actor:GetFullName() end), blueprints_before = before,
                      blueprints_after = read(function() return manor.blueprints:GetArrayNum() end),
                      tag = read(function() return actor.Tags[1]:ToString() end) }
