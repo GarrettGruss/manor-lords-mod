@@ -25,7 +25,7 @@ Can a Lua hook write the placement preview (`DummyBuilding`) after the native ti
 After the late writer ran with a `regionUnderCursor` write, `HarnessPlace.disarm` (`resetBuildingMode`) was followed by a frozen game thread (bridge and mod commands did not answer). The game was stopped. Cause not separated. The mod now writes `regionUnderCursor` only with `region = true`. Do not use it.
 
 ## Not done
-- Spawned pivot actor and attach trick (relative write of the native tick): the first try crashed the game (`SpawnActor` or `K2_AttachToComponent`, not separated). Not repeated. It could only move the ghost anyway, not fix validity.
+- Spawned pivot actor and attach trick (relative write of the native tick): the first try crashed the game. Cause: `K2_AttachToComponent(root, "None", ...)` passed a Lua string as an FName; UE4SS crashed in `push_nameproperty` (access violation at 0x70, run s104h-2). The commands `pivot_attach` and `pivot_move` are removed. It could only move the ghost anyway, not fix validity.
 - Row 125 with pak `stable4`, command `place_building_at`, fake tests, skill update: not done, because the placement does not work.
 
 ## Next ideas
@@ -34,4 +34,4 @@ After the late writer ran with a `regionUnderCursor` write, `HarnessPlace.disarm
 3. Find the native validity input: a hook on a reflected function that the native check calls through ProcessEvent (none seen: `updateCursor` and `updatePlacebuildingMesh` fire 0 and 1 times).
 
 ## Commands of `HarnessPlace`
-`arm {x, y, z, type, late, probe, region}`, `disarm`, `state`, `press`, `release`, `pivot_attach`, `pivot_move` (crashed once, avoid).
+`arm {x, y, z, type, late, probe, region}`, `disarm`, `state`, `press`, `release`.
