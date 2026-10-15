@@ -27,6 +27,10 @@ A spike answers one question about the engine with evidence. Write the question 
 - Do not destroy actors that the game made for its own systems (for example the planner's `GhostStaticMeshActor` wall pieces). The game keeps
   pointers to them: after `K2_DestroyActor` on the 92 pieces of a wall, opening the manor planner crashed the game (null read, spec 14).
   Destroy only actors that the mod spawned itself.
+- Real mouse clicks need a mouse device in Windows (#115). Without one, `GetSystemMetrics(SM_MOUSEPRESENT)` is 0, the game gives no mouse
+  position, `getMouse3d` returns Z -100000 and no ghost follows the cursor. Hover tooltips still work, so it looks like a bad click spot.
+  `osinput` now raises `InputError` ("no mouse device"). If you see it, stop: plug in a mouse or ask the user. Do not retry clicks and do not
+  burn launches. Check first with `uv run python harness/tools/s115_input_env.py` (`SM_MOUSEPRESENT 1` is needed).
 - Do not scan all components (`FindAllOf` over mesh components) right after the game destroys actors (a demolish): a scan then crashed inside
   UE4SS (read 0x10). Let the game run a few seconds first, or read counts only.
 

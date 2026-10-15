@@ -20,6 +20,7 @@ MOUSEEVENTF_LEFTUP = 0x0004
 MOUSEEVENTF_RIGHTDOWN = 0x0008
 MOUSEEVENTF_RIGHTUP = 0x0010
 SW_RESTORE = 9
+SM_MOUSEPRESENT = 19
 CLICK_HOLD_S = 0.15
 KEYEVENTF_KEYUP = 0x0002
 VK_F7 = 0x76
@@ -32,6 +33,7 @@ class InputError(Exception):
 
 
 class InputApi(Protocol):
+    def mouse_present(self) -> bool: ...
     def foreground_window(self) -> int: ...
     def bring_to_front(self, hwnd: int) -> None: ...
     def window_rect(self, hwnd: int) -> tuple[int, int, int, int]: ...
@@ -57,6 +59,17 @@ def check_inside(rect: tuple[int, int, int, int], point: tuple[int, int], margin
         raise InputError(f"point {point} is not inside the game window {rect}")
 
 
+def check_mouse_present(api: InputApi) -> None:
+    """The game finds the cursor in the 3D world only while Windows reports a mouse device (spike #115).
+
+    Without one, UE returns no mouse position: getMouse3d gives Z -100000 and no ghost follows the cursor.
+    Hover tooltips still work, so the failure looks like a bad click spot. Fail early instead.
+    """
+    if not api.mouse_present():
+        raise InputError("Windows reports no mouse device (GetSystemMetrics SM_MOUSEPRESENT = 0). "
+                         "The game then ignores the cursor in the world. Plug in a mouse, or install a virtual mouse, and restart the game; no input sent")
+
+
 def check_foreground(api: InputApi, hwnd: int) -> None:
     current = api.foreground_window()
     if current != hwnd:
@@ -65,6 +78,7 @@ def check_foreground(api: InputApi, hwnd: int) -> None:
 
 def focus_game(api: InputApi, hwnd: int, sleep: Callable[[float], None] = time.sleep, settle_s: float = 0.5) -> None:
     """Bring the game window to the front. Raise InputError if it does not get the focus."""
+    check_mouse_present(api)
     if api.foreground_window() == hwnd:
         return  # repeated focus tricks can open the Windows task switcher
     api.bring_to_front(hwnd)
@@ -216,6 +230,9 @@ class Win32Input:
         self.user32 = ctypes.windll.user32
         self.kernel32 = ctypes.windll.kernel32
         self.user32.GetForegroundWindow.restype = wintypes.HWND
+
+    def mouse_present(self) -> bool:
+        return bool(self.user32.GetSystemMetrics(SM_MOUSEPRESENT))
 
     def foreground_window(self) -> int:
         return int(self.user32.GetForegroundWindow() or 0)

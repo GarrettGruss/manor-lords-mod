@@ -12,11 +12,15 @@ WINDOW = (100, 100, 1100, 800)
 
 
 class FakeApi:
-    def __init__(self, foreground=GAME, cursor=(5, 5), grabs_focus=True):
+    def __init__(self, foreground=GAME, cursor=(5, 5), grabs_focus=True, has_mouse=True):
+        self.has_mouse = has_mouse
         self.foreground = foreground
         self.cursor = cursor
         self.grabs_focus = grabs_focus
         self.events = []
+
+    def mouse_present(self):
+        return self.has_mouse
 
     def foreground_window(self):
         return self.foreground
@@ -73,6 +77,14 @@ class PointTest(unittest.TestCase):
 
 
 class FocusTest(unittest.TestCase):
+    def test_no_mouse_device_is_an_error_before_any_input(self):
+        api = FakeApi(foreground=GAME, cursor=(600, 450), has_mouse=False)
+        for action in (lambda: osinput.focus_game(api, GAME, no_sleep),
+                       lambda: osinput.click_at(api, GAME, 0.5, 0.5, no_sleep)):
+            with self.assertRaisesRegex(osinput.InputError, "no mouse device"):
+                action()
+        self.assertEqual(api.events, [])
+
     def test_focus_ok(self):
         api = FakeApi(foreground=7)
         osinput.focus_game(api, GAME, no_sleep)
