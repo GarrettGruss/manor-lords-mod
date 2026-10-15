@@ -9,7 +9,7 @@
 local log = require("HarnessLog")
 local commands = require("HarnessCommands")
 
-local VERSION = "6"
+local VERSION = "11"
 local TAG = "HarnessPlace"
 local PREFIX = "HarnessPlace."
 local MAX_TYPE = 600
@@ -251,6 +251,11 @@ local DEFINITIONS = {
     pivot_move = { run = pivotMove, schema = { x = number(-WORLD_LIMIT, WORLD_LIMIT), y = number(-WORLD_LIMIT, WORLD_LIMIT),
         z = number(-WORLD_LIMIT, WORLD_LIMIT) } },
     state = { run = state, schema = {} },
+    bp = { run = require("blueprint_route")({ read = read, pawn = pawn, vectorText = vectorText }),
+        schema = { mode = { type = "string", required = true }, type = { type = "integer", min = 1, max = MAX_TYPE },
+            master_type = { type = "integer", min = 1, max = MAX_TYPE }, index = { type = "integer", min = 0, max = 50 },
+            mesh_fragment = { type = "string" }, x = { type = "number", min = -WORLD_LIMIT, max = WORLD_LIMIT },
+            y = { type = "number", min = -WORLD_LIMIT, max = WORLD_LIMIT }, z = { type = "number", min = -WORLD_LIMIT, max = WORLD_LIMIT } } },
     press = { run = press, schema = {} },
     release = { run = release, schema = {} },
 }
