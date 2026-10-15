@@ -207,3 +207,30 @@ Date: 2026-10-15. No game launch. Sources: `getBuildingMeshForID` bytecode, `DT_
 - Card slot `buildingWidget_5` (ID 123) is not drawn (round "spike" of #65). Slots that are drawn take a new ID (pak `mmlv3slot` used `_9` and `_8`). So: set ID 123 on `buildingWidget_9` (drawn slot of 472) and keep 472 on a second slot, or retarget the second 57 card `_6`.
 - Row 123 is cloned from 472, so its key chain is `MainBld_472` -> `DT_ConstructionBPs` 472 (Lv1 outer tower). Give row 123 its own `constructionMeshAsset`, a `DT_BuildingMeshPathData` row 123 (none exists) and, for a different finished look, a BM with a new `MainBld_<key>` and a `DT_ConstructionBPs` row for that key.
 - Same open question as for card 57: confirm with `building_stat type=123` that the ghost mesh follows `constructionMeshAsset`.
+
+## Round 8 (runs s90f-1 to s90f-6, 2026-10-15, fixture manor-closed, 6 launches)
+No Lv3 module was built. The harness mouse did not reach the game in these runs, so the working flow (card, place, check `blueprints`, Commit) could not be run. No save function was called. Screenshots are git-ignored: `runs/s90f-N/screenshots/` of the agent worktree `.claude/worktrees/agent-ab05b49097fc30160/`.
+
+### Finding 1: pak A of rounds 6 and 7 never loaded (path bug)
+- `s90pakA_P.pak` held its files at the pak ROOT (`buildingStats.uasset`, no `ManorLords/Content/NotStronghold/Data/` prefix). The JSON had been put in `modtools/work/s90json`, not under `modtools/work/json/ManorLords/...`, so `pakmod.py fromjson --to` used the file name only. The game ignored the pak. This explains live test 2 (the keep stayed Lv1, garrison 24) and run s90e-4.
+- Fix: edit the JSON in `modtools/work/json/ManorLords/Content/NotStronghold/Data/` (made by `pakmod.py tojson` from a fresh `extract`). Check with `repak list`: every path must start with `ManorLords/Content/`.
+- Rebuilt: `s90pakA_P.pak` (row 57: BlueprintPath, constructionMeshAsset, garrisonLimit 36 copied from row 83; mesh path row 57 = Tower_Lv3) and new `s90pakB_P.pak` (the same rows plus `DT_ConstructionBPs` row 167 `constructionAsset` copied from row 421 = `C_SG_Tower_Lv3_C`). Both are in `mod/HarnessActions/paks/`, both from a clean extract, no key in the bytes.
+- Task 1 result (run s90f-5): with the fixed pak A, `building_stat kind=57` reads `garrisonLimit` 36 and `maxInRegion` 1. So the row IS loaded now.
+
+### Finding 2: garrison hook works
+- New module `HarnessGarrison` (`mod/shared/HarnessGarrison/HarnessGarrison.lua`), installed by HarnessActions only when the game environment has `HARNESS_GARRISON_BONUS` (opt-in; `HARNESS_GARRISON_MODULE_TYPE` chooses the built module type, default 83). It is a post-hook on `SMBuildingMaster:getModularGarrisonLimit` and adds the bonus to the return value.
+- Run s90f-5 (bonus 24, module type 98 = the manor itself, only to prove the hook): `getModularGarrisonLimit` through the bridge returned 36; the mod log says `limit 12 -> 36`. A real Lv3 keep test needs a built module (see below). Native C++ callers are not changed, so the UI number may stay at the native value: check on screen when a Lv3 keep exists.
+
+### Finding 3: the mouse did not reach the game (open)
+- New probe `probe-manor-flow` (the working flow: open planner by `openCastlePlannerUI`, click card, place, check `blueprints` count and cost, Commit, give goods, wait for `IsConstructed`). Runs s90f-1, 2, 6: the card click opened tooltips (hover works: `s90f-3/screenshots/k2.png`, k3.png) but no ghost appeared, `blueprints` stayed 3, and the scenario stopped before Commit (as designed).
+- Card order on `manor-closed` today: x 0.785 Walls and Gates, 0.83 Outer Tower (472), 0.875 Garrison Tower (keep, 57), 0.92 hall; y 0.449. Round 6 notes had another order. Use hover tooltips to check.
+- By hand in a kept-open game (s90f-3 with pak, s90f-4 WITHOUT any pak): the cost tag "Construction Cost: 4 8" appears at the screen centre and does not follow the cursor; `PawnCPP:getMouse3d` returns Z -100000 (no ground) for every cursor position, also with no planner and in plain building mode (`s94_drive.py ghost`). The game is in the foreground and the cursor is inside the window. So the synthetic cursor is not seen by the game's world trace today, with or without the pak. The earlier runs (s90e-5) did show a ghost, so something changed in the session (focus, DPI, or a user input device). Needs the user's real mouse or a check of the input setup.
+- Not tried: opening the planner with the real manor panel button instead of `openCastlePlannerUI` (the button may also switch the input mode), and a raw-input mouse move.
+
+### Not done
+- Pak B ghost and finished module (task 2): pak B is built and installed in run s90f-6, but no module could be placed. The Lv3 look of the finished keep is NOT proven.
+- Card 123 (#65, task 4): no launch left.
+
+### Tools added
+- `probe-manor-flow` scenario (options `HARNESS_CARD_X/Y`, `HARNESS_SPOTS`, `HARNESS_STOP=planner`, `HARNESS_DAYS`), `s94_drive.py` commands `click`, `hover`, `prop`, `call`, `mouse3d`, `pause`, `unpause`.
+- Next run: first prove `getMouse3d` is valid (hover in building mode) before any planner step; then pak B with `HARNESS_CARD_X=0.875`.
