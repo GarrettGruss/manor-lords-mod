@@ -263,3 +263,11 @@ A Lv3 tower WAS built with no mouse and no planner. No save function was called.
 - `manor_blueprint_add` and `manor_planner commit` take `order` (`hand` default, `convert_first`, `convert_only`). `probe-manor-flow` has HARNESS_MOUSEFREE=1 (HARNESS_TYPE, HARNESS_SPOT, HARNESS_MESH, HARNESS_ORDER).
 - Run command: `run.py --scenario probe-manor-flow --fixture manor-closed --pak s90pakB --env HARNESS_MOUSEFREE=1 --env HARNESS_TYPE=57 --env HARNESS_MESH=<path> --env HARNESS_DAYS=60`.
 - Game closed, no pak installed, fixture slot removed after each run. One launch unused.
+
+## Round 10 (garrison 36 shown, run s90h-1, 2026-10-15, fixture manor-closed, 1 launch)
+Garrison 36 is shown with the Lv3 tower built, without the mouse. No save function was called. No crash.
+- Detection fix: a module part cannot be read after a commit, and `manor_state` lists only masters (type 98). So `HarnessWalls` now records the module types it added (`pending_types`) and moves them to `committed_types` when the commit runs. `HarnessGarrison` adds its bonus when the type is in `committed_types` and the manor (self of the hooked call) reads `IsConstructed` true. No part read is needed. The hook stays opt-in.
+- Run: `run.py --scenario probe-manor-flow --fixture manor-closed --pak s90pakB --env HARNESS_MOUSEFREE=1 --env HARNESS_TYPE=57 --env HARNESS_MESH=/Game/NotStronghold/Buildings/Merged/SM_MERGED_C_SG_Tower_Lv3 --env HARNESS_DAYS=40 --env HARNESS_GARRISON_BONUS=24 --env HARNESS_GARRISON_MODULE_TYPE=57`.
+- Result: garrison before 12; blueprints 3 -> 4; commit; `IsConstructed` true on day 11; `getModularGarrisonLimit` 12 -> 36 (log `[HarnessGarrison] limit 12 -> 36`). The bonus is 24 because the native value stays 12 for this tower (the vanilla keep gives 24 in total).
+- Screenshots (git-ignored): `runs/s90h-1/screenshots/day10.png`, `end.png`.
+- Limit: the 36 comes from the hook. The native limit is still 12 for the Lv3 tower.

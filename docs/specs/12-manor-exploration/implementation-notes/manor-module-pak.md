@@ -83,3 +83,9 @@ Date: 2026-10-14. Result: neither goal is proven. Paks removed, game closed, no 
 - The new part listing did not work. `master_parts` now has `from` (first row) and rows with `tags` and `btype`. The call timed out (no answer in 10 s) in run s65d-2 (40 rows) and run s65d-3 (8 rows), so the part list before and after could not be read. Reading `part.Tags` or `part.Data.bType` may be the cause: calls with 40 rows without these fields worked in run s65-1. Next step: read these fields in a separate command, test with `limit` 1 first.
 - Trap: a Python scenario reads `HARNESS_PROBE` only from `run.py --env HARNESS_PROBE=build`. A shell variable is ignored, so run s65d-1 ran the planner mode only.
 - 60 game days take about 35 min of real time.
+
+## Round 10 (#65, module 123 built, run s65e-1, 2026-10-15, fixture manor-closed, pak mm123data, mouse-free)
+Module type 123 is built. Pak mm123data (row 123 cloned from 472) loaded: `building_stat` kind 123 returned the row.
+- `manor_blueprint_add` type 123, mesh `/Game/ManorLords/Buildings/Merged/SM_MERGED_C_SG_Manor_Tower_Lv1_00` at (13000, -51163, 2500): blueprints 3 -> 4, tag `bType_123`, cost non-empty (timber 4, rubble 8, the goods of row 472).
+- `manor_planner commit order=hand`: no crash. `IsConstructed` true on day 6 (`getModularGarrisonLimit` 12, an outer tower adds none).
+- Screenshot (git-ignored): `runs/s65e-1/screenshots/end.png` (a new tower at the bailey wall). The planner card for 123 was not tested (planner closed, no mouse).
