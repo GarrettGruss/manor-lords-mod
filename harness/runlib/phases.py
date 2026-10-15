@@ -199,6 +199,16 @@ def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float, e
     return run
 
 
+GAME_RECORD_FILE = "game.json"
+
+
+def write_game_record(ctx: PhaseContext) -> None:
+    # Why: a kept-open game can crash after the run ended. collect_crash.py needs the pid and start time to find its report.
+    record = {"pid": ctx.state["game_pid"], "run_started_epoch": ctx.state.get("run_started_epoch", 0.0),
+              "appdata_dir": ctx.state.get("appdata_dir")}
+    atomic_write_text(ctx.run.path / GAME_RECORD_FILE, json.dumps(record, default=str))
+
+
 # ---- boot ----
 
 def _boot_result(boot_file: dict, seconds: float, pause_calls: int) -> dict:
@@ -316,6 +326,8 @@ def copy_new_crash_dirs(install: GameInstall, crash_dir: Path, since_epoch: floa
     for folder in sorted(p for p in install.crashes_dir.iterdir() if p.is_dir()):
         if folder.stat().st_mtime <= since_epoch or not is_crash_of_process(folder, game_pid):
             continue
+        if (crash_dir / folder.name).exists():
+            continue
         if _folder_size(folder) > MAX_CRASH_DIR_BYTES:
             notes.append(f"crash report {folder.name} is over 50 MB and was not copied")
             continue
@@ -331,7 +343,7 @@ def copy_new_dumps(install: GameInstall, crash_dir: Path, since_epoch: float) ->
         return []
     copied = []
     for dump in sorted(ue4ss_dir.glob("*.dmp")):
-        if dump.stat().st_mtime > since_epoch:
+        if dump.stat().st_mtime > since_epoch and not (crash_dir / dump.name).exists():
             shutil.copy2(dump, crash_dir / dump.name)
             copied.append(f"{crash_dir.name}/{dump.name}")
     return copied
