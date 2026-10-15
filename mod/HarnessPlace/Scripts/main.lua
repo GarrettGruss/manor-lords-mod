@@ -187,44 +187,6 @@ local function state()
     return result
 end
 
--- Why a pivot: the native tick writes (0, 0, -100000) into the ghost every frame. If the ghost hangs under a pivot actor and the native code
--- writes the RELATIVE location, the world point is the pivot point plus (0, 0, -100000). So the pivot stands 100000 above the target.
-local PIVOT_LIFT = 100000
-local EXTRA_LIFT = 0
-
-local function spawnPivot(location)
-    if S.pivot ~= nil and read(function() return S.pivot:IsValid() end) then return S.pivot end
-    local world = pawn():GetWorld()
-    local class = StaticFindObject("/Script/Engine.StaticMeshActor")
-    S.pivot = world:SpawnActor(class, location, { Pitch = 0, Yaw = 0, Roll = 0 })
-    return S.pivot
-end
-
-local function pivotAttach(args)
-    local player = pawn()
-    if not player then return nil, "no player pawn" end
-    local component = previewComponent(player)
-    if not component then return nil, "no DummyBuilding" end
-    local location = { X = args.x, Y = args.y, Z = args.z + PIVOT_LIFT + EXTRA_LIFT }
-    S.noWrite = true
-    log.info(TAG, "pivot: spawn")
-    local pivot = spawnPivot(location)
-    if not pivot then return nil, "cannot spawn the pivot" end
-    log.info(TAG, "pivot: mobility")
-    local root = pivot.RootComponent
-    root:SetMobility(2)
-    pivot:K2_SetActorLocation(location, false, {}, true)
-    log.info(TAG, "pivot: attach")
-    component:K2_AttachToComponent(root, "None", 0, 0, 0, false)
-    return { pivot = pivot:GetFullName() }
-end
-
-local function pivotMove(args)
-    if not S.pivot then return nil, "no pivot" end
-    S.pivot:K2_SetActorLocation({ X = args.x, Y = args.y, Z = args.z + PIVOT_LIFT }, false, {}, true)
-    return { moved = true }
-end
-
 local function press()
     local player = pawn()
     if not player then return nil, "no player pawn" end
@@ -246,10 +208,6 @@ local DEFINITIONS = {
         z = number(-WORLD_LIMIT, WORLD_LIMIT), type = { type = "integer", min = 1, max = MAX_TYPE, required = true },
         late = { type = "boolean" }, probe = { type = "boolean" }, region = { type = "boolean" } } },
     disarm = { run = disarm, schema = {} },
-    pivot_attach = { run = pivotAttach, schema = { x = number(-WORLD_LIMIT, WORLD_LIMIT), y = number(-WORLD_LIMIT, WORLD_LIMIT),
-        z = number(-WORLD_LIMIT, WORLD_LIMIT) } },
-    pivot_move = { run = pivotMove, schema = { x = number(-WORLD_LIMIT, WORLD_LIMIT), y = number(-WORLD_LIMIT, WORLD_LIMIT),
-        z = number(-WORLD_LIMIT, WORLD_LIMIT) } },
     state = { run = state, schema = {} },
     bp = { run = require("blueprint_route")({ read = read, pawn = pawn, vectorText = vectorText }),
         schema = { mode = { type = "string", required = true }, type = { type = "integer", min = 1, max = MAX_TYPE },
