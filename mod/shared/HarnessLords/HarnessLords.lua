@@ -189,6 +189,13 @@ local function lordRow(number, pawn, engineObject, positions, home)
     }
 end
 
+local function roundedPoint(at)
+    if not at then return nil end
+    local x, y = read(function() return at.X end), read(function() return at.Y end)
+    if not x or not y then return nil end
+    return { x = math.floor(x + 0.5), y = math.floor(y + 0.5) }
+end
+
 local function challengeRows(engineObject)
     local out = {}
     local list = read(function() return engineObject.challenges end)
@@ -200,6 +207,9 @@ local function challengeRows(engineObject)
             by = shortName(read(function() return challenge.challengedBy end)), days_left = read(function() return challenge.DaysLeft end),
             status = read(function() return challenge.status end), contested = read(function() return challenge.contested end),
             regions = arrayNames(read(function() return challenge.inRegardsTo end)),
+            center = roundedPoint(read(function() return challenge.Center end)),
+            battlefield = shortName(read(function() return challenge.Battlefield end)),
+            battlefield_at = roundedPoint(read(function() return challenge.Battlefield:K2_GetActorLocation() end)),
         }
     end
     return out
@@ -423,6 +433,13 @@ local regionRow = core.region_row
 
 -- Every region: owner, settled, settlement type and level, town center, manor, buildings, families. Read only.
 M.regions_state = core.regions_state
+
+-- For other Harness modules: the pawn of a lord number (0 is the player). Nil when there is none.
+function M.pawn_by_number(number)
+    local engineObject = engine()
+    if not engineObject then return nil end
+    return pawnByNumber(number, engineObject)
+end
 
 function M.lord_relations(request)
     local engineObject = engine()

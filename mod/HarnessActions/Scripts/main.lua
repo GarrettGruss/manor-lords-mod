@@ -66,6 +66,8 @@
 --   {"command":"lord_declare_war","lord":1,"target":0}      declareWar     {"command":"lord_declare_peace","lord":1,"target":0}   declarePeace
 --   {"command":"lord_set_influence","lord":1,"value":500}   write the influence of the lord
 --   {"command":"lord_challenge","lord":1,"target":0}        initChallenge over the target's current region
+--   {"command":"battlefield_anchor","lord":1,"target":0,"x":0,"y":0,"delay_ms":500}   move all battlefield_BP_C to the anchor (x,y, or the manor of "region" / the target region), challenge when "lord" is set, restore after delay_ms
+--   {"command":"battlefield_state"}                          where the battlefield actors are now (read only)
 --   {"command":"lord_claim","lord":1,"target":0}            layClaim on the target's current region
 --   {"command":"lord_spawn_army","lord":1,"template":"spearMilitia","count":2,"dx":0,"dy":0}   spawnArmy with the lord as owner
 --   {"command":"spawn_ai_lord","name":"Norse Warlord","build":1}   spawnNewAILord ("build":1 = can build)
@@ -158,8 +160,9 @@ local bandits = require("HarnessBandits")
 local housing = require("HarnessHousing")
 local parts = require("HarnessParts")
 local steer = require("HarnessSteer")
+local battlefield = require("HarnessBattlefield")
 
-local VERSION = "48"
+local VERSION = "49"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -256,6 +259,7 @@ local function parseRequest(raw)
         subtext = raw:match('"subtext"%s*:%s*"([^"]*)"'),
         dx = tonumber(raw:match('"dx"%s*:%s*(-?[%d%.]+)')),
         dy = tonumber(raw:match('"dy"%s*:%s*(-?[%d%.]+)')),
+        delay_ms = tonumber(raw:match('"delay_ms"%s*:%s*(-?%d+)')),
         lord = tonumber(raw:match('"lord"%s*:%s*(%d+)')),
         target = tonumber(raw:match('"target"%s*:%s*(%d+)')),
         log = tonumber(raw:match('"log"%s*:%s*(%d+)')),
@@ -488,6 +492,8 @@ local COMMANDS = {
     lord_declare_peace = lordsCmd.lord_declare_peace,
     lord_set_influence = lordsCmd.lord_set_influence,
     lord_challenge = lordsCmd.lord_challenge,
+    battlefield_anchor = battlefield.battlefield_anchor,
+    battlefield_state = battlefield.battlefield_state,
     lord_claim = lordsCmd.lord_claim,
     lord_spawn_army = lordsCmd.lord_spawn_army,
     spawn_ai_lord = lordsCmd.spawn_ai_lord,
