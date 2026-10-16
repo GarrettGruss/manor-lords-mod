@@ -33,8 +33,8 @@ WEATHER_NOTE = "the game moves the weather back toward its own target within sec
 ITEM_IDS = {"timber": 16, "planks": 17, "fish": 30}
 # Letter paragraphs that were sent in the real game. Other names may be missing in the game data.
 LETTER_PARAGRAPHS = ("welcome_from_hildebolt",)
-DEFAULT_PLACE_FX = 0.65  # open meadow right of the start camp; the middle (0.5, 0.7) overlaps a building site in some starts
-DEFAULT_PLACE_FY = 0.65
+DEFAULT_PLACE_FX = 0.35  # open meadow upper left of the start camp (0.65, 0.65 overlaps the sawpit in the base fixture, run 20261015-203710-6b45)
+DEFAULT_PLACE_FY = 0.3
 FLOAT_TOLERANCE = 0.01  # property floats are 32 bit
 MAX_NOTE_CHARS = 140
 DATATABLES = ("items", "units")
