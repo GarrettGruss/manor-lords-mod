@@ -10,11 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .actions import Actions
+from .actions import ActionNotPossible, Actions
 from .bridge_client import Bridge
 from .commands import CommandChannel, ModCommandChannel
 from .expectations import Expectations
-from . import osinput
+from . import harness_save, osinput
 from .game import ensure_game_alive, find_game_processes
 from .modstate import ModState
 from .popups import PopupGuard
@@ -60,11 +60,20 @@ class ScenarioContext:
         self._metrics: dict[str, float] = {}
         self.commands = CommandChannel(self.run_dir / "commands", check_alive=self.ensure_alive)
         self.actions = Actions(bridge, self.expect, self.notes, self.log.info, self.ensure_alive, self.commands,
-                               mouse_placer=self._place_with_mouse)
+                               mouse_placer=self._place_with_mouse, saver=self._guarded_save)
         # ctx.popups() presses Accept on open pop-ups. Use it as on_poll or on_stall of ctx.run_until in a long scenario.
         self.popups = PopupGuard(lambda: self.commands.send("close_popups"), self.log.info)
         self.mod_commands = ModCommandChannel(self.run_dir / "modcmd", check_alive=self.ensure_alive)
         self.mod = ModState(self)  # commands and metrics of mods, served by each mod itself (spec 10, U10)
+
+    def _guarded_save(self, label: str, keep: bool) -> dict:
+        save_dir = self.phase.state.get("user_save_dir")
+        if save_dir is None:
+            raise ActionNotPossible("save_game: this run has no user save folder")
+        result = harness_save.save_game(Path(save_dir), self.commands.send, label, keep)
+        if keep:  # the run end expects these new files. Other harness saves are in the ledger and are deleted at the run end.
+            self.phase.state.setdefault("kept_save_files", {}).update(result["files"])
+        return result
 
     # ---- real OS mouse (used by the action place_building) ----
     def _place_with_mouse(self, type_id: int, fx: float, fy: float) -> None:
