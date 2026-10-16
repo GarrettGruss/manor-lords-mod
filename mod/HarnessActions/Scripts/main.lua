@@ -44,6 +44,10 @@
 --   {"command":"unit_stats","side":"bandit"}                   mean att, def, block, armorPierce, morale of the living units of the registry (spec 25)
 --   {"command":"set_unit_stat","side":"player","field":"def","value":0}  write one SMUnit stat on the living units of a side, read back (spec 25)
 --   {"command":"combat_hook","mode":"start"}                 observe-only hook on SMUnit:CombatHit; start, stop or read the call counts (spec 25)
+--   {"command":"tune_state"}                                    per side (player, bandit, ai_lord, other) and squad: living units, mean stats, active overrides (spec 28)
+--   {"command":"tune_set","side":"bandit","field":"att","value":3}  write a stat on ALL living units of a side (or "squad": id), keep it as an override, re-apply every 2 s (spec 28)
+--   {"command":"tune_reset","side":"bandit","field":"att"}      remove overrides (all if no argument) and restore the original values (spec 28)
+--   {"command":"tune_apply"}                                     run one override pass now (spec 28)
 --   {"command":"set_squad_experience","squad":8,"value":20}    write combatExperience on the living units of one of those squads
 --   {"command":"mercenary_offers"}                             the companies that can be hired (read only)
 --   {"command":"hire_mercenaries","company":"greencaps"}       hireMercs for one offered company; refused when the silver is below the cost
@@ -166,10 +170,11 @@ local housing = require("HarnessHousing")
 local parts = require("HarnessParts")
 local steer = require("HarnessSteer")
 local battlefield = require("HarnessBattlefield")
+local tune = require("HarnessTune")
 local garrison = require("HarnessGarrison")
 local harnessSave = require("HarnessSave")
 
-local VERSION = "52"
+local VERSION = "53"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -468,6 +473,10 @@ local COMMANDS = {
     unit_stats = battle.unit_stats,
     set_unit_stat = battle.set_unit_stat,
     combat_hook = battle.combat_hook,
+    tune_state = tune.tune_state,
+    tune_set = tune.tune_set,
+    tune_reset = tune.tune_reset,
+    tune_apply = tune.tune_apply,
     mercenary_offers = battle.mercenary_offers,
     hire_mercenaries = battle.hire_mercenaries,
     raid_state = raids.raid_state,

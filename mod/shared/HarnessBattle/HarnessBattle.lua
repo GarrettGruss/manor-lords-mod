@@ -262,6 +262,8 @@ end
 M.STAT_FIELDS = { att = true, def = true, block = true, armorPierce = true, morale = true, baseDefence = true, baseBlock = true, charge = true }
 local STAT_ORDER = { "att", "def", "block", "armorPierce", "morale", "baseDefence", "baseBlock", "charge" }
 local MAX_STAT_VALUE = 1000
+M.MAX_STAT_VALUE = MAX_STAT_VALUE
+M.STAT_ORDER = STAT_ORDER
 
 local function sideOfUnit(unit)
     local id = read(function() return unit.assignedSquadID.Value end)
