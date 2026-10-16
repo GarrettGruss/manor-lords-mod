@@ -37,3 +37,17 @@ Let a human and an agent tune the "feel" of combat damage in the running game. T
 - A4: `tune_reset` restores the original values.
 - A5: The UI starts with `uv run streamlit run harness/tools/tune_ui.py -- --run <id>` and shows command errors.
 - A6: The full unit test suite passes. The real-game check has run ids.
+
+## Restart a tuning session
+Run these from the repo root (or the worktree that has the tune code). Only one agent or person may use the game at a time.
+1. Start a game that stays open: `uv run python harness\run.py --scenario noop --keep-open --run-id tune-<date>`.
+   Wait until the run line says `pass`. The game is then paused at READY.
+2. Start the page: `uv run streamlit run harness/tools/tune_ui.py --server.headless true --server.address localhost --server.port 8501 -- --run tune-<date>`.
+   Without `--run`, the page uses the newest run that has a commands folder or a `ready.marker`.
+3. Open http://localhost:8501. Click Refresh. Unpause the game window to watch a fight.
+4. Use "Spawn test fight", change stats per side, click Apply. Overrides are re-applied every 2 s to new units. Reset restores the originals.
+5. Export the values you like. Presets go to `docs/harness/28-unit-tuning/presets/`.
+6. At the end: stop the Streamlit process (Ctrl+C), then stop the game (`manor-harness` `stop_game`, or close the window). Overrides live only in the running game; they are lost on restart.
+
+Known issue (fixed in e6492dc): a fresh run has no `commands` folder until the first command. The page now accepts a run with `ready.marker`.
+First session: run `s28-session-1` (2026-10-16). The user checked the page and approved the tool. No preset was exported yet.
