@@ -10,7 +10,7 @@ The player never sees it.
 None. The player only sees that the countdown, loyalty, influence and the other values come back after a load.
 
 ## Current state
-Not started. The design and the proof are done in harness spec 24.
+Iteration 01 is done (2026-10-16): `ModState` on the pawn Tags works in the real game over a harness save and a load. Notes: `implementation-notes/tags-module.md`. Region state and the size limit test are iteration 02.
 
 ## Proven building blocks
 - Option A works: names in `Tags` of the player pawn and the player region survive a save and a load. `docs/harness/24-mod-save-state/README.md` (section Recommendation, module design).
@@ -43,5 +43,5 @@ None. Every other feature that keeps values depends on it.
 ## Iterations
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
-| 01 | tags-module | `ModState` module on pawn Tags, with default state on a save that has no mod marker | not started |
+| 01 | tags-module | `ModState` module on pawn Tags, with default state on a save that has no mod marker | done (A1 to A6 pass) |
 | 02 | region-state-and-limits | Region Tags and the size limit test | not started |
