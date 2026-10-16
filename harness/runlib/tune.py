@@ -17,20 +17,25 @@ TEMPLATES = ("spearMilitia", "militiaFoot", "bowMilitia", "Brigands", "retinue_t
 MAX_SQUADS = 6
 
 
+def is_live_run(run: Path) -> bool:
+    """A run can take commands when it has a commands folder or reached READY. The folder appears only with the first command."""
+    return (run / "commands").is_dir() or (run / "ready.marker").is_file()
+
+
 def find_newest_run(runs_dir: Path) -> Path:
-    """The newest run folder that has a commands folder. Fail with a clear message if there is none."""
-    candidates = [p for p in Path(runs_dir).glob("*/commands") if p.is_dir()]
+    """The newest run folder that can take commands. Fail with a clear message if there is none."""
+    candidates = [p for p in Path(runs_dir).iterdir() if p.is_dir() and is_live_run(p)] if Path(runs_dir).is_dir() else []
     if not candidates:
-        raise CommandError(f"no run with a commands folder in {runs_dir}. Start one with: uv run python harness/run.py --scenario noop --keep-open")
-    return max(candidates, key=lambda p: p.stat().st_mtime).parent
+        raise CommandError(f"no run with a commands folder or ready.marker in {runs_dir}. Start one with: uv run python harness/run.py --scenario noop --keep-open")
+    return max(candidates, key=lambda p: p.stat().st_mtime)
 
 
 def resolve_run(runs_dir: Path, run_id: str | None) -> Path:
     if run_id is None:
         return find_newest_run(runs_dir)
     run = Path(runs_dir) / run_id
-    if not (run / "commands").is_dir():
-        raise CommandError(f"run {run_id} has no commands folder in {runs_dir}")
+    if not is_live_run(run):
+        raise CommandError(f"run {run_id} has no commands folder and no ready.marker in {runs_dir}")
     return run
 
 
