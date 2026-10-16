@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Scenario discovery reads `mod/<Name>/scenarios/**/*.py`; a duplicate scenario name fails loudly. Boundary test: harness code must not name the mod pack.
 - Mod pack skeleton `mod/InvasionMod` (spec 22): feature loader (order by `requires`, fails on a cycle or a missing feature), config, stub feature `example`, fake-game test.
 - Late crash collect: runs write `game.json` (game pid, start time), and `harness/tools/collect_crash.py runs/<id>` copies crash reports of a kept-open game that crashed after the run ended.
 - Spike #104: tool `s104_ai_watch.py` lists which hooks fire while AI lords build. over 30 reflected hooks fired 0 times for the AI build itself, so the AI route gives the player no placement input. Note `mousefree-ai-route.md`.

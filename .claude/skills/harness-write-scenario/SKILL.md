@@ -20,6 +20,7 @@ def run(ctx) -> dict:
     return ctx.result()
 ```
 A hook sees only Blueprint (ProcessEvent) calls. Native UI actions (build mode, placement clicks) fire no hook: read the effect with a count instead.
+A mod may keep scenarios beside its files: `mod/<Name>/scenarios/**/*.py` (same module format; a file name that starts with `_` is a helper). Names must be unique across harness and mods; a duplicate fails at import.
 Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a test compares the full list).
 
 ## The context (`ctx`)
