@@ -105,6 +105,10 @@
 --   {"command":"homeless_rebel","count":2,"families_per_squad":1,"template":"Brigands","mode":"home"}   remove families, then bandits appear at their homes ("mode":"raid": a real raid that targets the home)
 --   {"command":"rebel_raid_rally","count":2}   remove families, then one real raid aimed at a forest spot; the raiders stand at the AI waypoint for about 100 to 150 game seconds, then attack. The answer has the squad ids, the spot and the families before and after
 --   {"command":"bandit_kill_squads","squad":41,"count":2}   SMUnit:just_die on every living bandit unit of squads 41, 42 (to remove a raid and keep other squads)
+--   Save and game setup (specs 24 and 26):
+--   {"command":"save_game","label":"x"}                     guarded harness save (spec 24, see harness/runlib/harness_save.py)
+--   {"command":"game_setup_state"}                          read the game start settings and the victory goal (spec 26)
+--   {"command":"game_setup_set_goal"}                       set a victory goal (spec 26)
 --   Housing (spec 15, see mod/shared/HarnessHousing):
 --   {"command":"upgrade_stat","type":117}                      number fields of one DT_Upgrades row (spec 23, read only)
 --   {"command":"building_stat","type":87}                   scalar fields of the buildingStats row of one building type (read only)
