@@ -10,6 +10,8 @@ The harness specs are in `docs/harness/`. The layout and build rules of the mod 
 | design docs (to come) | Game design docs that the user scaffolds | the user |
 | `M<NN>-<feature>/` | One spec per core feature, broken out of the design docs | agent, reviewed by the user |
 
+The batch plan that breaks M00 into feature specs is in [`feature-breakdown.md`](feature-breakdown.md).
+
 A feature spec is made only when the user breaks a part of the design out into a core feature.
 
 ## How a feature spec is written

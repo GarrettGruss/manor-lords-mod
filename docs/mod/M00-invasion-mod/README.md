@@ -1,6 +1,7 @@
 # M00: Invasion Mod overview design
 
 Status: draft (2026-10-15), updated with the feasibility decisions (see "Feasibility decisions"). Design content comes from two user briefs. The agent merged them. The user owns the decisions.
+Feature breakdown: [`../feature-breakdown.md`](../feature-breakdown.md).
 Feasibility review: `implementation-notes/feasibility-summary.md`.
 Internal name: `InvasionMod`. Player-facing name: to be decided (it lives only in `mod.json` `display_name`).
 
@@ -49,7 +50,7 @@ Each cycle feeds the next. The aftermath of one raid is the start position for t
 The game has only foot soldiers (technical limit). All factions fight on foot.
 
 - **Hussites (the invader):** a disciplined peasant army from Bohemia.
-  - Units: sword men, pikemen and spearmen, crossbowmen, and early handgunners if the game has a fitting unit.
+  - Units (decision 7): units already in the game. Melee: tier I brigands and spearmen, tier II axe and sword infantry, tier III retinue and poleaxe infantry. Ranged: tier I bows, tier II crossbows. Handgunners are out of scope.
   - Historical model: the "beautiful rides" into Franconia, Bavaria and Saxony (1427 to 1433). They burned towns and took ransom.
   - Ransom demand: before a raid, the Hussite captains can demand a payment to spare the town. This is the first tribute term the player meets.
   - Their war wagons (Wagenburg) are left out. The game cannot show them.
@@ -106,7 +107,7 @@ Raid behaviors:
 ## Bandits
 Villagers become bandits for three reasons:
 1. **Low approval:** approval below a threshold.
-2. **Low regional wealth:** a poor region pushes peasants to banditry, even when approval is fine.
+2. **Low Public Order:** replaces the "low regional wealth" cause (decision 6). Public Order below 75%, 50% and 25% gives a rising chance per season. The user can reverse this.
 3. **Unhoused refugees:** refugees with no home turn to banditry (see Refugees).
 
 - The change uses the proven `homeless_rebel` route: the mod removes the families and bandits appear at their homes (feasibility decision 7). No `turnToBandit` and no `Region:AddNewFamily` (crash risks).
@@ -128,7 +129,7 @@ Repeated sacks inside a short window can still end the game.
 Version 1 (scripted events):
 - **Sack instead of deletion:** percentage loss of buildings, stockpiles and population.
 - **Vassal fallback:** before or during a battle, pay to move families, grain and the best units to a fortified vassal. It becomes the fallback capital.
-- **Tribute terms:** the invader offers terms: a one-time payment, hostages, or vassalage with yearly tribute.
+- **Tribute terms:** the invader offers terms: a one-time payment, or vassalage with yearly tribute. Hostages are dropped (decision 8).
 
 Later layers:
 - **Manor holds:** if the town falls but the manor stronghold holds, raiders loot and leave when supplies or morale run out.
@@ -168,20 +169,20 @@ The core features. Each one becomes a feature spec `docs/mod/M<NN>-<feature>/` w
 
 | Feature | Short goal | Depends on | Spec |
 | --- | --- | --- | --- |
-| invasion | Schedule plunder raids (minor), subjugation raids (major) and the great raid. Show a countdown and a size estimate. | none | not yet |
-| raid behavior | Start the native plunder AI. Loot of a killed raider goes back to the store. Carry caps. Native rout. | invasion | not yet |
-| bandits | Low approval, low regional wealth or no home turns villagers into bandits. Fight them or pay coin to bring them back. | approval, regional wealth | not yet |
-| refugees | A lost vassal sends refugees. They lower approval and eat food. Unhoused refugees become bandits. | vassals, bandits | not yet |
-| vassals | Vassalize a neighbor or found one with settlers. Indirect control through policies and orders. | regions | not yet |
-| tribute | Vassals send supplies. They expect protection. Failed protection lowers loyalty. | vassals, invasion | not yet |
-| liege and influence | Tribute to the liege gives influence. Influence buys aid, villagers, weapons or tools. | tribute | not yet |
-| sack and terms | A lost battle sacks the town. Tribute terms, fallback capital. | invasion, vassals | not yet |
-| manor stronghold | The manor is the stronghold. Upgrade it through builds and the tech tree: manor storage, retinue capacity. | tech tree | not yet |
-| finite resources | Home deposits of iron, salt and similar run out. Vassals are the permanent source. | vassals | not yet |
-| plundered start | Start in a damaged village. | none | not yet |
-| tech tree | Two exclusive paths: oppression and prosperity. Laws and vassal policies. Lua effects, custom UI from a pak. | approval, bandits | not yet |
-| mod state | Keep the mod's own values (countdown, loyalty, influence, path, tech, deposits, schedule) with each save. | none | harness spike 24 (#128) |
-| unit balance | Hussite unit roles from existing foot units. Counters. Veterancy. Much higher damage to unarmored units. | none | not yet |
+| invasion | Schedule plunder raids (minor), subjugation raids (major) and the great raid. Show a countdown and a size estimate. | none | [M02](../M02-invasion/) |
+| raid behavior | Start the native plunder AI. Loot of a killed raider goes back to the store. Carry caps. Native rout. | invasion | [M03](../M03-raid_behavior/) |
+| bandits | Low approval, low regional wealth or no home turns villagers into bandits. Fight them or pay coin to bring them back. | approval, regional wealth | [M04](../M04-bandits/) |
+| refugees | A lost vassal sends refugees. They lower approval and eat food. Unhoused refugees become bandits. | vassals, bandits | [M09](../M09-refugees/) |
+| vassals | Vassalize a neighbor or found one with settlers. Indirect control through policies and orders. | regions | [M07](../M07-vassals/) |
+| tribute | Vassals send supplies. They expect protection. Failed protection lowers loyalty. | vassals, invasion | [M08](../M08-tribute/) |
+| liege and influence | Tribute to the liege gives influence. Influence buys aid, villagers, weapons or tools. | tribute | [M11](../M11-liege_influence/) |
+| sack and terms | A lost battle sacks the town. Tribute terms, fallback capital. | invasion, vassals | [M06](../M06-sack_and_terms/) |
+| manor stronghold | The manor is the stronghold. Upgrade it through builds and the tech tree: manor storage, retinue capacity. | tech tree | [M13](../M13-manor_stronghold/) |
+| finite resources | Home deposits of iron, salt and similar run out. Vassals are the permanent source. | vassals | [M10](../M10-finite_resources/) |
+| plundered start | Start in a damaged village. | none | [M14](../M14-plundered_start/) |
+| tech tree | Two exclusive paths: oppression and prosperity. Laws and vassal policies. Lua effects, custom UI from a pak. | approval, bandits | [M12](../M12-tech_tree/) |
+| mod state | Keep the mod's own values (countdown, loyalty, influence, path, tech, deposits, schedule) with each save. | none | [M01](../M01-mod_state/) (harness spike 24, #128) |
+| unit balance | Hussite unit roles from existing foot units. Counters. Veterancy. Much higher damage to unarmored units. | none | [M05](../M05-unit_balance/) |
 
 ## Build plan
 Manor Lords has limited mod support. AI behavior, regions and new law systems are the riskiest parts. Build in this order:
@@ -218,7 +219,7 @@ First guesses. The scenarios will check them later as ranges.
 - Home finite deposits: last 2 to 4 game years at normal use.
 - A vassal sends tribute worth 10% to 30% of its production.
 - Approval below a threshold (for example 30%) turns 1 to 3 families per month into bandits.
-- Regional wealth below a threshold turns 1 to 2 families per month into bandits. The threshold is to be tuned.
+- Public Order below 75%, 50% and 25% gives a 10%, 25% and 50% chance per season (decision 6). Replaces the regional wealth target.
 - A lost vassal sends 30% to 60% of its population as refugees.
 - Unhoused refugees become bandits after 1 to 2 game months.
 - A sack takes 20% to 50% of buildings, stockpiles and population.
@@ -260,14 +261,44 @@ Places where brief B replaced brief A. The user can reverse each one.
 3. How are vassal regions shown in the game? As AI lord regions, as player regions with locked building, or as an abstract layer in Lua only?
 4. Answered: policies and orders are mod-owned settings; Lua applies them to any region (decision 2). Open: which effects Lua can apply to a region the player does not control.
 5. Answered: the base bandit AI already loots, burns and leaves; the mod starts it. Raiders cannot be steered (decision 1). Open: which AI to reuse for subjugation.
-6. What is the win condition: survive the great raid, hold until the liege's relief army comes, defeat the warlord, or reach a set order score?
-7. How is "order" measured and shown to the player?
+6. Answered (decision 1): survive waves until the relief army comes, then fight a very large battle with the liege's reinforcements. Open: how the difficulty is chosen, when the relief army comes, its size.
+7. Answered (decision 2): "order" is the native Public Order (`Region.publicOrder`). Approval stays a separate value.
 8. A lost vassal sends refugees (decided). What does its land become: an enemy region, a bandit camp, or empty land that can be retaken?
-9. Is the liege a real entity in the world (troops that arrive), or only a menu with effects?
+9. Partly answered (decision 9): the liege is off-screen. Only a custom menu represents it. M11 is backlog, TBD.
 10. Can the path choice be undone at a high cost, or is it final?
 11. How large should a sack be before it feels fair?
 12. Is a second invader faction needed for the first release? Candidate: a mercenary free company that can link to the bandits.
-13. Which existing foot units can stand in for sword men and handgunners? Militia, spear, pole and crossbow rows exist. No handgunner row was found.
+13. Answered (decision 7): existing units are used. No handgunners. See "User decisions".
 14. Answered: "regional wealth" is the game's own `regionalWealth` (the HUD coins value). It reads, writes and holds. Open: no game link from wealth to bandits; the mod adds that rule.
 15. Answered: refugees wait in the game's homeless tent (building type 87), a real building in the world.
 16. Can the mod change manor storage capacity and retinue size? Manor storage is likely (row write). Retinue size is unknown. The armor part moved to harness spike 25 (#129).
+
+## User decisions (2026-10-16)
+The user gave these decisions. Features apply them in their own READMEs. The user can reverse each one.
+1. **Win condition.** During the great raid the player must survive waves of attackers until the relief army arrives. Then the player gets a very large battle. The king or liege sends reinforcements under the player's control. With goals = Endless (spec 26), this win is a mod rule. Affects M02, M06, M07. Answers open question 6.
+2. **Order is the native Public Order.** It is the HUD scales icon and the value `Region.publicOrder`. It reads and writes (`docs/harness/07-feature-test-kit/implementation-notes/actions-catalog.md`, `docs/harness/04-telemetry-and-assertions`). Approval stays a separate game value. Answers open question 7.
+3. **Row id blocks confirmed.** Block start is 1000 + 100 times the M number. M02 gets 1200 to 1299, and so on.
+4. **Raid info UI.** One custom widget (a pak widget, as in harness spec 16) shows all raid information: countdown, size estimate and more. Applies to M02.
+5. **Vassal model.** Still open. It is being explained to the user.
+6. **Bandit conversion uses Public Order.** Below 75%: 10% chance. Below 50%: 25%. Below 25%: 50%. Conversion ticks once per season (winter, spring, summer, fall). The values are starting tunables. This replaces the low regional wealth cause. The refugee cause stays (M09). Applies to M04.
+7. **No handgunners.** Hussites use units already in the game. Melee: tier I brigands and spearmen, tier II axe and sword infantry, tier III retinue and poleaxe infantry. Ranged: tier I bows, tier II crossbows. Applies to M05 and the M02 raid composition.
+8. **No hostages.** Use the game's native sack and loot mechanics. Sack size is proportional to a difficulty indicator, an integer from 1 to 3 for now. Each raid has a base size multiplier: small 1, medium 2, large 3. Unit count is the multiplier times the difficulty. Applies to M02, M03, M06.
+9. **The liege is off-screen.** For now only a custom menu represents the liege. M11 is backlog, TBD.
+10. **Tech tree node list and M14.** Still open. They are being explained to the user.
+
+Follow-up decisions (user, 2026-10-16, later the same day):
+11. **Difficulty is chosen by the player at the start** (1 to 3). Applies to M02.
+12. **Great raid for now:** 1 times difficulty waves, and every wave is a large raid. A large army is 15 units. (Open: is a unit one soldier or one squad? See M02.)
+13. **Bandit chance is rolled once per region** at each season tick. Applies to M04.
+14. **Low approval debuffs Public Order.** Approval does not turn villagers into bandits on its own; it lowers Public Order, and Public Order drives conversion. Oppression techs grant Public Order boons that offset low approval. Prosperity techs boost approval, which removes the Public Order debuff. Applies to M04 and M12.
+15. **Sack size grows in a straight line with difficulty for now.** It may become logarithmic. This is decided in playtests. Applies to M06.
+16. **A large army is 15 squads.** The count is tuned in playtests. The great raid's final "very large battle" is a reward for surviving, so difficulty does not scale it for now.
+17. **The relief army is 15 squads** under the player's control.
+18. **Raid size (small, medium, large) is random** for normal raids, for now. The great raid waves are all large.
+19. **Public Order debuff from approval:** debuff = (100 - approval) x difficulty, in Public Order points. Base rate 1:1. Example: approval 65 (a normal village) gives Public Order 65 at difficulty 1. Linear steps. Tech boon sizes are TBD.
+20. **Vassal model A (answers decision 5).** The player starts with no vassals. The player settles a region, and the game hands it to a friendly AI lord who rules in the player's name. The user does not expect the AI lord to declare war; playtests watch for it.
+21. **Tribute is a Lua rule:** at each season tick, the mod adds goods to the player's stock. No goods transfer between regions. Applies to M08.
+22. **Tech tree (answers decision 10).** The 4-node draft per path is approved for now (Martial Law, Iron Hand, Veteran Levies, Fear of the Lord; Fair Courts, Amnesty, Militia Rights, Golden Age). Path and node choices are final and exclusive.
+23. **Tech tree is data-driven.** It changes often. The feature JSON defines the tree as a linked list of nodes. The mod builds the tree from it. The JSON may hold optional layout data (positions) for the menu. No hard-coded tree, unless a technical limit forces it. Applies to M12.
+24. **Tech cost is free for now.** One node slot unlocks each time the settlement level rises. Applies to M12.
+25. **M14 plundered start is out of scope for the first release.**
