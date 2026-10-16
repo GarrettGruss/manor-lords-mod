@@ -6,7 +6,8 @@ Usage:
 
 The key comes from MESHY_API_KEY (environment, else Windows user scope). It is never
 printed, logged or written. Every task is appended to runs/genmesh/log.jsonl with its
-credits. A call is refused when its estimated cost passes MAX_CREDITS_PER_CALL, or when
+credits. The task id is logged at once when the task is created, before polling.
+"resume --task <id> --out <dir>" downloads an existing task and spends no credits. A call is refused when its estimated cost passes MAX_CREDITS_PER_CALL, or when
 the credits logged today plus the estimate pass MAX_CREDITS_PER_DAY.
 """
 from __future__ import annotations
@@ -155,12 +156,28 @@ def run_multi(images: list[Path], out: Path, polycount: int, model: str,
     check_caps(MULTI_IMAGE_TEXTURED_COST, log_file)
     payload = build_payload([image_data_uri(path) for path in images], polycount, model)
     task_id = call("POST", "multi-image-to-3d", payload)["result"]
+    # Log first: a timeout after Meshy charged must not lose the id.
+    log_call({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), "task": task_id, "kind": "task-created",
+              "model": model, "polycount": polycount, "credits": 0}, log_file)
     task = wait_for_task(task_id, call, sleep)
     credits = int(task.get("consumed_credits", 0))
     files = download_results(task, out, fetch) if task["status"] == "SUCCEEDED" else []
     log_call({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), "task": task_id, "kind": "multi-image-to-3d",
               "model": model, "polycount": polycount, "images": [str(p) for p in images],
               "status": task["status"], "credits": credits, "outputs": [str(p) for p in files]}, log_file)
+    if task["status"] != "SUCCEEDED":
+        raise SystemExit(f"Task {task_id} ended {task['status']}: {task.get('task_error')}")
+    return task
+
+
+def resume_task(task_id: str, out: Path, call=call_api, fetch=download, sleep=time.sleep,
+                log_file: Path = LOG_FILE) -> dict:
+    """Download the result of an existing task. No new task, no new credits."""
+    task = wait_for_task(task_id, call, sleep)
+    files = download_results(task, out, fetch) if task["status"] == "SUCCEEDED" else []
+    # Credits are 0 here: the creation was already paid and counted.
+    log_call({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), "task": task_id, "kind": "resume",
+              "status": task["status"], "credits": 0, "outputs": [str(p) for p in files]}, log_file)
     if task["status"] != "SUCCEEDED":
         raise SystemExit(f"Task {task_id} ended {task['status']}: {task.get('task_error')}")
     return task
@@ -175,7 +192,14 @@ def main() -> None:
     multi.add_argument("--out", type=Path, required=True)
     multi.add_argument("--polycount", type=int, default=2000)
     multi.add_argument("--model", default="meshy-6")
+    resume = sub.add_parser("resume")
+    resume.add_argument("--task", required=True)
+    resume.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
+    if args.command == "resume":
+        task = resume_task(args.task, args.out)
+        print(f"task {task['id']} resumed")
+        return
     if args.command == "balance":
         print(json.dumps(call_api("GET", "balance")))
         return

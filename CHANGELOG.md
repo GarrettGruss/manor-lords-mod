@@ -27,6 +27,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Soak (#53): `soak-days` accepts up to 13000 s of wall time (`MAX_LIMIT_S` 13500 s) and wider clock-rate (1.5 to 9) and days (0.2 to 1.1) ranges. A 3.3 h run reached day 333 of 730 with no crash and no memory growth; see spec 10 `open-items.md`.
 
 ### Fixed
+- genmesh (#131, #102): the Meshy task id is written to the spend log at creation, before polling, so a client timeout cannot lose it. New command `resume --task <id> --out <dir>` downloads an existing task and spends no credits.
 - Harness: the default placement click point is now (0.35, 0.3). The old point (0.65, 0.65) lay over the sawpit in fixture `base`, so the ghost was blocked (run 20261015-203710-6b45).
 - HarnessPlace: remove the `pivot_attach` and `pivot_move` commands. `pivot_attach` passed a Lua string as an FName and crashed the game in UE4SS `push_nameproperty`.
 - Real-mouse input (#115): `osinput` now fails at once with "no mouse device" when Windows reports no mouse (`SM_MOUSEPRESENT` 0). That state made `getMouse3d` return Z -100000 and blocked every real placement click. New tools `s115_input_env.py` and `s115_probe.py`; note `os-mouse-regression.md`. The placement itself still needs a mouse on the PC.
