@@ -18,5 +18,9 @@
 
 ## Step 6: release
 - Manifest: optional `display_name` (string) and `features` (list of `{name, requires, ids}`).
-- The gate covers `gate_scenarios` (empty list is allowed when `features` is set).
+- The gate covers `gate_scenarios`. An empty list is allowed only when `features` is set; `release.py` then prints a warning. Gate hashes skip `data/` and `scenarios/`.
 - The zip leaves out `data/` and `scenarios/` of a mod.
+
+## Commits
+- The boundary test (step 7) went into the step 4 commit, not into its own commit.
+- The first commit has an `InvasionMod/mod.json` without `display_name` and `features`; the manifest support (step 6) came later. The feature-list test skips until `features` exists.

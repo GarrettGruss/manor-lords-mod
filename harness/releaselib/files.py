@@ -18,6 +18,9 @@ LUA_COMMENT = re.compile(r"--[^\n]*")
 # Files of a mod folder that stay out of the zip.
 SKIP_PARTS = {"__pycache__"}
 
+# Top-level folders of a mod that are sources for the build or the tests. They never go into a release.
+NOT_RELEASED = ("data", "scenarios")
+
 
 class ClosureError(Exception):
     """A mod needs a module that it does not declare, or a harness-only module."""

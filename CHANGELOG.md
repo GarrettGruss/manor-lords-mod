@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Release (spec 19): optional manifest fields `display_name` and `features`; the zip and the gate ignore the `data/` and `scenarios/` folders of a mod.
 - Scenario discovery reads `mod/<Name>/scenarios/**/*.py`; a duplicate scenario name fails loudly. Boundary test: harness code must not name the mod pack.
 - Mod pack skeleton `mod/InvasionMod` (spec 22): feature loader (order by `requires`, fails on a cycle or a missing feature), config, stub feature `example`, fake-game test.
 - Late crash collect: runs write `game.json` (game pid, start time), and `harness/tools/collect_crash.py runs/<id>` copies crash reports of a kept-open game that crashed after the run ended.
