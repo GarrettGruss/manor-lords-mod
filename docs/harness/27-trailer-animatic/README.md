@@ -1,6 +1,6 @@
 # Spec 27: Trailer animatic and review pipeline
 
-Status: draft (2026-10-16). Branch: `feat/27-trailer-animatic`. Issue: #133.
+Status: approved with open decisions TBD (2026-10-16). Branch: `feat/27-trailer-animatic`. Issue: #133.
 
 ## Goal
 Build trailer drafts from a timed shot list, and let the agent review each draft at a low token cost.
@@ -72,10 +72,11 @@ Cost grows with the number of images, not with the video length. `--every 2` hal
 - yt-dlp: only to fetch the user's own published video, with its captions, for the final review.
 
 ## Open questions
-1. Piper or a cloud TTS for the Czech lines?
-2. Which scenario sets up the gameplay shots (a raid on a burning village)? Can the harness move the camera, or does the user record those clips by hand?
-3. Where do large assets live: only on the local disk, or in Git LFS?
-4. Does `trailer/` belong in the repo root, or under `docs/mod/M00-invasion-mod/`?
+All decisions are TBD. The user decides them before version 0 starts.
+1. Piper or a cloud TTS for the Czech lines? **Decision: TBD.**
+2. Which scenario sets up the gameplay shots (a raid on a burning village)? Can the harness move the camera, or does the user record those clips by hand? **Decision: TBD.**
+3. Where do large assets live: only on the local disk, or in Git LFS? **Decision: TBD.**
+4. Does `trailer/` belong in the repo root, or under `docs/mod/M00-invasion-mod/`? **Decision: TBD.**
 
 ## Acceptance criteria
 - A1: `build.py` turns a YAML with text-card shots and TTS voice into an mp4 of 60 seconds or less.
