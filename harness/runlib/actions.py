@@ -1196,10 +1196,19 @@ class Actions:
         village stays. The lord does NOT build there (use lord_receive_region for that)."""
         return self._command("lord_take_region", lord=lord, region=region)
 
-    def claim_region(self, region: str, target: int = 0, finalize: bool = True) -> dict:
+    def game_setup_state(self) -> dict:
+        """Spec 26: goal (EGameGoals number), victory status, difficulty and start fields of the game instance (read only)."""
+        return self._command("game_setup_state")
+
+    def game_setup_set_goal(self, goal: int) -> dict:
+        """Spec 26: write gameSetup.currentGameSetup.goals (0 Conquest, 1 Dominance, 2 Endless, 3 Growth). Reads it back."""
+        return self._command("game_setup_set_goal", goal=goal)
+
+    def claim_region(self, region: str, target: int = 0, finalize: bool = True, consume_influence: bool = False) -> dict:
         """PawnCPP:layClaim and finalizeClaim (target 0 is the player, N a lord). Verified (S13 part 2): a free region gets the owner
         and a CityPlanningComponent at once; no 14 day wait."""
-        return self._command("claim_region", target=target, region=region, finalize=1 if finalize else 0)
+        return self._command("claim_region", target=target, region=region, finalize=1 if finalize else 0,
+                             consume=1 if consume_influence else 0)
 
     def settle_region(self, region: str, target: int = 0, settlement_type: int = 1, supply: int = 0,
                       x: float | None = None, y: float | None = None, z: float = 0) -> dict:
