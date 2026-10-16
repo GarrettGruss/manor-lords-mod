@@ -1,6 +1,6 @@
 # Spec 24: Mod state across saves (spike)
 
-Status: proposed (2026-10-15). Issue: #128. Branch: `feat/24-mod-save-state`.
+Status: in progress (2026-10-15). `save_game` is built with fake tests (plan step 2); no real save yet. Issue: #128. Branch: `feat/24-mod-save-state`.
 Needed by: the Invasion Mod (M00 feasibility decision 9). Every feature that keeps values needs it.
 
 ## Goal
@@ -31,7 +31,7 @@ C. **Hybrid.** Option A stores only a small id; option B stores the data under t
 2. Guarded harness save action `save_game` (replaces the `save_state` stub that raises today, spec 07):
    - back up the user's save folder first (copy outside the game folder, keep the newest backups);
    - snapshot the file list and hashes of the save folder;
-   - call the save function that the static step picks (`PawnCPP:requestSaveFile` with a NEW harness slot name, prefix `harness_`), never an existing slot and never `Request Autosave`;
+   - call the save function that the static step picks (`PawnCPP:requestSaveFile`) with the next free slot `saveGame_<N>` (above the highest existing one, as fixtures do), never an existing slot and never `Request Autosave`. The Python guard checks that no file of the slot exists; the Lua command checks it again with `DoesSaveGameExist` and accepts only `saveGame_<number>`;
    - after the save: exactly one new file (plus the game's thumbnail or meta file, if any) may appear; any change to an existing file is a failure, and the action restores that file from the backup and fails loudly;
    - the run guard (save hashes before and after) expects only the files that `save_game` reported;
    - at run end, delete the harness save files unless the scenario keeps them as a fixture (spec 06).
@@ -43,7 +43,8 @@ C. **Hybrid.** Option A stores only a small id; option B stores the data under t
 ## Safety
 - Back up the user's save folder before any test (CLAUDE.md).
 - Save only through `save_game` (plan step 2). Never call a save function from a probe, a scenario or `eval_lua`.
-- Every harness save goes into a new `harness_` slot. Never overwrite an existing save. If the game picks the slot by itself (as with `saveGame_9` before), stop and report before the next save.
+- Every harness save goes into the next free `saveGame_<N>` slot. Never overwrite an existing save. If the game picks the slot by itself (as with `saveGame_9` before), stop and report before the next save.
+- Why not a `harness_` prefix: the load list shows only `autosave` and `saveGame_<N>` (see `implementation-notes/save-hooks.md`), so a `harness_` slot could not be loaded for plan step 3. The next free number also needs no new slot logic. (Decision 2026-10-15.)
 
 ## Acceptance criteria
 - A0: `save_game` exists with fake tests for the guard (new slot only, one new file, restore on change), and one real save in a run left the user's other saves unchanged (hashes).
@@ -54,5 +55,6 @@ C. **Hybrid.** Option A stores only a small id; option B stores the data under t
 - A5: A recommendation and the `ModState` module design are written into this spec, and M00 links to it.
 
 ## Open questions
-- Does `requestSaveFile` let the caller choose the slot file, or does the game pick `saveGame_N`? The earlier probe overwrote `saveGame_9`. The static step must answer this before the first real save.
+- Does `requestSaveFile` let the caller choose the slot file, or does the game pick `saveGame_N`? Static answer: the caller chooses (`save-hooks.md`). The first real save must confirm it. `save_game` raises if any other file changes.
+- Which extra files does the game write for a slot (`_descr.sav`, `.png`, `_coat_<n>.png`)? `save_game` accepts exactly these names for the new slot and fails on any other new file.
 - Decided (user, 2026-10-15): the harness may make saves, under the rules above.

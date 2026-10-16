@@ -37,7 +37,7 @@ Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a 
 - The game is not deterministic. Assert ranges, not exact values, for anything stochastic. Use `equals` for flags and names.
 - Keep asserts few and named so the 4 KB summary stays readable (`R5 five captives are held`).
 - A failing assert is a `fail`. A bug in your code is a `harness_error`. Do not catch errors to hide them.
-- Never call a save function. Scenarios that need the real mouse (`place_building`) are `HIDDEN` and run alone.
+- Never call a save function. To save, use `ctx.actions.save_game(label, keep=False)` (spec 24): it backs up the save folder, uses a new free slot, deletes the files at the run end unless `keep=True`, and raises if an existing file changes. Scenarios that need the real mouse (`place_building`) are `HIDDEN` and run alone.
 - Long scenarios need `LONG_REASON` and the pop-up guard (`ctx.popups`). A pop-up pauses the game.
 - Use `COVERS` only for a criterion whose method the scenario really proves. The coverage tool counts a passing tagged scenario.
 

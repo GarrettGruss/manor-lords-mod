@@ -132,8 +132,8 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 ## Safety
 
 - Game save functions write into the user's REAL save folder, even when a run has a private `LOCALAPPDATA`: `PawnCPP:requestSaveFile`, `SaveToDiskWithThumbnail`, `IoHandler:SaveGameToSlot`, `RequestMenuSave`, `Request Autosave`. A probe overwrote the user's `saveGame_9` this way (restored from the user's backup).
-  - The user approved that the harness makes saves (2026-10-15), but ONLY through the guarded harness action `save_game` (spec 24). It backs up the save folder, saves to a new `harness_` slot, and fails and restores if any existing save file changes.
-  - Until `save_game` exists with its fake tests, no save calls at all. Never call a save function from a probe, a scenario or `eval_lua`. Never call `Request Autosave`.
+  - The user approved that the harness makes saves (2026-10-15), but ONLY through the guarded harness action `save_game` (spec 24). It backs up the save folder, saves to the next free `saveGame_<N>` slot (above the highest one, as fixtures do), and fails and restores if any existing save file changes. `mod/shared/HarnessSave/HarnessSave.lua` is the only code that calls a save function. A test enforces it (`test_save_call_sites.py`).
+  - `save_game` exists with fake tests, but it has not run in the real game yet. The first real call needs a fresh backup and the user informed. Never call a save function from a probe, a scenario or `eval_lua`. Never call `Request Autosave`.
   - Player mods (the Invasion Mod) never call a save function. They react to the player's saves through hooks.
   - The launcher hashes the user's save folder before and after each run. That guard only reports a change after it happened.
 - The game's autosave timer runs in real time, also while the game is paused (about 10 min after a load). `HarnessBoot` pushes it one year away before READY (`MLGameInstance:SetAutosavePeriodOnPawn`, checked 2026-10-10). Do not call `Request Autosave` or the native `SetAutosavePeriod`.
