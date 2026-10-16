@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 23: command `upgrade_stat` reads number fields of a DT_Upgrades row. `building_stat` accepts ids up to 70000. Tool `s127_make_ids_json.py` builds the `ids` test pak. Result: buildingStats ids up to 65536 work (`id-results.md`).
 - Late crash collect: runs write `game.json` (game pid, start time), and `harness/tools/collect_crash.py runs/<id>` copies crash reports of a kept-open game that crashed after the run ended.
 - Spike #104: tool `s104_ai_watch.py` lists which hooks fire while AI lords build. over 30 reflected hooks fired 0 times for the AI build itself, so the AI route gives the player no placement input. Note `mousefree-ai-route.md`.
 - Spike #104: command `HarnessPlace.bp` (modes scan, extend, newmaster) tests the blueprint-to-building route for a normal building. It does not build a hitching post. Note `mousefree-blueprint-route.md`.

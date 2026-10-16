@@ -1,11 +1,11 @@
 # Spec 23: Row id range spike
 
-Status: proposed (2026-10-15). Issue: #127. Branch: `feat/23-row-id-range`.
+Status: real-game round done (2026-10-16). Issue: #127. Branch: `feat/23-row-id-range`.
 Needed by: spec 22 (reserved id ranges for each mod feature, plan step 5).
 
 ## Goal
 Find which ids are safe for NEW rows in the game data tables that the mod will extend. Then set an id range for each mod feature.
-Known so far: `buildingStats` row 125 (cloned from row 97) loads, shows, is placed by a real click and is built (spec 18, `real-mouse-placement-proof.md`). The vanilla ids end near 125.
+Known so far: `buildingStats` row 125 (cloned from row 97) loads, shows, is placed by a real click and is built (spec 18, `real-mouse-placement-proof.md`). The vanilla building ids end at 484 (see `implementation-notes/id-types.md`). Id 125 is a free vanilla id.
 
 ## Non-goals
 - No save and load test. A save function is forbidden (CLAUDE.md Safety). Save persistence of new ids stays an open question.
@@ -37,3 +37,15 @@ Start with `buildingStats` and `DT_Upgrades`. Then, if time allows, the units, i
 ## Risks
 - Large ids may work in the menu but break native systems that are not visible at once (AI build lists, save files). The 30-day run reduces this risk but does not remove it.
 - Mouse placement needs the real mouse (#115).
+
+## Result and proposed id ranges (A2, A3)
+Details: `implementation-notes/id-results.md`. In the real game, buildingStats ids 126, 486, 1000, 2000, 32767 and 65536 all load, show in the build menu, are placed with a real click, are built and survive 45 game days with no crash. Two DT_Upgrades rows (117, 118) load. Their use in the game is not tested.
+
+Proposal for spec 22 (`mod.json` and rule 3):
+- Vanilla building ids are 1 to 484. The enum sentinel is 485. Do not use ids 1 to 485, and keep 200, 255 and 256 free (other tables use them).
+- Every mod feature gets a block of 100 building ids in the range 1000 to 9999. Block start = 1000 + 100 * feature number (feature 22 gets 3200 to 3299, for example). Use the feature number of its spec.
+- Ids 10000 to 32766 are a reserve. Do not use ids above 32767 (65536 worked, but the reserve is enough and 16 bit values stay safe).
+- Existing test rows 123 and 125 stay as they are. Do not add new rows there.
+- Upgrade ids: only 117 and 118 were read. Use 117 to 999 for new upgrade rows until a larger id is tested in the game.
+- Text keys: add `buildingID_<id>` for each new id.
+- Open: save and load of a new id, upgrade use, AI build lists.
