@@ -8,7 +8,9 @@ A lost battle sacks the town instead of deleting the game. The invader offers tr
 ## Player rules (from M00)
 - Losing the main battle triggers a sack. The town loses a share of buildings, stockpiles and people (20% to 50%). The game continues.
 - Repeated sacks inside a short window can still end the game.
-- Tribute terms: the invader offers a one-time payment, hostages, or vassalage with yearly tribute.
+- Tribute terms: the invader offers a one-time payment, or vassalage with yearly tribute. Hostages are dropped (decision 8).
+- Sack uses the native sack and loot mechanics (decision 8). Sack size is proportional to the difficulty (integer 1 to 3), on top of the raid size (M02).
+- Great raid end (decision 1): the player survives waves until the relief army arrives, then fights a very large battle with the liege's reinforcements under the player's control. M02 runs the waves. M06 defines what a lost battle is and what the sack does.
 - Fallback capital: before or during a battle, pay to move families, grain and the best units to a fortified vassal. It becomes the fallback capital.
 - Later layers (deferred, no spec): the manor holds while the town falls; occupation; liberation.
 - Vassals expect protection. A vassal that is not protected may submit to the invader (M07).
@@ -30,7 +32,8 @@ Not started. The first part (sack and terms in the home town) does not need vass
 ## Tunables (M00)
 - Sack share: 20% to 50% of buildings, stockpiles and population.
 - Window for repeated sacks (M00 gives no number).
-- Terms: payment amount, hostage count, yearly tribute share.
+- Terms: payment amount, yearly tribute share.
+- Sack share per difficulty step (difficulty 1 to 3). M00 gives 20% to 50% as the range.
 
 ## Dependencies
 - M01, M02 (great raid result, ransom demand).
@@ -39,11 +42,12 @@ Not started. The first part (sack and terms in the home town) does not need vass
 ## Open questions
 1. How large must a sack be to feel fair? (M00 open question 11.) The user decides by play.
 2. What counts as a "lost battle"? There is no captain. M00 gives no rule.
-3. What are hostages in a game without captives? M00 removes captive raids. Does a hostage term make sense?
+3. Answered (decision 8): hostages are dropped. Terms are a payment or vassalage.
 4. What is the window and the count of sacks that ends the game?
 5. How do families, goods and units move to the fallback capital? Only toy results exist (`InvasionStandIn`).
 6. What does the player pick: terms before or after the sack?
-7. Win condition and the end of the great raid (M00 open question 6).
+7. Answered (decision 1): survive waves until the relief army arrives, then the very large battle. Open: what happens if the player loses that battle (a sack at difficulty size, or the end of the game)?
+8. Does the sack size scale linearly with the difficulty, for example 20% at 1 and 50% at 3?
 
 ## Iterations
 | # | Name | Goal | Result |

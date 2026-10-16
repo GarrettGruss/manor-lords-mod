@@ -7,12 +7,12 @@ Make armor matter in battle. Give the Hussites roles from existing foot units. A
 
 ## Player rules (from M00)
 - The game has only foot soldiers. All factions fight on foot.
-- Hussite units: sword men, pikemen and spearmen, crossbowmen, and early handgunners if the game has a fitting unit.
+- Hussite units (decision 7): existing units only. Melee: tier I brigands and spearmen, tier II axe and sword infantry, tier III retinue and poleaxe infantry. Ranged: tier I bows, tier II crossbows. Handgunners are out of scope.
 - Armor matters. Unarmored units take much more damage: villagers in militia, bandits and light raiders.
   - Target: an unarmored unit takes 2 to 3 times the damage of the same unit with armor.
   - Target: an armored militia group beats a bandit group 1.5 to 2 times its size in most runs.
   - Investment in armor (smiths, armor stock, liege requests) must pay off clearly.
-- Counters: pavises and shields against crossbows and handguns. Pikes and a held line against sword men. Archers against light raiders.
+- Counters: pavises and shields against crossbows. Pikes and a held line against sword men. Archers against light raiders.
 - Veterancy: surviving units keep experience. Losing the best retinue hurts.
 
 ## Current state
@@ -30,12 +30,12 @@ Not started. The lever research is done (spec 25). The tuning tool is done on br
 - Veterancy and unit stat numbers (`maxSize`): spec 10 criteria in `docs/harness/10-invasion-testability/criteria.json`.
 - Larger formations and retinue: `docs/harness/13-mod-inspection/implementation-notes/larger-formations.md`.
 - A/B method: skill `harness-ab-testing`.
-- Row ids: `docs/harness/23-row-id-range/README.md`. Proposed block: building ids 1500 to 1599, only if it adds buildings (rule in `feature-breakdown.md`).
+- Row ids: `docs/harness/23-row-id-range/README.md`. Confirmed block (decision 3): building ids 1500 to 1599, only if it adds buildings.
 
 ## Tunables (M00)
 - Damage ratio unarmored to armored (2 to 3 times).
 - Armored militia against bandits (1.5 to 2 times its size).
-- Per-role stat values for Hussite sword, pike, spear, crossbow rows.
+- Per-tier stat values for the Hussite rows (melee tiers I to III, bow tier I, crossbow tier II).
 - Veterancy gain per battle.
 
 ## Dependencies
@@ -45,7 +45,7 @@ Not started. The lever research is done (spec 25). The tuning tool is done on br
 ## Open questions
 1. Which Lua rule applies the stat write to each new squad: a spawn hook or a poll (spec 28 uses a 2 s timer)?
 2. Does a live write of `att` and `armorPierce` on militia reach the 1.5 times target? Not tested (spec 25).
-3. Which existing foot rows stand in for sword men and handgunners? No handgunner row was found (M00 open question 13).
+3. Answered (decision 7): tier I brigand and spearman, tier II axe and sword infantry, tier III retinue and poleaxe infantry, tier I bow, tier II crossbow. No handgunners. Open: the exact row ids of each tier.
 4. Does the pak route (`DT_UnitTemplates` equipment ids) give a stable item-level lever? Not tested.
 5. Veterancy: which field holds the experience, and does it survive a save? Not stated in M00.
 6. The loss rate stops at 1.0 when a group routs. How is the 2 to 3 times target measured? Use the loss rate ratio, or the raw damage ratio?
@@ -54,6 +54,6 @@ Not started. The lever research is done (spec 25). The tuning tool is done on br
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
 | 01 | unarmored-lethality | Apply the live `def` and `block` write to unarmored units, for each new squad. | not started |
-| 02 | hussite-roles | Hussite roles from existing foot rows. | not started |
+| 02 | hussite-roles | Hussite roles from existing foot rows, by tier (decision 7). | not started |
 | 03 | armored-militia | Armor plus weapon values so militia beat 1.5 times as many bandits. | not started |
 | 04 | counters-veterancy | Counters and veterancy. | not started |

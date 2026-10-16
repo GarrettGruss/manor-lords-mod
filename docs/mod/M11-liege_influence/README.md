@@ -1,6 +1,8 @@
-# M11: liege-influence
+# M11: liege-influence (backlog, TBD)
 
-Feature folder: `liege_influence`. Batch 5.
+Feature folder: `liege_influence`. Status: backlog, TBD (decision 9). Not in the batch order.
+
+Decision 9 (2026-10-16): the liege is an off-screen concept. For now only a custom menu represents the liege. Nothing in this spec is planned. Keep the text for later.
 
 ## Goal
 Tribute to the liege gives influence. Influence buys aid, villagers, weapons or tools.
@@ -32,7 +34,8 @@ Not started.
 - M08 tribute, M01 mod-state. M12 for path effects.
 
 ## Open questions
-1. Is the liege a real entity in the world (troops that arrive) or only a menu with effects? (M00 open question 9.)
+1. Answered (decision 9): the liege is off-screen. Only a custom menu represents it. All other rules stay TBD.
+6. The relief army of the great raid (decision 1) comes from the liege. Does M11 own the relief army, or does M02? Until M11 starts, M02 owns it.
 2. How does the player send tribute to the liege and spend influence: a menu from a pak widget, or a named command?
 3. What does a military aid call bring: a spawned army, and under whose control?
 4. Which goods and how many villagers can be requested?

@@ -12,6 +12,7 @@ Start the native plunder AI for a raid. Loot of a killed raider goes back to a s
 - Storage tiers: a guarded granary loses less per trip than an open barn. The manor is the safest store. Manor capacity grows with the tech tree (M12, M13).
 - Burned buildings become ruins. Ruins rebuild at partial cost.
 - Units rout on their own. A mod mass rout is added only if playtests show the game is too punishing.
+- Hostages are dropped (decision 8). Loot and sack use the native game mechanics. Raid size comes from M02: base size multiplier times difficulty (1 to 3).
 
 ## Current state
 Not started.
@@ -25,12 +26,13 @@ Not started.
 - Manor store: `docs/harness/12-manor-exploration/implementation-notes/storage-m1.md`.
 - Review: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-raids.md`.
 - Mod state: M01. Raid start: M02.
-- Row ids: `docs/harness/23-row-id-range/README.md`. Proposed block: building ids 1300 to 1399 (rule in `feature-breakdown.md`).
+- Row ids: `docs/harness/23-row-id-range/README.md`. Confirmed block (decision 3): building ids 1300 to 1399.
 
 ## Tunables (M00 values, first guesses)
 - Carry cap per raider (Hussite grain 10, iron 5. Bandit grain 5).
 - Loss share per trip by store tier. M00 gives no numbers. The spike used open barn 50% and granary 10%.
 - Rebuild discount for ruins.
+- Loot and sack scale with raid size, which is multiplier times difficulty (M02). No separate loot multiplier is added (decision 8).
 
 ## Dependencies
 - M02 invasion (starts the raid).
@@ -44,6 +46,7 @@ Not started.
 4. Does the squad type matter (`spawnRaiders` against `spawnArmy`)? A `spawnArmy` squad attacked late in one test.
 5. What is the ruin rebuild discount? M00 says "partial cost" and gives no number.
 6. Which building types are guarded and which are open? M00 gives no list.
+7. Does the native loot per raider stay in range when the raid has 1 to 9 squads (multiplier 1 to 3 times difficulty 1 to 3)? Test in iteration 01.
 
 ## Iterations
 | # | Name | Goal | Result |

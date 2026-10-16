@@ -13,14 +13,15 @@ A raid that M02 spawns runs the native plunder AI: it loots, burns and leaves. T
 - No steering call. No rout call.
 
 ## Acceptance criteria
-- A1: a raid of 1 squad (18 raiders) on the `base` fixture ends within 20 game days (raiders gone or left). The log shows the native leave line.
+- A1: a raid of 1 squad (18 raiders; small raid, difficulty 1) on the `base` fixture ends within 20 game days (raiders gone or left). The log shows the native leave line.
 - A2: total looted goods at the end are more than 0.
 - A3: the number of burned buildings is between 0 and 10 (a range, because the AI is not deterministic).
 - A4: the village population after the raid is more than 0 (the game does not end).
 - A5: the tracker count of living raiders equals the unit count read from the game, with no difference.
+- A6: a small raid at difficulty 2 (2 squads) and a medium raid at difficulty 1 (2 squads) loot more than the 1-squad raid on average over 3 runs each. Loot and burned buildings use only native mechanics (no hostages, no captives).
 
 ## Scenarios to write
-- `scenarios/raid_behavior/native_plunder.py`: spawn a raid through M02 `invasion_force_next`, run 20 days, assert A1 to A5. Run 3 times.
+- `scenarios/raid_behavior/native_plunder.py`: spawn a raid through M02 `invasion_force_next`, run 20 days, assert A1 to A5. Run 3 times. Repeat for 2 squads (small at difficulty 2) for A6.
 
 ## Result
 Result: not started.

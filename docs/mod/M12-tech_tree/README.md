@@ -29,7 +29,7 @@ Not started.
 - Policy system is not usable (`enactPolicy` false in 95 tries): `docs/harness/16-policy-edicts/README.md`, `implementation-notes/policy-followups.md`, `policies.md`.
 - Custom UI from a pak (Widget Blueprint): `docs/harness/16-policy-edicts/implementation-notes/pak-widget-spike.md`, `pak-widget-plan.md`, `policy-menu.md`, `ui-art.md`.
 - Pak build and data rows: `docs/harness/09-asset-mods/implementation-notes/pak-spike-findings.md`, `tooling.md`. Skill `harness-pak-mod`.
-- Row ids: `docs/harness/23-row-id-range/README.md`. Proposed block: building ids 2200 to 2299 (rule in `feature-breakdown.md`). Upgrade ids 117 to 999.
+- Row ids: `docs/harness/23-row-id-range/README.md`. Confirmed block (decision 3): building ids 2200 to 2299. Upgrade ids 117 to 999.
 - Tech data tables (`DT_RegionDevelopmentTech`): `docs/mod/M00-invasion-mod/implementation-notes/feasibility-manor-tech-units.md` (read and write test is open).
 - Mod state: M01.
 
@@ -38,7 +38,7 @@ Not started.
 - Cost to undo the path choice, if allowed.
 
 ## Dependencies
-- M01. M04 (bandit effects). M07 (vassal policies). M08, M11 (tribute and influence effects). M13 (manor nodes).
+- M01. M04 (bandit effects). M07 (vassal policies). M08 (tribute effects). M11 (influence effects) is backlog and TBD (decision 9). M13 (manor nodes).
 - M05 for the Hussite and army effects.
 
 ## Open questions

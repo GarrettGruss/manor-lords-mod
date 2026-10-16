@@ -11,7 +11,7 @@ Vassals send supplies to the home region. They expect protection. Failed protect
 - Vassals expect protection from the empire and from bandits. A vassal the player failed to protect loses loyalty.
 - More vassals give more tribute but split the player's forces.
 - A neglected vassal may pay tribute to the invader.
-- Tribute to the liege gives influence (M11).
+- Tribute to the liege gives influence (M11, backlog and TBD: decision 9).
 - Vassal policies and the path change the tribute rate (M12).
 
 ## Current state

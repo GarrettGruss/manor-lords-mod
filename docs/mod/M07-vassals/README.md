@@ -42,7 +42,8 @@ Not started.
 4. How does the player vassalize a neighbor: by claim, or by an order and a payment? M00 does not say.
 5. Does Lua set goals = Endless on every start and every load, or only at the first claim?
 6. Can the AI lord of a vassal region grow without a build? (Open from the 2026-10-13 rerun.)
-7. What is the win condition? (M00 open question 6.) Endless stops the claim victory; the win rule is a mod rule.
+7. Answered (decision 1): survive the great raid waves until the relief army arrives, then the very large battle. Endless stops the claim victory; the win is this mod rule (M02, M06).
+8. Vassal model (decision 5): still open. It is being explained to the user.
 
 ## Iterations
 | # | Name | Goal | Result |

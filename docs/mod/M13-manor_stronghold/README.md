@@ -23,7 +23,7 @@ Not started.
 - Bailey buildings: `docs/harness/17-bailey-buildings/implementation-notes/bailey-buildings.md`.
 - Retinue size and garrison limit hook (12 to 36): `docs/harness/13-mod-inspection/implementation-notes/larger-formations.md`.
 - Review: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-manor-tech-units.md`.
-- Row ids: `docs/harness/23-row-id-range/README.md`. Proposed block: building ids 2300 to 2399 (rule in `feature-breakdown.md`).
+- Row ids: `docs/harness/23-row-id-range/README.md`. Confirmed block (decision 3): building ids 2300 to 2399.
 
 ## Tunables (M00)
 - Storage capacity per upgrade level.
