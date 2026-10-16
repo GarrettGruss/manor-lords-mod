@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 28: live unit tuning. HarnessActions 53 adds `tune_state`, `tune_set`, `tune_reset`, `tune_apply` (module HarnessTune): they find the side of every unit through the squad owner pawn, write stats on all living units, and re-apply overrides every 2 s. Streamlit page `harness/tools/tune_ui.py` (`uv run streamlit run harness/tools/tune_ui.py -- --run <id>`) with a spawn test fight and preset export. Streamlit is a new dependency. Notes in `docs/harness/28-unit-tuning/`.
 - Spec 25: scenario `combat-levers` and suites `combat-def-ab`, `combat-armor-ab`, `combat-armor-high-ab`. HarnessActions 51 adds `unit_stats`, `set_unit_stat` (live SMUnit `def`, `block`, `att` and more, read back) and `combat_hook` (observe-only `SMUnit:CombatHit`, which never fires). `datatable_*` on items accepts `def`, `block`, `att`, `armorPierce`. Results in `docs/harness/25-combat-lethality/implementation-notes/ab-results.md`.
 - Spec 23: command `upgrade_stat` reads number fields of a DT_Upgrades row. `building_stat` accepts ids up to 70000. Tool `s127_make_ids_json.py` builds the `ids` test pak. Result: buildingStats ids up to 65536 work (`id-results.md`).
 - Spec 24 result (#128): the mod state can live in the `Tags` of the player pawn and the player region. They survive a save and a load (`persistence-tests.md`). Observe-only mod `HarnessSaveProbe` and hidden `probe-save-*` scenarios. The recommendation and the `ModState` design are in the spec README.

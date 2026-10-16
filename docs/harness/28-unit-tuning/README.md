@@ -1,6 +1,6 @@
 # Spec 28: Live unit tuning
 
-Status: in progress. Branch: `feat/28-unit-tuning` (based on `feat/25-combat-lethality`).
+Status: done, awaiting user review (2026-10-16). Real-game check passed (`implementation-notes/real-game-check.md`). Issue: #138. Branch: `feat/28-unit-tuning` (based on `feat/25-combat-lethality`).
 
 ## Goal
 Let a human and an agent tune the "feel" of combat damage in the running game. The human watches a fight. The tool changes unit stats (att, def, block, armorPierce, morale, charge) for a whole side at once. The change applies at once and also to units that spawn later.
@@ -27,8 +27,8 @@ Let a human and an agent tune the "feel" of combat damage in the running game. T
 4. Fake-game tests, then a real-game check (`implementation-notes/real-game-check.md`).
 
 ## Open questions
-- Does a unit spawned by the game (levy call-up, raid) get its stat from a template after spawn, so that the timer is late by up to 2 s? (Measured in the real-game check.)
-- Do other owners exist (merchants, other armies)? Side `other` is reported when a squad has an owner that is none of the three.
+- Answered (real-game check): the timer re-applies within 2 s to units spawned later. A unit may fight up to 2 s with the original value.
+- Answered (`unit-owner.md`): no `other` squad was seen in a normal game; the side is reported if a pawn has none of the flags.
 
 ## Acceptance criteria
 - A1: `tune_state` lists player, bandit, ai_lord units of a normal game without registry.
