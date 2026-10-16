@@ -202,7 +202,7 @@ class RealScenarioTest(ContextTestCase):
 class RegistryTest(unittest.TestCase):
     def test_hidden_scenarios_are_not_listed_by_default(self):
         self.assertEqual(sorted(list_scenarios()), [
-            "autosave-protection", "combat-levers", "counters-ab", "datatable-vanilla", "letter-delivery", "loot-drop-recovery", "mercenary-hire", "noop", "policy-menu",
+            "autosave-protection", "combat-levers", "counters-ab", "datatable-vanilla", "letter-delivery", "loot-drop-recovery", "mercenary-hire", "mod-state-default-load", "mod-state-roundtrip", "mod-state-two-saves", "noop", "policy-menu",
             "raid-behavior", "raid-load", "raid-loot", "raid-politics",
             "raid-sack", "raid-seasons", "raid-spawn", "raid-tiers",
             "raid-timeline", "raid-timer", "refugee-wave", "sack-ruins", "sack-store-trip", "sack-village", "silver-change", "smoke",
