@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spike #104 and #102: command `building_assign_worker` (`type`, optional `family`; HarnessHousing, HarnessActions 50) assigns a family as worker of an own building. Pak `bigshed` (row 125 with a Meshy-made wide ox shed, `stableSpace` 4). The shed shows and builds, but only about 2 oxen hitch in it; hitch spots are native. Notes `big-ox-shed-test.md`, `ox-hitch-hook.md`, `stable4b-hitch-probe.md`, `hitch-socket-world-positions.md`, spec 21 `spike-b-big-ox-shed.md`.
 - Late crash collect: runs write `game.json` (game pid, start time), and `harness/tools/collect_crash.py runs/<id>` copies crash reports of a kept-open game that crashed after the run ended.
 - Spike #104: tool `s104_ai_watch.py` lists which hooks fire while AI lords build. over 30 reflected hooks fired 0 times for the AI build itself, so the AI route gives the player no placement input. Note `mousefree-ai-route.md`.
 - Spike #104: command `HarnessPlace.bp` (modes scan, extend, newmaster) tests the blueprint-to-building route for a normal building. It does not build a hitching post. Note `mousefree-blueprint-route.md`.

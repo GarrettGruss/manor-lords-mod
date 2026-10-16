@@ -390,6 +390,37 @@ function M.plot_upgrade(_, raw)
              upgrades_before = before, being_upgraded = read(function() return building.isBeingUpgraded end) }
 end
 
+-- Issue 104: put one family to work in the own building of a type (for a stable, job 51). No mouse.
+-- The family is the zero-based index in Region.workerFamilies. Without "family" the first family without a workplace is used.
+function M.building_assign_worker(_, raw)
+    local wantedType = intField(raw, "type")
+    if not wantedType then return { ok = false, error = "type is required" } end
+    local pawn = playerPawn()
+    if not pawn then return { ok = false, error = "no player pawn" } end
+    local region, problem = sack.playerRegion()
+    if not region then return { ok = false, error = problem } end
+    local building = ownMasterOfType(pawn, wantedType)
+    if not building then return { ok = false, error = "no own building of type " .. wantedType } end
+    local function assignedCount() return read(function() return building.assignedFamilyIDs:GetArrayNum() end) or 0 end
+    local maxSlots = read(function() return building:getMaxWorkerFamilies() end) or 0
+    local before = assignedCount()
+    if before >= maxSlots then return { ok = false, error = "no free worker slot (" .. before .. " of " .. maxSlots .. ")" } end
+    local families = listOf(region.workerFamilies)
+    local index = intField(raw, "family")
+    if index == nil then
+        for i, family in ipairs(families) do
+            if not isValid(read(function() return family.assignedTo end)) then index = i - 1; break end
+        end
+    end
+    if index == nil or index >= #families then return { ok = false, error = "no family without a workplace" } end
+    local ok, err = pcall(function() region:assignFamily(index, building) end)
+    if not ok then return { ok = false, error = "assignFamily: " .. tostring(err) } end
+    local after = assignedCount()
+    if after ~= before + 1 then return { ok = false, error = "the family is not assigned (assigned " .. after .. ")" } end
+    return { ok = true, family = index, type = wantedType, max_slots = maxSlots, job = read(function() return building:getJobType() end),
+             assigned_before = before, assigned_after = after }
+end
+
 function M.plot_field_place(_, raw)
     local okDecode, decoded = pcall(json.decode, raw)
     if not okDecode or type(decoded) ~= "table" then return { ok = false, error = "request is not valid JSON" } end
