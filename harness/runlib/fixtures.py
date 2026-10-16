@@ -4,7 +4,7 @@ A fixture is one saved game. Its manifest entry is in `harness/fixtures/fixtures
 Part D (2026-10-11): the files of a fixture are kept in `harness/fixtures/saves/<name>/` (git ignores that folder) under the stem
 `slot`. A run installs them into the user's save folder under a free slot name (`runlib/saveslots.py`) and loads that slot.
 The game lists and loads saves only from the user's REAL save folder; a copy in the run's private `LOCALAPPDATA` is never read
-(docs/specs/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md). The private folder still holds the game's config,
+(docs/harness/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md). The private folder still holds the game's config,
 logs and crash reports for the run.
 An old entry with `source_slot` and no stored files is loaded from that slot of the user's folder by name, read only.
 

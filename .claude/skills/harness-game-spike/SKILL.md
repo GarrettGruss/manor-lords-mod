@@ -8,7 +8,7 @@ description: Safely experiment with the running game to find out what Lua can re
 A spike answers one question about the engine with evidence. Write the question first (the spec's spike list, for example S4 or S6), then keep the work small.
 
 ## Setup
-1. Read the existing notes in `docs/specs/*/implementation-notes/` for the same area (spike-S*.md, `actions-catalog.md`). Do not repeat a finished spike.
+1. Read the existing notes in `docs/harness/*/implementation-notes/` for the same area (spike-S*.md, `actions-catalog.md`). Do not repeat a finished spike.
 2. Start a game that stays open: `uv run python harness\run.py --scenario noop --keep-open --run-id <id>` (for a new game: `--new-game --scenario noop --keep-open`) (or a hidden `probe-*` scenario, see `harness/scenarios/probe_raids.py`).
 3. Talk to the game through the bridge (`ue4ss-bridge` MCP tools, or the bridge client from Python with the run's bridge folder; see `harness/README.md`). The MCP bridge tools may point to a different folder than a `--keep-open` run, and they may not be connected. Then use the Python client: set `UE4SS_BRIDGE_DATA_DIR=<run>/bridge`, and call `ue4ss_bridge.server.one(op, ...)` or `server.batch([...])` (from `mcp/`, started with `uv run python <file>`). Ops: `hook`, `events`, `get`, `set`, `call`, `props`, `objects` (arg `class_name`), `funcs` (arg `ref`), `world`. `get` and `set` take `ref` and `name`. Prefer one `batch` call over many single calls: each process start is slow.
 4. Raw Lua eval (`eval_lua`) is approved by the user (2026-10-10) for single-player experiments only. Mods and scenarios must not depend on it.

@@ -5,13 +5,13 @@ description: Orientation for the Manor Lords mod harness: what exists, where it 
 
 # Manor Lords mod harness: overview
 
-The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are in `CLAUDE.md` and `docs/specs/00-harness-overview/README.md` (the roadmap of specs 00 to 19).
+The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are in `CLAUDE.md` and `docs/harness/00-harness-overview/README.md` (the roadmap of specs 00 to 19).
 
 ## Parts
 - `mod/`: Lua mods for RE-UE4SS (HarnessBoot, HarnessLog, HarnessTelemetry, HarnessActions, HarnessReload, the real feature mod RefugeeWaves (releasable, has `mod.json`), and the stand-ins InvasionStandIn and RaidStandIn). Shared modules (each has a fake-game test): ManorCore (player-safe game calls; the Harness modules call it; a released mod may need it), HarnessSteer (real right click, unit steering), HarnessParts (parts of composite buildings), HarnessWalls (walls and roads), HarnessManor (manor goods and worker slots), HarnessBuild (building placement data), HarnessUi (Lua screens and banners), HarnessHousing, HarnessBandits (settle raiders), HarnessPolicies (policy edicts), plus HarnessLords, HarnessSack, HarnessRaids, HarnessUnits, HarnessBattle, HarnessLoot, HarnessDataTable. They are in `mod/shared/<Name>/<Name>.lua`. Each mod has its own Lua state.
 - `harness/`: `run.py` (one run), `run_series.py`, `suite.py` (suites, baselines, A/B), `deploy.ps1`, `runlib/` (library), `scenarios/`, `suites/`, `release.py` and `releaselib/` (mod releases), `tools/` (`coverage.py`, `pakmod.py`, `reload_mods.py`, `fixtures.py`).
 - `mcp/harness_tools` (server `manor-harness`: run_scenario, wait_for_run, read_summary, read_log, ...) and the `ue4ss-bridge` MCP server (live queries into a running game).
-- `docs/specs/NN-name/`: one spec per core feature, with `implementation-notes/` for findings.
+- `docs/harness/NN-name/`: one spec per core feature, with `implementation-notes/` for findings.
 - Git-ignored: `runs/`, `modtools/` (repak, UAssetGUI, work files, the AES key), `harness/pakmod.local.json`, the fixture saves, `slots/`, `dist/`. A worktree has none of them: copy the fixture saves and `pakmod.local.json` from the main checkout. Compiled mod paks (`mod/<Name>/paks/*_P.pak`) may be committed. The AES key never.
 
 ## Which skill for which job
@@ -43,5 +43,5 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 - Raw Lua eval through the bridge is approved for experiments only (2026-10-10).
 - Python: start every command with `uv run python` (scripts, `-m unittest`, fake-game tests). Never `python`, `python3`, `py`, `python -`, `python -c` or code through stdin: they are the Windows Store stub and hang. Dependencies: `pyproject.toml` and `uv.lock` (`uv add`).
 - Shells: Git Bash may have no `gh` on the PATH. Use `C:\Program Files\GitHub CLI\gh.exe`. Bash heredocs mangle quotes: use the Write tool for files.
-- Spec 10 (`docs/specs/10-invasion-testability/`) is the plan for testing the Invasion Mode brief. Spec 11 (parallel game slots) is proposed. Specs 12 to 18 are spikes and mods: 12 manor exploration, 13 mod inspection, 14 free walls, 15 bandit settlement (refugee waves, mod RefugeeWaves, `implementation-notes/settler-camp.md`), 16 policy edicts, 17 bailey buildings, 18 composite buildings (parts). Spec 19 is mod releases (skill `harness-release`). Spec status lines: `docs/specs/00-harness-overview/README.md`.
+- Spec 10 (`docs/harness/10-invasion-testability/`) is the plan for testing the Invasion Mode brief. Spec 11 (parallel game slots) is proposed. Specs 12 to 18 are spikes and mods: 12 manor exploration, 13 mod inspection, 14 free walls, 15 bandit settlement (refugee waves, mod RefugeeWaves, `implementation-notes/settler-camp.md`), 16 policy edicts, 17 bailey buildings, 18 composite buildings (parts). Spec 19 is mod releases (skill `harness-release`). Spec status lines: `docs/harness/00-harness-overview/README.md`.
 - Writing rules: simplified technical English, short sentences, one term per thing.

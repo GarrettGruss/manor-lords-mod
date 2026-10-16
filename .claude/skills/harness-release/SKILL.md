@@ -5,7 +5,7 @@ description: Release a mod to play testers as a GitHub pre-release (manifest, ch
 
 # Mod releases (spec 19)
 
-A release is one zip for one mod version. Rules are in `docs/specs/19-mod-releases/README.md`.
+A release is one zip for one mod version. Rules are in `docs/harness/19-mod-releases/README.md`.
 
 ## Make a mod releasable
 0. Example: `mod/RefugeeWaves` (version 0.1.0, needs only `ManorCore`; gate scenario `refugee-wave`).

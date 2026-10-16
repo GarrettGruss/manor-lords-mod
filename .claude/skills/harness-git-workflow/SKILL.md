@@ -29,7 +29,7 @@ Rules are in CLAUDE.md: atomic Conventional commits, one feature branch per spec
 - After the merge: `git checkout main && git pull`.
 
 ## Merge conflicts
-`git merge origin/main` into your branch. The usual conflicts: `CHANGELOG.md` and the scenario list in `harness/tests/test_runlib_scenario.py` (keep both sides; rebuild the sorted list), `HarnessActions/Scripts/main.lua` (keep both requires and both command tables, bump no VERSION twice), `criteria.json` (keep the verified marks of both sides), `docs/specs/10-invasion-testability/README.md` (keep both status lines). Keep the file's line endings (many files are CRLF; write with bytes, not text mode, in scripts). Rerun the tests after resolving.
+`git merge origin/main` into your branch. The usual conflicts: `CHANGELOG.md` and the scenario list in `harness/tests/test_runlib_scenario.py` (keep both sides; rebuild the sorted list), `HarnessActions/Scripts/main.lua` (keep both requires and both command tables, bump no VERSION twice), `criteria.json` (keep the verified marks of both sides), `docs/harness/10-invasion-testability/README.md` (keep both status lines). Keep the file's line endings (many files are CRLF; write with bytes, not text mode, in scripts). Rerun the tests after resolving.
 
 ## Worktree hygiene
 Remove a temporary worktree after its PR is merged (`git worktree remove --force <path>`; remove a `.venv` junction first with `cmd /c rmdir`). Do not leave a worktree on a branch the main checkout needs.

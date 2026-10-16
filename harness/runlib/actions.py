@@ -4,7 +4,7 @@ Every action does four things: check that the game is loaded, read the state, ma
 It returns {"action", "ok", "args", "before", "after"} and adds a short line to the scenario notes.
 A failed read-back also adds a failed assertion, so the scenario verdict is `fail`.
 
-Only actions that were checked in the real game are here (docs/specs/07-feature-test-kit/implementation-notes/actions-catalog.md).
+Only actions that were checked in the real game are here (docs/harness/07-feature-test-kit/implementation-notes/actions-catalog.md).
 A name in NOT_POSSIBLE, or an unknown name, raises ActionNotPossible with the reason. The runner turns that into a failed scenario.
 
 Call actions while the game is paused. A running game changes silver and stock by itself, and then an exact read-back can fail.

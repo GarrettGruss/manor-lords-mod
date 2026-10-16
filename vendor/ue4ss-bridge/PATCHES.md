@@ -1,6 +1,6 @@
 # Patches to upstream ue4ss-bridge
 
-Base: upstream commit a5eae1c (see `VERSION`). Reason for each patch: `docs/specs/01-ue4ss-bridge/implementation-notes/review-report.md`.
+Base: upstream commit a5eae1c (see `VERSION`). Reason for each patch: `docs/harness/01-ue4ss-bridge/implementation-notes/review-report.md`.
 Each changed place in the code has a comment `PATCH P<n> (harness)`. Search for it to find all changes.
 
 | Patch | File | Change |
@@ -15,7 +15,7 @@ Each changed place in the code has a comment `PATCH P<n> (harness)`. Search for 
 | P7 | `pyproject.toml` and `uv.lock` (was `mcp/requirements.txt`), `.mcp.json`, `.claude/settings.json` | `mcp` is pinned. Stdio only. All tools of both project MCP servers are allowed without a prompt (user decision 2026-10-12); the game-side `allow_writes` and `allow_eval` settings and `UE4SS_BRIDGE_ALLOW_EVAL` still decide what runs. |
 
 ## Known limits of the patches
-- In-game tests so far: see `docs/specs/01-ue4ss-bridge/implementation-notes/smoke-test-log.md`. No Lua interpreter exists on the dev machine, so the Lua is checked only by reading it and by running it in the game.
+- In-game tests so far: see `docs/harness/01-ue4ss-bridge/implementation-notes/smoke-test-log.md`. No Lua interpreter exists on the dev machine, so the Lua is checked only by reading it and by running it in the game.
 - It is not checked that `os.getenv` and `os.execute` exist in the UE4SS Lua build. The code guards against both missing.
 - P4: if the 120 s recovery fires and the old job finishes later, that job can clear `busy` while a newer request runs. This is rare and not fixed.
 - A request can still run after the client timed out (review finding M4). After a timeout, read the state again.

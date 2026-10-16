@@ -29,11 +29,11 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 
 ## Specs and notes
 
-- Every core design feature must have a spec in `docs/specs/<NN>-<feature-name>/`.
+- Every core design feature must have a spec in `docs/harness/<NN>-<feature-name>/`.
   - Write the spec before the code. The spec starts with `README.md`.
   - A spec states the goal, non-goals, plan, open questions, and acceptance criteria.
 - Store all findings and implementation notes inside the spec they belong to.
-  - Path: `docs/specs/<NN>-<feature-name>/implementation-notes/`.
+  - Path: `docs/harness/<NN>-<feature-name>/implementation-notes/`.
   - One file per topic. Name files by topic, for example `jmap-findings.md`.
   - Do not put notes in chat only. Do not put them in other folders.
 - When a note changes a decision, update the spec README in the same commit.
@@ -82,7 +82,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 ## Architecture
 
 1. **Game mods** (`mod/`): Lua mods for RE-UE4SS. They hook reflected UFunctions and read UObject properties.
-2. **Live control** (`ue4ss-bridge`): a Lua mod and an MCP server. The agent queries the running game through them. See `docs/specs/01-ue4ss-bridge/`.
+2. **Live control** (`ue4ss-bridge`): a Lua mod and an MCP server. The agent queries the running game through them. See `docs/harness/01-ue4ss-bridge/`.
 3. **Outer harness** (`harness/`): scripts that deploy the mod, launch the game, run a scenario, collect results, and write `runs/<id>/summary.json`.
 4. **Reference** (`reference/`): dumps and exports. Large raw dumps stay out of git.
 

@@ -10,7 +10,7 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 ## What the game gives you
 - The game paks are in `...\Manor Lords\ManorLords\Content\Paks\`. All 20 are encrypted (pak V11, mount `../../../`). Original paks are only read, never written.
 - A pak you build is unencrypted, named `<name>_P.pak`, and goes to `Paks\~mods\`. The game loads it after the base paks, so its assets replace the originals.
-- Data tables are under `ManorLords/Content/NotStronghold/Data/` (`DT_Items`, `DT_UnitTemplates`, `DT_MercenaryCompanies`, `DT_PolicyTypes`, `DT_Upgrades`, `DT_Quests`) and `ManorLords/Content/ManorLords/Database/` (`DT_Alerts`, `DT_Approval`). The list of names is in `docs/specs/10-invasion-testability/implementation-notes/game-data-tables.md`. There is no raid table: raid logic is in code.
+- Data tables are under `ManorLords/Content/NotStronghold/Data/` (`DT_Items`, `DT_UnitTemplates`, `DT_MercenaryCompanies`, `DT_PolicyTypes`, `DT_Upgrades`, `DT_Quests`) and `ManorLords/Content/ManorLords/Database/` (`DT_Alerts`, `DT_Approval`). The list of names is in `docs/harness/10-invasion-testability/implementation-notes/game-data-tables.md`. There is no raid table: raid logic is in code.
 
 ## Setup (done on this machine, see `harness/pakmod.local.json`, git-ignored)
 - In a worktree, copy `harness/pakmod.local.json` from the main checkout (it is git-ignored).
@@ -33,7 +33,7 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 - UAssetGUI exits 0 on errors and can write a useless "RawExport" JSON that still round-trips. `tojson` now fails on it. A missing mapping is the usual cause.
 - Compiled mod paks (`*_P.pak`) may be committed (user decision 2026-10-13). A mod keeps its pak at `mod/<Name>/paks/<pak>_P.pak`. Original game paks, extracts, `.usmap` files, `modtools/work` files and the AES key stay out of git. Grep the diff for the key before each commit. The work folder is `modtools/work` (git-ignored).
 - A mod pak for a release stays in `mod/<Name>/paks/` and is named in `mod.json` (skill `harness-release`). A committed pak over 10 MB gives a release warning.
-- Spec 18 notes: a pak can add `buildingStats` rows cloned from the tent and retarget a row to another blueprint class (`docs/specs/18-composite-buildings/implementation-notes/composite-pak.md`). Spike #65: `harness/tools/s65_edit_json.py` clones a row (`manor-module-pak.md` in spec 12).
+- Spec 18 notes: a pak can add `buildingStats` rows cloned from the tent and retarget a row to another blueprint class (`docs/harness/18-composite-buildings/implementation-notes/composite-pak.md`). Spike #65: `harness/tools/s65_edit_json.py` clones a row (`manor-module-pak.md` in spec 12).
 - After a run killed by a timeout, check `pakmod.py list`.
 - Only number fields in one table are proven. Test strings, new rows and other tables with a round trip first.
 
@@ -47,7 +47,7 @@ A cooked Widget Blueprint is a pak too. Sources: mod/PolicyMenu/ue/ (copy to the
 - Originals stay in `runs/genimage/` (git-ignored). Commit only resized copies in `mod/<Name>/art/`. `art/`, `ue/` and `paks/` are not deployed and not zipped.
 
 ## Generated meshes (spec 21)
-Workflow verified 2026-10-14 (note `docs/specs/21-mesh-generation/implementation-notes/spike-a-ladder.md`):
+Workflow verified 2026-10-14 (note `docs/harness/21-mesh-generation/implementation-notes/spike-a-ladder.md`):
 1. Two reference views with `genimage.py` (plain background, no ground, no text). Then `uv run python harness/tools/genmesh.py multi --image a.png --image b.png --out runs/genmesh/<name> --polycount 2000` (key `MESHY_API_KEY`, never printed; caps 60 per call and 200 per day; log `runs/genmesh/log.jsonl`; `genmesh.py balance` shows credits). One textured call costs 30 credits.
 2. Import headless in the UE workspace: copy `mod/HarnessActions/ue/import_mesh.py`, set `MESH_FBX` and `MESH_NAME`, run `UnrealEditor-Cmd.exe <uproject> -ExecutePythonScript=import_mesh.py -unattended -nullrhi`. It logs size (cm), vertices and material. It caps textures (1024 colour and normal, 512 others) to keep the pak near 3 MB.
 3. `make_bm.py` with `BM_NAME` and `BM_PARTS` (JSON list of `[component name, mesh path, [x,y,z], [sx,sy,sz]]`). Use the prefixes `MainBld_`, `Bld_`, `clutter_`, `res_`.
