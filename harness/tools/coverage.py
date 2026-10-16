@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
-SPEC_DIR = REPO_DIR / "docs" / "specs" / "10-invasion-testability"
+SPEC_DIR = REPO_DIR / "docs" / "harness" / "10-invasion-testability"
 DEFAULT_CRITERIA = SPEC_DIR / "criteria.json"
 DEFAULT_SPEC = SPEC_DIR / "README.md"
 DEFAULT_SCENARIOS = REPO_DIR / "harness" / "scenarios"

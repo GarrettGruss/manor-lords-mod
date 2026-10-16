@@ -410,7 +410,7 @@ class DispatchTest(unittest.TestCase):
         with self.assertRaises(ActionNotPossible):
             actions.run("_perform")
         with self.assertRaises(ActionNotPossible):
-            actions.run("save_state", "x")
+            actions.run("get_item_info", "x")
 
     def test_available_has_no_helpers(self):
         names = make_actions()[0].available()
@@ -511,7 +511,7 @@ class ScenarioIntegrationTest(unittest.TestCase):
 
     def test_a_scenario_with_an_impossible_action_fails_clearly(self):
         def scenario(ctx):
-            ctx.actions.save_state("x")
+            ctx.actions.get_item_info("x")
             return ctx.result()
 
         install = GameInstall(root=self.temp / "game", saved_dir=self.temp / "saved")
@@ -522,7 +522,7 @@ class ScenarioIntegrationTest(unittest.TestCase):
         result = self.ctx.state["scenario_result"]
         self.assertFalse(result["passed"])
         self.assertEqual(result["asserts"][0]["name"], "action is possible")
-        self.assertIn("save_state", result["asserts"][0]["value"])
+        self.assertIn("get_item_info", result["asserts"][0]["value"])
         self.assertTrue((self.ctx.run.path / "scenario.json").is_file())
 
 

@@ -2,7 +2,7 @@
 
 The samples are small (3 to 30 runs per variant). The tests here are HEURISTICS for such samples:
 they give a clear, repeatable rule, not a proof. See
-docs/specs/10-invasion-testability/implementation-notes/ab-statistics.md for the rules and their limits.
+docs/harness/10-invasion-testability/implementation-notes/ab-statistics.md for the rules and their limits.
 """
 
 from __future__ import annotations

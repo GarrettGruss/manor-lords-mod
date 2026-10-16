@@ -77,6 +77,7 @@ def _prepare_appdata(install: GameInstall, ctx: PhaseContext, fixture: str | Non
     except fixtures.FixtureError as error:
         raise PhaseFailed(f"fixture {fixture}: {error}") from error
     ctx.state["user_saves_snapshot"] = result.user_snapshot
+    ctx.state["user_save_dir"] = str(install.saved_dir / "SaveGames")  # the real folder, for the guarded save_game (spec 24)
     ctx.config.setdefault("environment", {})["fixture"] = result.as_dict()
     return result
 
@@ -411,14 +412,27 @@ def _remove_installed_slot(ctx: PhaseContext) -> None:
                               + (f"; kept {result['kept']}" if result["kept"] else ""))
 
 
+def _remove_harness_saves(install: GameInstall, ctx: PhaseContext) -> None:
+    """Delete the files of harness saves (spec 24) that the ledger lists. Saves that a scenario keeps are not in the ledger."""
+    for result in saveslots.uninstall_all(install.saved_dir / "SaveGames"):
+        ctx.state["notes"].append(f"harness save {result['slot']} removed ({len(result['removed'])} files)"
+                                  + (f"; kept {result['kept']}" if result["kept"] else ""))
+
+
+def _expected_user_files(ctx: PhaseContext) -> dict[str, str]:
+    """The preflight snapshot plus the files of harness saves that the scenario asked to keep."""
+    return {**ctx.state.get("user_saves_snapshot", {}), **ctx.state.get("kept_save_files", {})}
+
+
 def _finish_appdata(install: GameInstall, ctx: PhaseContext) -> str | None:
     """Remove the installed slot, compare the user's save files with the snapshot of preflight, then delete the run's appdata."""
     appdata = ctx.state.get("appdata_dir")
     if not appdata:
         return None
     _remove_installed_slot(ctx)
+    _remove_harness_saves(install, ctx)
     problems = fixtures.describe_difference(
-        ctx.state.get("user_saves_snapshot", {}), fixtures.snapshot_user_files(install.saved_dir / "SaveGames"))
+        _expected_user_files(ctx), fixtures.snapshot_user_files(install.saved_dir / "SaveGames"))
     removed = fixtures.remove_appdata(appdata)
     if problems:
         raise PhaseFailed(f"the user's save files changed during the run: {'; '.join(problems[:10])}")

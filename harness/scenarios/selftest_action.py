@@ -6,5 +6,5 @@ HIDDEN = True
 
 
 def run(ctx) -> dict:
-    ctx.actions.save_state("selftest")  # must raise ActionNotPossible. The runner turns it into the verdict fail.
+    ctx.actions.get_item_info(1)  # must raise ActionNotPossible. The runner turns it into the verdict fail.
     return ctx.result()

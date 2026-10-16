@@ -47,6 +47,18 @@ class BuildTests(ZipTestCase):
         self.assertEqual(names, sorted([f"{prefix}/Demo/Scripts/main.lua", f"{prefix}/Demo/mod.json", f"{prefix}/Demo/enabled.txt",
                                         f"{prefix}/shared/Core/Core.lua", "README.txt"]))
 
+    def test_data_and_scenarios_folders_stay_out_of_the_zip(self):
+        self.write("mod/Demo/data/alpha/patches/one.json", "{}")
+        self.write("mod/Demo/data/alpha/assets/mesh.uasset", b"x", binary=True)
+        self.write("mod/Demo/scenarios/alpha/check.py", "x = 1")
+        names = self.names(self.build())
+        self.assertFalse([n for n in names if "/data/" in n or "/scenarios/" in n], names)
+        self.assertIn("ManorLords/Binaries/Win64/ue4ss/Mods/Demo/Scripts/main.lua", names)
+
+    def test_a_scripts_file_named_data_deep_in_the_tree_is_kept(self):
+        self.write("mod/Demo/Scripts/data/table.lua", "return {}")
+        self.assertIn("ManorLords/Binaries/Win64/ue4ss/Mods/Demo/Scripts/data/table.lua", self.names(self.build()))
+
     def test_the_zip_is_named_after_the_mod_and_the_version(self):
         self.assertEqual(self.build().name, "Demo-v1.2.3.zip")
         self.assertEqual(build.tag_name(MANIFEST), "demo-v1.2.3")

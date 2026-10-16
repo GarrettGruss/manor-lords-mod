@@ -1,7 +1,7 @@
 # ue4ss-bridge MCP server
 
 Vendored from upstream commit a5eae1c with harness patches. See
-`docs/specs/01-ue4ss-bridge/implementation-notes/patches-python.md`.
+`docs/harness/01-ue4ss-bridge/implementation-notes/patches-python.md`.
 
 ## Setup (from the repo root, with uv)
 

@@ -2,7 +2,7 @@
 
 The chain: scenario code -> Actions -> CommandChannel -> request files -> HarnessActions -> HarnessSack / HarnessLoot -> a fake village.
 Only the game is fake. This checks the logic of the scenarios and of the Lua modules. It does NOT prove that the real game behaves the same:
-the real runs are listed in docs/specs/10-invasion-testability/implementation-notes/spike-S6.md.
+the real runs are listed in docs/harness/10-invasion-testability/implementation-notes/spike-S6.md.
 """
 
 import unittest

@@ -5,7 +5,7 @@ local core = require("ManorCore")
 -- Every change is read back: the census of the player village is taken before and after.
 -- Rules: no eval, no save function, only the game calls listed here. Call only on the game thread.
 --
--- Game facts (real game, 2026-10-10, see docs/specs/10-invasion-testability/implementation-notes/spike-S6.md):
+-- Game facts (real game, 2026-10-10, see docs/harness/10-invasion-testability/implementation-notes/spike-S6.md):
 --   Building: SMBuildingMaster:StartFire() burns it for a while, then it becomes type Rubble (75).
 --             SMBuildingMaster:collapseBuilding() makes it Rubble at once. IsRubble() is true for both.
 --             A burned or collapsed building keeps its place in Region:GetBuildings() until it is demolished.

@@ -114,6 +114,12 @@ class StateTests(HousingTestCase):
         self.assertFalse(answer["ok"])
         self.assertRegex(answer["error"], "no own building of type 97|no player pawn")
 
+    def test_building_assign_worker_needs_a_type_and_fails_loudly_without_a_building(self):
+        self.assertIn("type is required", self.send("building_assign_worker")["error"])
+        answer = self.send("building_assign_worker", type=125)
+        self.assertFalse(answer["ok"])
+        self.assertRegex(answer["error"], "no own building of type 125|no player pawn|no player region")
+
 
 class SpotTests(HousingTestCase):
     def test_spots_are_clear_of_buildings(self):

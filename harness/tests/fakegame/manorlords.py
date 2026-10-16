@@ -1,6 +1,6 @@
 """A ready-made Manor Lords state: main menu, load screen, and the in-game engine.
 
-Field names come from docs/specs/02-save-autoload/implementation-notes/jmap-findings.md and
+Field names come from docs/harness/02-save-autoload/implementation-notes/jmap-findings.md and
 in-game-messages-and-hud.md. Values match the real save `saveGame_0`.
 """
 
@@ -10,7 +10,7 @@ from .clock import FakeGameClock
 
 IO_HANDLER_PATH = "/Script/ManorLords.Default__IoHandler"
 TIMER_LIBRARY_PATH = "/Script/Engine.Default__KismetSystemLibrary"
-# Values read from the real game (docs/specs/06-dev-loop-and-fixtures/implementation-notes/autosave.md).
+# Values read from the real game (docs/harness/06-dev-loop-and-fixtures/implementation-notes/autosave.md).
 AUTOSAVE_PERIOD_S = 600
 FIRST_TIMER_HANDLE = 503316508
 
