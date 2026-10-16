@@ -25,6 +25,53 @@ def changed(**fields):
     return manifest
 
 
+FEATURES = [{"name": "alpha", "requires": [], "ids": {"buildingStats": [100, 119]}},
+            {"name": "beta", "requires": ["alpha"]}]
+
+
+class PackManifestTests(unittest.TestCase):
+    def problems(self, **fields):
+        return " | ".join(check_manifest(changed(**fields), "Demo"))
+
+    def test_display_name_and_features_are_valid(self):
+        self.assertEqual(check_manifest(changed(display_name="Demo Mode", features=FEATURES), "Demo"), [])
+
+    def test_display_name_must_be_text(self):
+        self.assertIn("display_name must be a non-empty string", self.problems(display_name=""))
+        self.assertIn("display_name must be a non-empty string", self.problems(display_name=3))
+
+    def test_features_must_be_a_list_of_objects(self):
+        self.assertIn("features must be a list", self.problems(features={}))
+        self.assertIn("features[0] must be an object", self.problems(features=["alpha"]))
+
+    def test_a_feature_needs_a_word_as_name_and_known_fields(self):
+        self.assertIn("features[0].name must be a word", self.problems(features=[{"requires": []}]))
+        self.assertIn("features[alpha].colour is not a known field", self.problems(features=[{"name": "alpha", "colour": 1}]))
+
+    def test_duplicate_feature_names_are_refused(self):
+        self.assertIn("features has a duplicate name", self.problems(features=[{"name": "a"}, {"name": "a"}]))
+
+    def test_requires_must_name_a_feature(self):
+        self.assertIn("requires 'ghost', which is not a feature", self.problems(features=[{"name": "a", "requires": ["ghost"]}]))
+        self.assertIn("requires must be a list", self.problems(features=[{"name": "a", "requires": "b"}]))
+
+    def test_id_ranges_must_be_ordered_pairs_of_numbers(self):
+        for bad in ([5, 1], [1], ["a", "b"], [-1, 2], "1-2"):
+            self.assertIn("ids.buildingStats must be [first, last]",
+                          self.problems(features=[{"name": "a", "ids": {"buildingStats": bad}}]), bad)
+        self.assertIn("ids must be an object", self.problems(features=[{"name": "a", "ids": []}]))
+
+    def test_gate_scenarios_may_be_empty_only_with_features(self):
+        self.assertEqual(check_manifest(changed(features=FEATURES, gate_scenarios=[]), "Demo"), [])
+        self.assertIn("gate_scenarios must not be empty", self.problems(gate_scenarios=[]))
+
+    def test_the_pack_manifest_in_the_repo_is_valid(self):
+        for path in sorted((REPO_ROOT / "mod").glob("*/mod.json")):
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+            if "features" in manifest:
+                self.assertEqual(check_manifest(manifest, path.parent.name), [], path)
+
+
 class ManifestCheckTests(unittest.TestCase):
     def test_a_good_manifest_has_no_problem(self):
         self.assertEqual(check_manifest(GOOD, "Demo"), [])

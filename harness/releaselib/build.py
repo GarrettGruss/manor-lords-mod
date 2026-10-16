@@ -5,7 +5,7 @@ from __future__ import annotations
 import zipfile
 from pathlib import Path
 
-from .files import mod_files
+from .files import NOT_RELEASED, mod_files
 
 MODS_PREFIX = "ManorLords/Binaries/Win64/ue4ss/Mods"
 PAK_PREFIX = "ManorLords/Content/Paks/~mods"
@@ -100,7 +100,7 @@ def build_zip(manifest: dict, mod_root: Path, shared: list[str], out_dir: Path, 
     try:
         with zipfile.ZipFile(temporary, "w") as archive:
             for path in mod_files(mod_root / name):
-                if path.relative_to(mod_root / name).parts[0] in SOURCE_FOLDERS:
+                if path.relative_to(mod_root / name).parts[0] in SOURCE_FOLDERS + NOT_RELEASED:
                     continue  # the pak goes to Content/Paks/~mods; the UE sources stay in the repo
                 _add(archive, f"{MODS_PREFIX}/{name}/{path.relative_to(mod_root / name).as_posix()}", path.read_bytes())
             _add(archive, f"{MODS_PREFIX}/{name}/enabled.txt", b"")

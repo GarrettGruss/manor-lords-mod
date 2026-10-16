@@ -186,7 +186,7 @@ The core features. Each one becomes a feature spec `docs/mod/M<NN>-<feature>/` w
 ## Build plan
 Manor Lords has limited mod support. AI behavior, regions and new law systems are the riskiest parts. Build in this order:
 1. **Scripted raid events** with the threat countdown.
-0. **Mod state across saves** (harness spike 24 (#128)). Every later step that keeps values needs it.
+0. **Mod state across saves** (harness spike 24 (#128), result: option A, Tags of the player pawn, see `docs/harness/24-mod-save-state/README.md`). Every later step that keeps values needs it.
 2. **Plunder:** start the native plunder AI, loot back to the store on death.
 3. **Bandits from low approval and low regional wealth,** and the coin buy-back.
 4. **Unit and balance tweaks:** Hussite units, counters and veterancy.

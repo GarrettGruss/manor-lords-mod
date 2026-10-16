@@ -11,7 +11,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .files import mod_files
+from .files import NOT_RELEASED, mod_files
 
 
 class GateError(Exception):
@@ -47,7 +47,10 @@ def sha256_of(path: Path) -> str:
 def current_hashes(mod_root: Path, mod_name: str, shared: list[str]) -> dict[str, str]:
     """Hashes of the release source files, keyed like mod_files.json: path relative to mod/."""
     folders = [mod_root / mod_name] + [mod_root / "shared" / name for name in shared]
-    return {path.relative_to(mod_root).as_posix(): sha256_of(path) for folder in folders for path in mod_files(folder)}
+    own = mod_root / mod_name
+    released = [path for folder in folders for path in mod_files(folder)
+                if not (folder == own and path.relative_to(own).parts[0] in NOT_RELEASED)]
+    return {path.relative_to(mod_root).as_posix(): sha256_of(path) for path in released}
 
 
 def _read_run(run_dir: Path) -> RunInfo | None:

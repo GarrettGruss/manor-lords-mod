@@ -41,6 +41,9 @@
 --   {"command":"spawn_units","side":"player","template":"spearMilitia","count":1,"dx":0,"dy":0}   spawnArmy with a chosen template; dx, dy from the player pawn
 --   {"command":"battle_state","detail":1}                      living units, experience and casualties of the squads that this mod spawned or hired
 --   {"command":"clear_battle","side":"bandit"}                 kill the units of those squads (of one side if "side" is given) and forget them
+--   {"command":"unit_stats","side":"bandit"}                   mean att, def, block, armorPierce, morale of the living units of the registry (spec 25)
+--   {"command":"set_unit_stat","side":"player","field":"def","value":0}  write one SMUnit stat on the living units of a side, read back (spec 25)
+--   {"command":"combat_hook","mode":"start"}                 observe-only hook on SMUnit:CombatHit; start, stop or read the call counts (spec 25)
 --   {"command":"set_squad_experience","squad":8,"value":20}    write combatExperience on the living units of one of those squads
 --   {"command":"mercenary_offers"}                             the companies that can be hired (read only)
 --   {"command":"hire_mercenaries","company":"greencaps"}       hireMercs for one offered company; refused when the silver is below the cost
@@ -103,6 +106,7 @@
 --   {"command":"rebel_raid_rally","count":2}   remove families, then one real raid aimed at a forest spot; the raiders stand at the AI waypoint for about 100 to 150 game seconds, then attack. The answer has the squad ids, the spot and the families before and after
 --   {"command":"bandit_kill_squads","squad":41,"count":2}   SMUnit:just_die on every living bandit unit of squads 41, 42 (to remove a raid and keep other squads)
 --   Housing (spec 15, see mod/shared/HarnessHousing):
+--   {"command":"upgrade_stat","type":117}                      number fields of one DT_Upgrades row (spec 23, read only)
 --   {"command":"building_stat","type":87}                   scalar fields of the buildingStats row of one building type (read only)
 --   {"command":"building_stat_vector_write","type":87,"field":"occupantTypes","component":"Y","value":5}   UNSAFE test command (needs HARNESS_ALLOW_UNSAFE=1): write one component of a Vector4 field of a buildingStats row, in memory
 --   {"command":"housing_state"}                             player region: families, homeless, living and vacant slots, tents, residential buildings (read only)
@@ -164,8 +168,9 @@ local steer = require("HarnessSteer")
 local battlefield = require("HarnessBattlefield")
 local garrison = require("HarnessGarrison")
 local gameSetup = require("HarnessGameSetup")
+local harnessSave = require("HarnessSave")
 
-local VERSION = "49"
+local VERSION = "53"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -278,6 +283,8 @@ local function parseRequest(raw)
         outpost = raw:match('"outpost"%s*:%s*"([%w_]+)"'),
         policy = tonumber(raw:match('"policy"%s*:%s*(%d+)')),
         slot = tonumber(raw:match('"slot"%s*:%s*(%d+)')),
+        save_slot = raw:match('"save_slot"%s*:%s*"(saveGame_%d+)"'), -- spec 24, checked again by HarnessSave
+        save_name = raw:match('"save_name"%s*:%s*"([%w _%-]+)"'),
         signed = ({ ["true"] = true, ["false"] = false })[raw:match('"signed"%s*:%s*(%a+)') or ""],
         mode = raw:match('"mode"%s*:%s*"(%a+)"'),
         source = raw:match('"source"%s*:%s*"(%a+)"'),
@@ -451,6 +458,7 @@ local COMMANDS = {
     ping = function() return { ok = true, version = VERSION } end,
     send_letter = sendLetter,
     autosave_status = autosaveStatus,
+    save_game = harnessSave.save_game, -- the only save call in the repo; guarded by harness/runlib/harness_save.py
     disable_autosave = disableAutosave,
     datatable_info = datatableInfo,
     datatable_read = datatableRead,
@@ -460,6 +468,9 @@ local COMMANDS = {
     battle_state = battle.battle_state,
     clear_battle = battle.clear_battle,
     set_squad_experience = battle.set_squad_experience,
+    unit_stats = battle.unit_stats,
+    set_unit_stat = battle.set_unit_stat,
+    combat_hook = battle.combat_hook,
     mercenary_offers = battle.mercenary_offers,
     hire_mercenaries = battle.hire_mercenaries,
     raid_state = raids.raid_state,
@@ -537,6 +548,7 @@ local COMMANDS = {
     rebel_raid_rally = bandits.rebel_raid_rally,
     bandit_kill_squads = bandits.bandit_kill_squads,
     building_stat = buildingStat,
+    upgrade_stat = housing.upgrade_stat,
     building_stat_vector_write = housing.building_stat_vector_write,
     master_parts = parts.master_parts,
     master_site = parts.master_site,

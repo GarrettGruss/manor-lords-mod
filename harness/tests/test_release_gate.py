@@ -92,6 +92,13 @@ class RunFolderTests(unittest.TestCase):
         self.assertEqual(sorted(hashes), ["Demo/Scripts/main.lua", "shared/Core/Core.lua"])
         self.assertEqual(hashes, {k: v for k, v in hash_mod_files(mod_root).items() if k in hashes})
 
+    def test_data_and_scenario_files_do_not_change_the_gate_hashes(self):
+        mod_root = self.runs / "mod"
+        for name in ("Demo/Scripts/main.lua", "Demo/data/a/patches/p.json", "Demo/scenarios/a/check.py", "Demo/paks/Demo_P.pak"):
+            (mod_root / name).parent.mkdir(parents=True, exist_ok=True)
+            (mod_root / name).write_text(name, encoding="utf-8")
+        self.assertEqual(sorted(gate.current_hashes(mod_root, "Demo", [])), ["Demo/Scripts/main.lua", "Demo/paks/Demo_P.pak"])
+
     def test_the_run_summary_names_the_hash_file(self):
         self.assertEqual(condense_environment({"mod_files": MOD_FILES_NAME})["mod_files"], MOD_FILES_NAME)
 

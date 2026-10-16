@@ -17,7 +17,7 @@ from typing import Any, Callable
 
 from .bridge_client import Bridge
 from .commands import CommandChannel
-from . import battle, sack
+from . import battle, harness_save, sack
 from .units import ELITE_RAID_UNITS, SQUAD_UNITS, side_count
 
 CHEAT_MANAGER = "first:MLCheatManager"
@@ -59,8 +59,6 @@ MAX_WORKER_SLOTS = 6  # same limit as mod/shared/HarnessManor
 STORAGE_JOBS = (44, 45)  # EJobType: GranaryWorker, WarehouseWorker
 
 NOT_POSSIBLE = {
-    "save_state": "PawnCPP:requestSaveFile writes into the user's real save folder, even when the run has a private LOCALAPPDATA. "
-                  "It overwrote the user's saveGame_9 in the probe. Make fixtures with harness/tools/fixtures.py instead.",
     "get_item_info": "RTSMultiEngineCPP:getItem crashed the game when called through the bridge (spec 07 catalog).",
     "remove_all_families": "MLCheatManager:RemoveAllFamilies changed no population or family count in the probe.",
     "spawn_raiders": "MLCheatManager:SpawnRaidersOfType changed no unit count (checked again in spec 10). Use spawn_raid.",
@@ -117,8 +115,10 @@ class Actions:
     def __init__(self, bridge: Bridge, expect=None, notes: list[str] | None = None,
                  log: Callable[[str], None] = lambda message: None,
                  ensure_alive: Callable[[], None] = lambda: None, commands: CommandChannel | None = None,
-                 mouse_placer: Callable[[int, float, float], None] | None = None):
+                 mouse_placer: Callable[[int, float, float], None] | None = None,
+                 saver: Callable[[str, bool], dict] | None = None):
         self._bridge = bridge
+        self._saver = saver
         self._commands = commands
         self._mouse_placer = mouse_placer
         self._expect = expect
@@ -375,6 +375,26 @@ class Actions:
         self._precondition()
         return self._commands.send("autosave_status")["status"]
 
+    # ---- guarded save (spec 24) ----
+
+    def save_game(self, label: str, keep: bool = False) -> dict:
+        """Save the running game into a NEW slot `saveGame_<N>`, with the guard of harness/runlib/harness_save.py.
+
+        The guard backs up the user's save folder, refuses an existing slot, and restores and raises if any existing file changes.
+        The new files are deleted at the end of the run, unless `keep` is true (a fixture, spec 06). Returns the slot and the file hashes.
+        """
+        if self._saver is None:
+            raise ActionNotPossible("save_game: no save folder or command channel in this context")
+        self._precondition()
+        try:
+            result = self._saver(label, keep)
+        except harness_save.SaveGuardError as error:
+            raise ActionError(str(error)) from error
+        record = self._record("save_game", {"label": label, "keep": keep}, True, result["user_files"], result["user_files"] + len(result["files"]),
+                              note=f"slot {result['slot']}, backup {result['backup']}")
+        record.update(slot=result["slot"], files=result["files"], backup=result["backup"], kept=result["kept"])
+        return record
+
     # ---- raids and units (through the helper mod HarnessActions, spec 10) ----
 
     def _command(self, name: str, /, **fields) -> dict:  # positional only: a command field may be called "name" (spawn_ai_lord)
@@ -586,6 +606,22 @@ class Actions:
         answer = self._command("set_squad_experience", **fields)
         return self._record("set_squad_experience", fields, answer["alive"] > 0 and answer["changed"] == answer["alive"],
                             answer["alive"], answer["changed"])
+
+    def unit_stats(self, side: str | None = None) -> dict:
+        """Mean att, def, block, armorPierce, morale of the living units of the battle registry, per squad. Read only (spec 25)."""
+        fields = {} if side is None else {"side": battle.check_side(side)}
+        return self._command("unit_stats", **fields)
+
+    def set_unit_stat(self, side: str, field: str, value: float) -> dict:
+        """Write one SMUnit stat (att, def, block, armorPierce, morale, baseDefence, baseBlock, charge) on the living units of a side.
+        The mod reads each value back. The write is live and per unit (spec 25)."""
+        fields = {"side": battle.check_side(side), "field": battle.check_name("field", field), "value": value}
+        answer = self._command("set_unit_stat", **fields)
+        return self._record("set_unit_stat", fields, answer["alive"] > 0 and answer["changed"] == answer["alive"], answer["alive"], answer["changed"])
+
+    def combat_hook(self, mode: str) -> dict:
+        """Observe-only hook on SMUnit:CombatHit. mode: start (reset and enable), stop, read. The answer has the call count (spec 25)."""
+        return self._command("combat_hook", mode=mode)
 
     def mercenary_offers(self) -> dict:
         """The companies that can be hired: {"offers": [{"name", "cost", "arrives_in", "units"}], "silver", "hired"}. Read only."""
