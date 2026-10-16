@@ -53,7 +53,7 @@ An agent uses the fastest layer that can answer its question. It moves to a slow
 | 14 | free-walls | Build walls without the usual limits | spike done for Q1 to Q5 (2026-10-11); Q6 open |
 | 15 | bandit-settlement | Settle raiders as families (refugee waves) through the negotiation letter | spike done (2026-10-12); commands added |
 | 16 | policy-edicts | Enact policies and show a policy card in a Lua screen | spike done for Q1 to Q5 (2026-10-12); `enactPolicy` returned false |
-| 22 | mod-pack-layout | One mod (Invasion Mod) made of features: one pak from merged row patches, one Lua mod, mod docs in `docs/mod/` | approved (2026-10-15); doc tracks done, skeleton next |
+| 22 | mod-pack-layout | One mod (Invasion Mod) made of features: one pak from merged row patches, one Lua mod, mod docs in `docs/mod/` | approved (2026-10-15); doc tracks done, skeleton next || 25 | combat-lethality | Find and measure levers for armor and lethality of unarmored units | proposed (2026-10-15) |
 
 Order and reasons:
 - 03 comes first: every later spec needs a run folder and a summary.
