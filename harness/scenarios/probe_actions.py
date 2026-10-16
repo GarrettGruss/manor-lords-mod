@@ -154,7 +154,7 @@ def group_misc(probe, paths):
     bridge, player = probe.bridge, paths["player"]
     for box in ("InBox", "outbox"):
         probe.attempt(f"read {box}", lambda b=box: str(bridge.read_property(player, b))[:600])
-    # requestSaveFile is NOT probed again. It wrote into the user's real save folder (catalog: save_state).
+    # No save function is called here. Use ctx.actions.save_game (spec 24), the guarded save.
     probe.attempt("sendLetter to self (object arg as path)",
                   lambda: bridge.call_function(player, "sendLetter", [player, ["probe"]]))
 

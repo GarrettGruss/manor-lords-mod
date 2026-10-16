@@ -1,0 +1,2 @@
+{ "table": "buildingStats", "row": "1000", "op": "add", "from": "30",
+  "set": { "bVisibleInUi": true } }

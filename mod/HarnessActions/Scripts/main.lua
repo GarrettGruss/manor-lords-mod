@@ -106,6 +106,7 @@
 --   {"command":"rebel_raid_rally","count":2}   remove families, then one real raid aimed at a forest spot; the raiders stand at the AI waypoint for about 100 to 150 game seconds, then attack. The answer has the squad ids, the spot and the families before and after
 --   {"command":"bandit_kill_squads","squad":41,"count":2}   SMUnit:just_die on every living bandit unit of squads 41, 42 (to remove a raid and keep other squads)
 --   Housing (spec 15, see mod/shared/HarnessHousing):
+--   {"command":"upgrade_stat","type":117}                      number fields of one DT_Upgrades row (spec 23, read only)
 --   {"command":"building_stat","type":87}                   scalar fields of the buildingStats row of one building type (read only)
 --   {"command":"building_stat_vector_write","type":87,"field":"occupantTypes","component":"Y","value":5}   UNSAFE test command (needs HARNESS_ALLOW_UNSAFE=1): write one component of a Vector4 field of a buildingStats row, in memory
 --   {"command":"housing_state"}                             player region: families, homeless, living and vacant slots, tents, residential buildings (read only)
@@ -166,8 +167,9 @@ local parts = require("HarnessParts")
 local steer = require("HarnessSteer")
 local battlefield = require("HarnessBattlefield")
 local garrison = require("HarnessGarrison")
+local harnessSave = require("HarnessSave")
 
-local VERSION = "51"
+local VERSION = "52"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -278,6 +280,8 @@ local function parseRequest(raw)
         outpost = raw:match('"outpost"%s*:%s*"([%w_]+)"'),
         policy = tonumber(raw:match('"policy"%s*:%s*(%d+)')),
         slot = tonumber(raw:match('"slot"%s*:%s*(%d+)')),
+        save_slot = raw:match('"save_slot"%s*:%s*"(saveGame_%d+)"'), -- spec 24, checked again by HarnessSave
+        save_name = raw:match('"save_name"%s*:%s*"([%w _%-]+)"'),
         signed = ({ ["true"] = true, ["false"] = false })[raw:match('"signed"%s*:%s*(%a+)') or ""],
         mode = raw:match('"mode"%s*:%s*"(%a+)"'),
         source = raw:match('"source"%s*:%s*"(%a+)"'),
@@ -451,6 +455,7 @@ local COMMANDS = {
     ping = function() return { ok = true, version = VERSION } end,
     send_letter = sendLetter,
     autosave_status = autosaveStatus,
+    save_game = harnessSave.save_game, -- the only save call in the repo; guarded by harness/runlib/harness_save.py
     disable_autosave = disableAutosave,
     datatable_info = datatableInfo,
     datatable_read = datatableRead,
@@ -538,6 +543,7 @@ local COMMANDS = {
     rebel_raid_rally = bandits.rebel_raid_rally,
     bandit_kill_squads = bandits.bandit_kill_squads,
     building_stat = buildingStat,
+    upgrade_stat = housing.upgrade_stat,
     building_stat_vector_write = housing.building_stat_vector_write,
     master_parts = parts.master_parts,
     master_site = parts.master_site,

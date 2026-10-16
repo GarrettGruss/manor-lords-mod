@@ -178,3 +178,11 @@ def uninstall_all(save_dir: Path, ledger_path: Path | None = None) -> list[dict]
     results = [uninstall(entry) for entry in mine]
     _write_ledger([entry for entry in entries if entry not in mine], ledger_path)
     return results
+
+
+def record_saved(save_dir: Path, slot: str, label: str, files: dict, ledger_path: Path | None = None) -> None:
+    """Put files that the game wrote (a harness save, spec 24) into the ledger, so the run end or the next run deletes them."""
+    ledger_path = ledger_path or LEDGER_PATH
+    entries = read_ledger(ledger_path)
+    entries.append(Installed(slot, label, dict(files), str(save_dir)).as_dict())
+    _write_ledger(entries, ledger_path)
