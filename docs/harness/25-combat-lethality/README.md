@@ -1,6 +1,6 @@
 # Spec 25: Combat lethality and armor levers (spike)
 
-Status: proposed (2026-10-15). Issue: #129. Branch: `feat/25-combat-lethality`.
+Status: A/B round done (2026-10-16): `CombatHit` hook dead, live `def`/`block` write proven, armor alone does not win, armor plus weapon (retinue unit) does. See `implementation-notes/ab-results.md`. Issue: #129. Branch: `feat/25-combat-lethality`.
 Needed by: the Invasion Mod (M00 feasibility decision 5, "armor matters").
 
 ## Goal

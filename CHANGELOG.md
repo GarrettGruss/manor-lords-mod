@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 25: scenario `combat-levers` and suites `combat-def-ab`, `combat-armor-ab`, `combat-armor-high-ab`. HarnessActions 51 adds `unit_stats`, `set_unit_stat` (live SMUnit `def`, `block`, `att` and more, read back) and `combat_hook` (observe-only `SMUnit:CombatHit`, which never fires). `datatable_*` on items accepts `def`, `block`, `att`, `armorPierce`. Results in `docs/harness/25-combat-lethality/implementation-notes/ab-results.md`.
 - Late crash collect: runs write `game.json` (game pid, start time), and `harness/tools/collect_crash.py runs/<id>` copies crash reports of a kept-open game that crashed after the run ended.
 - Spike #104: tool `s104_ai_watch.py` lists which hooks fire while AI lords build. over 30 reflected hooks fired 0 times for the AI build itself, so the AI route gives the player no placement input. Note `mousefree-ai-route.md`.
 - Spike #104: command `HarnessPlace.bp` (modes scan, extend, newmaster) tests the blueprint-to-building route for a normal building. It does not build a hitching post. Note `mousefree-blueprint-route.md`.
