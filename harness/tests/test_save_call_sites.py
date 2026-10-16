@@ -21,6 +21,9 @@ COMMENT_ONLY = {
     "harness/tests/test_fakegame_harnesssack.py",
     "harness/tests/test_fakegame_harnesssave.py",
 }
+# Observe-only hook files. They name the functions as hook paths and must never call one.
+HOOK_ONLY = {"mod/HarnessSaveProbe/Scripts/main.lua"}
+CALL_SYNTAX = re.compile(r"[:.](requestSaveFile|SaveGameToSlot|SaveDataToSlot|SaveToDiskWithThumbnail|RequestMenuSave|Request Autosave)\s*\(")
 
 
 def code_files():
@@ -38,7 +41,7 @@ class SaveCallSiteTests(unittest.TestCase):
     def test_only_the_save_game_command_names_a_save_function(self):
         offenders = []
         for path, relative in code_files():
-            if relative in ALLOWED or relative in COMMENT_ONLY:
+            if relative in ALLOWED or relative in COMMENT_ONLY or relative in HOOK_ONLY:
                 continue
             for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), start=1):
                 if SAVE_CALLS.search(line) and not is_comment(line):
@@ -50,6 +53,11 @@ class SaveCallSiteTests(unittest.TestCase):
             for line in (REPO / relative).read_text(encoding="utf-8").splitlines():
                 if SAVE_CALLS.search(line):
                     self.assertTrue(is_comment(line), f"{relative}: {line}")
+
+    def test_hook_only_files_do_not_call_a_save_function(self):
+        for relative in sorted(HOOK_ONLY):
+            text = (REPO / relative).read_text(encoding="utf-8")
+            self.assertIsNone(CALL_SYNTAX.search(text), f"{relative} calls a save function")
 
     def test_the_allow_listed_lua_file_has_exactly_one_call(self):
         text = (REPO / "mod/shared/HarnessSave/HarnessSave.lua").read_text(encoding="utf-8")
