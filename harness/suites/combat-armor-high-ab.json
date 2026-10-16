@@ -1,0 +1,17 @@
+{
+  "name": "combat-armor-high-ab",
+  "scenarios": [
+    {
+      "scenario": "combat-levers",
+      "repeat": 5,
+      "variants": [
+        {"name": "normal", "env": {"LEVER_BANDIT": "militiaFoot", "LEVER_BANDIT2": "Brigands"}},
+        {"name": "live-def62-block60", "env": {"LEVER_BANDIT": "militiaFoot", "LEVER_BANDIT2": "Brigands", "LEVER_SET_PLAYER": "def=62,block=60"}},
+        {"name": "retinue-tier3", "env": {"LEVER_PLAYER": "retinue_tier3", "LEVER_BANDIT": "militiaFoot", "LEVER_BANDIT2": "Brigands"}}
+      ],
+      "expect": {"metric": "player_loss_rate", "direction": "lower", "min_rel_diff": 0.3}
+    }
+  ],
+  "time_budget_s": 2400,
+  "flake_retries": 2
+}

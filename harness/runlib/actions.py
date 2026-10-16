@@ -587,6 +587,22 @@ class Actions:
         return self._record("set_squad_experience", fields, answer["alive"] > 0 and answer["changed"] == answer["alive"],
                             answer["alive"], answer["changed"])
 
+    def unit_stats(self, side: str | None = None) -> dict:
+        """Mean att, def, block, armorPierce, morale of the living units of the battle registry, per squad. Read only (spec 25)."""
+        fields = {} if side is None else {"side": battle.check_side(side)}
+        return self._command("unit_stats", **fields)
+
+    def set_unit_stat(self, side: str, field: str, value: float) -> dict:
+        """Write one SMUnit stat (att, def, block, armorPierce, morale, baseDefence, baseBlock, charge) on the living units of a side.
+        The mod reads each value back. The write is live and per unit (spec 25)."""
+        fields = {"side": battle.check_side(side), "field": battle.check_name("field", field), "value": value}
+        answer = self._command("set_unit_stat", **fields)
+        return self._record("set_unit_stat", fields, answer["alive"] > 0 and answer["changed"] == answer["alive"], answer["alive"], answer["changed"])
+
+    def combat_hook(self, mode: str) -> dict:
+        """Observe-only hook on SMUnit:CombatHit. mode: start (reset and enable), stop, read. The answer has the call count (spec 25)."""
+        return self._command("combat_hook", mode=mode)
+
     def mercenary_offers(self) -> dict:
         """The companies that can be hired: {"offers": [{"name", "cost", "arrives_in", "units"}], "silver", "hired"}. Read only."""
         return self._command("mercenary_offers")

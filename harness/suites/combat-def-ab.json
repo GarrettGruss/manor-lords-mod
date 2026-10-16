@@ -1,0 +1,16 @@
+{
+  "name": "combat-def-ab",
+  "scenarios": [
+    {
+      "scenario": "combat-levers",
+      "repeat": 6,
+      "variants": [
+        {"name": "normal", "env": {"LEVER_BANDIT_SQUADS": "2"}},
+        {"name": "def0-block0", "env": {"LEVER_BANDIT_SQUADS": "2", "LEVER_SET_PLAYER": "def=0,block=0"}}
+      ],
+      "expect": {"metric": "player_loss_rate", "direction": "higher", "min_rel_diff": 0.5}
+    }
+  ],
+  "time_budget_s": 1800,
+  "flake_retries": 2
+}
