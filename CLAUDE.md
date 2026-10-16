@@ -132,6 +132,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
   The launcher hashes the user's save folder before and after each run. That guard only reports a change after it happened.
 - The game's autosave timer runs in real time, also while the game is paused (about 10 min after a load). `HarnessBoot` pushes it one year away before READY (`MLGameInstance:SetAutosavePeriodOnPawn`, checked 2026-10-10). Do not call `Request Autosave` or the native `SetAutosavePeriod`.
 - A game crash writes its UE crash report into the REAL `%LOCALAPPDATA%\ManorLords\Saved\Crashes`, not the private one. The launcher copies it. Do not read struct values with soft object fields (`getItem`, `RowStruct`) through the bridge: it crashes the game.
+- Do not pass a Lua string to a UFunction that takes an `FName` argument on a component or mesh that may lack it. UE4SS crashes in `push_nameproperty` (access violation at `0x70`). Known cases: `pivot_attach`, and `GetSocketLocation` or `DoesSocketExist` on the ox shed meshes (spec 18 `hitch-socket-world-positions.md`). Read the socket list first (`GetAllSocketNames`), or skip the call.
 - Back up saves before tests: `%LOCALAPPDATA%\ManorLords\Saved\SaveGames`. Never write to the original test save.
 - Do not edit `UE4SS-settings.ini` or other game files unless the task needs it. Say what you changed.
 - Ask the user before you change files outside this repo, except the planned deploy folder.
