@@ -1,6 +1,6 @@
 # Spec 24: Mod state across saves (spike)
 
-Status: spike done (2026-10-15). Option A works: names in `Tags` arrays of the player pawn and the player region survive a save and a load. Open: one manual menu-save check (see Open questions). Issue: #128. Branch: `feat/24-mod-save-state`.
+Status: spike done (2026-10-15). Option A works: names in `Tags` arrays of the player pawn and the player region survive a save and a load. The manual menu-save check passed (2026-10-16). Issue: #128. Branch: `feat/24-mod-save-state`.
 Needed by: the Invasion Mod (M00 feasibility decision 9). Every feature that keeps values needs it.
 
 ## Goal
@@ -85,6 +85,6 @@ Format of one entry: a Name `<mod>:<key>=<value>`. Example: `invasion:raid_days=
 - Which extra files does the game write for a slot (`_descr.sav`, `.png`, `_coat_<n>.png`)? `save_game` accepts exactly these names for the new slot and fails on any other new file.
 - Decided (user, 2026-10-15): the harness may make saves, under the rules above.
 - Answered: the game keeps the slot name given by the caller; the first real save confirmed it (`first-save.md`).
-- Open: does a PLAYER save (menu, quick save, autosave) keep the Tags too? Expected yes, because the game builds every save from the live state. One manual check by the user: add a tag with the probe command, save from the menu, load it, read the tag.
+- Done (2026-10-16): a PLAYER menu save keeps the Tags. See `implementation-notes/menu-save-check.md`. Quick save and autosave not tested (same save path expected).
 - Open: size limits (many or long Names), and the Tags of AI lords and buildings.
 - Open: the unrelated stale slot `saveGame_48` in the real folder (8 files, not in any ledger, present before this work). Ask the user.

@@ -109,6 +109,10 @@
 --   {"command":"homeless_rebel","count":2,"families_per_squad":1,"template":"Brigands","mode":"home"}   remove families, then bandits appear at their homes ("mode":"raid": a real raid that targets the home)
 --   {"command":"rebel_raid_rally","count":2}   remove families, then one real raid aimed at a forest spot; the raiders stand at the AI waypoint for about 100 to 150 game seconds, then attack. The answer has the squad ids, the spot and the families before and after
 --   {"command":"bandit_kill_squads","squad":41,"count":2}   SMUnit:just_die on every living bandit unit of squads 41, 42 (to remove a raid and keep other squads)
+--   Save and game setup (specs 24 and 26):
+--   {"command":"save_game","label":"x"}                     guarded harness save (spec 24, see harness/runlib/harness_save.py)
+--   {"command":"game_setup_state"}                          read the game start settings and the victory goal (spec 26)
+--   {"command":"game_setup_set_goal"}                       set a victory goal (spec 26)
 --   Housing (spec 15, see mod/shared/HarnessHousing):
 --   {"command":"upgrade_stat","type":117}                      number fields of one DT_Upgrades row (spec 23, read only)
 --   {"command":"building_stat","type":87}                   scalar fields of the buildingStats row of one building type (read only)
@@ -125,6 +129,7 @@
 --   {"command":"plot_field_shift","dx":3000,"dy":0,"plots":true,"commit":true}   test only: move the drawn, closed plot outline of the pawn (plots: also extractedPlots), then commit it
 --   {"command":"plot_upgrade","upgrade":12,"slot":0,"extension":false}   spike: PawnCPP:addUpgradeRequest (or addExtensionChangeRequest) on the building under the mouse
 --   {"command":"plot_upgrade","upgrade":13,"type":97}   same, on the first own master of that building type (no mouse)
+--   {"command":"building_assign_worker","type":125}         put one family without a workplace (or "family":N) to work in the first own building of that type (issue 104, no mouse)
 --   Composite parts (spec 18, see mod/shared/HarnessParts):
 --   {"command":"master_parts","building":123,"limit":5}      parts and extensions of one building master (or "type":3: the first built one; read only)
 --   {"command":"master_site","type":483}                    state of a site, built or not: Region, owner, goods, builders (issue 94, read only)
@@ -172,9 +177,10 @@ local steer = require("HarnessSteer")
 local battlefield = require("HarnessBattlefield")
 local tune = require("HarnessTune")
 local garrison = require("HarnessGarrison")
+local gameSetup = require("HarnessGameSetup")
 local harnessSave = require("HarnessSave")
 
-local VERSION = "53"
+local VERSION = "55"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -234,6 +240,8 @@ local function parseRequest(raw)
         field = raw:match('"field"%s*:%s*"([%w_]+)"'),
         value = tonumber(raw:match('"value"%s*:%s*(-?[%d%.]+)')),
         squads = tonumber(raw:match('"squads"%s*:%s*(%d+)')),
+        goal = tonumber(raw:match('"goal"%s*:%s*(%d+)')),
+        consume = tonumber(raw:match('"consume"%s*:%s*(%d+)')),
         count = tonumber(raw:match('"count"%s*:%s*(%d+)')),
         sample = tonumber(raw:match('"sample"%s*:%s*(%d+)')),
         amount = tonumber(raw:match('"amount"%s*:%s*(%d+)')),
@@ -524,6 +532,8 @@ local COMMANDS = {
     lord_relations = lordsCmd.lord_relations,
     lord_take_region = lordsCmd.lord_take_region,
     claim_region = lordsCmd.claim_region,
+    game_setup_state = gameSetup.game_setup_state,
+    game_setup_set_goal = gameSetup.game_setup_set_goal,
     settle_region = lordsCmd.settle_region,
     lord_receive_region = lordsCmd.lord_receive_region,
     lord_found_village = lordsCmd.lord_found_village,
@@ -572,6 +582,7 @@ local COMMANDS = {
     plot_field_shift = housing.plot_field_shift,
     plot_field_place = housing.plot_field_place,
     plot_upgrade = housing.plot_upgrade,
+    building_assign_worker = housing.building_assign_worker,
     wall_pieces = walls.wall_pieces,
     wall_pieces_clear = walls.wall_pieces_clear,
     path_state = walls.path_state,
