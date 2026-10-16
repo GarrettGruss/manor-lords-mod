@@ -1,0 +1,17 @@
+{
+  "name": "InvasionMod",
+  "version": "0.1.0",
+  "description": "Invasion mode for Manor Lords, built from separate features.",
+  "shared": [
+    "ManorCore"
+  ],
+  "pak": null,
+  "tested": {
+    "game": "0.8.111",
+    "game_build": "25598558",
+    "ue4ss": "4.0.0-rc1"
+  },
+  "gate_scenarios": [
+    "smoke"
+  ]
+}

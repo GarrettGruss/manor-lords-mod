@@ -1,6 +1,6 @@
 # Spec 22: Mod pack layout (one mod, many features)
 
-Status: approved (2026-10-15). Issue: #126. Branch: `feat/22-mod-pack-layout`.
+Status: approved (2026-10-15). Plan steps 3, 4, 6 and 7: see implementation-notes/skeleton.md. Issue: #126. Branch: `feat/22-mod-pack-layout`.
 
 ## Goal
 Set up the repo so that the agent can build the Invasion Mod as one mod made of separate features (for example invasion, refugees, tech tree, and more later).
