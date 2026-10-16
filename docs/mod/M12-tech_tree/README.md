@@ -61,3 +61,9 @@ Not started.
 See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.
 - Oppression nodes grant Public Order boons that offset low approval.
 - Prosperity nodes boost approval, which removes the Public Order debuff (M04).
+
+## Decisions (2026-10-16, M00 items 22 to 24)
+- The 4-node draft per path is approved for now. Path and node choices are final and exclusive.
+- Data-driven tree: the feature JSON holds the nodes as a linked list (each node names its next or previous node), plus optional layout data. The mod builds the tree and the menu from it. No hard-coded tree unless a technical limit forces it.
+- Cost: free. One node slot unlocks each time the settlement level rises.
+- Open: the exact JSON schema (fields: id, path, name, effect, next, layout). Write it in iteration 01.

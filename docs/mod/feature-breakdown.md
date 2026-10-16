@@ -49,8 +49,8 @@ The user gave decisions on 2026-10-16. They are listed in `M00-invasion-mod/READ
 
 ## Open decisions
 Only the user can decide these.
-1. Vassal model (decision 5, M00 open question 3). Blocks Batch 4.
-2. Tech tree node list, path undo and M14 (decision 10, M00 open question 10). Blocks M12 and M14.
+1. None for Batch 4 model choice: decided (M00 decision 20). Spike first: does a handed-over AI lord grow reliably?
+2. Tech tree decided (M00 decisions 22 to 24). M14 is out of scope for the first release (decision 25).
 3. Tech boon sizes (M12) and the loss of the very large battle (M06). TBD, set in playtests.
 Answered on 2026-10-16 (M00 decisions 11 to 15): difficulty chosen by the player at the start; great raid = 1 x difficulty waves, all large; bandit chance once per region per season tick; low approval debuffs Public Order; sack size linear in difficulty for now. Decisions 16 to 19: large army and relief army 15 squads, final battle not scaled by difficulty, random raid size, Public Order debuff = (100 - approval) x difficulty.
 

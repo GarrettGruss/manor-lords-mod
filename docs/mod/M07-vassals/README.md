@@ -52,3 +52,8 @@ Not started.
 | 02 | settled-vassal | Found a vassal with settlers. | not started |
 | 03 | policies-and-orders | Mod-owned policies applied to a vassal. | not started |
 | 04 | loss-and-submission | Lose or submit a vassal. | not started |
+
+## Decisions (2026-10-16, M00 items 20 and 21)
+- Model A. No vassals at the start. The player settles a region; the game hands it to a friendly AI lord who rules in the player name.
+- Watch in playtests whether the AI lord declares war.
+- First spike: does a handed-over AI lord grow reliably?

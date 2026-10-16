@@ -45,3 +45,6 @@ Not started.
 | --- | --- | --- | --- |
 | 01 | tribute-payout | A vassal pays a share of its production each period. | not started |
 | 02 | protection-and-loyalty | Failed protection lowers loyalty and tribute. | not started |
+
+## Decisions (2026-10-16, M00 item 21)
+- Tribute is a Lua rule: each season tick, add goods to the player stock. No goods move between regions.

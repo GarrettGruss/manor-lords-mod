@@ -1,5 +1,7 @@
 # M14: plundered-start
 
+Status: **out of scope for the first release** (M00 decision 25, 2026-10-16).
+
 Feature folder: `plundered_start`. Batch 7.
 
 ## Goal

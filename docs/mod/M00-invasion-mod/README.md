@@ -296,3 +296,9 @@ Follow-up decisions (user, 2026-10-16, later the same day):
 17. **The relief army is 15 squads** under the player's control.
 18. **Raid size (small, medium, large) is random** for normal raids, for now. The great raid waves are all large.
 19. **Public Order debuff from approval:** debuff = (100 - approval) x difficulty, in Public Order points. Base rate 1:1. Example: approval 65 (a normal village) gives Public Order 65 at difficulty 1. Linear steps. Tech boon sizes are TBD.
+20. **Vassal model A (answers decision 5).** The player starts with no vassals. The player settles a region, and the game hands it to a friendly AI lord who rules in the player's name. The user does not expect the AI lord to declare war; playtests watch for it.
+21. **Tribute is a Lua rule:** at each season tick, the mod adds goods to the player's stock. No goods transfer between regions. Applies to M08.
+22. **Tech tree (answers decision 10).** The 4-node draft per path is approved for now (Martial Law, Iron Hand, Veteran Levies, Fear of the Lord; Fair Courts, Amnesty, Militia Rights, Golden Age). Path and node choices are final and exclusive.
+23. **Tech tree is data-driven.** It changes often. The feature JSON defines the tree as a linked list of nodes. The mod builds the tree from it. The JSON may hold optional layout data (positions) for the menu. No hard-coded tree, unless a technical limit forces it. Applies to M12.
+24. **Tech cost is free for now.** One node slot unlocks each time the settlement level rises. Applies to M12.
+25. **M14 plundered start is out of scope for the first release.**
