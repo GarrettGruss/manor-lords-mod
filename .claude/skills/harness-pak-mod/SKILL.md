@@ -20,7 +20,7 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 - The AES key is in `modtools\work\aes_key.txt`. In a worktree the file does not exist: use the main checkout path `C:\Users\garre\development\manor-lords-mod\modtools\work\aes_key.txt`. Give it to tools ONLY through the environment variable `MANORLORDS_AES_KEY`, set from that file inside the command. Never print it, write it into a note, a commit, a changelog, a PR or chat. Before every commit: grep the diff for it.
 
 ## Commands (`uv run python harness\tools\pakmod.py ...`)
-`check [--pin]`, `find <text>`, `extract <asset>`, `tojson`, `fromjson <abs json> --to <name>`, `roundtrip <asset>`, `build <name>`, `install`, `remove [--all]`, `list`. Exit codes: 0 ok, 1 error, 3 hash mismatch, 4 pak list mismatch.
+`check [--pin]`, `find <text>`, `extract <asset>`, `tojson`, `fromjson <abs json> --to <name>`, `roundtrip <asset>`, `build <name>`, `install`, `remove [--all]`, `list`, `buildmod <ModName>` (see below). Exit codes: 0 ok, 1 error, 3 hash mismatch, 4 pak list mismatch.
 
 ## Working sequence (verified 2026-10-10)
 1. `check`, then `roundtrip ManorLords/Content/NotStronghold/Data/DT_Items` (must be byte-equal).
@@ -53,3 +53,6 @@ Workflow verified 2026-10-14 (note `docs/harness/21-mesh-generation/implementati
 3. `make_bm.py` with `BM_NAME` and `BM_PARTS` (JSON list of `[component name, mesh path, [x,y,z], [sx,sy,sz]]`). Use the prefixes `MainBld_`, `Bld_`, `clutter_`, `res_`.
 4. Cook (`-run=cook -targetplatform=Windows -unversioned -nopak -skipeditorcontent`), copy `BM_*` and `Meshes/` into `modtools/work/<pak>/ManorLords/Content/HarnessMod/`, add a `buildingStats` row (`s65_edit_json.py stats`, `blueprint`, `visible`) with a free id, `pakmod.py fromjson --to <pak>`, `pakmod.py build <pak>`.
 5. Run `run.py --scenario noop --keep-open --pak <pak>`, then `s94_drive.py` (`camera`, `ghost`, `place`, `days`), `s21_locate.py` and `s21_view.py` (wheel zoom and screenshot). Place only on a WHITE ghost. Close the game, then `pakmod.py remove --all`.
+
+## Mod pack pak (spec 22)
+`pakmod.py buildmod <ModName>` builds `mod/<ModName>/paks/<ModName>_P.pak` from `mod/<ModName>/data/<feature>/patches/*.json` (patch format: spec 22 README) and `data/<feature>/assets/**`. It extracts the tables from the current game paks each time. It fails with the file names on a bad patch, a conflict (same row added, same field set by two features) or a new row outside the feature's `ids` range in `mod.json`. Tables: `buildingStats`, `DT_Upgrades`. Logic: `harness/tools/modpak.py`. Notes: `docs/harness/22-mod-pack-layout/implementation-notes/buildmod.md`.

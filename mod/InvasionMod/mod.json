@@ -11,7 +11,7 @@
     "ue4ss": "4.0.0-rc1"
   },
   "features": [
-    { "name": "example", "requires": [], "ids": { "buildingStats": [0, 0] } }
+    { "name": "example", "requires": [], "ids": { "buildingStats": [1000, 1099], "DT_Upgrades": [117, 126] } }
   ],
   "gate_scenarios": []
 }

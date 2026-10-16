@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `pakmod.py buildmod <Name>` (spec 22): builds `mod/<Name>/paks/<Name>_P.pak` from the row patches of all features, with a conflict check, an id-range check and a copy of `data/<feature>/assets`. The logic is in `harness/tools/modpak.py`; the stub feature has two patches and real id ranges.
 - Release (spec 19): optional manifest fields `display_name` and `features`; the zip and the gate ignore the `data/` and `scenarios/` folders of a mod.
 - Scenario discovery reads `mod/<Name>/scenarios/**/*.py`; a duplicate scenario name fails loudly. Boundary test: harness code must not name the mod pack.
 - Mod pack skeleton `mod/InvasionMod` (spec 22): feature loader (order by `requires`, fails on a cycle or a missing feature), config, stub feature `example`, fake-game test.
