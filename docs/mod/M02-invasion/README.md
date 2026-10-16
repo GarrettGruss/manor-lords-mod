@@ -69,3 +69,8 @@ Not started. The stand-ins `RaidStandIn` and `InvasionStandIn` exist but use inv
 | 04 | difficulty | Difficulty 1 to 3 and the size multipliers. | not started |
 | 05 | raid-widget | One custom pak widget for all raid information (decision 4). | not started |
 | 06 | great-raid-waves | Waves of attackers until the relief army arrives, then the very large battle (decision 1). | not started |
+
+## Follow-up decisions (2026-10-16)
+See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.
+- Difficulty (1 to 3) is picked by the player at the start.
+- Great raid: 1 x difficulty waves, every wave large. A large army is 15 units (soldier or squad: open).

@@ -55,3 +55,7 @@ Not started. The first part (sack and terms in the home town) does not need vass
 | 01 | sack-after-defeat | A lost battle runs `HarnessSack` rules and the game continues. | not started |
 | 02 | tribute-terms | One-time payment and yearly tribute terms. | not started |
 | 03 | fallback-capital | Move to a fortified vassal (needs M07). | not started |
+
+## Follow-up decisions (2026-10-16)
+See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.
+- Sack size grows linearly with difficulty for now. Logarithmic is possible later; decided in playtests.

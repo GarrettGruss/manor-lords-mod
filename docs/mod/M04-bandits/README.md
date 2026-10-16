@@ -49,3 +49,8 @@ Not started.
 | 01 | low-order-bandits | Low Public Order turns families into bandits through `homeless_rebel`. | not started |
 | 02 | season-tick | Seasonal tick with the 75, 50 and 25 percent thresholds. | not started |
 | 03 | coin-buy-back | Pay coin to bring bandits back. | not started |
+
+## Follow-up decisions (2026-10-16)
+See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.
+- The chance is rolled once per region at each season tick.
+- Low approval lowers Public Order (a debuff). It does not convert villagers by itself. Debuff size per approval step: open tunable.

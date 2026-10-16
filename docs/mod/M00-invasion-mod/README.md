@@ -285,3 +285,10 @@ The user gave these decisions. Features apply them in their own READMEs. The use
 8. **No hostages.** Use the game's native sack and loot mechanics. Sack size is proportional to a difficulty indicator, an integer from 1 to 3 for now. Each raid has a base size multiplier: small 1, medium 2, large 3. Unit count is the multiplier times the difficulty. Applies to M02, M03, M06.
 9. **The liege is off-screen.** For now only a custom menu represents the liege. M11 is backlog, TBD.
 10. **Tech tree node list and M14.** Still open. They are being explained to the user.
+
+Follow-up decisions (user, 2026-10-16, later the same day):
+11. **Difficulty is chosen by the player at the start** (1 to 3). Applies to M02.
+12. **Great raid for now:** 1 times difficulty waves, and every wave is a large raid. A large army is 15 units. (Open: is a unit one soldier or one squad? See M02.)
+13. **Bandit chance is rolled once per region** at each season tick. Applies to M04.
+14. **Low approval debuffs Public Order.** Approval does not turn villagers into bandits on its own; it lowers Public Order, and Public Order drives conversion. Oppression techs grant Public Order boons that offset low approval. Prosperity techs boost approval, which removes the Public Order debuff. Applies to M04 and M12.
+15. **Sack size grows in a straight line with difficulty for now.** It may become logarithmic. This is decided in playtests. Applies to M06.

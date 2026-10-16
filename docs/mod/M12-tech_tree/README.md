@@ -56,3 +56,8 @@ Not started.
 | 02 | pak-ui | Pak widget that lists nodes and takes the choice. | not started |
 | 03 | first-nodes | A few nodes per path with Lua effects. | not started |
 | 04 | laws-and-vassal-policies | Laws and vassal policies. | not started |
+
+## Follow-up decisions (2026-10-16)
+See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.
+- Oppression nodes grant Public Order boons that offset low approval.
+- Prosperity nodes boost approval, which removes the Public Order debuff (M04).
