@@ -1,0 +1,2 @@
+{ "table": "DT_Upgrades", "row": "117", "op": "add", "from": "2",
+  "set": { "upgradesInto": 1000 } }

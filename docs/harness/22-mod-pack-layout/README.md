@@ -1,6 +1,6 @@
 # Spec 22: Mod pack layout (one mod, many features)
 
-Status: approved (2026-10-15). Issue: #126. Branch: `feat/22-mod-pack-layout`.
+Status: approved (2026-10-15). Real-game checks of step 3 and A3 passed (2026-10-16): see implementation-notes/real-game-checks.md. Plan steps 3, 4, 6 and 7: see implementation-notes/skeleton.md. Step 5: see implementation-notes/buildmod.md. Issue: #126. Branch: `feat/22-mod-pack-layout`.
 
 ## Goal
 Set up the repo so that the agent can build the Invasion Mod as one mod made of separate features (for example invasion, refugees, tech tree, and more later).
@@ -79,7 +79,7 @@ A row patch is a small JSON file that names a table, a row and the fields to set
 2. CLAUDE.md and skills: doc paths, mod doc rules, branch names (`feat/M<NN>-<feature>-<iteration>`), the feature rules above.
 3. Skeleton: `mod/InvasionMod/` with `mod.json`, `main.lua`, `config.lua`, the feature loader, one stub feature, and a fake-game test for the loader (order, cycle, missing feature, disabled feature). Check in the real game that `require` of a feature module under `Scripts/features/` works.
 4. Harness: scenario discovery also reads `mod/<Name>/scenarios/**`. Scenario names stay unique.
-5. Harness: `pakmod.py buildmod InvasionMod` applies the row patches, runs the conflict and id-range checks, copies `data/*/assets`, builds `paks/InvasionMod_P.pak`. Fake tests for the patch rules. Needs spec 23 for the id ranges.
+5. (code done, A3 open) Harness: `pakmod.py buildmod InvasionMod` applies the row patches, runs the conflict and id-range checks, copies `data/*/assets`, builds `paks/InvasionMod_P.pak`. Fake tests for the patch rules. Needs spec 23 for the id ranges.
 6. Release (spec 19): manifest fields `display_name` and `features`; gate over all features' scenarios; the zip leaves out `data/` and `scenarios/`.
 7. Boundary check: a test fails when code under `harness/` names `InvasionMod` or a feature. The harness finds the mod only through `mod.json` and paths.
 
@@ -98,7 +98,7 @@ The features themselves (invasion, refugees, tech tree) are not in this spec. Th
   "gate_scenarios": []
 }
 ```
-The id values are placeholders. Spec 23 decides the real ranges.
+Id ranges (spec 23): ids 1 to 485 are vanilla or enum range (keep free, also 200, 255, 256). Each feature gets a block of 100 ids in `buildingStats`, start = 1000 + 100 * feature number (feature 0: `[1000, 1099]`). `DT_Upgrades` new rows use 117 to 999 (feature 0: `[117, 126]`). Ids above 32767 are not used. The key in `ids` is the table name of the patch.
 
 ## Open questions
 - Q1 (decided 2026-10-15): keep `requires`, allow it empty.

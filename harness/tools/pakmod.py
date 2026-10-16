@@ -33,12 +33,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import modpak  # noqa: E402
 from runlib.paks import (  # noqa: E402,F401 - the install code is shared with run.py --pak
     EXIT_ERROR, MANIFEST_NAME, NAME_PATTERN, PAK_SUFFIX, PakError, built_pak_path, check_name, install_pak, is_inside,
     list_paks, mods_dir_of, pak_file_name, paks_dir_of, read_manifest, remove, require_inside, sha256_of, write_manifest,
 )
 
 DEFAULT_GAME_DIR = Path(r"C:\Program Files (x86)\Steam\steamapps\common\Manor Lords")
+MODS_DIR = Path(__file__).resolve().parents[2] / "mod"
 DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "pakmod.local.json"
 ENV_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 PLACEHOLDER_PATTERN = re.compile(r"\{[a-z_]+\}")
@@ -672,6 +674,28 @@ def verify_pak_list(config: dict, pak: Path, expected: set[str]) -> None:
     print(f"verified: the pak lists the same {len(actual)} files as the folder")
 
 
+def buildmod(config: dict, game_dir: Path, name: str, mods_dir: Path = MODS_DIR, dry_run: bool = False) -> Path:
+    """Build mod/<name>/paks/<name>_P.pak from the row patches of all features (spec 22). Starts from the current game paks."""
+    mod_dir = mods_dir / check_mod_name(name)
+    folder = config["work_dir"] / name
+    print(f"{'[dry-run] ' if dry_run else ''}buildmod {name}: {mod_dir} -> {pak_file_name(name)}")
+    if dry_run:
+        return mod_dir / "paks" / pak_file_name(name)
+    require_inside(folder, config["work_dir"], "asset folder")
+    shutil.rmtree(folder, ignore_errors=True)  # no stale file from an earlier build
+    folder.mkdir(parents=True)
+
+    def fetch(asset: str) -> Path:
+        extract(config, game_dir, asset)
+        return tojson(config, asset + ".uasset")
+
+    try:
+        return modpak.build_mod(mod_dir, folder, fetch, lambda json_file: fromjson(config, str(json_file), name),
+                                lambda: build(config, name))
+    except modpak.ModPakError as error:
+        raise PakModError(str(error)) from error
+
+
 # ---- manifest, install, remove ----
 
 def install(work_dir: Path, game_dir: Path, name: str, dry_run: bool = False) -> Path:
@@ -697,6 +721,7 @@ def make_parser() -> argparse.ArgumentParser:
     commands.add_parser("find", help="find <text> in the game's pak indexes").add_argument("text")
     for name in ("extract", "tojson", "roundtrip", "build", "install"):
         commands.add_parser(name, help=f"{name} <asset or name>").add_argument("target")
+    commands.add_parser("buildmod", help="buildmod <mod name>: build mod/<name>/paks from the row patches").add_argument("target")
     fromjson_parser = commands.add_parser("fromjson", help="fromjson <json file> [--to <mod name>]")
     fromjson_parser.add_argument("target")
     fromjson_parser.add_argument("--to", help="write the asset into the build folder of this mod name")
@@ -724,6 +749,7 @@ def dispatch(args: argparse.Namespace) -> int:
         "fromjson": lambda: fromjson(config, args.target, getattr(args, "to", None), args.dry_run),
         "roundtrip": lambda: roundtrip(config, args.game_dir, args.target, args.dry_run),
         "build": lambda: build(config, args.target, args.dry_run),
+        "buildmod": lambda: buildmod(config, args.game_dir, args.target, dry_run=args.dry_run),
         "install": lambda: install(config["work_dir"], args.game_dir, args.target, args.dry_run),
     }
     handlers[args.command]()
