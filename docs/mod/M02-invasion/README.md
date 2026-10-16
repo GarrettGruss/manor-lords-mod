@@ -74,3 +74,5 @@ Not started. The stand-ins `RaidStandIn` and `InvasionStandIn` exist but use inv
 See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.
 - Difficulty (1 to 3) is picked by the player at the start.
 - Great raid: 1 x difficulty waves, every wave large. A large army is 15 units (soldier or squad: open).
+- A large army is 15 squads (playtest value). Normal raid size (small, medium, large) is random for now.
+- The final very large battle and the relief army (15 squads, player-controlled) are not scaled by difficulty for now.

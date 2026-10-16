@@ -54,3 +54,4 @@ Not started.
 See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.
 - The chance is rolled once per region at each season tick.
 - Low approval lowers Public Order (a debuff). It does not convert villagers by itself. Debuff size per approval step: open tunable.
+- Public Order debuff = (100 - approval) x difficulty. Approval 65 gives Public Order 65 at difficulty 1.

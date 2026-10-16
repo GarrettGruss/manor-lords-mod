@@ -292,3 +292,7 @@ Follow-up decisions (user, 2026-10-16, later the same day):
 13. **Bandit chance is rolled once per region** at each season tick. Applies to M04.
 14. **Low approval debuffs Public Order.** Approval does not turn villagers into bandits on its own; it lowers Public Order, and Public Order drives conversion. Oppression techs grant Public Order boons that offset low approval. Prosperity techs boost approval, which removes the Public Order debuff. Applies to M04 and M12.
 15. **Sack size grows in a straight line with difficulty for now.** It may become logarithmic. This is decided in playtests. Applies to M06.
+16. **A large army is 15 squads.** The count is tuned in playtests. The great raid's final "very large battle" is a reward for surviving, so difficulty does not scale it for now.
+17. **The relief army is 15 squads** under the player's control.
+18. **Raid size (small, medium, large) is random** for normal raids, for now. The great raid waves are all large.
+19. **Public Order debuff from approval:** debuff = (100 - approval) x difficulty, in Public Order points. Base rate 1:1. Example: approval 65 (a normal village) gives Public Order 65 at difficulty 1. Linear steps. Tech boon sizes are TBD.

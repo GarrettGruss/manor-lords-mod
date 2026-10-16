@@ -51,11 +51,8 @@ The user gave decisions on 2026-10-16. They are listed in `M00-invasion-mod/READ
 Only the user can decide these.
 1. Vassal model (decision 5, M00 open question 3). Blocks Batch 4.
 2. Tech tree node list, path undo and M14 (decision 10, M00 open question 10). Blocks M12 and M14.
-3. Which raids are small, medium or large, and who sets the base size multiplier (open; the great raid is all large).
-4. Relief army timing and size, and the size of the very large battle. What happens when the player loses it (M06).
-5. Is a "unit" in "a large army is 15 units" one soldier or one squad (18 to 36 soldiers)?
-6. Public Order debuff size per approval step, and the tech boon sizes (M04, M12).
-Answered on 2026-10-16 (M00 decisions 11 to 15): difficulty chosen by the player at the start; great raid = 1 x difficulty waves, all large; bandit chance once per region per season tick; low approval debuffs Public Order; sack size linear in difficulty for now.
+3. Tech boon sizes (M12) and the loss of the very large battle (M06). TBD, set in playtests.
+Answered on 2026-10-16 (M00 decisions 11 to 15): difficulty chosen by the player at the start; great raid = 1 x difficulty waves, all large; bandit chance once per region per season tick; low approval debuffs Public Order; sack size linear in difficulty for now. Decisions 16 to 19: large army and relief army 15 squads, final battle not scaled by difficulty, random raid size, Public Order debuff = (100 - approval) x difficulty.
 
 ## Backlog
 - M11 `M11-liege_influence`: status backlog, TBD (decision 9). The liege is off-screen. Only a custom menu represents it for now. The folder stays. The relief army is owned by M02 until M11 starts.
