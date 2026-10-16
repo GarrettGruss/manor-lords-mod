@@ -156,3 +156,9 @@ New tools: `s104_stable.py` (master, oxen, `animalSpaceCache`), `s104_order.py` 
 - Capacity and look: proven (stableMax 4, two sheds, 4 oxen housed, HUD 4).
 - New placeable card (row 125 by the mouse): not proven (mouse blocker).
 - Open: why repeated `order_oxen` adds nothing; where oxen rest when idle (run unpaused longer, at night).
+
+### User observation, run s115-st4 (2026-10-15)
+- The user watched the row 125 stable (pak `stable4`). The oxen walked to the shed. They pushed into each other and tried to hitch at the same point.
+- This is the fail case of the plan ("spots stack"). The data check (distinct `realPos`, more than 50 units apart) was taken while oxen were away at work. It does not show the hitch spot.
+- Meaning: the game has a hitch spot for each shed. It is not stored in the BM class components we know. A 4-ox stable needs 4 distinct spots.
+- Next: run `stable4b` (the `Scene_0..3` probe components) and compare the hitch positions.
