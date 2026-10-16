@@ -329,7 +329,8 @@ A failed read-back also adds a failed assertion, so the verdict is `fail`. Call 
 | `place_building(type_id, fx=0.65, fy=0.65)` | One more building of that type in the player region. **Uses the OS mouse and keyboard focus: do not use it while a person works on this computer.** The window comes to the front, the real cursor clicks the ground at that fraction of the window, and the cursor goes back. Aborts with an error if the game is not the foreground window or no ground is under the cursor. The player needs the goods of the building (HitchingPost 30 is free); a spot that overlaps another building places nothing. Scenario `place-building`. Code: `harness/runlib/osinput.py` |
 | `send_letter(["welcome_from_hildebolt"], sender=1)` | an AI lord sends a letter. Needs the mod `HarnessActions` |
 
-`save_state`, `get_item_info`, `remove_all_families` and `spawn_raiders` raise `ActionNotPossible` with the reason. An unknown name does too.
+`get_item_info`, `remove_all_families` and `spawn_raiders` raise `ActionNotPossible` with the reason. An unknown name does too.
+`save_game(label, keep=False)` (spec 24) is the guarded save into a new `saveGame_<N>` slot: backup of the save folder first, files deleted at the run end unless `keep=True`, restore and raise if an existing file changes. Not run in the real game yet.
 The runner turns it into a failed scenario (assertion `action is possible`), not a crash. `ctx.actions.available()` lists the names.
 Status, numbers and caveats of every action: `docs/harness/07-feature-test-kit/implementation-notes/actions-catalog.md`.
 

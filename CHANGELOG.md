@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 24 result (#128): the mod state can live in the `Tags` of the player pawn and the player region. They survive a save and a load (`persistence-tests.md`). Observe-only mod `HarnessSaveProbe` and hidden `probe-save-*` scenarios. The recommendation and the `ModState` design are in the spec README.
+- Guarded harness save (spec 24, #128): action `ctx.actions.save_game(label, keep=False)` replaces the `save_state` stub. It backs up the save folder, saves to the next free `saveGame_<N>` slot through the Lua command `save_game` (the only save call in the repo), restores and raises if an existing file changes, and deletes its files at the run end unless kept. The run save guard accepts only the files that `save_game` reported. A test forbids save calls elsewhere. The first real save was clean (`first-save.md`).
 - `pakmod.py buildmod <Name>` (spec 22): builds `mod/<Name>/paks/<Name>_P.pak` from the row patches of all features, with a conflict check, an id-range check and a copy of `data/<feature>/assets`. The logic is in `harness/tools/modpak.py`; the stub feature has two patches and real id ranges.
 - Release (spec 19): optional manifest fields `display_name` and `features`; the zip and the gate ignore the `data/` and `scenarios/` folders of a mod.
 - Scenario discovery reads `mod/<Name>/scenarios/**/*.py`; a duplicate scenario name fails loudly. Boundary test: harness code must not name the mod pack.
