@@ -29,11 +29,13 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 
 ## Specs and notes
 
-- Every core design feature must have a spec in `docs/specs/<NN>-<feature-name>/`.
+- There are two doc tracks:
+  - Harness specs: `docs/harness/<NN>-<feature-name>/`. Every core harness feature must have one.
+  - Mod docs (the Invasion Mod): `docs/mod/`. Read `docs/mod/README.md` first. `M00-invasion-mod/` is the overview design; the user writes it. Feature specs are `docs/mod/M<NN>-<feature>/`, with one file per iteration in `iterations/`. Do not write game design content unless the user asks.
   - Write the spec before the code. The spec starts with `README.md`.
   - A spec states the goal, non-goals, plan, open questions, and acceptance criteria.
 - Store all findings and implementation notes inside the spec they belong to.
-  - Path: `docs/specs/<NN>-<feature-name>/implementation-notes/`.
+  - Path: `<spec folder>/implementation-notes/`.
   - One file per topic. Name files by topic, for example `jmap-findings.md`.
   - Do not put notes in chat only. Do not put them in other folders.
 - When a note changes a decision, update the spec README in the same commit.
@@ -48,6 +50,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 - Remote: `origin` is `git@github.com:GarrettGruss/manor-lords-mod.git`. The default branch is `main`.
 - Use one feature branch for each spec.
   - Name it `feat/<NN>-<feature-name>`, the same as the spec folder. Example: `feat/02-save-autoload`.
+  - A mod feature uses one branch for each iteration: `feat/M<NN>-<feature>-<iteration>`. Example: `feat/M02-refugees-01-first-wave`.
   - Create the branch from an up-to-date `main`. Do the spec work, code, notes, and changelog entries on that branch.
   - Keep commits atomic on the branch. Merge into `main` only when the user asks.
   - Small changes that do not belong to one spec (for example `chore` or `docs` for the project rules) may go to `main`.
@@ -58,7 +61,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 ## GitHub issues
 
 - Every new feature has one GitHub issue that tracks its status. Create the issue when the spec is written.
-  - Title: `Spec <NN>: <feature name>`. Link the spec folder and the feature branch in the body.
+  - Title: `Spec <NN>: <feature name>`, or `Mod M<NN>.<iteration>: <name>` for a mod iteration. Link the spec folder and the feature branch in the body.
   - Keep the body current: what works, what is open, and the next step.
 - Create and manage issues with the `gh` CLI (`gh issue create`, `gh issue edit`, `gh issue comment`, `gh issue close`).
 - Show the status with these labels:
@@ -82,9 +85,10 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 ## Architecture
 
 1. **Game mods** (`mod/`): Lua mods for RE-UE4SS. They hook reflected UFunctions and read UObject properties.
-2. **Live control** (`ue4ss-bridge`): a Lua mod and an MCP server. The agent queries the running game through them. See `docs/specs/01-ue4ss-bridge/`.
+2. **Live control** (`ue4ss-bridge`): a Lua mod and an MCP server. The agent queries the running game through them. See `docs/harness/01-ue4ss-bridge/`.
 3. **Outer harness** (`harness/`): scripts that deploy the mod, launch the game, run a scenario, collect results, and write `runs/<id>/summary.json`.
 4. **Reference** (`reference/`): dumps and exports. Large raw dumps stay out of git.
+5. **The Invasion Mod** (`mod/InvasionMod/`, planned in spec 22): one Lua mod and one pak, made of features (`Scripts/features/<f>/`, `data/<f>/patches/`, `scenarios/<f>/`). Harness code must not name the mod or its features.
 
 ## Design rules
 
@@ -127,11 +131,15 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 
 ## Safety
 
-- Never call a game function that saves: `PawnCPP:requestSaveFile`, `SaveToDiskWithThumbnail`, `IoHandler:SaveGameToSlot`, `RequestMenuSave`, `Request Autosave`.
-  They write into the user's REAL save folder, even when a run has a private `LOCALAPPDATA`. A probe overwrote the user's `saveGame_9` this way (restored from the user's backup).
-  The launcher hashes the user's save folder before and after each run. That guard only reports a change after it happened.
+- Game save functions write into the user's REAL save folder, even when a run has a private `LOCALAPPDATA`: `PawnCPP:requestSaveFile`, `SaveToDiskWithThumbnail`, `IoHandler:SaveGameToSlot`, `RequestMenuSave`, `Request Autosave`. A probe overwrote the user's `saveGame_9` this way (restored from the user's backup).
+  - The user approved that the harness makes saves (2026-10-15), but ONLY through the guarded harness action `save_game` (spec 24). It backs up the save folder, saves to the next free `saveGame_<N>` slot (above the highest one, as fixtures do), and fails and restores if any existing save file changes. `mod/shared/HarnessSave/HarnessSave.lua` is the only code that calls a save function. A test enforces it (`test_save_call_sites.py`).
+  - `save_game` exists with fake tests, but it has not run in the real game yet. The first real call needs a fresh backup and the user informed. Never call a save function from a probe, a scenario or `eval_lua`. Never call `Request Autosave`.
+  - Player mods (the Invasion Mod) never call a save function. They react to the player's saves through hooks.
+  - The launcher hashes the user's save folder before and after each run. That guard only reports a change after it happened.
 - The game's autosave timer runs in real time, also while the game is paused (about 10 min after a load). `HarnessBoot` pushes it one year away before READY (`MLGameInstance:SetAutosavePeriodOnPawn`, checked 2026-10-10). Do not call `Request Autosave` or the native `SetAutosavePeriod`.
 - A game crash writes its UE crash report into the REAL `%LOCALAPPDATA%\ManorLords\Saved\Crashes`, not the private one. The launcher copies it. Do not read struct values with soft object fields (`getItem`, `RowStruct`) through the bridge: it crashes the game.
+- Never write a `Tags` array (names) through the bridge `set`. It crashes the game. Append in Lua instead: `object.Tags[#object.Tags + 1] = FName("x")` (spec 24). Never write `region.regionName` with a made-up name and save: the load of that save crashes.
+- Do not pass a Lua string to a UFunction that takes an `FName` argument on a component or mesh that may lack it. UE4SS crashes in `push_nameproperty` (access violation at `0x70`). Known cases: `pivot_attach`, and `GetSocketLocation` or `DoesSocketExist` on the ox shed meshes (spec 18 `hitch-socket-world-positions.md`). Read the socket list first (`GetAllSocketNames`), or skip the call.
 - Back up saves before tests: `%LOCALAPPDATA%\ManorLords\Saved\SaveGames`. Never write to the original test save.
 - Do not edit `UE4SS-settings.ini` or other game files unless the task needs it. Say what you changed.
 - Ask the user before you change files outside this repo, except the planned deploy folder.

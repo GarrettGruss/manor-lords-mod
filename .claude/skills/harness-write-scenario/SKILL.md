@@ -20,11 +20,12 @@ def run(ctx) -> dict:
     return ctx.result()
 ```
 A hook sees only Blueprint (ProcessEvent) calls. Native UI actions (build mode, placement clicks) fire no hook: read the effect with a count instead.
+A mod may keep scenarios beside its files: `mod/<Name>/scenarios/**/*.py` (same module format; a file name that starts with `_` is a helper). Names must be unique across harness and mods; a duplicate fails at import.
 Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a test compares the full list).
 
 ## The context (`ctx`)
 - `ctx.expect`: `equals`, `in_range`, `at_least`, `at_most`, `changed`, `eventually(name, fn, timeout_s)`. Each call records one assert. Sets are saved as sorted lists.
-- `ctx.actions`: base-game actions (give goods, spawn raiders, sack, close pop-ups, and so on). The list is in `docs/specs/07-feature-test-kit/implementation-notes/actions-catalog.md`.
+- `ctx.actions`: base-game actions (give goods, spawn raiders, sack, close pop-ups, and so on). The list is in `docs/harness/07-feature-test-kit/implementation-notes/actions-catalog.md`.
 - `ctx.mod`: commands and metrics of a mod that defines its own state (see the skill `harness-mod-state`).
 - `ctx.run_until(predicate, timeout_s, clock="wall"|"game", stall_s=..., on_poll=ctx.popups)`: wait with a stall detector.
 - `ctx.time`, `ctx.read_clock()`, `ctx.read_calendar()`, `ctx.pause()`, `ctx.unpause()`: game time. A game day is 40 game seconds. Speeds are index 1/2/3 = 1x/4x/8x. The game drops to 1x when an army is spotted: use `ctx.time.run_game_*` to hold the speed.
@@ -37,7 +38,7 @@ Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a 
 - The game is not deterministic. Assert ranges, not exact values, for anything stochastic. Use `equals` for flags and names.
 - Keep asserts few and named so the 4 KB summary stays readable (`R5 five captives are held`).
 - A failing assert is a `fail`. A bug in your code is a `harness_error`. Do not catch errors to hide them.
-- Never call a save function. Scenarios that need the real mouse (`place_building`) are `HIDDEN` and run alone.
+- Never call a save function. To save, use `ctx.actions.save_game(label, keep=False)` (spec 24): it backs up the save folder, uses a new free slot, deletes the files at the run end unless `keep=True`, and raises if an existing file changes. Scenarios that need the real mouse (`place_building`) are `HIDDEN` and run alone.
 - Long scenarios need `LONG_REASON` and the pop-up guard (`ctx.popups`). A pop-up pauses the game.
 - Use `COVERS` only for a criterion whose method the scenario really proves. The coverage tool counts a passing tagged scenario.
 

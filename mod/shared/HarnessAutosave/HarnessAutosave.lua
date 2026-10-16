@@ -1,6 +1,6 @@
 -- HarnessAutosave: read the autosave timer of the game, and push the timer far into the future.
 -- Why: the game's own autosave writes into the user's REAL save folder, also when a run has a private LOCALAPPDATA.
--- Spec: docs/specs/06-dev-loop-and-fixtures/implementation-notes/autosave.md
+-- Spec: docs/harness/06-dev-loop-and-fixtures/implementation-notes/autosave.md
 --
 -- How the game does it (jmap): the player pawn (MyPawnCPP_BP3_C) owns a timer, `autosaveHandle`.
 -- The timer calls the pawn event 'Request Autosave'. The game instance (MLGameInstance) has

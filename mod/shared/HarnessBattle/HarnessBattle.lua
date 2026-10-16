@@ -255,6 +255,116 @@ function M.set_squad_experience(request)
 end
 
 ---------------------------------------------------------------------------------------------
+-- Combat stats and the CombatHit probe (spec 25)
+---------------------------------------------------------------------------------------------
+
+-- Fields of SMUnit that the lethality levers use (levers.md). Only these may be read or written.
+M.STAT_FIELDS = { att = true, def = true, block = true, armorPierce = true, morale = true, baseDefence = true, baseBlock = true, charge = true }
+local STAT_ORDER = { "att", "def", "block", "armorPierce", "morale", "baseDefence", "baseBlock", "charge" }
+local MAX_STAT_VALUE = 1000
+
+local function sideOfUnit(unit)
+    local id = read(function() return unit.assignedSquadID.Value end)
+    if id ~= nil and registry[id] then return registry[id].side, id end
+    return nil, id
+end
+
+-- Mean stat values of the living units of one side, by squad. Read only.
+function M.unit_stats(request)
+    local side = request and request.side
+    if side ~= nil and not M.SIDES[side] then return { ok = false, error = "side must be player or bandit" } end
+    local per = {}
+    for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+        if isValid(unit) and read(function() return unit.dead end) ~= true then
+            local unitSide, id = sideOfUnit(unit)
+            if unitSide and (side == nil or unitSide == side) then
+                local row = per[id] or { squad = id, side = unitSide, template = registry[id].template, alive = 0, sum = {} }
+                per[id] = row
+                row.alive = row.alive + 1
+                for _, name in ipairs(STAT_ORDER) do
+                    local value = read(function() return unit[name] end)
+                    if type(value) == "number" then row.sum[name] = (row.sum[name] or 0) + value end
+                end
+            end
+        end
+    end
+    local squads = {}
+    for _, row in pairs(per) do
+        local mean = {}
+        for name, total in pairs(row.sum) do mean[name] = round(total / row.alive, 3) end
+        squads[#squads + 1] = { squad = row.squad, side = row.side, template = row.template, alive = row.alive, mean = mean }
+    end
+    table.sort(squads, function(a, b) return a.squad < b.squad end)
+    return { ok = true, squads = squads }
+end
+
+-- Write one stat field on every living unit of one side. Reads each value back. request: side, field, value.
+function M.set_unit_stat(request)
+    local side, field, value = request.side, request.field, request.value
+    if not M.SIDES[side or ""] then return { ok = false, error = "side must be player or bandit" } end
+    if not M.STAT_FIELDS[field or ""] then return { ok = false, error = "field is not an allowed stat: " .. tostring(field) } end
+    if type(value) ~= "number" or value < 0 or value > MAX_STAT_VALUE then
+        return { ok = false, error = "value must be a number from 0 to " .. MAX_STAT_VALUE }
+    end
+    local alive, changed = 0, 0
+    for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+        if isValid(unit) and read(function() return unit.dead end) ~= true and sideOfUnit(unit) == side then
+            alive = alive + 1
+            local wrote = pcall(function() unit[field] = value end)
+            local back = read(function() return unit[field] end)
+            if wrote and type(back) == "number" and math.abs(back - value) < 0.001 then changed = changed + 1 end
+        end
+    end
+    return { ok = true, side = side, field = field, value = value, alive = alive, changed = changed }
+end
+
+-- Observe-only hook on SMUnit:CombatHit. It counts calls and samples the stats of attacker and defender. It changes nothing.
+local hook = { registered = false, error = nil, enabled = false, calls = 0, by_side = {}, samples = {} }
+local MAX_HOOK_SAMPLES = 40
+
+local function statsOf(unit)
+    local out = {}
+    for _, name in ipairs(STAT_ORDER) do out[name] = read(function() return unit[name] end) end
+    return out
+end
+
+local function onCombatHit(_self, attacker, defender)
+    if not hook.enabled then return end
+    hook.calls = hook.calls + 1
+    local a = read(function() return attacker:get() end)
+    local d = read(function() return defender:get() end)
+    local aSide = a and sideOfUnit(a) or "?"
+    local dSide = d and sideOfUnit(d) or "?"
+    local key = tostring(aSide) .. ">" .. tostring(dSide)
+    hook.by_side[key] = (hook.by_side[key] or 0) + 1
+    if #hook.samples < MAX_HOOK_SAMPLES and a and d then
+        hook.samples[#hook.samples + 1] = { attacker = statsOf(a), defender = statsOf(d), key = key }
+    end
+end
+
+local function registerHook()
+    if hook.registered then return true end
+    local ok, err = pcall(RegisterHook, "/Script/ManorLords.SMUnit:CombatHit", onCombatHit, function() end)
+    if not ok then hook.error = tostring(err); return false end
+    hook.registered = true
+    return true
+end
+
+-- request.mode: start (reset counters and enable), stop (disable) or read.
+function M.combat_hook(request)
+    local action = request and request.mode
+    if action == "start" then
+        if not registerHook() then return { ok = false, error = "RegisterHook: " .. tostring(hook.error) } end
+        hook.calls, hook.by_side, hook.samples, hook.enabled = 0, {}, {}, true
+    elseif action == "stop" then
+        hook.enabled = false
+    elseif action ~= "read" then
+        return { ok = false, error = "action must be start, stop or read" }
+    end
+    return { ok = true, enabled = hook.enabled, registered = hook.registered, calls = hook.calls, by_side = hook.by_side, samples = hook.samples }
+end
+
+---------------------------------------------------------------------------------------------
 -- Mercenaries (spike P5)
 ---------------------------------------------------------------------------------------------
 

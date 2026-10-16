@@ -1,6 +1,6 @@
 """FakeGameClock: the game clock with pause and speed, as seen in the real game.
 
-Source: docs/specs/02-save-autoload/implementation-notes/pause-and-game-speed.md
+Source: docs/harness/02-save-autoload/implementation-notes/pause-and-game-speed.md
 """
 
 # setGameSpeed(0) was measured to leave the clock moving a little (0.8 in 3 s).

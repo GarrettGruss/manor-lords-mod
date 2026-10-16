@@ -1,7 +1,7 @@
 """Install a save into the game's save folder under a free slot name, and remove it again (spec 06, part D).
 
 Why this exists: the game lists and loads saves only from the user's REAL save folder, and only names `saveGame_<n>` up to
-the highest number there (docs/specs/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md). The slot name the game
+the highest number there (docs/harness/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md). The slot name the game
 uses comes from the `saveSlot` value inside `<slot>_descr.sav`, not from the file name. So an install copies the files under the
 next free name and rewrites `saveSlot` in the copied descriptor.
 
@@ -178,3 +178,11 @@ def uninstall_all(save_dir: Path, ledger_path: Path | None = None) -> list[dict]
     results = [uninstall(entry) for entry in mine]
     _write_ledger([entry for entry in entries if entry not in mine], ledger_path)
     return results
+
+
+def record_saved(save_dir: Path, slot: str, label: str, files: dict, ledger_path: Path | None = None) -> None:
+    """Put files that the game wrote (a harness save, spec 24) into the ledger, so the run end or the next run deletes them."""
+    ledger_path = ledger_path or LEDGER_PATH
+    entries = read_ledger(ledger_path)
+    entries.append(Installed(slot, label, dict(files), str(save_dir)).as_dict())
+    _write_ledger(entries, ledger_path)

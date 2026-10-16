@@ -10,7 +10,10 @@ SEMVER = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)
 NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 PAK_NAME = re.compile(r"^[A-Za-z0-9_-]+$")
 PAK_SOURCES = ("build", "file")
-KEYS = {"name", "version", "description", "shared", "pak", "tested", "gate_scenarios"}
+REQUIRED_KEYS = {"name", "version", "description", "shared", "tested", "gate_scenarios"}
+OPTIONAL_KEYS = {"pak", "display_name", "features"}
+KEYS = REQUIRED_KEYS | OPTIONAL_KEYS
+FEATURE_KEYS = {"name", "requires", "ids"}
 TESTED_KEYS = {"game", "game_build", "ue4ss"}
 PAK_KEYS = {"name", "source", "path"}
 
@@ -33,6 +36,52 @@ def _check_name_list(manifest: dict, key: str, problems: list[str], *, allow_emp
         problems.append(f"{key} must not be empty")
     elif len(set(value)) != len(value):
         problems.append(f"{key} has a duplicate")
+
+
+def _check_ids(feature: str, ids: object, problems: list[str]) -> None:
+    if not isinstance(ids, dict):
+        problems.append(f"features[{feature}].ids must be an object of table name -> [first, last]")
+        return
+    for table, span in ids.items():
+        valid = (isinstance(span, list) and len(span) == 2 and all(isinstance(n, int) and not isinstance(n, bool) and n >= 0 for n in span)
+                 and span[0] <= span[1])
+        if not valid:
+            problems.append(f"features[{feature}].ids.{table} must be [first, last] with 0 <= first <= last")
+
+
+def _check_feature(feature: object, index: int, problems: list[str]) -> str | None:
+    """Check one entry of features. Return its name when it has a valid one."""
+    if not isinstance(feature, dict):
+        problems.append(f"features[{index}] must be an object with name, requires and ids")
+        return None
+    label = str(feature.get("name", index))
+    for key in sorted(feature.keys() - FEATURE_KEYS):
+        problems.append(f"features[{label}].{key} is not a known field")
+    name = feature.get("name")
+    if not isinstance(name, str) or not NAME.match(name):
+        problems.append(f"features[{index}].name must be a word (letters, digits, _)")
+        name = None
+    requires = feature.get("requires", [])
+    if not isinstance(requires, list) or not all(isinstance(item, str) and item for item in requires):
+        problems.append(f"features[{label}].requires must be a list of feature names")
+    if "ids" in feature:
+        _check_ids(label, feature["ids"], problems)
+    return name
+
+
+def _check_features(manifest: dict, problems: list[str]) -> None:
+    features = manifest.get("features")
+    if not isinstance(features, list):
+        problems.append("features must be a list of {name, requires, ids}")
+        return
+    names = [_check_feature(feature, index, problems) for index, feature in enumerate(features)]
+    known = {name for name in names if name}
+    if len(known) != len([name for name in names if name]):
+        problems.append("features has a duplicate name")
+    for feature in features:
+        if isinstance(feature, dict) and isinstance(feature.get("requires"), list):
+            problems += [f"features[{feature.get('name')}] requires {item!r}, which is not a feature" for item in feature["requires"]
+                         if isinstance(item, str) and item not in known]
 
 
 def _check_tested(manifest: dict, problems: list[str]) -> None:
@@ -73,7 +122,7 @@ def check_manifest(manifest: object, folder_name: str) -> list[str]:
     if not isinstance(manifest, dict):
         return ["the manifest must be a JSON object"]
     problems = [f"{key} is not a known field" for key in sorted(manifest.keys() - KEYS)]
-    problems += [f"{key} is missing" for key in sorted(KEYS - manifest.keys() - {"pak"})]
+    problems += [f"{key} is missing" for key in sorted(REQUIRED_KEYS - manifest.keys())]
     if "name" in manifest:
         if not isinstance(manifest["name"], str) or not NAME.match(manifest["name"]):
             problems.append("name must be a word (letters, digits, _)")
@@ -86,7 +135,12 @@ def check_manifest(manifest: object, folder_name: str) -> list[str]:
     if "shared" in manifest:
         _check_name_list(manifest, "shared", problems, allow_empty=True)
     if "gate_scenarios" in manifest:
-        _check_name_list(manifest, "gate_scenarios", problems, allow_empty=False)
+        # A mod with features may have no gate scenario yet (the features add them). A mod without features needs one.
+        _check_name_list(manifest, "gate_scenarios", problems, allow_empty="features" in manifest)
+    if "display_name" in manifest:
+        _check_text(manifest, "display_name", problems)
+    if "features" in manifest:
+        _check_features(manifest, problems)
     if "tested" in manifest:
         _check_tested(manifest, problems)
     _check_pak(manifest, problems)

@@ -96,6 +96,8 @@ def run_gate(manifest: dict, runs_root: Path, shared: list[str]) -> list[gate.Ga
     wanted = gate.current_hashes(REPO_ROOT / "mod", manifest["name"], shared)
     runs = gate.real_runs(runs_root)
     results = []
+    if not manifest["gate_scenarios"]:
+        print("warning: gate_scenarios is empty, so the real-game gate checks nothing")
     for scenario in manifest["gate_scenarios"]:
         try:
             results.append(gate.check_scenario(scenario, runs, wanted, manifest["tested"]["game_build"]))

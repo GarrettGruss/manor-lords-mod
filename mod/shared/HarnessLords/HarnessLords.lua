@@ -464,7 +464,7 @@ function M.claim_region(request)
     local region, why = checkedRegion(request, engineObject)
     if not region then return { ok = false, error = why } end
     local before = regionRow(region)
-    local ok, err = pcall(function() pawn:layClaim(region, false, false) end)
+    local ok, err = pcall(function() pawn:layClaim(region, false, request.consume == 1) end)
     if not ok then return { ok = false, error = "layClaim: " .. tostring(err) } end
     local middle = regionRow(region)
     if request.finalize == 1 then

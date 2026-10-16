@@ -5,7 +5,7 @@ description: Measure and update how much of the Invasion Mode brief is testable 
 
 # Coverage of the Invasion Mode criteria
 
-Source of truth: `docs/specs/10-invasion-testability/criteria.json` (40 criteria). The spec README has the same table. The tool: `harness/tools/coverage.py`.
+Source of truth: `docs/harness/10-invasion-testability/criteria.json` (40 criteria). The spec README has the same table. The tool: `harness/tools/coverage.py`.
 
 ## Commands
 ```

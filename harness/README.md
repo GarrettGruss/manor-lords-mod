@@ -66,7 +66,7 @@ Sides: `player`, `ai`, `bandit` (raiders and bandits), `civil`. `harness/runlib/
 Not possible: choose raid type or size, steer a squad, read unit type or health (`choose_raid_type`, `steer_squad` raise `ActionNotPossible`).
 Telemetry: start the launcher with `HARNESS_TELEMETRY_UNITS=1` and every sample has `custom.units` (counts by side, loot totals).
 Scenarios: `raid-timer`, `raid-spawn`, `raid-loot`, `raid-load`. The hidden `probe-raids` scenario (`HARNESS_PROBE=s1|s1b|s2|s5|s10`) is the research tool of the spikes.
-The scenario limit cap is 300 s (it was 120 s). Notes: `docs/specs/10-invasion-testability/implementation-notes/`.
+The scenario limit cap is 300 s (it was 120 s). Notes: `docs/harness/10-invasion-testability/implementation-notes/`.
 
 ### Sack primitives and the loot stand-in (spec 10, spikes S6 and R3)
 Actions (need `HarnessActions` version 8): `sack_census()` (read only: buildings by state, stock, stores, families, people of the player village),
@@ -75,7 +75,7 @@ Actions (need `HarnessActions` version 8): `sack_census()` (read only: buildings
 Fire burns for about 50 game seconds, then the building is rubble (type 75) and its goods are gone. A collapse is rubble at once and keeps the goods. Goods are removed one unit at a time (`consumeGoodNoCheck`), at most 5000 per call.
 Loot: the base game has no loot on the ground, so `drop_loot(count, good)`, `loot_piles()` and `recover_loot(pile)` drive a stand-in ledger (module `HarnessLoot`): the piles are Lua tables, and a recovery adds the goods with `GiveItemByID`.
 Scenarios: `sack-village` (S1), `sack-ruins` (the ruin state of R8; not tagged, because the rebuild cost is not verified), `sack-store-trip` (R7), `loot-drop-recovery` (R3). Helpers: `harness/runlib/sack.py`.
-Tests: `test_runlib_sack.py`, `test_fakegame_harnesssack.py`, `test_fakegame_sack_scenarios.py`. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S6.md` and `spike-R3.md`.
+Tests: `test_runlib_sack.py`, `test_fakegame_harnesssack.py`, `test_fakegame_sack_scenarios.py`. Notes: `docs/harness/10-invasion-testability/implementation-notes/spike-S6.md` and `spike-R3.md`.
 
 ### Unit data, typed units, fights and mercenaries (spec 10, spikes S7, P5, C1 and C2)
 Actions (need `HarnessActions` version 9): `datatable_info(table)`, `datatable_read(row, field, table)`, `datatable_rows(table="units")` and `datatable_write(row, field, value, table="units")`.
@@ -91,16 +91,16 @@ The base game has no horse unit in its templates, so C1 covers the templates tha
 
 ### Banner text, construction sites and ruins (spec 10, S9 and R8)
 `ctx.actions.show_message(text, subtext)` shows a banner (`PawnCPP:playEventMessage` with an `FName` type) and reads the text back from the widget; `read_message()` and `list_messages()` only read. Text: letters, digits, space and `, . ! : -`, at most 60 characters.
-Scenario `ui-countdown` (COVERS T4): "Raid in N days" for N = 4, 3, 2, widget text read back, screenshot for each N. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S9.md`.
+Scenario `ui-countdown` (COVERS T4): "Raid in N days" for N = 4, 3, 2, widget text read back, screenshot for each N. Notes: `docs/harness/10-invasion-testability/implementation-notes/spike-S9.md`.
 `building_sites(type)` lists the goods that a construction site needs; `ruin_building(type, method)` burns or collapses a built building; `demolish_ruins()`; `set_site_cost(type, good, amount)` lowers the cost of a site.
-AI lords (spec 10, spike S11, `docs/specs/10-invasion-testability/implementation-notes/baron-model.md`): `lords_state(log=12)` (lords, squads, challenges, the AI decision logs), `lord_declare_war(lord, target=0)`, `lord_declare_peace(lord, target=0)`, `lord_set_influence(lord, value)`, `lord_challenge(lord, target=0)`, `lord_claim(lord, target=0)`, `lord_spawn_army(lord, template, count, dx, dy)`, `spawn_ai_lord(name, can_build=False)`, `lord_start_ai(lord, speed=1, can_build=False)`, `regions_state()`, `lord_relations(lord)`, `lord_take_region(lord, region)` (spike S13, `dynamic-lords.md`; `settleRegion` crashes the game and is not offered). A lord is a number from 1 (lord 1 was the baron); target 0 is the player. The game's AI moves the armies; these calls steer its inputs. While armies are seen the game drops to 1x; `ctx.time.run_game_*` sets the speed again about once a second (`speed_resets` in the record).
+AI lords (spec 10, spike S11, `docs/harness/10-invasion-testability/implementation-notes/baron-model.md`): `lords_state(log=12)` (lords, squads, challenges, the AI decision logs), `lord_declare_war(lord, target=0)`, `lord_declare_peace(lord, target=0)`, `lord_set_influence(lord, value)`, `lord_challenge(lord, target=0)`, `lord_claim(lord, target=0)`, `lord_spawn_army(lord, template, count, dx, dy)`, `spawn_ai_lord(name, can_build=False)`, `lord_start_ai(lord, speed=1, can_build=False)`, `regions_state()`, `lord_relations(lord)`, `lord_take_region(lord, region)` (spike S13, `dynamic-lords.md`; `settleRegion` crashes the game and is not offered). A lord is a number from 1 (lord 1 was the baron); target 0 is the player. The game's AI moves the armies; these calls steer its inputs. While armies are seen the game drops to 1x; `ctx.time.run_game_*` sets the speed again about once a second (`speed_resets` in the record).
 
 Manor (spec 12): `manor_state()`, `finish_manor_site(type)` (harness shortcut: the test village cannot finish a Keep), `manor_put(good, amount)`, `manor_take(good, amount)`, `manor_stock(good)`. Scenario `manor-storage` (COVERS M1, hidden: real mouse, run it alone with a visible game window, about 70 s). Worker slots: `manor_worker_slot(job=45, slots=3)` (the Keep gets the slots and role of a Storehouse; job 44 is a Granary), `manor_assign_worker(family=None)`, `manor_unassign_workers()`, `manor_worker_state()`. Scenario `manor-storage-workers` (COVERS M1, hidden: real mouse, run it alone, about 90 s): no goods arrive without a worker, a worker carries goods into the Keep after the assignment.
 Scenario `rebuild-cost` (COVERS R8, hidden: it uses the real OS mouse through `place_building`, run it alone with `run.py --scenario rebuild-cost` and a visible game window, about 85 s). Notes: `spike-R8.md`.
 
 ### Pop-ups and soak runs (spec 10, S8 and Q1)
 An open pop-up ("Hunger!") pauses the game until Accept is pressed. `ctx.actions.close_popups()` (command `close_popups` of `HarnessActions`) presses Accept on every open pop-up, and the game goes on at the old speed.
-`ctx.popups()` does the same without checks and remembers the types (`ctx.popups.closed`). Use it as `on_poll` of `ctx.run_until`. `ctx.actions.popup_state()` only reads. Notes: `docs/specs/10-invasion-testability/implementation-notes/spike-S8.md`.
+`ctx.popups()` does the same without checks and remembers the types (`ctx.popups.closed`). Use it as `on_poll` of `ctx.run_until`. `ctx.actions.popup_state()` only reads. Notes: `docs/harness/10-invasion-testability/implementation-notes/spike-S8.md`.
 Scenario `soak-days` (COVERS Q1): 8x speed for 600 wall seconds (about 120 game days), pop-ups closed, 100 Fish every 10 game days (the start village is defeated at day 137 without food), `GameOver` on a defeat, then asserts on the game process, the days run, the clock rate while running and the process memory. `HARNESS_SOAK_WALL_S` (60 to 3900) sets the wall time and the scenario limit follows. A 2-year soak (3650 s) cannot finish on the start village: it is defeated in its first winter at about day 350 (`implementation-notes/soak-results.md`).
 
 ### Assertions (`ctx.expect`)
@@ -269,7 +269,7 @@ The loop takes about 2 s. `HarnessBoot` and `HarnessReload` are not restarted by
 
 The mod `HarnessReload` does the work: it reads `<run>/reload.json` (`{"mod", "id"}`), calls `RestartMod`, and writes `reload.result.json`.
 A reloadable mod needs `local VERSION = "..."` and a log line `loaded version <VERSION>` with its folder name as tag.
-A syntax error is not in `mod.log`; look at `ue4ss\UE4SS.log` (`Error loading script`). Details: `docs/specs/06-dev-loop-and-fixtures/implementation-notes/hot-reload.md`.
+A syntax error is not in `mod.log`; look at `ue4ss\UE4SS.log` (`Error loading script`). Details: `docs/harness/06-dev-loop-and-fixtures/implementation-notes/hot-reload.md`.
 UE4SS auto reload is also on in this install, but it reloads only one mod when two change together, so the tool does not rely on it.
 
 ```powershell
@@ -281,7 +281,7 @@ uv run python -m unittest discover -s harness/tests -p "test_reload_mods.py" -v
 ## Save fixtures
 
 Spec 06, part D (2026-10-11). The game lists and loads saves only from the user's REAL save folder, and before this date every run
-started a NEW game instead of the fixture (`docs/specs/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md`).
+started a NEW game instead of the fixture (`docs/harness/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md`).
 - A fixture's files are kept in `harness\fixtures\saves\<name>\` (`slot.sav`, `slot_descr.sav`, images). Git ignores that folder.
   `harness\fixtures\fixtures.json` keeps the hashes, the description and the tags.
 - A run copies the fixture into the user's save folder under the next free name (`saveGame_<max+1>`), rewrites `saveSlot` in the copied
@@ -329,9 +329,10 @@ A failed read-back also adds a failed assertion, so the verdict is `fail`. Call 
 | `place_building(type_id, fx=0.65, fy=0.65)` | One more building of that type in the player region. **Uses the OS mouse and keyboard focus: do not use it while a person works on this computer.** The window comes to the front, the real cursor clicks the ground at that fraction of the window, and the cursor goes back. Aborts with an error if the game is not the foreground window or no ground is under the cursor. The player needs the goods of the building (HitchingPost 30 is free); a spot that overlaps another building places nothing. Scenario `place-building`. Code: `harness/runlib/osinput.py` |
 | `send_letter(["welcome_from_hildebolt"], sender=1)` | an AI lord sends a letter. Needs the mod `HarnessActions` |
 
-`save_state`, `get_item_info`, `remove_all_families` and `spawn_raiders` raise `ActionNotPossible` with the reason. An unknown name does too.
+`get_item_info`, `remove_all_families` and `spawn_raiders` raise `ActionNotPossible` with the reason. An unknown name does too.
+`save_game(label, keep=False)` (spec 24) is the guarded save into a new `saveGame_<N>` slot: backup of the save folder first, files deleted at the run end unless `keep=True`, restore and raise if an existing file changes. Not run in the real game yet.
 The runner turns it into a failed scenario (assertion `action is possible`), not a crash. `ctx.actions.available()` lists the names.
-Status, numbers and caveats of every action: `docs/specs/07-feature-test-kit/implementation-notes/actions-catalog.md`.
+Status, numbers and caveats of every action: `docs/harness/07-feature-test-kit/implementation-notes/actions-catalog.md`.
 
 The cheat manager actions (`give_item`, `set_settlement_level`, `spawn_bandit_squad`) need the stock UE4SS mod `CheatManagerEnablerMod` to be on in `ue4ss\Mods\mods.txt`.
 **Never call `PawnCPP:requestSaveFile`.** It writes into the user's real save folder, not into the private one (see the catalog).
@@ -342,11 +343,11 @@ Helpers in the bridge client: `write_property`, `count_objects`, `region_paths`,
 The game's autosave timer runs in real time, also while the game is paused, and an autosave writes into the user's REAL save folder.
 `HarnessBoot` has a step `DISABLING_AUTOSAVE` before `PAUSING`: it restarts the timer with a one year period (`MLGameInstance:SetAutosavePeriodOnPawn`) and fails the boot if the timer is not far away.
 `PAUSING` does not call `pauseGame` while the intro cinematic plays (`PawnCPP.currentUIMode ~= 0`): its end restores 1x and would undo the pause (spec 02, `clock-restart-cause.md`). The 8 s hold stays as a safety net.
-`ctx.actions.autosave_status()` reads the timer. Scenario `autosave-protection` checks it over 60 game seconds. Notes: `docs/specs/06-dev-loop-and-fixtures/implementation-notes/autosave.md`.
+`ctx.actions.autosave_status()` reads the timer. Scenario `autosave-protection` checks it over 60 game seconds. Notes: `docs/harness/06-dev-loop-and-fixtures/implementation-notes/autosave.md`.
 
 ### DataTable commands (spec 09 first check)
 `HarnessActions` also has `datatable_info`, `datatable_read` and `datatable_write` for number fields (`Weight`, `Value`, `spoilageRate`) of `RTSMultiEngineCPP.itemStats` rows.
-Do not read `RowStruct` or whole `Item` structs through the bridge: it crashes the game. Notes: `docs/specs/09-asset-mods/implementation-notes/datatable-check.md`.
+Do not read `RowStruct` or whole `Item` structs through the bridge: it crashes the game. Notes: `docs/harness/09-asset-mods/implementation-notes/datatable-check.md`.
 
 ### Helper mod HarnessActions
 For game functions that need object parameters. The client `runlib/commands.py` (`CommandChannel`) writes `<run>/commands/0001.json`, `0002.json`, ... in order. The mod runs the command on the game thread
@@ -361,8 +362,8 @@ Tests: `uv run python -m unittest discover -s harness/tests -p "test_runlib_acti
 
 ## Asset mods (spec 09)
 `harness/tools/pakmod.py` finds and extracts assets from the game paks, converts them to JSON and back, builds a patch pak, and installs and removes it.
-Tools: repak (paks) and the UAssetGUI command line (one asset). **Status: verified with the real tools and the real game (spike 2026-10-10, `docs/specs/09-asset-mods/implementation-notes/pak-spike-findings.md`).**
-Use Lua first. Build a pak only when the data cannot be changed at runtime (`docs/specs/09-asset-mods/README.md`).
+Tools: repak (paks) and the UAssetGUI command line (one asset). **Status: verified with the real tools and the real game (spike 2026-10-10, `docs/harness/09-asset-mods/implementation-notes/pak-spike-findings.md`).**
+Use Lua first. Build a pak only when the data cannot be changed at runtime (`docs/harness/09-asset-mods/README.md`).
 
 Setup (only you can do this; the repo has no tools and no AES key):
 1. Get `repak.exe` (github.com/trumank/repak releases) and `UAssetGUI.exe` (v1.1.0 is verified) (github.com/atenfyr/UAssetGUI releases). Review them. Put them outside the repo, for example `C:\modtools\`.
@@ -391,15 +392,15 @@ pakmod.py remove <name>       # or: remove --all. Deletes only manifest files wh
 ```
 Exit codes: 0 ok, 1 error, 3 a tool does not match its pinned hash, 4 the built pak lists other files than the folder.
 The build folder `<work_dir>\<name>\` holds the edited files in the game layout, for example `ManorLords\Content\NotStronghold\Data\DT_Items.uasset`.
-The config can override the argument templates (key `templates`), because the real tools may differ by version. Command facts: `docs/specs/09-asset-mods/implementation-notes/cli-reference.md`.
+The config can override the argument templates (key `templates`), because the real tools may differ by version. Command facts: `docs/harness/09-asset-mods/implementation-notes/cli-reference.md`.
 
 `uninstall.ps1 -Remove` also removes the manifest paks. Restart the game after install or remove (the launcher starts a new game for each run anyway).
 To check the effect: set `HARNESS_EXPECT_ITEM_ROWS='{"17": {"Value": 0.75}}'` in the shell, then run `run.py --scenario datatable-vanilla --pak <name>`. It passes with the pak and fails without it (verified). `fromjson` needs an absolute path for the JSON file.
-Without a pak the scenario compares 24 `itemStats` rows with `harness/vanilla/itemStats.json` (about 50 s per run). Details: `docs/specs/09-asset-mods/implementation-notes/tooling.md`.
+Without a pak the scenario compares 24 `itemStats` rows with `harness/vanilla/itemStats.json` (about 50 s per run). Details: `docs/harness/09-asset-mods/implementation-notes/tooling.md`.
 Tests: `uv run python -m unittest discover -s harness/tests -p "test_pakmod.py" -v` and `test_runlib_itemtable.py`.
 
 ## Coverage of a feature (criteria and COVERS)
-The tool `harness/tools/coverage.py` measures how many criteria of spec 10 (Invasion Mode) have a verified test method. Data: `docs/specs/10-invasion-testability/criteria.json`.
+The tool `harness/tools/coverage.py` measures how many criteria of spec 10 (Invasion Mode) have a verified test method. Data: `docs/harness/10-invasion-testability/criteria.json`.
 - Tag a scenario: add a module constant `COVERS = ["T1", "T2"]` (criterion ids). The tool reads it with `ast`. It never runs the scenario file. An unknown id is an error.
 - Mark a criterion verified: a scenario that covers it and has a passing run (newest `runs/*/summary.json` of that scenario with verdict `pass`) counts. A spike result counts too: set `method_verified` to true in `criteria.json` and list the evidence (note path or scenario name) in `verified_by`.
 - Run: `uv run python harness\tools\coverage.py` (options: `--json`, `--min-verified 0.9`, `--runs-root`, `--criteria`, `--check-spec`). Exit code 0 is ok, 1 is a failed check, 2 is bad input.
@@ -407,7 +408,7 @@ The tool `harness/tools/coverage.py` measures how many criteria of spec 10 (Inva
 - Tests: `uv run python -m unittest harness/tests/test_coverage.py`.
 
 ## A/B variants and statistics
-Combat is not deterministic, so a feature is judged over N runs per variant (spec 10, U4). Rules and limits: `docs/specs/10-invasion-testability/implementation-notes/ab-statistics.md`.
+Combat is not deterministic, so a feature is judged over N runs per variant (spec 10, U4). Rules and limits: `docs/harness/10-invasion-testability/implementation-notes/ab-statistics.md`.
 - `run.py --pak <name>` (repeatable) installs the built pak `<work_dir>\out\<name>_P.pak` before the game starts and always removes it at the end (also after a crash). The work folder comes from `harness\pakmod.local.json` (`--pak-config`).
 - `run.py --env KEY=VALUE` (repeatable) sets a variable for the game process. Name `^[A-Z][A-Z0-9_]{0,63}$`, not starting with `HARNESS_RUN_DIR`, `LOCALAPPDATA`, `PATH` or `UE4SS_BRIDGE`. Value printable, no newline, at most 256 characters. A value is hidden in `config.json` if the name contains KEY, TOKEN, SECRET or PASSWORD. `summary.environment` lists env keys only.
 - Suite entry with variants (the first variant is the reference; no `variants` means one variant `default`):
@@ -422,11 +423,11 @@ Combat is not deterministic, so a feature is judged over N runs per variant (spe
 - Tests: `test_suitelib_stats.py`, `test_suitelib_ab.py`, `test_runlib_variant.py`.
 
 ## Mod state: commands and metrics of a mod
-A mod can expose its own state to the harness (spec 10, U10). Full rules, an example and the security rules: `docs/specs/10-invasion-testability/implementation-notes/mod-state-contract.md`.
+A mod can expose its own state to the harness (spec 10, U10). Full rules, an example and the security rules: `docs/harness/10-invasion-testability/implementation-notes/mod-state-contract.md`.
 - In the mod: `require("HarnessCommands").register("MyMod.command", handler, schema)` for actions, and `require("HarnessCommands").metric("MyMod.metric", fn)` for values. Names follow `<ModName>.<name>`. UE4SS gives every mod its own Lua state, so each mod serves its own commands: the first call starts a poller for `<run>/modcmd/MyMod/` in the state of the mod. The schema lists each argument with `type` (`number`, `integer`, `string`, `boolean`) and optional `required`, `min`, `max`, `maxLength`, `oneOf`. Bad arguments are refused before the handler runs.
 - In a scenario: `ctx.mod.command("MyMod.command", amount=5)` (returns the result, raises `ModCommandError` with the message of the mod), `ctx.mod.refusal(...)`, `ctx.mod.commands("MyMod")`, `ctx.mod.metric("MyMod.metric", None)`, `ctx.mod.wait_metric(name, predicate, timeout_s)`, `ctx.mod.metrics_window()`. A metric is read from the mod when you ask (the command `harness.metrics`), so it is current. A mod that is not loaded raises `ModDidNotAnswer` ("mod did not answer: MyMod"). The fake game kit has `FakeGame(separate_states=True)` to run each mod in its own Lua state, like UE4SS.
 - Stand-in scenarios `standin-outposts`, `standin-captives` and `standin-tribute` use the test mod `InvasionStandIn` (a toy model, not the real mod). They are tested with the fake game kit only; the real-game run is pending.
-- Raid stand-in scenarios (the test mod `RaidStandIn`, a toy model of the raid director, tiers, warlord, sack rule and pressure systems; notes: `docs/specs/10-invasion-testability/implementation-notes/raid-standin.md`):
+- Raid stand-in scenarios (the test mod `RaidStandIn`, a toy model of the raid director, tiers, warlord, sack rule and pressure systems; notes: `docs/harness/10-invasion-testability/implementation-notes/raid-standin.md`):
   `raid-timeline` (T1, T3; waits real game days), `raid-seasons` (T5, P6), `raid-behavior` (R1, R4, R6), `raid-tiers` (D1, D2, D3; reports `tierN_mean_size` and `tierN_mean_raids` with `ctx.metric`),
   `raid-sack` (S2, S3), `raid-politics` (P1, P2, P4). The commands `set_day` and `advance_days` move the toy clock, `configure seed=N` makes a run repeatable. The helper package `harness/raidstandin/` is not a scenario package.
   The suite `raid-size-ab` runs `raid-tiers` with `RAID_STANDIN_SIZE_PERCENT` 100 and 150 as a real A/B example for the mod. Tested with the fake game kit only (`test_fakegame_raidstandin.py`, `test_fakegame_raid_scenarios.py`); the real-game run is pending.

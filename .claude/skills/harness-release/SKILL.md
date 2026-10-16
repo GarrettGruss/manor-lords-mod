@@ -5,13 +5,13 @@ description: Release a mod to play testers as a GitHub pre-release (manifest, ch
 
 # Mod releases (spec 19)
 
-A release is one zip for one mod version. Rules are in `docs/specs/19-mod-releases/README.md`.
+A release is one zip for one mod version. Rules are in `docs/harness/19-mod-releases/README.md`.
 
 ## Make a mod releasable
 0. Example: `mod/RefugeeWaves` (version 0.1.0, needs only `ManorCore`; gate scenario `refugee-wave`).
 1. The mod must not need harness-only modules. Allowed: `ManorCore` (player-safe game calls and a logger that falls back to `print`) and shared modules that need nothing harness-only. Not allowed: `HarnessActions`, `HarnessBoot`, `HarnessLog`, `HarnessCommands`, `HarnessTelemetry`, `HarnessReload`, `HarnessAutosave`, `UEBridge`, stand-ins and probes. Need a game call that lives only in a Harness module? Move it into `mod/shared/ManorCore/ManorCore.lua` and let the Harness module call it. Keep the fake tests green.
 2. Optional dependencies use `pcall(require, "HarnessCommands")`. Only a plain `require("X")` counts as a hard dependency (the checker reads it).
-3. `mod/<Name>/mod.json`: `name` (the folder name), `version` (semver), `description`, `shared` (every hard-required shared module), `pak` (`null`, or `{name, source: "build"}` or `{name, source: "file", path}`), `tested` (`game`, `game_build`, `ue4ss`), `gate_scenarios`.
+3. `mod/<Name>/mod.json`: `name` (the folder name), `version` (semver), `description`, `shared` (every hard-required shared module), `pak` (`null`, or `{name, source: "build"}` or `{name, source: "file", path}`), `tested` (`game`, `game_build`, `ue4ss`), `gate_scenarios` (may be empty only when `features` is set). Optional: `display_name` (the player-facing name; text for players comes from here) and `features` (list of `{name, requires, ids}`; `ids` maps a table name to `[first, last]`). A release leaves out the `data/` and `scenarios/` folders of the mod, and the gate hashes ignore them.
 4. `mod/<Name>/CHANGELOG.md`: Keep a Changelog, one `## [x.y.z] - date` section for each version.
 
 ## Release steps

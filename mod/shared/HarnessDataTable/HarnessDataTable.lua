@@ -15,7 +15,8 @@ M.DEFAULT_KIND = "items"
 -- Units: /Script/ManorLords.UnitTemplate cost 100 (float), maxSize 256 (int), minMeleeTraining 296 and minArcheryTraining 300 (float),
 -- minHouseLv 304 (int), combatExperience 312 (float).
 M.TABLES = {
-    items = { fields = { Weight = true, Value = true, spoilageRate = true } },
+    -- def, block, att, armorPierce: combat numbers of Item (spec 25).
+    items = { fields = { Weight = true, Value = true, spoilageRate = true, def = true, block = true, att = true, armorPierce = true } },
     units = {
         path = "/Game/NotStronghold/Data/DT_UnitTemplates.DT_UnitTemplates",
         fields = { cost = true, maxSize = true, minMeleeTraining = true, minArcheryTraining = true, minHouseLv = true, combatExperience = true },

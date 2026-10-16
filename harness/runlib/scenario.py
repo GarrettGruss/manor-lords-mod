@@ -11,6 +11,7 @@ A scenario is a Python module in `harness/scenarios/`. It defines:
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import os
 import pkgutil
 import sys
@@ -43,6 +44,7 @@ class ScenarioInfo:
 
 SCENARIOS: dict[str, Callable] = {}
 SCENARIO_INFO: dict[str, ScenarioInfo] = {}
+SCENARIO_SOURCE: dict[str, Path] = {}  # the file that defines each discovered scenario
 
 
 def check_limit(name: str, limit_s: float, long_reason: str = "") -> None:
@@ -97,6 +99,19 @@ def list_scenarios(include_hidden: bool = False) -> dict[str, ScenarioInfo]:
     }
 
 
+def _register_module(module, source: Path) -> None:
+    """Register the scenario of one module. The same file twice is ignored. Another file with the same name fails."""
+    name = getattr(module, "NAME", module.__name__.rsplit(".", 1)[-1].replace("_", "-"))
+    if name in SCENARIOS:
+        if SCENARIO_SOURCE[name] == source:
+            return
+        raise ValueError(f"Scenario {name!r} is defined twice: {SCENARIO_SOURCE[name]} and {source}. Scenario names must be unique.")
+    summary = (module.__doc__ or "").strip().splitlines()[0:1]
+    register(name, module.LIMIT_S, getattr(module, "HIDDEN", False), summary[0] if summary else "",
+             getattr(module, "LONG_REASON", ""))(module.run)
+    SCENARIO_SOURCE[name] = source
+
+
 def load_scenario_modules(package: str = "scenarios") -> None:
     """Import every module of the scenarios package and register it."""
     harness_dir = str(REPO_ROOT / "harness")
@@ -105,12 +120,24 @@ def load_scenario_modules(package: str = "scenarios") -> None:
     package_module = importlib.import_module(package)
     for module_info in pkgutil.iter_modules(package_module.__path__):
         module = importlib.import_module(f"{package}.{module_info.name}")
-        name = getattr(module, "NAME", module_info.name.replace("_", "-"))
-        if name in SCENARIOS:
-            continue
-        summary = (module.__doc__ or "").strip().splitlines()[0:1]
-        register(name, module.LIMIT_S, getattr(module, "HIDDEN", False), summary[0] if summary else "",
-                 getattr(module, "LONG_REASON", ""))(module.run)
+        _register_module(module, Path(module.__file__).resolve())
+
+
+def mod_scenario_files(mod_root: Path) -> list[Path]:
+    """The scenario files of all mods: mod/<Name>/scenarios/**/*.py (files that start with _ are helpers)."""
+    return sorted(path for path in mod_root.glob("*/scenarios/**/*.py") if not path.name.startswith("_"))
+
+
+def load_mod_scenarios(mod_root: Path = REPO_ROOT / "mod") -> None:
+    """Import and register the scenarios that a mod keeps beside its own files."""
+    for path in mod_scenario_files(mod_root):
+        relative = path.relative_to(mod_root).with_suffix("")
+        module_name = "modscenario_" + "_".join(relative.parts)
+        spec = importlib.util.spec_from_file_location(module_name, path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+        _register_module(module, path.resolve())
 
 
 def configure_bridge_client(ctx: PhaseContext, install: GameInstall) -> Bridge:
@@ -131,3 +158,4 @@ def configure_bridge_client(ctx: PhaseContext, install: GameInstall) -> Bridge:
 
 
 load_scenario_modules()
+load_mod_scenarios()

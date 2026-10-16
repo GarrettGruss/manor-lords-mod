@@ -1,7 +1,7 @@
 -- HarnessBattlefield: steer the battle place of a challenge (spec 10, spike for issue #99).
 -- Why: initChallenge picks one battlefield_BP_C actor as the battle site. If every such actor stands at one anchor
 -- at that moment, the challenge keeps the anchor. The actors go back to their places after a short delay.
--- The idea comes from a public mod (see docs/specs/13-mod-inspection/implementation-notes/better-battlefield.md).
+-- The idea comes from a public mod (see docs/harness/13-mod-inspection/implementation-notes/better-battlefield.md).
 -- This code is our own.
 --
 -- Rules: call only on the game thread. No save function. Every input is checked before it is used.
