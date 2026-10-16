@@ -41,6 +41,9 @@
 --   {"command":"spawn_units","side":"player","template":"spearMilitia","count":1,"dx":0,"dy":0}   spawnArmy with a chosen template; dx, dy from the player pawn
 --   {"command":"battle_state","detail":1}                      living units, experience and casualties of the squads that this mod spawned or hired
 --   {"command":"clear_battle","side":"bandit"}                 kill the units of those squads (of one side if "side" is given) and forget them
+--   {"command":"unit_stats","side":"bandit"}                   mean att, def, block, armorPierce, morale of the living units of the registry (spec 25)
+--   {"command":"set_unit_stat","side":"player","field":"def","value":0}  write one SMUnit stat on the living units of a side, read back (spec 25)
+--   {"command":"combat_hook","mode":"start"}                 observe-only hook on SMUnit:CombatHit; start, stop or read the call counts (spec 25)
 --   {"command":"set_squad_experience","squad":8,"value":20}    write combatExperience on the living units of one of those squads
 --   {"command":"mercenary_offers"}                             the companies that can be hired (read only)
 --   {"command":"hire_mercenaries","company":"greencaps"}       hireMercs for one offered company; refused when the silver is below the cost
@@ -166,7 +169,7 @@ local battlefield = require("HarnessBattlefield")
 local garrison = require("HarnessGarrison")
 local harnessSave = require("HarnessSave")
 
-local VERSION = "51"
+local VERSION = "52"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -462,6 +465,9 @@ local COMMANDS = {
     battle_state = battle.battle_state,
     clear_battle = battle.clear_battle,
     set_squad_experience = battle.set_squad_experience,
+    unit_stats = battle.unit_stats,
+    set_unit_stat = battle.set_unit_stat,
+    combat_hook = battle.combat_hook,
     mercenary_offers = battle.mercenary_offers,
     hire_mercenaries = battle.hire_mercenaries,
     raid_state = raids.raid_state,
