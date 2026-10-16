@@ -131,9 +131,11 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 
 ## Safety
 
-- Never call a game function that saves: `PawnCPP:requestSaveFile`, `SaveToDiskWithThumbnail`, `IoHandler:SaveGameToSlot`, `RequestMenuSave`, `Request Autosave`.
-  They write into the user's REAL save folder, even when a run has a private `LOCALAPPDATA`. A probe overwrote the user's `saveGame_9` this way (restored from the user's backup).
-  The launcher hashes the user's save folder before and after each run. That guard only reports a change after it happened.
+- Game save functions write into the user's REAL save folder, even when a run has a private `LOCALAPPDATA`: `PawnCPP:requestSaveFile`, `SaveToDiskWithThumbnail`, `IoHandler:SaveGameToSlot`, `RequestMenuSave`, `Request Autosave`. A probe overwrote the user's `saveGame_9` this way (restored from the user's backup).
+  - The user approved that the harness makes saves (2026-10-15), but ONLY through the guarded harness action `save_game` (spec 24). It backs up the save folder, saves to a new `harness_` slot, and fails and restores if any existing save file changes.
+  - Until `save_game` exists with its fake tests, no save calls at all. Never call a save function from a probe, a scenario or `eval_lua`. Never call `Request Autosave`.
+  - Player mods (the Invasion Mod) never call a save function. They react to the player's saves through hooks.
+  - The launcher hashes the user's save folder before and after each run. That guard only reports a change after it happened.
 - The game's autosave timer runs in real time, also while the game is paused (about 10 min after a load). `HarnessBoot` pushes it one year away before READY (`MLGameInstance:SetAutosavePeriodOnPawn`, checked 2026-10-10). Do not call `Request Autosave` or the native `SetAutosavePeriod`.
 - A game crash writes its UE crash report into the REAL `%LOCALAPPDATA%\ManorLords\Saved\Crashes`, not the private one. The launcher copies it. Do not read struct values with soft object fields (`getItem`, `RowStruct`) through the bridge: it crashes the game.
 - Do not pass a Lua string to a UFunction that takes an `FName` argument on a component or mesh that may lack it. UE4SS crashes in `push_nameproperty` (access violation at `0x70`). Known cases: `pivot_attach`, and `GetSocketLocation` or `DoesSocketExist` on the ox shed meshes (spec 18 `hitch-socket-world-positions.md`). Read the socket list first (`GetAllSocketNames`), or skip the call.
