@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spike #104 and #102: command `building_assign_worker` (`type`, optional `family`; HarnessHousing, HarnessActions 50) assigns a family as worker of an own building. Pak `bigshed` (row 125 with a Meshy-made wide ox shed, `stableSpace` 4). The shed shows and builds, but only about 2 oxen hitch in it; hitch spots are native. Notes `big-ox-shed-test.md`, `ox-hitch-hook.md`, `stable4b-hitch-probe.md`, `hitch-socket-world-positions.md`, spec 21 `spike-b-big-ox-shed.md`.
 - Spec 26: commands `game_setup_state` and `game_setup_set_goal`, option `consume` of `claim_region`, probe `probe-claim-victory`. A claim shows the victory cinematic with goals Growth; goals Endless, Conquest or Dominance stop it (note `claim-victory-test.md`).
 - Spec 25: scenario `combat-levers` and suites `combat-def-ab`, `combat-armor-ab`, `combat-armor-high-ab`. HarnessActions 51 adds `unit_stats`, `set_unit_stat` (live SMUnit `def`, `block`, `att` and more, read back) and `combat_hook` (observe-only `SMUnit:CombatHit`, which never fires). `datatable_*` on items accepts `def`, `block`, `att`, `armorPierce`. Results in `docs/harness/25-combat-lethality/implementation-notes/ab-results.md`.
 - Spec 23: command `upgrade_stat` reads number fields of a DT_Upgrades row. `building_stat` accepts ids up to 70000. Tool `s127_make_ids_json.py` builds the `ids` test pak. Result: buildingStats ids up to 65536 work (`id-results.md`).
@@ -26,6 +27,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Soak (#53): `soak-days` accepts up to 13000 s of wall time (`MAX_LIMIT_S` 13500 s) and wider clock-rate (1.5 to 9) and days (0.2 to 1.1) ranges. A 3.3 h run reached day 333 of 730 with no crash and no memory growth; see spec 10 `open-items.md`.
 
 ### Fixed
+- Harness: the default placement click point is now (0.35, 0.3). The old point (0.65, 0.65) lay over the sawpit in fixture `base`, so the ghost was blocked (run 20261015-203710-6b45).
 - HarnessPlace: remove the `pivot_attach` and `pivot_move` commands. `pivot_attach` passed a Lua string as an FName and crashed the game in UE4SS `push_nameproperty`.
 - Real-mouse input (#115): `osinput` now fails at once with "no mouse device" when Windows reports no mouse (`SM_MOUSEPRESENT` 0). That state made `getMouse3d` return Z -100000 and blocked every real placement click. New tools `s115_input_env.py` and `s115_probe.py`; note `os-mouse-regression.md`. The placement itself still needs a mouse on the PC.
 

@@ -1,6 +1,6 @@
 # Spec 18: Custom composite buildings
 
-Status: Siege Camp build spike (#94) done in part: the camp has no build path (notes `siege-camp-build.md`). static, Lua part-edit and pak spikes done (2026-10-13). Placement of a new type id is open (needs the real mouse). Hidden and unused buildings: `implementation-notes/hidden-buildings.md`. Issue: #69. Branch: `feat/18-composite-buildings`. Mouse-free normal placement (#104, #115, 2026-10-15): not achieved, see `implementation-notes/mousefree-placement.md`.
+Status: Siege Camp build spike (#94) done in part: the camp has no build path (notes `siege-camp-build.md`). static, Lua part-edit and pak spikes done (2026-10-13). Placement of a new type id is open (needs the real mouse). Hidden and unused buildings: `implementation-notes/hidden-buildings.md`. Issue: #69. Branch: `feat/18-composite-buildings`. Mouse-free normal placement (#104, #115, 2026-10-15): not achieved, see `implementation-notes/mousefree-placement.md`. Real mouse back (2026-10-15): placement of vanilla row 30 and new row 125 works, see `implementation-notes/real-mouse-placement-proof.md`.
 
 Spec 13 lead (2026-10-14): MLArmyCampMod makes no buildable camp and no garrison (squad skills Encamp and Decamp by a native DLL; no row, no BM_ class), see `../13-mod-inspection/implementation-notes/ml-army-camp.md`. SwapShrine shows a Lua-only mesh swap on a finished building (`LoadAsset_Blocking` plus `SetStaticMesh`), see `../13-mod-inspection/implementation-notes/swap-shrine.md`.
 
@@ -54,9 +54,14 @@ From spec 15 notes (`tent-placement.md`, `burgage-placement-events.md`):
 - Done: Siege Camp card and placement, new `BM_` class from UE with new meshes placed and built (see `implementation-notes/siege-camp-and-bm.md`). Open: menu card for a new id, Siege Camp build.
 - Access points (#104, static): `gathering`, `workpos` and `res_<good>_<n>` + `workPos_add*` tags define entry and delivery; animal capacity is the row field `stableSpace`; no per-ox spot component found. Plan for a 4-oxen stable in `implementation-notes/access-points.md`.
 - Game round (#104, 2026-10-15): pak `stable4` (row 97 and new row 125, `stableSpace` 4, class `BM_HarnessLargeStable` with two real ox sheds) gives `stableMax` 4, two sheds and 4 housed oxen (HUD 4). Placing row 125 by mouse is open: the mouse does not reach the world (`getMouse3d` Z -100000). Notes `access-points.md` "Game round".
+- Real-mouse round (#104, #115, 2026-10-15): row 125 placed with a real click (white ghost, master type 125, built after 14 game days, stableMax 4, 4 oxen housed). Notes `real-mouse-placement-proof.md`.
 
 ## Earlier status (2026-10-13)
 - Done: static read (`implementation-notes/building-parts-static.md`) and the Lua part-edit test (`implementation-notes/part-edit-test.md`,
   HarnessActions 38, commands `master_parts`, `master_part_add`, `master_part_remove`, probe `probe-composite`).
 - Blocked: plan steps 3 and 4 (pak with a new type, building function). They need the AES key to extract and repack. Resume when the key is set.
 - Open: spawn a visible part from a real `BM_*` class; read `BlueprintPath` of rows 87 and 3 safely.
+
+## Decision (2026-10-15): ox hitch spots
+- The number of ox hitch spots is native (about 2 per stable). Hooks, mesh sockets and Scene probes did not show the source. A larger shed mesh does not add spots. Notes `big-ox-shed-test.md`, `ox-hitch-hook.md`.
+- Capacity 4 (`stableSpace`) is proven and stays. The 4-oxen stable is done as far as Lua and pak allow. No further hitch tests unless a way to create a hitching post (blocked by native code) is found.

@@ -125,6 +125,7 @@
 --   {"command":"plot_field_shift","dx":3000,"dy":0,"plots":true,"commit":true}   test only: move the drawn, closed plot outline of the pawn (plots: also extractedPlots), then commit it
 --   {"command":"plot_upgrade","upgrade":12,"slot":0,"extension":false}   spike: PawnCPP:addUpgradeRequest (or addExtensionChangeRequest) on the building under the mouse
 --   {"command":"plot_upgrade","upgrade":13,"type":97}   same, on the first own master of that building type (no mouse)
+--   {"command":"building_assign_worker","type":125}         put one family without a workplace (or "family":N) to work in the first own building of that type (issue 104, no mouse)
 --   Composite parts (spec 18, see mod/shared/HarnessParts):
 --   {"command":"master_parts","building":123,"limit":5}      parts and extensions of one building master (or "type":3: the first built one; read only)
 --   {"command":"master_site","type":483}                    state of a site, built or not: Region, owner, goods, builders (issue 94, read only)
@@ -174,7 +175,7 @@ local garrison = require("HarnessGarrison")
 local gameSetup = require("HarnessGameSetup")
 local harnessSave = require("HarnessSave")
 
-local VERSION = "53"
+local VERSION = "54"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -572,6 +573,7 @@ local COMMANDS = {
     plot_field_shift = housing.plot_field_shift,
     plot_field_place = housing.plot_field_place,
     plot_upgrade = housing.plot_upgrade,
+    building_assign_worker = housing.building_assign_worker,
     wall_pieces = walls.wall_pieces,
     wall_pieces_clear = walls.wall_pieces_clear,
     path_state = walls.path_state,
