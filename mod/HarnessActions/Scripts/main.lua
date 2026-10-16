@@ -163,6 +163,7 @@ local parts = require("HarnessParts")
 local steer = require("HarnessSteer")
 local battlefield = require("HarnessBattlefield")
 local garrison = require("HarnessGarrison")
+local gameSetup = require("HarnessGameSetup")
 
 local VERSION = "49"
 local TAG = "HarnessActions"
@@ -224,6 +225,8 @@ local function parseRequest(raw)
         field = raw:match('"field"%s*:%s*"([%w_]+)"'),
         value = tonumber(raw:match('"value"%s*:%s*(-?[%d%.]+)')),
         squads = tonumber(raw:match('"squads"%s*:%s*(%d+)')),
+        goal = tonumber(raw:match('"goal"%s*:%s*(%d+)')),
+        consume = tonumber(raw:match('"consume"%s*:%s*(%d+)')),
         count = tonumber(raw:match('"count"%s*:%s*(%d+)')),
         sample = tonumber(raw:match('"sample"%s*:%s*(%d+)')),
         amount = tonumber(raw:match('"amount"%s*:%s*(%d+)')),
@@ -504,6 +507,8 @@ local COMMANDS = {
     lord_relations = lordsCmd.lord_relations,
     lord_take_region = lordsCmd.lord_take_region,
     claim_region = lordsCmd.claim_region,
+    game_setup_state = gameSetup.game_setup_state,
+    game_setup_set_goal = gameSetup.game_setup_set_goal,
     settle_region = lordsCmd.settle_region,
     lord_receive_region = lordsCmd.lord_receive_region,
     lord_found_village = lordsCmd.lord_found_village,

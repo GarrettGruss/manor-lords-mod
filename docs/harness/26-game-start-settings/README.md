@@ -1,6 +1,6 @@
 # Spec 26: Game start and victory settings (spike)
 
-Status: proposed (2026-10-15). Issue: #130. Branch: `feat/26-game-start-settings`.
+Status: A1, A2, A3 met (2026-10-16): writing goals = Endless (2) on MLGameInstance stops the victory on a claim, 3 of 3. Note `claim-victory-test.md`. Issue: #130. Branch: `feat/26-game-start-settings`.
 Needed by: the Invasion Mod (M00 feasibility decision 6 and open question 2).
 
 ## Goal
