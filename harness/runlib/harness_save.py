@@ -149,7 +149,7 @@ def save_game(save_dir: Path, send: Callable[..., dict], label: str, keep: bool 
     backup = backup_folder(save_dir, backup_root, now=now)
     before = fixtures.snapshot_user_files(save_dir)
     try:
-        send("save_game", slot=slot, name=f"harness {label}")
+        send("save_game", save_slot=slot, save_name=f"harness {label}")
         wait_for_slot(save_dir, slot, timeout_s, sleep, monotonic)
     except BaseException:
         _check_after_failure(save_dir, before, backup, slot, label, ledger_path)
