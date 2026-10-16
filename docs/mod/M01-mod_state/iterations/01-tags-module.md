@@ -1,6 +1,6 @@
 # M01 iteration 01: tags-module
 
-Branch: `feat/M01-mod_state-01-tags-module`. Issue: `Mod M01.01: tags-module` (not created yet).
+Branch: `feat/M01-mod_state-01-tags-module`. Issue: `Mod M01.01: tags-module` #142.
 
 ## Goal
 Build the `ModState` shared module for the pawn Tags, as designed in spec 24. Prove it in the real game with a harness save and a load.

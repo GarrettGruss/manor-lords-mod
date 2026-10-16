@@ -3,7 +3,7 @@
   "display_name": "Invasion Mode",
   "version": "0.1.0",
   "description": "Invasion mode for Manor Lords, built from separate features.",
-  "shared": ["ManorCore"],
+  "shared": ["ManorCore", "ModState"],
   "pak": null,
   "tested": {
     "game": "0.8.111",
@@ -11,7 +11,8 @@
     "ue4ss": "4.0.0-rc1"
   },
   "features": [
-    { "name": "example", "requires": [], "ids": { "buildingStats": [1000, 1099], "DT_Upgrades": [117, 126] } }
+    { "name": "example", "requires": [], "ids": { "buildingStats": [1000, 1099], "DT_Upgrades": [117, 126] } },
+    { "name": "mod_state", "requires": [], "ids": {} }
   ],
   "gate_scenarios": []
 }

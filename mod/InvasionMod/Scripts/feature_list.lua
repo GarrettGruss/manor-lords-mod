@@ -2,4 +2,5 @@
 -- A test compares the two lists.
 return {
     { name = "example", requires = {} },
+    { name = "mod_state", requires = {} },
 }
