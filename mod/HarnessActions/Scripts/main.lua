@@ -103,6 +103,7 @@
 --   {"command":"rebel_raid_rally","count":2}   remove families, then one real raid aimed at a forest spot; the raiders stand at the AI waypoint for about 100 to 150 game seconds, then attack. The answer has the squad ids, the spot and the families before and after
 --   {"command":"bandit_kill_squads","squad":41,"count":2}   SMUnit:just_die on every living bandit unit of squads 41, 42 (to remove a raid and keep other squads)
 --   Housing (spec 15, see mod/shared/HarnessHousing):
+--   {"command":"upgrade_stat","type":117}                      number fields of one DT_Upgrades row (spec 23, read only)
 --   {"command":"building_stat","type":87}                   scalar fields of the buildingStats row of one building type (read only)
 --   {"command":"building_stat_vector_write","type":87,"field":"occupantTypes","component":"Y","value":5}   UNSAFE test command (needs HARNESS_ALLOW_UNSAFE=1): write one component of a Vector4 field of a buildingStats row, in memory
 --   {"command":"housing_state"}                             player region: families, homeless, living and vacant slots, tents, residential buildings (read only)
@@ -164,7 +165,7 @@ local steer = require("HarnessSteer")
 local battlefield = require("HarnessBattlefield")
 local garrison = require("HarnessGarrison")
 
-local VERSION = "49"
+local VERSION = "50"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -532,6 +533,7 @@ local COMMANDS = {
     rebel_raid_rally = bandits.rebel_raid_rally,
     bandit_kill_squads = bandits.bandit_kill_squads,
     building_stat = buildingStat,
+    upgrade_stat = housing.upgrade_stat,
     building_stat_vector_write = housing.building_stat_vector_write,
     master_parts = parts.master_parts,
     master_site = parts.master_site,

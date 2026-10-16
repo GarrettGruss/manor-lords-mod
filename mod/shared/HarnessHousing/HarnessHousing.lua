@@ -13,7 +13,10 @@ local M = {}
 
 M.BUILDING_STATS = "/Game/NotStronghold/Data/buildingStats.buildingStats"
 M.TENT_TYPE = 87          -- buildingStats row "homeless_tents", function Temporary
-M.MAX_TYPE = 600
+-- Spec 23 tests building ids up to 65536, so the limit is above that.
+M.MAX_TYPE = 70000
+M.UPGRADES_TABLE = "/Game/NotStronghold/Data/DT_Upgrades.DT_Upgrades"
+M.UPGRADE_FIELDS = { "upgradesInto", "minimumSettlementLevel", "minimumProsperity", "minimumHouseLv", "bUseOnlyOnce", "lockedInOutposts" }
 M.MAX_ROWS = 40
 -- Scalar fields of the buildingStats row that are safe to read (no soft object, no array of structs).
 M.STAT_FIELDS = { "bWorkInProgress", "isWork", "job", "bSize", "maxHp", "needsRoad", "collidesWithRoads", "canRelocate", "constructionCost",
@@ -81,6 +84,19 @@ function M.building_stat(request)
     for _, field in ipairs(M.STAT_FIELDS) do out[field] = textOf(read(function() return row[field] end)) end
     out.workerTypes = vector4(read(function() return row.workerTypes end))
     out.occupantTypes = vector4(read(function() return row.occupantTypes end))
+    return out
+end
+
+-- Read only: number fields of one DT_Upgrades row (spec 23). The request field "type" holds the upgrade id.
+function M.upgrade_stat(request)
+    local id = request.type
+    if not id or id < 0 or id > M.MAX_TYPE then return { ok = false, error = "type must be an upgrade id up to " .. M.MAX_TYPE } end
+    local table = StaticFindObject(M.UPGRADES_TABLE)
+    if not isValid(table) then return { ok = false, error = "the DataTable DT_Upgrades is not loaded" } end
+    local ok, row = pcall(function() return table:FindRow(tostring(id)) end)
+    if not ok or row == nil then return { ok = false, error = "no DT_Upgrades row " .. tostring(id) } end
+    local out = { ok = true, upgrade = id }
+    for _, field in ipairs(M.UPGRADE_FIELDS) do out[field] = textOf(read(function() return row[field] end)) end
     return out
 end
 
