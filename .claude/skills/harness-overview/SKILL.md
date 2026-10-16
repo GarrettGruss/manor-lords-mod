@@ -12,6 +12,7 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 - `harness/`: `run.py` (one run), `run_series.py`, `suite.py` (suites, baselines, A/B), `deploy.ps1`, `runlib/` (library), `scenarios/`, `suites/`, `release.py` and `releaselib/` (mod releases), `tools/` (`coverage.py`, `pakmod.py`, `reload_mods.py`, `fixtures.py`).
 - `mcp/harness_tools` (server `manor-harness`: run_scenario, wait_for_run, read_summary, read_log, ...) and the `ue4ss-bridge` MCP server (live queries into a running game).
 - `docs/harness/NN-name/`: one spec per core feature, with `implementation-notes/` for findings.
+- `docs/mod/`: the Invasion Mod docs (overview design `M00`, feature specs `M<NN>-<feature>/` with iterations). Layout and build rules of the mod: spec 22. Row id range spike: spec 23.
 - Git-ignored: `runs/`, `modtools/` (repak, UAssetGUI, work files, the AES key), `harness/pakmod.local.json`, the fixture saves, `slots/`, `dist/`. A worktree has none of them: copy the fixture saves and `pakmod.local.json` from the main checkout. Compiled mod paks (`mod/<Name>/paks/*_P.pak`) may be committed. The AES key never.
 
 ## Which skill for which job

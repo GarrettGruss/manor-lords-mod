@@ -8,7 +8,7 @@ description: Branch, commit, push, open and merge pull requests for this repo, a
 Rules are in CLAUDE.md: atomic Conventional commits, one feature branch per spec, CHANGELOG kept current. Do not commit, push or merge unless the user asked or a standing goal grants it (for example the user's goal that allows merging pull requests).
 
 ## Branch and commit
-- Branch from an up-to-date `main`: `git checkout -b feat/<NN>-<name>` (or a worktree, see `harness-dispatch-agents`).
+- Branch from an up-to-date `main`: `git checkout -b feat/<NN>-<name>`; a mod iteration uses `feat/M<NN>-<feature>-<iteration>` (or a worktree, see `harness-dispatch-agents`).
 - Commit: `<type>(<scope>): <summary>` in the imperative, under 72 characters. Types: feat, fix, docs, refactor, test, chore, build, ci. End with the attribution line the session gives (`Co-Authored-By: ...`).
 - One logical change per commit: mod code, harness code, scenarios, tests, docs and notes are separate commits when they can stand alone.
 - A releasable mod has its own `mod/<Name>/CHANGELOG.md` and `mod.json`. Change them in the same commit as a mod change that players see (skill `harness-release`).

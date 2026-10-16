@@ -29,11 +29,13 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 
 ## Specs and notes
 
-- Every core design feature must have a spec in `docs/harness/<NN>-<feature-name>/`.
+- There are two doc tracks:
+  - Harness specs: `docs/harness/<NN>-<feature-name>/`. Every core harness feature must have one.
+  - Mod docs (the Invasion Mod): `docs/mod/`. Read `docs/mod/README.md` first. `M00-invasion-mod/` is the overview design; the user writes it. Feature specs are `docs/mod/M<NN>-<feature>/`, with one file per iteration in `iterations/`. Do not write game design content unless the user asks.
   - Write the spec before the code. The spec starts with `README.md`.
   - A spec states the goal, non-goals, plan, open questions, and acceptance criteria.
 - Store all findings and implementation notes inside the spec they belong to.
-  - Path: `docs/harness/<NN>-<feature-name>/implementation-notes/`.
+  - Path: `<spec folder>/implementation-notes/`.
   - One file per topic. Name files by topic, for example `jmap-findings.md`.
   - Do not put notes in chat only. Do not put them in other folders.
 - When a note changes a decision, update the spec README in the same commit.
@@ -48,6 +50,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 - Remote: `origin` is `git@github.com:GarrettGruss/manor-lords-mod.git`. The default branch is `main`.
 - Use one feature branch for each spec.
   - Name it `feat/<NN>-<feature-name>`, the same as the spec folder. Example: `feat/02-save-autoload`.
+  - A mod feature uses one branch for each iteration: `feat/M<NN>-<feature>-<iteration>`. Example: `feat/M02-refugees-01-first-wave`.
   - Create the branch from an up-to-date `main`. Do the spec work, code, notes, and changelog entries on that branch.
   - Keep commits atomic on the branch. Merge into `main` only when the user asks.
   - Small changes that do not belong to one spec (for example `chore` or `docs` for the project rules) may go to `main`.
@@ -58,7 +61,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 ## GitHub issues
 
 - Every new feature has one GitHub issue that tracks its status. Create the issue when the spec is written.
-  - Title: `Spec <NN>: <feature name>`. Link the spec folder and the feature branch in the body.
+  - Title: `Spec <NN>: <feature name>`, or `Mod M<NN>.<iteration>: <name>` for a mod iteration. Link the spec folder and the feature branch in the body.
   - Keep the body current: what works, what is open, and the next step.
 - Create and manage issues with the `gh` CLI (`gh issue create`, `gh issue edit`, `gh issue comment`, `gh issue close`).
 - Show the status with these labels:
@@ -85,6 +88,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 2. **Live control** (`ue4ss-bridge`): a Lua mod and an MCP server. The agent queries the running game through them. See `docs/harness/01-ue4ss-bridge/`.
 3. **Outer harness** (`harness/`): scripts that deploy the mod, launch the game, run a scenario, collect results, and write `runs/<id>/summary.json`.
 4. **Reference** (`reference/`): dumps and exports. Large raw dumps stay out of git.
+5. **The Invasion Mod** (`mod/InvasionMod/`, planned in spec 22): one Lua mod and one pak, made of features (`Scripts/features/<f>/`, `data/<f>/patches/`, `scenarios/<f>/`). Harness code must not name the mod or its features.
 
 ## Design rules
 
