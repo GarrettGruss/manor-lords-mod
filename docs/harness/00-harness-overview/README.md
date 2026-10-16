@@ -54,6 +54,7 @@ An agent uses the fastest layer that can answer its question. It moves to a slow
 | 15 | bandit-settlement | Settle raiders as families (refugee waves) through the negotiation letter | spike done (2026-10-12); commands added |
 | 16 | policy-edicts | Enact policies and show a policy card in a Lua screen | spike done for Q1 to Q5 (2026-10-12); `enactPolicy` returned false |
 | 22 | mod-pack-layout | One mod (Invasion Mod) made of features: one pak from merged row patches, one Lua mod, mod docs in `docs/mod/` | approved (2026-10-15); doc tracks done, skeleton next |
+| 23 | row-id-range | Find safe ids for new rows in game tables; set an id range for each mod feature | proposed (2026-10-15), needed by spec 22 step 5 |
 | 24 | mod-save-state | Keep the mod state with each player save (write into the save, or a side file) | proposed (2026-10-15), needed by every mod feature with state |
 
 Order and reasons:

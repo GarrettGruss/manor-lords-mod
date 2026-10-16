@@ -102,7 +102,7 @@ Id ranges (spec 23): ids 1 to 485 are vanilla or enum range (keep free, also 200
 
 ## Open questions
 - Q1 (decided 2026-10-15): keep `requires`, allow it empty.
-- Q2: which row ids are safe for new rows. Moved to spec 23 (`docs/harness/23-row-id-range/`).
+- Q2: which row ids are safe for new rows. Moved to spec 23 (#127) (`docs/harness/23-row-id-range/`).
 - Q3 (decided 2026-10-15): every build starts from the current game paks.
 - Q4 (decided 2026-10-15): `refugees` is built new; RefugeeWaves is a reference. The `require` check stays in plan step 3.
 - Q5 (decided 2026-10-15): `InvasionMod` is the internal name; the player name is `display_name` and will change.

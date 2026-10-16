@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 23: command `upgrade_stat` reads number fields of a DT_Upgrades row. `building_stat` accepts ids up to 70000. Tool `s127_make_ids_json.py` builds the `ids` test pak. Result: buildingStats ids up to 65536 work (`id-results.md`).
 - Spec 24 result (#128): the mod state can live in the `Tags` of the player pawn and the player region. They survive a save and a load (`persistence-tests.md`). Observe-only mod `HarnessSaveProbe` and hidden `probe-save-*` scenarios. The recommendation and the `ModState` design are in the spec README.
 - Guarded harness save (spec 24, #128): action `ctx.actions.save_game(label, keep=False)` replaces the `save_state` stub. It backs up the save folder, saves to the next free `saveGame_<N>` slot through the Lua command `save_game` (the only save call in the repo), restores and raises if an existing file changes, and deletes its files at the run end unless kept. The run save guard accepts only the files that `save_game` reported. A test forbids save calls elsewhere. The first real save was clean (`first-save.md`).
 - `pakmod.py buildmod <Name>` (spec 22): builds `mod/<Name>/paks/<Name>_P.pak` from the row patches of all features, with a conflict check, an id-range check and a copy of `data/<feature>/assets`. The logic is in `harness/tools/modpak.py`; the stub feature has two patches and real id ranges.
