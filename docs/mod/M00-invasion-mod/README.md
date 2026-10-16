@@ -1,6 +1,7 @@
 # M00: Invasion Mod overview design
 
 Status: draft (2026-10-15), updated with the feasibility decisions (see "Feasibility decisions"). Design content comes from two user briefs. The agent merged them. The user owns the decisions.
+Feature breakdown: [`../feature-breakdown.md`](../feature-breakdown.md).
 Feasibility review: `implementation-notes/feasibility-summary.md`.
 Internal name: `InvasionMod`. Player-facing name: to be decided (it lives only in `mod.json` `display_name`).
 
@@ -168,20 +169,20 @@ The core features. Each one becomes a feature spec `docs/mod/M<NN>-<feature>/` w
 
 | Feature | Short goal | Depends on | Spec |
 | --- | --- | --- | --- |
-| invasion | Schedule plunder raids (minor), subjugation raids (major) and the great raid. Show a countdown and a size estimate. | none | not yet |
-| raid behavior | Start the native plunder AI. Loot of a killed raider goes back to the store. Carry caps. Native rout. | invasion | not yet |
-| bandits | Low approval, low regional wealth or no home turns villagers into bandits. Fight them or pay coin to bring them back. | approval, regional wealth | not yet |
-| refugees | A lost vassal sends refugees. They lower approval and eat food. Unhoused refugees become bandits. | vassals, bandits | not yet |
-| vassals | Vassalize a neighbor or found one with settlers. Indirect control through policies and orders. | regions | not yet |
-| tribute | Vassals send supplies. They expect protection. Failed protection lowers loyalty. | vassals, invasion | not yet |
-| liege and influence | Tribute to the liege gives influence. Influence buys aid, villagers, weapons or tools. | tribute | not yet |
-| sack and terms | A lost battle sacks the town. Tribute terms, fallback capital. | invasion, vassals | not yet |
-| manor stronghold | The manor is the stronghold. Upgrade it through builds and the tech tree: manor storage, retinue capacity. | tech tree | not yet |
-| finite resources | Home deposits of iron, salt and similar run out. Vassals are the permanent source. | vassals | not yet |
-| plundered start | Start in a damaged village. | none | not yet |
-| tech tree | Two exclusive paths: oppression and prosperity. Laws and vassal policies. Lua effects, custom UI from a pak. | approval, bandits | not yet |
-| mod state | Keep the mod's own values (countdown, loyalty, influence, path, tech, deposits, schedule) with each save. | none | harness spike 24 (#128) |
-| unit balance | Hussite unit roles from existing foot units. Counters. Veterancy. Much higher damage to unarmored units. | none | not yet |
+| invasion | Schedule plunder raids (minor), subjugation raids (major) and the great raid. Show a countdown and a size estimate. | none | [M02](../M02-invasion/) |
+| raid behavior | Start the native plunder AI. Loot of a killed raider goes back to the store. Carry caps. Native rout. | invasion | [M03](../M03-raid_behavior/) |
+| bandits | Low approval, low regional wealth or no home turns villagers into bandits. Fight them or pay coin to bring them back. | approval, regional wealth | [M04](../M04-bandits/) |
+| refugees | A lost vassal sends refugees. They lower approval and eat food. Unhoused refugees become bandits. | vassals, bandits | [M09](../M09-refugees/) |
+| vassals | Vassalize a neighbor or found one with settlers. Indirect control through policies and orders. | regions | [M07](../M07-vassals/) |
+| tribute | Vassals send supplies. They expect protection. Failed protection lowers loyalty. | vassals, invasion | [M08](../M08-tribute/) |
+| liege and influence | Tribute to the liege gives influence. Influence buys aid, villagers, weapons or tools. | tribute | [M11](../M11-liege_influence/) |
+| sack and terms | A lost battle sacks the town. Tribute terms, fallback capital. | invasion, vassals | [M06](../M06-sack_and_terms/) |
+| manor stronghold | The manor is the stronghold. Upgrade it through builds and the tech tree: manor storage, retinue capacity. | tech tree | [M13](../M13-manor_stronghold/) |
+| finite resources | Home deposits of iron, salt and similar run out. Vassals are the permanent source. | vassals | [M10](../M10-finite_resources/) |
+| plundered start | Start in a damaged village. | none | [M14](../M14-plundered_start/) |
+| tech tree | Two exclusive paths: oppression and prosperity. Laws and vassal policies. Lua effects, custom UI from a pak. | approval, bandits | [M12](../M12-tech_tree/) |
+| mod state | Keep the mod's own values (countdown, loyalty, influence, path, tech, deposits, schedule) with each save. | none | [M01](../M01-mod_state/) (harness spike 24, #128) |
+| unit balance | Hussite unit roles from existing foot units. Counters. Veterancy. Much higher damage to unarmored units. | none | [M05](../M05-unit_balance/) |
 
 ## Build plan
 Manor Lords has limited mod support. AI behavior, regions and new law systems are the riskiest parts. Build in this order:
