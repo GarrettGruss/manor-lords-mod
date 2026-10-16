@@ -1,5 +1,5 @@
 -- HarnessBoot: loads the test save from the main menu and reports when the game is ready.
--- Spec: docs/specs/02-save-autoload/README.md
+-- Spec: docs/harness/02-save-autoload/README.md
 --
 -- The mod does nothing unless the harness turns it on. This keeps normal play safe.
 --   Turn on: set env HARNESS_AUTOBOOT=1, or create the file <harness dir>/autoboot.enable.

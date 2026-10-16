@@ -273,7 +273,7 @@ def _ab_lines(report: dict) -> list[str]:
                           f"{'MET' if expect['met'] else 'NOT MET'} ({expect['reason']})"]
     if lines:
         lines += ["", "Verdicts use a permutation test and an effect size. They are heuristics for small samples "
-                      "(see docs/specs/10-invasion-testability/implementation-notes/ab-statistics.md)."]
+                      "(see docs/harness/10-invasion-testability/implementation-notes/ab-statistics.md)."]
     return lines
 
 

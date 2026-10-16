@@ -2,7 +2,7 @@ upstream: https://github.com/littleRabbit94/ue-bridge
 commit:   a5eae1cec9c6283a6259571140668ed118b2db8b
 version:  1.2.1
 license:  MIT (see LICENSE)
-review:   docs/specs/01-ue4ss-bridge/implementation-notes/review-report.md
+review:   docs/harness/01-ue4ss-bridge/implementation-notes/review-report.md
 
 Layout in this repo:
   mod/UEBridge/       <- upstream ue4ss/UEBridge/   (deploys to ue4ss\Mods\UEBridge)

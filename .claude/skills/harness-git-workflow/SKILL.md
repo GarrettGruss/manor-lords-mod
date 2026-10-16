@@ -8,7 +8,7 @@ description: Branch, commit, push, open and merge pull requests for this repo, a
 Rules are in CLAUDE.md: atomic Conventional commits, one feature branch per spec, CHANGELOG kept current. Do not commit, push or merge unless the user asked or a standing goal grants it (for example the user's goal that allows merging pull requests).
 
 ## Branch and commit
-- Branch from an up-to-date `main`: `git checkout -b feat/<NN>-<name>` (or a worktree, see `harness-dispatch-agents`).
+- Branch from an up-to-date `main`: `git checkout -b feat/<NN>-<name>`; a mod iteration uses `feat/M<NN>-<feature>-<iteration>` (or a worktree, see `harness-dispatch-agents`).
 - Commit: `<type>(<scope>): <summary>` in the imperative, under 72 characters. Types: feat, fix, docs, refactor, test, chore, build, ci. End with the attribution line the session gives (`Co-Authored-By: ...`).
 - One logical change per commit: mod code, harness code, scenarios, tests, docs and notes are separate commits when they can stand alone.
 - A releasable mod has its own `mod/<Name>/CHANGELOG.md` and `mod.json`. Change them in the same commit as a mod change that players see (skill `harness-release`).
@@ -29,7 +29,7 @@ Rules are in CLAUDE.md: atomic Conventional commits, one feature branch per spec
 - After the merge: `git checkout main && git pull`.
 
 ## Merge conflicts
-`git merge origin/main` into your branch. The usual conflicts: `CHANGELOG.md` and the scenario list in `harness/tests/test_runlib_scenario.py` (keep both sides; rebuild the sorted list), `HarnessActions/Scripts/main.lua` (keep both requires and both command tables, bump no VERSION twice), `criteria.json` (keep the verified marks of both sides), `docs/specs/10-invasion-testability/README.md` (keep both status lines). Keep the file's line endings (many files are CRLF; write with bytes, not text mode, in scripts). Rerun the tests after resolving.
+`git merge origin/main` into your branch. The usual conflicts: `CHANGELOG.md` and the scenario list in `harness/tests/test_runlib_scenario.py` (keep both sides; rebuild the sorted list), `HarnessActions/Scripts/main.lua` (keep both requires and both command tables, bump no VERSION twice), `criteria.json` (keep the verified marks of both sides), `docs/harness/10-invasion-testability/README.md` (keep both status lines). Keep the file's line endings (many files are CRLF; write with bytes, not text mode, in scripts). Rerun the tests after resolving.
 
 ## Worktree hygiene
 Remove a temporary worktree after its PR is merged (`git worktree remove --force <path>`; remove a `.venv` junction first with `cmd /c rmdir`). Do not leave a worktree on a branch the main checkout needs.
