@@ -66,4 +66,4 @@ See M00 "User decisions", items 11 to 15. They override the open questions above
 - The 4-node draft per path is approved for now. Path and node choices are final and exclusive.
 - Data-driven tree: the feature JSON holds the nodes as a linked list (each node names its next or previous node), plus optional layout data. The mod builds the tree and the menu from it. No hard-coded tree unless a technical limit forces it.
 - Cost: free. One node slot unlocks each time the settlement level rises.
-- Open: the exact JSON schema (fields: id, path, name, effect, next, layout). Write it in iteration 01.
+- Schema form (user, 2026-10-16): each node lists the node ids it `requires` (a linked form that also allows branches). Fields: id, path, name, effect, requires, layout. Write the full schema in iteration 01.
