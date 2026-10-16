@@ -1,6 +1,7 @@
 # M00: Invasion Mod overview design
 
-Status: draft (2026-10-15). Design content comes from two user briefs. The agent merged them. The user owns the decisions.
+Status: draft (2026-10-15), updated with the feasibility decisions (see "Feasibility decisions"). Design content comes from two user briefs. The agent merged them. The user owns the decisions.
+Feasibility review: `implementation-notes/feasibility-summary.md`.
 Internal name: `InvasionMod`. Player-facing name: to be decided (it lives only in `mod.json` `display_name`).
 
 Sources:
@@ -24,7 +25,7 @@ A lost battle sacks the town. It does not delete the game.
 2. **Rule through others.** The player controls only the home region directly. Vassals are controlled only through policies and orders.
 3. **Scarcity forces expansion.** Home resources are plentiful but finite. Permanent supplies come from vassals.
 4. **Dread from knowing.** Raids are announced with a countdown and a size estimate. The great raid on the main town has a visible clock (Frostpunk).
-5. **Raids have goals.** Each raid has one objective and one breaking point. A battle can end without total annihilation (RimWorld).
+5. **Raids have goals.** Each raid has one objective. A battle can end without total annihilation: units rout on their own (the game's own behavior).
 6. **One path of rule.** The player picks oppression or prosperity. The paths are mutually exclusive. The choice changes how every crisis is solved.
 
 ## Core loop
@@ -58,7 +59,9 @@ The game has only foot soldiers (technical limit). All factions fight on foot.
 ## Vassals
 Vassals replace the "outposts" of brief A. A vassal is an AI-run region that the player rules only indirectly.
 - **Two ways to gain one:** vassalize a nearby neighbor, or send settlers to found one. A settled region is also a vassal, but it starts under the player's full control.
-- **Indirect control:** policies and orders only. The player does not place buildings there.
+- **Indirect control:** policies and orders only. The player does not place buildings there. Policies and orders are mod-owned settings that Lua applies (feasibility decision 2).
+- **Loyalty** is a mod-owned value (feasibility decision 8).
+- **Victory risk:** a region claim once triggered the game's victory cinematic. Harness spike 26 checks how the game sets the start and victory conditions and whether Lua can change them (feasibility decision 6).
 - **Tribute:** vassals send supplies. They are the permanent source of iron, salt and other finite goods.
 - **Protection duty:** vassals expect protection from the empire and from bandits.
 - **First targets:** the empire raids vassals first, to subjugate or destroy them. More vassals give more tribute but split the player's forces.
@@ -84,20 +87,21 @@ Targets over the game:
 - A countdown runs to the great raid. The great raid is a subjugation raid on the main town. Its goal is to destroy the town.
 - Bandits use the plunder type too, with smaller and weaker groups.
 
-Every raid spawns with one objective and one breaking point. The numbers are starting values to tune. They are not tested balance.
+Every raid spawns with one objective. The numbers are starting values to tune. They are not tested balance.
+Raiders pick their own targets (the game's AI). The mod does not steer them (feasibility decision 1).
 
-| Raid type | Size | Faction | Composition | Objective | Carry cap per raider | Retreat trigger |
+| Raid type | Size | Faction | Composition | Objective | Carry cap per raider | Retreat |
 | --- | --- | --- | --- | --- | --- | --- |
-| Plunder | Minor | Hussite | Sword men, light spearmen, crossbows | Loot stores, kill villagers, burn buildings | About 10 grain or 5 iron | Full loot, raid timer ends, or morale break |
-| Plunder | Minor | Bandits | Poorly armed peasants | Food stores, lone workers | About 5 grain | Light losses or morale break |
-| Subjugation | Major | Hussite | Mid-size army | A vassal region | None | Vassal submits, or morale break |
-| Subjugation (great raid) | Major | Hussite field army | Full army with its captain | Destroy the main town | None | Captain dies only |
+| Plunder | Minor | Hussite | Sword men, light spearmen, crossbows | Loot stores, kill villagers, burn buildings | About 10 grain or 5 iron | Native: the base AI leaves when it has looted enough; units rout on their own |
+| Plunder | Minor | Bandits | Poorly armed peasants | Food stores, lone workers | About 5 grain | Native |
+| Subjugation | Major | Hussite | Mid-size army | A vassal region | None | Vassal submits, or native rout |
+| Subjugation (great raid) | Major | Hussite field army | Full army | Destroy the main town | None | Native rout |
 
 Raid behaviors:
-- **Loot drops on death:** looters run for the map edge. Kill one and the goods drop for peasants to recover.
-- **Bait:** raiders go for the nearest high-value stockpile. A decoy storehouse in a killing zone steers them.
+- **Loot goes back to the store:** when a looter is killed, the goods it carried go back to the nearest storehouse (feasibility decision 3). No ground pile.
 - **Storage tiers:** a guarded granary loses less per trip than an open barn. The manor is the safest store. Its capacity grows through the manor tech tree.
 - **Damage:** burned buildings become ruins. Ruins rebuild at partial cost.
+- **Rout:** units rout on their own. A mod "mass rout" (end a raid by losses or a timer) is added only if playtests show the game is too punishing (feasibility decision 4).
 
 ## Bandits
 Villagers become bandits for three reasons:
@@ -105,6 +109,7 @@ Villagers become bandits for three reasons:
 2. **Low regional wealth:** a poor region pushes peasants to banditry, even when approval is fine.
 3. **Unhoused refugees:** refugees with no home turn to banditry (see Refugees).
 
+- The change uses the proven `homeless_rebel` route: the mod removes the families and bandits appear at their homes (feasibility decision 7). No `turnToBandit` and no `Region:AddNewFamily` (crash risks).
 - Bandits raid the home region and the vassals, like small local raids.
 - The player can fight them, or reason with them and pay coin to bring them back to the village.
 
@@ -135,6 +140,7 @@ Later layers:
   - **Manor storage:** more storage capacity in the manor. Goods in the manor are the hardest for raiders to reach.
   - **Retinue capacity:** a larger retinue.
 - The tech tree has two mutually exclusive paths. Each path unlocks abilities and passive bonuses.
+- Laws, vassal policies and the tech tree are owned by the mod (feasibility decision 2). Lua applies their effects. A custom UI from a pak (Widget Blueprint, as in harness spec 16) shows them. The game's own policy system is not used (`enactPolicy` returned false in 95 tries).
 
 First ideas. They are examples, not decisions. Some nodes reuse ideas from the three doctrines of brief A (Bulwark, Warband, Pact).
 
@@ -155,6 +161,7 @@ First ideas. They are examples, not decisions. Some nodes reuse ideas from the t
 - **Armor matters:** unarmored units take much more damage. This applies to everyone without armor: villagers in militia, bandits, and light raiders.
   - Goal: investment in armor (smiths, armor stock, liege requests) pays off clearly in battle.
   - Effect: armored militia beat larger groups of bandits. Unarmed villagers die fast when raiders reach them.
+  - Feasibility: not known yet. A spike looks for every lever that makes unarmored combat more lethal and armored units stronger (feasibility decision 5).
 
 ## Feature map
 The core features. Each one becomes a feature spec `docs/mod/M<NN>-<feature>/` when it is broken out.
@@ -162,7 +169,7 @@ The core features. Each one becomes a feature spec `docs/mod/M<NN>-<feature>/` w
 | Feature | Short goal | Depends on | Spec |
 | --- | --- | --- | --- |
 | invasion | Schedule plunder raids (minor), subjugation raids (major) and the great raid. Show a countdown and a size estimate. | none | not yet |
-| raid behavior | Plunder goal states: seek target, loot, kill, burn, flee. Loot drops on death. Carry caps and retreat triggers. | invasion | not yet |
+| raid behavior | Start the native plunder AI. Loot of a killed raider goes back to the store. Carry caps. Native rout. | invasion | not yet |
 | bandits | Low approval, low regional wealth or no home turns villagers into bandits. Fight them or pay coin to bring them back. | approval, regional wealth | not yet |
 | refugees | A lost vassal sends refugees. They lower approval and eat food. Unhoused refugees become bandits. | vassals, bandits | not yet |
 | vassals | Vassalize a neighbor or found one with settlers. Indirect control through policies and orders. | regions | not yet |
@@ -172,13 +179,15 @@ The core features. Each one becomes a feature spec `docs/mod/M<NN>-<feature>/` w
 | manor stronghold | The manor is the stronghold. Upgrade it through builds and the tech tree: manor storage, retinue capacity. | tech tree | not yet |
 | finite resources | Home deposits of iron, salt and similar run out. Vassals are the permanent source. | vassals | not yet |
 | plundered start | Start in a damaged village. | none | not yet |
-| tech tree | Two exclusive paths: oppression and prosperity. | approval, bandits | not yet |
+| tech tree | Two exclusive paths: oppression and prosperity. Laws and vassal policies. Lua effects, custom UI from a pak. | approval, bandits | not yet |
+| mod state | Keep the mod's own values (countdown, loyalty, influence, path, tech, deposits, schedule) with each save. | none | harness spike 24 (#128) |
 | unit balance | Hussite unit roles from existing foot units. Counters. Veterancy. Much higher damage to unarmored units. | none | not yet |
 
 ## Build plan
 Manor Lords has limited mod support. AI behavior, regions and new law systems are the riskiest parts. Build in this order:
 1. **Scripted raid events** with the threat countdown.
-2. **Plunder goal states:** seek target, loot, kill, burn, flee, loot drops on death.
+0. **Mod state across saves** (harness spike 24 (#128), result: option A, Tags of the player pawn, see `docs/harness/24-mod-save-state/README.md`). Every later step that keeps values needs it.
+2. **Plunder:** start the native plunder AI, loot back to the store on death.
 3. **Bandits from low approval and low regional wealth,** and the coin buy-back.
 4. **Unit and balance tweaks:** Hussite units, counters and veterancy.
 5. **Sack and tribute events** in place of deletion.
@@ -196,10 +205,10 @@ Manor Lords has limited mod support. AI behavior, regions and new law systems ar
 Difficulty tiers change what raiders want and how smart they are, not only how many come:
 - Raid count and size rise per tier.
 - Subjugation raids start later and come more often on higher tiers.
-- Smarter targeting: raiders go for the best stockpile. Raiders go around walls to find weak points.
-- Higher carry caps and lower morale breaks.
-- A captain who escapes comes back stronger.
-- Top tier: raiders retreat only when the captain dies.
+- More frequent raids and different spawn sides.
+- Higher carry caps.
+- Better equipped raiders (if the armor spike finds a lever).
+- Smarter targeting, raiders going around walls and a captain are removed (raiders cannot be steered, feasibility decision 1).
 
 ## Balance targets
 First guesses. The scenarios will check them later as ranges.
@@ -225,6 +234,18 @@ First guesses. The scenarios will check them later as ranges.
 - Raid types other than plunder and subjugation (technical limit, user decision 2026-10-15): no hostage or slave raids, no captives, no separate burn raids, no test skirmishes.
 - Intel in version 1 (user decision, 2026-10-15): no scouting by vassals, no raid size or type reveal from scouts, no intel leaks to the invader. The threat countdown stays.
 
+## Feasibility decisions (user, 2026-10-15)
+Taken after the review in `implementation-notes/feasibility-summary.md`.
+1. **No raider steering.** Bait, the decoy storehouse, smarter targeting and raiders going around walls are dropped. Raiders cannot be steered from Lua.
+2. **Laws, vassal policies and the tech tree are mod-owned.** Lua applies the effects. A custom UI comes from a pak.
+3. **Loot goes back to the storehouse** when a looter is killed. No ground pile.
+4. **Units rout on their own.** This is accepted as the current state. A mod mass rout is added only if the game is too punishing.
+5. **Armor spike:** find levers that make unarmored combat more lethal and armored units much stronger (harness spike 25 (#129)).
+6. **Victory cinematic:** probably solved by the game start conditions. Spike on how the game sets scenario settings and whether Lua can change them (harness spike 26 (#130)).
+7. **Villagers to bandits** through `homeless_rebel`.
+8. **Loyalty, the liege, influence spending and finite deposits** are owned by Lua.
+9. **Mod state across saves:** spike (harness spike 24 (#128)). Either write into the save, or keep a mod save system next to the save file. The user approved that the harness makes saves (2026-10-15), so save and load can be tested automatically (rules in CLAUDE.md Safety and spec 24).
+
 ## Merge decisions
 Places where brief B replaced brief A. The user can reverse each one.
 1. **Outposts became vassals.** Brief A outposts are AI villages for scouting and trade. Brief B vassals take their place. One system, not two. The scouting part is cut from version 1 (see Out of scope).
@@ -235,17 +256,18 @@ Places where brief B replaced brief A. The user can reverse each one.
 
 ## Open questions
 1. Which mod hooks does the current game build expose for AI, events, regions and new buildings? (Partly answered by the harness specs in `docs/harness/`.)
-2. Can the mod start in a plundered village (ruins, damaged buildings)? This needs a spike.
+2. Can the mod start in a plundered village (ruins, damaged buildings)? Part of harness spike 26 (#130) (start conditions). Sacks at run time already work.
 3. How are vassal regions shown in the game? As AI lord regions, as player regions with locked building, or as an abstract layer in Lua only?
-4. Can Lua apply policies and orders to a region the player does not control?
-5. Can the game spawn raiders that steal and carry goods, not only fight? Which existing AI (bandits, the Baron) can be reused for plunder and for subjugation?
+4. Answered: policies and orders are mod-owned settings; Lua applies them to any region (decision 2). Open: which effects Lua can apply to a region the player does not control.
+5. Answered: the base bandit AI already loots, burns and leaves; the mod starts it. Raiders cannot be steered (decision 1). Open: which AI to reuse for subjugation.
 6. What is the win condition: survive the great raid, hold until the liege's relief army comes, defeat the warlord, or reach a set order score?
 7. How is "order" measured and shown to the player?
-8. A lost vassal sends refugees (decided). What does its land become: an enemy region, a bandit camp, or empty land that can be retaken?9. Is the liege a real entity in the world (troops that arrive), or only a menu with effects?
+8. A lost vassal sends refugees (decided). What does its land become: an enemy region, a bandit camp, or empty land that can be retaken?
+9. Is the liege a real entity in the world (troops that arrive), or only a menu with effects?
 10. Can the path choice be undone at a high cost, or is it final?
 11. How large should a sack be before it feels fair?
 12. Is a second invader faction needed for the first release? Candidate: a mercenary free company that can link to the bandits.
-13. Which existing foot units can stand in for sword men and handgunners? This needs a check of the unit data.
-14. What is "regional wealth" in the game? Is it the game's own region wealth value, or a value the mod computes? This needs a spike.
-15. Where do refugees wait before they get a home: a camp entity in the world, or only a counter in Lua?
-16. Can the mod change manor storage capacity, retinue size and the armor damage factor? Lua at run time, or a pak data change? This needs a spike.
+13. Which existing foot units can stand in for sword men and handgunners? Militia, spear, pole and crossbow rows exist. No handgunner row was found.
+14. Answered: "regional wealth" is the game's own `regionalWealth` (the HUD coins value). It reads, writes and holds. Open: no game link from wealth to bandits; the mod adds that rule.
+15. Answered: refugees wait in the game's homeless tent (building type 87), a real building in the world.
+16. Can the mod change manor storage capacity and retinue size? Manor storage is likely (row write). Retinue size is unknown. The armor part moved to harness spike 25 (#129).

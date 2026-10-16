@@ -77,7 +77,7 @@ Details and numbers: `implementation-notes/actions-catalog.md`.
 - Probed in the real game in 18 probe runs (4 ended in a game crash, which the launcher recorded as a result). 14 actions are `verified` or `partial` and are in `actions.py`; 5 are `not possible` with a reason (`ctx.actions.<name>` raises `ActionNotPossible`).
 - The cheat manager exists because the stock mod `CheatManagerEnablerMod` is on. The kit depends on that mod.
 - Setters hold for silver, influence, wealth and the date. `Approval` and `supplies_food` are recalculated by the game within one to three game days. Weather values move back in seconds.
-- `requestSaveFile` writes into the user's real save folder, even with a private `LOCALAPPDATA`. In the probe it overwrote the user's old slot `saveGame_9`. `save_state` is `not possible`. The run guard caught it.
+- `requestSaveFile` writes into the user's real save folder, even with a private `LOCALAPPDATA`. In the probe it overwrote the user's old slot `saveGame_9`. `save_state` was `not possible`; spec 24 replaced it with the guarded `save_game`. The run guard caught it.
 - The helper mod `HarnessActions` was needed for `send_letter` (object parameter). Plain strings as `FName` values crashed the game; `FName(name)` works.
 - Scenarios: `silver-change`, `winter-region`, `letter-delivery` (3 passes in a row each), and the hidden `selftest-action` (fails with a clear message, run once). The hidden `probe-actions` is the probe.
 - Unit tests: `harness/tests/test_runlib_actions.py` (45 tests), `harness/tests/test_fakegame_harnessactions.py` (12 tests, lupa).

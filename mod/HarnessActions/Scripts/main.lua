@@ -164,8 +164,9 @@ local parts = require("HarnessParts")
 local steer = require("HarnessSteer")
 local battlefield = require("HarnessBattlefield")
 local garrison = require("HarnessGarrison")
+local harnessSave = require("HarnessSave")
 
-local VERSION = "50"
+local VERSION = "51"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -276,6 +277,8 @@ local function parseRequest(raw)
         outpost = raw:match('"outpost"%s*:%s*"([%w_]+)"'),
         policy = tonumber(raw:match('"policy"%s*:%s*(%d+)')),
         slot = tonumber(raw:match('"slot"%s*:%s*(%d+)')),
+        save_slot = raw:match('"save_slot"%s*:%s*"(saveGame_%d+)"'), -- spec 24, checked again by HarnessSave
+        save_name = raw:match('"save_name"%s*:%s*"([%w _%-]+)"'),
         signed = ({ ["true"] = true, ["false"] = false })[raw:match('"signed"%s*:%s*(%a+)') or ""],
         mode = raw:match('"mode"%s*:%s*"(%a+)"'),
         source = raw:match('"source"%s*:%s*"(%a+)"'),
@@ -449,6 +452,7 @@ local COMMANDS = {
     ping = function() return { ok = true, version = VERSION } end,
     send_letter = sendLetter,
     autosave_status = autosaveStatus,
+    save_game = harnessSave.save_game, -- the only save call in the repo; guarded by harness/runlib/harness_save.py
     disable_autosave = disableAutosave,
     datatable_info = datatableInfo,
     datatable_read = datatableRead,

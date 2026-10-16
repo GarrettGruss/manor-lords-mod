@@ -29,7 +29,7 @@ Status words: `verified` = the effect was read back in the real game. `partial` 
 | close pop-ups ("Hunger!" and similar) | verified (3 real pop-ups at 8x; the clock resumes at the old speed). Needs the mod `HarnessActions` version 6 | `close_popups()`, `popup_state()`, `ctx.popups()` | command `close_popups`: press the Accept handler of `popupMessageWidget_C` (spec 10, S8) |
 | read InBox / outbox | verified (read only) | `ctx.bridge.read_property` | `get InBox` |
 | read the HUD silver number | verified | `ctx.bridge.hud_treasury_text()` | `TreasuryNumeric:GetText()` |
-| save state to a new fixture | **not possible** | `save_state` raises | `PawnCPP:requestSaveFile` |
+| save state to a new slot | guarded action `save_game(label, keep=False)` (spec 24); fake tests only, no real run yet. `save_state` is gone | `save_game` | command `save_game` of `HarnessActions` -> `PawnCPP:requestSaveFile` |
 | show a message (`playEventMessage`) | see the row "show a banner text" below (the first try crashed: a plain string was given for a `Name`) | `show_message` | |
 | read item data (`getItem`) | **not possible** (crash) | `get_item_info` raises | |
 | remove all families | not possible (no effect seen) | `remove_all_families` raises | `MLCheatManager:RemoveAllFamilies` |
@@ -169,7 +169,8 @@ Item names with a confirmed effect: `Timber` (16), `Planks` (17), `Fish` (30). T
 
 ## Not possible
 
-### save_state (`PawnCPP:requestSaveFile`)
+### save_state (`PawnCPP:requestSaveFile`), replaced by `save_game` (spec 24)
+The unguarded call is still not allowed. The action `save_game` replaced the stub. It backs up the save folder, uses a new free slot and restores on any change. The probe below is the reason.
 `requestSaveFile("saveGame_9", "probe-save")` returned true. It wrote into the **user's real save folder** (`%LOCALAPPDATA%\ManorLords\Saved\SaveGames`),
 not into the private `LOCALAPPDATA` of the run. The launcher guard failed the run (`harness_error`: changed `saveGame_9.sav`, `saveGame_9_coat_1.png`, `saveGame_9_coat_2.png`,
 `saveGame_9_descr.sav`; new `saveGame_9_coat_3.png`, `saveGame_9_coat_4.png`). `IoHandler:DoesSaveGameExist("saveGame_9")` was already true before the call, so the
