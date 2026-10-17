@@ -15,7 +15,7 @@ Families turn into bandits when Public Order is low (decision 6). The player fig
 - Oppression path: bandits are cheaper to fight, captured bandits become forced labor. Prosperity path: bandits are cheaper to bring back, returned bandits work at once (paths belong to M12).
 
 ## Current state
-Iteration 01 (low-order-bandits) is done: the Public Order debuff and the conversion through `homeless_rebel` work in the real game with a fixed 30 day tick. See `iterations/01-low-order-bandits.md`. Iterations 02 and 03 are not started.
+Iteration 01 (low-order-bandits) is done: the Public Order debuff and the conversion through `homeless_rebel` work in the real game. Iteration 02 (season-tick) is done: the roll runs once per region at each season change, and the last season is saved in ModState. See `iterations/`. Iteration 03 is not started.
 
 ## Proven building blocks
 - `homeless_rebel` removes families and bandits appear: `docs/harness/15-bandit-settlement/implementation-notes/homeless-rebellion.md`, `bandit-settlement.md`.
@@ -47,7 +47,7 @@ Iteration 01 (low-order-bandits) is done: the Public Order debuff and the conver
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
 | 01 | low-order-bandits | Low Public Order turns families into bandits through `homeless_rebel`. | pass (see iteration file) |
-| 02 | season-tick | Seasonal tick with the 75, 50 and 25 percent thresholds. | not started |
+| 02 | season-tick | Seasonal tick with the 75, 50 and 25 percent thresholds. | pass (see iteration file) |
 | 03 | coin-buy-back | Pay coin to bring bandits back. | not started |
 
 ## Follow-up decisions (2026-10-16)
