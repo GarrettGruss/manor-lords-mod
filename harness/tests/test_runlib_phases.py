@@ -11,6 +11,7 @@ from unittest import mock
 import runlib_path  # noqa: F401
 from runlib import phases
 from runlib.environment import hash_mods, read_build_id, sha256_of_folder
+from runlib.game import GameInstall
 from runlib.game import (
     GameInstall,
     build_game_environment,
@@ -129,13 +130,13 @@ class StalePreflightTest(TempTestCase):
         with mock.patch.object(phases, "find_game_processes", return_value=[stale]), mock.patch.object(
             phases, "stop_processes"
         ) as stop:
-            phases._stop_stale_game(self.ctx)
+            phases._stop_stale_game(GameInstall(root=self.temp), self.ctx)
         stop.assert_called_once_with([stale])
         self.assertEqual(self.ctx.state["notes"], ["stale game process PID 4242 was stopped"])
 
     def test_no_stale_process_no_note(self):
         with mock.patch.object(phases, "find_game_processes", return_value=[]):
-            phases._stop_stale_game(self.ctx)
+            phases._stop_stale_game(GameInstall(root=self.temp), self.ctx)
         self.assertEqual(self.ctx.state["notes"], [])
 
     def test_steam_missing_is_only_a_note(self):

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -87,23 +88,34 @@ def write_config(run_folder: RunFolder, config: dict) -> None:
     atomic_write_text(run_folder.config_path, json.dumps(config, indent=2, sort_keys=True))
 
 
-class RunLock:
-    """Lock file runs/.lock that holds the PID of the owner. Use as a context manager."""
+class PidLock:
+    """A lock file that holds the PID of the owner. A lock of a dead process is taken over. Use as a context manager."""
 
-    def __init__(self, runs_root: Path):
-        self.lock_path = Path(runs_root) / ".lock"
+    def __init__(self, lock_path: Path):
+        self.lock_path = Path(lock_path)
         self.took_over_pid: int | None = None
+        self.held = False
 
-    def __enter__(self) -> "RunLock":
-        self.lock_path.parent.mkdir(parents=True, exist_ok=True)
-        if not self._try_create():
-            self._take_over_if_stale()
+    def __enter__(self) -> "PidLock":
+        if not self.held:  # a lock taken with acquire() first can still be used in a with block
+            self.acquire()
         return self
 
     def __exit__(self, *exc_info) -> None:
+        self.release()
+
+    def acquire(self) -> None:
+        """Take the lock or raise RunLockedError."""
+        self.lock_path.parent.mkdir(parents=True, exist_ok=True)
+        if not self._try_create():
+            self._take_over_if_stale()
+        self.held = True
+
+    def release(self) -> None:
         # Remove the lock only if it is still ours.
         if self._read_pid() == os.getpid():
             self.lock_path.unlink(missing_ok=True)
+        self.held = False
 
     def _try_create(self) -> bool:
         try:
@@ -131,6 +143,46 @@ class RunLock:
         self.took_over_pid = holder_pid
 
 
+def run_lock_name(slot: int = 0) -> str:
+    """Slot 0 keeps the old name runs/.lock, so older tools still see it."""
+    return ".lock" if slot == 0 else f".lock-{slot}"
+
+
+class RunLock(PidLock):
+    """The run lock of one game slot: runs/.lock or runs/.lock-<n>. Two runs in the same slot cannot overlap."""
+
+    def __init__(self, runs_root: Path, slot: int = 0):
+        super().__init__(Path(runs_root) / run_lock_name(slot))
+        self.slot = slot
+
+
+class LockTimeoutError(RuntimeError):
+    """A short shared lock was not free in time."""
+
+
+class WaitLock(PidLock):
+    """A short lock that waits until it is free: for shared state that parallel runs change (the user's save folder, counters).
+
+    An empty or unreadable lock file counts as held, because its writer may be half way through the write.
+    """
+
+    def __init__(self, lock_path: Path, timeout_s: float = 120.0, poll_s: float = 0.1):
+        super().__init__(lock_path)
+        self.timeout_s = timeout_s
+        self.poll_s = poll_s
+
+    def acquire(self) -> None:
+        deadline = time.monotonic() + self.timeout_s
+        while True:
+            try:
+                PidLock.acquire(self)
+                return
+            except RunLockedError as error:
+                if time.monotonic() >= deadline:
+                    raise LockTimeoutError(f"{self.lock_path} was not free in {self.timeout_s:.0f} s: {error}") from error
+            time.sleep(self.poll_s)
+
+
 def default_max_runs(environ: dict | None = None) -> int:
     """The cap on runs: the environment variable HARNESS_MAX_RUNS, else DEFAULT_MAX_RUNS. A bad value is an error."""
     text = (os.environ if environ is None else environ).get(MAX_RUNS_ENV, "").strip()
@@ -148,6 +200,11 @@ def default_max_runs(environ: dict | None = None) -> int:
 def bump_iterations(runs_root: Path, max_runs: int) -> int:
     """Add one to runs/.iterations and return the new count. Refuse to pass max_runs."""
     counter_path = Path(runs_root) / ".iterations"
+    with WaitLock(Path(runs_root) / ".iterations.lock", timeout_s=30):  # parallel runs must not lose a count
+        return _bump_locked(counter_path, max_runs)
+
+
+def _bump_locked(counter_path: Path, max_runs: int) -> int:
     try:
         current = int(counter_path.read_text().strip())
     except FileNotFoundError:

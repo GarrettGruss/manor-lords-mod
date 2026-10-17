@@ -1,6 +1,6 @@
 # Spec 11: Parallel game slots
 
-Status: spikes 1 and 2 done (2026-10-17): 3 games run at once from slot folders. See `implementation-notes/spike-1-2-slots-low-settings.md`. Idea from the user (2026-10-10): the game runs without Steam, so several copies can run at the same time.
+Status: steps 1 to 3 done (2026-10-17): `install.ps1` builds slots, and `run.py --slot N|auto` and the MCP `run_scenario(slot="auto")` run up to 3 games at once (3 x smoke passed in 98 s). Notes: `implementation-notes/spike-1-2-slots-low-settings.md`, `implementation-notes/step3-launcher-slots.md`. Step 4 (parallel suite runner, `EXCLUSIVE`) is open. Idea from the user (2026-10-10): the game runs without Steam, so several copies can run at the same time.
 
 ## Goal
 Run N independent game instances ("slots") on this machine at the same time, so that suites with many runs (A/B statistics, soak checks, flake finding) finish in a fraction of the wall time. Each slot gives the same results and guards as a single run today.
@@ -48,7 +48,7 @@ Run N independent game instances ("slots") on this machine at the same time, so 
 - Disk: junction slots cost a few hundred MB each. A full copy costs about 14 GB.
 
 ## Plan
-0. Done (2026-10-17): spikes 1 and 2, see `implementation-notes/spike-1-2-slots-low-settings.md`. Next: install and uninstall (design 10), then step 3.
+0. Done (2026-10-17): spikes 1 and 2, install and uninstall (design 10), and step 3 (`implementation-notes/step3-launcher-slots.md`). Next: step 4.
 1. Spike (no harness change): build one junction slot by hand, start the game from it with a private `LOCALAPPDATA`, check that it boots to READY and that the mods load. Record the size on disk.
 2. Spike: run two games at once. Measure RAM, boot time, the game clock rate at 1x and 8x, and compare with a single run. Then three games.
 3. Build the slot support (config, per-slot lock, deploy, process search, MCP tools) with tests that use the fake game and stub launcher.
@@ -70,8 +70,8 @@ Run N independent game instances ("slots") on this machine at the same time, so 
 - [ ] `uninstall.ps1 -Remove` deletes the slots and never a file in the game folder (test: a junction target survives).
 - [x] The spike shows a slot boots to READY with all mods loaded, and records its disk size.
 - [x] Two and three games run at once on this machine. RAM, boot time and clock rate are recorded in a note.
-- [ ] A run in slot 1 never stops, deploys over or reads files of slot 0 (tested with the stub launcher and a real check).
-- [ ] The user-save hash guard still reports any change of the real save folder, also with parallel runs.
+- [x] A run in slot 1 never stops, deploys over or reads files of slot 0 (process search by path, per-slot lock; real check: 3 parallel smoke runs).
+- [x] The user-save hash guard still reports any change of the real save folder, also with parallel runs (harness files of the ledger and, while installed, `rtsSettings.sav` are left out; the check runs under `runs/.saves.lock`).
 - [ ] The suite runner finishes a 3 slot suite in clearly less wall time than the same suite on 1 slot, with the same verdicts.
 - [ ] An `EXCLUSIVE` scenario never runs at the same time as another game.
 - [ ] A slot that fails to start does not fail the other slots.

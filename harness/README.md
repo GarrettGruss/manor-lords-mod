@@ -183,6 +183,21 @@ powershell -ExecutionPolicy Bypass -File harness\install.ps1                 # s
 powershell -ExecutionPolicy Bypass -File harness\install.ps1 -SettingsOnly   # settings only
 ```
 
+### Parallel runs in slots
+
+After `install.ps1`, up to 3 runs can run at the same time, one per game slot (spec 11, step 3):
+
+```powershell
+uv run python harness\run.py --scenario smoke --slot auto   # the first free slot
+uv run python harness\run.py --scenario smoke --slot 2      # slot 2 only; it fails if slot 2 is busy
+```
+
+- Slot 0 is the game folder (`runs\.lock`). Slot n uses `runs\.lock-<n>`. The default is `--slot 0`, as before.
+- Each run deploys to its own slot, and stops only the game of its own slot.
+- Changes to the real save folder (fixture install, save check, `save_game`) wait for `runs\.saves.lock`. OS mouse and key actions wait for `runs\.input.lock`.
+- After READY the window moves to the slot's screen tile.
+- MCP: `run_scenario(name, slot="auto")` is the default. `game_status` lists the slots and `free_slots`.
+
 ## Disable or remove the harness
 
 `uninstall.ps1` (PowerShell 5.1) has two modes. Both support `-DryRun` and `-GameDir`. Running twice is safe.
