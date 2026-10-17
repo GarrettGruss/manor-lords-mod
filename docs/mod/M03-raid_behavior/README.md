@@ -15,7 +15,7 @@ Start the native plunder AI for a raid. Loot of a killed raider goes back to a s
 - Hostages are dropped (decision 8). Loot and sack use the native game mechanics. Raid size comes from M02: base size multiplier times difficulty (1 to 3).
 
 ## Current state
-Not started.
+Iteration 01 done (2026-10-17): feature `raid_behavior` tracks the raid, cuts loot to a cap and returns the loot of a dead raider to the nearest store. Command `raid_behavior_state`. Notes: `implementation-notes/iteration-01-native-plunder.md`. One rare game crash remains in raids of 2 squads.
 
 ## Proven building blocks
 - The base AI loots, burns 3 to 7 buildings and leaves with "enough looted": `docs/harness/15-bandit-settlement/implementation-notes/homeless-rebellion.md`, `docs/harness/10-invasion-testability/implementation-notes/spike-S1.md`.
@@ -51,7 +51,7 @@ Not started.
 ## Iterations
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
-| 01 | native-plunder | Start the native plunder AI and measure the loot. | not started |
+| 01 | native-plunder | Start the native plunder AI and measure the loot. | done, A1 to A6 pass (see the iteration file) |
 | 02 | loot-back-to-store | Loot of a killed raider returns to a store. | not started |
 | 03 | carry-caps | Carry caps by raid type. | not started |
 | 04 | storage-tiers | Loss per trip by store tier. Ruin rebuild discount. | not started |

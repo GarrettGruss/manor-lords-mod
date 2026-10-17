@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M03.01 (#144): feature `raid_behavior` of `InvasionMod`. It tracks the raid that runs under the native plunder AI (living raiders, carried loot, burned buildings, native leave line), cuts carried loot to a cap, and returns the loot of a dead raider to the nearest store. Command `InvasionMod.raid_behavior_state`; scenarios `raid-behavior-native-plunder`, `raid-behavior-loot-return`; suite `raid-behavior-ab`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-01-native-plunder.md`.
 - Mod M02.01 (#143): feature `invasion` of `InvasionMod`. It owns the raid timer, plans one minor raid (day 30 to 90, size small, medium or large times difficulty 1 to 3), shows a daily countdown banner and spawns the raid. Commands `InvasionMod.invasion_state`, `invasion_force_next`, `invasion_set_difficulty`, `invasion_set_size`; scenarios `invasion-first-raid`, `invasion-no-double-raid`. Notes `docs/mod/M02-invasion/implementation-notes/iteration-01-first-scheduled-raid.md`.
 - Mod M01.01 follow-up: `InvasionMod.mod_state_dump` returns only its selftest keys.
 - Mod M01.01 (#142): shared module `ModState` and feature `mod_state` of `InvasionMod`. Mod values live as `invasion:<key>=<value>` Tags of the player pawn and survive a save and a load. Commands `InvasionMod.mod_state_dump`, `mod_state_get`, `mod_state_set`; scenarios `mod-state-roundtrip`, `mod-state-two-saves`, `mod-state-default-load`. Notes `docs/mod/M01-mod_state/implementation-notes/tags-module.md`.
@@ -38,6 +39,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Real-mouse input (#115): `osinput` now fails at once with "no mouse device" when Windows reports no mouse (`SM_MOUSEPRESENT` 0). That state made `getMouse3d` return Z -100000 and blocked every real placement click. New tools `s115_input_env.py` and `s115_probe.py`; note `os-mouse-regression.md`. The placement itself still needs a mouse on the PC.
 
 ### Added
+- Mod M03.01 (#144): feature `raid_behavior` of `InvasionMod`. It tracks the raid that runs under the native plunder AI (living raiders, carried loot, burned buildings, native leave line), cuts carried loot to a cap, and returns the loot of a dead raider to the nearest store. Command `InvasionMod.raid_behavior_state`; scenarios `raid-behavior-native-plunder`, `raid-behavior-loot-return`; suite `raid-behavior-ab`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-01-native-plunder.md`.
 - Spike #104: command `HarnessPlace.bp` (modes scan, extend, newmaster) tests the blueprint-to-building route for a normal building. It does not build a hitching post. Note `mousefree-blueprint-route.md`.
 - Spike #90 round 10 and #65: `HarnessGarrison` detects a built module from the commit record of `HarnessWalls` plus `IsConstructed`; garrison 12 -> 36 shown with the Lv3 tower (hook, opt-in). Module type 123 (pak mm123data) built mouse-free. Notes `manor-lv3.md`, `manor-module-pak.md`.
 - Spike #90 round 9 (mouse-free): a Lv3 tower is built without the mouse. `manor_blueprint_add` and `manor_planner commit` take `order` (`hand` = setPlacedBuilding(0) then convertBlueprintsToBuildings), `meshByPath` loads base game meshes (`LoadAsset` with `path.Name`), `probe-manor-flow` has HARNESS_MOUSEFREE. Control builds the Lv1 keep. Garrison stays 12 for the Lv3 tower. Notes `manor-lv3.md`.
@@ -69,6 +71,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Suite `pak-ab` with hidden scenario `pak-item-value` (5 runs per side, real pak A/B passed; spec 09 criterion ticked). Hidden probes `probe-lord-village` and `probe-lord-diplomacy` and suite `lord-village-ab` for the S13 and S11 reruns (partly run, issue #53). `soak-days` option `HARNESS_SOAK_KEEP_APPROVAL=1`.
 
 ### Added
+- Mod M03.01 (#144): feature `raid_behavior` of `InvasionMod`. It tracks the raid that runs under the native plunder AI (living raiders, carried loot, burned buildings, native leave line), cuts carried loot to a cap, and returns the loot of a dead raider to the nearest store. Command `InvasionMod.raid_behavior_state`; scenarios `raid-behavior-native-plunder`, `raid-behavior-loot-return`; suite `raid-behavior-ab`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-01-native-plunder.md`.
 - Spike #104: command `HarnessPlace.bp` (modes scan, extend, newmaster) tests the blueprint-to-building route for a normal building. It does not build a hitching post. Note `mousefree-blueprint-route.md`.
 - Harness (#104): `HARNESS_GAME_ARGS` passes an allow-listed launch argument to the game. Spike note `mousefree-placement.md` (mouse-free normal placement not achieved).
 
@@ -111,6 +114,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The UnrealPak response-file packer path of `pakmod.py` and its config keys `packer` and `packer_args` (spec 09 uses repak and UAssetGUI).
 
 ### Added
+- Mod M03.01 (#144): feature `raid_behavior` of `InvasionMod`. It tracks the raid that runs under the native plunder AI (living raiders, carried loot, burned buildings, native leave line), cuts carried loot to a cap, and returns the loot of a dead raider to the nearest store. Command `InvasionMod.raid_behavior_state`; scenarios `raid-behavior-native-plunder`, `raid-behavior-loot-return`; suite `raid-behavior-ab`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-01-native-plunder.md`.
 - Spike #104: command `HarnessPlace.bp` (modes scan, extend, newmaster) tests the blueprint-to-building route for a normal building. It does not build a hitching post. Note `mousefree-blueprint-route.md`.
 - Harness (#104): `HARNESS_GAME_ARGS` passes an allow-listed launch argument to the game. Spike note `mousefree-placement.md` (mouse-free normal placement not achieved).
 
@@ -130,6 +134,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Mod commands failed with `unknown command` in the real game because UE4SS gives each mod its own Lua state, so the registry in `HarnessCommands` was not shared (real run `20261010-172028-008b`). See Changed. Not yet verified in the real game.
 
 ### Added
+- Mod M03.01 (#144): feature `raid_behavior` of `InvasionMod`. It tracks the raid that runs under the native plunder AI (living raiders, carried loot, burned buildings, native leave line), cuts carried loot to a cap, and returns the loot of a dead raider to the nearest store. Command `InvasionMod.raid_behavior_state`; scenarios `raid-behavior-native-plunder`, `raid-behavior-loot-return`; suite `raid-behavior-ab`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-01-native-plunder.md`.
 - Spike #104: command `HarnessPlace.bp` (modes scan, extend, newmaster) tests the blueprint-to-building route for a normal building. It does not build a hitching post. Note `mousefree-blueprint-route.md`.
 - Mod `RefugeeWaves` (spec 15, #51): a monthly random event that sends a refugee wave (`settleRegion` calls, camp near the woods), ends when the player houses the families, and turns half of the homeless wave families into a raid after 30 game days or approval under 40. New scenario `refugee-wave` (3 of 3 real runs). Notes: `docs/harness/15-bandit-settlement/implementation-notes/refugee-waves-mod.md`.
 - Policy edicts spike (spec 16, issue #55): shared module `HarnessPolicies`, `HarnessActions` version 19 with `policy_state` (read), `policy_enact`, `policy_sign` and the spike commands `menu_probe_show`, `menu_probe_read`, `menu_probe_hide`; Python actions; fake tests. Real game: 19 policy rows in `DT_PolicyTypes`, "Strict fasting" is the rationing policy; `enactPolicy` returned false; `setPolicySigned` works; a game policy card can be shown from Lua. Notes: `docs/harness/16-policy-edicts/implementation-notes/`.
@@ -219,6 +224,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `harness/suite.py` and `harness/suitelib/`: the regression suite. It runs a suite through `run.py`, retries failures to find flaky scenarios, writes `report.json` and `report.md`, compares metrics with baselines, and writes baselines only on request. Suites are in `harness/suites/` (`smoke`, `core`, `soak`, `selftest`). Real baselines for `smoke`, `time-advance` and `telemetry-sanity` are in `harness/baselines/`. After a run timeout the suite kills `run.py` and closes the game (found in a real run: the game stayed open).
 
 ### Added
+- Mod M03.01 (#144): feature `raid_behavior` of `InvasionMod`. It tracks the raid that runs under the native plunder AI (living raiders, carried loot, burned buildings, native leave line), cuts carried loot to a cap, and returns the loot of a dead raider to the nearest store. Command `InvasionMod.raid_behavior_state`; scenarios `raid-behavior-native-plunder`, `raid-behavior-loot-return`; suite `raid-behavior-ab`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-01-native-plunder.md`.
 - Spike #104: command `HarnessPlace.bp` (modes scan, extend, newmaster) tests the blueprint-to-building route for a normal building. It does not build a hitching post. Note `mousefree-blueprint-route.md`.
 - Harness (#104): `HARNESS_GAME_ARGS` passes an allow-listed launch argument to the game. Spike note `mousefree-placement.md` (mouse-free normal placement not achieved).
 

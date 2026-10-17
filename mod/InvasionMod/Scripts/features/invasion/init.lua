@@ -23,6 +23,7 @@ state:register("last_banner_day", 0, "integer")
 if config.seed then math.randomseed(config.seed) else math.randomseed(os.time()) end
 
 local last_handled_day = nil -- the day of the last daily step in this Lua state
+local spawn_watchers = {} -- { before, after } pairs from other features (M03 tracks the raid)
 
 ---------------------------------------------------------------------------------------------
 -- Game reads
@@ -78,9 +79,14 @@ local function spawn_raid(today)
     local squads = state:get("squads")
     local centre = spawn_centre()
     if centre == nil then return core.log.error(TAG, "no player pawn: the raid is not spawned") end
+    local tokens = {}
+    for index, watcher in ipairs(spawn_watchers) do tokens[index] = watcher.before() end
     local ok, problem = core.spawn_raiders(squads, centre)
     if not ok then return core.log.error(TAG, "raid spawn failed: " .. tostring(problem)) end
     state:set("raids_spawned", state:get("raids_spawned") + 1)
+    for index, watcher in ipairs(spawn_watchers) do
+        core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = squads })
+    end
     core.log.info(TAG, string.format("INVASION spawn day=%d planned_day=%d squads=%d raiders=%d",
         today, state:get("raid_day"), squads, squads * config.squad_units))
     core.show_banner("Raiders are here", string.format("About %d raiders", squads * config.squad_units))
@@ -173,4 +179,10 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature invasion loaded")
-return { state = state }
+-- Another feature registers two functions: before() runs just before the spawn call and returns a token,
+-- after(token, { day, squads }) runs just after it.
+local function watch_spawn(before, after)
+    spawn_watchers[#spawn_watchers + 1] = { before = before, after = after }
+end
+
+return { state = state, watch_spawn = watch_spawn }
