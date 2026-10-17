@@ -24,6 +24,7 @@ import psutil
 
 from runlib import game, gameslots
 from runlib.runfolder import DEFAULT_MAX_RUNS, default_max_runs, new_run_id, run_lock_name
+from runlib.shared import lock_root
 
 MAX_RESULT_BYTES = 20_000
 MAX_TEXT_CHARS = 15_000  # leaves room for the JSON frame around one text field
@@ -154,7 +155,7 @@ def clamp(value: int, low: int, high: int) -> int:
 def lock_holder_pid(runs_root: Path, slot: int = 0) -> int | None:
     """PID of a live process that holds the run lock of `slot` (runs/.lock or runs/.lock-<n>), or None. Read only."""
     try:
-        pid = int((Path(runs_root) / run_lock_name(slot)).read_text().strip())
+        pid = int((lock_root(runs_root) / run_lock_name(slot)).read_text().strip())
     except (FileNotFoundError, ValueError):
         return None
     return pid if psutil.pid_exists(pid) else None
@@ -171,7 +172,7 @@ CLAIM_GRACE_S = 10  # time a claim counts as live while the launcher pid is not 
 
 def claim_path(runs_root: Path, slot: int = 0) -> Path:
     """One start claim per game slot (spec 11). Slot 0 keeps the old name."""
-    return Path(runs_root) / (CLAIM_NAME if slot == 0 else f".active-launcher-{slot}.json")
+    return lock_root(runs_root) / (CLAIM_NAME if slot == 0 else f".active-launcher-{slot}.json")
 
 
 def claim_is_live(path: Path, claim: dict | None) -> bool:
@@ -232,7 +233,7 @@ def release_claim(path: Path) -> None:
 
 def read_iteration_state(runs_root: Path) -> dict:
     try:
-        used = int((Path(runs_root) / ".iterations").read_text().strip())
+        used = int((lock_root(runs_root) / ".iterations").read_text().strip())
     except (FileNotFoundError, ValueError):
         used = 0
     folders = list_run_folders(runs_root)

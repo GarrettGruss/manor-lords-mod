@@ -25,9 +25,9 @@ import psutil
 
 from .environment import sha256_of_file
 from .runfolder import WaitLock
+from .shared import SHARED_RUNS
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-LEDGER_PATH = REPO_ROOT / "runs" / ".installed-slots.json"
+LEDGER_PATH = SHARED_RUNS / ".installed-slots.json"  # one ledger for all worktrees: they share the save folder
 SLOT_NAME = re.compile(r"^saveGame_(\d+)(?:_descr\.sav|\.sav|\.png|_coat_\d+\.png)$")
 REQUIRED_SUFFIXES = (".sav", "_descr.sav")
 DESCRIPTOR_SUFFIX = "_descr.sav"

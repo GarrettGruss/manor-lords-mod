@@ -11,9 +11,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .game import GameInstall, _default_root
+from .shared import SHARED_ROOT
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-SLOTS_DIR = REPO_ROOT / "slots"
+SLOTS_DIR = SHARED_ROOT / "slots"  # harness/install.ps1 builds them once, in the main checkout
 MAX_SLOT = 3
 # Screen tiles for 1280x720 windows on a 2560x1440 screen. Slot n uses tile n, so windows do not cover each other.
 TILES = ((0, 0), (1280, 0), (0, 720), (1280, 720))

@@ -28,7 +28,7 @@ param(
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'installstate.ps1')
 # $PSScriptRoot is empty in parameter defaults on PowerShell 5.1, so the default is set here.
-if (-not $SlotsDir) { $SlotsDir = Join-Path (Split-Path -Parent $PSScriptRoot) 'slots' }
+if (-not $SlotsDir) { $SlotsDir = Join-Path (Get-MainCheckout (Split-Path -Parent $PSScriptRoot)) 'slots' }  # one set for all worktrees
 
 try {
     Assert-GameNotRunning
