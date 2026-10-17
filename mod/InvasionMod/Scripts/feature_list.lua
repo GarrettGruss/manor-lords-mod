@@ -4,4 +4,5 @@ return {
     { name = "example", requires = {} },
     { name = "mod_state", requires = {} },
     { name = "invasion", requires = { "mod_state" } },
+    { name = "raid_behavior", requires = { "invasion" } },
 }

@@ -25,4 +25,12 @@ return {
         poll_ms = 300,                                       -- real time between two checks of the game day
         seed = nil,                                          -- nil: seed from the clock
     },
+    -- M03 raid_behavior, iteration 01. The native plunder AI is left alone.
+    raid_behavior = {
+        enabled = true,
+        poll_ms = 1000,         -- real time between two looks at the raiders
+        carry_cap = 10,         -- most loot (ItemsLooted) one raider keeps. Hussite grain 10 (M00). The native AI reaches 4 or 5.
+        exit_y = -85000,        -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
+        fallback_good = 16,     -- good type for loot when the nearest store has no goods
+    },
 }
