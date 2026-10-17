@@ -12,7 +12,7 @@ return {
             { key = "selftest_text", kind = "string", default = "none" },
         },
     },
-    -- M02 invasion, iteration 01. First guesses from the M00 balance targets.
+    -- M02 invasion, iterations 01 and 02 (the tick runs at each season change). First guesses from the M00 balance targets.
     invasion = {
         enabled = true,
         difficulty = 1,                                      -- start value, 1 to 3. The player picks it (start UI comes later).
@@ -46,7 +46,6 @@ return {
     bandits = {
         enabled = true,
         poll_ms = 1000,                  -- real time between two checks of Public Order
-        tick_days = 30,                  -- simple fixed tick; iteration 02 replaces it with the season tick
         bands = {                        -- the chance applies when Public Order is below "below"; the lowest matching band wins
             { below = 75, chance = 0.10 },
             { below = 50, chance = 0.25 },

@@ -39,10 +39,10 @@ function M.should_convert(order, bands, roll)
     return roll < M.chance_for(order, bands)
 end
 
--- A tick is due when at least tick_days passed since the last tick.
--- The caller sets the first day: last_tick_day 0 is never due.
-function M.tick_due(today, last_tick_day, tick_days)
-    return last_tick_day > 0 and today - last_tick_day >= tick_days
+-- A season tick is due when the season differs from the saved one.
+-- last -1 means no season is saved yet: the caller only stores the season then and does not roll.
+function M.season_changed(current, last)
+    return last >= 0 and current ~= last
 end
 
 return M

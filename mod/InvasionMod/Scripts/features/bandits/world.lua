@@ -17,6 +17,14 @@ function M.current_day()
     return nil
 end
 
+function M.current_season()
+    local e = engine()
+    if e == nil then return nil end
+    local ok, value = pcall(function() return e.TemporalComponent.Season end)
+    if ok and type(value) == "number" then return math.floor(value) end
+    return nil
+end
+
 function M.region()
     local region, problem = core.player_region()
     return region, problem
