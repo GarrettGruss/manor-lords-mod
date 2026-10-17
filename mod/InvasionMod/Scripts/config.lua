@@ -41,4 +41,18 @@ return {
         unarmored_def_factor = 0.0,    -- new def = def x factor, for an unarmored unit
         unarmored_block_factor = 0.0,  -- new block = block x factor
     },
+    -- M04 bandits, iteration 01. First guesses from M00 decisions 11 to 15 and 28 to 30.
+    bandits = {
+        enabled = true,
+        poll_ms = 1000,                  -- real time between two checks of Public Order
+        tick_days = 30,                  -- simple fixed tick; iteration 02 replaces it with the season tick
+        bands = {                        -- the chance applies when Public Order is below "below"; the lowest matching band wins
+            { below = 75, chance = 0.10 },
+            { below = 50, chance = 0.25 },
+            { below = 25, chance = 0.50 },
+        },
+        families_per_conversion = 2,     -- families removed by one successful roll
+        families_per_squad = 2,          -- one Brigands squad (18 units) per 2 families (spike 15 proposal)
+        min_families_left = 1,           -- the village never loses its last family to this feature
+    },
 }
