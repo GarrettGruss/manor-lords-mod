@@ -39,13 +39,13 @@ def run(ctx) -> dict:
     squads = MULTIPLIERS[size] * difficulty
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=difficulty)
     ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
-    ctx.mod.command("InvasionMod.invasion_set_size", size=size)
+    plan = ctx.mod.command("InvasionMod.invasion_set_size", size=size)
     bandits_before = side_count(ctx.actions.units_census(), "bandit")
     population_before = ctx.mod.command("InvasionMod.raid_behavior_state")["population"]
     ctx.mod.command("InvasionMod.invasion_force_next")
     ctx.run_until(lambda: bool(tracker(ctx)), 30, what="the raid record")
     raid = tracker(ctx)
-    ctx.check("the tracker found all raiders", raid["initial"] == 18 * squads, raid["initial"])
+    ctx.check("the tracker found all raiders", raid["initial"] == plan["raiders"] and plan["squads"] == squads, [raid["initial"], plan["raiders"]])
 
     mismatches, samples, days = [], 0, 0
     while raid["state"] == "active" and days < MAX_DAYS:

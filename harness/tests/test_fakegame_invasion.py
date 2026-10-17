@@ -24,12 +24,15 @@ class InvasionTestCase(unittest.TestCase):
         self.mod_name = pack.name
         self.game.exec(f'package.path = "{(pack / "Scripts").as_posix()}/?.lua;" .. package.path')
         self.game.exec(FNAME + HELPERS)
-        self.banners, self.raids = [], []
+        self.banners, self.raids, self.armies = [], [], []
         self.pawn = self.game.obj("PawnCPP", Tags=self.game.array([]))
         self.game.method(self.pawn, "playEventMessage", lambda _self, _kind, text, sub: self.banners.append(text))
         self.game.method(self.pawn, "K2_GetActorLocation", lambda _self: self.game.struct(X=10.0, Y=20.0, Z=30.0))
         self.calendar = self.game.obj("TemporalComponent", daysTotal=61, daysUntilNextRaid=730)
         self.engine = self.game.obj("RTSMultiEngineCPP", playerRef=self.pawn, TemporalComponent=self.calendar)
+        self.bandit = self.game.obj("PawnCPP", isBandit=True)
+        self.game.method(self.engine, "spawnArmy", lambda _self, point, names, owner, company, days: self.armies.append(
+            ([names[i].text for i in range(1, len(names) + 1)], point.X, point.Y, owner.isBandit is True)))
         self.game.method(self.engine, "spawnRaiders", lambda _self, squads, centre: self.raids.append((squads, centre.X, centre.Y)))
         self.game.load_mod(self.mod_name)
         self.game.advance(2)
@@ -66,7 +69,7 @@ class PlanTests(InvasionTestCase):
         self.assertTrue(PLAN_DAYS[0] <= state["raid_day"] - 61 <= PLAN_DAYS[1], state)
         self.assertTrue(WARNING_DAYS[0] <= state["raid_day"] - state["warning_day"] <= WARNING_DAYS[1], state)
         self.assertIn(state["squads"], (1, 2, 3))
-        self.assertEqual(state["raiders"], 18 * state["squads"])
+        self.assertEqual(len(state["composition"].split("-")), state["squads"])
 
     def test_the_plan_is_kept_in_the_pawn_tags(self):
         state = self.state()
@@ -86,7 +89,7 @@ class CommandTests(InvasionTestCase):
             self.assertTrue(self.ask("invasion_set_difficulty", value=difficulty)["ok"])
             answer = self.ask("invasion_set_size", size=size)
             self.assertEqual(answer["result"]["squads"], squads)
-            self.assertEqual(answer["result"]["raiders"], 18 * squads)
+            self.assertEqual(len(answer["result"]["composition"].split("-")), squads)
 
     def test_a_difficulty_outside_one_to_three_is_refused(self):
         self.assertFalse(self.ask("invasion_set_difficulty", value=4)["ok"])
@@ -104,27 +107,80 @@ class RaidTests(InvasionTestCase):
         self.run_days(62, plan["raid_day"] + 5)
         warning_days = plan["raid_day"] - plan["warning_day"]
         self.assertEqual(len(self.banners), warning_days + 1)  # one for each day left, plus the arrival banner
-        self.assertEqual(self.banners[0], f"Raid in {warning_days} days, about 72 raiders")
-        self.assertEqual(self.banners[warning_days - 1], "Raid in 1 day, about 72 raiders")
-        self.assertEqual(self.raids, [(4, 10.0, 20.0)])
+        raiders = self.state()["raiders"]
+        self.assertEqual(self.banners[0], f"Raid in {warning_days} days, about {raiders} raiders")
+        self.assertEqual(self.banners[warning_days - 1], f"Raid in 1 day, about {raiders} raiders")
+        self.assertEqual(len(self.armies), 1)
+        self.assertEqual(len(self.armies[0][0]), 4)
+        self.assertEqual(self.raids, [])
         self.assertEqual(self.state()["raids_spawned"], 1)
 
     def test_force_next_spawns_on_the_next_check(self):
         self.ask("invasion_set_size", size="small")
         self.assertTrue(self.ask("invasion_force_next")["ok"])
         self.game.advance(2)
-        self.assertEqual(self.raids, [(1, 10.0, 20.0)])
+        self.assertEqual(len(self.armies), 1)
         self.assertFalse(self.ask("invasion_force_next")["ok"])
 
     def test_a_missed_day_still_spawns(self):
         plan = self.state()
         self.set_day(plan["raid_day"] + 2)
-        self.assertEqual(len(self.raids), 1)
+        self.assertEqual(len(self.armies), 1)
 
     def test_no_second_raid(self):
         plan = self.state()
         self.run_days(62, plan["raid_day"] + 30)
-        self.assertEqual(len(self.raids), 1)
+        self.assertEqual(len(self.armies), 1)
+
+
+class RolesTests(InvasionTestCase):
+    def plan_and_spawn(self, difficulty, size):
+        self.ask("invasion_set_difficulty", value=difficulty)
+        planned = self.ask("invasion_set_size", size=size)["result"]
+        self.assertTrue(self.ask("invasion_force_next")["ok"])
+        self.game.advance(2)
+        return planned
+
+    def test_the_raid_spawns_the_planned_composition_at_the_edge(self):
+        planned = self.plan_and_spawn(3, "large")
+        self.assertEqual(len(self.armies), 1)
+        names, x, y, from_bandit = self.armies[0]
+        self.assertEqual("-".join(names), planned["composition"])
+        self.assertEqual(len(names), 9)
+        self.assertEqual((x, y), (10.0, -88900))
+        self.assertTrue(from_bandit)
+        self.assertEqual(self.raids, [])
+
+    def test_raiders_estimate_is_the_sum_of_the_squad_sizes(self):
+        planned = self.plan_and_spawn(2, "medium")
+        sizes = {"Brigands": 18, "spearMilitia": 32, "militiaFoot": 32, "mercenary_infantry": 36, "retinue_tier3": 36,
+                 "brigandPolearms": 36, "bowMilitia": 32, "brigandArchers": 36, "crossbowMilitia": 32, "mercenary_crossbowmen": 36}
+        self.assertEqual(planned["raiders"], sum(sizes[name] for name in planned["composition"].split("-")))
+
+    def test_a_new_difficulty_makes_a_new_composition(self):
+        self.state()
+        self.ask("invasion_set_size", size="small")
+        one = self.ask("invasion_set_difficulty", value=1)["result"]
+        three = self.ask("invasion_set_difficulty", value=3)["result"]
+        self.assertEqual(len(one["composition"].split("-")), 1)
+        self.assertEqual(len(three["composition"].split("-")), 3)
+
+    def test_roles_off_uses_spawn_raiders(self):
+        self.ask("invasion_set_size", size="small")
+        self.ask("invasion_set_difficulty", value=2)
+        self.assertFalse(self.ask("invasion_set_roles", enabled=False)["result"]["roles"])
+        self.assertEqual(self.state()["raiders"], 36)
+        self.ask("invasion_force_next")
+        self.game.advance(2)
+        self.assertEqual(self.raids, [(2, 10.0, 20.0)])
+        self.assertEqual(self.armies, [])
+
+    def test_a_failed_army_spawn_is_not_counted(self):
+        self.game.method(self.engine, "spawnArmy", lambda *_args: (_ for _ in ()).throw(RuntimeError("no")))
+        self.ask("invasion_set_size", size="small")
+        self.ask("invasion_force_next")
+        self.game.advance(2)
+        self.assertEqual(self.state()["raids_spawned"], 0)
 
 
 if __name__ == "__main__":

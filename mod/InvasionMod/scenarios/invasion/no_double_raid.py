@@ -6,7 +6,7 @@ It saves nothing.
 
 import re
 
-from runlib.units import SQUAD_UNITS, side_count
+from runlib.units import side_count
 
 NAME = "invasion-no-double-raid"
 LIMIT_S = 1000
@@ -58,7 +58,7 @@ def run(ctx) -> dict:
     refills = [int(m.group(1)) for m in map(REFILL.search, lines) if m]
     ctx.check("A4 every lift started from just under the floor (no base raid reset it)", all(value == TIMER_FLOOR - 1 for value in refills), refills)
     added = side_count(ctx.actions.units_census(), "bandit") - bandits_before
-    planned_units = SQUAD_UNITS * plan["squads"]
+    planned_units = plan["raiders"]
     # Raiders fight for days after the spawn, so some die before the census. More than planned would mean a second raid.
     ctx.check("A4 the bandit units are at most the planned raid and not zero", 0 < added <= planned_units, [added, planned_units])
     ctx.metric("bandit_units_added", added)
