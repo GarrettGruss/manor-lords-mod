@@ -54,7 +54,8 @@ class ScenarioContext:
         self.log = ScenarioLog(self.run_dir / "scenario.log")
         self._screenshot_fn = screenshot_fn
         self.expect = Expectations(self.log.info)
-        self.time = TimeControl(bridge, check_alive=self.ensure_alive, log=self.log.info)
+        self.time = TimeControl(bridge, check_alive=self.ensure_alive, log=self.log.info,
+                                guard=lambda: self.popups())
         self.telemetry = TelemetryReader(self.run_dir)
         self.notes: list[str] = []
         self._metrics: dict[str, float] = {}

@@ -117,6 +117,29 @@ class SetSpeedTest(unittest.TestCase):
 
 
 class RunTest(unittest.TestCase):
+    def test_the_guard_closes_a_pop_up_that_opens_during_a_run(self):
+        game = FakeGame()
+        game.player_paused_flag = False
+        calls = []
+
+        def guard():
+            calls.append(game.wall)
+            game.blocked = False  # the guard closed the pop-up
+
+        control = TimeControl(Bridge(game.one, sleep=game.sleep), sleep=game.sleep, monotonic=game.monotonic, guard=guard)
+        real_sleep = game.sleep
+
+        def sleep_and_block(seconds):
+            real_sleep(seconds)
+            if 3.0 < game.wall < 3.3:
+                game.blocked = True  # a pop-up opens
+
+        game.sleep = sleep_and_block
+        control = TimeControl(Bridge(game.one, sleep=sleep_and_block), sleep=sleep_and_block, monotonic=game.monotonic, guard=guard)
+        record = control.run_game_seconds(80, speed=3)
+        self.assertTrue(calls)
+        self.assertTrue(record["paused_at_end"])
+
     def test_run_game_seconds_pauses_at_the_end(self):
         game = FakeGame()
         record = make_time(game).run_game_seconds(20, speed=3)

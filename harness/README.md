@@ -50,7 +50,7 @@ Scenarios: `noop`, `smoke`. Test scenarios (`selftest-fail`, `selftest-timeout`)
 Each run function unpauses, sets the speed, waits, pauses, and checks that the clock stands still for 3 s. It returns
 `{clock_start, clock_end, wall_s, paused_at_end, speed}` (days also have `days_start`, `days_end`, `day_start`, `day_end`).
 It raises `TimeControlError` on a timeout, with a pause first. Days are counted with `daysTotal`, which does not wrap at the year end (365 days).
-`absolute_day(date)` gives a day number for date asserts. A game pop-up (for example "Hunger!") pauses the game and gives a `TimeControlError`. Use `ctx.popups()` in a long run (see below).
+`absolute_day(date)` gives a day number for date asserts. A game pop-up (for example "Hunger!") pauses the game and gives a `TimeControlError`. `ctx.time.run_game_seconds` and `run_game_days` close pop-ups on their own every 2 s. Use `ctx.popups()` in your own wait loops (see below).
 `set_speed` takes about 3 s, because it waits to see that the speed holds. Numbers: spec 04 `implementation-notes/time-measurements.md`.
 
 ### Telemetry
