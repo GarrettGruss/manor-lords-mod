@@ -1,7 +1,7 @@
 -- Feature bandits (M04, iteration 01): low approval lowers Public Order, low Public Order turns families into bandits.
 -- The mod writes Region.publicOrder = natural - debuff. The game rewrites the value now and then (it falls back to its own value),
 -- and the mod takes the new value as the natural one. The conversion uses the proven homeless_rebel route.
--- The tick here is a simple fixed interval. Iteration 02 replaces it with the season tick.
+-- The tick runs once per season change (iteration 02). The last season is saved in ModState, so a load does not repeat a season.
 local core = require("ManorCore")
 local ModState = require("ModState")
 local invasion = require("features.invasion.init")
@@ -15,6 +15,7 @@ local STATE_VERSION = 1
 local state = ModState.open("invasion", "pawn", STATE_VERSION)
 state:register("bandits_converted_families", 0, "integer")
 state:register("bandits_last_tick_day", 0, "integer")
+state:register("bandits_last_season", -1, "integer")
 state:register("bandits_rolls", 0, "integer")
 state:register("bandits_natural_order", -1, "integer")
 state:register("bandits_written_order", -1, "integer")
@@ -104,14 +105,27 @@ local function run_tick(today, roll)
     state:set("bandits_last_tick_day", today)
 end
 
+-- The saved season is set before the tick, so an error in the tick cannot make it run twice.
+local function check_season(today)
+    local season = world.current_season()
+    if season == nil then return end
+    local last = state:get("bandits_last_season")
+    if not rules.season_changed(season, last) then
+        if last < 0 then state:set("bandits_last_season", season) end
+        return
+    end
+    state:set("bandits_last_season", season)
+    core.log.info(TAG, string.format("BANDITS season change %d to %d on day %d", last, season, today))
+    run_tick(today, math.random())
+end
+
 local function poll()
     if not state.loaded then return end
     if natural_order == nil and written_order == nil then restore_memory() end
     apply_debuff()
     local today = world.current_day()
     if today == nil then return end
-    if state:get("bandits_last_tick_day") == 0 then state:set("bandits_last_tick_day", today) end
-    if rules.tick_due(today, state:get("bandits_last_tick_day"), config.tick_days) then run_tick(today, math.random()) end
+    check_season(today)
 end
 
 LoopAsync(config.poll_ms, function()
@@ -132,7 +146,7 @@ local function command_state()
         day = world.current_day(), difficulty = difficulty(), order = values and values.order, approval = values and values.approval,
         natural_order = natural_order, written_order = written_order, debuff = debuff, overwrites = overwrites,
         families = region and world.families(region), converted_families = state:get("bandits_converted_families"),
-        rolls = state:get("bandits_rolls"), last_tick_day = state:get("bandits_last_tick_day"), ticks = last_ticks,
+        season = world.current_season(), last_season = state:get("bandits_last_season"), rolls = state:get("bandits_rolls"), last_tick_day = state:get("bandits_last_tick_day"), ticks = last_ticks,
     }
 end
 

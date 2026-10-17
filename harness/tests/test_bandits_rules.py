@@ -39,10 +39,11 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(self.rules.natural_order(35, 35, 100), 100)  # the mod's own write
         self.assertEqual(self.rules.natural_order(90, 35, 100), 90)   # the game rewrote it
 
-    def test_tick_due(self):
-        self.assertFalse(self.rules.tick_due(100, 0, 30))
-        self.assertFalse(self.rules.tick_due(129, 100, 30))
-        self.assertTrue(self.rules.tick_due(130, 100, 30))
+    def test_season_changed(self):
+        self.assertFalse(self.rules.season_changed(1, -1))  # nothing saved: store only
+        self.assertFalse(self.rules.season_changed(1, 1))
+        self.assertTrue(self.rules.season_changed(2, 1))
+        self.assertTrue(self.rules.season_changed(0, 3))  # autumn to winter
 
 
 if __name__ == "__main__":
