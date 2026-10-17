@@ -122,13 +122,15 @@ local function log_day(today)
     end
 end
 
-local function step_raid(entry, seen, today)
+local function step_raid(entry, seen, today, slow_look)
     local raid = entry.raid
     local was_active = raid.state == "active"
     for _, death in ipairs(rules.update(raid, seen, config, today)) do return_loot(entry, death) end
     write_caps(seen)
-    refresh_burned(entry)
-    check_leave_line(entry, today)
+    if slow_look then
+        refresh_burned(entry)
+        check_leave_line(entry, today)
+    end
     if state.loaded then save_summary(entry) end
     if was_active and raid.state ~= "active" then
         core.log.info(TAG, string.format("RAID_BEHAVIOR end id=%d day=%s state=%s", raid.id, tostring(today), raid.state))
@@ -142,12 +144,28 @@ local function has_active_raid()
     return false
 end
 
+-- Why only the raid units and a slow look: reads of every unit, building and log line each second crashed
+-- the Lua state in 120 day runs (issue 163).
+local function tracked_keys()
+    local keys = {}
+    for _, id in ipairs(order) do
+        if raids[id].raid.state == "active" then
+            for key in pairs(raids[id].raid.units) do keys[key] = true end
+        end
+    end
+    return keys
+end
+
+local tick_count = 0
+
 local function tick()
     if not has_active_raid() then return end
+    tick_count = tick_count + 1
+    local slow_look = tick_count % config.slow_every == 1
     local today = world.current_day()
-    local seen = world.read_units()
+    local seen = world.read_units(tracked_keys())
     for _, id in ipairs(order) do
-        if raids[id].raid.state == "active" then step_raid(raids[id], seen, today) end
+        if raids[id].raid.state == "active" then step_raid(raids[id], seen, today, slow_look) end
     end
     if today ~= nil and today ~= last_logged_day then
         last_logged_day = today

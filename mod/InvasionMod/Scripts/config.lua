@@ -29,6 +29,7 @@ return {
     raid_behavior = {
         enabled = true,
         poll_ms = 1000,         -- real time between two looks at the raiders
+        slow_every = 5,         -- the building scan and the AI log scan run every Nth look (they read many objects)
         carry_cap = 10,         -- most loot (ItemsLooted) one raider keeps. Hussite grain 10 (M00). The native AI reaches 4 or 5.
         exit_y = -85000,        -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
         fallback_good = 16,     -- good type for loot when the nearest store has no goods
