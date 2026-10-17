@@ -17,6 +17,7 @@ A spike answers one question about the engine with evidence. Write the question 
 - Never call a function that saves: `PawnCPP:requestSaveFile`, `SaveToDiskWithThumbnail`, `IoHandler:SaveGameToSlot`, `RequestMenuSave`, `Request Autosave`. They write into the user's real save folder. The launcher only reports a change after it happened.
 - Do not read struct values with soft object fields (`getItem`, `RowStruct`) through the bridge: it crashes the game.
 - Touch UObjects only on the game thread. The bridge does this for you.
+- Never change cvars through the console (bridge `console_command`, for example `r.*`, `sg.*`, `t.MaxFps`). The game saves them into the user's REAL settings (`UserSettings.ini`, `rtsSettings.sav`), also with a private `LOCALAPPDATA` (spec 11, spike 2). Game settings belong to `harness/install.ps1`.
 - One agent uses the game at a time. End every game process you start. Check `tasklist`. `harness\game-close.ps1` may be refused by PowerShell policy. Then close the game window (`CloseMainWindow`).
 - Background shells can be killed by Claude Code when memory is low. Do not restart them on your own. Report it.
 - Read elements of a property array directly. Never call `:get()` on a struct element of a property array, and do not read a struct that a function returns by value (`getSquadByID`): both crashed the game inside UE4SS, and a pcall cannot catch it. Call `:get()` only on function return values (spike S11).
