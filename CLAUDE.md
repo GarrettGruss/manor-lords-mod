@@ -55,9 +55,9 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
   - Keep commits atomic on the branch.
   - Small changes that do not belong to one spec (for example `chore` or `docs` for the project rules) may go to `main`.
   - When work is done and ready for `main`, push the branch and open a pull request so it can be reviewed. Link the issue.
-  - Merge rules:
-    - `docs`, `fix` and `chore` work may be merged without review.
-    - Features (`feat`, a feature or mod iteration branch) and breaking changes need the user's approval before the merge. Open the PR, set the issue to `status: awaiting user`, and wait.
+  - Merge rules: every PR type is approved by the user in advance (2026-10-17). Merge it after the full tests pass.
+    - This covers `docs`, `fix`, `chore`, features (`feat`, feature or mod iteration branches) and breaking changes.
+    - Merge stacked PRs in order. Retarget the next PR to `main` before its merge.
   - Do not push or merge in any other case unless the user asks.
 - Do not commit unless the user asks.
 - Never skip hooks. Never force push.
