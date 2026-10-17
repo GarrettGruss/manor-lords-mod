@@ -55,6 +55,12 @@ function Assert-Inside([string]$Root, [string]$Path) {
     }
 }
 
+# The state names the game folder it was made for. An uninstall for another folder (a test with a temp game) leaves it alone.
+function Test-SameGameDir($State, [string]$GameDir) {
+    if (-not $State.game_dir) { return $true }  # a state from before this field: it can only be the real install
+    return [IO.Path]::GetFullPath($State.game_dir).TrimEnd('') -ieq [IO.Path]::GetFullPath($GameDir).TrimEnd('')
+}
+
 function Write-TextAtomic([string]$Path, [string]$Text) {
     $tmp = "$Path.tmp"
     [IO.File]::WriteAllText($tmp, $Text, (New-Object Text.UTF8Encoding($false)))
@@ -103,7 +109,7 @@ function Set-IniValues([string]$Text, $Sections) {
 
 # ---- user settings: backup, harness values, restore ----
 
-function Backup-UserFiles([string]$UserDir, [string]$SlotsDir) {
+function Backup-UserFiles([string]$UserDir, [string]$SlotsDir, [string]$GameDir) {
     $statePath = Get-SettingsStatePath $SlotsDir
     if (Test-Path -LiteralPath $statePath) {
         Write-Host 'settings   backup exists from an earlier install; it is kept, not replaced'
@@ -125,7 +131,7 @@ function Backup-UserFiles([string]$UserDir, [string]$SlotsDir) {
         Write-Host ("settings   backed up  {0} ({1})" -f $relative, $(if ($entry.existed) { 'exists' } else { 'not present' }))
     }
     # The state is written before the first change, so an uninstall can always find the backup.
-    Write-TextAtomic $statePath (ConvertTo-Json @{ user_dir = $UserDir; files = $entries } -Depth 4)
+    Write-TextAtomic $statePath (ConvertTo-Json @{ user_dir = $UserDir; game_dir = $GameDir; files = $entries } -Depth 4)
 }
 
 function Set-HarnessUserSettings([string]$UserDir) {
@@ -138,10 +144,14 @@ function Set-HarnessUserSettings([string]$UserDir) {
     }
 }
 
-function Restore-UserFiles([string]$SlotsDir) {
+function Restore-UserFiles([string]$SlotsDir, [string]$GameDir) {
     $statePath = Get-SettingsStatePath $SlotsDir
     if (-not (Test-Path -LiteralPath $statePath)) { Write-Host 'settings   no install backup found: nothing to restore'; return 0 }
     $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
+    if (-not (Test-SameGameDir $state $GameDir)) {
+        Write-Host "settings   the install backup belongs to $($state.game_dir), not to this GameDir: left alone"
+        return 0
+    }
     $backupDir = Join-Path (Get-InstallDir $SlotsDir) 'backup'
     $restored = 0
     foreach ($entry in $state.files) {
@@ -220,13 +230,18 @@ function Remove-Slot([string]$SlotsDir, $Entry) {
     Write-Host "slot $($Entry.slot)     removed"
 }
 
-function Read-SlotsState([string]$SlotsDir) {
+function Read-SlotsState([string]$SlotsDir, [string]$GameDir) {
     $path = Get-SlotsStatePath $SlotsDir
     if (-not (Test-Path -LiteralPath $path)) { return @() }
-    return @((Get-Content -LiteralPath $path -Raw | ConvertFrom-Json).slots)
+    $state = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+    if (-not (Test-SameGameDir $state $GameDir)) {
+        Write-Host "slots      the slots belong to $($state.game_dir), not to this GameDir: left alone"
+        return @()
+    }
+    return @($state.slots)
 }
 
-function Write-SlotsState([string]$SlotsDir, $Entries) {
+function Write-SlotsState([string]$SlotsDir, $Entries, [string]$GameDir) {
     New-Item -ItemType Directory -Force -Path (Get-InstallDir $SlotsDir) | Out-Null
-    Write-TextAtomic (Get-SlotsStatePath $SlotsDir) (ConvertTo-Json @{ slots = @($Entries) } -Depth 4)
+    Write-TextAtomic (Get-SlotsStatePath $SlotsDir) (ConvertTo-Json @{ game_dir = $GameDir; slots = @($Entries) } -Depth 4)
 }

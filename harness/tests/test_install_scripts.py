@@ -84,6 +84,18 @@ class InstallScriptTests(unittest.TestCase):
         self.assertFalse((self.user / "Config" / "Windows" / "GameUserSettings.ini").exists(), "it did not exist before")
         self.assertFalse((self.slots / ".install" / "settings.json").exists())
 
+    def test_uninstall_for_another_game_folder_leaves_the_state_alone(self):
+        self.run_script(INSTALL, "-Slots", "1")
+        other_game = self.temp / "other"
+        (other_game / "ManorLords" / "Binaries" / "Win64" / "ue4ss" / "Mods").mkdir(parents=True)
+        command = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(UNINSTALL), "-GameDir", str(other_game),
+                   "-SlotsDir", str(self.slots), "-Remove"]
+        done = subprocess.run(command, capture_output=True, text=True, timeout=180)
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        self.assertTrue((self.slots / "1" / "Manor Lords").exists())
+        self.assertTrue((self.slots / ".install" / "settings.json").exists())
+        self.assertIn("t.MaxFps=30", self.settings_text())
+
     def test_second_install_keeps_the_first_backup(self):
         self.run_script(INSTALL, "-SettingsOnly")
         self.run_script(INSTALL, "-SettingsOnly")

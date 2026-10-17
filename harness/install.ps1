@@ -35,17 +35,17 @@ try {
     if (-not (Test-Path -LiteralPath (Join-Path $GameDir 'ManorLords\Binaries\Win64'))) { throw "Game not found: $GameDir" }
     New-Item -ItemType Directory -Force -Path $SlotsDir | Out-Null
 
-    Backup-UserFiles $UserDir $SlotsDir
+    Backup-UserFiles $UserDir $SlotsDir $GameDir
     Set-HarnessUserSettings $UserDir
 
     if (-not $SettingsOnly) {
         $entries = [System.Collections.Generic.List[object]]::new()
-        foreach ($old in Read-SlotsState $SlotsDir) { $entries.Add($old) }
+        foreach ($old in Read-SlotsState $SlotsDir $GameDir) { $entries.Add($old) }
         for ($slot = 1; $slot -le $Slots; $slot++) {
             $entry = New-Slot $GameDir $SlotsDir $slot
             if ($null -eq $entry) { continue }
             $entries.Add($entry)
-            Write-SlotsState $SlotsDir $entries  # after each slot, so a failed install can still be removed
+            Write-SlotsState $SlotsDir $entries $GameDir  # after each slot, so a failed install can still be removed
             if (-not $SkipDeploy) {
                 & (Join-Path $PSScriptRoot 'deploy.ps1') -GameDir $entry.root 6>&1 | Select-Object -Last 1  # only the summary line
             }

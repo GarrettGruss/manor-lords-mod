@@ -212,7 +212,7 @@ function Remove-Manifest {
 
 # Spec 11: slots that install.ps1 built. The state lists each junction, so none is deleted through.
 function Remove-InstalledSlots {
-    $entries = @(Read-SlotsState $SlotsDir)
+    $entries = @(Read-SlotsState $SlotsDir $GameDir)
     if ($entries.Count -eq 0) { return }
     foreach ($entry in $entries) {
         Write-Host ("{0}deleted    slot {1}" -f $tag, $entry.slot)
@@ -237,7 +237,7 @@ try {
         if (Test-Path -LiteralPath (Get-SettingsStatePath $SlotsDir)) { Write-Host '[dry-run] settings   would restore the install backup' }
     } else {
         if (Test-Path -LiteralPath (Get-SettingsStatePath $SlotsDir)) { Assert-GameNotRunning }
-        $restored = Restore-UserFiles $SlotsDir
+        $restored = Restore-UserFiles $SlotsDir $GameDir
         $deleted += $restored
     }
 } catch {
