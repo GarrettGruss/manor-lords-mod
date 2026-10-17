@@ -12,4 +12,17 @@ return {
             { key = "selftest_text", kind = "string", default = "none" },
         },
     },
+    -- M02 invasion, iteration 01. First guesses from the M00 balance targets.
+    invasion = {
+        enabled = true,
+        difficulty = 1,                                      -- start value, 1 to 3. The player picks it (start UI comes later).
+        first_raid_days_min = 30, first_raid_days_max = 90,  -- game days from the day the plan is made
+        warning_days_min = 14, warning_days_max = 56,        -- 2 to 8 game weeks
+        size_multipliers = { small = 1, medium = 2, large = 3 }, -- squads = multiplier x difficulty
+        squad_units = 18,                                    -- units in one squad of spawnRaiders
+        base_timer_floor = 300,                              -- the mod lifts the base game raid timer when it falls under this
+        base_timer_refill = 700,
+        poll_ms = 300,                                       -- real time between two checks of the game day
+        seed = nil,                                          -- nil: seed from the clock
+    },
 }

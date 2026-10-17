@@ -12,7 +12,8 @@
   },
   "features": [
     { "name": "example", "requires": [], "ids": { "buildingStats": [1000, 1099], "DT_Upgrades": [117, 126] } },
-    { "name": "mod_state", "requires": [], "ids": {} }
+    { "name": "mod_state", "requires": [], "ids": {} },
+    { "name": "invasion", "requires": ["mod_state"], "ids": {} }
   ],
   "gate_scenarios": []
 }
