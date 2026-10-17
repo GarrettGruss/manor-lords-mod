@@ -8,7 +8,7 @@
         {"name": "rule-off", "env": {"UB_RULE": "off"}},
         {"name": "rule-on", "env": {"UB_RULE": "on"}}
       ],
-      "expect": {"metric": "casualties_total", "direction": "higher", "min_rel_diff": 0.5}
+      "expect": {"metric": "player_loss_rate", "direction": "higher", "min_rel_diff": 0.5}
     }
   ],
   "time_budget_s": 2400,

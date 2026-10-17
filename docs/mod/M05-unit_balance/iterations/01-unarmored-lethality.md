@@ -28,13 +28,17 @@ Armor matters. A unit without armor takes much more damage than the same unit wi
 - A1: after a spawn and one apply, the mean `def` and `block` of spawned `spearMilitia` and `Brigands` equal `base * factor` (0 with the first values), read back from the units. All of the units that the rule counts as unarmored are changed (`changed == unarmored`).
 - A2: units with `def >= armored_def_min` (a `retinue_tier3` squad, def 62) keep their `def` and `block` exactly.
 - A3: the rule needs no new call: a squad that spawns later (second spawn, no command) is changed within 2 polls (4 s wall).
-- A4 (A/B, N >= 5 per variant, interleaved by the suite, fight 32 `spearMilitia` against 2 squads of `Brigands`): total casualties of both sides (`casualties_total`) with the rule on are at least 1.5 times the mean with the rule off, and the permutation test gives p <= 0.1. Reference: spec 25 measured 1.9 times militia losses with def 0 and block 0 on one side. The upper bound is 3.5 times (more would mean the rule is too strong for the 2 to 3 times target; compare the loss rate too, which stops at 1.0).
+- A4 (A/B, N >= 5 per variant, interleaved, fight 32 `spearMilitia` against 2 squads of `Brigands`): the mean `player_loss_rate` (loss rate of the militia) with the rule on is 1.5 to 3.5 times the mean with the rule off, and the permutation test gives p <= 0.1. Reference: spec 25 measured 1.9 times. Note: `casualties_total` was the first metric. It is capped (36 bandits die in most runs), so it cannot show the effect; the metric was changed after the first look at the data.
 - A5: with the rule off (`unit_balance_set enabled=false`), unit values are the original ones. The A/B "off" variant must equal the vanilla fight (mean player `def` above 5 at the start).
 - A6: fake-game tests for classification, writes, restore, command validation. The full unit suite passes.
 
 ## Scenarios and measures
-- `unit-balance-lethality`: clears the battle, sets the rule on or off from the option `UB_RULE` (`on` or `off`), spawns the groups, applies the rule, logs the stats, runs the fight (`run_fight`), records `casualties_total`, `player_loss_rate`, `bandit_loss_rate`, `player_casualties`, `bandit_casualties`, `player_def_mean`, `bandit_def_mean`.
+- `unit-balance-lethality`: clears the battle, sets the rule on or off from the option `UB_RULE` (`on` or `off`), spawns the groups, applies the rule, logs the stats, runs the fight (`run_fight`), records `casualties_total` (capped, not used for A4), `player_loss_rate`, `bandit_loss_rate`, `player_casualties`, `bandit_casualties`, `player_def_mean`, `bandit_def_mean`.
 - The raw damage ratio is not measured (no per-hit hook, spec 25). The casualty count is the proxy. A fight ends at a rout or stand-off, so the ratio is capped (M05 open question 6).
 
 ## Result
-not started
+Result: PASS in the real game (2026-10-17), with deviations. Notes: `../implementation-notes/iteration-01-unarmored-lethality.md`.
+- A1, A2, A3, A5: scenario `unit-balance-armored-kept`, run `m05-kept-1` pass (Brigands def and block 0, retinue unchanged, a later squad changed by the poll, off restores).
+- A4: `unit-balance-lethality`, 6 runs per variant, interleaved by a script (runs `m05-ab-off-2` to `-7` and `m05-ab-on-1` to `-6`; `m05-ab-off-1` had no contact, 1 casualty, and was replaced by `m05-ab-off-7`). Militia loss rate: off 0.23 mean (0.125 to 0.56), on 0.49 mean (0.28 to 0.81). Ratio 2.14 (median 2.6). p 0.058, Cohen's d 1.32, verdict `different` (heuristic, small N). Mean def of both sides is 0 with the rule on and 6.7 (militia) and 2.9 (bandits) with it off.
+- Both sides were unarmored, so the bandits also lost def. The bandit loss rate stayed 1.0 in most runs (p 1.0), so the militia lost many more units for the same win.
+- A6: 10 fake-game tests pass.
