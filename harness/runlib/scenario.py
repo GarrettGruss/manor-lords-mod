@@ -5,6 +5,7 @@ A scenario is a Python module in `harness/scenarios/`. It defines:
   LIMIT_S  the hard time limit for the whole scenario, in seconds
   LONG_REASON  required when LIMIT_S is above LONG_LIMIT_S (300 s): why the scenario needs so much time
   HIDDEN   True for test scenarios. They are not listed unless asked for.
+  EXCLUSIVE  True if the scenario needs the screen or the real mouse or keyboard for long. A suite runs it with no other game.
   run(ctx) the function. It gets a ScenarioContext and returns ctx.result().
 """
 
@@ -40,6 +41,7 @@ class ScenarioInfo:
     hidden: bool = False
     summary: str = ""
     long_reason: str = ""
+    exclusive: bool = False
 
 
 SCENARIOS: dict[str, Callable] = {}
@@ -59,13 +61,13 @@ def check_limit(name: str, limit_s: float, long_reason: str = "") -> None:
 
 
 def register(name: str, limit_s: float = DEFAULT_LIMIT_S, hidden: bool = False, summary: str = "",
-             long_reason: str = "") -> Callable:
+             long_reason: str = "", exclusive: bool = False) -> Callable:
     def add(function):
         if name in SCENARIOS:
             raise ValueError(f"Scenario {name!r} is registered twice.")
         check_limit(name, limit_s, long_reason)
         SCENARIOS[name] = function
-        SCENARIO_INFO[name] = ScenarioInfo(limit_s, hidden, summary, long_reason)
+        SCENARIO_INFO[name] = ScenarioInfo(limit_s, hidden, summary, long_reason, exclusive)
         return function
 
     return add
@@ -80,6 +82,11 @@ def get_scenario(name: str) -> Callable:
 def get_limit_s(name: str) -> float:
     info = SCENARIO_INFO.get(name)
     return info.limit_s if info else DEFAULT_LIMIT_S
+
+
+def is_exclusive(name: str) -> bool:
+    info = SCENARIO_INFO.get(name)
+    return bool(info and info.exclusive)
 
 
 def run_timeout_s(name: str, floor_s: float = MIN_RUN_TIMEOUT_S) -> float:
@@ -108,7 +115,7 @@ def _register_module(module, source: Path) -> None:
         raise ValueError(f"Scenario {name!r} is defined twice: {SCENARIO_SOURCE[name]} and {source}. Scenario names must be unique.")
     summary = (module.__doc__ or "").strip().splitlines()[0:1]
     register(name, module.LIMIT_S, getattr(module, "HIDDEN", False), summary[0] if summary else "",
-             getattr(module, "LONG_REASON", ""))(module.run)
+             getattr(module, "LONG_REASON", ""), getattr(module, "EXCLUSIVE", False))(module.run)
     SCENARIO_SOURCE[name] = source
 
 

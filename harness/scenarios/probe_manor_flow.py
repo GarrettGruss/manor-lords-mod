@@ -17,6 +17,7 @@ from runlib.bridge_client import object_path
 
 NAME = "probe-manor-flow"
 LIMIT_S = 2400
+EXCLUSIVE = True  # real mouse input: a parallel suite runs it with no other game
 HIDDEN = True
 LONG_REASON = "The probe waits several game days for builders."
 MANOR_TYPE = 98

@@ -11,6 +11,7 @@ from runlib import plotgeom
 
 NAME = "probe-bailey"
 LIMIT_S = 1500
+EXCLUSIVE = True  # real mouse input: a parallel suite runs it with no other game
 HIDDEN = True
 LONG_REASON = "The probe watches builders for several game days."
 TIMBER = 16

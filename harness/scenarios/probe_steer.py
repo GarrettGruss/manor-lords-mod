@@ -14,6 +14,7 @@ from runlib import battle
 
 NAME = "probe-steer"
 LIMIT_S = 300
+EXCLUSIVE = True  # real mouse input: a parallel suite runs it with no other game
 HIDDEN = True
 LONG_REASON = "The probe watches a squad walk for about 60 game seconds."
 DISTANCE = 4000
