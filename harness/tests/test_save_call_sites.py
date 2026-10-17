@@ -22,7 +22,7 @@ COMMENT_ONLY = {
     "harness/tests/test_fakegame_harnesssave.py",
 }
 # Observe-only hook files. They name the functions as hook paths and must never call one.
-HOOK_ONLY = {"mod/HarnessSaveProbe/Scripts/main.lua"}
+HOOK_ONLY: set[str] = set()
 CALL_SYNTAX = re.compile(r"[:.](requestSaveFile|SaveGameToSlot|SaveDataToSlot|SaveToDiskWithThumbnail|RequestMenuSave|Request Autosave)\s*\(")
 
 

@@ -293,7 +293,7 @@ Follow-up decisions (user, 2026-10-16, later the same day):
 14. **Low approval debuffs Public Order.** Approval does not turn villagers into bandits on its own; it lowers Public Order, and Public Order drives conversion. Oppression techs grant Public Order boons that offset low approval. Prosperity techs boost approval, which removes the Public Order debuff. Applies to M04 and M12.
 15. **Sack size grows in a straight line with difficulty for now.** It may become logarithmic. This is decided in playtests. Applies to M06.
 16. **A large army is 15 squads.** The count is tuned in playtests. The great raid's final "very large battle" is a reward for surviving, so difficulty does not scale it for now.
-17. **The relief army is 15 squads** under the player's control.
+17. **The relief army is 15 squads** under the player's control. Changed by decision 26.
 18. **Raid size (small, medium, large) is random** for normal raids, for now. The great raid waves are all large.
 19. **Public Order debuff from approval:** debuff = (100 - approval) x difficulty, in Public Order points. Base rate 1:1. Example: approval 65 (a normal village) gives Public Order 65 at difficulty 1. Linear steps. Tech boon sizes are TBD.
 20. **Vassal model A (answers decision 5).** The player starts with no vassals. The player settles a region, and the game hands it to a friendly AI lord who rules in the player's name. The user does not expect the AI lord to declare war; playtests watch for it.
@@ -302,3 +302,4 @@ Follow-up decisions (user, 2026-10-16, later the same day):
 23. **Tech tree is data-driven.** It changes often. The feature JSON defines the tree as a linked list of nodes. The mod builds the tree from it. The JSON may hold optional layout data (positions) for the menu. No hard-coded tree, unless a technical limit forces it. Applies to M12.
 24. **Tech cost is free for now.** One node slot unlocks each time the settlement level rises. Applies to M12.
 25. **M14 plundered start is out of scope for the first release.**
+26. **Relief army size scales down with difficulty** (replaces the fixed size of decision 17). The liege sends 15 squads at difficulty 1 and 0 squads at difficulty 3 (the hardest). Difficulty 2: linear in between, 7 or 8 squads (open; tune in playtests). Applies to M02 (great raid end) and M06.
