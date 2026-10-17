@@ -206,6 +206,7 @@ class EndTests(RaidBehaviorTestCase):
     def test_the_raid_ends_left_when_raiders_walk_off(self):
         self.start_raid()
         for unit in self.units:
+            unit.ItemsLooted = 1
             unit.realPos = self.game.struct(X=0.0, Y=float(EXIT_Y - 1), Z=0.0)
         self.game.advance(2)
         for unit in self.units:

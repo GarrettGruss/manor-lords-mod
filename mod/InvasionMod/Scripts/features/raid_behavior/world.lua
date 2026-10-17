@@ -16,21 +16,24 @@ local function unit_key(unit)
     return read(function() return unit:GetAddress() end)
 end
 
--- Every unit now: key -> { loot, x, y, dead, squad, object }.
+-- Every unit now: key -> { loot, x, y, dead, object }.
+-- Few reads on purpose: a read of every property of every unit once a second crashed the game in raids of 2 squads
+-- (spike notes of M03.01). A dead unit is read for `dead` only. The place is read only for a unit that carries loot.
 function M.read_units()
     local out = {}
     for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
         if isValid(unit) then
             local key = unit_key(unit)
             if key ~= nil then
-                local at = read(function() return unit.realPos end)
-                out[key] = {
-                    loot = read(function() return unit.ItemsLooted end) or 0,
-                    x = at and read(function() return at.X end), y = at and read(function() return at.Y end),
-                    dead = read(function() return unit.dead end) == true,
-                    squad = read(function() return unit.assignedSquadID.Value end),
-                    object = unit,
-                }
+                local row = { dead = read(function() return unit.dead end) == true, loot = 0, object = unit }
+                if not row.dead then
+                    row.loot = read(function() return unit.ItemsLooted end) or 0
+                    if row.loot > 0 then
+                        local at = read(function() return unit.realPos end)
+                        row.x, row.y = at and read(function() return at.X end), at and read(function() return at.Y end)
+                    end
+                end
+                out[key] = row
             end
         end
     end
