@@ -15,6 +15,10 @@ def foreign_tags(tags: list[str]) -> list[str]:
     return [tag for tag in tags if not tag.startswith(PREFIX)]
 
 
+def selftest_tags(tags: list[str]) -> list[str]:
+    return [tag for tag in tags if tag.startswith(PREFIX + "selftest_")]
+
+
 def error_lines(ctx) -> list[str]:
     log = ctx.run_dir / "mod.log"
     if not log.exists():
@@ -27,8 +31,8 @@ def run(ctx) -> dict:
     dump = ctx.mod.command("InvasionMod.mod_state_dump")
     ctx.check("A4 the state is loaded", dump["loaded"] is True, dump["loaded"])
     ctx.check("A4 all values are the defaults", dump["values"] == DEFAULTS, dump["values"])
-    ctx.check("A4 the save has no mod entry", not [tag for tag in dump["tags"] if tag.startswith(PREFIX)], dump["tags"])
-    ctx.check("A4 no stored version", dump.get("stored_version") is None, dump.get("stored_version"))
+    # Other features of the mod (invasion) write their own entries and the version entry. Only the selftest keys are checked.
+    ctx.check("A4 the save has no selftest entry", not selftest_tags(dump["tags"]), dump["tags"])
     ctx.check("A4 no error in the log", not error_lines(ctx), error_lines(ctx))
 
     for tag in FOREIGN:
@@ -46,6 +50,7 @@ def run(ctx) -> dict:
 
     message = ctx.mod.refusal("InvasionMod.mod_state_set", key="selftest_itn", value="1")
     ctx.check("A5 a key that is not registered is refused with a clear message", message is not None and "not registered" in message, message)
-    ctx.check("A5 the refused set changed nothing", ctx.mod.command("InvasionMod.mod_state_dump")["tags"] == after["tags"])
+    ctx.check("A5 the refused set changed nothing",
+              selftest_tags(ctx.mod.command("InvasionMod.mod_state_dump")["tags"]) == selftest_tags(after["tags"]))
     ctx.check("A4 no unexpected error in the log at the end", not error_lines(ctx), error_lines(ctx))
     return ctx.result()

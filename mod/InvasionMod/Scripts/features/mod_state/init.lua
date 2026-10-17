@@ -79,8 +79,16 @@ local has_commands, commands = pcall(require, "HarnessCommands")
 
 local function key_argument() return { type = "string", required = true, maxLength = 40 } end
 
+-- Only the keys of this feature (config.keys). Other features share the state and register their own keys.
 local function command_dump()
-    return state:dump()
+    local dump = state:dump()
+    local own_values, own_kinds = {}, {}
+    for _, entry in ipairs(config.keys) do
+        own_values[entry.key] = dump.values[entry.key]
+        own_kinds[entry.key] = dump.kinds[entry.key]
+    end
+    dump.values, dump.kinds = own_values, own_kinds
+    return dump
 end
 
 local function command_get(args)
