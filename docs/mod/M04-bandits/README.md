@@ -55,3 +55,7 @@ See M00 "User decisions", items 11 to 15. They override the open questions above
 - The chance is rolled once per region at each season tick.
 - Low approval lowers Public Order (a debuff). It does not convert villagers by itself. Debuff size per approval step: open tunable.
 - Public Order debuff = (100 - approval) x difficulty. Approval 65 gives Public Order 65 at difficulty 1.
+
+## Values (M00 decisions 28 to 30, 2026-10-17)
+- Bandit raid size uses the same random class weights as M02 (small 50%, medium 35%, large 15%). TBD, tuned in playtests.
+- Scaled values round up.

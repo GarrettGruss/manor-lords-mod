@@ -76,3 +76,9 @@ See M00 "User decisions", items 11 to 15. They override the open questions above
 - Great raid: 1 x difficulty waves, every wave large. A large army is 15 units (soldier or squad: open).
 - A large army is 15 squads (playtest value). Normal raid size (small, medium, large) is random for now.
 - The final very large battle and the relief army (15 squads, player-controlled) are not scaled by difficulty for now.
+
+## TBD values (M00 decisions 27 to 30, 2026-10-17)
+TBD, values chosen by the agent, tuned in playtests.
+- Raid size class is random with weights small 50%, medium 35%, large 15%. Base multipliers stay 1, 2, 3. Units = multiplier x difficulty, in squads, at least 1.
+- All difficulty scaling rounds up. The relief army at difficulty 2 is 8 squads.
+- Loss of the great raid's final battle: TBD. No rule for now.

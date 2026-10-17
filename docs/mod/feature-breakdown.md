@@ -45,13 +45,13 @@ The user gave decisions on 2026-10-16. They are listed in `M00-invasion-mod/READ
 | 7 | No handgunners; Hussites use existing tiered units | decided | M05, M02 |
 | 8 | No hostages; native sack and loot; difficulty 1 to 3 times a base size multiplier | decided | M02, M03, M06 |
 | 9 | Liege is off-screen; only a custom menu | decided; M11 is backlog | M11, M08, M12 |
-| 10 | Tech tree node list and M14 | open (being explained) | M12, M14 |
+| 10 | Tech tree node list and M14 | decided (decisions 22 to 25) | M12, M14 |
 
 ## Open decisions
 Only the user can decide these.
 1. None for Batch 4 model choice: decided (M00 decision 20). Spike first: does a handed-over AI lord grow reliably?
 2. Tech tree decided (M00 decisions 22 to 24). M14 is out of scope for the first release (decision 25).
-3. Tech boon sizes (M12) and the loss of the very large battle (M06). TBD, set in playtests.
+3. Only playtest values remain (M00 decisions 27 to 30: loss of the final battle is TBD, tech boon sizes, raid size weights). The M11 liege stays in the backlog.
 Answered on 2026-10-16 (M00 decisions 11 to 15): difficulty chosen by the player at the start; great raid = 1 x difficulty waves, all large; bandit chance once per region per season tick; low approval debuffs Public Order; sack size linear in difficulty for now. Decisions 16 to 19: large army and relief army 15 squads, final battle not scaled by difficulty, random raid size, Public Order debuff = (100 - approval) x difficulty.
 
 ## Backlog

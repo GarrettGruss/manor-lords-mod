@@ -67,3 +67,16 @@ See M00 "User decisions", items 11 to 15. They override the open questions above
 - Data-driven tree: the feature JSON holds the nodes as a linked list (each node names its next or previous node), plus optional layout data. The mod builds the tree and the menu from it. No hard-coded tree unless a technical limit forces it.
 - Cost: free. One node slot unlocks each time the settlement level rises.
 - Schema form (user, 2026-10-16): each node lists the node ids it `requires` (a linked form that also allows branches). Fields: id, path, name, effect, requires, layout. Write the full schema in iteration 01.
+
+## Boon sizes (M00 decision 29, 2026-10-17)
+TBD, tuned in playtests. The agent chose the numbers marked with an asterisk.
+| Node | Boon |
+| --- | --- |
+| Martial Law | Public Order +10 |
+| Iron Hand | Public Order +15, buy-back cost +25%* |
+| Veteran Levies | militia defence +10%* |
+| Fear of the Lord | Public Order +25 while garrison >= 4 squads* |
+| Fair Courts | approval +5 |
+| Amnesty | buy-back cost -50% |
+| Militia Rights | militia attack +10%* |
+| Golden Age | approval +15 |
