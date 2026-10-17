@@ -19,7 +19,7 @@ state:register("raid_day", 0, "integer")
 state:register("warning_day", 0, "integer")
 state:register("size_class", 0, "integer")
 state:register("squads", 0, "integer")
-state:register("composition", "none", "string") -- templates of the squads, joined with "-" (plan.join)
+state:register("composition_seed", 0, "integer") -- seed of the template picks; the composition is computed from it (0: none yet)
 state:register("raids_spawned", 0, "integer")
 state:register("last_banner_day", 0, "integer")
 
@@ -73,24 +73,29 @@ end
 -- Plan and daily step
 ---------------------------------------------------------------------------------------------
 
-local function compose()
-    local list = plan_rules.composition(state:get("squads"), state:get("difficulty"), roles, math.random)
-    state:set("composition", plan_rules.join(list))
-    return list
+-- Only the seed is saved: it is one integer (a string tag crashed the game, see the notes). The list follows from the seed,
+-- the squads and the difficulty, so a size or difficulty change gives a new list with the same random picks.
+local function ensure_seed()
+    if state:get("composition_seed") == 0 then state:set("composition_seed", math.random(1, plan_rules.MAX_SEED)) end
+end
+
+local function composition_list()
+    ensure_seed()
+    return plan_rules.composition(state:get("squads"), state:get("difficulty"), roles, plan_rules.lcg(state:get("composition_seed")))
 end
 
 local function planned_units()
     local squads = state:get("squads")
-    if not use_roles or state:get("composition") == "none" then return squads * config.squad_units end
-    return plan_rules.expected_units(plan_rules.split(state:get("composition")), roles.template_units)
+    if not use_roles or squads < 1 then return squads * config.squad_units end
+    return plan_rules.expected_units(composition_list(), roles.template_units)
 end
 
 local function make_plan(today)
     local plan = plan_rules.first_raid(today, state:get("difficulty"), config, math.random)
     for key, value in pairs(plan) do state:set(key, value) end
-    compose()
+    ensure_seed()
     core.log.info(TAG, string.format("INVASION plan day=%d raid_day=%d warning_day=%d size_class=%d squads=%d difficulty=%d composition=%s",
-        today, plan.raid_day, plan.warning_day, plan.size_class, plan.squads, state:get("difficulty"), state:get("composition")))
+        today, plan.raid_day, plan.warning_day, plan.size_class, plan.squads, state:get("difficulty"), plan_rules.join(composition_list())))
 end
 
 local function spawn_raid(today)
@@ -101,9 +106,7 @@ local function spawn_raid(today)
     for index, watcher in ipairs(spawn_watchers) do tokens[index] = watcher.before() end
     local ok, problem
     if use_roles then
-        -- A plan saved before the roles existed has no composition.
-        if state:get("composition") == "none" then compose() end
-        local list = plan_rules.split(state:get("composition"))
+        local list = composition_list()
         local ids
         ok, ids = core.spawn_squads(list, { x = centre.x, y = roles.raid_spawn_y, z = centre.z })
         problem = ids
@@ -120,7 +123,7 @@ local function spawn_raid(today)
         core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = squads })
     end
     core.log.info(TAG, string.format("INVASION spawn day=%d planned_day=%d squads=%d raiders=%d composition=%s roles=%s",
-        today, state:get("raid_day"), squads, planned_units(), state:get("composition"), tostring(use_roles)))
+        today, state:get("raid_day"), squads, planned_units(), plan_rules.join(composition_list()), tostring(use_roles)))
     core.show_banner("Raiders are here", string.format("About %d raiders", planned_units()))
 end
 
@@ -164,7 +167,6 @@ local has_commands, commands = pcall(require, "HarnessCommands")
 local function replan_size()
     if state:get("raid_day") == 0 or state:get("raids_spawned") > 0 then return end
     state:set("squads", plan_rules.squads(state:get("size_class"), state:get("difficulty"), config.size_multipliers))
-    compose()
 end
 
 local function command_state()
@@ -174,7 +176,7 @@ local function command_state()
     return {
         day = today, difficulty = state:get("difficulty"), plan_day = state:get("plan_day"), raid_day = raid_day,
         warning_day = state:get("warning_day"), size_class = state:get("size_class"), squads = squads,
-        raiders = planned_units(), composition = state:get("composition"), roles = use_roles, days_left = (today and raid_day > 0) and (raid_day - today) or nil,
+        raiders = planned_units(), composition = (use_roles and state:get("squads") > 0) and plan_rules.join(composition_list()) or "none", roles = use_roles, days_left = (today and raid_day > 0) and (raid_day - today) or nil,
         raids_spawned = state:get("raids_spawned"), last_banner_day = state:get("last_banner_day"),
     }
 end

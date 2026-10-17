@@ -55,6 +55,21 @@ class RoleRulesTest(unittest.TestCase):
         self.game.exec("result = table.concat(plan.split(plan.join({'a','b_c'})), '|')")
         self.assertEqual(self.game.lua.eval("result"), "a|b_c")
 
+    def test_the_seeded_random_repeats_and_stays_in_range(self):
+        self.game.exec("""
+            local a, b = plan.lcg(12345), plan.lcg(12345)
+            same, inside = true, true
+            for _ = 1, 200 do
+                local x, y = a(1, 2), b(1, 2)
+                if x ~= y then same = false end
+                if x < 1 or x > 2 then inside = false end
+            end
+            first, other = plan.lcg(1)(1, 1000), plan.lcg(2)(1, 1000)
+        """)
+        self.assertTrue(self.game.lua.eval("same"))
+        self.assertTrue(self.game.lua.eval("inside"))
+        self.assertNotEqual(self.game.lua.eval("first"), self.game.lua.eval("other"))
+
     def test_bad_input_fails_loudly(self):
         self.game.exec("ok, err = pcall(plan.composition, 0, 1, roles, first)")
         self.assertFalse(self.game.lua.eval("ok"))

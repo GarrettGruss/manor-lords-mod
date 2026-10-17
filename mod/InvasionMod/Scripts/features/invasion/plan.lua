@@ -33,6 +33,17 @@ function M.first_raid(today, difficulty, config, random)
 end
 
 -- Hussite roles (M05 iteration 02). Pure rules: which template each squad of a raid gets.
+-- A small seeded random function (linear congruential), so the composition can be rebuilt from one saved integer.
+M.MAX_SEED = 2 ^ 30
+function M.lcg(seed)
+    local value = seed % 2147483648
+    return function(low, high)
+        if high < low then error("plan: bad range " .. low .. ".." .. high, 0) end
+        value = (value * 1103515245 + 12345) % 2147483648
+        return low + math.floor(value / 2147483648 * (high - low + 1))
+    end
+end
+
 -- Rounding half up, so a share of 0.5 of 1 squad gives 1.
 local function round_half_up(value)
     return math.floor(value + 0.5)

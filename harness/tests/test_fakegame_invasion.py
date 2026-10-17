@@ -165,6 +165,13 @@ class RolesTests(InvasionTestCase):
         self.assertEqual(len(one["composition"].split("-")), 1)
         self.assertEqual(len(three["composition"].split("-")), 3)
 
+    def test_the_composition_is_kept_in_one_integer_tag(self):
+        planned = self.plan_and_spawn(3, "large")
+        tags = list(self.game.lua.eval("tag_names")(self.pawn).values())
+        self.assertTrue(any(tag.startswith("invasion:composition_seed=") for tag in tags), tags)
+        self.assertFalse(any(tag.startswith("invasion:composition=") for tag in tags), tags)
+        self.assertEqual("-".join(self.armies[0][0]), planned["composition"])
+
     def test_roles_off_uses_spawn_raiders(self):
         self.ask("invasion_set_size", size="small")
         self.ask("invasion_set_difficulty", value=2)
