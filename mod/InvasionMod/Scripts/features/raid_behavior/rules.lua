@@ -72,6 +72,12 @@ function M.looted_total(raid)
     return M.total_loot(raid) + raid.carried_out + raid.returned + raid.lost
 end
 
+-- The native AI wrote its leave line: the raid is over for the village, also while the raiders still walk to the map edge.
+function M.mark_leaving(raid, day)
+    raid.leaving = true
+    if raid.state == "active" then raid.state, raid.end_day = "left", day end
+end
+
 function M.record_return(raid, amount) raid.returned = raid.returned + amount end
 function M.record_loss(raid, amount) raid.lost = raid.lost + amount end
 

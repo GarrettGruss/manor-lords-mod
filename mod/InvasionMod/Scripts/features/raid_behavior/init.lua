@@ -91,11 +91,11 @@ local function refresh_burned(entry)
     if burned ~= nil then entry.raid.burned = math.max(entry.raid.burned, burned - entry.burned_base) end
 end
 
-local function check_leave_line(entry)
+local function check_leave_line(entry, today)
     if entry.raid.leaving then return end
     local count = world.ai_log_count(LEAVE_TEXT)
     if count ~= nil and count > entry.leave_base then
-        entry.raid.leaving = true
+        rules.mark_leaving(entry.raid, today)
         core.log.info(TAG, string.format("RAID_BEHAVIOR native leave line seen id=%d", entry.raid.id))
     end
 end
@@ -123,7 +123,7 @@ local function step_raid(entry, seen, today)
     for _, death in ipairs(rules.update(raid, seen, config, today)) do return_loot(entry, death) end
     write_caps(seen)
     refresh_burned(entry)
-    check_leave_line(entry)
+    check_leave_line(entry, today)
     if state.loaded then save_summary(entry) end
     if was_active and raid.state ~= "active" then
         core.log.info(TAG, string.format("RAID_BEHAVIOR end id=%d day=%s state=%s", raid.id, tostring(today), raid.state))

@@ -218,6 +218,7 @@ class EndTests(RaidBehaviorTestCase):
         self.engine.debugLog_AI_general = self.game.array([self.game.text("Outlaws (36) Army - enough looted. Leaving map.")])
         self.game.advance(2)
         self.assertTrue(self.raid()["leaving"])
+        self.assertEqual(self.raid()["state"], "left")
 
     def test_the_numbers_are_kept_in_the_pawn_tags(self):
         self.start_raid()
