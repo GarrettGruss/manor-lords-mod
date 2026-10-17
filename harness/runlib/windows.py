@@ -106,3 +106,14 @@ SW_MINIMIZE = 6
 def minimize_window(hwnd: int) -> None:
     """Minimize a window without giving it the focus."""
     ctypes.windll.user32.ShowWindow(hwnd, SW_MINIMIZE)
+
+
+SWP_NOSIZE = 0x0001
+SWP_NOZORDER = 0x0004
+SWP_NOACTIVATE = 0x0010
+
+
+def move_window(hwnd: int, x: int, y: int) -> None:
+    """Move a window to a screen point without a resize and without the focus. The game ignores -WinX and -WinY (spec 11)."""
+    if not ctypes.windll.user32.SetWindowPos(hwnd, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE):
+        raise OSError(f"SetWindowPos failed for window {hwnd}")

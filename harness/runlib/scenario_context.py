@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import math
 import re
@@ -14,11 +15,11 @@ from .actions import ActionNotPossible, Actions
 from .bridge_client import Bridge
 from .commands import CommandChannel, ModCommandChannel
 from .expectations import Expectations
-from . import harness_save, osinput
+from . import harness_save, osinput, saveslots
 from .game import ensure_game_alive, find_game_processes
 from .modstate import ModState
 from .popups import PopupGuard
-from .runfolder import atomic_write_text
+from .runfolder import WaitLock, atomic_write_text
 from .runner import PhaseContext
 from .snapshot import snapshot
 from .telemetry import TelemetryReader
@@ -30,6 +31,25 @@ from .waiting import WaitResult, run_until
 MAX_REASON_CHARS = 300
 METRICS_FILE = "metrics.json"  # read by the suite runner (spec 10, A/B statistics)
 METRIC_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,60}$")
+
+
+# One real cursor and one focus for all game slots (spec 11): a run holds this lock while it uses the OS mouse or keyboard.
+INPUT_LOCK_PATH = Path(__file__).resolve().parent.parent.parent / "runs" / ".input.lock"
+INPUT_LOCK_TIMEOUT_S = 300
+
+
+def os_input_lock() -> WaitLock:
+    return WaitLock(INPUT_LOCK_PATH, timeout_s=INPUT_LOCK_TIMEOUT_S)
+
+
+def uses_os_input(method):
+    """Run the method while holding the OS input lock, so two slots never move the one cursor at the same time."""
+    @functools.wraps(method)
+    def locked(*args, **kwargs):
+        with os_input_lock():
+            return method(*args, **kwargs)
+
+    return locked
 
 
 class ScenarioLog:
@@ -71,14 +91,26 @@ class ScenarioContext:
         save_dir = self.phase.state.get("user_save_dir")
         if save_dir is None:
             raise ActionNotPossible("save_game: this run has no user save folder")
-        result = harness_save.save_game(Path(save_dir), self.commands.send, label, keep)
+        with saveslots.saves_lock():  # the guard compares the whole folder, so no parallel run may change it meanwhile
+            result = harness_save.save_game(Path(save_dir), self.commands.send, label, keep)
         if keep:  # the run end expects these new files. Other harness saves are in the ledger and are deleted at the run end.
             self.phase.state.setdefault("kept_save_files", {}).update(result["files"])
         return result
 
     # ---- real OS mouse (used by the action place_building) ----
+    def game_window(self) -> dict:
+        """The window of this run's game. Another slot may show a game window at the same time (spec 11)."""
+        pid = self.phase.state.get("game_pid")
+        return pick_game_window(list_windows(), {pid} if pid else {process.pid for process in find_game_processes()})
+
+    def game_processes(self) -> list:
+        """This run's game process as a list (empty if it ended), for memory checks."""
+        pid = self.phase.state.get("game_pid")
+        return [process for process in find_game_processes() if pid is None or process.pid == pid]
+
+    @uses_os_input
     def _place_with_mouse(self, type_id: int, fx: float, fy: float) -> None:
-        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        window = self.game_window()
         player = self.bridge.player_path()
         steps = osinput.PlacementSteps(
             activate=lambda: self.bridge.call_function(player, "activateBuildingMode", [type_id]),
@@ -89,27 +121,31 @@ class ScenarioContext:
         )
         osinput.place_with_mouse(osinput.Win32Input(), window["hwnd"], steps, fx, fy)
 
+    @uses_os_input
     def order_with_mouse(self, fx: float | None = None, fy: float | None = None) -> dict:
         """A real right click at a fraction of the game window: a move order for the selected squads (spike #59). Returns the terrain point."""
-        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        window = self.game_window()
         player = self.bridge.player_path()
         return osinput.order_with_mouse(osinput.Win32Input(), window["hwnd"], lambda: self.bridge.call_function(player, "getMouse3d"), fx, fy)
 
+    @uses_os_input
     def click_with_mouse(self, fx: float, fy: float) -> tuple[int, int]:
         """A real left click at a fraction of the game window (a UI button, spec 16). Returns the screen point."""
-        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        window = self.game_window()
         point = osinput.click_at(osinput.Win32Input(), window["hwnd"], fx, fy)
         self.log.info(f"click_with_mouse ({fx:.3f}, {fy:.3f}) -> screen {point}")
         return point
 
+    @uses_os_input
     def hover_with_mouse(self, fx: float, fy: float) -> tuple[int, int]:
         """Move the real cursor to a fraction of the game window. The cursor stays there."""
-        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        window = self.game_window()
         return osinput.hover_at(osinput.Win32Input(), window["hwnd"], fx, fy)
 
+    @uses_os_input
     def press_key(self, virtual_key: int) -> None:
         """A real key press (for example osinput.VK_F7) in the game window."""
-        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        window = self.game_window()
         osinput.press_key(osinput.Win32Input(), window["hwnd"], virtual_key)
         self.log.info(f"press_key {virtual_key:#x}")
 

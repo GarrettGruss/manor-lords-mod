@@ -779,7 +779,9 @@ class UninstallIntegrationTests(PakTestCase):
         (mods / "mods.txt").write_text("Keybinds : 1\n", encoding="utf-8")
 
     def uninstall(self, *flags):
-        command = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(UNINSTALL), "-GameDir", str(self.game), *flags]
+        # A temp SlotsDir: the default is the real slots folder, and -Remove would delete the real slots (spec 11).
+        command = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(UNINSTALL), "-GameDir", str(self.game),
+                   "-SlotsDir", str(self.game.parent / "slots"), *flags]
         return subprocess.run(command, capture_output=True, text=True, timeout=120)
 
     def test_remove_deletes_the_harness_pak_and_keeps_others(self):

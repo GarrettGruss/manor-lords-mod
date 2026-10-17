@@ -176,7 +176,7 @@ class RunPyOptionsTest(unittest.TestCase):
         args = self.parse("--env", "MODE=fast", "--env", "API_KEY=abc")
         run_module.check_variant_options(args)
         run = argparse.Namespace(run_id="r1")
-        lock = argparse.Namespace(took_over_pid=None)
+        lock = argparse.Namespace(took_over_pid=None, slot=0)
         config = run_module.build_config(args, run, [], lock)
         self.assertEqual(config["env"], {"MODE": "fast", "API_KEY": "***"})
         self.assertEqual(config["environment"], {"env_keys": ["API_KEY", "MODE"]})
@@ -195,7 +195,7 @@ class RunPyOptionsTest(unittest.TestCase):
         args = self.parse("--new-game", "--map", "Other_Map")
         run_module.check_variant_options(args)
         self.assertEqual(args.new_game_map, "Other_Map")
-        config = run_module.build_config(args, argparse.Namespace(run_id="r1"), [], argparse.Namespace(took_over_pid=None))
+        config = run_module.build_config(args, argparse.Namespace(run_id="r1"), [], argparse.Namespace(took_over_pid=None, slot=0))
         self.assertEqual((config["new_game_map"], config["fixture"]), ("Other_Map", None))
 
     def test_bad_new_game_options_fail_before_a_run(self):

@@ -5,7 +5,6 @@ import time
 
 from runlib import soak
 from runlib.actions import CHEAT_MANAGER
-from runlib.game import find_game_processes
 from runlib.timectl import CLOCK_SECONDS_PER_DAY, SPEED_FACTOR
 
 NAME = "soak-days"
@@ -44,7 +43,7 @@ def run(ctx) -> dict:
     expect, bridge = ctx.expect, ctx.bridge
     engine = bridge.engine_path()
     calendar = bridge.calendar_path(engine)
-    games = find_game_processes
+    games = ctx.game_processes  # only this run's game: other slots may run games too
     sampler = soak.Sampler(time.monotonic, lambda: bridge.read_clock_value(engine),
                            lambda: bridge.read_property(calendar, "daysTotal"), lambda: soak.process_memory_mb(games()))
     first = sampler()

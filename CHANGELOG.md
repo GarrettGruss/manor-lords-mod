@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 11 step 3: parallel runs. `run.py --slot N|auto` and MCP `run_scenario(name, slot="auto")` run up to 3 games at once, one per game slot, with a run lock per slot. Shared state is protected: `runs/.saves.lock` (fixture installs, the save check, `save_game`), `runs/.iterations.lock`, `runs/.input.lock` (OS mouse and keys). Ledger entries record their owner run; a run removes only entries of dead runs. Games are found by their exe path, so a run never stops another slot's game. The window moves to the slot's screen tile. `game_status` lists slots and `free_slots`. Notes `step3-launcher-slots.md`.
+- Spec 11: `harness/install.ps1` backs up the user's game settings once (hash checked), writes the harness values (low, windowed 1280x720, 30 fps) and builds parallel game slots (`slots/<n>`, own Win64 and `~mods`, junctions and hard links for the game data). `uninstall.ps1` restores the backup in both modes and deletes the slots with `-Remove`. Spikes 1 and 2: 3 games run at once (notes `spike-1-2-slots-low-settings.md`).
 - Mod M02.01 (#143): feature `invasion` of `InvasionMod`. It owns the raid timer, plans one minor raid (day 30 to 90, size small, medium or large times difficulty 1 to 3), shows a daily countdown banner and spawns the raid. Commands `InvasionMod.invasion_state`, `invasion_force_next`, `invasion_set_difficulty`, `invasion_set_size`; scenarios `invasion-first-raid`, `invasion-no-double-raid`. Notes `docs/mod/M02-invasion/implementation-notes/iteration-01-first-scheduled-raid.md`.
 - Mod M01.01 follow-up: `InvasionMod.mod_state_dump` returns only its selftest keys.
 - Mod M01.01 (#142): shared module `ModState` and feature `mod_state` of `InvasionMod`. Mod values live as `invasion:<key>=<value>` Tags of the player pawn and survive a save and a load. Commands `InvasionMod.mod_state_dump`, `mod_state_get`, `mod_state_set`; scenarios `mod-state-roundtrip`, `mod-state-two-saves`, `mod-state-default-load`. Notes `docs/mod/M01-mod_state/implementation-notes/tags-module.md`.
@@ -31,6 +33,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Soak (#53): `soak-days` accepts up to 13000 s of wall time (`MAX_LIMIT_S` 13500 s) and wider clock-rate (1.5 to 9) and days (0.2 to 1.1) ranges. A 3.3 h run reached day 333 of 730 with no crash and no memory growth; see spec 10 `open-items.md`.
 
 ### Fixed
+- The `test_pakmod` uninstall tests used the real `slots` folder, so the full suite could delete the real slots. They use a temp folder now, and `uninstall.ps1` leaves an install state of another game folder alone.
 - Time control (#143): a run of `ctx.time` calls the pop-up guard (`ctx.popups`) every 2 s. A "Hunger!" pop-up that opened in a chunk of 10 game days paused the game for the rest of the chunk and failed a 120-day run.
 - genmesh (#131, #102): the Meshy task id is written to the spend log at creation, before polling, so a client timeout cannot lose it. New command `resume --task <id> --out <dir>` downloads an existing task and spends no credits.
 - Harness: the default placement click point is now (0.35, 0.3). The old point (0.65, 0.65) lay over the sawpit in fixture `base`, so the ghost was blocked (run 20261015-203710-6b45).

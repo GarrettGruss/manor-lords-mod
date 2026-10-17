@@ -10,7 +10,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 SAVE_CALLS = re.compile(r"requestSaveFile|SaveGameToSlot|SaveToDiskWithThumbnail|RequestMenuSave|Request Autosave")
 CODE_SUFFIXES = {".lua", ".py", ".ps1", ".json", ".ini", ".cfg", ".toml", ".js"}
-SKIP_DIRS = {".git", ".venv", ".claude", "runs", "node_modules", "__pycache__", "vendor", "modtools"}
+SKIP_DIRS = {".git", ".venv", ".claude", "runs", "slots", "node_modules", "__pycache__", "vendor", "modtools"}
 ALLOWED = {
     "mod/shared/HarnessSave/HarnessSave.lua",  # the one guarded call
     "harness/tests/test_save_call_sites.py",   # this test

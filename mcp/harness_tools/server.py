@@ -42,14 +42,16 @@ def build_server() -> FastMCP:
         return tools.list_scenarios(runs_root(), REPO_ROOT)
 
     @mcp.tool(annotations=STARTS_OR_KILLS)
-    def run_scenario(name: str) -> dict:
+    def run_scenario(name: str, slot: str = "auto") -> dict:
         """Start one test run with the real game, in the background. Returns at once.
 
-        Returns {"status": "started", "run_id": ...}. Then call wait_for_run with the run_id.
-        Refuses with an error if another run is active or the scenario name is unknown.
+        `slot` is the game copy: "auto" (default) takes the first free one, "0" is the game folder, "1" to "3" are
+        the copies that harness/install.ps1 built. Several runs can run at the same time, one per slot.
+        Returns {"status": "started", "run_id": ..., "slot": ...}. Then call wait_for_run with the run_id.
+        Refuses with an error if the slot is busy (with "auto": if all are) or the scenario name is unknown.
         Starts the game and stops it again at the end of the run.
         """
-        return tools.run_scenario(runs_root(), REPO_ROOT, name)
+        return tools.run_scenario(runs_root(), REPO_ROOT, name, slot=slot)
 
     @mcp.tool(annotations=READ_ONLY)
     async def wait_for_run(run_id: str, seconds: int = 45) -> dict:
@@ -98,13 +100,13 @@ def build_server() -> FastMCP:
 
     @mcp.tool(annotations=READ_ONLY)
     def game_status() -> dict:
-        """Report if a game process runs, which process holds the run lock, and runs used against the cap."""
+        """Report the game processes, each slot (lock holder, active run, game pids), the free slots, and runs used against the cap."""
         return tools.game_status(runs_root(), REPO_ROOT)
 
     @mcp.tool(annotations=STARTS_OR_KILLS)
-    def stop_game() -> dict:
-        """Stop a stray game process. Refuses while a run holds the lock. Unsaved game state is lost."""
-        return tools.stop_game(runs_root(), REPO_ROOT)
+    def stop_game(slot: int = 0) -> dict:
+        """Stop a stray game process of one slot. Refuses while a run holds that slot's lock. Unsaved game state is lost."""
+        return tools.stop_game(runs_root(), REPO_ROOT, slot)
 
     return mcp
 
