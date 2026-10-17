@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Callable
@@ -19,6 +20,7 @@ RETRY_VERDICTS = ("fail", "crash", "timeout")
 
 STOP_TIME_BUDGET = "time_budget"
 STOP_ITERATION_CAP = "iteration_cap"
+STOP_NO_SLOTS = "no_slots"  # parallel suites: every game slot failed to start a run
 
 
 @dataclass
@@ -66,6 +68,7 @@ class SuiteOutcome:
     elapsed_s: float
     stop_reason: str | None = None
     not_run: list[str] = field(default_factory=list)  # scenarios that never started
+    bad_slots: dict[int, str] = field(default_factory=dict)  # parallel suites: game slot -> why its run did not start
 
 
 def _guarded(run_one: RunOne, scenario: str, run_id: str, fixture: str | None, variant: Variant | None = None) -> RunResult:
@@ -86,6 +89,7 @@ class _SuiteRun:
         self.started = clock()
         self.stop_reason: str | None = None
         self.run_count = 0
+        self._count_lock = threading.Lock()  # the parallel pool asks for run ids from several threads
 
     def budget_left(self) -> bool:
         if self.clock() - self.started >= self.budget_s:
@@ -94,28 +98,30 @@ class _SuiteRun:
         return True
 
     def next_run_id(self, scenario: str, retry: int, variant: Variant | None = None) -> str:
-        self.run_count += 1
+        with self._count_lock:
+            self.run_count += 1
+            count = self.run_count
         suffix = f"-r{retry}" if retry else ""
         variant_part = f"-{variant.name}" if variant else ""
-        return f"{self.suite_id}-{self.run_count:03d}-{scenario}{variant_part}{suffix}"
+        return f"{self.suite_id}-{count:03d}-{scenario}{variant_part}{suffix}"
 
-    def run_attempt(self, entry: SuiteEntry, retry: int, variant: Variant | None) -> RunResult:
+    def run_attempt(self, entry: SuiteEntry, retry: int, variant: Variant | None, run_one: RunOne | None = None) -> RunResult:
         run_id = self.next_run_id(entry.scenario, retry, variant)
-        result = _guarded(self.run_one, entry.scenario, run_id, entry.fixture, variant)
+        result = _guarded(run_one or self.run_one, entry.scenario, run_id, entry.fixture, variant)
         if result.iteration_cap:
             self.stop_reason = STOP_ITERATION_CAP
         return result
 
-    def run_repeat(self, entry: SuiteEntry, variant: Variant | None) -> list[RunResult]:
+    def run_repeat(self, entry: SuiteEntry, variant: Variant | None, run_one: RunOne | None = None) -> list[RunResult]:
         attempts: list[RunResult] = []
         for retry in range(self.suite.flake_retries + 1):
             if not self.budget_left():
                 break
-            result = self.run_attempt(entry, retry, variant)
+            result = self.run_attempt(entry, retry, variant, run_one)
             if self.stop_reason == STOP_ITERATION_CAP:
                 break  # the cap refused the run. It says nothing about the scenario.
             attempts.append(result)
-            if result.verdict not in RETRY_VERDICTS:
+            if result.start_failed or result.verdict not in RETRY_VERDICTS:
                 break
         return attempts
 

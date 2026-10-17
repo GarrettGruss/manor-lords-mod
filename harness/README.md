@@ -258,7 +258,7 @@ Tests: `uv run python -m unittest discover -s harness/tests -p "test_harness_too
 Each run is a separate `run.py` process, so a crash in one run does not stop the suite.
 
 ```powershell
-uv run python harness\suite.py --suite core [--max-minutes N] [--runs-root DIR]
+uv run python harness\suite.py --suite core [--slots N|all] [--max-minutes N] [--runs-root DIR]
 uv run python harness\suite.py --list
 uv run python harness\suite.py --update-baseline <scenario> [--from-last N]
 ```
@@ -277,6 +277,8 @@ Only `--update-baseline` writes a baseline file. It uses the last N passing runs
 
 Real baselines are in the repository. With only 2 to 4 runs, `--update-baseline` gives ranges that are too tight for timing metrics. Widen `duration_s`, `wall seconds` and sample counts by hand after you read the proposal.
 On a run timeout the suite kills the `run.py` process tree and then runs `game-close.ps1`, so no game stays open. This cleanup is off when a custom launcher is used.
+
+Parallel suites (spec 11): `--slots all` (or a number) runs up to one run per installed game slot at the same time (`harness/install.ps1`). A job is one repeat of one entry and variant, with its retries. Jobs start in the order of the sequential runner, so A and B runs stay interleaved across slots. A scenario with `EXCLUSIVE = True` (real mouse or keyboard) waits until no other game runs, and no other run starts while it runs. A slot whose run does not start (no `summary.json`, for example a slot that is not installed) is not used again; its job runs on another slot, and the report lists it under `bad_slots`. If no slot works, the suite stops (`no_slots`, exit code 3). A run timeout stops only the game of that slot.
 
 Test the suite without the game: `HARNESS_SUITE_LAUNCHER` (or `--launcher-command`) replaces `run.py`.
 
