@@ -8,12 +8,14 @@ description: Plan and delegate harness work to subagents (spikes, upgrades, scen
 Rules from CLAUDE.md: use `model: "sonnet"` for subagents when possible, do not spawn one for a small task, give a full prompt, and treat the report as data.
 
 ## What can run in parallel
-- ONE agent uses the real game at a time. A second game run breaks the first (one run lock, one game folder).
+- Up to 3 agents can use the real game at the same time, one per game slot (spec 11, after `harness/install.ps1`). Slots, run locks, the run counter and the fixture ledger are shared by the main checkout and all worktrees, so agents in different worktrees see each other's runs.
+  - Either tell every agent to use `--slot auto` (MCP `run_scenario` does it by default), or give each agent a fixed slot (`--slot 1`). Fixed slots keep one agent from waiting on another. A busy slot is an error, not a wait.
+  - Scenarios with the real mouse wait for each other (`runs/.input.lock`). `harness/uninstall.ps1` must not run while agents test.
 - Agents that only use the fake game kit and unit tests can run in parallel with the game agent. Give them their own git worktree and branch.
 - Several agents may edit the same shared files (HarnessActions `main.lua`, `criteria.json`, `CHANGELOG.md`, the scenario list test). Expect merge conflicts there. Keep those edits small and tell agents to put new code in new files.
 
 ## Worktrees
-`git worktree add ../mlm-wtNN -b feat/NN-name origin/main`. Link the venv with a junction (`mklink /J .venv <main>\.venv`), and remove the junction with `cmd /c rmdir` before `git worktree remove`. Without the junction, the first `uv run` makes a venv for the worktree from `uv.lock`. The main worktree is the one the harness MCP tools and `run.py` deploy from: scenarios run from the code in the main worktree. To run a branch's scenarios in the real game, merge it to main (or check it out in the main worktree) first.
+`git worktree add ../mlm-wtNN -b feat/NN-name origin/main`. Link the venv with a junction (`mklink /J .venv <main>\.venv`), and remove the junction with `cmd /c rmdir` before `git worktree remove`. Without the junction, the first `uv run` makes a venv for the worktree from `uv.lock`. `run.py` deploys the mods of the checkout it runs from. So an agent in a worktree tests its own branch with `uv run python harness\run.py --scenario <name> --slot auto` from its worktree. The MCP tools deploy from the checkout their server started in.
 
 A worktree has no git-ignored files. Tell the agent to copy the fixture saves and `harness/pakmod.local.json` from the main checkout `C:\Users\garre\development\manor-lords-mod`. The AES key stays in the main checkout: `C:\Users\garre\development\manor-lords-mod\modtools\work\aes_key.txt`. The agent loads it into `MANORLORDS_AES_KEY` inside each command and never prints it.
 

@@ -12,6 +12,8 @@ from pathlib import Path
 
 import psutil
 
+from .shared import lock_root
+
 
 DEFAULT_MAX_RUNS = 400  # a safety rail for unattended loops. Delete runs/.iterations to reset the counter.
 UNLINK_RETRY_S = 2.0  # how long a lock release retries a delete that another process blocks
@@ -166,7 +168,7 @@ class RunLock(PidLock):
     """The run lock of one game slot: runs/.lock or runs/.lock-<n>. Two runs in the same slot cannot overlap."""
 
     def __init__(self, runs_root: Path, slot: int = 0):
-        super().__init__(Path(runs_root) / run_lock_name(slot))
+        super().__init__(lock_root(runs_root) / run_lock_name(slot))  # shared by all worktrees
         self.slot = slot
 
 
@@ -213,8 +215,8 @@ def default_max_runs(environ: dict | None = None) -> int:
 
 def bump_iterations(runs_root: Path, max_runs: int) -> int:
     """Add one to runs/.iterations and return the new count. Refuse to pass max_runs."""
-    counter_path = Path(runs_root) / ".iterations"
-    with WaitLock(Path(runs_root) / ".iterations.lock", timeout_s=30):  # parallel runs must not lose a count
+    counter_path = lock_root(runs_root) / ".iterations"
+    with WaitLock(lock_root(runs_root) / ".iterations.lock", timeout_s=30):  # parallel runs must not lose a count
         return _bump_locked(counter_path, max_runs)
 
 

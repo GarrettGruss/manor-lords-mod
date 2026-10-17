@@ -27,7 +27,7 @@ Run N independent game instances ("slots") on this machine at the same time, so 
 ## Design
 1. **Slot folder.** A slot is `slots/<n>/Manor Lords/` (git-ignored). `Win64` is a full copy (exe, UE4SS, mods). `Content/Paks` is a real folder with hard links to the game paks and its own `~mods`, so pak A/B tests do not mix. `Engine`, `Plugins`, `Content/Movies` and `Content/Slate` are junctions. About 0.6 GB per slot (spike 1). Slot 0 is the normal game folder.
 2. **Config.** A local config (git-ignored, like `pakmod.local.json`) lists the slots: id, game folder path. Slot 0 is the normal game folder. A run takes a slot with `--slot <n>` or the next free one.
-3. **Locks.** One lock file per slot (`runs/.lock-<n>`). A run takes the slot lock, not a global lock. The global parts stay global and are protected by a short lock: the iteration counter and the user-save hash check.
+3. **Locks.** One lock file per slot (`runs/.lock-<n>`). A run takes the slot lock, not a global lock. The global parts stay global and are protected by a short lock: the iteration counter and the user-save hash check. All checkouts share these files (the main checkout and its git worktrees, `runlib/shared.py`), and the slots, the fixture ledger and the input lock too.
 4. **Deploy.** `deploy.ps1` gets a `-Slot` option and deploys to the slot folder. Each slot folder is deployed before its run, as today.
 5. **Process search.** The launcher, `stop_game` and the teardown find the game process by its executable path (the slot folder), not by name. A run never ends a game in another slot.
 6. **Private data.** Every run keeps its own `LOCALAPPDATA`. Crash reports are matched to a slot by process id and time.

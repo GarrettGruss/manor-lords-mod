@@ -245,3 +245,19 @@ function Write-SlotsState([string]$SlotsDir, $Entries, [string]$GameDir) {
     New-Item -ItemType Directory -Force -Path (Get-InstallDir $SlotsDir) | Out-Null
     Write-TextAtomic (Get-SlotsStatePath $SlotsDir) (ConvertTo-Json @{ game_dir = $GameDir; slots = @($Entries) } -Depth 4)
 }
+
+function Get-MainCheckout([string]$RepoRoot) {
+    # A git worktree has a .git FILE: 'gitdir: <main>/.git/worktrees/<name>'. The slots belong to the main checkout,
+    # so every worktree uses the same ones (same rule as harness/runlib/shared.py).
+    $gitPath = Join-Path $RepoRoot '.git'
+    if (-not (Test-Path -LiteralPath $gitPath -PathType Leaf)) { return $RepoRoot }
+    $text = (Get-Content -LiteralPath $gitPath -Raw).Trim()
+    if (-not $text.StartsWith('gitdir:')) { throw "$gitPath is not a git worktree file." }
+    $gitDir = $text.Substring(7).Trim()
+    $worktrees = Split-Path -Parent $gitDir
+    $dotGit = Split-Path -Parent $worktrees
+    if ((Split-Path -Leaf $worktrees) -ne 'worktrees' -or (Split-Path -Leaf $dotGit) -ne '.git') {
+        throw "$gitPath points to $gitDir, which is not <main>/.git/worktrees/<name>."
+    }
+    return (Split-Path -Parent $dotGit)
+}

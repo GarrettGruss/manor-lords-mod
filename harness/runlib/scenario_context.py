@@ -21,6 +21,7 @@ from .modstate import ModState
 from .popups import PopupGuard
 from .runfolder import WaitLock, atomic_write_text
 from .runner import PhaseContext
+from .shared import SHARED_RUNS
 from .snapshot import snapshot
 from .telemetry import TelemetryReader
 from .windows import list_windows, pick_game_window
@@ -34,7 +35,7 @@ METRIC_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,60}$")
 
 
 # One real cursor and one focus for all game slots (spec 11): a run holds this lock while it uses the OS mouse or keyboard.
-INPUT_LOCK_PATH = Path(__file__).resolve().parent.parent.parent / "runs" / ".input.lock"
+INPUT_LOCK_PATH = SHARED_RUNS / ".input.lock"  # one mouse for all worktrees
 INPUT_LOCK_TIMEOUT_S = 300
 
 
