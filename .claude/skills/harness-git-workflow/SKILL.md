@@ -5,7 +5,7 @@ description: Branch, commit, push, open and merge pull requests for this repo, a
 
 # Git workflow for this repo
 
-Rules are in CLAUDE.md: atomic Conventional commits, one feature branch per spec, CHANGELOG kept current. Do not commit, push or merge unless the user asked or a standing goal grants it (for example the user's goal that allows merging pull requests).
+Rules are in CLAUDE.md: atomic Conventional commits, one feature branch per spec, CHANGELOG kept current. Done work goes to a pull request for review. All PR types (docs, fix, chore, features, breaking changes) are approved in advance: merge after the full tests pass (CLAUDE.md, Git).
 
 ## Branch and commit
 - Branch from an up-to-date `main`: `git checkout -b feat/<NN>-<name>`; a mod iteration uses `feat/M<NN>-<feature>-<iteration>` (or a worktree, see `harness-dispatch-agents`).

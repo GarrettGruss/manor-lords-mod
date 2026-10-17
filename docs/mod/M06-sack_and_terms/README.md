@@ -59,3 +59,7 @@ Not started. The first part (sack and terms in the home town) does not need vass
 ## Follow-up decisions (2026-10-16)
 See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.
 - Sack size grows linearly with difficulty for now. Logarithmic is possible later; decided in playtests.
+
+## TBD values (M00 decisions 27 to 30, 2026-10-17)
+- Loss of the great raid's final battle: TBD. Leave open. M06 has no rule for it for now. This answers open question 7 as "TBD".
+- Scaled counts and shares round up. The relief army at difficulty 2 is 8 squads.

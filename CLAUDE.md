@@ -52,9 +52,13 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
   - Name it `feat/<NN>-<feature-name>`, the same as the spec folder. Example: `feat/02-save-autoload`.
   - A mod feature uses one branch for each iteration: `feat/M<NN>-<feature>-<iteration>`. Example: `feat/M02-refugees-01-first-wave`.
   - Create the branch from an up-to-date `main`. Do the spec work, code, notes, and changelog entries on that branch.
-  - Keep commits atomic on the branch. Merge into `main` only when the user asks.
+  - Keep commits atomic on the branch.
   - Small changes that do not belong to one spec (for example `chore` or `docs` for the project rules) may go to `main`.
-  - Do not push or merge unless the user asks.
+  - When work is done and ready for `main`, push the branch and open a pull request so it can be reviewed. Link the issue.
+  - Merge rules: every PR type is approved by the user in advance (2026-10-17). Merge it after the full tests pass.
+    - This covers `docs`, `fix`, `chore`, features (`feat`, feature or mod iteration branches) and breaking changes.
+    - Merge stacked PRs in order. Retarget the next PR to `main` before its merge.
+  - Do not push or merge in any other case unless the user asks.
 - Do not commit unless the user asks.
 - Never skip hooks. Never force push.
 
