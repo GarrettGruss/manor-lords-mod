@@ -5,5 +5,6 @@ return {
     { name = "mod_state", requires = {} },
     { name = "invasion", requires = { "mod_state" } },
     { name = "raid_behavior", requires = { "invasion" } },
+    { name = "unit_balance", requires = {} },
     { name = "bandits", requires = { "invasion" } },
 }

@@ -16,7 +16,7 @@ Make armor matter in battle. Give the Hussites roles from existing foot units. A
 - Veterancy: surviving units keep experience. Losing the best retinue hurts.
 
 ## Current state
-Not started. The lever research is done (spec 25). The tuning tool is done on branch `feat/28-unit-tuning` (not merged).
+Iteration 01 (unarmored-lethality) is done in the mod: feature `unit_balance` cuts def and block of unarmored units (def below 10) to 0 for all sides. Real-game A/B: militia loss rate x2.14 (p 0.058, N 6). Notes: `implementation-notes/iteration-01-unarmored-lethality.md`. The lever research is done (spec 25). The tuning tool is done in spec 28.
 
 ## Proven building blocks
 - Lever results: `docs/harness/25-combat-lethality/implementation-notes/ab-results.md`, `levers.md`.
@@ -53,7 +53,7 @@ Not started. The lever research is done (spec 25). The tuning tool is done on br
 ## Iterations
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
-| 01 | unarmored-lethality | Apply the live `def` and `block` write to unarmored units, for each new squad. | not started |
+| 01 | unarmored-lethality | Apply the live `def` and `block` write to unarmored units, for each new squad. | pass (x2.14 militia loss rate), see [iterations/01-unarmored-lethality.md](iterations/01-unarmored-lethality.md) |
 | 02 | hussite-roles | Hussite roles from existing foot rows, by tier (decision 7). | not started |
 | 03 | armored-militia | Armor plus weapon values so militia beat 1.5 times as many bandits. | not started |
 | 04 | counters-veterancy | Counters and veterancy. | not started |

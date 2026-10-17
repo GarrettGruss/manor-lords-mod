@@ -15,6 +15,7 @@
     { "name": "mod_state", "requires": [], "ids": {} },
     { "name": "invasion", "requires": ["mod_state"], "ids": {} },
     { "name": "raid_behavior", "requires": ["invasion"], "ids": {} },
+    { "name": "unit_balance", "requires": [], "ids": {} },
     { "name": "bandits", "requires": ["invasion"], "ids": {} }
   ],
   "gate_scenarios": []

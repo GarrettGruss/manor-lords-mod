@@ -33,6 +33,14 @@ return {
         exit_y = -85000,        -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
         fallback_good = 16,     -- good type for loot when the nearest store has no goods
     },
+    -- M05 unit_balance, iteration 01. Unarmored units take more damage (spec 25: def 0 and block 0 doubled the losses of militia).
+    unit_balance = {
+        enabled = true,
+        poll_ms = 2000,                -- real time between two looks for new units
+        armored_def_min = 10,          -- a unit with def below this is unarmored (Brigands about 3, militia 5 to 7, mail 10, retinue 62)
+        unarmored_def_factor = 0.0,    -- new def = def x factor, for an unarmored unit
+        unarmored_block_factor = 0.0,  -- new block = block x factor
+    },
     -- M04 bandits, iteration 01. First guesses from M00 decisions 11 to 15 and 28 to 30.
     bandits = {
         enabled = true,
