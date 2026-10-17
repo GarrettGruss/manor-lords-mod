@@ -35,6 +35,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Soak (#53): `soak-days` accepts up to 13000 s of wall time (`MAX_LIMIT_S` 13500 s) and wider clock-rate (1.5 to 9) and days (0.2 to 1.1) ranges. A 3.3 h run reached day 333 of 730 with no crash and no memory growth; see spec 10 `open-items.md`.
 
 ### Fixed
+- Spec 11: parallel games no longer read the save list at the same time (the launch holds `runs/.saves.lock` until the main menu); before, two of three games saw only `autosave`. Lock files survive the Windows delete race (`PermissionError`). Preflight, launch and teardown limits include the lock wait (`RUN_OVERHEAD_S` 1200 s). The bridge client checks the run's own game pid (`UE4SS_BRIDGE_GAME_PID`) instead of `tasklist`, which reported a live game as gone under load.
 - The `test_pakmod` uninstall tests used the real `slots` folder, so the full suite could delete the real slots. They use a temp folder now, and `uninstall.ps1` leaves an install state of another game folder alone.
 - Time control (#143): a run of `ctx.time` calls the pop-up guard (`ctx.popups`) every 2 s. A "Hunger!" pop-up that opened in a chunk of 10 game days paused the game for the rest of the chunk and failed a 120-day run.
 - genmesh (#131, #102): the Meshy task id is written to the spend log at creation, before polling, so a client timeout cannot lose it. New command `resume --task <id> --out <dir>` downloads an existing task and spends no credits.

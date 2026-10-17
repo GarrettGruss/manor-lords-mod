@@ -25,6 +25,25 @@ Date: 2026-10-17.
 - `harness/tests/test_suitelib_pool.py` (12 tests): job order, 3 runs at the same time with the same verdicts as the sequential runner, variant order in the report, retries, an exclusive scenario never overlaps another run, a broken slot, no working slot, an unknown optional scenario, the iteration cap, separate run folders, the scenario flags.
 - `harness/tests/test_suitelib_cli.py`: `--slots 2` passes `--slot` to each run, a broken slot (stub `HARNESS_STUB_BAD_SLOT`) is reported while the other slot finishes the suite, bad `--slots` values are refused. The stub launcher now locks its state file, because parallel stubs start at the same time.
 
-## Not verified yet
+## Real runs (2026-10-17)
+The `core` suite (smoke x2, time-advance x2, telemetry-sanity x1) with `--slots all` (slots 0, 1, 2). Four suites, one after the other, with fixes in between:
+
+| Suite | Result | Wall time | What happened |
+|---|---|---|---|
+| `20261017-201437-9e1d` | 5 of 5 pass | 312.8 s | slot 2 marked bad: `run.py` crashed before its run folder (see "Lock file race"). The other 2 slots finished the suite. |
+| `20261017-202947-630e` | 5 of 6 pass, smoke flaky | 268.4 s | one teardown hit its 30 s limit while it waited for `runs/.saves.lock` |
+| `20261017-203613-7410` | 4 of 5 pass, exit 4 | 243.9 s | a bridge call got no response in 15 s, and the bridge then called the live game "gone" |
+| `20261017-204212-3120` | 5 of 5 pass, exit 0 | 247.5 s | no problem |
+
+The same suite on 1 slot took 289 to 298 s (4 suites on 2026-10-10). So `core` gains only about 15%. Its scenarios are short (10 to 57 s), and the boot takes most of each run. In parallel, a boot takes 35 to 90 s, against about 25 to 30 s alone: three games load maps at the same time, and the save list lock (below) lets only one game at a time through the main menu. Suites with long scenarios (A/B raids, soaks) should gain much more. Step 5 measures that.
+
+## Problems found and fixed
+- **Save list read at the same time.** Three `run.py` started at the same moment: two games showed only `autosave` in their save list and failed with "slot did not appear in the save list in 30 s". The third game started 50 s later and saw all 47 saves. Fix: the launch phase takes `runs/.saves.lock` before it starts the game, and the boot releases it when the boot state leaves `WAITING_FOR_MENU` (or after 90 s, or at READY or FAILED). So a game reads the list while no other game reads it and no run changes the folder. After the fix, 3 runs started at the same moment all passed (twice).
+- **Lock file race on Windows.** `os.open(O_EXCL)` raises `PermissionError`, not `FileExistsError`, while another process deletes the file. A delete also fails (WinError 32) while a waiting process reads the file. Both crashed `run.py` (`bump_iterations`). Fix: `PidLock` treats `PermissionError` as "taken" and retries a blocked delete for up to 2 s. Test: 6 processes count 90 times through `bump_iterations` with no crash and no lost count.
+- **Phase limits did not count the lock wait.** Preflight, launch and teardown wait for `runs/.saves.lock` (up to 180 s). Their limits are now 60, 60 and 30 s plus 180 s. `RUN_OVERHEAD_S` (the kill timer of the suite and `run_series.py`) is now 1200 s.
+- **False "game is gone".** After a bridge timeout, the bridge client checks the game with `tasklist` by image name (10 s timeout). Under the load of 3 games a failed `tasklist` reported a live game as gone (`popen.poll()` was still `None`). Fix: the launcher sets `UE4SS_BRIDGE_GAME_PID`, and the bridge then checks that one process with psutil.
+
+## Open
+- With 3 games, a bridge call can wait more than 15 s (`DEFAULT_TIMEOUT`) for the game thread. It happened once in 26 parallel runs. The run then ends with `harness_error`, which the suite does not retry. Not fixed: a longer timeout or a retry of such runs is a separate decision.
 - Step 5: a real A/B suite on 3 slots against the same suite on 1 slot (wall time and result ranges).
 - An exclusive scenario in a real parallel suite.

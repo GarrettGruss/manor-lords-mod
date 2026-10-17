@@ -196,8 +196,22 @@ def _process_running(image: str) -> bool:
     return any(line.startswith(f'"{image}.exe"') for line in out.splitlines())
 
 
+def _pid_running(pid_text: str) -> bool:
+    import psutil
+
+    try:
+        return psutil.Process(int(pid_text)).is_running()
+    except (psutil.NoSuchProcess, ValueError):
+        return False
+
+
 def game_running() -> bool:
     global _GAME
+    # A launcher that knows its game pins the pid: with parallel games the image name is shared, and tasklist
+    # can time out under load and report a live game as gone.
+    pinned_pid = _env("GAME_PID")
+    if pinned_pid:
+        return _pid_running(pinned_pid)
     g = game()
     if g.process and _process_running(g.process):
         return True

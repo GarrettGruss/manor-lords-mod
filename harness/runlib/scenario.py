@@ -30,8 +30,9 @@ DEFAULT_LIMIT_S = 90.0
 # MAX_LIMIT_S fits a 2-game-year soak: 730 days at the measured 2.5 game s per wall s is about 11700 s, plus the boot.
 LONG_LIMIT_S = 300.0
 MAX_LIMIT_S = 13500.0
-# The limits of the other phases (preflight 60, deploy 120, launch 60, boot 240, collect 60, teardown 30) and some room.
-RUN_OVERHEAD_S = 600.0
+# The limits of the other phases (preflight 60, deploy 120, launch 60, boot 240, collect 60, teardown 30), the wait for
+# runs/.saves.lock in preflight, launch and teardown (3 x 180 s, parallel slots), and some room.
+RUN_OVERHEAD_S = 1200.0
 MIN_RUN_TIMEOUT_S = 900.0
 
 
@@ -155,6 +156,8 @@ def configure_bridge_client(ctx: PhaseContext, install: GameInstall) -> Bridge:
     """
     os.environ["UE4SS_BRIDGE_GAME_DIR"] = str(install.win64)
     os.environ["UE4SS_BRIDGE_DATA_DIR"] = str(ctx.run.bridge_dir.resolve())
+    if ctx.state.get("game_pid"):
+        os.environ["UE4SS_BRIDGE_GAME_PID"] = str(ctx.state["game_pid"])
     mcp_dir = str(REPO_ROOT / "mcp")
     if mcp_dir not in sys.path:
         sys.path.insert(0, mcp_dir)

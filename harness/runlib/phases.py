@@ -200,6 +200,9 @@ def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float, e
         env = build_game_environment(ctx.run.path, ctx.state.get("test_save", test_save), telemetry_interval_s=telemetry_interval_s,
                                      appdata_dir=ctx.state.get("appdata_dir"), extra_env=extra_env,
                                      new_game_map=new_game_map)
+        # A game that reads the save list at the same time as another game, or while a run changes the save folder,
+        # sees only part of the list (spec 11, step 4). The boot releases the lock after the menu.
+        hold_save_scan_lock(ctx)
         # The working folder must be Win64, or UE4SS does not find its files.
         popen = subprocess.Popen(
             [str(install.exe), *game_launch_args(env)], cwd=install.win64, env=env,
@@ -213,6 +216,25 @@ def _launch(install: GameInstall, test_save: str, telemetry_interval_s: float, e
         return f"game started, PID {popen.pid}"
 
     return run
+
+
+# The boot states in which the game may still read the save list. After them the lock is free for the next game.
+SAVE_SCAN_STATES = ("no boot.json yet", "WAITING_FOR_MENU")
+SAVE_SCAN_LOCK_MAX_S = 90.0  # a game stuck in the menu must not block the other slots longer
+# Preflight, launch and teardown wait for runs/.saves.lock while other slots use it. The wait must not use up the phase limit.
+LOCK_WAIT_S = saveslots.SAVES_LOCK_TIMEOUT_S
+
+
+def hold_save_scan_lock(ctx: PhaseContext) -> None:
+    lock = saveslots.saves_lock()
+    lock.acquire()
+    ctx.state["save_scan_lock"] = lock
+
+
+def release_save_scan_lock(ctx: PhaseContext) -> None:
+    lock = ctx.state.pop("save_scan_lock", None)
+    if lock is not None:
+        lock.release()
 
 
 GAME_RECORD_FILE = "game.json"
@@ -258,6 +280,13 @@ def _boot_phase(slot: gameslots.GameSlot | None):
 
 
 def _boot(ctx: PhaseContext) -> str | None:
+    try:
+        return _wait_for_boot(ctx)
+    finally:
+        release_save_scan_lock(ctx)
+
+
+def _wait_for_boot(ctx: PhaseContext) -> str | None:
     started = ctx.state["launch_monotonic"]
     deadline = time.monotonic() + BOOT_DEADLINE_S
     last_state = "no boot.json yet"
@@ -266,7 +295,10 @@ def _boot(ctx: PhaseContext) -> str | None:
         boot_file = read_boot_file(ctx.run.boot_path)
         if boot_file:
             last_state = str(boot_file.get("state"))
-            seconds = time.monotonic() - started
+        seconds = time.monotonic() - started
+        if last_state not in SAVE_SCAN_STATES or seconds > SAVE_SCAN_LOCK_MAX_S:
+            release_save_scan_lock(ctx)
+        if boot_file:
             if last_state in ("READY", "FAILED"):
                 ctx.state["boot"] = _boot_result(boot_file, seconds, count_pause_calls(ctx.run.path / "mod.log"))
             if last_state == "FAILED":
@@ -491,6 +523,7 @@ def _teardown(install: GameInstall, keep_open: bool):
     def run(ctx: PhaseContext) -> str | None:
         # Set first, so the end of the process is not read as a crash.
         ctx.state["game_stop_requested"] = True
+        release_save_scan_lock(ctx)  # the launch held it, and the boot phase did not run
         if keep_open:
             ctx.state["notes"].append("--keep-open: the game was left running")
             if ctx.state.get("appdata_dir"):
@@ -530,13 +563,14 @@ def build_real_phases(
     install = install or (slot.install() if slot else GameInstall())
     fixture = fixtures.check_name(fixture or fixtures.DEFAULT_FIXTURE)  # a bad name fails before any game starts
     phases = [
-        Phase("preflight", _preflight(install, test_save, fixture, pak_names, pak_work_dir, save_path, new_game_map is not None), 60),
+        Phase("preflight", _preflight(install, test_save, fixture, pak_names, pak_work_dir, save_path, new_game_map is not None),
+              60 + LOCK_WAIT_S),
         Phase("deploy", _deploy(install), 120),
-        Phase("launch", _launch(install, test_save, telemetry_interval_s, extra_env, new_game_map), 60),
+        Phase("launch", _launch(install, test_save, telemetry_interval_s, extra_env, new_game_map), 60 + LOCK_WAIT_S),
         Phase("boot", _boot_phase(slot), 240),
         Phase("scenario", _scenario(install, scenario_name), get_limit_s(scenario_name)),
         Phase("collect", _collect(install), 60, always_run=True),
-        Phase("teardown", _teardown(install, keep_open), 30, always_run=True),
+        Phase("teardown", _teardown(install, keep_open), 30 + LOCK_WAIT_S, always_run=True),
     ]
     if pak_names:
         # After teardown: the game is stopped by then, so it no longer holds the pak file.

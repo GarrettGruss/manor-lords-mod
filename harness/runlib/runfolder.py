@@ -14,6 +14,7 @@ import psutil
 
 
 DEFAULT_MAX_RUNS = 400  # a safety rail for unattended loops. Delete runs/.iterations to reset the counter.
+UNLINK_RETRY_S = 2.0  # how long a lock release retries a delete that another process blocks
 MAX_RUNS_ENV = "HARNESS_MAX_RUNS"  # overrides the default. The option --max-runs of run.py overrides both.
 
 
@@ -114,13 +115,26 @@ class PidLock:
     def release(self) -> None:
         # Remove the lock only if it is still ours.
         if self._read_pid() == os.getpid():
-            self.lock_path.unlink(missing_ok=True)
+            self._unlink()
         self.held = False
+
+    def _unlink(self) -> None:
+        # Windows refuses the delete while a waiting process reads the file. The read takes milliseconds.
+        deadline = time.monotonic() + UNLINK_RETRY_S
+        while True:
+            try:
+                self.lock_path.unlink(missing_ok=True)
+                return
+            except PermissionError:
+                if time.monotonic() >= deadline:
+                    raise
+                time.sleep(0.01)
 
     def _try_create(self) -> bool:
         try:
             fd = os.open(self.lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError:
+        except (FileExistsError, PermissionError):
+            # Windows gives PermissionError while another process deletes the file: it still counts as taken.
             return False
         with os.fdopen(fd, "w") as lock_file:
             lock_file.write(str(os.getpid()))
@@ -129,8 +143,8 @@ class PidLock:
     def _read_pid(self) -> int | None:
         try:
             return int(self.lock_path.read_text().strip())
-        except (FileNotFoundError, ValueError):
-            return None
+        except (FileNotFoundError, PermissionError, ValueError):
+            return None  # PermissionError: another process deletes or writes the file right now
 
     def _take_over_if_stale(self) -> None:
         holder_pid = self._read_pid()

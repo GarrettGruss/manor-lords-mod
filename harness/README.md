@@ -38,7 +38,7 @@ A scenario is a module in `harness/scenarios/` with `LIMIT_S` (hard time limit, 
 `run` returns `ctx.result()`: `{"passed": bool, "asserts": [...]}`. It is also saved as `scenario.json`. The log is `scenario.log`.
 A scenario that is over its limit gives the verdict `timeout`.
 Limits: the default is 90 s. A limit up to 300 s needs nothing more. A limit above 300 s (a soak) needs a text `LONG_REASON` in the module that says why. The most is 4200 s.
-The suite runner and `run_series.py` give each run `LIMIT_S` plus 600 s (at least 900 s and 600 s), so their kill timer never ends a long scenario early (`suite.py --run-timeout-s` sets one fixed value).
+The suite runner and `run_series.py` give each run `LIMIT_S` plus 1200 s (the other phases and the waits for `runs/.saves.lock`; at least 900 s and 600 s), so their kill timer never ends a long scenario early (`suite.py --run-timeout-s` sets one fixed value).
 While a long run is active, `wait_for_run` answers `running` with `scenario_limit_s`: call it again until the summary appears.
 `ctx.run_until(predicate, timeout_s, what=, clock="wall"|"game", poll_s=, stall_s=, on_stall=, on_poll=)` waits for a condition (`runlib/waiting.py`).
 `timeout_s` counts wall seconds or game seconds. The stall detector watches the game clock: after `stall_s` wall seconds with no progress it calls `on_stall`, and if the clock still stands still after another `stall_s` it raises `GameStalled`.
