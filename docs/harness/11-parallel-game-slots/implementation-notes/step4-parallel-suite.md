@@ -47,3 +47,8 @@ The same suite on 1 slot took 289 to 298 s (4 suites on 2026-10-10). So `core` g
 - With 3 games, a bridge call can wait more than 15 s (`DEFAULT_TIMEOUT`) for the game thread. It happened once in 26 parallel runs. The run then ends with `harness_error`, which the suite does not retry. Not fixed: a longer timeout or a retry of such runs is a separate decision.
 - Step 5: a real A/B suite on 3 slots against the same suite on 1 slot (wall time and result ranges).
 - An exclusive scenario in a real parallel suite.
+
+## Worktrees share the state (2026-10-17)
+- Problem: every checkout built its paths from its own folder. A session in a git worktree saw only slot 0 (no `slots` folder) and none of the locks, the run counter or the fixture ledger of other sessions. Two sessions could start a game in the same slot, and a run's save check saw another session's fixture as a change to the user's saves.
+- Fix: `harness/runlib/shared.py` finds the main checkout from the worktree's `.git` file. The slots, run locks, start claims, `.iterations`, the fixture ledger and `.saves.lock`, `.input.lock` and the save backups use the main checkout. A run folder stays in its own checkout. A non-default `--runs-root` keeps its own locks (tests). `install.ps1` and `uninstall.ps1` use the same rule.
+- Real check: a temp worktree of the fix branch listed slots 0, 1 and 2. Three `run.py --slot auto` smoke runs, two from the main checkout and one from the worktree, started 1 s apart: all passed, in slots 0, 1 and 2, with fixture saves 51, 52 and 53, and the user's saves did not change.
