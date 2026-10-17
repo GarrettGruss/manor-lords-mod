@@ -5,7 +5,7 @@ import unittest
 import runlib_path  # noqa: F401
 from runlib.scenario import (
     get_limit_s,
-    LONG_LIMIT_S, MAX_LIMIT_S, SCENARIO_INFO, check_limit, list_scenarios, register, run_timeout_s,
+    DEFAULT_LIMIT_S, LONG_LIMIT_S, MAX_LIMIT_S, RUN_OVERHEAD_S, SCENARIO_INFO, check_limit, list_scenarios, register, run_timeout_s,
 )
 from runlib.timectl import TimeControlError
 from runlib.waiting import GameStalled, ScenarioFailure, WaitTimeout, run_until
@@ -161,9 +161,9 @@ class LimitRulesTest(unittest.TestCase):
                 self.assertTrue(info.long_reason, f"{name} has no LONG_REASON")
 
     def test_launcher_timeout_follows_the_scenario_limit(self):
-        self.assertEqual(run_timeout_s("smoke"), 900)  # short scenario: the floor
-        self.assertEqual(run_timeout_s("unknown-scenario"), 900)
-        self.assertEqual(run_timeout_s("smoke", 10), get_limit_s("smoke") + 600)
+        self.assertEqual(run_timeout_s("smoke"), get_limit_s("smoke") + RUN_OVERHEAD_S)
+        self.assertEqual(run_timeout_s("unknown-scenario"), DEFAULT_LIMIT_S + RUN_OVERHEAD_S)
+        self.assertEqual(run_timeout_s("smoke", 5000), 5000)  # the floor wins over a short scenario
         info = SCENARIO_INFO.get("soak-days")
         if info:
             self.assertGreater(run_timeout_s("soak-days"), info.limit_s)

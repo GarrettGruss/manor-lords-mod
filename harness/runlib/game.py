@@ -37,6 +37,7 @@ class GameInstall:
 
     root: Path = field(default_factory=_default_root)
     saved_dir: Path = field(default_factory=_local_app_data)
+    steam_root: Path | None = None  # the Steam game folder, for a slot copy whose root is elsewhere (spec 11)
 
     @property
     def win64(self) -> Path:
@@ -52,7 +53,7 @@ class GameInstall:
 
     @property
     def appmanifest(self) -> Path:
-        return self.root.parent.parent / "appmanifest_1363080.acf"
+        return (self.steam_root or self.root).parent.parent / "appmanifest_1363080.acf"
 
     def save_file(self, slot: str) -> Path:
         return self.saved_dir / "SaveGames" / f"{slot}.sav"
@@ -70,8 +71,21 @@ def find_processes(names: tuple[str, ...]) -> list[psutil.Process]:
     return found
 
 
-def find_game_processes() -> list[psutil.Process]:
-    return find_processes(GAME_PROCESS_NAMES)
+def is_process_under(process: psutil.Process, root: Path) -> bool:
+    """True if the executable of `process` is inside `root`. An unreadable path counts as outside, so it is never stopped."""
+    try:
+        exe = Path(process.exe()).resolve()
+    except (psutil.Error, OSError):
+        return False
+    return Path(root).resolve() in exe.parents
+
+
+def find_game_processes(root: Path | None = None) -> list[psutil.Process]:
+    """Game processes. With `root`, only the ones started from that game folder, so a run never touches another slot (spec 11)."""
+    found = find_processes(GAME_PROCESS_NAMES)
+    if root is None:
+        return found
+    return [process for process in found if is_process_under(process, root)]
 
 
 def find_crash_reporters() -> list[psutil.Process]:

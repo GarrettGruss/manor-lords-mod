@@ -17,6 +17,7 @@ from runlib.windows import list_windows, pick_game_window
 
 NAME = "probe-policy-followups"
 LIMIT_S = 900
+EXCLUSIVE = True  # real mouse input: a parallel suite runs it with no other game
 HIDDEN = True
 LONG_REASON = "The A/B mode watches several game days."
 POLICY = 12

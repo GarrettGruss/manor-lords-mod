@@ -23,6 +23,8 @@ class RunResult:
     iteration_cap: bool = False
     # The launcher does not know the scenario. An optional entry is skipped then.
     unknown_scenario: bool = False
+    # run.py refused before the run folder existed (for example a busy or broken game slot). The parallel pool tries another slot.
+    start_failed: bool = False
 
 
 def _is_number(value) -> bool:

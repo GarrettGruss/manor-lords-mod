@@ -38,7 +38,7 @@ A scenario is a module in `harness/scenarios/` with `LIMIT_S` (hard time limit, 
 `run` returns `ctx.result()`: `{"passed": bool, "asserts": [...]}`. It is also saved as `scenario.json`. The log is `scenario.log`.
 A scenario that is over its limit gives the verdict `timeout`.
 Limits: the default is 90 s. A limit up to 300 s needs nothing more. A limit above 300 s (a soak) needs a text `LONG_REASON` in the module that says why. The most is 4200 s.
-The suite runner and `run_series.py` give each run `LIMIT_S` plus 600 s (at least 900 s and 600 s), so their kill timer never ends a long scenario early (`suite.py --run-timeout-s` sets one fixed value).
+The suite runner and `run_series.py` give each run `LIMIT_S` plus 1200 s (the other phases and the waits for `runs/.saves.lock`; at least 900 s and 600 s), so their kill timer never ends a long scenario early (`suite.py --run-timeout-s` sets one fixed value).
 While a long run is active, `wait_for_run` answers `running` with `scenario_limit_s`: call it again until the summary appears.
 `ctx.run_until(predicate, timeout_s, what=, clock="wall"|"game", poll_s=, stall_s=, on_stall=, on_poll=)` waits for a condition (`runlib/waiting.py`).
 `timeout_s` counts wall seconds or game seconds. The stall detector watches the game clock: after `stall_s` wall seconds with no progress it calls `on_stall`, and if the clock still stands still after another `stall_s` it raises `GameStalled`.
@@ -166,14 +166,48 @@ They cannot show that the real UE4SS API behaves like the fake one.
 - Delete the file to get normal play back. Ask Claude to delete it if you prefer.
 - The run launcher (spec 03) will use the environment variable `HARNESS_AUTOBOOT=1` instead of this file.
 
+## Install the harness state (spec 11)
+
+The game reads and writes its settings in your REAL `%LOCALAPPDATA%\ManorLords\Saved`, so a run cannot have private settings.
+`install.ps1` puts the PC into the harness state:
+
+- It backs up `GameUserSettings.ini`, `UserSettings.ini` and `rtsSettings.sav` into `slots\.install\` with SHA-256, once. A second install keeps the first backup.
+- It writes the harness values into the real files: low quality, windowed 1280x720, 30 fps. Other keys (key bindings) stay.
+- It builds the slot folders `slots\<n>\Manor Lords\` (default 2; the game folder is slot 0) and runs `deploy.ps1` for each.
+
+While installed, your own play also uses the harness settings. Run `uninstall.ps1` before you play.
+Both scripts refuse to work while the game runs, because the game writes its settings when it exits.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File harness\install.ps1                 # settings and 2 slots
+powershell -ExecutionPolicy Bypass -File harness\install.ps1 -SettingsOnly   # settings only
+```
+
+### Parallel runs in slots
+
+After `install.ps1`, up to 3 runs can run at the same time, one per game slot (spec 11, step 3):
+
+```powershell
+uv run python harness\run.py --scenario smoke --slot auto   # the first free slot
+uv run python harness\run.py --scenario smoke --slot 2      # slot 2 only; it fails if slot 2 is busy
+```
+
+- Slot 0 is the game folder (`runs\.lock`). Slot n uses `runs\.lock-<n>`. The default is `--slot 0`, as before.
+- Each run deploys to its own slot, and stops only the game of its own slot.
+- Changes to the real save folder (fixture install, save check, `save_game`) wait for `runs\.saves.lock`. OS mouse and key actions wait for `runs\.input.lock`.
+- After READY the window moves to the slot's screen tile.
+- MCP: `run_scenario(name, slot="auto")` is the default. `game_status` lists the slots and `free_slots`.
+
 ## Disable or remove the harness
 
 `uninstall.ps1` (PowerShell 5.1) has two modes. Both support `-DryRun` and `-GameDir`. Running twice is safe.
+Both modes first restore the settings files that `install.ps1` backed up, and check each hash.
 
 - Default (disable): deletes `ue4ss\harness\autoboot.enable` and sets every harness mod to `Name : 0` in `mods.txt`.
   All files stay. Run `deploy.ps1` to enable the harness again.
 - `-Remove` (full uninstall): also deletes the files listed in the manifest, the harness lines in `mods.txt`,
-  the manifest, and the folders `ue4ss\bridge` and `ue4ss\harness`.
+  the manifest, and the folders `ue4ss\bridge` and `ue4ss\harness`. It deletes the slot folders that `install.ps1` built;
+  their junctions are removed as links first, so no game file is deleted.
   `mods.txt.harness.bak` is kept. The script prints its path, so you can restore it by hand.
 
 ```powershell
@@ -224,7 +258,7 @@ Tests: `uv run python -m unittest discover -s harness/tests -p "test_harness_too
 Each run is a separate `run.py` process, so a crash in one run does not stop the suite.
 
 ```powershell
-uv run python harness\suite.py --suite core [--max-minutes N] [--runs-root DIR]
+uv run python harness\suite.py --suite core [--slots N|all] [--max-minutes N] [--runs-root DIR]
 uv run python harness\suite.py --list
 uv run python harness\suite.py --update-baseline <scenario> [--from-last N]
 ```
@@ -243,6 +277,8 @@ Only `--update-baseline` writes a baseline file. It uses the last N passing runs
 
 Real baselines are in the repository. With only 2 to 4 runs, `--update-baseline` gives ranges that are too tight for timing metrics. Widen `duration_s`, `wall seconds` and sample counts by hand after you read the proposal.
 On a run timeout the suite kills the `run.py` process tree and then runs `game-close.ps1`, so no game stays open. This cleanup is off when a custom launcher is used.
+
+Parallel suites (spec 11): `--slots all` (or a number) runs up to one run per installed game slot at the same time (`harness/install.ps1`). A job is one repeat of one entry and variant, with its retries. Jobs start in the order of the sequential runner, so A and B runs stay interleaved across slots. A scenario with `EXCLUSIVE = True` (real mouse or keyboard) waits until no other game runs, and no other run starts while it runs. A slot whose run does not start (no `summary.json`, for example a slot that is not installed) is not used again; its job runs on another slot, and the report lists it under `bad_slots`. If no slot works, the suite stops (`no_slots`, exit code 3). A run timeout stops only the game of that slot.
 
 Test the suite without the game: `HARNESS_SUITE_LAUNCHER` (or `--launcher-command`) replaces `run.py`.
 

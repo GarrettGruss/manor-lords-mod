@@ -21,9 +21,9 @@ from pathlib import Path
 from typing import Callable
 
 from . import fixtures, saveslots
+from .shared import SHARED_RUNS
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-BACKUP_ROOT = REPO_ROOT / "runs" / "save-backups"
+BACKUP_ROOT = SHARED_RUNS / "save-backups"  # backups of the one user save folder
 KEPT_BACKUPS = 5
 SAVE_TIMEOUT_S = 30.0
 POLL_S = 0.2

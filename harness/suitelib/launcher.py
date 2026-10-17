@@ -32,6 +32,14 @@ def close_game() -> None:
     )
 
 
+def close_slot_game(slot: int) -> None:
+    """Stop only the game of one slot after a run timeout. The games of the other slots keep running their runs."""
+    from runlib import gameslots
+    from runlib.game import find_game_processes, stop_processes
+
+    stop_processes(find_game_processes(gameslots.get_slot(slot).root))
+
+
 def kill_process_tree(process: subprocess.Popen) -> None:
     if os.name == "nt":
         subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True)
@@ -71,19 +79,23 @@ def variant_arguments(variant: Variant | None) -> list[str]:
 class SubprocessLauncher:
     """Callable with the run_one signature. One call is one run.py process."""
 
-    def __init__(self, runs_root: Path, command: list[str] | None = None, run_timeout_s: float | None = None, on_timeout=None):
+    def __init__(self, runs_root: Path, command: list[str] | None = None, run_timeout_s: float | None = None, on_timeout=None,
+                 slot: int | None = None):
         # on_timeout runs after a timeout kill. suite.py sets it to close_game for the real run.py.
         # run_timeout_s None: each run gets scenario_run_timeout_s(scenario, DEFAULT_RUN_TIMEOUT_S). A number is a fixed limit for all runs.
         self.on_timeout = on_timeout
         self.runs_root = Path(runs_root)
         self.command = command or default_command()
         self.run_timeout_s = run_timeout_s
+        self.slot = slot  # None: run.py picks its default slot, and no --slot option is passed
 
     def __call__(self, scenario: str, run_id: str, fixture: str | None = None, variant: Variant | None = None) -> RunResult:
         arguments = ["--scenario", scenario, "--run-id", run_id, "--runs-root", str(self.runs_root)]
         if fixture:
             arguments += ["--fixture", fixture]
         arguments += variant_arguments(variant)
+        if self.slot is not None:
+            arguments += ["--slot", str(self.slot)]
         started = time.monotonic()
         stderr, timed_out, start_error = "", False, None
         timeout_s = self.run_timeout_s if self.run_timeout_s is not None else scenario_run_timeout_s(scenario, DEFAULT_RUN_TIMEOUT_S)
@@ -116,13 +128,16 @@ class SubprocessLauncher:
         if timed_out:
             return RunResult(run_id, "timeout", wall_s, reason=f"run.py did not end within {timeout_s:.0f} s")
         tail = stderr.strip()[-STDERR_TAIL_CHARS:]
+        iteration_cap = "Iteration limit" in stderr
+        unknown_scenario = "Unknown scenario" in stderr
         return RunResult(
             run_id,
             "harness_error",
             wall_s,
             reason=f"no summary.json. stderr: {tail or '(empty)'}",
-            iteration_cap="Iteration limit" in stderr,
-            unknown_scenario="Unknown scenario" in stderr,
+            iteration_cap=iteration_cap,
+            unknown_scenario=unknown_scenario,
+            start_failed=not (iteration_cap or unknown_scenario),
         )
 
     @staticmethod

@@ -1,6 +1,6 @@
 """Run a regression suite and write runs/suite-<id>/report.json and report.md (spec 08).
 
-  suite.py --suite core [--max-minutes N] [--runs-root DIR] [--list]
+  suite.py --suite core [--slots N|all] [--max-minutes N] [--runs-root DIR] [--list]
   suite.py --update-baseline <scenario> [--from-last N]
 
 Exit code: 0 pass, 1 fail or strict drift, 2 unresolved crash or timeout,
@@ -10,14 +10,18 @@ Exit code: 0 pass, 1 fail or strict drift, 2 unresolved crash or timeout,
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import os
 import sys
 from pathlib import Path
 
+from runlib import gameslots
 from runlib.runfolder import new_run_id
+from runlib.scenario import is_exclusive
 from suitelib import baselines, history, report as report_module
-from suitelib.launcher import SubprocessLauncher, LAUNCHER_ENV, close_game, resolve_command
+from suitelib.launcher import SubprocessLauncher, LAUNCHER_ENV, close_game, close_slot_game, resolve_command
+from suitelib.pool import run_suite_parallel
 from suitelib.runner import run_suite
 from suitelib.suitefile import SUITES_DIR, SuiteFileError, load_suite
 
@@ -37,6 +41,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--baselines-dir", type=Path, default=baselines.BASELINES_DIR)
     parser.add_argument("--suites-dir", type=Path, default=SUITES_DIR)
     parser.add_argument("--launcher-command", help="replace run.py (default: env HARNESS_SUITE_LAUNCHER, else run.py)")
+    parser.add_argument("--slots", default="1",
+                        help="game slots to run on at once: a number or 'all' (the installed slots, harness/install.ps1). Default 1")
     parser.add_argument("--run-timeout-s", type=float, default=None,
                         help="fixed time limit of one run. Default: the scenario LIMIT_S plus 600 s, at least 900 s")
     return parser.parse_args(argv)
@@ -82,14 +88,43 @@ def update_baseline(args: argparse.Namespace) -> int:
     return 0
 
 
-def run_named_suite(args: argparse.Namespace) -> int:
-    suite = load_suite(args.suite, args.suites_dir)
+def slot_numbers(text: str, using_run_py: bool) -> list[int]:
+    """The game slots of a parallel suite. A custom launcher (tests) gets the numbers 0 to N-1 without a check."""
+    installed = [slot.number for slot in gameslots.installed_slots()] if using_run_py else None
+    if text == "all":
+        if installed is None:
+            raise ValueError("--slots all needs the real run.py. Give a number with a custom launcher.")
+        return installed
+    if not text.isdigit() or int(text) < 1:
+        raise ValueError(f"--slots must be a number of 1 or more, or 'all', not {text!r}.")
+    count = int(text)
+    if installed is not None and count > len(installed):
+        raise ValueError(f"--slots {count}: only {len(installed)} game slot(s) are installed ({installed}). Run harness/install.ps1 -Slots {count - 1}.")
+    return installed[:count] if installed is not None else list(range(count))
+
+
+def run_with_slots(args: argparse.Namespace, suite, suite_id: str, max_seconds: float | None):
     # A custom launcher (tests) may not start a game, so only the real run.py gets the game cleanup.
     using_run_py = not (args.launcher_command or os.environ.get(LAUNCHER_ENV, "").strip())
-    launcher = SubprocessLauncher(args.runs_root, resolve_command(args.launcher_command), args.run_timeout_s, close_game if using_run_py else None)
+    command = resolve_command(args.launcher_command)
+    slots = slot_numbers(args.slots, using_run_py)
+    if len(slots) == 1 and args.slots != "all":
+        launcher = SubprocessLauncher(args.runs_root, command, args.run_timeout_s, close_game if using_run_py else None)
+        return run_suite(suite, launcher, suite_id, max_seconds)
+    launchers = {
+        slot: SubprocessLauncher(args.runs_root, command, args.run_timeout_s,
+                                 functools.partial(close_slot_game, slot) if using_run_py else None, slot=slot)
+        for slot in slots
+    }
+    print(f"suite {suite.name}: running on game slots {slots}")
+    return run_suite_parallel(suite, launchers, suite_id, max_seconds, is_exclusive=is_exclusive)
+
+
+def run_named_suite(args: argparse.Namespace) -> int:
+    suite = load_suite(args.suite, args.suites_dir)
     suite_id = new_run_id()
     max_seconds = args.max_minutes * 60 if args.max_minutes else None
-    outcome = run_suite(suite, launcher, suite_id, max_seconds)
+    outcome = run_with_slots(args, suite, suite_id, max_seconds)
 
     history_path = args.runs_root / "suite-history.jsonl"
     history.append_history(history_path, outcome)
@@ -113,7 +148,7 @@ def main(argv: list[str]) -> int:
         if not args.suite:
             return fail("one of --suite, --list and --update-baseline is required.")
         return run_named_suite(args)
-    except (SuiteFileError, baselines.BaselineError, ValueError) as error:
+    except (SuiteFileError, baselines.BaselineError, gameslots.SlotError, ValueError) as error:
         return fail(str(error))
 
 

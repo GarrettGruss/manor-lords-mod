@@ -16,6 +16,7 @@ from runlib import osinput
 NAME = "policy-menu"
 DESCRIPTION = "Open the policy menu, click a policy button (signed), click again (unsigned), toggle the menu with F7. Needs --pak policymenu."
 LIMIT_S = 300
+EXCLUSIVE = True  # real mouse input: a parallel suite runs it with no other game
 LONG_REASON = "Waits for the widget and real mouse input."
 COVERS = []
 PREFIX = "PolicyMenu."

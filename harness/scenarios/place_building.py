@@ -9,6 +9,7 @@ from runlib.osinput import Win32Input
 NAME = "place-building"
 DESCRIPTION = "Place a HitchingPost with a real mouse click (uses the OS mouse and focus). The player region must get one more."
 LIMIT_S = 120
+EXCLUSIVE = True  # real mouse input: a parallel suite runs it with no other game
 # Hidden on purpose: it takes over the real mouse and the keyboard focus. It is not offered to agents by the MCP tools
 # and not in any suite. Run it by hand on a computer that nobody is using: run.py --scenario place-building
 HIDDEN = True

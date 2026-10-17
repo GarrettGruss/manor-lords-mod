@@ -22,8 +22,9 @@ from typing import Callable
 
 import psutil
 
-from runlib import game
-from runlib.runfolder import DEFAULT_MAX_RUNS, default_max_runs, new_run_id
+from runlib import game, gameslots
+from runlib.runfolder import DEFAULT_MAX_RUNS, default_max_runs, new_run_id, run_lock_name
+from runlib.shared import lock_root
 
 MAX_RESULT_BYTES = 20_000
 MAX_TEXT_CHARS = 15_000  # leaves room for the JSON frame around one text field
@@ -151,10 +152,10 @@ def clamp(value: int, low: int, high: int) -> int:
 
 # --- lock and game state ----------------------------------------------------------------------
 
-def lock_holder_pid(runs_root: Path) -> int | None:
-    """PID of a live process that holds runs/.lock, or None. Read only: a stale lock is not removed."""
+def lock_holder_pid(runs_root: Path, slot: int = 0) -> int | None:
+    """PID of a live process that holds the run lock of `slot` (runs/.lock or runs/.lock-<n>), or None. Read only."""
     try:
-        pid = int((Path(runs_root) / ".lock").read_text().strip())
+        pid = int((lock_root(runs_root) / run_lock_name(slot)).read_text().strip())
     except (FileNotFoundError, ValueError):
         return None
     return pid if psutil.pid_exists(pid) else None
@@ -169,8 +170,9 @@ CLAIM_NAME = ".active-launcher.json"
 CLAIM_GRACE_S = 10  # time a claim counts as live while the launcher pid is not known yet
 
 
-def claim_path(runs_root: Path) -> Path:
-    return Path(runs_root) / CLAIM_NAME
+def claim_path(runs_root: Path, slot: int = 0) -> Path:
+    """One start claim per game slot (spec 11). Slot 0 keeps the old name."""
+    return lock_root(runs_root) / (CLAIM_NAME if slot == 0 else f".active-launcher-{slot}.json")
 
 
 def claim_is_live(path: Path, claim: dict | None) -> bool:
@@ -184,9 +186,9 @@ def claim_is_live(path: Path, claim: dict | None) -> bool:
     return time.time() - float(claim.get("started", 0)) < CLAIM_GRACE_S
 
 
-def active_claim(runs_root: Path) -> dict | None:
-    """The live claim, or None. Read only: a stale claim is not removed."""
-    path = claim_path(runs_root)
+def active_claim(runs_root: Path, slot: int = 0) -> dict | None:
+    """The live claim of `slot`, or None. Read only: a stale claim is not removed."""
+    path = claim_path(runs_root, slot)
     claim = read_json_file(path)
     if path.exists() and claim_is_live(path, claim):
         return claim or {"run_id": None}
@@ -210,17 +212,17 @@ def try_create_claim(path: Path, run_id: str) -> bool:
     return True
 
 
-def claim_start_slot(runs_root: Path, run_id: str) -> Path:
-    """Take the start slot or raise ToolError that names the active run."""
-    path = claim_path(runs_root)
+def claim_start_slot(runs_root: Path, run_id: str, slot: int = 0) -> Path:
+    """Take the start claim of a game slot or raise ToolError that names the active run."""
+    path = claim_path(runs_root, slot)
     for _ in range(2):
         if try_create_claim(path, run_id):
             return path
         claim = read_json_file(path)
         if claim_is_live(path, claim):
             active = (claim or {}).get("run_id") or "unknown"
-            raise ToolError(f"A launcher is already starting or running (run {active}). "
-                            f"Use wait_for_run with run_id {active}. Do not start a second run.")
+            raise ToolError(f"A launcher is already starting or running in slot {slot} (run {active}). "
+                            f"Use wait_for_run with run_id {active}, or start in another slot (slot='auto').")
         path.unlink(missing_ok=True)  # stale: its launcher is gone
     raise ToolError("Could not take the start slot. Another call took it first. Try again.")
 
@@ -231,7 +233,7 @@ def release_claim(path: Path) -> None:
 
 def read_iteration_state(runs_root: Path) -> dict:
     try:
-        used = int((Path(runs_root) / ".iterations").read_text().strip())
+        used = int((lock_root(runs_root) / ".iterations").read_text().strip())
     except (FileNotFoundError, ValueError):
         used = 0
     folders = list_run_folders(runs_root)
@@ -245,30 +247,47 @@ def read_iteration_state(runs_root: Path) -> dict:
     return {"runs_used": used, "max_runs": max_runs, "runs_left": max(0, max_runs - used)}
 
 
+def slot_status(runs_root: Path, slot: gameslots.GameSlot) -> dict:
+    return {
+        "slot": slot.number,
+        "game_pids": [p.pid for p in game.find_game_processes(slot.root)],
+        "lock_holder_pid": lock_holder_pid(runs_root, slot.number),
+        "active_run_id": (active_claim(runs_root, slot.number) or {}).get("run_id"),
+    }
+
+
+def any_slot_locked(runs_root: Path) -> bool:
+    return any(lock_holder_pid(runs_root, slot.number) is not None for slot in gameslots.installed_slots())
+
+
 def game_status(runs_root: Path, repo_root: Path) -> dict:
     def build() -> dict:
         pids = [p.pid for p in game.find_game_processes()]
+        slots = [slot_status(runs_root, slot) for slot in gameslots.installed_slots()]
         return {
             "ok": True,
             "game_running": bool(pids),
             "game_pids": pids,
             "lock_holder_pid": lock_holder_pid(runs_root),
             "active_run_id": (active_claim(runs_root) or {}).get("run_id"),
+            "slots": slots,
+            "free_slots": [s["slot"] for s in slots if s["lock_holder_pid"] is None and s["active_run_id"] is None],
             **read_iteration_state(runs_root),
         }
 
     return run_tool(build)
 
 
-def stop_game(runs_root: Path, repo_root: Path) -> dict:
+def stop_game(runs_root: Path, repo_root: Path, slot: int = 0) -> dict:
     def build() -> dict:
-        holder = lock_holder_pid(runs_root)
+        game_slot = gameslots.get_slot(slot)
+        holder = lock_holder_pid(runs_root, slot)
         if holder is not None:
-            raise ToolError(f"A run holds the lock (process {holder}). Stopping the game now would break it.")
-        claim = active_claim(runs_root)
+            raise ToolError(f"A run holds the lock of slot {slot} (process {holder}). Stopping the game now would break it.")
+        claim = active_claim(runs_root, slot)
         if claim is not None:
-            raise ToolError(f"A launcher is active (run {claim.get('run_id')}). Stopping the game now would break it.")
-        processes = game.find_game_processes()
+            raise ToolError(f"A launcher is active in slot {slot} (run {claim.get('run_id')}). Stopping the game now would break it.")
+        processes = game.find_game_processes(game_slot.root)
         pids = [p.pid for p in processes]
         if not processes:
             return {"ok": True, "stopped_pids": [], "note": "No game process was running."}
@@ -337,29 +356,51 @@ def run_scenario(
     repo_root: Path,
     name: str,
     launcher_command: LauncherCommand | None = None,
+    slot: str = "0",
 ) -> dict:
     def build() -> dict:
         check_name(name, "scenario name")
         known = load_scenarios()
         if name not in known:
             raise ToolError(f"Unknown scenario {name!r}. Known scenarios: {sorted(known)}.")
-        holder = lock_holder_pid(runs_root)
-        if holder is not None:
-            raise ToolError(f"A run is active (process {holder} holds the lock). Use wait_for_run on it.")
         Path(runs_root).mkdir(parents=True, exist_ok=True)
         run_id = new_run_id()
         make_argv = launcher_command or default_launcher_command(repo_root)
-        claim = claim_start_slot(runs_root, run_id)
+        number, claim = claim_game_slot(runs_root, run_id, slot)
         try:
-            pid = spawn_detached(make_argv(name, run_id, Path(runs_root)), launcher_log_path(runs_root, run_id))
+            argv = make_argv(name, run_id, Path(runs_root)) + ["--slot", str(number)]
+            pid = spawn_detached(argv, launcher_log_path(runs_root, run_id))
         except BaseException:
             release_claim(claim)
             raise
         write_claim(claim, {"run_id": run_id, "pid": pid, "started": time.time(), "launcher_known": True})
-        return {"ok": True, "status": "started", "run_id": run_id, "launcher_pid": pid,
+        return {"ok": True, "status": "started", "run_id": run_id, "launcher_pid": pid, "slot": number,
                 "next": "Call wait_for_run with this run_id."}
 
     return run_tool(build)
+
+
+def claim_game_slot(runs_root: Path, run_id: str, slot: str) -> tuple[int, Path]:
+    """Claim the asked slot ("0" to "3"), or with "auto" the first installed slot without a run. Raise ToolError if none is free."""
+    if slot != "auto" and not slot.isdigit():
+        raise ToolError(f"slot must be a number 0 to {gameslots.MAX_SLOT} or 'auto', not {slot!r}")
+    try:
+        candidates = gameslots.installed_slots() if slot == "auto" else [gameslots.get_slot(int(slot))]
+    except gameslots.SlotError as error:
+        raise ToolError(str(error)) from error
+    for candidate in candidates:
+        holder = lock_holder_pid(runs_root, candidate.number)
+        if holder is not None:
+            if slot != "auto":
+                raise ToolError(f"A run is active in slot {candidate.number} (process {holder} holds the lock). "
+                                "Use wait_for_run on it, or start with slot='auto'.")
+            continue
+        try:
+            return candidate.number, claim_start_slot(runs_root, run_id, candidate.number)
+        except ToolError:
+            if slot != "auto":
+                raise
+    raise ToolError(f"All {len(candidates)} game slots are busy. Wait for a run to end (wait_for_run), then try again.")
 
 
 def guess_phase(folder: Path) -> str | None:
@@ -376,7 +417,7 @@ def guess_phase(folder: Path) -> str | None:
 def running_result(runs_root: Path, run_id: str, started: float) -> dict:
     folder = run_folder_of(runs_root, run_id)
     log = launcher_log_path(runs_root, run_id)
-    if not folder.is_dir() and log.is_file() and log.stat().st_size > 0 and lock_holder_pid(runs_root) is None:
+    if not folder.is_dir() and log.is_file() and log.stat().st_size > 0 and not any_slot_locked(runs_root):
         # The launcher printed something and made no run folder: it refused or crashed.
         text, _ = cut_from_start(log.read_text(encoding="utf-8", errors="replace"))
         return {"ok": False, "status": "failed_to_start", "run_id": run_id, "launcher_log": text}

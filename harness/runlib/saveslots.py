@@ -21,14 +21,45 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from .environment import sha256_of_file
+import psutil
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-LEDGER_PATH = REPO_ROOT / "runs" / ".installed-slots.json"
+from .environment import sha256_of_file
+from .runfolder import WaitLock
+from .shared import SHARED_RUNS
+
+LEDGER_PATH = SHARED_RUNS / ".installed-slots.json"  # one ledger for all worktrees: they share the save folder
 SLOT_NAME = re.compile(r"^saveGame_(\d+)(?:_descr\.sav|\.sav|\.png|_coat_\d+\.png)$")
 REQUIRED_SUFFIXES = (".sav", "_descr.sav")
 DESCRIPTOR_SUFFIX = "_descr.sav"
 STR_PROPERTY = b"StrProperty\x00"
+
+
+SAVES_LOCK_TIMEOUT_S = 180  # a guarded save holds the lock for its whole save (spec 24), which can take a minute
+
+
+def saves_lock(ledger_path: Path | None = None) -> WaitLock:
+    """The lock for every change to the user's save folder and the ledger. Parallel runs (spec 11) share both."""
+    return WaitLock((ledger_path or LEDGER_PATH).with_name(".saves.lock"), timeout_s=SAVES_LOCK_TIMEOUT_S)
+
+
+def _this_process() -> dict:
+    return {"owner_pid": os.getpid(), "owner_started": psutil.Process().create_time()}
+
+
+def has_live_owner(entry: dict) -> bool:
+    """True if another run that is still alive owns the entry. An old entry without an owner counts as left over."""
+    pid = entry.get("owner_pid")
+    if pid is None or pid == os.getpid():
+        return False
+    try:
+        return psutil.Process(pid).create_time() == entry.get("owner_started")  # the start time rules out a reused pid
+    except psutil.Error:
+        return False
+
+
+def harness_file_names(save_dir: Path, ledger_path: Path | None = None) -> set[str]:
+    """Names of the files that the ledger lists for `save_dir`: saves of the harness, not of the user."""
+    return {name for entry in read_ledger(ledger_path) if Path(entry["save_dir"]) == Path(save_dir) for name in entry["files"]}
 
 
 class SlotError(RuntimeError):
@@ -109,7 +140,7 @@ class Installed:
 
     def as_dict(self) -> dict:
         return {"slot": self.slot, "label": self.label, "files": self.files, "save_dir": self.save_dir,
-                "installed": int(time.time())}
+                "installed": int(time.time()), **_this_process()}
 
 
 def install(save_dir: Path, sources: dict[str, Path], label: str, ledger_path: Path | None = None) -> Installed:
@@ -169,10 +200,13 @@ def uninstall_slot(slot: str, ledger_path: Path | None = None) -> dict:
 
 
 def uninstall_all(save_dir: Path, ledger_path: Path | None = None) -> list[dict]:
-    """Uninstall every ledger slot of `save_dir` (for example copies left by a --keep-open run). Other entries stay."""
+    """Uninstall every ledger slot of `save_dir` (for example copies left by a --keep-open run). Other entries stay.
+
+    Entries of another run that is still alive stay too: it runs in another game slot at the same time (spec 11).
+    """
     ledger_path = ledger_path or LEDGER_PATH
     entries = read_ledger(ledger_path)
-    mine = [entry for entry in entries if Path(entry["save_dir"]) == Path(save_dir)]
+    mine = [entry for entry in entries if Path(entry["save_dir"]) == Path(save_dir) and not has_live_owner(entry)]
     if not mine:
         return []
     results = [uninstall(entry) for entry in mine]
