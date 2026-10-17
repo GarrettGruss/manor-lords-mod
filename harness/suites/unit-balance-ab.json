@@ -1,0 +1,16 @@
+{
+  "name": "unit-balance-ab",
+  "scenarios": [
+    {
+      "scenario": "unit-balance-lethality",
+      "repeat": 6,
+      "variants": [
+        {"name": "rule-off", "env": {"UB_RULE": "off"}},
+        {"name": "rule-on", "env": {"UB_RULE": "on"}}
+      ],
+      "expect": {"metric": "casualties_total", "direction": "higher", "min_rel_diff": 0.5}
+    }
+  ],
+  "time_budget_s": 2400,
+  "flake_retries": 2
+}

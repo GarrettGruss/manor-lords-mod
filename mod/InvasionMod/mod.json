@@ -14,7 +14,8 @@
     { "name": "example", "requires": [], "ids": { "buildingStats": [1000, 1099], "DT_Upgrades": [117, 126] } },
     { "name": "mod_state", "requires": [], "ids": {} },
     { "name": "invasion", "requires": ["mod_state"], "ids": {} },
-    { "name": "raid_behavior", "requires": ["invasion"], "ids": {} }
+    { "name": "raid_behavior", "requires": ["invasion"], "ids": {} },
+    { "name": "unit_balance", "requires": [], "ids": {} }
   ],
   "gate_scenarios": []
 }
