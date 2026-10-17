@@ -1,6 +1,6 @@
 # M01 iteration 01: tags-module
 
-Branch: `feat/M01-mod_state-01-tags-module`. Issue: `Mod M01.01: tags-module` (not created yet).
+Branch: `feat/M01-mod_state-01-tags-module`. Issue: `Mod M01.01: tags-module` #142.
 
 ## Goal
 Build the `ModState` shared module for the pawn Tags, as designed in spec 24. Prove it in the real game with a harness save and a load.
@@ -25,4 +25,9 @@ Build the `ModState` shared module for the pawn Tags, as designed in spec 24. Pr
 - `scenarios/mod_state/default_load.py`: A4 and A6.
 
 ## Result
-Result: not started.
+Result: done (2026-10-16). A1 to A6 pass in the real game. Details and run ids: `../implementation-notes/tags-module.md`.
+- Module `mod/shared/ModState/ModState.lua`. Feature `mod/InvasionMod/Scripts/features/mod_state/`. Commands `InvasionMod.mod_state_dump`, `mod_state_get`, `mod_state_set`, `mod_state_add_foreign_tag` (test only).
+- A1, A4, A5, A6: `mod-state-default-load`. A2: `mod-state-roundtrip`, 3 of 3. A3: `mod-state-two-saves`.
+- A Tag is never removed. A changed key is overwritten in place.
+- The load waits for the new pawn: at `ReceiveBeginPlay` the engine has no new pawn yet.
+- 22 fake-game tests in `harness/tests/test_fakegame_modstate.py`.

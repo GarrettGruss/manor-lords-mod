@@ -5,6 +5,7 @@ Facts measured in the real game (docs/harness/04-telemetry-and-assertions/implem
   - One game day is 40 game seconds.
   - `daysTotal` counts days without a wrap. `day` is the day of the year (1 to 365) and wraps with `Year`.
   - A pop-up (for example "Hunger!") pauses the game until a player closes it. The clock then stands still.
+    A run calls its `guard` every 2 s (the scenario context passes `ctx.popups`), so a pop-up cannot stall a run.
   - When an army is spotted, the game sets the speed to 1x. An army in a forest is hidden and seen again quickly, so this
     repeats many times while armies march (user note and spike S11, 2026-10-11: 19 drops in 110 s). A run therefore checks
     the speed about once a second and sets it again.
@@ -30,6 +31,7 @@ SPEED_ATTEMPTS = 3
 LIMIT_FACTOR = 3  # the wall time limit is this many times the expected time (spec 04, Part A)
 LIMIT_EXTRA_S = 10.0
 HOLD_CHECK_S = 1.0  # how often a run checks that the game kept the speed
+GUARD_CHECK_S = 2.0  # how often a run calls the guard (it closes pop-ups)
 
 
 class TimeControlError(ScenarioFailure):
@@ -55,8 +57,10 @@ class TimeControl:
         monotonic: Callable[[], float] = time.monotonic,
         check_alive: Callable[[], None] = lambda: None,
         log: Callable[[str], None] = lambda message: None,
+        guard: Callable[[], object] = lambda: None,
     ):
         self._bridge = bridge
+        self._guard = guard
         self._sleep = sleep
         self._monotonic = monotonic
         self._check_alive = check_alive
@@ -137,7 +141,7 @@ class TimeControl:
         started = self._monotonic()
         self.set_speed(speed)
         resets = 0
-        last_check = self._monotonic()
+        last_check = last_guard = self._monotonic()
         while not done(self._bridge.read_clock_value(engine)):
             self._check_alive()
             if self._monotonic() - started > limit_s:
@@ -146,6 +150,10 @@ class TimeControl:
             if self._monotonic() - last_check >= HOLD_CHECK_S:
                 last_check = self._monotonic()
                 resets += self._hold_speed(speed)
+            if self._monotonic() - last_guard >= GUARD_CHECK_S:
+                # A pop-up can open at any time and pauses the game. Close it here, not only between chunks.
+                last_guard = self._monotonic()
+                self._guard()
             self._sleep(POLL_S)
         wall_s = self._monotonic() - started
         paused = self.pause()

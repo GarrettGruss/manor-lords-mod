@@ -20,7 +20,7 @@ Schedule the raids. Show a countdown and a size estimate to the player. Run the 
 - One custom raid widget (decision 4) shows all raid information: countdown, size estimate and more. It is a pak widget (harness spec 16). The banner stays a fallback.
 
 ## Current state
-Not started. The stand-ins `RaidStandIn` and `InvasionStandIn` exist but use invented rules. They are not part of the mod.
+Iteration 01 is done: the feature `invasion` plans one minor raid (day 30 to 90), shows a daily countdown banner with the size estimate and spawns the raid. The mod keeps the base game raid timer high. Real game runs pass A1 to A5. Raid count, great raid clock and the widget are not built. The stand-ins `RaidStandIn` and `InvasionStandIn` exist but use invented rules. They are not part of the mod.
 
 ## Proven building blocks
 - Raid timer write and spawn (`TemporalComponent.daysUntilNextRaid`): `docs/harness/10-invasion-testability/implementation-notes/spike-S1.md`. The base game also sets a random timer after each raid (208 and 353 days seen). The mod must own the timer.
@@ -63,7 +63,7 @@ Not started. The stand-ins `RaidStandIn` and `InvasionStandIn` exist but use inv
 ## Iterations
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
-| 01 | first-scheduled-raid | The mod owns the raid timer. One scheduled minor raid with a daily countdown banner and a size estimate. | not started |
+| 01 | first-scheduled-raid | The mod owns the raid timer. One scheduled minor raid with a daily countdown banner and a size estimate. | done (#143): A1 to A5 pass at difficulty 1 to 3 and over 120 days |
 | 02 | great-raid-clock | The great raid clock survives a load. Season weights. | not started |
 | 03 | subjugation-raid | A subjugation raid on a vassal region (needs M07). | not started |
 | 04 | difficulty | Difficulty 1 to 3 and the size multipliers. | not started |

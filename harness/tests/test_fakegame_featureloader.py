@@ -116,7 +116,7 @@ class MainAndListTests(unittest.TestCase):
             game.load_mod(PACK_MOD.name)
             lines = game.log_lines()
         self.assertEqual(sum("example feature loaded" in line for line in lines), 1)
-        self.assertTrue(any("ready, features: example" in line for line in lines))
+        self.assertTrue(any("ready, features: example, mod_state, invasion" in line for line in lines))
 
 
 if __name__ == "__main__":

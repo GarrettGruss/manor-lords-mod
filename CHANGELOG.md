@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M02.01 (#143): feature `invasion` of `InvasionMod`. It owns the raid timer, plans one minor raid (day 30 to 90, size small, medium or large times difficulty 1 to 3), shows a daily countdown banner and spawns the raid. Commands `InvasionMod.invasion_state`, `invasion_force_next`, `invasion_set_difficulty`, `invasion_set_size`; scenarios `invasion-first-raid`, `invasion-no-double-raid`. Notes `docs/mod/M02-invasion/implementation-notes/iteration-01-first-scheduled-raid.md`.
+- Mod M01.01 follow-up: `InvasionMod.mod_state_dump` returns only its selftest keys.
+- Mod M01.01 (#142): shared module `ModState` and feature `mod_state` of `InvasionMod`. Mod values live as `invasion:<key>=<value>` Tags of the player pawn and survive a save and a load. Commands `InvasionMod.mod_state_dump`, `mod_state_get`, `mod_state_set`; scenarios `mod-state-roundtrip`, `mod-state-two-saves`, `mod-state-default-load`. Notes `docs/mod/M01-mod_state/implementation-notes/tags-module.md`.
 - Spec 28: live unit tuning. HarnessActions 55 adds `tune_state`, `tune_set`, `tune_reset`, `tune_apply` (module HarnessTune): they find the side of every unit through the squad owner pawn, write stats on all living units, and re-apply overrides every 2 s. Streamlit page `harness/tools/tune_ui.py` (`uv run streamlit run harness/tools/tune_ui.py -- --run <id>`) with a spawn test fight and preset export. Streamlit is a new dependency. Notes in `docs/harness/28-unit-tuning/`.
 - Spike #104 and #102: command `building_assign_worker` (`type`, optional `family`; HarnessHousing, HarnessActions 50) assigns a family as worker of an own building. Pak `bigshed` (row 125 with a Meshy-made wide ox shed, `stableSpace` 4). The shed shows and builds, but only about 2 oxen hitch in it; hitch spots are native. Notes `big-ox-shed-test.md`, `ox-hitch-hook.md`, `stable4b-hitch-probe.md`, `hitch-socket-world-positions.md`, spec 21 `spike-b-big-ox-shed.md`.
 - Spec 26: commands `game_setup_state` and `game_setup_set_goal`, option `consume` of `claim_region`, probe `probe-claim-victory`. A claim shows the victory cinematic with goals Growth; goals Endless, Conquest or Dominance stop it (note `claim-victory-test.md`).
@@ -28,6 +31,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Soak (#53): `soak-days` accepts up to 13000 s of wall time (`MAX_LIMIT_S` 13500 s) and wider clock-rate (1.5 to 9) and days (0.2 to 1.1) ranges. A 3.3 h run reached day 333 of 730 with no crash and no memory growth; see spec 10 `open-items.md`.
 
 ### Fixed
+- Time control (#143): a run of `ctx.time` calls the pop-up guard (`ctx.popups`) every 2 s. A "Hunger!" pop-up that opened in a chunk of 10 game days paused the game for the rest of the chunk and failed a 120-day run.
 - genmesh (#131, #102): the Meshy task id is written to the spend log at creation, before polling, so a client timeout cannot lose it. New command `resume --task <id> --out <dir>` downloads an existing task and spends no credits.
 - Harness: the default placement click point is now (0.35, 0.3). The old point (0.65, 0.65) lay over the sawpit in fixture `base`, so the ghost was blocked (run 20261015-203710-6b45).
 - HarnessPlace: remove the `pivot_attach` and `pivot_move` commands. `pivot_attach` passed a Lua string as an FName and crashed the game in UE4SS `push_nameproperty`.
