@@ -6,6 +6,7 @@ a template by its stats (profiles from the probe `unit-balance-role-templates`) 
 The rule unit_balance is off while the stats are read, so the profiles are the vanilla ones. It saves nothing.
 """
 
+import time
 from collections import Counter
 
 NAME = "invasion-raid-composition"
@@ -13,6 +14,7 @@ DESCRIPTION = "A forced large raid spawns the planned composition (templates, un
 COVERS = []
 LIMIT_S = 240
 SIZE_MULTIPLIER = 3  # large
+SETTLE_S = 2
 TOLERANCE = 0.2
 # Mean stats of a vanilla squad (run 20261017-221800-9e31): att, def, armorPierce, units.
 PROFILES = {
@@ -31,16 +33,16 @@ def label(template: str) -> str:
 
 
 def match(squad: dict) -> str:
-    """The template whose profile is closest to the squad, or 'unknown'."""
+    """The template whose unit count fits the squad and whose profile is nearest, or 'unknown'.
+
+    The mean stats of a squad vary a little between spawns (random gear), so the unit count picks the candidates first.
+    """
     mean = squad["mean"]
-    best, best_gap = "unknown", None
-    for name, (att, defence, pierce, units) in PROFILES.items():
-        if squad["alive"] > units:
-            continue
-        gap = abs(mean["att"] - att) + abs(mean["def"] - defence) + abs(mean["armorPierce"] - pierce)
-        if best_gap is None or gap < best_gap:
-            best, best_gap = name, gap
-    return label(best) if best_gap is not None and best_gap <= TOLERANCE * 3 else "unknown"
+    candidates = {name: profile for name, profile in PROFILES.items() if profile[3] * SIZE_FIT <= squad["alive"] <= profile[3]}
+    if not candidates:
+        return "unknown"
+    gap = lambda profile: abs(mean["att"] - profile[0]) + abs(mean["def"] - profile[1]) + abs(mean["armorPierce"] - profile[2])
+    return label(min(candidates, key=lambda name: gap(candidates[name])))
 
 
 def run(ctx) -> dict:
@@ -57,8 +59,7 @@ def run(ctx) -> dict:
 
     ctx.mod.command("InvasionMod.invasion_force_next")
     ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raids_spawned"] == 1, 30, what="the raid spawn")
-    ctx.run_until(lambda: all(row["alive"] > 0 for row in ctx.mod.command("InvasionMod.invasion_raid_squads")["squads"]), 20,
-                  what="all raid squads to have units")
+    time.sleep(SETTLE_S)  # one read only: many reads of all units can crash the game (M03 notes)
     squads = ctx.mod.command("InvasionMod.invasion_raid_squads")["squads"]
     ctx.log.info(f"COMPOSITION squads {squads}")
     ctx.check("A3 the mod made one squad for each planned template", [row["template"] for row in squads] == planned, squads)

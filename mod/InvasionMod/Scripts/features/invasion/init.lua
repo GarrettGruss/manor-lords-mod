@@ -205,14 +205,19 @@ local function command_set_size(args)
 end
 
 -- The squads of the last raid with the units now alive and their mean stats. The scenario compares them with the plan.
-local STAT_NAMES = { "att", "def", "block", "armorPierce" }
+-- Few reads on purpose (M03 crashed the game with many reads): stats are read only for units of the raid squads.
+local STAT_NAMES = { "att", "def", "armorPierce" }
 
 local function command_raid_squads()
+    local wanted = {}
+    for _, squad in ipairs(raid_squads) do
+        if squad.id then wanted[squad.id] = true end
+    end
     local by_id = {}
     for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
-        if core.isValid(unit) and core.read(function() return unit.dead end) ~= true then
+        if core.isValid(unit) then
             local id = core.read(function() return unit.assignedSquadID.Value end)
-            if id ~= nil then
+            if id ~= nil and wanted[id] and core.read(function() return unit.dead end) ~= true then
                 local row = by_id[id] or { alive = 0, sum = {} }
                 by_id[id] = row
                 row.alive = row.alive + 1
