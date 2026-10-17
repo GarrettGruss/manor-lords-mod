@@ -5,6 +5,7 @@ The raid is started at once with invasion_force_next. The scenario adds no steer
 """
 
 import re
+import time
 
 from runlib.units import side_count
 
@@ -53,6 +54,11 @@ def run(ctx) -> dict:
         raid = tracker(ctx)
         census_living = side_count(ctx.actions.units_census(), "bandit") - bandits_before
         samples += 1
+        if census_living != raid["living"]:
+            # The tracker looks once a second. A unit can die in between, so look again after the tracker had time.
+            time.sleep(2.0)
+            raid = tracker(ctx)
+            census_living = side_count(ctx.actions.units_census(), "bandit") - bandits_before
         if census_living != raid["living"]:
             mismatches.append([days, raid["living"], census_living])
         ctx.log.info(f"day {days}: {raid}")
