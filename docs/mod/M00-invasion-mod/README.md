@@ -302,4 +302,10 @@ Follow-up decisions (user, 2026-10-16, later the same day):
 23. **Tech tree is data-driven.** It changes often. The feature JSON defines the tree as a linked list of nodes. The mod builds the tree from it. The JSON may hold optional layout data (positions) for the menu. No hard-coded tree, unless a technical limit forces it. Applies to M12.
 24. **Tech cost is free for now.** One node slot unlocks each time the settlement level rises. Applies to M12.
 25. **M14 plundered start is out of scope for the first release.**
-26. **Relief army size scales down with difficulty** (replaces the fixed size of decision 17). The liege sends 15 squads at difficulty 1 and 0 squads at difficulty 3 (the hardest). Difficulty 2: linear in between, 7 or 8 squads (open; tune in playtests). Applies to M02 (great raid end) and M06.
+26. **Relief army size scales down with difficulty** (replaces the fixed size of decision 17). The liege sends 15 squads at difficulty 1 and 0 squads at difficulty 3 (the hardest). Difficulty 2: linear in between, 7.5 rounded up to 8 squads (decision 28). Applies to M02 (great raid end) and M06.
+
+Decisions of 2026-10-17:
+27. **Loss of the great raid's final battle: TBD.** There is no rule for now. M06 and M02 leave it open.
+28. **All difficulty scaling rounds up for now.** Any scaled count or share uses the ceiling. Example: the relief army at difficulty 2 is ceil(7.5) = 8 squads. Decision 26 now says 8, not "7 or 8".
+29. **Tech tree boon sizes (TBD, tuned in playtests).** Martial Law: Public Order +10. Iron Hand: Public Order +15 and buy-back cost +25%. Veteran Levies: militia defence +10%. Fear of the Lord: Public Order +25 while the garrison is at least 4 squads. Fair Courts: approval +5. Amnesty: buy-back cost -50%. Militia Rights: militia attack +10%. Golden Age: approval +15. The agent chose the numbers marked "+10%", "+25%" and "4 squads". The user gave the others. Applies to M12.
+30. **Raid size values (TBD, values chosen by the agent, tuned in playtests).** The base multipliers stay small 1, medium 2, large 3. Random size class weights: small 50%, medium 35%, large 15%. The class is rolled once per normal raid, with fixed weights all game. Unit count = multiplier x difficulty, in squads, at least 1. Scaled counts round up (decision 28). The great raid waves stay large. Applies to M02, M03, M04, M06.
