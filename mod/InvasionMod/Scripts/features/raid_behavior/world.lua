@@ -131,17 +131,30 @@ end
 -- The AI log
 ---------------------------------------------------------------------------------------------
 
--- Number of lines in the AI general log that hold the text. The game writes the native leave line there.
-function M.ai_log_count(text)
+local MAX_NEW_LINES = 60   -- never read more new log lines than this in one look
+
+local function ai_log()
     local found = engine()
-    if found == nil then return nil end
-    local lines = read(function() return found.debugLog_AI_general end)
-    local count = 0
-    for _, line in ipairs(listOf(lines)) do
-        local content = textOf(line)
-        if content and content:find(text, 1, true) then count = count + 1 end
+    return found and read(function() return found.debugLog_AI_general end)
+end
+
+-- Number of lines in the AI general log. Reading only the length is cheap.
+function M.ai_log_length()
+    local lines = ai_log()
+    if lines == nil then return nil end
+    return read(function() return lines:GetArrayNum() end)
+end
+
+-- True when one of the lines after index `from` (1-based, at most MAX_NEW_LINES of the newest) holds the text.
+-- The game writes the native leave line there. Only new lines are read, because a long read of a growing log each second is risky.
+function M.ai_log_has_new(text, from, length)
+    local lines = ai_log()
+    if lines == nil then return false end
+    for index = math.max(from + 1, length - MAX_NEW_LINES + 1), length do
+        local content = textOf(read(function() return lines[index] end))
+        if content and content:find(text, 1, true) then return true end
     end
-    return count
+    return false
 end
 
 function M.current_day()

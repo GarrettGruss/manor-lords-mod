@@ -1,0 +1,16 @@
+{
+  "name": "raid-behavior-ab",
+  "scenarios": [
+    {
+      "scenario": "raid-behavior-native-plunder",
+      "repeat": 3,
+      "variants": [
+        {"name": "small-d1-1squad", "env": {"INVASION_DIFFICULTY": "1", "INVASION_SIZE": "small"}},
+        {"name": "small-d2-2squads", "env": {"INVASION_DIFFICULTY": "2", "INVASION_SIZE": "small"}},
+        {"name": "medium-d1-2squads", "env": {"INVASION_DIFFICULTY": "1", "INVASION_SIZE": "medium"}}
+      ]
+    }
+  ],
+  "time_budget_s": 2400,
+  "flake_retries": 1
+}

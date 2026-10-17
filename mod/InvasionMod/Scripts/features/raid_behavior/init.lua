@@ -23,7 +23,7 @@ state:register("raid_returned", 0, "integer")
 state:register("raid_lost", 0, "integer")
 state:register("raid_burned", 0, "integer")
 
-local raids = {}            -- raid id -> { raid, burned_base, leave_base }
+local raids = {}            -- raid id -> { raid, burned_base, log_seen }
 local order = {}            -- raid ids in start order
 local last_logged_day = nil
 
@@ -39,7 +39,7 @@ local function after_spawn(before, info)
     local keys = world.new_keys(before, world.read_units())
     local id = #order + 1
     local raid = rules.new_raid(id, info.day, info.squads, keys)
-    raids[id] = { raid = raid, burned_base = world.burned_count() or 0, leave_base = world.ai_log_count(LEAVE_TEXT) or 0 }
+    raids[id] = { raid = raid, burned_base = world.burned_count() or 0, log_seen = world.ai_log_length() or 0 }
     order[#order + 1] = id
     if state.loaded then
         state:set("raid_count", id)
@@ -93,8 +93,11 @@ end
 
 local function check_leave_line(entry, today)
     if entry.raid.leaving then return end
-    local count = world.ai_log_count(LEAVE_TEXT)
-    if count ~= nil and count > entry.leave_base then
+    local length = world.ai_log_length()
+    if length == nil or length <= entry.log_seen then return end
+    local found = world.ai_log_has_new(LEAVE_TEXT, entry.log_seen, length)
+    entry.log_seen = length
+    if found then
         rules.mark_leaving(entry.raid, today)
         core.log.info(TAG, string.format("RAID_BEHAVIOR native leave line seen id=%d", entry.raid.id))
     end
