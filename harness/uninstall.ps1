@@ -2,6 +2,9 @@
 .SYNOPSIS
   Disables or removes the harness in a Manor Lords UE4SS install.
 .DESCRIPTION
+  Both modes first restore the user's settings files that install.ps1 backed up (spec 11), and check their
+  SHA-256. They refuse this while the game runs, because the game writes its settings when it exits.
+
   Default mode (disable). Keeps all files, so it is reversible.
     - Deletes the switch file ue4ss\harness\autoboot.enable.
     - Sets every harness mod to "Name : 0" in Mods\mods.txt.
@@ -17,6 +20,7 @@
       It deletes the pak manifest, and the ~mods folder if the harness created it and it is empty.
       A pak that changed since install is skipped with a warning.
     - Deletes the folders ue4ss\bridge and ue4ss\harness (only these two).
+    - Deletes the slot folders that install.ps1 built (slots\<n>). Junctions are removed as links first.
     - Keeps mods.txt.harness.bak. The script prints its path, so you can restore it by hand.
 
   Harness mods are the top-level folders in the manifest, except "shared".
@@ -46,9 +50,13 @@
 param(
     [string]$GameDir = 'C:\Program Files (x86)\Steam\steamapps\common\Manor Lords',
     [switch]$DryRun,
-    [switch]$Remove
+    [switch]$Remove,
+    [string]$SlotsDir = ''
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'installstate.ps1')
+# $PSScriptRoot is empty in parameter defaults on PowerShell 5.1, so the default is set here.
+if (-not $SlotsDir) { $SlotsDir = Join-Path (Split-Path -Parent $PSScriptRoot) 'slots' }
 
 $modsDir      = Join-Path $GameDir 'ManorLords\Binaries\Win64\ue4ss\Mods'
 $ue4ssDir     = Split-Path -Parent $modsDir
@@ -202,6 +210,18 @@ function Remove-Manifest {
     if (-not $DryRun) { Remove-Item -LiteralPath $manifestPath -Force }
 }
 
+# Spec 11: slots that install.ps1 built. The state lists each junction, so none is deleted through.
+function Remove-InstalledSlots {
+    $entries = @(Read-SlotsState $SlotsDir)
+    if ($entries.Count -eq 0) { return }
+    foreach ($entry in $entries) {
+        Write-Host ("{0}deleted    slot {1}" -f $tag, $entry.slot)
+        $script:deleted++
+        if (-not $DryRun) { Remove-Slot $SlotsDir $entry }
+    }
+    if (-not $DryRun) { Remove-Item -LiteralPath (Get-SlotsStatePath $SlotsDir) -Force }
+}
+
 # ---- Checks ----
 if (-not (Test-Path -LiteralPath $modsDir)) { throw "UE4SS Mods dir not found: $modsDir" }
 foreach ($p in @($modsDir, $modsTxt, $manifestPath, $switchPath, $pakModsDir, $pakManifest) + $outputDirs) { Assert-InsideGameDir $p }
@@ -211,6 +231,20 @@ if (Get-Process -Name 'ManorLords-Win64-Shipping' -ErrorAction SilentlyContinue)
 }
 
 # ---- Work ----
+# The settings come first: they are the user's data, and they do not depend on the game folder.
+try {
+    if ($DryRun) {
+        if (Test-Path -LiteralPath (Get-SettingsStatePath $SlotsDir)) { Write-Host '[dry-run] settings   would restore the install backup' }
+    } else {
+        if (Test-Path -LiteralPath (Get-SettingsStatePath $SlotsDir)) { Assert-GameNotRunning }
+        $restored = Restore-UserFiles $SlotsDir
+        $deleted += $restored
+    }
+} catch {
+    Write-Host "ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    $errors++
+}
+
 try {
     $manifestFiles = @(Read-ManifestFiles)
     $modNames = Get-HarnessModNames $manifestFiles
@@ -223,6 +257,7 @@ try {
         Remove-Manifest
         Remove-HarnessPaks
         Remove-OutputFolders
+        Remove-InstalledSlots
         if (Test-Path -LiteralPath $bakPath) { Write-Host "backup     kept, restore by hand if needed: $bakPath" }
     }
 } catch {

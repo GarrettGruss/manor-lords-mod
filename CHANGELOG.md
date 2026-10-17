@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 11: `harness/install.ps1` backs up the user's game settings once (hash checked), writes the harness values (low, windowed 1280x720, 30 fps) and builds parallel game slots (`slots/<n>`, own Win64 and `~mods`, junctions and hard links for the game data). `uninstall.ps1` restores the backup in both modes and deletes the slots with `-Remove`. Spikes 1 and 2: 3 games run at once (notes `spike-1-2-slots-low-settings.md`).
 - Mod M02.01 (#143): feature `invasion` of `InvasionMod`. It owns the raid timer, plans one minor raid (day 30 to 90, size small, medium or large times difficulty 1 to 3), shows a daily countdown banner and spawns the raid. Commands `InvasionMod.invasion_state`, `invasion_force_next`, `invasion_set_difficulty`, `invasion_set_size`; scenarios `invasion-first-raid`, `invasion-no-double-raid`. Notes `docs/mod/M02-invasion/implementation-notes/iteration-01-first-scheduled-raid.md`.
 - Mod M01.01 follow-up: `InvasionMod.mod_state_dump` returns only its selftest keys.
 - Mod M01.01 (#142): shared module `ModState` and feature `mod_state` of `InvasionMod`. Mod values live as `invasion:<key>=<value>` Tags of the player pawn and survive a save and a load. Commands `InvasionMod.mod_state_dump`, `mod_state_get`, `mod_state_set`; scenarios `mod-state-roundtrip`, `mod-state-two-saves`, `mod-state-default-load`. Notes `docs/mod/M01-mod_state/implementation-notes/tags-module.md`.
