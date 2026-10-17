@@ -49,7 +49,8 @@ function M.update(raid, seen, config, day)
             if now ~= nil then unit.x, unit.y = now.x or unit.x, now.y or unit.y end
             raid.units[key] = nil
             raid.living = raid.living - 1
-            if M.departure_kind(unit, config.exit_y) == "left" then
+            local died_in_view = now ~= nil and now.dead
+            if not died_in_view and M.departure_kind(unit, config.exit_y) == "left" then
                 raid.departures = raid.departures + 1
                 raid.carried_out = raid.carried_out + unit.loot
             else

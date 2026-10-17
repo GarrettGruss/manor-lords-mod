@@ -163,6 +163,17 @@ class LootTests(RaidBehaviorTestCase):
         self.assertEqual(self.stock(self.stores[0]), 14)
         self.assertGreaterEqual(raid["looted_total"], 5)
 
+    def test_a_unit_that_dies_in_view_at_the_edge_is_dead_not_left(self):
+        self.start_raid()
+        victim = self.raiders()[0]
+        victim.ItemsLooted = 2
+        victim.realPos = self.game.struct(X=0.0, Y=float(EXIT_Y - 100), Z=0.0)
+        self.game.advance(2)
+        victim.dead = True
+        self.game.advance(2)
+        raid = self.raid()
+        self.assertEqual((raid["deaths"], raid["departures"], raid["returned"]), (1, 0, 2))
+
     def test_loot_above_the_carry_cap_is_cut(self):
         self.start_raid()
         unit = self.raiders()[0]
