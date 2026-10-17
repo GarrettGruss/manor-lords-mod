@@ -7,7 +7,7 @@ from pathlib import Path
 
 from . import ab, baselines, stats
 from .baselines import DriftFinding
-from .runner import STOP_ITERATION_CAP, EntryOutcome, SuiteOutcome
+from .runner import STOP_ITERATION_CAP, STOP_NO_SLOTS, EntryOutcome, SuiteOutcome
 from .runresult import worst_verdict
 
 MAX_REPORT_JSON_BYTES = 4096  # for a passing suite without A/B variants
@@ -208,6 +208,8 @@ def build_report(
         report["notes"] = [f"ab: different on {different} metrics"]
     if outcome.stop_reason:
         report["stopped"] = _stop_text(outcome)
+    if outcome.bad_slots:
+        report["bad_slots"] = [f"slot {slot}: {cut(reason)}" for slot, reason in sorted(outcome.bad_slots.items())]
     if outcome.not_run:
         report["not_run"] = sorted(set(outcome.not_run))
     skipped = [item["note"] for item in scenarios if item["verdict"] == "skipped"]
@@ -219,6 +221,8 @@ def build_report(
 def _stop_text(outcome: SuiteOutcome) -> str:
     if outcome.stop_reason == STOP_ITERATION_CAP:
         return "iteration cap reached. Raise --max-runs of run.py (or set HARNESS_MAX_RUNS) or reset runs/.iterations."
+    if outcome.stop_reason == STOP_NO_SLOTS:
+        return "no game slot could start a run (see bad_slots). Check harness/install.ps1 and game_status."
     return f"time budget of {outcome.budget_s:.0f} s used up. The suite is incomplete."
 
 
@@ -234,7 +238,7 @@ def render_markdown(report: dict) -> str:
         f"Exit code {report['exit_code']}. {totals['runs']} runs, {totals['passed_runs']} passed, "
         f"{totals['flaky']} flaky scenario(s). {report['elapsed_s']} s of {report['budget_s']:.0f} s.",
     ]
-    for key, label in (("stopped", "Stopped"), ("not_run", "Not run"), ("skipped", "Skipped"), ("notes", "Notes")):
+    for key, label in (("stopped", "Stopped"), ("bad_slots", "Bad slots"), ("not_run", "Not run"), ("skipped", "Skipped"), ("notes", "Notes")):
         if report.get(key):
             value = report[key] if isinstance(report[key], str) else "; ".join(report[key])
             lines.append(f"{label}: {value}")

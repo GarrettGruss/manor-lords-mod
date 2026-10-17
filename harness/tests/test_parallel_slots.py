@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -118,6 +119,103 @@ class WaitLockTest(TempCase):
         self.assertFalse((self.temp / ".iterations.lock").exists())
 
 
+class LockFileRaceTest(TempCase):
+    def test_a_file_that_is_being_deleted_counts_as_taken(self):
+        # Windows raises PermissionError, not FileExistsError, while another process deletes the lock file.
+        with mock.patch("runlib.runfolder.os.open", side_effect=PermissionError("delete pending")):
+            with self.assertRaisesRegex(LockTimeoutError, "was not free"):
+                with WaitLock(self.temp / ".saves.lock", timeout_s=0.2, poll_s=0.01):
+                    pass
+
+    def test_an_unreadable_holder_pid_is_no_crash(self):
+        path = self.temp / ".lock-1"
+        path.write_text(str(os.getpid()))
+        with mock.patch.object(Path, "read_text", side_effect=PermissionError("in use")):
+            with self.assertRaises(RunLockedError):
+                RunLock(self.temp, 1).acquire()
+
+
+    def test_release_retries_a_blocked_delete(self):
+        lock = WaitLock(self.temp / ".saves.lock", timeout_s=1)
+        lock.acquire()
+        real_unlink = Path.unlink
+        calls = []
+
+        def blocked_once(path, missing_ok=False):
+            calls.append(path)
+            if len(calls) == 1:
+                raise PermissionError("in use by a reader")
+            real_unlink(path, missing_ok=missing_ok)
+
+        with mock.patch.object(Path, "unlink", blocked_once):
+            lock.release()
+        self.assertEqual(len(calls), 2)
+        self.assertFalse((self.temp / ".saves.lock").exists())
+
+    def test_many_processes_count_without_a_crash_or_a_lost_count(self):
+        runlib_dir = Path(runlib_path.__file__).resolve().parent.parent
+        code = ("import sys; sys.path.insert(0, sys.argv[1]); from runlib.runfolder import bump_iterations; "
+                "from pathlib import Path; [bump_iterations(Path(sys.argv[2]), 10000) for _ in range(15)]")
+        workers = [subprocess.Popen([sys.executable, "-c", code, str(runlib_dir), str(self.temp)], stderr=subprocess.PIPE, text=True)
+                   for _ in range(6)]
+        errors = [worker.communicate(timeout=120)[1] for worker in workers]
+        self.assertEqual([worker.returncode for worker in workers], [0] * 6, " | ".join(errors))
+        self.assertEqual((self.temp / ".iterations").read_text().strip(), "90")
+
+class FakePopen:
+    def poll(self):
+        return None
+
+
+class SaveScanLockTest(TempCase):
+    """A game reads the save list in the main menu. Two games that read it at once saw only 'autosave' (step 4)."""
+
+    def setUp(self):
+        super().setUp()
+        self.lock_path = self.temp / ".saves.lock"
+        for target, value in ((saveslots, "saves_lock"), (phases, "BOOT_POLL_S")):
+            replacement = (lambda: WaitLock(self.lock_path, timeout_s=5)) if value == "saves_lock" else 0.01
+            patcher = mock.patch.object(target, value, replacement)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        run_folder = mock.Mock(boot_path=self.temp / "boot.json", path=self.temp)
+        self.ctx = phases.PhaseContext(run=run_folder, config={})
+        self.ctx.state.update(launch_monotonic=time.monotonic(), game_popen=FakePopen())
+
+    def write_boot(self, state):
+        (self.temp / "boot.json").write_text(json.dumps({"state": state}))
+
+    def test_the_lock_is_held_in_the_menu_and_free_after_it(self):
+        phases.hold_save_scan_lock(self.ctx)
+        self.write_boot("WAITING_FOR_MENU")
+        boot = threading.Thread(target=phases._boot, args=(self.ctx,))
+        boot.start()
+        time.sleep(0.2)
+        self.assertTrue(self.lock_path.exists(), "another game could read the save list now")
+        self.write_boot("LOADING_SAVE")
+        deadline = time.monotonic() + 5
+        while self.lock_path.exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertFalse(self.lock_path.exists(), "the lock stays after the menu")
+        self.write_boot("READY")
+        boot.join(5)
+
+    def test_a_failed_boot_frees_the_lock(self):
+        phases.hold_save_scan_lock(self.ctx)
+        self.write_boot("FAILED")
+        with self.assertRaises(phases.PhaseFailed):
+            phases._boot(self.ctx)
+        self.assertFalse(self.lock_path.exists())
+
+    def test_a_game_stuck_in_the_menu_frees_the_lock_after_the_limit(self):
+        phases.hold_save_scan_lock(self.ctx)
+        self.write_boot("WAITING_FOR_MENU")
+        with mock.patch.object(phases, "SAVE_SCAN_LOCK_MAX_S", 0.0), mock.patch.object(phases, "BOOT_DEADLINE_S", 0.2):
+            with self.assertRaises(phases.PhaseFailed):
+                phases._wait_for_boot(self.ctx)
+        self.assertFalse(self.lock_path.exists())
+
+
 class LedgerOwnerTest(TempCase):
     def setUp(self):
         super().setUp()
@@ -205,6 +303,23 @@ class ProcessByPathTest(TempCase):
             self.assertEqual([p.pid for p in find_game_processes(slot0)], [1])
             self.assertEqual([p.pid for p in find_game_processes()], [1, 2])
 
+
+class BridgeGamePidTest(unittest.TestCase):
+    """With parallel games the bridge must judge its own game by pid, not by the shared image name."""
+
+    def check(self, pid) -> bool:
+        from ue4ss_bridge import server
+        with mock.patch.dict(os.environ, {"UE4SS_BRIDGE_GAME_PID": str(pid)}):
+            with mock.patch.object(server, "_process_running", side_effect=AssertionError("tasklist was used")):
+                return server.game_running()
+
+    def test_a_live_pid_is_running(self):
+        self.assertTrue(self.check(os.getpid()))
+
+    def test_an_ended_pid_is_not_running(self):
+        child = subprocess.Popen([sys.executable, "-c", "pass"])
+        child.wait()
+        self.assertFalse(self.check(child.pid))
 
 class McpSlotClaimTest(TempCase):
     def setUp(self):

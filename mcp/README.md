@@ -21,4 +21,5 @@ Use `uv add <name>` or `uv remove <name>` from the repo root. It updates `pyproj
 - `UE4SS_BRIDGE_GAME_DIR`: the game `Win64` folder.
   `C:\Program Files (x86)\Steam\steamapps\common\Manor Lords\ManorLords\Binaries\Win64`
 - `UE4SS_BRIDGE_DATA_DIR`: leave it unset for manual use. The server and the Lua mod then both use `ue4ss\bridge`. The run launcher sets `HARNESS_RUN_DIR` for the Lua mod, so it must also set this to the absolute path `<HARNESS_RUN_DIR>\bridge`.
+- `UE4SS_BRIDGE_GAME_PID`: optional. The process id of the game. With it, the "is the game running" check looks at that one process, not at every process with the game's image name. The run launcher sets it, because parallel games (spec 11) share the image name and `tasklist` can time out under load.
 - `UE4SS_BRIDGE_ALLOW_EVAL`: leave it unset. Only `1` registers the `eval_lua` tool and the CLI `eval` verb.

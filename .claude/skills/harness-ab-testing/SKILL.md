@@ -19,8 +19,9 @@ A suite is `harness/suites/<name>.json`: `name`, `scenarios` (a list), `time_bud
 ```
 Examples: `ab-example.json`, `raid-size-ab.json`, `counters-ab.json`, `pak-ab.json` (hidden scenario `pak-item-value`, a real pak A/B), `lord-village-ab.json`. Runs are interleaved (A, B, A, B) to cancel drift. An optional `expect` rule turns an A/B result into pass or fail (exit code 1).
 ```
-uv run python harness\suite.py --suite raid-size-ab
+uv run python harness\suite.py --suite raid-size-ab [--slots all]
 ```
+`--slots all` runs on every installed game slot at once (spec 11, `harness/install.ps1`). The A and B runs stay interleaved across the slots, so both variants meet the same load.
 Outputs: `runs/suite-<stamp>/report.json` (an `ab` section: the 8 metrics with the largest effect) and `report.md` (a table).
 
 ## What a variant can change

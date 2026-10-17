@@ -38,7 +38,7 @@ A scenario is a module in `harness/scenarios/` with `LIMIT_S` (hard time limit, 
 `run` returns `ctx.result()`: `{"passed": bool, "asserts": [...]}`. It is also saved as `scenario.json`. The log is `scenario.log`.
 A scenario that is over its limit gives the verdict `timeout`.
 Limits: the default is 90 s. A limit up to 300 s needs nothing more. A limit above 300 s (a soak) needs a text `LONG_REASON` in the module that says why. The most is 4200 s.
-The suite runner and `run_series.py` give each run `LIMIT_S` plus 600 s (at least 900 s and 600 s), so their kill timer never ends a long scenario early (`suite.py --run-timeout-s` sets one fixed value).
+The suite runner and `run_series.py` give each run `LIMIT_S` plus 1200 s (the other phases and the waits for `runs/.saves.lock`; at least 900 s and 600 s), so their kill timer never ends a long scenario early (`suite.py --run-timeout-s` sets one fixed value).
 While a long run is active, `wait_for_run` answers `running` with `scenario_limit_s`: call it again until the summary appears.
 `ctx.run_until(predicate, timeout_s, what=, clock="wall"|"game", poll_s=, stall_s=, on_stall=, on_poll=)` waits for a condition (`runlib/waiting.py`).
 `timeout_s` counts wall seconds or game seconds. The stall detector watches the game clock: after `stall_s` wall seconds with no progress it calls `on_stall`, and if the clock still stands still after another `stall_s` it raises `GameStalled`.
@@ -258,7 +258,7 @@ Tests: `uv run python -m unittest discover -s harness/tests -p "test_harness_too
 Each run is a separate `run.py` process, so a crash in one run does not stop the suite.
 
 ```powershell
-uv run python harness\suite.py --suite core [--max-minutes N] [--runs-root DIR]
+uv run python harness\suite.py --suite core [--slots N|all] [--max-minutes N] [--runs-root DIR]
 uv run python harness\suite.py --list
 uv run python harness\suite.py --update-baseline <scenario> [--from-last N]
 ```
@@ -277,6 +277,8 @@ Only `--update-baseline` writes a baseline file. It uses the last N passing runs
 
 Real baselines are in the repository. With only 2 to 4 runs, `--update-baseline` gives ranges that are too tight for timing metrics. Widen `duration_s`, `wall seconds` and sample counts by hand after you read the proposal.
 On a run timeout the suite kills the `run.py` process tree and then runs `game-close.ps1`, so no game stays open. This cleanup is off when a custom launcher is used.
+
+Parallel suites (spec 11): `--slots all` (or a number) runs up to one run per installed game slot at the same time (`harness/install.ps1`). A job is one repeat of one entry and variant, with its retries. Jobs start in the order of the sequential runner, so A and B runs stay interleaved across slots. A scenario with `EXCLUSIVE = True` (real mouse or keyboard) waits until no other game runs, and no other run starts while it runs. A slot whose run does not start (no `summary.json`, for example a slot that is not installed) is not used again; its job runs on another slot, and the report lists it under `bad_slots`. If no slot works, the suite stops (`no_slots`, exit code 3). A run timeout stops only the game of that slot.
 
 Test the suite without the game: `HARNESS_SUITE_LAUNCHER` (or `--launcher-command`) replaces `run.py`.
 

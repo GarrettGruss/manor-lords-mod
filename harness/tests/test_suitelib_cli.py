@@ -38,13 +38,14 @@ class SuiteCliTest(unittest.TestCase):
     def set_suite(self, suite):
         (self.suites_dir / f"{suite['name']}.json").write_text(json.dumps(suite))
 
-    def run_cli(self, plan, *args, timeout=120):
+    def run_cli(self, plan, *args, timeout=120, extra_env=None):
         plan_path = self.root / "plan.json"
         plan_path.write_text(json.dumps(plan))
         state_path = self.root / "state.json"
         state_path.unlink(missing_ok=True)
         env = {**os.environ, "HARNESS_STUB_PLAN": str(plan_path), "HARNESS_STUB_STATE": str(state_path)}
         env["HARNESS_SUITE_LAUNCHER"] = f'"{sys.executable}" "{STUB}"'
+        env.update(extra_env or {})
         command = [
             sys.executable, str(SUITE_PY), "--runs-root", str(self.runs_root), "--suites-dir", str(self.suites_dir),
             "--baselines-dir", str(self.baselines_dir), *args,
@@ -146,6 +147,33 @@ class SuiteCliTest(unittest.TestCase):
         metrics = json.loads((self.baselines_dir / "a.json").read_text())["metrics"]
         # last 2 passing runs have values 5 and 3: spread 2, margin 0.4, floor 0.5.
         self.assertEqual(metrics["v"], [2.5, 5.5])
+
+    def stub_slots(self):
+        return sorted(json.loads(path.read_text())["stub_args"]["slot"] for path in self.runs_root.glob("*/summary.json"))
+
+    def test_two_slots_pass_the_slot_to_each_run(self):
+        done = self.run_cli({"later": [{"mode": "unknown"}]}, "--suite", "t", "--slots", "2")
+        self.assertEqual(done.returncode, 0, done.stderr + done.stdout)
+        self.assertIn("game slots [0, 1]", done.stdout)
+        data, _ = self.report()
+        self.assertEqual(data["totals"]["runs"], 3)
+        self.assertEqual(data["scenarios"][2]["verdict"], "skipped")
+        self.assertTrue(set(self.stub_slots()) <= {"0", "1"})
+
+    def test_a_broken_slot_is_reported_and_the_others_finish_the_suite(self):
+        done = self.run_cli({"later": [{"mode": "unknown"}]}, "--suite", "t", "--slots", "2", extra_env={"HARNESS_STUB_BAD_SLOT": "1"})
+        self.assertEqual(done.returncode, 0, done.stderr + done.stdout)
+        data, folder = self.report()
+        self.assertEqual(data["totals"]["runs"], 3)
+        self.assertEqual(self.stub_slots(), ["0", "0", "0"])
+        self.assertIn("slot 1", data["bad_slots"][0])
+        self.assertIn("Bad slots", (folder / "report.md").read_text())
+
+    def test_bad_slots_option_is_refused(self):
+        for value in ("0", "x", "all"):
+            done = self.run_cli({}, "--suite", "t", "--slots", value)
+            self.assertEqual(done.returncode, 4, value)
+            self.assertIn("--slots", done.stderr)
 
     def test_list_and_bad_arguments(self):
         listed = self.run_cli({}, "--list")
