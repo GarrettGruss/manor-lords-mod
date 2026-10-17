@@ -110,9 +110,8 @@ local function restore_all()
     return restored
 end
 
-LoopAsync(config.poll_ms, function()
-    if settings.enabled then ExecuteInGameThread(safe_pass) end
-    return false
+require("scheduler").every(TAG, config.poll_ms, function()
+    if settings.enabled then safe_pass() end
 end)
 
 ---------------------------------------------------------------------------------------------
