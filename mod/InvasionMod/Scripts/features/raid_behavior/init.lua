@@ -23,7 +23,7 @@ state:register("raid_returned", 0, "integer")
 state:register("raid_lost", 0, "integer")
 state:register("raid_burned", 0, "integer")
 
-local raids = {}            -- raid id -> { raid, burned_base, log_seen }
+local raids = {}            -- raid id -> { raid, burned_base, leave_base }
 local order = {}            -- raid ids in start order
 local last_logged_day = nil
 
@@ -39,7 +39,7 @@ local function after_spawn(before, info)
     local keys = world.new_keys(before, world.read_units())
     local id = #order + 1
     local raid = rules.new_raid(id, info.day, info.squads, keys)
-    raids[id] = { raid = raid, burned_base = world.burned_count() or 0, log_seen = world.ai_log_length() or 0 }
+    raids[id] = { raid = raid, burned_base = world.burned_count() or 0, leave_base = world.ai_log_tail_count(LEAVE_TEXT) or 0 }
     order[#order + 1] = id
     if state.loaded then
         state:set("raid_count", id)
@@ -93,22 +93,24 @@ end
 
 local function check_leave_line(entry, today)
     if entry.raid.leaving then return end
-    local length = world.ai_log_length()
-    if length == nil or length <= entry.log_seen then return end
-    local found = world.ai_log_has_new(LEAVE_TEXT, entry.log_seen, length)
-    entry.log_seen = length
-    if found then
+    local count = world.ai_log_tail_count(LEAVE_TEXT)
+    if count ~= nil and count > entry.leave_base then
         rules.mark_leaving(entry.raid, today)
         core.log.info(TAG, string.format("RAID_BEHAVIOR native leave line seen id=%d", entry.raid.id))
     end
 end
 
+-- Every set writes the Tags of the player pawn. A write each second may have crashed the game in real runs, so write only a change.
+local function set_if_changed(key, value)
+    if state:get(key) ~= value then state:set(key, value) end
+end
+
 local function save_summary(entry)
     local raid = entry.raid
-    state:set("raid_state", STATE_CODES[raid.state])
-    state:set("raid_returned", raid.returned)
-    state:set("raid_lost", raid.lost)
-    state:set("raid_burned", raid.burned)
+    set_if_changed("raid_state", STATE_CODES[raid.state])
+    set_if_changed("raid_returned", raid.returned)
+    set_if_changed("raid_lost", raid.lost)
+    set_if_changed("raid_burned", raid.burned)
 end
 
 local function log_day(today)
