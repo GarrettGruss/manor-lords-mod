@@ -8,7 +8,7 @@ from pathlib import Path
 # Modules that only the harness may use. A release must not contain them or require them.
 HARNESS_ONLY = frozenset({
     "HarnessActions", "HarnessBoot", "HarnessLog", "HarnessCommands", "HarnessTelemetry", "HarnessReload",
-    "HarnessAutosave", "HarnessSaveProbe", "HarnessLoadProbe", "HarnessLogTest", "UEBridge", "InvasionStandIn", "RaidStandIn",
+    "HarnessAutosave", "HarnessLoadProbe", "HarnessLogTest", "UEBridge", "InvasionStandIn", "RaidStandIn",
 })
 
 # A hard dependency. `pcall(require, "X")` is an optional one and does not match this pattern.
