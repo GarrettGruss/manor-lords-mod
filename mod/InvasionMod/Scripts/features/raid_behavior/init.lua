@@ -26,6 +26,7 @@ state:register("raid_returned", 0, "integer")
 state:register("raid_lost", 0, "integer")
 state:register("raid_burned", 0, "integer")
 
+local end_watchers = {}    -- functions called with the raid summary when a raid is no longer active (M08 protection)
 local leave_watchers = {}  -- functions called with the raid summary when a role raid begins to leave (M06 sack)
 local raids = {}            -- raid id -> { raid, burned_base, leave_base }
 local order = {}            -- raid ids in start order
@@ -43,6 +44,7 @@ local function after_spawn(before, info)
     local keys = world.new_keys(before, world.read_units())
     local id = #order + 1
     local raid = rules.new_raid(id, info.day, info.squads, keys, info.roles, info.lord_raid)
+    raid.target = info.target and info.target.region or nil
     raids[id] = { raid = raid, burned_base = world.burned_count() or 0, leave_base = world.ai_log_tail_count(LEAVE_TEXT) or 0 }
     order[#order + 1] = id
     if state.loaded then
@@ -189,6 +191,7 @@ local function step_raid(entry, seen, today, slow_look)
     if state.loaded then save_summary(entry) end
     if was_active and raid.state ~= "active" then
         core.log.info(TAG, string.format("RAID_BEHAVIOR end id=%d day=%s state=%s", raid.id, tostring(today), raid.state))
+        for _, watcher in ipairs(end_watchers) do core.log.try(TAG, watcher, rules.summary(raid)) end
         if raid.leave_reason ~= nil and raid.lord == nil then
             local ok, problem = world.restore_war()
             core.log.info(TAG, string.format("RAID_BEHAVIOR war restored=%s%s", tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
@@ -305,6 +308,11 @@ local function watch_leave(fn)
     leave_watchers[#leave_watchers + 1] = fn
 end
 
+-- Another feature registers fn(summary). It runs once when a raid is no longer active.
+local function watch_end(fn)
+    end_watchers[#end_watchers + 1] = fn
+end
+
 -- True when the last final-battle raid of the great raid has no living unit. nil when there is no such raid yet.
 local function final_raid_ended()
     for index = #order, 1, -1 do
@@ -334,4 +342,4 @@ local function active_role_raid()
     return nil
 end
 
-return { state = state, watch_leave = watch_leave, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }
+return { state = state, watch_leave = watch_leave, watch_end = watch_end, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }

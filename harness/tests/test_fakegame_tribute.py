@@ -101,6 +101,50 @@ class TributeTests(HandoverBase):
         self.change_season()
         self.assertEqual(self.tribute()["paid_total"], 0)
 
+    def raid_result(self, region, state, leave_reason=None):
+        args = {"region": region, "state": state}
+        if leave_reason:
+            args["leave_reason"] = leave_reason
+        answer = self.ask("tribute_test_raid_result", **args)
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def loyalty(self):
+        return self.state()["vassals"][0]["loyalty"]
+
+    def test_an_undefended_raid_on_a_vassal_lowers_loyalty_by_15(self):
+        self.raid_result("Eichenhau", "left", "loot")
+        self.assertEqual(self.loyalty(), 35)
+        self.assertEqual(self.tribute()["protection_failed"], 1)
+
+    def test_a_defended_raid_raises_loyalty_by_5(self):
+        self.raid_result("Eichenhau", "left", "losses")
+        self.raid_result("Eichenhau", "destroyed")
+        self.assertEqual(self.loyalty(), 60)
+        self.assertEqual(self.tribute()["protection_defended"], 2)
+
+    def test_a_raid_on_the_home_region_changes_nothing(self):
+        self.assertFalse(self.raid_result("Home", "left", "loot")["event"])
+        self.assertEqual(self.loyalty(), 50)
+
+    def test_three_undefended_raids_make_the_vassal_submit_at_the_next_season_and_tribute_stops(self):
+        for _ in range(3):
+            self.raid_result("Eichenhau", "left", "time")
+        self.assertEqual(self.loyalty(), 5)
+        self.change_season()
+        self.assertTrue(self.state()["vassals"][0]["submitted"])
+        paid = self.tribute()["paid_total"]  # the tribute tick may run before the submission in the same season change
+        self.change_season()
+        self.assertEqual(self.tribute()["paid_total"], paid)
+
+    def test_loyalty_is_clamped(self):
+        for _ in range(5):
+            self.raid_result("Eichenhau", "left", "loot")
+        self.assertEqual(self.loyalty(), 0)
+        self.ask("vassals_set_loyalty", slot=1, value=98)
+        self.raid_result("Eichenhau", "destroyed")
+        self.assertEqual(self.loyalty(), 100)
+
 
 if __name__ == "__main__":
     unittest.main()

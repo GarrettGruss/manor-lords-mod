@@ -217,6 +217,17 @@ class EndTests(RaidBehaviorTestCase):
         self.game.advance(2)
         self.assertEqual(self.raid()["state"], "left")
 
+    def test_an_end_watcher_gets_the_summary_with_the_target_once(self):
+        self.game.exec('ENDED = {}; require("features.raid_behavior.init").watch_end(function(s) ENDED[#ENDED + 1] = s.state .. ":" .. tostring(s.target) end)')
+        self.start_raid()
+        self.assertEqual(self.game.exec("return #ENDED"), 0)
+        for unit in self.units:
+            unit.dead = True
+        self.game.advance(4)
+        self.assertEqual(self.game.exec("return #ENDED"), 1)
+        self.assertTrue(self.game.exec("return ENDED[1]").startswith("destroyed:"))
+        self.assertNotEqual(self.game.exec("return ENDED[1]"), "destroyed:nil")
+
     def test_the_native_leave_line_is_noticed(self):
         self.start_raid()
         self.engine.debugLog_AI_general = self.game.array([self.game.text("Outlaws (36) Army - enough looted. Leaving map.")])
