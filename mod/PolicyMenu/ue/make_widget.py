@@ -2,8 +2,8 @@
 # Makes /Game/HarnessMod/WBP_PolicyMenu from a stock engine widget.
 # Why a copy: the WidgetTree root widget is a protected property, so Python
 # cannot set it on a new Widget Blueprint. A copy already has a root.
-# The menu has a title and SLOT_COUNT policy buttons. Lua fills the label of each
-# button and hides the unused ones. Lua finds the widgets by name (FindAllOf).
+# The menu has a title and SLOT_COUNT Borders. Lua puts a click button (WBP_ClickButton, spec 34) into each Border,
+# fills its label and hides the unused ones. Lua finds the Borders by name (FindAllOf).
 import unreal
 
 SOURCE = "/MoverExamples/Widgets/ControlsDisplay"
@@ -45,12 +45,10 @@ def add_menu(tree, seed):
     title.set_editor_property("text", "Policies")
     column.add_child(title)
     for i in range(SLOT_COUNT):
-        button = unreal.new_object(unreal.Button, tree, "PolicyButton%d" % i)
-        label = unreal.new_object(unreal.TextBlock, tree, "PolicyLabel%d" % i)
-        label.set_editor_property("text", "-")
-        button.set_editor_property("visibility", unreal.SlateVisibility.COLLAPSED)
-        button.add_child(label)
-        column.add_child(button)
+        # A Button here would have no hookable click. A Border paints white by default, so its brush is clear.
+        slot = unreal.new_object(unreal.Border, tree, "PolicyButton%d" % i)
+        slot.set_editor_property("brush_color", unreal.LinearColor(0, 0, 0, 0))
+        column.add_child(slot)
 
 
 def drop_graphs(bp):

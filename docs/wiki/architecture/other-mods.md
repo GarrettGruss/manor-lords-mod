@@ -85,8 +85,8 @@ A player mod must run without the harness. It needs only `ManorCore`. `HarnessCo
 A menu that lists the policies of the player region. A click signs or unsigns one (spec 16). F7 opens and closes it. The key callback runs on the input thread, so it only sets a flag; the game-thread tick does the toggle (see [Key binds](invasion-features.md#shared-patterns)).
 
 - The layout is a cooked Widget Blueprint in `policymenu_P.pak`, built by `mod/PolicyMenu/ue/make_widget.py`. Lua fills labels, colors and visibility at run time.
-- The Blueprint has no graph. Lua polls `Button:IsPressed` every 40 ms. A press that ends with the mouse on the button is one click. It calls `Region:setPolicySigned` through `ManorCore`.
-- Commands (prefix `PolicyMenu.`): `open`, `close`, `toggle`, `read`. Metrics: `clicks`, `entries`.
+- The Blueprint has no graph. A click button (`WBP_ClickButton`, shared module `HarnessClickHooks`, spec 34) sits in each `Border`. Its OnClicked hook queues the click. The 100 ms tick drains the queue and calls `Region:setPolicySigned` through `ManorCore`.
+- Commands (prefix `PolicyMenu.`): `open`, `close`, `toggle`, `read`, `press`. Metrics: `clicks`, `entries`.
 - Gate scenario: `policy-menu`.
 
 ### RefugeeWaves

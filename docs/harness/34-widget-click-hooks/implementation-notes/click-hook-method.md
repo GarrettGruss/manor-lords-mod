@@ -36,3 +36,15 @@ Runs with the tech menu open and the harness reading its state twice a second:
 - New code with `TICK_MS = 100`, labels refreshed every 500 ms and only when changed: pass for 300 s, run `20261018-173614-d910`.
 Cause [theory]: the async loop thread and the game thread both run Lua in one state (known: issue #163, PR #166). A faster tick and a refresh that touches many objects each tick raise the chance.
 The click hook makes the 50 ms tick unneeded. So `TICK_MS` is back at 100 ms.
+
+## PolicyMenu port (2026-10-18)
+The mod PolicyMenu (F7, `mod/PolicyMenu/`) uses the same pattern as the tech tree menu. Issue: see the PR of branch `fix/policymenu-click-hooks`.
+- [known] The pak `policymenu_P.pak` holds 20 `Border` widgets named `PolicyButton<N>` (clear brush) and the title. The old `Button` and `TextBlock` pairs are gone.
+  The pak also holds `WBP_ClickButton` (same cooked files as `techmenu_P.pak`). `make_widget.py` makes the menu, the cook copies both assets into `modtools/work/policymenu`.
+- [known] Lua: `attachSlots` finds the Borders by name, calls `clickhooks.attach` for each, then one `bind_texts`. The colour uses `SetColorAndOpacity`, set only when the signed state changes.
+- [known] The key callback only sets a flag. The existing `LoopAsync` (`tick_ms = 100`, was `poll_ms = 40`) drains the click queue on the game thread. No new loop.
+  The hook callback only queues. A click on a policy calls `ManorCore.set_policy_signed`, then the menu refreshes.
+- [known] New command `PolicyMenu.press {index}` calls the click handler without the mouse. `PolicyMenu.read` reports `hovered` and `visibility` of the click button (no `pressed`).
+- [known] Layout change: the click button is smaller than the old Button. The first button is at about 25 % and 57 % of the screenshot. Both scenarios start the hover scan there.
+- [known] Real runs (all pass): `policy-menu` `20261018-201834-1aad` and `20261018-202221-89ac`. New scenario `policy-menu-clicks` (10 real clicks, 10 counted, EXCLUSIVE): `20261018-201957-b8f7` and `20261018-202107-d682`.
+- [theory] Not soaked for 5 minutes with the menu open (the tech menu was, run `20261018-173614-d910`). The tick is 100 ms and the labels change only when the state changes, as there.

@@ -2,7 +2,7 @@
   "name": "PolicyMenu",
   "version": "0.1.0",
   "description": "A menu with all policies you can sign in your village. Click a policy to sign it, click again to unsign it. F7 opens and closes the menu.",
-  "shared": ["ManorCore"],
+  "shared": ["ManorCore", "HarnessClickHooks"],
   "pak": {"name": "policymenu", "source": "file"},
   "tested": {
     "game": "0.8.111",

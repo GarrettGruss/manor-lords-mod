@@ -23,8 +23,8 @@ PREFIX = "PolicyMenu."
 SETTLE_S = 1.0
 
 # The geometry calls of the widget return a zero size in the real game, so the scenario finds the first button by hover.
-# The start point comes from a screenshot (window 2582x1496, first button at about 27 % and 53 %).
-FIRST_BUTTON_GUESS = (0.2735, 0.531)
+# The start point comes from a screenshot (the click button menu, spec 34: first button at about 25 % and 57 %).
+FIRST_BUTTON_GUESS = (0.25, 0.57)
 SCAN_DX = (0.0, -0.03, 0.03, -0.06, 0.06)
 SCAN_DY = (0.0, -0.01, 0.01, -0.02, 0.02, -0.03, 0.03)
 HOVER_WAIT_S = 0.3
