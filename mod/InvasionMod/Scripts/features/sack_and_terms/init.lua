@@ -34,21 +34,22 @@ end
 ---------------------------------------------------------------------------------------------
 
 -- Run one sack at `difficulty`. Returns the result table. Raises an error on a game problem (fail loudly).
-local function run_sack(difficulty, reason)
+local function run_sack(difficulty, reason, target)
     local today = raid_world.current_day()
     if today == nil then error("the game day is not available", 0) end
     local start, count, reached = rules.count_sack(state:get("sack_window_start"), state:get("sack_window_count"), today, sack_config)
     local fatal = reached and fatal_enabled
-    local before = world.census()
+    local region = rules.sack_region(target, require("features.vassals.init").state:get("vassals_home_region"), world.player_region_names())
+    local before = world.census(region)
     local plan = rules.plan(before, difficulty, sack_config, fatal)
-    local taken = world.apply(plan, sack_config.method)
-    local after = world.census()
+    local taken = world.apply(plan, sack_config.method, region)
+    local after = world.census(region)
     state:set("sack_count", state:get("sack_count") + 1)
     set_if_changed("sack_window_start", start)
     set_if_changed("sack_window_count", count)
     set_if_changed("sack_last_day", today)
     local result = {
-        day = today, reason = reason, difficulty = difficulty, percent = plan.percent, window_count = count, limit_reached = reached,
+        day = today, reason = reason, region = region, difficulty = difficulty, percent = plan.percent, window_count = count, limit_reached = reached,
         fatal = fatal, planned = { buildings = plan.buildings, families = plan.families }, taken = taken,
         before = { standing = before.buildings.standing, stock = before.stock.total, families = before.people.families, population = before.people.population },
         after = { standing = after.buildings.standing, stock = after.stock.total, families = after.people.families, population = after.people.population },
@@ -66,7 +67,7 @@ local function on_raid_leave(summary)
     if not rules.is_lost_battle(summary, sack_config) then
         return core.log.info(TAG, string.format("SACK none: raid %d leaves with reason %s (not a lost battle)", summary.id, tostring(summary.leave_reason)))
     end
-    run_sack(invasion.state:get("difficulty"), summary.leave_reason)
+    run_sack(invasion.state:get("difficulty"), summary.leave_reason, summary.target)
 end
 
 raid_behavior.watch_leave(on_raid_leave)

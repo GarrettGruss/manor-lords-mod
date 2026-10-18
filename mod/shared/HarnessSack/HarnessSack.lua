@@ -61,7 +61,19 @@ end
 ---------------------------------------------------------------------------------------------
 
 -- The region whose owner is the player pawn. The region the pawn stands in can be an AI region.
-M.playerRegion = core.player_region
+-- With a `name` (the object name of a region): that region, when the player owns it. Without: the first region of the player,
+-- which may be a fallback capital and not the home (M06.04), so a caller that knows the region under attack passes its name.
+function M.playerRegion(name)
+    if name == nil then return core.player_region() end
+    local engine = FindFirstOf("RTSMultiEngineCPP")
+    local player = engine and read(function() return engine.playerRef end)
+    local playerAddress = isValid(player) and read(function() return player:GetAddress() end)
+    for _, region in ipairs(playerAddress and listOf(engine.regions) or {}) do
+        local owner = read(function() return region.ownerPawn end)
+        if isValid(region) and core.shortName(region) == name and isValid(owner) and read(function() return owner:GetAddress() end) == playerAddress then return region end
+    end
+    return nil, "the player does not own a region named " .. name
+end
 
 local function buildingId(building)
     local name = read(function() return building:GetFullName() end) or ""
@@ -147,8 +159,8 @@ local function censusPeople(region)
 end
 
 -- The state of the village: buildings by state, stock, stores (buildings that hold goods), people.
-function M.census()
-    local region, problem = M.playerRegion()
+function M.census(regionName)
+    local region, problem = M.playerRegion(regionName)
     if not region then return nil, problem end
     local buildings = buildingsOf(region)
     local counts, stores = censusBuildings(buildings)
@@ -291,28 +303,28 @@ local function percentOf(request, name)
     return value
 end
 
-function M.sack_census()
-    local census, problem = M.census()
+function M.sack_census(request)
+    local census, problem = M.census(request and request.region)
     if not census then return { ok = false, error = problem } end
     return { ok = true, census = census }
 end
 
 -- Burn or collapse `count` standing buildings (or `percent` of them).
 function M.sack_buildings(request)
-    local region, problem = M.playerRegion()
+    local region, problem = M.playerRegion(request.region)
     if not region then return { ok = false, error = problem } end
-    local before = M.census()
+    local before = M.census(request.region)
     local count = request.count or M.share(before.buildings.standing, request.percent or 0)
     local hit, err = M.destroy_buildings(region, count, request.method or "collapse")
     if not hit then return { ok = false, error = err } end
-    return { ok = true, wanted = count, hit = hit, method = request.method or "collapse", before = before, after = M.census() }
+    return { ok = true, wanted = count, hit = hit, method = request.method or "collapse", before = before, after = M.census(request.region) }
 end
 
 -- Remove goods: `amount` of `good` (from one building when `store` is given), or `percent` of every good (of one building when `store` is given).
 function M.sack_goods(request)
-    local region, problem = M.playerRegion()
+    local region, problem = M.playerRegion(request.region)
     if not region then return { ok = false, error = problem } end
-    local before = M.census()
+    local before = M.census(request.region)
     local removed
     if request.good then
         if not request.amount then return { ok = false, error = "good needs amount" } end
@@ -322,34 +334,34 @@ function M.sack_goods(request)
         removed, err = M.remove_stock_share(region, request.percent or 0, request.store)
         if not removed then return { ok = false, error = err } end
     end
-    return { ok = true, removed = removed, before = before, after = M.census() }
+    return { ok = true, removed = removed, before = before, after = M.census(request.region) }
 end
 
 -- Kill `count` families (or `percent` of them).
 function M.sack_people(request)
-    local region, problem = M.playerRegion()
+    local region, problem = M.playerRegion(request.region)
     if not region then return { ok = false, error = problem } end
-    local before = M.census()
+    local before = M.census(request.region)
     local count = request.count or M.share(before.people.families or 0, request.percent or 0)
     local families, people = M.remove_families(region, count)
-    return { ok = true, wanted = count, families = families, people = people, before = before, after = M.census() }
+    return { ok = true, wanted = count, families = families, people = people, before = before, after = M.census(request.region) }
 end
 
 -- All three at once. Goods first: a fire takes the goods of a burning building by itself.
 function M.sack_village(request)
-    local region, problem = M.playerRegion()
+    local region, problem = M.playerRegion(request.region)
     if not region then return { ok = false, error = problem } end
     local buildingsPercent, e1 = percentOf(request, "buildings_pct")
     local stockPercent, e2 = percentOf(request, "stock_pct")
     local peoplePercent, e3 = percentOf(request, "people_pct")
     if not (buildingsPercent and stockPercent and peoplePercent) then return { ok = false, error = e1 or e2 or e3 } end
-    local before = M.census()
+    local before = M.census(request.region)
     local goodsRemoved = M.remove_stock_share(region, stockPercent)
     local families, people = M.remove_families(region, M.share(before.people.families or 0, peoplePercent))
     local hit, err = M.destroy_buildings(region, M.share(before.buildings.standing, buildingsPercent), request.method or "collapse")
     if not hit then return { ok = false, error = err } end
     return { ok = true, buildings_hit = hit, goods_removed = goodsRemoved, families_removed = families, people_removed = people,
-             method = request.method or "collapse", before = before, after = M.census() }
+             method = request.method or "collapse", before = before, after = M.census(request.region) }
 end
 
 return M

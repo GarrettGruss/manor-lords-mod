@@ -150,6 +150,15 @@ class CensusTests(unittest.TestCase):
             self.assertEqual(region.regionName.ToString(), "Test Village")
             self.assertIsNotNone(village.player)
 
+    def test_a_named_region_that_the_player_does_not_own_is_an_error_message(self):
+        with FakeGame() as game:
+            build(game)
+            census, problem = sack(game).census("Foreign")
+            self.assertIsNone(census)
+            self.assertIn("does not own a region named Foreign", problem)
+            result = sack(game).sack_people({"region": "Nowhere", "count": 1})
+            self.assertFalse(result.ok)
+
     def test_no_player_region_is_an_error_message(self):
         with FakeGame() as game:
             game.obj("RTSMultiEngineCPP", playerRef=game.obj("PawnCPP"), regions=game.array([]))

@@ -55,6 +55,7 @@ Iterations 01 and 02 done (2026-10-18). Terms notes: `implementation-notes/itera
 | 01 | sack-after-defeat | A lost battle runs `HarnessSack` rules and the game continues. | done, see the iteration file |
 | 02 | tribute-terms | One-time payment and yearly tribute terms. | done, see the iteration file |
 | 03 | fallback-capital | Move to a fortified vassal (needs M07). | done, PASS (#205) |
+| 04 | sack-target | The sack hits the region under attack or the home region, not the first player region. | done (#224) |
 
 ## Follow-up decisions (2026-10-16)
 See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.
