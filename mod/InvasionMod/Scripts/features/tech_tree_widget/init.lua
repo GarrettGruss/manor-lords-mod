@@ -11,10 +11,10 @@ local config = require("config").tech_tree_widget
 local TAG = "InvasionMod.tech_tree_widget"
 local CLASS_PATH = "/Game/HarnessMod/WBP_TechTreeMenu.WBP_TechTreeMenu_C"
 local PACKAGE_PATH, ASSET_NAME = "/Game/HarnessMod", "WBP_TechTreeMenu"
-local LINE_COUNT, PATH_BUTTON_COUNT, NODE_COUNT = 3, 2, 16
+local LINE_COUNT, PATH_BUTTON_COUNT, NODE_COUNT, LAW_COUNT = 3, 2, 16, 3
 local VISIBLE, COLLAPSED = 0, 1 -- ESlateVisibility
 
-local S = { widget = nil, lines = {}, paths = {}, nodes = {}, clicks = 0, last_error = nil, last_view = nil }
+local S = { widget = nil, lines = {}, laws_line = nil, paths = {}, nodes = {}, laws = {}, clicks = 0, last_error = nil, last_view = nil }
 local isValid, read = core.isValid, core.read
 
 -- LoadAsset does not load an asset of a mod pak. The asset registry call does (spec 16 pak-widget-spike.md).
@@ -85,6 +85,18 @@ local function refresh_nodes(view)
     end
 end
 
+local function refresh_laws(view)
+    if S.laws_line then S.laws_line:SetText(FText(lines.laws_line(view))) end
+    for i = 1, LAW_COUNT do
+        local slot = S.laws[i]
+        if slot then
+            slot.row = view.laws[i]
+            set_visible(slot.button, slot.row ~= nil)
+            if slot.row then slot.label:SetText(FText(lines.law_label(slot.row))) end
+        end
+    end
+end
+
 local function refresh()
     if not isValid(S.widget) then return false end
     local view = tech_tree.view()
@@ -101,6 +113,7 @@ local function refresh()
         end
     end
     refresh_nodes(view)
+    refresh_laws(view)
     return true
 end
 
@@ -123,22 +136,46 @@ local function report(result, problem, what)
     end
 end
 
+-- The handlers below are what a click calls. The harness command press calls the same functions.
+local function press_path(index)
+    local path = S.last_view and S.last_view.paths[index]
+    if not path then return nil, "no path button " .. tostring(index) end
+    local result, problem = tech_tree.choose_path(path.id)
+    report(result, problem, "choose path")
+    return result, problem
+end
+
+local function press_node(index)
+    local slot = S.nodes[index]
+    if not (slot and slot.row) then return nil, "no node button " .. tostring(index) end
+    local result, problem = tech_tree.unlock(slot.row.id)
+    report(result, problem, "unlock " .. slot.row.id)
+    return result, problem
+end
+
+-- A law in force is repealed, any other law is enacted.
+local function press_law(index)
+    local slot = S.laws[index]
+    if not (slot and slot.row) then return nil, "no law button " .. tostring(index) end
+    local act = slot.row.status == "enacted" and tech_tree.repeal_law or tech_tree.enact_law
+    local result, problem = act(slot.row.id)
+    report(result, problem, "law " .. slot.row.id)
+    return result, problem
+end
+
 local function tick()
     if not isValid(S.widget) then
         S.widget = nil
         return
     end
     for i, slot in ipairs(S.paths) do
-        if was_clicked(slot) and S.last_view and S.last_view.paths[i] then
-            local result, problem = tech_tree.choose_path(S.last_view.paths[i].id)
-            report(result, problem, "choose path")
-        end
+        if was_clicked(slot) then press_path(i) end
     end
-    for _, slot in ipairs(S.nodes) do
-        if was_clicked(slot) and slot.row then
-            local result, problem = tech_tree.unlock(slot.row.id)
-            report(result, problem, "unlock " .. slot.row.id)
-        end
+    for i, slot in ipairs(S.nodes) do
+        if was_clicked(slot) then press_node(i) end
+    end
+    for i, slot in ipairs(S.laws) do
+        if was_clicked(slot) then press_law(i) end
     end
     refresh()
 end
@@ -168,7 +205,9 @@ local function open()
     S.lines = find_named(made, "TextBlock", "TechLine", LINE_COUNT)
     S.paths = make_slots(made, "PathButton", "PathLabel", PATH_BUTTON_COUNT)
     S.nodes = make_slots(made, "NodeButton", "NodeLabel", NODE_COUNT)
-    if S.lines[1] == nil or S.nodes[1] == nil then
+    S.laws = make_slots(made, "LawButton", "LawLabel", LAW_COUNT)
+    S.laws_line = find_named(made, "TextBlock", "LawsLine", 1)[1]
+    if S.lines[1] == nil or S.nodes[1] == nil or S.laws[1] == nil or S.laws_line == nil then
         made:RemoveFromParent()
         S.widget = nil
         return { ok = false, error = "the text lines or node buttons were not found in the widget" }
@@ -181,7 +220,7 @@ end
 
 local function close()
     if is_open() then S.widget:RemoveFromParent() end
-    S.widget, S.lines, S.paths, S.nodes = nil, {}, {}, {}
+    S.widget, S.lines, S.laws_line, S.paths, S.nodes, S.laws = nil, {}, nil, {}, {}, {}
     return { ok = true }
 end
 
@@ -206,7 +245,8 @@ local function describe()
     for i = 1, LINE_COUNT do
         shown[i] = S.lines[i] and read(function() return S.lines[i]:GetText():ToString() end) or nil
     end
-    local paths, nodes = {}, {}
+    local paths, nodes, laws = {}, {}, {}
+    for i, slot in pairs(S.laws) do laws[#laws + 1] = button_row(slot, { index = i, id = slot.row and slot.row.id, status = slot.row and slot.row.status }) end
     for i, slot in pairs(S.paths) do paths[#paths + 1] = button_row(slot, { index = i }) end
     for i, slot in pairs(S.nodes) do
         local position = read(function() return slot.button.Slot:GetPosition() end)
@@ -214,7 +254,9 @@ local function describe()
             x = position and position.X, y = position and position.Y })
     end
     return { open = is_open(), in_viewport = is_open() and read(function() return S.widget:IsInViewport() end) or false,
-        lines = shown, wanted_lines = lines.header(tech_tree.view()), paths = paths, nodes = nodes, clicks = S.clicks,
+        lines = shown, wanted_lines = lines.header(tech_tree.view()), paths = paths, nodes = nodes, laws = laws, clicks = S.clicks,
+        laws_line = S.laws_line and read(function() return S.laws_line:GetText():ToString() end) or nil,
+        wanted_laws_line = lines.laws_line(tech_tree.view()),
         last_error = S.last_error, position_error = S.position_error }
 end
 
@@ -223,6 +265,17 @@ if has_commands then
     commands.register("InvasionMod.tech_tree_widget_open", open, {})
     commands.register("InvasionMod.tech_tree_widget_close", close, {})
     commands.register("InvasionMod.tech_tree_widget_state", describe, {})
+    -- Calls the click handler without the mouse. The widget must be open.
+    commands.register("InvasionMod.tech_tree_widget_press", function(args)
+        if not is_open() then return nil, "the widget is not open" end
+        local handlers = { path = press_path, node = press_node, law = press_law }
+        local handler = handlers[args.kind]
+        if not handler then return nil, "kind must be path, node or law" end
+        local result, problem = handler(args.index)
+        if not result then return nil, problem end
+        refresh()
+        return describe()
+    end, { kind = { type = "string", required = true }, index = { type = "integer", required = true } })
 end
 
 require("scheduler").every(TAG, config.poll_ms, tick)

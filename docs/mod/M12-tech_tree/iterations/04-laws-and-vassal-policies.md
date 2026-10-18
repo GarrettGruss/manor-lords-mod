@@ -20,4 +20,4 @@ Mod-owned laws, and vassal tribute policies that the tree opens. Lua applies the
 - Fake game: loader refusals, enact and repeal, law places, policy gates (`test_fakegame_laws.py`).
 
 ## Result
-PASS in the real game (2026-10-18), `--new-game`. Runs `20261018-100341-061b` and `20261018-100452-039c` pass (L1 to L6). The menu widget does not list laws yet (open).
+PASS in the real game (2026-10-18), `--new-game`. Runs `20261018-100341-061b` and `20261018-100452-039c` pass (L1 to L6). The menu lists the laws since iteration 05.

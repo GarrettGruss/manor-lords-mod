@@ -22,6 +22,27 @@ function M.header(view)
     return { "Path: " .. path, slots, "Effects: " .. view.effects }
 end
 
+-- The line above the law buttons.
+function M.laws_line(view)
+    if view.path_name == nil then return "Laws: choose a path first" end
+    return string.format("Laws: %d of %d in force", #M.enacted_names(view), view.max_laws)
+end
+
+function M.enacted_names(view)
+    local names = {}
+    for _, law in ipairs(view.laws) do
+        if law.status == "enacted" then names[#names + 1] = law.name end
+    end
+    return names
+end
+
+-- A law button says what a click does: repeal a law in force, enact an open law, or why it is closed.
+function M.law_label(law)
+    if law.status == "enacted" then return "[in force] " .. law.name .. " (repeal)" end
+    if law.status == "available" then return "Enact " .. law.name end
+    return law.name .. " (closed)"
+end
+
 function M.path_label(path) return "Choose " .. path.name end
 
 -- Pixel position of a node on the canvas from its layout data.

@@ -1,7 +1,7 @@
 # Runs inside UnrealEditor-Cmd (-ExecutePythonScript). Makes /Game/HarnessMod/WBP_TechTreeMenu from a stock engine widget.
 # Same method as make_raid_widget.py. The tree is data driven (data/tech_tree/tree.json), but a pak asset is fixed.
 # So the asset holds a POOL of NODE_COUNT node buttons on a canvas. Lua shows, hides, labels and moves them from the JSON data.
-# Names: TitleText, TechLine0.., PathButton0.. (+PathLabel0..), TreeCanvas, NodeButton0.. (+NodeLabel0..).
+# Laws (M12.05): LawsLine0, LawButton0.. (+LawLabel0..). Names: TitleText, TechLine0.., PathButton0.. (+PathLabel0..), TreeCanvas, NodeButton0.. (+NodeLabel0..).
 import unreal
 
 SOURCE = "/MoverExamples/Widgets/ControlsDisplay"
@@ -12,6 +12,7 @@ SEED_WIDGET = "StackBox_51"
 LINE_COUNT = 3
 PATH_BUTTON_COUNT = 2
 NODE_COUNT = 16
+LAW_COUNT = 3
 CANVAS_W, CANVAS_H = 760, 240
 NODE_W, NODE_H = 170, 44
 GRID_STEP_X, GRID_STEP_Y = 180, 60
@@ -69,6 +70,14 @@ def add_tree_canvas(tree, column):
     column.add_child(box)
 
 
+def add_law_row(tree, column):
+    column.add_child(make_text(tree, "LawsLine0", "-"))
+    row = unreal.new_object(unreal.HorizontalBox, tree, "LawRow")
+    for i in range(LAW_COUNT):
+        row.add_child(make_button(tree, "LawButton%d" % i, "LawLabel%d" % i))
+    column.add_child(row)
+
+
 def add_menu(tree, seed):
     # Keep the seed widget: the copied graph refers to it by name.
     seed.clear_children()
@@ -83,6 +92,7 @@ def add_menu(tree, seed):
         column.add_child(make_text(tree, "TechLine%d" % i, "-"))
     add_path_row(tree, column)
     add_tree_canvas(tree, column)
+    add_law_row(tree, column)
 
 
 def drop_graphs(bp):
