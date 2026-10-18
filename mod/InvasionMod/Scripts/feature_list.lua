@@ -7,7 +7,7 @@ return {
     { name = "raid_behavior", requires = { "invasion" } },
     { name = "unit_balance", requires = {} },
     { name = "bandits", requires = { "invasion" } },
-    { name = "sack_and_terms", requires = { "raid_behavior" } },
+    { name = "sack_and_terms", requires = { "raid_behavior", "vassals" } },
     { name = "vassals", requires = { "mod_state" } },
     { name = "tribute", requires = { "vassals", "raid_behavior" } },
     { name = "raid_widget", requires = { "invasion" } },

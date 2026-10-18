@@ -158,6 +158,16 @@ return {
             tribute_days = 360,              -- game days between two tributes
             poll_ms = 2000,                  -- real time between two looks at the tribute day
         },
+        -- M06 iteration 03. Fallback capital, simplest form. All values TBD (playtests).
+        fallback = {
+            cost_base = 150,                 -- silver = cost_base x difficulty
+            min_buildings = 8,               -- "fortified" for now: the vassal region has at least this many buildings (TBD)
+            grain_goods = { 172, 1, 30 },    -- goods that move with the capital, first one the home stores hold: Bread, Grain, Fish
+            grain_amount = 20,               -- units moved from the home stores
+            take_back = "write",             -- how the region returns to the player: "clear" (clear owner, player claim) or "write" (owner write only)
+            family_calls = 1,                -- settleRegion calls on the new capital, 5 families each
+            deposit_tries = 10,              -- buildings tried when the grain is put into the new capital
+        },
     },
     -- M07 vassals. Values are TBD for playtests (M00 gives no loyalty numbers).
     vassals = {
