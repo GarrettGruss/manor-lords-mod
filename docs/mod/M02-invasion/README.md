@@ -65,10 +65,10 @@ Iteration 01 is done: the feature `invasion` plans one minor raid (day 30 to 90)
 | --- | --- | --- | --- |
 | 01 | first-scheduled-raid | The mod owns the raid timer. One scheduled minor raid with a daily countdown banner and a size estimate. | done (#143): A1 to A5 pass at difficulty 1 to 3 and over 120 days |
 | 02 | great-raid-clock | The great raid clock survives a load. Season weights. | done (#171): clock 3 to 5 years in ModState, banner. Season weights TBD |
-| 03 | subjugation-raid | A subjugation raid on a vassal region (needs M07). | not started |
+| 03 | subjugation-raid | A subjugation raid on a vassal region (needs M07). | not started || 03 | subjugation-raid | A subjugation raid on a vassal region (needs M07). | done (#177): raid type with the home region as stand-in target; vassal targets TBD (M07) |
 | 04 | difficulty | Difficulty 1 to 3 and the size multipliers. | done (#175): pick command, prompt banner, rounding helpers |
-| 05 | raid-widget | One custom pak widget for all raid information (decision 4). | not started |
-| 06 | great-raid-waves | Waves of attackers until the relief army arrives, then the very large battle (decision 1). | not started |
+| 05 | raid-widget | One custom pak widget for all raid information (decision 4). | done (#189) |
+| 06 | great-raid-waves | Waves of attackers until the relief army arrives, then the very large battle (decision 1). | done (#186) |
 
 ## Follow-up decisions (2026-10-16)
 See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.

@@ -166,5 +166,66 @@ class LostBattleTests(SackTestCase):
         self.assertEqual(self.sack_state()["sack_count"], 0)
 
 
+class TermsTests(SackTestCase):
+    def setUp(self):
+        super().setUp()
+        self.pawn.silver = 500
+        self.start_raid()
+
+    def terms(self):
+        return self.ask("terms_state")["result"]
+
+    def test_the_offer_amounts_grow_with_the_difficulty(self):
+        for difficulty, (payment, tribute) in {1: (100, 30), 2: (200, 60), 3: (300, 90)}.items():
+            self.ask("invasion_set_difficulty", value=difficulty)
+            offer = self.ask("terms_offer")["result"]["offer"]
+            self.assertEqual((offer["payment"], offer["tribute"]), (payment, tribute))
+
+    def test_a_payment_takes_the_silver_and_ends_the_raid_without_a_sack(self):
+        self.ask("terms_offer")
+        answer = self.ask("terms_accept", kind="payment")
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(self.pawn.silver, 400)
+        self.game.advance(3)
+        self.assertEqual(self.raid()["leave_reason"], "terms")
+        self.assertEqual(self.sack_state()["sack_count"], 0)
+        self.assertEqual(self.terms()["state"], 2)
+
+    def test_a_payment_without_enough_silver_is_refused(self):
+        self.pawn.silver = 99
+        self.ask("terms_offer")
+        self.assertFalse(self.ask("terms_accept", kind="payment")["ok"])
+        self.assertEqual((self.pawn.silver, self.raid().get("leave_reason")), (99, None))
+
+    def test_accepting_without_an_offer_is_refused(self):
+        self.assertFalse(self.ask("terms_accept", kind="payment")["ok"])
+
+    def test_vassalage_costs_nothing_now_and_sets_the_tribute_day(self):
+        self.ask("terms_offer")
+        day = self.calendar.daysTotal
+        self.assertTrue(self.ask("terms_accept", kind="vassalage")["ok"])
+        state = self.terms()
+        self.assertEqual((self.pawn.silver, state["state"], state["next_tribute_day"]), (500, 3, int(day) + 360))
+        self.assertEqual(self.raid()["leave_reason"], "terms")
+
+    def test_the_tribute_is_paid_on_its_day_and_never_more_than_the_silver(self):
+        self.ask("terms_offer")
+        self.ask("terms_accept", kind="vassalage")
+        self.calendar.daysTotal = self.calendar.daysTotal + 361
+        self.game.advance(4)
+        self.assertEqual(self.pawn.silver, 470)
+        self.assertGreater(self.terms()["next_tribute_day"], self.calendar.daysTotal)
+        self.pawn.silver = 10
+        self.calendar.daysTotal = self.calendar.daysTotal + 361
+        self.game.advance(4)
+        self.assertEqual(self.pawn.silver, 0)
+
+    def test_a_declined_offer_leaves_the_raid_alone(self):
+        self.ask("terms_offer")
+        self.assertTrue(self.ask("terms_decline")["ok"])
+        self.assertFalse(self.ask("terms_accept", kind="payment")["ok"])
+        self.assertIsNone(self.raid().get("leave_reason"))
+
+
 if __name__ == "__main__":
     unittest.main()

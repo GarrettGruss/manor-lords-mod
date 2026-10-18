@@ -106,7 +106,7 @@ class RaidTests(InvasionTestCase):
         plan = self.ask("invasion_set_size", size="medium")["result"]
         self.run_days(62, plan["raid_day"] + 5)
         warning_days = plan["raid_day"] - plan["warning_day"]
-        self.banners = [text for text in self.banners if not text.startswith(("Great raid in", "Pick the difficulty"))]
+        self.banners = [text for text in self.banners if not text.startswith(("Great raid in", "Pick the difficulty", "Subjugation"))]
         self.assertEqual(len(self.banners), warning_days + 1)  # one for each day left, plus the arrival banner
         raiders = self.state()["raiders"]
         self.assertEqual(self.banners[0], f"Raid in {warning_days} days, about {raiders} raiders")
@@ -254,7 +254,8 @@ class ClockTests(InvasionTestCase):
         for day in range(63, 100):
             self.set_day(day)
         great = [text for text in self.banners if text.startswith("Great raid in")]
-        self.assertGreaterEqual(len(great), 1)
+        subjugation = [text for text in self.banners if text.startswith("Subjugation")]  # these banners carry the clock in their subtitle
+        self.assertGreaterEqual(len(great) + len(subjugation), 1)
         self.assertLessEqual(len(great), 2)
 
     def test_the_minor_raid_banner_names_the_clock(self):
@@ -306,6 +307,157 @@ class DifficultyTests(InvasionTestCase):
 
     def test_pick_outside_range_is_refused(self):
         self.assertFalse(self.ask("invasion_pick_difficulty", value=4)["ok"])
+
+class SubjugationTests(InvasionTestCase):
+    def sub(self):
+        answer = self.ask("invasion_subjugation_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def after_first_raid(self):
+        self.ask("invasion_force_next")
+        self.set_day(62)
+        self.assertEqual(self.state()["raids_spawned"], 1)
+
+    def test_no_plan_before_the_first_raid(self):
+        self.assertEqual(self.sub()["sub_day"], 0)
+
+    def test_the_plan_follows_the_first_raid_and_is_large(self):
+        self.ask("invasion_set_difficulty", value=2)
+        self.after_first_raid()
+        sub = self.sub()
+        self.assertTrue(60 <= sub["sub_day"] - 61 <= 120, sub)
+        self.assertEqual(sub["squads"], 6)
+        self.assertEqual(len(sub["composition"].split("-")), 6)
+
+    def test_the_subjugation_raid_spawns_once_on_its_day(self):
+        self.after_first_raid()
+        armies_before = len(self.armies)
+        sub = self.sub()
+        self.set_day(sub["sub_day"] + 1)
+        self.assertTrue(self.sub()["spawned"])
+        self.assertEqual(self.state()["raids_spawned"], 2)
+        self.assertEqual(len(self.armies) - armies_before, 1)
+        self.assertEqual(len(self.armies[-1][0]), self.sub()["squads"])
+        self.set_day(sub["sub_day"] + 40)
+        self.assertEqual(self.state()["raids_spawned"], 2)
+
+    def test_force_next_needs_a_plan(self):
+        self.assertFalse(self.ask("invasion_subjugation_force_next")["ok"])
+        self.after_first_raid()
+        self.assertTrue(self.ask("invasion_subjugation_force_next")["ok"])
+        self.game.advance(2)
+        self.assertTrue(self.sub()["spawned"])
+
+
+class GreatRaidTests(InvasionTestCase):
+    def great(self):
+        answer = self.ask("invasion_great_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def enemy_armies(self):
+        return [army for army in self.armies if army[3]]
+
+    def relief_armies(self):
+        return [army for army in self.armies if not army[3]]
+
+    def start_great_raid(self, difficulty):
+        self.ask("invasion_set_difficulty", value=difficulty)
+        self.assertTrue(self.ask("invasion_great_force_start")["ok"])
+        self.set_day(62)
+
+    def run_to_final(self):
+        for _ in range(8):
+            self.ask("invasion_great_skip_wait")
+            self.set_day(self.calendar.daysTotal + 1)
+        return self.great()
+
+    def test_the_clock_end_spawns_wave_one_with_15_squads(self):
+        self.start_great_raid(1)
+        info = self.great()
+        self.assertEqual((info["phase"], info["wave"]), (1, 1))
+        self.assertEqual([len(army[0]) for army in self.enemy_armies()], [15])
+
+    def check_difficulty(self, difficulty, relief):
+        self.start_great_raid(difficulty)
+        info = self.run_to_final()
+        self.assertEqual((info["phase"], info["wave"]), (2, difficulty))
+        great = [len(army[0]) for army in self.enemy_armies() if len(army[0]) in (15, 25)]
+        self.assertEqual(great, [15] * difficulty + [25])
+        self.assertEqual(sum(len(army[0]) for army in self.relief_armies()), relief)
+
+    def test_difficulty_1_has_1_wave_and_15_relief_squads(self):
+        self.check_difficulty(1, 15)
+
+    def test_difficulty_2_has_2_waves_and_8_relief_squads(self):
+        self.check_difficulty(2, 8)
+
+    def test_difficulty_3_has_3_waves_and_no_relief(self):
+        self.check_difficulty(3, 0)
+
+    def test_the_final_army_is_not_scaled_by_difficulty(self):
+        self.start_great_raid(3)
+        self.run_to_final()
+        self.assertEqual(len(self.enemy_armies()[-1][0]), 25)
+
+    def test_nothing_spawns_twice(self):
+        self.start_great_raid(1)
+        before = self.run_to_final()
+        relief = len(self.relief_armies())
+        for _ in range(5):
+            self.set_day(self.calendar.daysTotal + 20)
+        after = self.great()
+        self.assertEqual((after["phase"], after["wave"], len(self.relief_armies())), (before["phase"], before["wave"], relief))
+
+    def test_force_start_is_refused_after_the_start(self):
+        self.start_great_raid(1)
+        self.assertFalse(self.ask("invasion_great_force_start")["ok"])
+
+
+class GreatRaidRulesTests(unittest.TestCase):
+    def action(self, at):
+        game = FakeGame()
+        game.start()
+        self.addCleanup(game.close)
+        game.exec(f'package.path = "{(find_pack_mod() / "Scripts").as_posix()}/?.lua;" .. package.path')
+        code = (f"local g = require('features.invasion.great_raid'); return tostring(g.next_action({at}, "
+                "{ wave_gap_days = 10, relief_delay_days = 10 }))")
+        return game.lua.eval(f"(function() {code} end)")()
+
+    def test_clock_phase_waits_until_due(self):
+        self.assertEqual(self.action("{ phase = 0, wave = 0, waves = 1, last_day = 0, today = 5, due = false }"), "nil")
+        self.assertEqual(self.action("{ phase = 0, wave = 0, waves = 1, last_day = 0, today = 5, due = true }"), "wave")
+
+    def test_next_wave_after_the_gap(self):
+        self.assertEqual(self.action("{ phase = 1, wave = 1, waves = 2, last_day = 100, today = 109 }"), "nil")
+        self.assertEqual(self.action("{ phase = 1, wave = 1, waves = 2, last_day = 100, today = 110 }"), "wave")
+
+    def test_relief_after_the_last_wave(self):
+        self.assertEqual(self.action("{ phase = 1, wave = 2, waves = 2, last_day = 100, today = 109 }"), "nil")
+        self.assertEqual(self.action("{ phase = 1, wave = 2, waves = 2, last_day = 100, today = 110 }"), "relief")
+
+    def test_final_and_won_do_nothing(self):
+        self.assertEqual(self.action("{ phase = 2, wave = 2, waves = 2, last_day = 0, today = 999 }"), "nil")
+        self.assertEqual(self.action("{ phase = 3, wave = 2, waves = 2, last_day = 0, today = 999 }"), "nil")
+
+
+class TargetRulesTests(unittest.TestCase):
+    def run_lua(self, code):
+        game = FakeGame()
+        game.start()
+        self.addCleanup(game.close)
+        game.exec(f'package.path = "{(find_pack_mod() / "Scripts").as_posix()}/?.lua;" .. package.path')
+        return game.lua.eval(f"(function() local target = require('features.invasion.target'); {code} end)")()
+
+    def test_plunder_always_hits_home(self):
+        self.assertEqual(self.run_lua("local t = target.pick('plunder', 'home', {'v1'}, function(a, b) return b end); return t.region .. tostring(t.stand_in)"), "homefalse")
+
+    def test_subjugation_without_vassals_uses_home_as_stand_in(self):
+        self.assertEqual(self.run_lua("local t = target.pick('subjugation', 'home', {}, math.random); return t.region .. tostring(t.stand_in)"), "hometrue")
+
+    def test_subjugation_picks_a_vassal(self):
+        self.assertEqual(self.run_lua("local t = target.pick('subjugation', 'home', {'a', 'b'}, function(a, b) return b end); return t.region .. tostring(t.stand_in)"), "bfalse")
 
 
 if __name__ == "__main__":

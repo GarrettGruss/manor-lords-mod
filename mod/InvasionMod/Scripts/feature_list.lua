@@ -8,4 +8,6 @@ return {
     { name = "unit_balance", requires = {} },
     { name = "bandits", requires = { "invasion" } },
     { name = "sack_and_terms", requires = { "raid_behavior" } },
+    { name = "vassals", requires = { "mod_state" } },
+    { name = "raid_widget", requires = { "invasion" } },
 }

@@ -17,7 +17,7 @@ The player vassalizes a nearby neighbor or founds a vassal region with settlers.
 - No scouting and no intel in version 1.
 
 ## Current state
-Not started.
+Iteration 01 is done (claim without victory): the mod holds goals = Endless and keeps a 3 slot registry with loyalty in the pawn Tags. Iteration 02 is next.
 
 ## Proven building blocks
 - Claim, settle and hand over a region as an AI-lord region: `docs/harness/10-invasion-testability/implementation-notes/dynamic-lords.md`, `baron-model.md`. A rerun on 2026-10-13 saw no lord build on the base fixture.
@@ -48,7 +48,7 @@ Not started.
 ## Iterations
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
-| 01 | claim-without-victory | Set goals = Endless and claim one region as a vassal, with loyalty in region Tags. | not started |
+| 01 | claim-without-victory | Set goals = Endless and claim one region as a vassal, with loyalty in region Tags. | done, PASS (#187) |
 | 02 | settled-vassal | Found a vassal with settlers. | not started |
 | 03 | policies-and-orders | Mod-owned policies applied to a vassal. | not started |
 | 04 | loss-and-submission | Lose or submit a vassal. | not started |

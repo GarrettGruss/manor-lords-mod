@@ -27,7 +27,20 @@ return {
             banner_every_days = 30,
             relief_full_squads = 15,                         -- relief army at difficulty 1 (decisions 17, 26)
             wave_squads = 15,                                -- a large army (decision 16)
+            -- M02 iteration 06: the waves, the relief army and the final battle. All values are TBD for playtests.
+            wave_gap_days = 10,                              -- game days between two waves
+            relief_delay_days = 10,                          -- game days from the last wave to the relief army and the final battle
+            final_squads = 25,                               -- "very large" (more than the 15 of a large army); not scaled by difficulty
+            final_tier_difficulty = 2,                       -- the tier mix of the final army (roles table of this difficulty)
+            relief_templates = { "militiaFoot", "spearMilitia", "bowMilitia", "crossbowMilitia" }, -- the liege squads, cycled
+            relief_offset = { x = 0, y = 2500 },             -- the relief army appears this far from the player pawn
             prompt_every_days = 7,                           -- iteration 04: the pick prompt repeats until the player picks                          -- a banner for the clock when no minor raid banner shows
+        },
+        -- M02 iteration 03: the subjugation raid (major). One is planned after the first raid. Values are TBD for playtests.
+        subjugation = {
+            enabled = true,
+            wait_days_min = 60, wait_days_max = 120,         -- game days from the first raid spawn to the subjugation raid
+            size_class = 3,                                  -- large: squads = 3 x difficulty (TBD, "major" has no size rule in M00)
         },
         poll_ms = 300,                                       -- real time between two checks of the game day
         seed = nil,                                          -- nil: seed from the clock
@@ -114,6 +127,15 @@ return {
             give_up_game_seconds = 120,  -- game time (not real time, the game may be paused) before a missing family counts as a failed deal
         },
     },
+    -- M02 iteration 05: the raid widget (one menu for all raid information). Needs the pak raidmenu_P.pak.
+    raid_widget = {
+        enabled = true,
+        toggle_key = Key.F8,                 -- F7 is the policy menu of the other mod; change here if F8 clashes
+        poll_ms = 200,                       -- real time between two checks of the buttons and the texts
+        click_cooldown_s = 0.4,
+        z_order = 500,
+        position = { X = 300, Y = 150 },
+    },
     -- M06 sack_and_terms, iteration 01. All values are TBD for playtests (M00 gives only the range 20 to 50 percent).
     sack_and_terms = {
         enabled = true,
@@ -127,5 +149,21 @@ return {
             limit = 2,                       -- the sack that brings the count in the window to this number is fatal
             fatal = { enabled = true },      -- a fatal sack removes every family and the game ends by itself
         },
+        -- M06 iteration 02. Silver amounts are TBD (playtests).
+        terms = {
+            offer_on_spawn = true,           -- an offer opens when a lord raid spawns
+            payment_base = 100,              -- one-time payment = payment_base x difficulty
+            tribute_base = 30,               -- yearly tribute of a vassal = tribute_base x difficulty
+            tribute_days = 360,              -- game days between two tributes
+            poll_ms = 2000,                  -- real time between two looks at the tribute day
+        },
+    },
+    -- M07 vassals. Values are TBD for playtests (M00 gives no loyalty numbers).
+    vassals = {
+        enabled = true,
+        poll_ms = 2000,          -- real time between two checks of the goal
+        goal = 2,                -- EGameGoals Endless (spec 26): a claim does not end the game
+        max_vassals = 3,         -- M00: 2 or 3 vassals in the middle game
+        loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
     },
 }
