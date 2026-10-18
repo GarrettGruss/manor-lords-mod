@@ -31,11 +31,11 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 
 - Specs and changes live in `openspec/`. Use the OpenSpec CLI (`openspec`) and the `openspec-*` skills (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`).
   - The rules are in the living spec `openspec/specs/process/spec-workflow/spec.md` and in `openspec/config.yaml`. Read both before you plan work.
-  - Living specs: `openspec/specs/<capability>/spec.md`. They describe only what is true on `main`. Capability groups: `harness/<name>`, `mod/<feature>`, `process/<name>`.
+  - Living specs: `openspec/specs/<capability>/spec.md`. They describe only what is true on `main`. Capability groups: `harness/<name>`, `mod/<feature>` (and `mod/core`), `mods/<name>` for standalone player mods, `process/<name>`.
   - Changes: `openspec/changes/<change-name>/` (proposal, delta specs, design, tasks). `<change-name>` is kebab-case and starts with a verb. Every new harness feature, mod feature, mod iteration and spike starts as a change. Write the change before the code.
   - Archive: `openspec/changes/archive/YYYY-MM-DD-<change-name>/`. Done changes go there with `openspec archive`.
   - Run `openspec validate <change-name> --strict` before you open a pull request.
-- Each spec scenario for harness or mod behavior names its test scenario ("Checked by `<path>`") and states ranges, not exact values.
+- Each spec scenario for harness or mod behavior names its check ("Checked by `<path>`": a test scenario or a Python test), or says "Not checked yet". It states ranges, not exact values.
   - "Spec scenario" is an OpenSpec `#### Scenario:` block. "Test scenario" is a harness scenario file. Do not say only "scenario".
 - Store findings and notes in the change they belong to: `openspec/changes/<change-name>/notes/<topic>.md`.
   - One file per topic. Name files by topic, for example `jmap-findings.md`.
@@ -44,7 +44,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 - When a note changes a decision, update the proposal, design or delta spec of the change in the same commit.
 - Legacy specs: `docs/harness/<NN>-*/` and `docs/mod/M<NN>-*/` are read-only. Read them as source material. Do not move or rename them.
   - Work that had an open issue there on 2026-10-18 may finish in its legacy folder. All other new work starts as a change.
-  - The first change for a capability seeds its living spec from the "current state" of the legacy README.
+  - The built behavior of the legacy specs is in the living specs (change `backfill-living-specs`). Planned legacy work that is not started is rewritten into a change when it starts.
   - Exception: the coverage data of spec 10 (`criteria.json` and the criteria tables of its README) stays live. `harness/tools/coverage.py` reads it.
 - The game design is `docs/mod/M00-invasion-mod/`. The user writes it. Do not write game design content unless the user asks.
   - Mod feature feedback goes to `openspec/specs/mod/<feature>/feedback.md`.

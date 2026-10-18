@@ -13,7 +13,8 @@ context: |
   Capabilities (folders in `openspec/specs/`):
   - Harness capabilities: `harness/<name>`, for example `harness/run-launcher`.
   - Invasion Mod features: `mod/<feature>`. `<feature>` is the folder name in
-    `mod/InvasionMod/Scripts/features/<feature>/`.
+    `mod/InvasionMod/Scripts/features/<feature>/`. The shared parts (loader, scheduler, config): `mod/core`.
+  - Standalone player mods: `mods/<name>` in kebab-case, for example `mods/policy-menu`.
   - Process rules: `process/<name>`, for example `process/spec-workflow`.
 
   Game facts:
@@ -34,7 +35,7 @@ rules:
     - Name the legacy doc folder the change continues, if there is one.
   specs:
     - A requirement states behavior a player, a scenario or a harness user can observe.
-    - Each spec scenario names the test scenario that checks it, as "Checked by `<path>`", or says "Checked by review" for a process rule.
+    - Each spec scenario names its check, as "Checked by `<path>`" (a test scenario or a Python test in `harness/tests/`), says "Checked by review" for a process rule, or says "Not checked yet".
     - For game behavior, write the THEN step as a range (for example "between 30 and 90 game days").
   design:
     - Record open questions with the spike that will answer them.
