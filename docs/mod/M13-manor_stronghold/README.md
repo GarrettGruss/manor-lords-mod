@@ -13,7 +13,7 @@ The manor is the stronghold. The player upgrades it through builds and the tech 
 - Later layer (deferred): if the town falls but the manor holds, raiders loot and leave when supplies or morale run out.
 
 ## Current state
-Iteration 01 done: manor storage capacity (200 + tech tree bonus). Retinue capacity not started.
+Iteration 01 done: manor storage capacity (200 + tech tree bonus). Iteration 02: hooks do not raise the native hire. Iteration 03: extra retinue squads work.
 
 ## Proven building blocks
 - Goods in the Keep count in the region stock: `docs/harness/12-manor-exploration/implementation-notes/storage-m1.md`.
@@ -43,3 +43,4 @@ Iteration 01 done: manor storage capacity (200 + tech tree bonus). Retinue capac
 | --- | --- | --- | --- |
 | 01 | manor-storage | Manor storage capacity rises by upgrade. | done (#207) |
 | 02 | retinue-capacity | Retinue size rises by upgrade. | spike: limit and gate change, native hire does not |
+| 03 | retinue-squads | Retinue men above 12 as extra player squads. | works (spawnArmy, 36 men a squad), runs 20261018-141824-1038, 20261018-142051-8932 |
