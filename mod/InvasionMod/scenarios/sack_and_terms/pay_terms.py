@@ -5,7 +5,7 @@ Options (run.py --env): INVASION_DIFFICULTY (1 to 3, default 1), TERMS_KIND (pay
 
 NAME = "sack-and-terms-pay-terms"
 DESCRIPTION = "Accepting terms (payment or vassalage) makes a role raid leave with reason terms; no sack."
-LIMIT_S = 600
+LIMIT_S = 300
 SPEED = 3
 DAY_LIMIT = 6
 PAYMENT_BASE = 100

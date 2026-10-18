@@ -31,4 +31,7 @@ The invader offers terms while a lord raid is on the map (M00: a one-time paymen
 - Fake tests: `test_fakegame_sack_and_terms.py` (terms classes).
 
 ## Result
-Not started.
+PASS in the real game (2026-10-18). Scenario `sack-and-terms-pay-terms`: payment d1 `20261018-053051-4834` (silver 1000 to 900, raid left by terms, no sack), vassalage d2 `20261018-053251-cd7c`, payment d2 `20261018-053415-924c`.
+- Fake tests: 7 terms tests in `test_fakegame_sack_and_terms.py` (B1, B3, B4, B5, decline).
+- Not verified in the real game: B3 (refusal) and B5 (tribute day) only in fake tests.
+- TBD: terms after a sack, effect of vassalage on later raids, UI.

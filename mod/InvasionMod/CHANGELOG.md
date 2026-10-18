@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Feature `sack_and_terms` (M06.02, #181): terms. Commands `terms_state`, `terms_offer`, `terms_accept` (payment or vassalage), `terms_decline`. `raid_behavior` exports `force_leave` and `active_role_raid`. Config `sack_and_terms.terms`.
 - Feature `sack_and_terms` (M06.01, #173): sack after a lost battle (config `sack_and_terms.sack`). `raid_behavior` gains `watch_leave`. Commands `sack_state`, `sack_now`, `sack_set_fatal`. `HarnessSack` is a shared module of the mod.
 - Feature `invasion` (M02.04, #175): difficulty pick command and prompt banner, ModState keys `difficulty_chosen`, `last_prompt_day`, rules in `difficulty.lua`. Commands `invasion_pick_difficulty`, `invasion_difficulty_state`.
 - Feature `invasion` (M02.02, #171): great raid clock of 3 to 5 game years in ModState (`great_raid_day`, `last_clock_banner_day`), shown in the second banner line and in a banner every 30 days. Commands `invasion_clock_state`, `invasion_clock_set_days_left`. Config `invasion.great_raid`.
