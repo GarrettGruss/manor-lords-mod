@@ -18,7 +18,7 @@ The legacy mod specs hold open items that are in no iteration file. Most of them
 
 ## Legacy folders
 
-`docs/mod/M02-invasion/`, `M04-bandits/`, `M06-sack_and_terms/`, `M07-vassals/`, `M08-tribute/`, `M10-finite_resources/`, `M13-manor_stronghold/` (read only).
+`openspec/changes/archive/2026-10-16-legacy-m02-invasion/`, `M04-bandits/`, `M06-sack_and_terms/`, `M07-vassals/`, `M08-tribute/`, `M10-finite_resources/`, `M13-manor_stronghold/` (read only).
 
 ## Capabilities
 

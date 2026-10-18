@@ -17,7 +17,7 @@ sources:
   - resource: repo://pyproject.toml
   - resource: repo://mcp/README.md
   - resource: repo://harness/tests/test_install_scripts.py
-  - resource: repo://docs/harness/11-parallel-game-slots/README.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-11-parallel-game-slots/README.md
 ---
 
 # Install and environment

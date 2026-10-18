@@ -1,7 +1,7 @@
 """Install a save into the game's save folder under a free slot name, and remove it again (spec 06, part D).
 
 Why this exists: the game lists and loads saves only from the user's REAL save folder, and only names `saveGame_<n>` up to
-the highest number there (docs/harness/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md). The slot name the game
+the highest number there (openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md). The slot name the game
 uses comes from the `saveSlot` value inside `<slot>_descr.sav`, not from the file name. So an install copies the files under the
 next free name and rewrites `saveSlot` in the copied descriptor.
 

@@ -27,13 +27,13 @@ Plain note: generated models (Customer Output) may be shipped in the mod. Do not
 
 ## Cost
 - About 30 credits for one textured model (`meshy-6`, 2k PBR). `genmesh.py` caps a call at 60 and a day at 200 credits and logs each task in `runs/genmesh/log.jsonl`.
-- Record the task id and the credits in the notes of the change (`openspec/changes/<change-name>/notes/`; legacy example: `docs/harness/32-manor-wagenburg/implementation-notes/meshy-assets.md`).
+- Record the task id and the credits in the notes of the change (`openspec/changes/<change-name>/notes/`; legacy example: `openspec/changes/archive/2026-10-18-legacy-32-manor-wagenburg/implementation-notes/meshy-assets.md`).
 - Never create an account. Never buy credits or change the plan. If the key is missing or credits are out, stop and ask the user.
 
 ## Grey material rule
 Always use a material INSTANCE of a game master material (spec 33). `meshy_material.py` does it: instance `MI_Meshy` of `/Game/NotStronghold/Buildings/TudorWall/tudorWall01`, with `d` = base colour, `n` = normal, `spec` = roughness, `AO` = white.
 
-Why: the UE import makes a plain material. The cook puts its shader code in a shader library file, and a mod pak ships none. The game has no code for it and draws a fallback grey. A material instance of a game master needs no new shader code. Specs 21, 30, 31 and 32 meshes were grey for this reason. Details: `docs/harness/33-meshy-materials/implementation-notes/cause-and-fix.md`. `retarget_material.py` fixes a mesh that was imported earlier.
+Why: the UE import makes a plain material. The cook puts its shader code in a shader library file, and a mod pak ships none. The game has no code for it and draws a fallback grey. A material instance of a game master needs no new shader code. Specs 21, 30, 31 and 32 meshes were grey for this reason. Details: `openspec/changes/archive/2026-10-18-legacy-33-meshy-materials/implementation-notes/cause-and-fix.md`. `retarget_material.py` fixes a mesh that was imported earlier.
 
 ## Known limits
 - Scale: Meshy size is arbitrary. Set the size on import to the real size (for example a wagon 240 cm long, a ring about 14.6 m). Base on the ground (z 0). Check the size in UE after import.

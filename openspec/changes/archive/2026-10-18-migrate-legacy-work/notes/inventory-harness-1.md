@@ -7,7 +7,7 @@ Spec gap: the living spec misses a behavior that main has.
 |---|---|---|---|---|
 | 00 Follow-up items: MCP tools in a real session, Ctrl+R, autosave, crash report, keep-open, clock cause, baselines, building placement, datatable check | DONE | All marked CLOSED in the file itself. | | no |
 | 00 Follow-up: `--keep-open` with another monitor | CONVERT | `spike-other-monitor-and-dpi` | | no |
-| 00 Follow-up: spec 09 real pak build "OPEN (user input needed)" | DONE | `pakmod.py`, the A/B suite `pak-ab` and many paks ran in the real game (`docs/harness/09-asset-mods/README.md`, acceptance boxes ticked). | | no |
+| 00 Follow-up: spec 09 real pak build "OPEN (user input needed)" | DONE | `pakmod.py`, the A/B suite `pak-ab` and many paks ran in the real game (`openspec/changes/archive/2026-10-15-legacy-09-asset-mods/README.md`, acceptance boxes ticked). | | no |
 | 00 Deferred: real pak build | DONE | Built (see above). | | no |
 | 00 Deferred: another monitor and DPI scales | CONVERT | `spike-other-monitor-and-dpi` | | no |
 | 00 Deferred: other building types with real-mouse placement | DROP | Other types are placed by later specs (14, 17, 18, 30, 32). No separate work. | | no |

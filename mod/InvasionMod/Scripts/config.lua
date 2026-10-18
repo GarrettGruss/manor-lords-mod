@@ -45,7 +45,7 @@ return {
         poll_ms = 300,                                       -- real time between two checks of the game day
         seed = nil,                                          -- nil: seed from the clock
         -- M05 iteration 02: Hussite roles of a raid (decision 7). All weights and shares are TBD for playtests.
-        -- Templates are rows of DT_UnitTemplates, checked in the real game (docs/mod/M05-unit_balance/iterations/02-hussite-roles.md).
+        -- Templates are rows of DT_UnitTemplates, checked in the real game (openspec/changes/archive/2026-10-16-legacy-m05-unit-balance/iterations/02-hussite-roles.md).
         roles = {
             enabled = true,                  -- false: the raid is spawned with spawnRaiders (Brigands only, 18 units a squad)
             templates = {
@@ -108,7 +108,7 @@ return {
         heavy_def_min = 40,            -- units with this def or more (retinue 62) are heavy: no weapon bonus
         armored_att_factor = 1.5,      -- new att = att x factor, for an armored unit (def from armored_def_min up to heavy_def_min)
         armored_pierce_add = 2,        -- new armorPierce = armorPierce + amount (poleaxe infantry has 2)
-        -- M05 iteration 04. Spec: docs/mod/M05-unit_balance/iterations/04-counters-veterancy.md. All values TBD by the A/B.
+        -- M05 iteration 04. Spec: openspec/changes/archive/2026-10-16-legacy-m05-unit-balance/iterations/04-counters-veterancy.md. All values TBD by the A/B.
         reach_min = 110, reach_max = 125, -- units with a weapon reach in this band are pike units (spears 120; swords 65, villagers 100, axes 130)
         reach_att_add = 1.0,           -- att + amount for a pike unit: spearMilitia att 4 reaches militiaFoot att 5 (data: spear lost 0 of 5 against swords)
         veterancy = {

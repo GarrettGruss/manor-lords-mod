@@ -1,7 +1,7 @@
 -- HarnessManor: read the manor of the player village and keep goods in it (spec 12, criterion M1).
 -- Why: the Invasion Mode plan needs a place that holds supplies and can be raided. The manor is the Keep (EBuildingType 57) and its modules.
 --
--- Game facts (real game, 2026-10-11, see docs/harness/12-manor-exploration/implementation-notes/):
+-- Game facts (real game, 2026-10-11, see openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/implementation-notes/):
 --   The manor is one SMBuildingMaster per module. The Keep site is placed with the real mouse (action place_building, type 57).
 --   `Region.manor` holds one object. A region has at most one manor.
 --   A Keep needs 40 builder units, so the 5 families of the test village never finish it ("not_enough_workers").

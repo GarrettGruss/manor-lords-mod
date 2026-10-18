@@ -12,14 +12,14 @@ sources:
   - resource: repo://harness/tests/test_release_gate.py
   - resource: repo://harness/tests/test_release_manifest.py
   - resource: repo://harness/tests/test_release_zip.py
-  - resource: repo://docs/harness/19-mod-releases/README.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-19-mod-releases/README.md
   - resource: repo://mod/InvasionMod/mod.json
   - resource: repo://.claude/skills/harness-release/SKILL.md
 ---
 
 # Mod releases
 
-`harness/release.py` turns one mod version into one zip for play testers and, on request, a GitHub pre-release. Rules: [spec 19](../../harness/19-mod-releases/README.md). The releasable mod is `mod/InvasionMod`. The first release was the removed standalone mod RefugeeWaves 0.1.0.
+`harness/release.py` turns one mod version into one zip for play testers and, on request, a GitHub pre-release. Rules: [spec 19](../../../openspec/changes/archive/2026-10-15-legacy-19-mod-releases/README.md). The releasable mod is `mod/InvasionMod`. The first release was the removed standalone mod RefugeeWaves 0.1.0.
 
 ## Entry point
 ```

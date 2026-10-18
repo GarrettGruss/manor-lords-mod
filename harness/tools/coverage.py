@@ -14,9 +14,9 @@ import sys
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
-SPEC_DIR = REPO_DIR / "docs" / "harness" / "10-invasion-testability"
+SPEC_DIR = REPO_DIR / "openspec" / "specs" / "harness" / "coverage"
 DEFAULT_CRITERIA = SPEC_DIR / "criteria.json"
-DEFAULT_SPEC = SPEC_DIR / "README.md"
+DEFAULT_SPEC = SPEC_DIR / "criteria.md"
 DEFAULT_SCENARIOS = REPO_DIR / "harness" / "scenarios"
 DEFAULT_RUNS_ROOT = REPO_DIR / "runs"
 
@@ -166,7 +166,7 @@ def _share(part: int, whole: int) -> float:
 # ---------- spec check ----------
 
 def read_spec_table(spec_path: Path) -> dict:
-    """Map criterion id to {"title", "mark"} from the tables of the spec README."""
+    """Map criterion id to {"title", "mark"} from the tables of the criteria document."""
     try:
         lines = Path(spec_path).read_text(encoding="utf-8").splitlines()
     except OSError as error:
@@ -230,7 +230,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--criteria", type=Path, default=DEFAULT_CRITERIA)
     parser.add_argument("--scenarios", type=Path, default=DEFAULT_SCENARIOS, help="folder with scenario files")
     parser.add_argument("--runs-root", type=Path, default=DEFAULT_RUNS_ROOT)
-    parser.add_argument("--spec", type=Path, default=DEFAULT_SPEC, help="spec README for --check-spec")
+    parser.add_argument("--spec", type=Path, default=DEFAULT_SPEC, help="criteria document for --check-spec")
     parser.add_argument("--json", action="store_true", help="print machine readable output")
     parser.add_argument("--min-verified", type=float, default=None, help="exit 1 if the verified share is lower")
     parser.add_argument("--check-spec", action="store_true", help="compare criteria.json with the spec tables")

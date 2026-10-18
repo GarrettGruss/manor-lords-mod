@@ -10,7 +10,7 @@ sources:
   - resource: repo://harness/runlib/fake_phases.py
   - resource: repo://harness/tests/stub_launcher.py
   - resource: repo://harness/tests/suitelib_fakes.py
-  - resource: repo://docs/harness/10-invasion-testability/criteria.json
+  - resource: repo://openspec/specs/harness/coverage/criteria.json
   - resource: repo://.claude/skills/harness-coverage/SKILL.md
   - resource: repo://.claude/skills/harness-git-workflow/SKILL.md
   - resource: repo://pyproject.toml
@@ -73,7 +73,7 @@ A test must not touch the real save folder, the real game folder or the network.
 
 Inputs:
 
-- `docs/harness/10-invasion-testability/criteria.json`: the source of truth, 40 criteria. Each has `id, title, pillar, mark, method, blocked_by, spikes, upgrades, method_verified, verified_by, reason_human, spike_note`. Mark `A` is automatable, `P` partly, `H` human.
+- `openspec/specs/harness/coverage/criteria.json`: the source of truth, 40 criteria. Each has `id, title, pillar, mark, method, blocked_by, spikes, upgrades, method_verified, verified_by, reason_human, spike_note`. Mark `A` is automatable, `P` partly, `H` human.
 - Scenario files in `harness/scenarios/`. The tool reads the module constants `NAME` and `COVERS` with `ast` and never runs the file. `COVERS` is a list of criterion ids.
 - `runs/*/summary.json`. `last_passing_runs` maps each scenario to its newest run with verdict `pass`. A broken summary is skipped. A newer failing run does not remove an older pass.
 
@@ -89,7 +89,7 @@ Commands (see the [coverage skill](../../../.claude/skills/harness-coverage/SKIL
 uv run python harness/tools/coverage.py                     # shares, blocked list, gap list
 uv run python harness/tools/coverage.py --json
 uv run python harness/tools/coverage.py --min-verified 0.9  # exit 1 if the share is lower
-uv run python harness/tools/coverage.py --check-spec        # criteria.json against the spec README tables
+uv run python harness/tools/coverage.py --check-spec        # criteria.json against the tables in criteria.md
 ```
 
 Exit codes: 0 ok, 1 a check failed (`--min-verified` or `--check-spec`), 2 bad input or an unknown id. The goal is at least 90% verified of the `A` and `P` criteria. Get the current number from the tool; do not quote an old one.

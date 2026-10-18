@@ -2,7 +2,7 @@
 
 ## Context
 
-Facts are in `docs/harness/14-free-walls/implementation-notes/free-walls.md` (sections "What exactly causes the wall collision", "Fire and damage as a breach", "Where this leaves free walls"). They are not copied here.
+Facts are in `openspec/changes/archive/2026-10-15-legacy-14-free-walls/implementation-notes/free-walls.md` (sections "What exactly causes the wall collision", "Fire and damage as a breach", "Where this leaves free walls"). They are not copied here.
 
 ## Open questions
 

@@ -1,5 +1,5 @@
 -- Retinue capacity hooks (M13.02). Game access: runs on the game thread.
--- Spike result (docs/mod/M13-manor_stronghold/implementation-notes/iteration-02-retinue-capacity.md): a post-hook on
+-- Spike result (openspec/changes/archive/2026-10-16-legacy-m13-manor-stronghold/implementation-notes/iteration-02-retinue-capacity.md): a post-hook on
 -- getModularGarrisonLimit changes the number that script callers read, but the native hire stops at the native limit.
 -- So the feature also hooks canHireRetinue, which the retinue editor (Blueprint) calls to enable its hire button.
 local core = require("ManorCore")

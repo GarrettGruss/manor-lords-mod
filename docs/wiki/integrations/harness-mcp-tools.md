@@ -8,8 +8,8 @@ sources:
   - resource: repo://mcp/harness_tools/server.py
   - resource: repo://mcp/harness_tools/tools.py
   - resource: repo://.mcp.json
-  - resource: repo://docs/harness/05-agent-tools/README.md
-  - resource: repo://docs/harness/11-parallel-game-slots/README.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-05-agent-tools/README.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-11-parallel-game-slots/README.md
   - resource: repo://harness/tests/test_harness_tools_tools.py
   - resource: repo://harness/tests/test_harness_tools_mcp.py
 ---

@@ -19,7 +19,7 @@ sources:
 
 # Pak mods
 
-A pak mod changes game data that Lua cannot change at run time: new rows, text, strings, soft objects and tables Lua cannot reach. Try Lua first (`datatable_write` can set number fields of the item table). Specs: [09 asset mods](../../harness/09-asset-mods/README.md) and [22 mod pack layout](../../harness/22-mod-pack-layout/README.md).
+A pak mod changes game data that Lua cannot change at run time: new rows, text, strings, soft objects and tables Lua cannot reach. Try Lua first (`datatable_write` can set number fields of the item table). Specs: [09 asset mods](../../../openspec/changes/archive/2026-10-15-legacy-09-asset-mods/README.md) and [22 mod pack layout](../../../openspec/changes/archive/2026-10-15-legacy-22-mod-pack-layout/README.md).
 
 ## What a pak is here
 - The game paks are encrypted. The harness only reads them.
@@ -62,7 +62,7 @@ All commands take `--dry-run` (global option, before the command).
 3. `fromjson <absolute json path> --to <name>`, move the files to the full game path inside the build folder when needed, then `build <name>`.
 4. Run with the pak (below). Test A with the pak and B without it. Without the pak the same expectation must fail.
 
-Traps: UAssetGUI exits 0 on errors. A missing mapping gives a useless "RawExport" JSON that still round-trips, and `tojson` now fails on it. Only number fields in one table are fully proven. New rows in `DT_UnitTemplates` and `DT_Items` are proven (spec 29). Test strings and other tables with a round trip first. Table names and paths: [game-data-tables note](../../harness/10-invasion-testability/implementation-notes/game-data-tables.md). Raid logic is code, not a table.
+Traps: UAssetGUI exits 0 on errors. A missing mapping gives a useless "RawExport" JSON that still round-trips, and `tojson` now fails on it. Only number fields in one table are fully proven. New rows in `DT_UnitTemplates` and `DT_Items` are proven (spec 29). Test strings and other tables with a round trip first. Table names and paths: [game-data-tables note](../../../openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/game-data-tables.md). Raid logic is code, not a table.
 
 ## Running a scenario with a pak
 `run.py --scenario <name> --pak <name>` (repeatable; `--pak-config` names the config). Flow:
@@ -100,7 +100,7 @@ Patch format (keys: `table`, `row`, `op`, `from`, `set`):
 - `op` is `add` (clone row `from`, give it the new name, add the name to the `NameMap`) or `set` (change fields of an existing row). `remove` is not supported.
 - Tables: `buildingStats` and `DT_Upgrades` (`TABLES` in `modpak.py`). Row ids are digit strings.
 - A list value replaces an array field by copying its first element as a template. An empty array fails.
-- Example patches: `mod/InvasionMod/data/example/patches/`. Notes: [buildmod.md](../../harness/22-mod-pack-layout/implementation-notes/buildmod.md).
+- Example patches: `mod/InvasionMod/data/example/patches/`. Notes: [buildmod.md](../../../openspec/changes/archive/2026-10-15-legacy-22-mod-pack-layout/implementation-notes/buildmod.md).
 
 Note that the `mod.json` of the Invasion Mod names pak `raidmenu` with `source: file`, and `mod/InvasionMod/paks/` holds committed paks. See [Mod releases](releases.md).
 
@@ -114,7 +114,7 @@ Note that the `mod.json` of the Invasion Mod names pak `raidmenu` with `source: 
 ## Related kinds of pak
 - Models in a pak: [Meshy models](meshy-models.md).
 - Widget Blueprint pak (spec 16): cook with UE, copy the `.uasset` and `.uexp` into the build folder, then `build`. See `.claude/skills/harness-pak-mod/SKILL.md` and spec 16 notes.
-- Composite buildings and a retargeted `blueprint` field: [composite-pak note](../../harness/18-composite-buildings/implementation-notes/composite-pak.md).
+- Composite buildings and a retargeted `blueprint` field: [composite-pak note](../../../openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/implementation-notes/composite-pak.md).
 
 ## Tests
 ```

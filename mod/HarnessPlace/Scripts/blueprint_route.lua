@@ -1,5 +1,5 @@
 -- Blueprint route (issue #104): turn a blueprint actor into a building without a mouse.
--- Spike modes. Notes: docs/harness/18-composite-buildings/implementation-notes/mousefree-blueprint-route.md
+-- Spike modes. Notes: openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/implementation-notes/mousefree-blueprint-route.md
 -- The caller passes the helpers `read`, `pawn` and `vectorText` of HarnessPlace.
 
 local SPAWN_ALWAYS = 1

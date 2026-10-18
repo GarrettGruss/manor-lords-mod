@@ -1,6 +1,6 @@
 # Proposal: add the influence balance of the liege
 
-Issue: #271. Legacy source: `docs/mod/M11-liege_influence/README.md` (iteration table row "01 influence-balance", no iteration file).
+Issue: #271. Legacy source: `openspec/changes/archive/2026-10-16-legacy-m11-liege-influence/README.md` (iteration table row "01 influence-balance", no iteration file).
 
 ## Why
 
@@ -22,7 +22,7 @@ The design (M00) says the player is sworn to a liege. Tribute to the liege gives
 
 ## Legacy folders
 
-`docs/mod/M11-liege_influence/` (read-only). Related: `docs/mod/M00-invasion-mod/` (design, owned by the user).
+`openspec/changes/archive/2026-10-16-legacy-m11-liege-influence/` (read-only). Related: `docs/mod/M00-invasion-mod/` (design, owned by the user).
 
 ## Capabilities
 

@@ -12,12 +12,12 @@ sources:
   - resource: repo://harness/runlib/runfolder.py
   - resource: repo://harness/deploy.ps1
   - resource: repo://mod/HarnessBoot/
-  - resource: repo://docs/harness/03-run-launcher/README.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-03-run-launcher/README.md
 ---
 
 # Scenario run
 
-`harness/run.py` runs one test iteration. It deploys the mods, starts the real game, waits until `HarnessBoot` says READY, runs one scenario, collects logs, stops the game, and writes `runs/<id>/summary.json`. The result is described in [Run folder and verdicts](../concepts/run-folder-and-verdicts.md). Spec: [03 run launcher](../../harness/03-run-launcher/README.md).
+`harness/run.py` runs one test iteration. It deploys the mods, starts the real game, waits until `HarnessBoot` says READY, runs one scenario, collects logs, stops the game, and writes `runs/<id>/summary.json`. The result is described in [Run folder and verdicts](../concepts/run-folder-and-verdicts.md). Spec: [03 run launcher](../../../openspec/changes/archive/2026-10-15-legacy-03-run-launcher/README.md).
 
 Start every Python command with `uv run python`:
 
@@ -104,7 +104,7 @@ With `--keep-open` teardown skips the stop and the save comparison. It notes the
 
 ## Rules that must hold
 
-- One run per slot at a time (run lock). Parallel runs use different slots ([spec 11](../../harness/11-parallel-game-slots/README.md)). Locks, the run counter and the save ledger are shared by all git worktrees (`runlib/shared.py`).
+- One run per slot at a time (run lock). Parallel runs use different slots ([spec 11](../../../openspec/changes/archive/2026-10-15-legacy-11-parallel-game-slots/README.md)). Locks, the run counter and the save ledger are shared by all git worktrees (`runlib/shared.py`).
 - The run cap: `runs/.iterations` counts runs. Default 400. Set it with `--max-runs` or `HARNESS_MAX_RUNS`. A bad value is an error. At the cap the run fails before it starts. Delete the counter file to reset.
 - The user's save files must not change during a run. Only the installed slot is added and removed. Any other change fails teardown.
 - The simulation is not deterministic. Scenarios assert ranges.

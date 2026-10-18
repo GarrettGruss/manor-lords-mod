@@ -15,7 +15,7 @@ sources:
 
 This repo is an agent harness for Manor Lords mods. An agent edits a Lua mod, deploys it, runs the real game, reads `summary.json`, and repeats. The main product is the Invasion Mod (`mod/InvasionMod/`). The rules are in `CONTRIBUTING.md`; `CLAUDE.md` imports it and adds agent permissions and the full safety list. Read its Safety section before you touch saves or the game.
 
-This wiki explains the current system. Specs hold the required behavior, the history and the decisions: OpenSpec in `openspec/`, and the legacy specs in `docs/harness/` and `docs/mod/`. Check an important detail in the source before you rely on it. To keep the wiki current, use the skill `repo-wiki`.
+This wiki explains the current system. Specs hold the required behavior, the history and the decisions: OpenSpec in `openspec/`, and the old legacy specs, archived in `openspec/changes/archive/<date>-legacy-*/`. Check an important detail in the source before you rely on it. To keep the wiki current, use the skill `repo-wiki`.
 
 ## The loop in five lines
 

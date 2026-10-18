@@ -14,14 +14,14 @@ sources:
   - resource: repo://mod/InvasionMod/data/
   - resource: repo://mod/InvasionMod/scenarios/
   - resource: repo://mod/InvasionMod/ue/
-  - resource: repo://docs/harness/22-mod-pack-layout/README.md
-  - resource: repo://docs/harness/22-mod-pack-layout/implementation-notes/buildmod.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-22-mod-pack-layout/README.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-22-mod-pack-layout/implementation-notes/buildmod.md
   - resource: repo://harness/tools/modpak.py
   - resource: repo://harness/tests/test_fakegame_featureloader.py
 ---
 # Invasion Mod structure
 
-`mod/InvasionMod/` is one RE-UE4SS Lua mod plus one data pak. Many features live inside it. The internal name is `InvasionMod`. The player-facing name is only `display_name` in `mod.json`. The layout comes from spec 22 ([README](../../harness/22-mod-pack-layout/README.md)). The features are listed in [Invasion Mod features](invasion-features.md).
+`mod/InvasionMod/` is one RE-UE4SS Lua mod plus one data pak. Many features live inside it. The internal name is `InvasionMod`. The player-facing name is only `display_name` in `mod.json`. The layout comes from spec 22 ([README](../../../openspec/changes/archive/2026-10-15-legacy-22-mod-pack-layout/README.md)). The features are listed in [Invasion Mod features](invasion-features.md).
 
 Harness code must not name the mod or its features. The harness finds the mod through `mod.json`.
 
@@ -42,7 +42,7 @@ Harness code must not name the mod or its features. The harness finds the mod th
 | `paks/` | Built paks: `raidmenu_P.pak` and `techmenu_P.pak`. |
 | `CHANGELOG.md` | One changelog. Each entry names its feature. |
 
-One feature name is used in `Scripts/features/`, `data/`, `scenarios/` and `docs/mod/M<NN>-<feature>/`.
+One feature name is used in `Scripts/features/`, `data/`, `scenarios/` and the living spec `openspec/specs/mod/<feature>/`.
 
 ## Load flow
 
@@ -97,7 +97,7 @@ Why one loop: every `LoopAsync` callback runs Lua on its own thread. Several loo
 ## Data and pak
 
 - Row patches are JSON files `data/<feature>/patches/*.json` with `table`, `row`, `op` (`add` or `set`), `from` and `set`. Only the `example` feature has patches now (`buildingStats` rows 1000 to 1099 and `DT_Upgrades` rows 117 to 126 reserved in `mod.json`).
-- `pakmod.py buildmod InvasionMod` reads `mod.json` and all patches, checks format, conflicts and id ranges, extracts the tables from the current game paks, applies the patches in feature order, then file name, and builds one pak. See [Pak mods](../workflows/pak-mods.md) and the [build notes](../../harness/22-mod-pack-layout/implementation-notes/buildmod.md).
+- `pakmod.py buildmod InvasionMod` reads `mod.json` and all patches, checks format, conflicts and id ranges, extracts the tables from the current game paks, applies the patches in feature order, then file name, and builds one pak. See [Pak mods](../workflows/pak-mods.md) and the [build notes](../../../openspec/changes/archive/2026-10-15-legacy-22-mod-pack-layout/implementation-notes/buildmod.md).
 - Conflict check: the build fails when two features set the same field of a row or add the same row. The message names both files.
 - `mod.json` field `pak` is `{"name": "raidmenu", "source": "file"}`. The committed paks in `paks/` are built from cooked assets (the widget Blueprints of `raid_widget` and `tech_tree_widget`). The AES key is never committed.
 - A release copies `Scripts/` and the pak. `data/` and `scenarios/` do not go into a release. See [Mod releases](../workflows/releases.md).
@@ -110,7 +110,7 @@ Why one loop: every `LoopAsync` callback runs Lua on its own thread. Several loo
 
 ## Add a feature
 
-1. Write the spec `docs/mod/M<NN>-<feature>/README.md` first.
+1. Write the change first: `openspec/changes/<change-name>/` with a delta spec for `mod/<feature>` (spec pull request, gate 1).
 2. Add `Scripts/features/<feature>/init.lua`, a `config.lua` table with `enabled`, and an entry in both `feature_list.lua` and `mod.json` (the test compares them).
 3. List every shared module the feature needs under `shared` in `mod.json`. The release check fails when a hard `require` is not declared.
 4. Add `data/<feature>/patches/` only if game tables change, with an `ids` range in `mod.json`.

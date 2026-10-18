@@ -2,7 +2,7 @@
 
 ## Context
 
-The legacy source is `docs/mod/M01-mod_state/README.md`. The Tags design is in `docs/harness/24-mod-save-state/README.md`. Evidence that region Tags survive a save is in `docs/harness/24-mod-save-state/implementation-notes/persistence-tests.md`.
+The legacy source is `openspec/changes/archive/2026-10-16-legacy-m01-mod-state/README.md`. The Tags design is in `openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/README.md`. Evidence that region Tags survive a save is in `openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/implementation-notes/persistence-tests.md`.
 
 ## Open questions
 

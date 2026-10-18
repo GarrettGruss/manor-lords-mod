@@ -1,5 +1,5 @@
 -- HarnessReload: restarts one Lua mod inside the running game, on request from a file.
--- Spec: docs/harness/06-dev-loop-and-fixtures/README.md (part A).
+-- Spec: openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/README.md (part A).
 --
 --   external  ->  writes  <HARNESS_RUN_DIR>/reload.json         {"mod": "Name", "id": "unique-id"}
 --   this mod  ->  polls it, calls RestartMod(Name) on the game thread,

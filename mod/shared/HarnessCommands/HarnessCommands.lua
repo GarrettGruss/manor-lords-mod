@@ -1,5 +1,5 @@
 -- HarnessCommands: a registry so any mod can add its own commands and metrics for the harness.
--- Spec: docs/harness/10-invasion-testability/README.md (U10), notes: implementation-notes/mod-state-contract.md
+-- Spec: openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/README.md (U10), notes: implementation-notes/mod-state-contract.md
 --
 -- A mod registers a command once:
 --   HarnessCommands.register("MyMod.add_gold", function(args) return { gold = ... } end,

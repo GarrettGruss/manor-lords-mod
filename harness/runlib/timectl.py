@@ -1,6 +1,6 @@
 """Game time control for scenarios: set the speed, run for N game seconds or N game days, then pause.
 
-Facts measured in the real game (docs/harness/04-telemetry-and-assertions/implementation-notes/time-measurements.md):
+Facts measured in the real game (openspec/changes/archive/2026-10-15-legacy-04-telemetry-and-assertions/implementation-notes/time-measurements.md):
   - The speed index 1, 2, 3 gives a game clock rate of 1, 4 and 8 game seconds for each wall second.
   - One game day is 40 game seconds.
   - `daysTotal` counts days without a wrap. `day` is the day of the year (1 to 365) and wraps with `Year`.

@@ -1,7 +1,7 @@
 -- Feature finite_resources (M10). Home deposits (iron first) are a mod-owned stock: the mod counts what the player buildings produce
 -- (ProductionTrackerComponent:getGoodsProducedOver, summed over the buildings) and, when the stock is used up, sets the production limit
 -- of the good to 0 for the player region (Region:setProductionLimit). Goods from vassals (tribute) do not count and are not blocked.
--- Spike: docs/mod/M10-finite_resources/implementation-notes/iteration-01-iron-deposit.md
+-- Spike: openspec/changes/archive/2026-10-16-legacy-m10-finite-resources/implementation-notes/iteration-01-iron-deposit.md
 local core = require("ManorCore")
 local ModState = require("ModState")
 local rules = require("features.finite_resources.rules")

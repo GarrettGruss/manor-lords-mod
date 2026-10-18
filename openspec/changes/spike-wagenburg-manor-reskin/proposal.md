@@ -1,6 +1,6 @@
 # Proposal: decide and finish the Wagenburg manor reskin
 
-Issue: #233. Legacy source: `docs/harness/32-manor-wagenburg/README.md`. Legacy issue: #233 (awaiting user).
+Issue: #233. Legacy source: `openspec/changes/archive/2026-10-18-legacy-32-manor-wagenburg/README.md`. Legacy issue: #233 (awaiting user).
 
 ## Why
 
@@ -23,8 +23,8 @@ A separate enemy camp with a real wall is not proven. The recommendation is in `
 
 ## Legacy folders
 
-- `docs/harness/32-manor-wagenburg/` (notes: `replacement-test.md`, `pathing-test.md`, `per-manor-lua-reskin.md`, `invasion-recommendation.md`).
-- `docs/harness/33-meshy-materials/`.
+- `openspec/changes/archive/2026-10-18-legacy-32-manor-wagenburg/` (notes: `replacement-test.md`, `pathing-test.md`, `per-manor-lua-reskin.md`, `invasion-recommendation.md`).
+- `openspec/changes/archive/2026-10-18-legacy-33-meshy-materials/`.
 
 ## Capabilities
 

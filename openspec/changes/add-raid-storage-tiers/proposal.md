@@ -1,10 +1,10 @@
 # Proposal: add store tiers and the ruin rebuild discount
 
-Issue: #276. Legacy source: `docs/mod/M03-raid_behavior/README.md` (iteration table row "04 storage-tiers", no iteration file).
+Issue: #276. Legacy source: `openspec/changes/archive/2026-10-16-legacy-m03-raid-behavior/README.md` (iteration table row "04 storage-tiers", no iteration file).
 
 ## Why
 
-The design (M00) says that a guarded granary loses less per trip than an open barn, that the manor is the safest store, and that burned buildings become ruins that rebuild at partial cost. None of this is built. The raid tracker returns the loot of a dead raider to the nearest store and treats all stores alike. M13 raised the manor storage, but raiders do not treat the manor store differently (`docs/mod/M13-manor_stronghold/iterations/01-manor-storage.md`).
+The design (M00) says that a guarded granary loses less per trip than an open barn, that the manor is the safest store, and that burned buildings become ruins that rebuild at partial cost. None of this is built. The raid tracker returns the loot of a dead raider to the nearest store and treats all stores alike. M13 raised the manor storage, but raiders do not treat the manor store differently (`openspec/changes/archive/2026-10-16-legacy-m13-manor-stronghold/iterations/01-manor-storage.md`).
 
 ## What Changes
 
@@ -20,7 +20,7 @@ The design (M00) says that a guarded granary loses less per trip than an open ba
 
 ## Legacy folders
 
-`docs/mod/M03-raid_behavior/` and `docs/mod/M13-manor_stronghold/` (read-only).
+`openspec/changes/archive/2026-10-16-legacy-m03-raid-behavior/` and `openspec/changes/archive/2026-10-16-legacy-m13-manor-stronghold/` (read-only).
 
 ## Capabilities
 

@@ -1,6 +1,6 @@
 # Proposal: Spike community mod leads
 
-Issue: #280. Legacy source: `docs/harness/13-mod-inspection/README.md` and `docs/harness/13-mod-inspection/implementation-notes/summary.md` ("Proposed follow-up spikes").
+Issue: #280. Legacy source: `openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/README.md` and `openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/implementation-notes/summary.md` ("Proposed follow-up spikes").
 
 ## Why
 Spec 13 read 20 community mods and proposed follow-up spikes. The inspection is done. Some leads were used later: the M2 data lead (`maxInRegion`, `placedWithin`) is in the walls and housing modules, the P3 refugee lead is in the bandit settlement work (spec 15), and the battle place lever became the battlefield anchor (spec 10). Five leads have no code and no test yet:
@@ -21,7 +21,7 @@ Each is a claim from DLL strings or Lua source that no game test has checked.
 - Copying mod code. Notes describe and cite only.
 
 ## Legacy folders
-`docs/harness/13-mod-inspection/` (read only).
+`openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/` (read only).
 
 ## Capabilities
 ### New Capabilities

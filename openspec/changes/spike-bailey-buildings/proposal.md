@@ -1,6 +1,6 @@
 # Proposal: find out if buildings can stand inside the manor bailey
 
-Issue: #68. Legacy source: `docs/harness/17-bailey-buildings/README.md`. Legacy issue: #68 (status: blocked, awaiting user).
+Issue: #68. Legacy source: `openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/README.md`. Legacy issue: #68 (status: blocked, awaiting user).
 
 ## Why
 
@@ -22,8 +22,8 @@ Two causes are not separated yet: a bailey rule, or no reachable path (a wall ri
 
 ## Legacy folders
 
-- `docs/harness/17-bailey-buildings/`
-- `docs/harness/12-manor-exploration/implementation-notes/` (rule search, `rule-search.md`)
+- `openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/`
+- `openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/implementation-notes/` (rule search, `rule-search.md`)
 
 ## Capabilities
 

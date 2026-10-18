@@ -1,12 +1,12 @@
 # Proposal: Spike parallel suite speedup
 
-Issue: #151. Legacy source: `docs/harness/11-parallel-game-slots/README.md` (plan step 5 and the open acceptance boxes). Legacy issue: #151.
+Issue: #151. Legacy source: `openspec/changes/archive/2026-10-15-legacy-11-parallel-game-slots/README.md` (plan step 5 and the open acceptance boxes). Legacy issue: #151.
 
 ## Why
 Steps 1 to 4 of spec 11 are built (slots, launcher slot support, parallel suite, `EXCLUSIVE` scenarios). The living spec `harness/game-slots` and `harness/regression-suite` describe them. Issue #151 still says that steps 3 and 4 are open. This is out of date.
 
 Three things are not proven:
-- The real A/B suite on 3 slots against the same suite on 1 slot. The `core` suite gained only about 15 percent, because the boot dominates short scenarios (`docs/harness/11-parallel-game-slots/implementation-notes/step4-parallel-suite.md`).
+- The real A/B suite on 3 slots against the same suite on 1 slot. The `core` suite gained only about 15 percent, because the boot dominates short scenarios (`openspec/changes/archive/2026-10-15-legacy-11-parallel-game-slots/implementation-notes/step4-parallel-suite.md`).
 - An `EXCLUSIVE` scenario in a real parallel suite. Only pool tests cover it.
 - With 3 games a bridge call can wait longer than the 15 s timeout. The run then ends with `harness_error`, which the suite does not retry.
 
@@ -23,7 +23,7 @@ Three things are not proven:
 - Bug #158 (`test_install_scripts` fails while a game runs) and bug #160 (`suite.py` has no `--slot`): they are bug issues. See `design.md`.
 
 ## Legacy folders
-`docs/harness/11-parallel-game-slots/` (read only).
+`openspec/changes/archive/2026-10-15-legacy-11-parallel-game-slots/` (read only).
 
 ## Capabilities
 ### New Capabilities

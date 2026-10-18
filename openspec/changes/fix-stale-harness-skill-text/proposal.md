@@ -1,6 +1,6 @@
 # Proposal: Fix stale harness skill text
 
-Issue: #53. Legacy source: `docs/harness/00-harness-overview/README.md` (roadmap status) and issue #53 (housekeeping from the review of specs 00 to 14).
+Issue: #53. Legacy source: `openspec/changes/archive/2026-10-15-legacy-00-harness-overview/README.md` (roadmap status) and issue #53 (housekeeping from the review of specs 00 to 14).
 
 ## Why
 Issue #53 lists stale text. Most of it is fixed. One item remains in the skills: `.claude/skills/harness-overview/SKILL.md` says "Spec 11 (parallel game slots) is proposed". Spec 11 steps 1 to 4 are built (`harness/game-slots`). The skill also points to the spec 00 status lines, which are legacy and frozen. The living specs hold the status now. The other #53 skill items are done (`harness-coverage` says 36 of 39; the modules are named in `harness-overview`; holding the game speed is described).
@@ -15,7 +15,7 @@ Issue #53 lists stale text. Most of it is fixed. One item remains in the skills:
 - Skills of the Invasion Mod.
 
 ## Legacy folders
-`docs/harness/00-harness-overview/` (read only).
+`openspec/changes/archive/2026-10-15-legacy-00-harness-overview/` (read only).
 
 ## Capabilities
 ### New Capabilities

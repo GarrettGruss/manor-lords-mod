@@ -5,7 +5,7 @@ description: Release a mod to play testers as a GitHub pre-release (manifest, ch
 
 # Mod releases (spec 19)
 
-A release is one zip for one mod version. Rules are in `docs/harness/19-mod-releases/README.md`.
+A release is one zip for one mod version. Rules are in `openspec/changes/archive/2026-10-15-legacy-19-mod-releases/README.md`.
 
 ## Make a mod releasable
 0. The releasable mod is `mod/InvasionMod`. The first release was the removed standalone mod RefugeeWaves 0.1.0 (pre-release `refugeewaves-v0.1.0`).

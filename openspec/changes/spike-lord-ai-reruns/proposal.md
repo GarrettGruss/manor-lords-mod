@@ -1,12 +1,12 @@
 # Proposal: Spike lord AI reruns
 
-Issue: #281. Legacy source: `docs/harness/10-invasion-testability/README.md` (spikes S11, S13, battlefield anchor, upgrade U3) and `docs/harness/10-invasion-testability/implementation-notes/open-items.md`.
+Issue: #281. Legacy source: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/README.md` (spikes S11, S13, battlefield anchor, upgrade U3) and `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/open-items.md`.
 
 ## Why
 Several spike results ran once and were never repeated:
 - S11 (baron model): the probe `probe-lord-diplomacy` (`lord_claim`, `lord_declare_peace`, the "challenge lost" path) is written but not run.
 - S13 (dynamic lords): the suite `lord-village-ab` was stopped after 2 runs. The second result differs from the first (the lord village stayed at 5 buildings, earlier it grew 4 to 14). "The lord builds" is not confirmed on the `base` fixture with other lords present.
-- Battlefield anchor: the raid challenge check and the formal 3 against 3 A/B are open (`docs/harness/10-invasion-testability/implementation-notes/battlefield-anchor.md`).
+- Battlefield anchor: the raid challenge check and the formal 3 against 3 A/B are open (`openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/battlefield-anchor.md`).
 - U3: a game-time `run_until` against the real game is not verified.
 
 ## What Changes
@@ -18,7 +18,7 @@ Several spike results ran once and were never repeated:
 - Save and load of a spawned lord (needs a save call; forbidden outside `save_game`).
 
 ## Legacy folders
-`docs/harness/10-invasion-testability/` (read only).
+`openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/` (read only).
 
 ## Capabilities
 ### New Capabilities

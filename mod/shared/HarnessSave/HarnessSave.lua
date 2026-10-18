@@ -2,7 +2,7 @@
 -- The Python side (harness/runlib/harness_save.py) backs up the save folder, chooses a free slot name and checks the result.
 -- This side refuses anything that does not look like a slot name from that guard, and refuses a slot that exists.
 --
--- Game facts (docs/harness/24-mod-save-state/implementation-notes/save-hooks.md):
+-- Game facts (openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/implementation-notes/save-hooks.md):
 --   PawnCPP:requestSaveFile(SlotName, saveName) writes <SlotName>.sav into the REAL save folder. It overwrites without asking.
 --   IoHandler:DoesSaveGameExist(SlotName) reads the real folder.
 -- Rules: no eval. Call only on the game thread. Never call any other save function (autosave, slot save, menu save).

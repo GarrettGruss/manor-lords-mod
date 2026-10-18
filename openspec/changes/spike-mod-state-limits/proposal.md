@@ -1,6 +1,6 @@
 # Proposal: Spike mod state limits
 
-Issue: #283. Legacy source: `docs/harness/24-mod-save-state/README.md` ("Open questions", "Module design: ModState").
+Issue: #283. Legacy source: `openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/README.md` ("Open questions", "Module design: ModState").
 
 ## Why
 The mod state lives in `Tags` of the player pawn and the player region. The ModState module is built (`mod/shared/ModState/ModState.lua`). The code rejects an entry longer than the name limit. These checks are still open (spec 24):
@@ -20,7 +20,7 @@ The mod state lives in `Tags` of the player pawn and the player region. The ModS
 - New mod features.
 
 ## Legacy folders
-`docs/harness/24-mod-save-state/` (read only).
+`openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/` (read only).
 
 ## Capabilities
 ### New Capabilities

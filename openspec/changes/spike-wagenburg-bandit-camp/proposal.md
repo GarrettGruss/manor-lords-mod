@@ -1,6 +1,6 @@
 # Proposal: decide and ship the Wagenburg encampment look
 
-Issue: #229. Legacy source: `docs/harness/30-wagenburg-encampment/README.md`. Legacy issue: #229 (awaiting user).
+Issue: #229. Legacy source: `openspec/changes/archive/2026-10-18-legacy-30-wagenburg-encampment/README.md`. Legacy issue: #229 (awaiting user).
 
 ## Why
 
@@ -22,8 +22,8 @@ The Invasion Mod design (decision 7) left war wagons out because "the game canno
 
 ## Legacy folders
 
-- `docs/harness/30-wagenburg-encampment/` (notes: `meshy-model.md`, `host-tests.md`, `invasion-recommendation.md`).
-- `docs/harness/33-meshy-materials/` (the grey look is fixed there; check it here).
+- `openspec/changes/archive/2026-10-18-legacy-30-wagenburg-encampment/` (notes: `meshy-model.md`, `host-tests.md`, `invasion-recommendation.md`).
+- `openspec/changes/archive/2026-10-18-legacy-33-meshy-materials/` (the grey look is fixed there; check it here).
 
 ## Capabilities
 

@@ -17,7 +17,7 @@ sources:
 ## Loading and deploy
 
 - `harness/deploy.ps1` copies every top-level folder of `mod/` into `ue4ss\Mods\`. It treats `shared` as a library: it adds no `mods.txt` line for it. Every other folder becomes a mod and is set to `: 1`. The `paks/`, `ue/` and `art/` folders of a mod are not copied.
-- UE4SS resolves `shared\<Name>\<Name>.lua` for `require` (see `docs/harness/01-ue4ss-bridge/README.md`).
+- UE4SS resolves `shared\<Name>\<Name>.lua` for `require` (see `openspec/changes/archive/2026-10-15-legacy-01-ue4ss-bridge/README.md`).
 - Each mod has its own Lua state. A module is loaded once for each state, so two mods never share a table. State that must cross mods goes through files (see [Harness and player mods](other-mods.md) and `HarnessCommands` below).
 - A player mod that is released lists the modules it needs in `mod.json` (`"shared": ["ManorCore"]`). It must not need a `Harness*` module.
 

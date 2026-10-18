@@ -1,6 +1,6 @@
 # Proposal: Spike new row id persistence
 
-Issue: #284. Legacy source: `docs/harness/23-row-id-range/README.md` ("Risks", "Result and proposed id ranges": Open list) and `docs/harness/23-row-id-range/implementation-notes/id-results.md`.
+Issue: #284. Legacy source: `openspec/changes/archive/2026-10-15-legacy-23-row-id-range/README.md` ("Risks", "Result and proposed id ranges": Open list) and `openspec/changes/archive/2026-10-15-legacy-23-row-id-range/implementation-notes/id-results.md`.
 
 ## Why
 Spec 23 found that new `buildingStats` ids (126 to 65536) load, show, are placed, are built and survive 45 game days. The id ranges are in use (`mod.json` of the Invasion Mod, row patches). Three checks are still open:
@@ -21,7 +21,7 @@ Large ids may work in the menu and break systems that are not visible at once (s
 - Text key checks beyond `buildingID_<id>`.
 
 ## Legacy folders
-`docs/harness/23-row-id-range/` (read only).
+`openspec/changes/archive/2026-10-15-legacy-23-row-id-range/` (read only).
 
 ## Capabilities
 ### New Capabilities

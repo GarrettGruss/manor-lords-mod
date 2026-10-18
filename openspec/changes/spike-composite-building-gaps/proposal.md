@@ -1,6 +1,6 @@
 # Proposal: close the open items of composite buildings
 
-Issue: #104. Legacy source: `docs/harness/18-composite-buildings/README.md`. Legacy issues: #104 (open, "Spike: building access points and a 4-oxen stable"); #69 and #94 are closed.
+Issue: #104. Legacy source: `openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/README.md`. Legacy issues: #104 (open, "Spike: building access points and a 4-oxen stable"); #69 and #94 are closed.
 
 ## Why
 
@@ -24,7 +24,7 @@ Spec 18 proved that a pak can add a composite building and that a real click can
 
 ## Legacy folders
 
-- `docs/harness/18-composite-buildings/` (notes: `access-points.md`, `real-mouse-placement-proof.md`, `siege-camp-build.md`, `hidden-buildings.md`, `siege-camp-and-bm.md`).
+- `openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/` (notes: `access-points.md`, `real-mouse-placement-proof.md`, `siege-camp-build.md`, `hidden-buildings.md`, `siege-camp-and-bm.md`).
 
 ## Capabilities
 

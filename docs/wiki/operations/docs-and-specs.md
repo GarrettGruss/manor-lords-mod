@@ -9,11 +9,10 @@ sources:
   - resource: repo://CONTRIBUTING.md
   - resource: repo://openspec/config.yaml
   - resource: repo://openspec/changes/archive/2026-10-18-adopt-openspec/
-  - resource: repo://docs/harness/README.md
-  - resource: repo://docs/harness/00-harness-overview/README.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-00-harness-overview/README.md
   - resource: repo://.claude/skills/repo-wiki/spec/README.md
   - resource: repo://docs/mod/README.md
-  - resource: repo://docs/mod/feature-breakdown.md
+  - resource: repo://openspec/changes/archive/2026-10-16-legacy-mod-feature-breakdown/README.md
   - resource: repo://.claude/skills/
   - resource: repo://.claude/skills/harness-git-workflow/SKILL.md
   - resource: repo://CHANGELOG.md
@@ -31,7 +30,7 @@ The rules are in `CONTRIBUTING.md` (for everyone; `CLAUDE.md` imports it and add
 | Open changes | `openspec/changes/<change-name>/` | One piece of work: `proposal.md`, delta specs in `specs/`, `design.md`, `tasks.md`, findings in `notes/`. |
 | Archive | `openspec/changes/archive/YYYY-MM-DD-<change-name>/` | Done changes with their full context. |
 | Game design | `docs/mod/M00-invasion-mod/` | The Invasion Mod design. The user owns it. |
-| Legacy specs | `docs/harness/<NN>-*/`, `docs/mod/M<NN>-*/` | Specs before 2026-10-18. Read-only. |
+| Legacy specs | `openspec/changes/archive/<date>-legacy-*/` | The old specs (`docs/harness/<NN>-*/`, `docs/mod/M<NN>-*/`) from before 2026-10-18, archived unchanged. Read-only. |
 | Wiki | `docs/wiki/` | How the code and the engine work. |
 
 Capability groups: `harness/<name>`, `mod/<feature>` (the folder name in `mod/InvasionMod/Scripts/features/`, plus `mod/core` for the shared parts) and `process/<name>`. The standalone test mods RefugeeWaves and PolicyMenu were absorbed by the Invasion Mod and have no spec. The change `backfill-living-specs` (#253) wrote the built behavior of all legacy specs into living specs. Its `design.md` maps each legacy spec to its capabilities. Run `openspec list --specs` for the list.
@@ -67,15 +66,15 @@ OpenSpec calls its examples `#### Scenario:`. The harness calls its test files s
 
 ### Tuning and feedback
 
-A tuning-only change (values in a feature `config.lua`) needs no change folder. Log it in the feedback file and the mod changelog. Player feedback for a mod feature goes to `openspec/specs/mod/<feature>/feedback.md`. The first change for a feature moves the open items from the legacy `feedback.md`.
+A tuning-only change (values in a feature `config.lua`) needs no change folder. Log it in the feedback file and the mod changelog. Player feedback for a mod feature goes to `openspec/specs/mod/<feature>/feedback.md`. No legacy feature had open feedback items.
 
 ## Legacy specs
 
-- `docs/harness/` and `docs/mod/M<NN>-*/` are read-only history. No work happens there: no spec folders, iterations, notes or status lines. `docs/harness/README.md` and `docs/mod/README.md` say so.
-- They are not moved or renamed. Code docstrings, skills, issues and the changelog link to them.
+- The old specs of `docs/harness/` and `docs/mod/M<NN>-*/` were moved, unchanged inside, to `openspec/changes/archive/<date>-legacy-<NN>-<name>/` and `<date>-legacy-m<NN>-<feature>/` (change `archive-legacy-specs`, #288). Its `notes/path-map.md` maps each old path. They are read-only history.
+- All references in code, skills, the wiki and the specs point to the new paths. The `CHANGELOG.md` files keep the old paths as history.
 - All their open work is an OpenSpec change (change `migrate-legacy-work`, #269). Its `notes/inventory-*.md` maps each legacy item to its change or says why it was dropped or is done.
-- Exception: `docs/harness/10-invasion-testability/criteria.json` and the criteria tables of its README stay live. `harness/tools/coverage.py --check-spec` compares them. See [Python tests and coverage](../testing/python-tests.md).
-- `docs/harness/00-harness-overview/README.md` is the roadmap of the legacy specs.
+- The coverage data moved out of spec 10 to `openspec/specs/harness/coverage/criteria.json` and `criteria.md` (change `move-coverage-criteria-to-openspec`, #279). `harness/tools/coverage.py --check-spec` compares them. See [Python tests and coverage](../testing/python-tests.md).
+- `openspec/changes/archive/2026-10-15-legacy-00-harness-overview/README.md` is the roadmap of the legacy specs.
 
 The legacy mod layout was `M<NN>-<feature>/` with `README.md`, `iterations/<NN>-<name>.md`, `feedback.md` and `implementation-notes/`. An OpenSpec change replaces an iteration file. The living spec replaces the "current state" part of the README. See [Invasion Mod structure](../architecture/invasion-mod.md).
 
@@ -125,5 +124,5 @@ Use the `sonnet` model for subagents when possible. Do not spawn one for a small
 | An engine fact that stays true | The matching wiki page, before the archive |
 | A user-visible change | `CHANGELOG.md`, `Unreleased` |
 | Player feedback | `openspec/specs/mod/<feature>/feedback.md` |
-| A verified Invasion Mode criterion | `docs/harness/10-invasion-testability/criteria.json` and its README tables |
+| A verified Invasion Mode criterion | `openspec/specs/harness/coverage/criteria.json` and `criteria.md` |
 | A how-the-system-works explanation | The matching wiki page |

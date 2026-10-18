@@ -1,6 +1,6 @@
 # Proposal: test that a mod menu stays open for five minutes
 
-Issue: #272. Legacy source: `docs/harness/34-widget-click-hooks/README.md`. Legacy issue: #254 (closed).
+Issue: #272. Legacy source: `openspec/changes/archive/2026-10-18-legacy-34-widget-click-hooks/README.md`. Legacy issue: #254 (closed).
 
 ## Why
 
@@ -22,7 +22,7 @@ Two small items are open in the spec 34 README:
 
 ## Legacy folders
 
-- `docs/harness/34-widget-click-hooks/` (note: `implementation-notes/click-hook-method.md`).
+- `openspec/changes/archive/2026-10-18-legacy-34-widget-click-hooks/` (note: `implementation-notes/click-hook-method.md`).
 
 ## Capabilities
 

@@ -1,6 +1,6 @@
 # Proposal: Decide unattended regression run
 
-Issue: #278. Legacy source: `docs/harness/00-harness-overview/README.md` ("Open decisions") and `docs/harness/08-regression-suite/README.md` (non-goals).
+Issue: #278. Legacy source: `openspec/changes/archive/2026-10-15-legacy-00-harness-overview/README.md` ("Open decisions") and `openspec/changes/archive/2026-10-15-legacy-08-regression-suite/README.md` (non-goals).
 
 ## Why
 Spec 00 has two open decisions that nobody closed:
@@ -18,7 +18,7 @@ The suite runner exists (`harness/suite.py`). No schedule uses it.
 - Parallel slots (see `spike-parallel-suite-speedup`).
 
 ## Legacy folders
-`docs/harness/00-harness-overview/` and `docs/harness/08-regression-suite/` (read only).
+`openspec/changes/archive/2026-10-15-legacy-00-harness-overview/` and `openspec/changes/archive/2026-10-15-legacy-08-regression-suite/` (read only).
 
 ## Capabilities
 ### New Capabilities

@@ -1,6 +1,6 @@
 # Proposal: Extend mesh pipeline checks
 
-Issue: #102. Legacy source: `docs/harness/21-mesh-generation/README.md` (open questions and acceptance) and `docs/harness/33-meshy-materials/implementation-notes/cause-and-fix.md` ("Open"). Legacy issues: #102 (spec 21), #237 (spec 33).
+Issue: #102. Legacy source: `openspec/changes/archive/2026-10-15-legacy-21-mesh-generation/README.md` (open questions and acceptance) and `openspec/changes/archive/2026-10-18-legacy-33-meshy-materials/implementation-notes/cause-and-fix.md` ("Open"). Legacy issues: #102 (spec 21), #237 (spec 33).
 
 ## Why
 Specs 21 and 33 are built: the Meshy tool, the headless import, the game material instance that fixes the grey look, and the recook of old paks. The living spec `harness/mesh-pipeline` describes them. The issues #102 and #237 can close after this check. Some items remain:
@@ -21,7 +21,7 @@ Specs 21 and 33 are built: the Meshy tool, the headless import, the game materia
 - A shader library for mods.
 
 ## Legacy folders
-`docs/harness/21-mesh-generation/` and `docs/harness/33-meshy-materials/` (read only).
+`openspec/changes/archive/2026-10-15-legacy-21-mesh-generation/` and `openspec/changes/archive/2026-10-18-legacy-33-meshy-materials/` (read only).
 
 ## Capabilities
 ### New Capabilities

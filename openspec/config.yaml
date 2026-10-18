@@ -22,8 +22,8 @@ context: |
   - Only the guarded harness action `save_game` may save. Never plan a save call anywhere else.
 
   Legacy docs:
-  - `docs/harness/<NN>-*/` and `docs/mod/M<NN>-*/` are read-only legacy specs. Read them as source
-    material. Do not add new work there.
+  - The old legacy specs are archived unchanged in `openspec/changes/archive/<date>-legacy-*/`. They are
+    read-only history. Read them as source material. Do not edit them.
   - `docs/mod/M00-invasion-mod/` is the game design. The user owns it. Do not change it unless asked.
   - `docs/wiki/` explains how the code and the game engine work. It is not a spec.
 
