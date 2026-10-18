@@ -4,8 +4,8 @@
 - [x] 1.3 Check that no property value or Lua source reaches the log. Verified by the eval scenario of the test.
 
 ## 2. Real game
-- [ ] 2.1 Run one smoke test scenario with the bridge and read `mod.log`. Verified by a run id and the log lines.
+- [x] 2.1 Run one smoke test scenario with the bridge and read `mod.log`. Verified by a run id and the log lines.
 
 ## 3. Close
 - [x] 3.1 Update `CHANGELOG.md`, the wiki page on the bridge, and the skill `harness-debug-run` (the log is a new place to look). Verified by `wiki.py check`.
-- [ ] 3.2 Fill the test results table of the implementation pull request.
+- [x] 3.2 Fill the test results table of the implementation pull request.
