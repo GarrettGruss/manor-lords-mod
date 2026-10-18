@@ -123,6 +123,30 @@ end
 
 raid_behavior.watch_end(apply_protection)
 
+---------------------------------------------------------------------------------------------
+-- Vassal targets and siege (M02 iteration 07)
+---------------------------------------------------------------------------------------------
+
+require("features.invasion.init").set_vassal_provider(vassals.target_regions)
+
+local siege_resolved = {}   -- raid id -> "taken" or "failed"
+
+local function resolve_siege(summary)
+    local slot = summary.target and vassal_slot(summary.target)
+    if slot == nil or siege_resolved[tostring(summary.id)] then return end
+    local result = rules.siege_result(summary, raid_world.current_day(), config.siege)
+    if result == nil then return end
+    siege_resolved[tostring(summary.id)] = result
+    core.log.info(TAG, string.format("TRIBUTE siege raid=%d region=%s slot=%d result=%s", summary.id, summary.target, slot, result))
+    if result == "taken" then vassals.lose_vassal(slot, "taken") end
+end
+
+local function siege_poll()
+    for _, summary in ipairs(raid_behavior.active_raids()) do resolve_siege(summary) end
+end
+
+require("scheduler").every(TAG .. ".siege", config.siege.poll_ms, siege_poll)
+
 -- The saved season is set before the tick, so an error in the tick cannot make it run twice.
 local function poll()
     if not state.loaded then return end
@@ -150,7 +174,7 @@ local function command_state()
     return { day = current_day(), season = current_season(), last_season = state:get("tribute_last_season"),
         ticks = state:get("tribute_ticks"), paid_total = state:get("tribute_paid_total"), failed_deposits = failed_deposits,
         history = history, stock = stock(), protection_defended = state:get("protection_defended"),
-        protection_failed = state:get("protection_failed"), protection_events = protection_events }
+        protection_failed = state:get("protection_failed"), protection_events = protection_events, siege = siege_resolved }
 end
 
 local has_commands, commands = pcall(require, "HarnessCommands")

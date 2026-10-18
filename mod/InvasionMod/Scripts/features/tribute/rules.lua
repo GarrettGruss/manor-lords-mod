@@ -41,4 +41,13 @@ function M.loyalty_change(outcome, protection)
     return protection.undefended
 end
 
+-- A subjugation raid on a vassal region takes the vassal when it has been active for `siege_days` game days
+-- and keeps at least `min_living` (a share) of its units. Returns "taken", "failed" (too few units left) or nil (still going).
+function M.siege_result(summary, today, siege)
+    if summary.kind ~= "subjugation" or summary.state ~= "active" or today == nil then return nil end
+    if summary.initial < 1 or summary.living / summary.initial < siege.min_living then return "failed" end
+    if today - summary.start_day >= siege.days then return "taken" end
+    return nil
+end
+
 return M

@@ -334,6 +334,15 @@ local function force_leave(reason)
     return false, "no active role raid that can leave"
 end
 
+-- Summaries of the raids that are still active.
+local function active_raids()
+    local list = {}
+    for _, id in ipairs(order) do
+        if raids[id].raid.state == "active" then list[#list + 1] = rules.summary(raids[id].raid) end
+    end
+    return list
+end
+
 local function active_role_raid()
     for _, id in ipairs(order) do
         local raid = raids[id].raid
@@ -342,4 +351,4 @@ local function active_role_raid()
     return nil
 end
 
-return { state = state, watch_leave = watch_leave, watch_end = watch_end, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }
+return { state = state, watch_leave = watch_leave, watch_end = watch_end, active_raids = active_raids, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }

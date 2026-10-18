@@ -460,5 +460,16 @@ class TargetRulesTests(unittest.TestCase):
         self.assertEqual(self.run_lua("local t = target.pick('subjugation', 'home', {'a', 'b'}, function(a, b) return b end); return t.region .. tostring(t.stand_in)"), "bfalse")
 
 
+class VassalProviderTests(InvasionTestCase):
+    def test_a_subjugation_raid_targets_a_vassal_region_when_a_provider_exists(self):
+        self.game.exec('require("features.invasion.init").set_vassal_provider(function() return { "Eichenhau" } end)')
+        self.ask("invasion_force_next")
+        self.set_day(62)
+        self.assertTrue(self.ask("invasion_subjugation_force_next")["ok"])
+        self.game.advance(3)
+        log = (self.game.run_dir / "mod.log").read_text(encoding="utf-8", errors="replace") if (self.game.run_dir / "mod.log").exists() else ""
+        self.assertIn("kind=subjugation target=Eichenhau stand_in=false", log)
+
+
 if __name__ == "__main__":
     unittest.main()
