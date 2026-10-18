@@ -343,6 +343,16 @@ class LordRaidRulesTests(RaidBehaviorTestCase):
             return rules.plunder_amount(raid, { [1] = { x = 0, y = 0 } }, { battle_radius = 4000, per_unit_day = 5 }, { loot_per_raider = 4 }, 11)""")
         self.assertEqual(result, 0)
 
+    def test_a_subjugation_raid_has_no_plunder_and_never_leaves(self):
+        result = self.run_lua("""
+            local raid = rules.new_raid(1, 10, 1, { 1, 2 }, true, { anchor = { x = 0, y = 0 }, kind = 'subjugation' })
+            local seen = { [1] = { x = 0, y = 0 }, [2] = { x = 0, y = 0 } }
+            local plunder, leave = { battle_radius = 4000, per_unit_day = 100 }, { loot_per_raider = 4, loss_share = 0.5, max_days = 25 }
+            local amount = rules.plunder_amount(raid, seen, plunder, leave, 11)
+            raid.deaths = 2
+            return amount .. ',' .. tostring(rules.leave_reason(raid, 500, leave))""")
+        self.assertEqual(result, "0,nil")
+
 
 if __name__ == "__main__":
     unittest.main()

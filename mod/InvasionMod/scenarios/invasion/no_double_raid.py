@@ -14,7 +14,7 @@ SPEED = 3
 LONG_REASON = "A4 needs 120 game days. One game day takes about 5 wall seconds at speed 3 (about 600 s)."
 TOTAL_DAYS = 120
 CHUNK_DAYS = 10
-SPAWN = re.compile(r"INVASION spawn day=")
+SPAWN = re.compile(r"INVASION spawn day=.*kind=plunder")  # the subjugation raid (M02.03) may come in the 120 days
 SPAWN_RAIDERS = re.compile(r"INVASION spawn .*raiders=(\d+)")
 REFILL = re.compile(r"base raid timer was (\d+),")
 TIMER_FLOOR = 300

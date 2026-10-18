@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - Mod M07.01 (#187): feature `vassals` of `InvasionMod`. The mod writes goals = Endless on every start and load (a claim no longer ends the game) and keeps a 3 slot vassal registry with loyalty in ModState. Commands `vassals_state`, `vassals_claim`, `vassals_set_loyalty`, `vassals_set_goal`. Scenario `vassals-claim-without-victory`.
+- Mod M02.03 (#177): the subjugation raid (major). One large raid (3 x difficulty squads) 60 to 120 game days after the first raid, as the lord army of M03.02, with no plunder tick and no leave rule. The target is the home region as a stand-in (vassals: M07). Commands `invasion_subjugation_state`, `invasion_subjugation_force_next`. Scenario `invasion-subjugation-raid`.
 - Mod M06.02 (#181): tribute terms. A lord raid offers a one-time payment (100 x difficulty silver) or vassalage (yearly tribute 30 x difficulty). Accepting makes the raid leave by the peace route, without a sack.
 - Mod M03.02 follow-up (#172): scenarios `raid-behavior-region-guard` and `raid-behavior-lord-leave-reason` (losses and time reasons) and three session-only test commands in `InvasionMod` (`raid_behavior_test_set_leave`, `_test_take_region`, `_test_kill_raiders`).
 - Mod M06.01 (#173): feature `sack_and_terms`. A role raid that leaves with its loot or at the time limit sacks the town: 20/35/50 percent of buildings, stock and families by difficulty, rounded up, people kept alive; a second sack in 360 days is fatal (tunable).
