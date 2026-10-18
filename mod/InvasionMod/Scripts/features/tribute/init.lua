@@ -55,7 +55,8 @@ end
 local function pay_vassal(row)
     local families = vassals.region_families(row.region) or 0
     local production = rules.production(families, config.units_per_family)
-    local share = rules.share(row.loyalty, config.share_min, config.share_max)
+    local factor = (require("config").vassals.policies[row.policy] or { tribute = 1.0 }).tribute -- vassal policy (M07.03)
+    local share = rules.share(row.loyalty, config.share_min, config.share_max) * factor
     local amount = rules.amount(production, share)
     local parts = rules.split(amount, #config.goods)
     local paid = 0
@@ -63,7 +64,7 @@ local function pay_vassal(row)
         if pay_good(good.id, parts[index]) then paid = paid + parts[index] end
     end
     return { slot = row.slot, region = row.region, loyalty = row.loyalty, families = families, production = production,
-        share = share, amount = amount, paid = paid }
+        share = share, policy = row.policy, amount = amount, paid = paid }
 end
 
 local function run_tick()

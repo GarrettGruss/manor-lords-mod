@@ -86,6 +86,15 @@ class TributeTests(HandoverBase):
         self.assertTrue(answer["ok"], answer)
         self.assertEqual(answer["result"]["paid_total"], 20)
 
+    def test_the_policy_scales_the_share(self):
+        for policy, factor in (("heavy", 1.5), ("light", 0.5)):
+            self.ask("vassals_set_policy", slot=1, policy=policy)
+            self.change_season()
+            payment = self.tribute()["history"][-1]["payments"][0]
+            self.assertEqual(payment["policy"], policy)
+            self.assertAlmostEqual(payment["share"], (0.10 + 0.20 * payment["loyalty"] / 100) * factor)
+
+
 
 if __name__ == "__main__":
     unittest.main()
