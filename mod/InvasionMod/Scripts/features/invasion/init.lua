@@ -4,9 +4,11 @@
 local core = require("ManorCore")
 local ModState = require("ModState")
 local plan_rules = require("features.invasion.plan")
+local great_raid = require("features.invasion.great_raid")
 local lord_raid = require("features.invasion.lord_raid")
 local all_config = require("config")
 local config = all_config.invasion
+local clock_config = config.great_raid
 local roles = config.roles
 
 local TAG = "InvasionMod.invasion"
@@ -23,6 +25,8 @@ state:register("squads", 0, "integer")
 state:register("composition_seed", 0, "integer") -- seed of the template picks; the composition is computed from it (0: none yet)
 state:register("raids_spawned", 0, "integer")
 state:register("last_banner_day", 0, "integer")
+state:register("great_raid_day", 0, "integer") -- absolute game day when the great raid starts (0: the clock has not started)
+state:register("last_clock_banner_day", 0, "integer")
 
 if config.seed then math.randomseed(config.seed) else math.randomseed(os.time()) end
 
@@ -139,20 +143,49 @@ local function spawn_raid(today)
     core.show_banner("Raiders are here", string.format("About %d raiders", planned_units()))
 end
 
+local function clock_days_left(today)
+    return great_raid.days_left(state:get("great_raid_day"), today)
+end
+
+local function start_clock(today)
+    local length = great_raid.length(clock_config, math.random)
+    state:set("great_raid_day", today + length)
+    core.log.info(TAG, string.format("INVASION clock start day=%d end_day=%d length=%d", today, today + length, length))
+end
+
+local function show_clock_banner(today)
+    local days_left = clock_days_left(today)
+    local ok, problem = core.show_banner(great_raid.text(days_left), "")
+    state:set("last_clock_banner_day", today)
+    core.log.info(TAG, string.format("INVASION clock banner day=%d days_left=%d shown=%s%s", today, days_left, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
+end
+
 local function show_countdown(today, days_left)
     local text = plan_rules.banner_text(days_left, planned_units())
-    local ok, problem = core.show_banner(text, "")
+    local ok, problem = core.show_banner(text, great_raid.text(clock_days_left(today)))
+    state:set("last_clock_banner_day", today)
     state:set("last_banner_day", today)
     core.log.info(TAG, string.format("INVASION banner day=%d days_left=%d raiders=%d shown=%s%s", today, days_left,
         planned_units(), tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
 end
 
-local function daily_step(today)
+local function minor_raid_step(today)
     if state:get("raids_spawned") > 0 then return end
     if state:get("raid_day") == 0 then make_plan(today) end
     local days_left = state:get("raid_day") - today
     if days_left <= 0 then return spawn_raid(today) end
     if today >= state:get("warning_day") and state:get("last_banner_day") ~= today then show_countdown(today, days_left) end
+end
+
+local function clock_step(today)
+    if state:get("great_raid_day") == 0 then start_clock(today) end
+    local due = state:get("last_clock_banner_day") + clock_config.banner_every_days <= today
+    if due and not great_raid.is_due(state:get("great_raid_day"), today) then show_clock_banner(today) end
+end
+
+local function daily_step(today)
+    minor_raid_step(today)
+    clock_step(today)
 end
 
 local function tick()
@@ -198,6 +231,21 @@ local function command_force_next()
     state:set("raid_day", today)
     last_handled_day = nil
     return command_state()
+end
+
+local function command_clock_state()
+    local today = current_day()
+    local end_day = state:get("great_raid_day")
+    return { day = today, great_raid_day = end_day, days_left = (today and end_day > 0) and clock_days_left(today) or nil,
+        last_clock_banner_day = state:get("last_clock_banner_day") }
+end
+
+-- For tests: move the end of the clock so that `days` game days remain.
+local function command_clock_set_days_left(args)
+    local today = current_day()
+    if today == nil then return nil, "the game day is not available" end
+    state:set("great_raid_day", today + args.days)
+    return command_clock_state()
 end
 
 local function command_set_difficulty(args)
@@ -258,6 +306,8 @@ if has_commands then
     commands.register("InvasionMod.invasion_raid_squads", command_raid_squads, {})
     commands.register("InvasionMod.invasion_set_roles", command_set_roles, { enabled = { type = "boolean", required = true } })
     commands.register("InvasionMod.invasion_state", command_state, {})
+    commands.register("InvasionMod.invasion_clock_state", command_clock_state, {})
+    commands.register("InvasionMod.invasion_clock_set_days_left", command_clock_set_days_left, { days = { type = "integer", required = true, min = 1, max = 2000 } })
     commands.register("InvasionMod.invasion_force_next", command_force_next, {})
     commands.register("InvasionMod.invasion_set_difficulty", command_set_difficulty, { value = { type = "integer", required = true, min = 1, max = 3 } })
     commands.register("InvasionMod.invasion_set_size", command_set_size, { size = { type = "string", required = true, oneOf = { "small", "medium", "large" } } })

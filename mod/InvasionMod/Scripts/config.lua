@@ -22,6 +22,10 @@ return {
         squad_units = 18,                                    -- units in one squad of spawnRaiders
         base_timer_floor = 300,                              -- the mod lifts the base game raid timer when it falls under this
         base_timer_refill = 700,
+        great_raid = {                                       -- M02 iteration 02: the clock to the great raid (365 game days a year)
+            min_days = 3 * 365, max_days = 5 * 365,          -- M00 balance target: 3 to 5 game years
+            banner_every_days = 30,                          -- a banner for the clock when no minor raid banner shows
+        },
         poll_ms = 300,                                       -- real time between two checks of the game day
         seed = nil,                                          -- nil: seed from the clock
         -- M05 iteration 02: Hussite roles of a raid (decision 7). All weights and shares are TBD for playtests.

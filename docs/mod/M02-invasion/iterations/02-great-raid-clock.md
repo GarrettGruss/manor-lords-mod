@@ -25,4 +25,5 @@ The mod keeps a countdown to the great raid. It lasts 3 to 5 game years (M00 bal
 - `scenarios/invasion/great_raid_clock.py`: reads the state, checks C1, sets days left to 3, runs 5 game days, checks the banner lines and days left (C2, C3).
 
 ## Result
-not started
+PASS in the real game (2026-10-18). Scenario `invasion-great-raid-clock`, runs `20261018-045438-cb2e` and `20261018-045637-7f91`: clock length 1549 and 1607 days (C1), days left fell with the days that passed (C3), one clock banner at the start with the right days left (C2). Fake game tests `ClockTests` pass. C4 (roundtrip) rests on the ModState proof of M01; the end day is one integer tag (`invasion:great_raid_day`).
+Season weights were not built (TBD).
