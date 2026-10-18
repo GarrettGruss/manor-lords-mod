@@ -123,5 +123,13 @@ return {
             limit = 2,                       -- the sack that brings the count in the window to this number is fatal
             fatal = { enabled = true },      -- a fatal sack removes every family and the game ends by itself
         },
+        -- M06 iteration 02. Silver amounts are TBD (playtests).
+        terms = {
+            offer_on_spawn = true,           -- an offer opens when a lord raid spawns
+            payment_base = 100,              -- one-time payment = payment_base x difficulty
+            tribute_base = 30,               -- yearly tribute of a vassal = tribute_base x difficulty
+            tribute_days = 360,              -- game days between two tributes
+            poll_ms = 2000,                  -- real time between two looks at the tribute day
+        },
     },
 }

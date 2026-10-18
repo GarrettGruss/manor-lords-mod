@@ -147,18 +147,22 @@ end
 
 -- A role raid that has taken enough, lost enough or stayed long enough must leave (user decision 2026-10-18): it first goes away
 -- (peace with the bandit lord), and the mod removes a unit only in a quiet spot, far from the village (config leave.quiet_distance).
+local function start_leave(raid, reason, today)
+    rules.begin_leave(raid, reason, today)
+    local ok, problem
+    if raid.lord ~= nil then ok, problem = lord_raid.peace() else ok, problem = world.make_peace() end
+    core.log.info(TAG, string.format("RAID_BEHAVIOR role raid must leave id=%d day=%s reason=%s peace=%s%s", raid.id, tostring(today),
+        reason, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
+    for _, watcher in ipairs(leave_watchers) do core.log.try(TAG, watcher, rules.summary(raid)) end
+end
+
 local function check_leave(entry, seen, today)
     local raid = entry.raid
     if not leave.enabled then return end
     if raid.leave_reason == nil then
         local reason = rules.leave_reason(raid, today, leave)
         if reason == nil then return end
-        rules.begin_leave(raid, reason, today)
-        local ok, problem
-        if raid.lord ~= nil then ok, problem = lord_raid.peace() else ok, problem = world.make_peace() end
-        core.log.info(TAG, string.format("RAID_BEHAVIOR role raid must leave id=%d day=%s reason=%s peace=%s%s", raid.id, tostring(today),
-            reason, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
-        for _, watcher in ipairs(leave_watchers) do core.log.try(TAG, watcher, rules.summary(raid)) end
+        start_leave(raid, reason, today)
     end
     local keys = rules.exit_quiet(raid, seen, world.home(), { distance = leave.quiet_distance, exit_y = config.exit_y })
     if #keys == 0 then return end
@@ -268,4 +272,24 @@ local function watch_leave(fn)
     leave_watchers[#leave_watchers + 1] = fn
 end
 
-return { state = state, watch_leave = watch_leave }
+-- Make the active role raid leave now (for example after the player accepted terms). Returns true, or false and a message.
+local function force_leave(reason)
+    for _, id in ipairs(order) do
+        local raid = raids[id].raid
+        if raid.roles and raid.state == "active" and raid.leave_reason == nil then
+            start_leave(raid, reason, world.current_day())
+            return true
+        end
+    end
+    return false, "no active role raid that can leave"
+end
+
+local function active_role_raid()
+    for _, id in ipairs(order) do
+        local raid = raids[id].raid
+        if raid.roles and raid.state == "active" and raid.leave_reason == nil then return rules.summary(raid) end
+    end
+    return nil
+end
+
+return { state = state, watch_leave = watch_leave, force_leave = force_leave, active_role_raid = active_role_raid }
