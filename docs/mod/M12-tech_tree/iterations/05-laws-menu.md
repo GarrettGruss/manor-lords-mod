@@ -17,3 +17,6 @@ The tech tree menu (iteration 02) lists the laws of iteration 04 and lets the pl
 
 ## Result
 PASS in the real game (2026-10-18). Runs `20261018-141510-3570` and `20261018-141610-8fda`. Real clicks: open (#203).
+
+## Fix after release: F9 key crash (#245)
+The real F9 key crashed the game (key callback ran Lua on the input thread). The callback now sets a flag and the scheduler tick toggles the menu. See implementation-notes/f9-key-crash.md. Scenario `tech-tree-widget-key`: runs 20261018-154213-0a49 and 20261018-154331-093d pass.
