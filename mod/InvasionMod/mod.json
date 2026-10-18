@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Invasion mode for Manor Lords, built from separate features.",
   "shared": ["ManorCore", "ModState", "HarnessBandits", "HarnessLords", "HarnessBattlefield", "HarnessSack"],
-  "pak": null,
+  "pak": {"name": "raidmenu", "source": "file"},
   "tested": {
     "game": "0.8.111",
     "game_build": "25598558",
@@ -17,7 +17,8 @@
     { "name": "raid_behavior", "requires": ["invasion"], "ids": {} },
     { "name": "unit_balance", "requires": [], "ids": {} },
     { "name": "bandits", "requires": ["invasion"], "ids": {} },
-    { "name": "sack_and_terms", "requires": ["raid_behavior"], "ids": {} }
+    { "name": "sack_and_terms", "requires": ["raid_behavior"], "ids": {} },
+    { "name": "raid_widget", "requires": ["invasion"], "ids": {} }
   ],
   "gate_scenarios": []
 }

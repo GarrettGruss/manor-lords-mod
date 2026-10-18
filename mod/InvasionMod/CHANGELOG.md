@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Feature `raid_widget` (M02.05, #189): the raid menu (pak `raidmenu`, key F8), commands `raid_widget_open`, `raid_widget_close`, `raid_widget_state`, config `raid_widget`. `invasion` exports `raid_info` and `pick_difficulty`; `terms` exports `summary`.
 - Feature `invasion` (M02.06, #186): great raid phases (`gr_*` ModState keys), `great_raid.next_action`, `relief.lua`, config `invasion.great_raid` wave and final values, three `invasion_great_*` commands. `raid_behavior` exports `final_raid_ended`; a `great` raid has no plunder and no leave.
 ### Fixed
 - Feature `raid_behavior`: a non-number `ItemsLooted` no longer raises an error in the unit scan.

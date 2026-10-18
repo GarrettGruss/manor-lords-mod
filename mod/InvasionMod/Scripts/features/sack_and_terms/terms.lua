@@ -111,4 +111,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "terms loaded")
-return { state = state }
+return { state = state, summary = command_state }
