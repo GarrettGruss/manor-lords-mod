@@ -3,11 +3,11 @@ type: Reference
 title: Specs, docs and project process
 description: How harness specs, mod docs and iterations, implementation notes, GitHub issues, branches, the changelog, skills and the wiki fit together.
 tags: [process, specs, docs, git, changelog, skills, wiki]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:03:40Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:09:10Z }
 sources:
   - resource: repo://CLAUDE.md
   - resource: repo://docs/harness/00-harness-overview/README.md
-  - resource: repo://docs/harness/34-repo-wiki/README.md
+  - resource: repo://.claude/skills/repo-wiki/spec/README.md
   - resource: repo://docs/mod/README.md
   - resource: repo://docs/mod/feature-breakdown.md
   - resource: repo://.claude/skills/
@@ -75,7 +75,7 @@ Each acceptance criterion needs at least one scenario. See [Writing scenarios](.
 
 ## Skills
 
-Project skills live in `.claude/skills/<name>/SKILL.md`. Start with `harness-overview`: it maps each job to a skill (run a scenario, write a scenario, mod state, game spike, A/B test, pak mod, debug a run, coverage, dispatch agents, release, Meshy, git workflow, repo wiki). Update a skill in the same commit when the harness changes.
+Project skills live in `.claude/skills/<name>/SKILL.md`. Start with `harness-overview`: it maps each job to a skill (run a scenario, write a scenario, mod state, game spike, A/B test, pak mod, debug a run, coverage, dispatch agents, release, Meshy, git workflow). Update a skill in the same commit when the harness changes. The skill `repo-wiki` is not a harness skill; CLAUDE.md points to it.
 
 ## Subagents
 
@@ -83,7 +83,7 @@ Use the `sonnet` model for subagents when possible. Do not spawn one for a small
 
 ## The wiki
 
-- Spec: `docs/harness/34-repo-wiki/`. Entry page: `docs/wiki/quickstart.md`. Skill: `repo-wiki`. Its script `.claude/skills/repo-wiki/scripts/wiki.py` (`index`, `check`, `stale`, `stamp`) and its tests live in the skill folder, apart from the game harness.
+- The skill `repo-wiki` keeps the wiki. It is separate from the game harness: its spec (`.claude/skills/repo-wiki/spec/`), its script `scripts/wiki.py` (`index`, `check`, `stale`, `stamp`) and its tests all live in `.claude/skills/repo-wiki/`. Entry page: `docs/wiki/quickstart.md`.
 - Run `uv run python .claude/skills/repo-wiki/scripts/wiki.py stale` after a change. It lists pages whose sources changed. Update those pages in the same branch, then run `index`, `check` and `stamp`.
 - `index.md` files are generated. Do not edit them by hand.
 
