@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M13.01 (#207): feature `manor_stronghold`. The capacity of a manor module is 200 units plus the tech tree effect `manor_storage` (+200 at Iron Hand and at Amnesty). Commands `manor_state`, `manor_put`, `manor_take`. Scenario `manor-stronghold-storage` (fixture `manor-bailey`). Spec `docs/mod/M13-manor_stronghold/iterations/01-manor-storage.md`.
 - Mod M12.02 (#203): the tech tree menu (key F9). Pak `techmenu_P.pak` holds a pool of 16 node buttons; Lua labels, colours and places them from `data/tech_tree/tree.json` (layout data). Feature `tech_tree_widget`; commands `tech_tree_widget_open`, `_close`, `_state`; scenario `tech-tree-widget` (real mouse, `--pak techmenu`; click steps not yet verified). Spec `docs/mod/M12-tech_tree/iterations/02-pak-ui.md`.
 - Mod M09.02 (#202): a refugee wave ends `housed` when the homeless count is back at the base, or `rebelled` after `refugees.timeout_days` (45): the unhoused families (at most 6) turn into bandits through `homeless_rebel`. Command `refugees_set_timeout`. Scenario `refugees-housing-and-timeout`.
 - Mod M09.01 (#200): feature `refugees`. A lost vassal sends 30 to 60 percent of its families as a refugee wave to the home region (settleRegion steps of 5 families, tent camp). Commands `refugees_state`, `refugees_vassal_lost`, `refugees_send_wave`. Scenario `refugees-wave`.

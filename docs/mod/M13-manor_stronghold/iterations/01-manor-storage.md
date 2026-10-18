@@ -27,4 +27,7 @@ M00 decisions 22 and 23 (tech tree nodes, data driven). The M00 rule: manor upgr
 - `mod/InvasionMod/scenarios/manor_stronghold/manor_storage.py` (`manor-stronghold-storage`), fixture `manor-bailey` (a built manor house, no mouse).
 
 ## Result
-Not started.
+PASS in the real game (2026-10-18), fixture `manor-bailey`. Runs `20261018-090003-97fb` and `20261018-090634-fdf1` pass (S0 to S4). A third launch (`20261018-090206-a900`) ended `harness_error` at boot (PAUSING), not a mod problem.
+- Fake game tests: `harness/tests/test_fakegame_manor_stronghold.py` (10 tests).
+- Deviations: the nodes are not new. The `manor_storage` effect was added to `iron_hand` and `amnesty` so the 8-node tree stays. Raiders do not yet treat the manor store differently (M03 storage tiers, later). Values TBD.
+- Notes: `../implementation-notes/iteration-01-manor-storage.md`.
