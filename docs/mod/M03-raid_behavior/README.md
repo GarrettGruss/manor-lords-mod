@@ -52,6 +52,7 @@ Iteration 01 done (2026-10-17): feature `raid_behavior` tracks the raid, cuts lo
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
 | 01 | native-plunder | Start the native plunder AI and measure the loot. | done, A1 to A6 pass (see the iteration file) |
-| 02 | loot-back-to-store | Loot of a killed raider returns to a store. | not started |
+| 02 | role-raid-leave | Role raids leave after loot, losses or time. | done, lord army raid with plunder tick (see the iteration file) |
+| 02b | loot-back-to-store | Loot of a killed raider returns to a store. | not started |
 | 03 | carry-caps | Carry caps by raid type. | not started |
 | 04 | storage-tiers | Loss per trip by store tier. Ruin rebuild discount. | not started |

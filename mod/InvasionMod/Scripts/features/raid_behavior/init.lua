@@ -7,6 +7,9 @@ local invasion = require("features.invasion.init")
 local rules = require("features.raid_behavior.rules")
 local world = require("features.raid_behavior.world")
 local config = require("config").raid_behavior
+local leave = config.leave
+local plunder = config.plunder
+local lord_raid = require("features.invasion.lord_raid")
 
 local TAG = "InvasionMod.raid_behavior"
 local STATE_VERSION = 1
@@ -38,7 +41,7 @@ end
 local function after_spawn(before, info)
     local keys = world.new_keys(before, world.read_units())
     local id = #order + 1
-    local raid = rules.new_raid(id, info.day, info.squads, keys)
+    local raid = rules.new_raid(id, info.day, info.squads, keys, info.roles, info.lord_raid)
     raids[id] = { raid = raid, burned_base = world.burned_count() or 0, leave_base = world.ai_log_tail_count(LEAVE_TEXT) or 0 }
     order[#order + 1] = id
     if state.loaded then
@@ -46,7 +49,7 @@ local function after_spawn(before, info)
         state:set("raid_start_day", info.day)
         state:set("raid_state", STATE_CODES.active)
     end
-    core.log.info(TAG, string.format("RAID_BEHAVIOR start id=%d day=%d squads=%d raiders=%d", id, info.day, info.squads, #keys))
+    core.log.info(TAG, string.format("RAID_BEHAVIOR start id=%d day=%d squads=%d raiders=%d roles=%s", id, info.day, info.squads, #keys, tostring(info.roles == true)))
 end
 
 invasion.watch_spawn(before_spawn, after_spawn)
@@ -122,11 +125,57 @@ local function log_day(today)
     end
 end
 
+-- The plunder tick: while the lord army stands at the manor, goods leave the village stores (once a day).
+local function check_plunder(entry, seen, today)
+    local raid = entry.raid
+    local want = rules.plunder_amount(raid, seen, plunder, leave, today)
+    if want <= 0 then return end
+    local taken = world.plunder(want)
+    rules.record_plunder(raid, taken)
+    core.log.info(TAG, string.format("RAID_BEHAVIOR plunder id=%d day=%s wanted=%d taken=%d plundered=%d", raid.id, tostring(today), want, taken, raid.plundered))
+end
+
+-- A won challenge writes the lord as region owner (run 20261018-015009-371a). The region goes back to the player at once.
+local function check_region(entry, slow_look)
+    local lord = entry.raid.lord
+    if lord == nil or lord.home_region == nil or not slow_look then return end
+    if world.region_is_players(lord.home_region) ~= false then return end
+    local ok, problem = world.give_region_to_player(lord.home_region)
+    core.log.warn(TAG, string.format("RAID_BEHAVIOR region %s was taken by the lord, given back=%s%s", lord.home_region, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
+end
+
+-- A role raid that has taken enough, lost enough or stayed long enough must leave (user decision 2026-10-18): it first goes away
+-- (peace with the bandit lord), and the mod removes a unit only in a quiet spot, far from the village (config leave.quiet_distance).
+local function check_leave(entry, seen, today)
+    local raid = entry.raid
+    if not leave.enabled then return end
+    if raid.leave_reason == nil then
+        local reason = rules.leave_reason(raid, today, leave)
+        if reason == nil then return end
+        rules.begin_leave(raid, reason, today)
+        local ok, problem
+        if raid.lord ~= nil then ok, problem = lord_raid.peace() else ok, problem = world.make_peace() end
+        core.log.info(TAG, string.format("RAID_BEHAVIOR role raid must leave id=%d day=%s reason=%s peace=%s%s", raid.id, tostring(today),
+            reason, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
+    end
+    local keys = rules.exit_quiet(raid, seen, world.home(), { distance = leave.quiet_distance, exit_y = config.exit_y })
+    if #keys == 0 then return end
+    local removed = 0
+    for _, key in ipairs(keys) do
+        if seen[key].object ~= nil and world.remove_unit(seen[key].object) then removed = removed + 1 end
+    end
+    core.log.info(TAG, string.format("RAID_BEHAVIOR role raid units removed in a quiet spot id=%d day=%s units=%d removed=%d living=%d carried_out=%d",
+        raid.id, tostring(today), #keys, removed, raid.living - #keys, raid.carried_out))
+end
+
 local function step_raid(entry, seen, today, slow_look)
     local raid = entry.raid
     local was_active = raid.state == "active"
     for _, death in ipairs(rules.update(raid, seen, config, today)) do return_loot(entry, death) end
     write_caps(seen)
+    check_plunder(entry, seen, today)
+    check_region(entry, slow_look)
+    check_leave(entry, seen, today)
     if slow_look then
         refresh_burned(entry)
         check_leave_line(entry, today)
@@ -134,6 +183,10 @@ local function step_raid(entry, seen, today, slow_look)
     if state.loaded then save_summary(entry) end
     if was_active and raid.state ~= "active" then
         core.log.info(TAG, string.format("RAID_BEHAVIOR end id=%d day=%s state=%s", raid.id, tostring(today), raid.state))
+        if raid.leave_reason ~= nil and raid.lord == nil then
+            local ok, problem = world.restore_war()
+            core.log.info(TAG, string.format("RAID_BEHAVIOR war restored=%s%s", tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
+        end
     end
 end
 
@@ -156,6 +209,14 @@ local function tracked_keys()
     return keys
 end
 
+local function any_leaving()
+    for _, id in ipairs(order) do
+        local raid = raids[id].raid
+        if raid.state == "active" and (raid.leave_reason ~= nil or raid.lord ~= nil) then return true end
+    end
+    return false
+end
+
 local tick_count = 0
 
 local function tick()
@@ -163,7 +224,7 @@ local function tick()
     tick_count = tick_count + 1
     local slow_look = tick_count % config.slow_every == 1
     local today = world.current_day()
-    local seen = world.read_units(tracked_keys())
+    local seen = world.read_units(tracked_keys(), any_leaving())
     for _, id in ipairs(order) do
         if raids[id].raid.state == "active" then step_raid(raids[id], seen, today, slow_look) end
     end
@@ -193,6 +254,10 @@ end
 
 if has_commands then
     commands.register("InvasionMod.raid_behavior_state", command_state, {})
+    commands.register("InvasionMod.raid_behavior_claim_back", function(args)
+        local ok, problem = world.give_region_to_player(args.region)
+        return { ok = ok, problem = problem }
+    end, { region = { type = "string", required = true, maxLength = 40 } })
 end
 
 core.log.info(TAG, "feature raid_behavior loaded")

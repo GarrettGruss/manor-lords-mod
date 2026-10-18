@@ -4,6 +4,7 @@
 local core = require("ManorCore")
 local ModState = require("ModState")
 local plan_rules = require("features.invasion.plan")
+local lord_raid = require("features.invasion.lord_raid")
 local all_config = require("config")
 local config = all_config.invasion
 local roles = config.roles
@@ -105,14 +106,25 @@ local function spawn_raid(today)
     local tokens = {}
     for index, watcher in ipairs(spawn_watchers) do tokens[index] = watcher.before() end
     local ok, problem
+    local lord_info = nil
     if use_roles then
         local list = composition_list()
-        local ids
-        ok, ids = core.spawn_squads(list, { x = centre.x, y = roles.raid_spawn_y, z = centre.z })
-        problem = ids
         raid_squads = {}
-        if ok then
-            for index, name in ipairs(list) do raid_squads[index] = { id = ids[index] or false, template = name } end
+        if roles.lord_army.enabled then
+            ok, problem = lord_raid.start(list, roles.lord_army)
+            if ok then
+                raid_squads, lord_info = problem.squads, problem
+            else
+                core.log.error(TAG, "lord raid failed, the squads are bandit squads: " .. tostring(problem))
+            end
+        end
+        if not ok then
+            local ids
+            ok, ids = core.spawn_squads(list, { x = centre.x, y = roles.raid_spawn_y, z = centre.z })
+            problem = ids
+            if ok then
+                for index, name in ipairs(list) do raid_squads[index] = { id = ids[index] or false, template = name } end
+            end
         end
     else
         ok, problem = core.spawn_raiders(squads, centre)
@@ -120,7 +132,7 @@ local function spawn_raid(today)
     if not ok then return core.log.error(TAG, "raid spawn failed: " .. tostring(problem)) end
     state:set("raids_spawned", state:get("raids_spawned") + 1)
     for index, watcher in ipairs(spawn_watchers) do
-        core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = squads })
+        core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = squads, roles = use_roles, lord_raid = lord_info })
     end
     core.log.info(TAG, string.format("INVASION spawn day=%d planned_day=%d squads=%d raiders=%d composition=%s roles=%s",
         today, state:get("raid_day"), squads, planned_units(), plan_rules.join(composition_list()), tostring(use_roles)))

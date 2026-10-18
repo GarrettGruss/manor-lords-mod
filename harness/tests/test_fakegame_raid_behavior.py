@@ -65,6 +65,7 @@ class RaidBehaviorTestCase(unittest.TestCase):
                              assignedSquadID=self.game.struct(Value=7))
         number = 1000 + len(self.units)
         self.game.method(unit, "GetAddress", lambda _self, number=number: number)
+        self.game.method(unit, "just_die", lambda _self, unit=unit: setattr(unit, "dead", True))
         self.units.append(unit)
         return unit
 
@@ -228,6 +229,119 @@ class EndTests(RaidBehaviorTestCase):
         tags = list(self.game.lua.eval("tag_names")(self.pawn).values())
         self.assertIn("invasion:raid_count=1", tags)
         self.assertIn("invasion:raid_state=1", tags)
+
+
+class RoleRaidLeaveTests(RaidBehaviorTestCase):
+    def raiders(self):
+        return self.units[-SQUAD_UNITS:]
+
+    def go_far(self):
+        for unit in self.raiders():
+            unit.realPos = self.game.struct(X=60000.0, Y=0.0, Z=0.0)
+
+    def stores_total(self):
+        return sum(self.stock(store) for store in self.stores)
+
+    def test_a_role_raid_leaves_after_enough_loot_and_the_loot_leaves_with_it(self):
+        self.start_raid()
+        stock = self.stores_total()
+        for unit in self.raiders():
+            unit.ItemsLooted = 4
+        self.game.advance(3)
+        self.assertEqual((self.raid()["leave_reason"], self.raid()["living"]), ("loot", SQUAD_UNITS))  # near the village: kept
+        self.assertFalse(any(unit.dead for unit in self.raiders()))
+        self.go_far()
+        self.game.advance(3)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["leave_reason"], raid["living"]), ("left", "loot", 0))
+        self.assertEqual((raid["departures"], raid["deaths"], raid["carried_out"], raid["returned"]), (SQUAD_UNITS, 0, 4 * SQUAD_UNITS, 0))
+        self.assertEqual(self.stores_total(), stock)
+        self.assertTrue(all(unit.dead for unit in self.raiders()))
+
+    def test_a_role_raid_leaves_after_enough_losses(self):
+        self.start_raid()
+        for unit in self.raiders()[: SQUAD_UNITS // 2]:
+            unit.dead = True
+        self.game.advance(3)
+        self.go_far()
+        self.game.advance(3)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["leave_reason"]), ("left", "losses"))
+        self.assertEqual((raid["deaths"], raid["departures"]), (SQUAD_UNITS // 2, SQUAD_UNITS // 2))
+
+    def test_a_role_raid_leaves_at_the_time_limit(self):
+        self.start_raid()
+        self.calendar.daysTotal = self.calendar.daysTotal + 30
+        self.game.advance(3)
+        self.go_far()
+        self.game.advance(3)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["leave_reason"]), ("left", "time"))
+
+    def test_a_leaving_raid_is_removed_only_in_a_quiet_spot(self):
+        self.start_raid()
+        self.calendar.daysTotal = self.calendar.daysTotal + 30
+        self.game.advance(3)
+        near, far = self.raiders()[:3], self.raiders()[3:]
+        for unit in far:
+            unit.realPos = self.game.struct(X=60000.0, Y=0.0, Z=0.0)
+        self.game.advance(3)
+        self.assertTrue(all(unit.dead for unit in far))
+        self.assertFalse(any(unit.dead for unit in near))
+        self.assertEqual(self.raid()["state"], "active")
+        self.assertEqual(self.raid()["living"], 3)
+
+    def test_a_role_raid_below_every_limit_stays(self):
+        self.start_raid()
+        self.raiders()[0].ItemsLooted = 4
+        self.game.advance(3)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["living"], raid.get("leave_reason")), ("active", SQUAD_UNITS, None))
+
+    def test_a_native_raid_is_never_removed(self):
+        self.ask("invasion_set_roles", enabled=False)
+        self.start_raid()
+        for unit in self.raiders():
+            unit.ItemsLooted = 4
+        self.calendar.daysTotal = self.calendar.daysTotal + 30
+        self.game.advance(3)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["roles"], raid["living"]), ("active", False, SQUAD_UNITS))
+        self.assertFalse(any(unit.dead for unit in self.raiders()))
+
+
+class LordRaidRulesTests(RaidBehaviorTestCase):
+    def run_lua(self, code):
+        return self.game.lua.eval(f"(function() local rules = require('features.raid_behavior.rules'); {code} end)")()
+
+    def test_the_plunder_counts_only_raiders_inside_the_battle_radius_once_a_day(self):
+        result = self.run_lua("""
+            local raid = rules.new_raid(1, 10, 1, { 1, 2, 3, 4 }, true, { anchor = { x = 0, y = 0 } })
+            local seen = { [1] = { x = 100, y = 0 }, [2] = { x = 3000, y = 0 }, [3] = { x = 9000, y = 0 }, [4] = { dead = true, x = 0, y = 0 } }
+            local plunder, leave = { battle_radius = 4000, per_unit_day = 2 }, { loot_per_raider = 4 }
+            local first = rules.plunder_amount(raid, seen, plunder, leave, 11)
+            local again = rules.plunder_amount(raid, seen, plunder, leave, 11)
+            rules.record_plunder(raid, first)
+            return first .. ',' .. again .. ',' .. rules.looted_total(raid)""")
+        self.assertEqual(result, "4,0,4")
+
+    def test_the_plunder_stops_at_the_goal_and_the_leave_rule_fires(self):
+        result = self.run_lua("""
+            local raid = rules.new_raid(1, 10, 1, { 1, 2 }, true, { anchor = { x = 0, y = 0 } })
+            local seen = { [1] = { x = 0, y = 0 }, [2] = { x = 0, y = 0 } }
+            local plunder, leave = { battle_radius = 4000, per_unit_day = 100 }, { loot_per_raider = 4, loss_share = 0.5, max_days = 25 }
+            local amount = rules.plunder_amount(raid, seen, plunder, leave, 11)
+            rules.record_plunder(raid, amount)
+            local reason = rules.leave_reason(raid, 11, leave)
+            rules.begin_leave(raid, reason, 11)
+            return amount .. ',' .. tostring(reason) .. ',' .. tostring(raid.units[1].exiting)""")
+        self.assertEqual(result, "8,loot,true")
+
+    def test_a_native_raid_has_no_plunder(self):
+        result = self.run_lua("""
+            local raid = rules.new_raid(1, 10, 1, { 1 }, true, nil)
+            return rules.plunder_amount(raid, { [1] = { x = 0, y = 0 } }, { battle_radius = 4000, per_unit_day = 5 }, { loot_per_raider = 4 }, 11)""")
+        self.assertEqual(result, 0)
 
 
 if __name__ == "__main__":
