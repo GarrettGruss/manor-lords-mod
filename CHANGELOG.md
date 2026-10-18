@@ -9,6 +9,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Skill `harness-meshy`: the pipeline for 3D models (Gemini, Meshy, UE import, material instance, pak), cost rules, and the Meshy Pro license quote.
 
 ### Fixed
+- Re-cooked the Wagenburg, wall, keep, big ox shed and weaver shed paks with the game material instance; added `weavermesh_P.pak` and `harness/tools/recook_meshy_pak.py` (spec 33, #237).
+- `probe-wagenburg` takes `HARNESS_BM` to show another Blueprint of a pak.
 - Meshy meshes now render their texture, not flat grey: the import scripts use an instance of a game master material (spec 33, #237).
 
 ### Added
