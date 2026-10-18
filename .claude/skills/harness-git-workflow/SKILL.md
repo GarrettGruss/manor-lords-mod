@@ -5,7 +5,7 @@ description: Branch, commit, push, open and merge pull requests for this repo, a
 
 # Git workflow for this repo
 
-Rules are in CLAUDE.md: atomic Conventional commits, two review gates per OpenSpec change, CHANGELOG kept current. Gate 1 is a spec pull request, gate 2 an implementation pull request; the user approves and merges both on GitHub. Do not merge a gate pull request yourself. A pull request without a gate (no change folder, no spec change, no test acceptance) may be merged by you after the full tests pass (CLAUDE.md, Git).
+Rules are in CONTRIBUTING.md (the agent permissions in CLAUDE.md): atomic Conventional commits, two review gates per OpenSpec change, CHANGELOG kept current. Gate 1 is a spec pull request, gate 2 an implementation pull request; the user approves and merges both on GitHub. Do not merge a gate pull request yourself. A pull request without a gate (no change folder, no spec change, no test acceptance) may be merged by you after the full tests pass (CLAUDE.md, Permissions from the user).
 
 ## Branch and commit
 - Gate 1: branch `spec/<change-name>` from an up-to-date `main`. Commit only the change folder (proposal, delta specs, design, tasks). No code, no archive.
