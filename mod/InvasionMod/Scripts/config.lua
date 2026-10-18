@@ -210,6 +210,8 @@ return {
         window_days = 36500,       -- getGoodsProducedOver window: the whole life of a building
         resources = {
             iron = { good = 14, size = 400 }, -- EItemType IronOre; units that the iron mines may still produce
+            salt = { good = 145, size = 300 }, -- EItemType Salt (M10.02, TBD)
+            clay = { good = 146, size = 500 }, -- EItemType Clay (M10.02, TBD)
         },
     },
     -- M08 tribute. Values are TBD for playtests (M00: 10 to 30 percent of the production).
@@ -221,7 +223,9 @@ return {
         share_max = 0.30,         -- share of the production at loyalty 100
         siege = { days = 8, min_living = 0.5, poll_ms = 2000 }, -- M02.07: a subjugation raid on a vassal takes it after days with min_living share of units (TBD)
         protection = { defended = 5, undefended = -15 }, -- iteration 02: loyalty change of a vassal after a raid on its region (TBD)
-        goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally (M10 adds iron and salt)
+        goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally
+        -- M10.02: the permanent supply of the goods that run out at home. Paid next to `goods`, with the same share. Values are TBD.
+        finite_goods = { { id = 14, name = "iron", units_per_family = 10 }, { id = 145, name = "salt", units_per_family = 6 } },
     },
     -- M13 manor_stronghold. Values are TBD for playtests.
     manor_stronghold = {

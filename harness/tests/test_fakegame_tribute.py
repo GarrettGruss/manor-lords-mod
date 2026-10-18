@@ -51,6 +51,19 @@ class TributeTests(HandoverBase):
         payment = state["history"][0]["payments"][0]
         self.assertEqual((payment["families"], payment["production"], payment["amount"]), (5, 100, 20))
 
+    def test_a_season_also_pays_iron_and_salt_next_to_the_main_goods(self):
+        self.change_season()
+        state = self.tribute()
+        self.assertEqual((self.held(14), self.held(145)), (10, 6))
+        self.assertEqual(state["history"][0]["payments"][0]["finite"], {"iron": 10, "salt": 6})
+        self.assertEqual(state["finite_paid"], {"iron": 10, "salt": 6})
+        self.assertEqual(state["paid_total"], 20)
+
+    def test_the_policy_scales_the_finite_goods_too(self):
+        self.ask("vassals_set_policy", slot=1, policy="light")
+        self.change_season()
+        self.assertEqual((self.held(14), self.held(145)), (5, 3))
+
     def test_no_vassal_no_tribute(self):
         self.game.exec("local v = require('features.vassals.init'); v.state:set('vassal1_lord', 'none')")
         self.change_season()
@@ -79,7 +92,7 @@ class TributeTests(HandoverBase):
         self.change_season()
         state = self.tribute()
         self.assertEqual(state["paid_total"], 0)
-        self.assertEqual(state["failed_deposits"], 2)
+        self.assertEqual(state["failed_deposits"], 4)  # two main goods and two finite goods
 
     def test_the_forced_tick_pays_at_once(self):
         answer = self.ask("tribute_tick_now")

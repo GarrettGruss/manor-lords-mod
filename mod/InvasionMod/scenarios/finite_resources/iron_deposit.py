@@ -22,7 +22,7 @@ def state(ctx) -> dict:
 
 
 def row(ctx) -> dict:
-    return state(ctx)["resources"][0]
+    return next(item for item in state(ctx)["resources"] if item["name"] == "iron")
 
 
 def advance_until(ctx, condition, max_days: int, what: str) -> None:
