@@ -3,7 +3,7 @@ type: Reference
 title: Invasion Mod features
 description: The features of mod/InvasionMod - what each one implements now, its named commands, its dependencies on other features, and its mod spec.
 tags: [invasion-mod, features, commands, dependencies]
-generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:15:30Z }
 sources:
   - resource: repo://mod/InvasionMod/Scripts/features/
   - resource: repo://mod/InvasionMod/Scripts/feature_list.lua
@@ -11,6 +11,7 @@ sources:
   - resource: repo://mod/InvasionMod/scenarios/
   - resource: repo://docs/mod/README.md
   - resource: repo://docs/mod/feature-breakdown.md
+  - resource: repo://docs/mod/M12-tech_tree/implementation-notes/f9-key-crash.md
 ---
 # Invasion Mod features
 
@@ -62,7 +63,7 @@ An arrow means "is required by". `example`, `unit_balance` and `manor_stronghold
 | refugees | [M09](../../mod/M09-refugees/README.md) | vassals, bandits | `scenarios/refugees/` |
 | finite_resources | [M10](../../mod/M10-finite_resources/README.md) | mod_state | `scenarios/finite_resources/` |
 | tech_tree | [M12](../../mod/M12-tech_tree/README.md) | bandits, unit_balance, mod_state, manor_stronghold, vassals, tribute | `scenarios/tech_tree/` |
-| tech_tree_widget | [M12](../../mod/M12-tech_tree/README.md) (iteration 02) | tech_tree | `scenarios/tech_tree/widget.py`, `widget_laws.py` |
+| tech_tree_widget | [M12](../../mod/M12-tech_tree/README.md) (iteration 02) | tech_tree | `scenarios/tech_tree/widget.py`, `widget_laws.py`, `widget_key.py` |
 | manor_stronghold | [M13](../../mod/M13-manor_stronghold/README.md) | none | `scenarios/manor_stronghold/` |
 
 Specs without code: [M11 liege_influence](../../mod/M11-liege_influence/README.md) is backlog (TBD). [M14 plundered_start](../../mod/M14-plundered_start/README.md) is out of scope for the first release. Neither has a feature folder.
@@ -86,7 +87,7 @@ The mod owns the raid timer. Files: `plan.lua`, `difficulty.lua`, `great_raid.lu
 Commands: `invasion_state`, `invasion_force_next`, `invasion_set_difficulty`, `invasion_set_size`, `invasion_set_roles`, `invasion_raid_squads`, `invasion_difficulty_state`, `invasion_pick_difficulty`, `invasion_clock_state`, `invasion_clock_set_days_left`, `invasion_great_state`, `invasion_great_force_start`, `invasion_great_skip_wait`, `invasion_subjugation_state`, `invasion_subjugation_force_next`.
 
 ### raid_widget (M02 iteration 05)
-One menu for all raid information. The layout is a cooked Widget Blueprint in `raidmenu_P.pak` (`ue/make_raid_widget.py`): a title, text lines and three difficulty buttons. Lua fills the texts (`lines.lua`) and polls the buttons. F8 opens and closes the menu (`config.raid_widget.toggle_key`). A click on a difficulty button picks the difficulty until the first raid or the first pick.
+One menu for all raid information. The layout is a cooked Widget Blueprint in `raidmenu_P.pak` (`ue/make_raid_widget.py`): a title, text lines and three difficulty buttons. Lua fills the texts (`lines.lua`) and polls the buttons. F8 opens and closes the menu (`config.raid_widget.toggle_key`); the key only sets a flag, the scheduler tick toggles (see [Shared patterns](#shared-patterns)). A click on a difficulty button picks the difficulty until the first raid or the first pick.
 Commands: `raid_widget_open`, `raid_widget_close`, `raid_widget_state`.
 
 ### raid_behavior (M03)
@@ -130,7 +131,7 @@ Two exclusive paths (Oppression, Prosperity). The nodes come from `data/tech_tre
 Commands: `tech_tree_state`, `tech_tree_choose_path`, `tech_tree_unlock`, `tech_tree_enact_law`, `tech_tree_repeal_law`, `tech_tree_set_vassal_policy`.
 
 ### tech_tree_widget (M12 iteration 02)
-The menu of the tech tree. `techmenu_P.pak` holds a cooked Widget Blueprint with a pool of node buttons on a canvas (`ue/make_tech_widget.py`). Lua labels, shows, hides, colours and moves the buttons from the nodes of `tech_tree`. F9 opens and closes it (`toggle_key` in config). A click calls `tech_tree`.
+The menu of the tech tree. `techmenu_P.pak` holds a cooked Widget Blueprint with a pool of node buttons on a canvas (`ue/make_tech_widget.py`). Lua labels, shows, hides, colours and moves the buttons from the nodes of `tech_tree`. F9 opens and closes it (`toggle_key` in config); the key only sets a flag, the scheduler tick toggles. Scenario `tech-tree-widget-key` presses the real F9 key (`--pak techmenu`). A click calls `tech_tree`.
 Commands: `tech_tree_widget_open`, `tech_tree_widget_close`, `tech_tree_widget_state`, `tech_tree_widget_press`.
 
 ## Shared patterns
@@ -138,6 +139,7 @@ Commands: `tech_tree_widget_open`, `tech_tree_widget_close`, `tech_tree_widget_s
 - Split of files: `rules.lua` is pure logic that fake-game tests run without the game. `world.lua` touches game objects. `init.lua` wires state, scheduler jobs and commands.
 - Season-change ticks (bandits, tribute) store the last handled season in ModState. A load must not repeat a tick.
 - Both widget features obey the rule: game objects only on the game thread, no `LoopAsync` of their own.
+- Key binds: a `RegisterKeyBind` callback runs on the input thread, not the game thread. It only sets a flag (`toggle_requested`); the scheduler tick on the game thread reads it and toggles the menu. Lua work in the callback raced with the game thread and crashed the game in `luaH_getint` (F9, issue #245, [f9-key-crash.md](../../mod/M12-tech_tree/implementation-notes/f9-key-crash.md)). The same applies to `PolicyMenu`.
 - A feature that needs a game fact not yet known has a spike note in `docs/mod/M<NN>-<feature>/implementation-notes/`. Read that note before you change the code.
 
 ## Tests

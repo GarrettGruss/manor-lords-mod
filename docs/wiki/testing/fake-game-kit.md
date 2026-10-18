@@ -3,7 +3,7 @@ type: Testing
 title: Fake game kit
 description: How Lua mods are tested without the game, using lupa and the fakegame kit (FakeGame, prelude.lua, clock, Manor Lords state), the test layers, the kit limits, and how to write a mod test.
 tags: [testing, lua, lupa, fakegame, mods]
-generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:15:30Z }
 sources:
   - resource: repo://harness/tests/fakegame/
   - resource: repo://harness/tests/test_fakegame_kit.py
@@ -15,6 +15,7 @@ sources:
   - resource: repo://harness/tests/battle_support.py
   - resource: repo://docs/harness/06-dev-loop-and-fixtures/implementation-notes/mock-kit.md
   - resource: repo://CLAUDE.md
+  - resource: repo://docs/mod/M12-tech_tree/implementation-notes/f9-key-crash.md
 ---
 
 # Fake game kit
@@ -121,7 +122,7 @@ uv run python -m unittest harness/tests/test_telemetry_mock.py -v
 ## What the kit does not cover
 
 - Lua version. `lupa` embeds Lua 5.5. The game uses 5.4. Do not use 5.5-only features (`global` declarations, read-only `for` variables). The kit cannot warn you.
-- Threads. Real races, locks and crashes are not modeled. Key bind callbacks and hooks run as game-thread code. This is a guess.
+- Threads. Real races, locks and crashes are not modeled. The kit runs key bind callbacks as game-thread code, but in the real game they run on the input thread ([f9-key-crash.md](../../mod/M12-tech_tree/implementation-notes/f9-key-crash.md)). A key callback that does Lua work passes here and can crash the game. Hooks are assumed to run on the game thread.
 - Wrappers. Hook arguments are always wrappers. The real game may mix them.
 - Not built: out parameters, `FName` objects, `TMap`, `TSet`, delegates, enums, `UClass` objects. Unknown properties read as nil, the real game may raise an error.
 - `FindFirstOf` returns nil when nothing is found. Some UE4SS versions return an invalid object.

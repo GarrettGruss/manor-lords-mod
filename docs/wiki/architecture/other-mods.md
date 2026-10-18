@@ -3,7 +3,7 @@ type: Architecture
 title: Harness and player mods
 description: The Lua mods in mod/ besides the Invasion Mod - harness mods (HarnessBoot, HarnessTelemetry, HarnessReload, HarnessPlace, HarnessActions, UEBridge), player mods (PolicyMenu, RefugeeWaves), stand-in fixtures and probes.
 tags: [lua, mods, harness, boot, stand-in]
-generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:15:30Z }
 sources:
   - resource: repo://mod/HarnessBoot/Scripts/main.lua
   - resource: repo://mod/HarnessTelemetry/Scripts/main.lua
@@ -82,7 +82,7 @@ A player mod must run without the harness. It needs only `ManorCore`. `HarnessCo
 
 ### PolicyMenu
 
-A menu that lists the policies of the player region. A click signs or unsigns one (spec 16). F7 opens and closes it.
+A menu that lists the policies of the player region. A click signs or unsigns one (spec 16). F7 opens and closes it. The key callback runs on the input thread, so it only sets a flag; the game-thread tick does the toggle (see [Key binds](invasion-features.md#shared-patterns)).
 
 - The layout is a cooked Widget Blueprint in `policymenu_P.pak`, built by `mod/PolicyMenu/ue/make_widget.py`. Lua fills labels, colors and visibility at run time.
 - The Blueprint has no graph. Lua polls `Button:IsPressed` every 40 ms. A press that ends with the mouse on the button is one click. It calls `Region:setPolicySigned` through `ManorCore`.

@@ -3,7 +3,7 @@ type: Workflow
 title: Scenario run
 description: How harness/run.py runs one scenario end to end through the phases preflight, deploy, launch, boot, scenario, collect and teardown, with its options, environment variables, locks, run cap and failure rules.
 tags: [harness, runs, launcher, phases]
-generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:15:30Z }
 sources:
   - resource: repo://harness/run.py
   - resource: repo://harness/runlib/runner.py
@@ -70,7 +70,7 @@ flowchart TD
 | scenario | scenario `LIMIT_S` | Gets the bridge client, takes the `start` screenshot, runs the scenario function. Stores `scenario_result` and writes `scenario.json`. |
 | collect | 60 s, always | `end` screenshot, copies `UE4SS.log`, crash reports and UE4SS dumps, lists the artifacts. |
 | teardown | 30 s + lock wait, always | Sets `game_stop_requested`, stops the game, copies `UE4SS.log` again, stops orphan `CrashReportClient`, removes the installed slot and the private appdata. |
-| remove paks | see `pak_phases.py` | Only with `--pak`. Runs after teardown, when the game no longer holds the pak. |
+| remove paks | 30 s, always | Only with `--pak`. Runs after teardown, when the game no longer holds the pak. With `--keep-open` it is replaced by a 5 s phase of the same name that keeps the paks in `~mods` and adds a note with the remove command (`keep_paks_phase`): the running game still loads pak assets on demand. |
 
 The default scenario limit is `DEFAULT_LIMIT_S` = 90 s. A limit above `LONG_LIMIT_S` (300 s) needs a written reason. The maximum is 13500 s (`runlib/scenario.py`).
 
@@ -78,7 +78,7 @@ The default scenario limit is `DEFAULT_LIMIT_S` = 90 s. A limit above `LONG_LIMI
 
 The game runs with a private `LOCALAPPDATA` (`runs/<id>/appdata`). The harness copies the needed save files into the user's real save folder under a free slot name, because the game loads from there (see [Safety rules](../concepts/safety-rules.md)). Before the run it snapshots the user's save files (`user_files`). Teardown removes the installed slot, compares the folder with the snapshot, and fails the phase with `the user's save files changed during the run` if they differ. See [Dev loop and fixtures](dev-loop-and-fixtures.md) for fixtures.
 
-With `--keep-open` teardown skips the stop and the save comparison. It notes the left appdata and the commands to clean up.
+With `--keep-open` teardown skips the stop and the save comparison. It notes the left appdata and the commands to clean up. Paks of the run also stay installed (see the table above).
 
 ### Launch and boot
 

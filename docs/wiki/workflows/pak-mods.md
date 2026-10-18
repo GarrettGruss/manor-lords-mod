@@ -3,7 +3,7 @@ type: Workflow
 title: Pak mods
 description: How the harness changes game data through a repacked pak (extract, patch rows, build, install, run with --pak, build the Invasion Mod pak) and the AES key rule.
 tags: [pak, data, repak, uassetgui, buildmod]
-generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:15:30Z }
 sources:
   - resource: repo://harness/tools/pakmod.py
   - resource: repo://harness/tools/modpak.py
@@ -78,7 +78,8 @@ flowchart LR
 - `install_paks` runs at the end of preflight. It records the name first, then copies `work_dir/out/<name>_P.pak` into `~mods` with `paks.install_pak`. The SHA-256 prefix goes to `config.json` under `environment.paks`.
 - `install_pak` refuses to overwrite a file that is not in the manifest `~mods/.harness-paks.json`. The manifest lists the files the harness wrote, with their hash.
 - `remove_paks_phase` (`paks-remove`, `always_run`) runs after teardown, so a crash or a timeout still removes the paks. It uses `remove_listed`, which ignores names not in the manifest. It never deletes a file that changed after install (it reports it). It fails the phase with a hint to run `pakmod.py remove --all`.
-- After a run killed by a timeout, or a `--keep-open` run, run `pakmod.py list`, close the game, and run `remove --all`.
+- A `--keep-open` run does not remove its paks. The game still runs and loads pak assets on demand (a widget on its first open); removing a pak under it hung the game on F9. The phase `paks-remove` then only adds a note. A later run with the same `--pak` replaces the file.
+- After a run killed by a timeout, or when you are done with a `--keep-open` game, close the game, run `pakmod.py list`, and run `remove --all`.
 
 ## Invasion Mod pak (`buildmod`)
 `pakmod.py buildmod InvasionMod` builds `mod/InvasionMod/paks/InvasionMod_P.pak` from the sources of all features. Logic is in `harness/tools/modpak.py` (pure, tools passed in as functions so tests need no game). The mod folder layout is in the [Invasion Mod structure](../architecture/invasion-mod.md) page.

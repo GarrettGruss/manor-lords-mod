@@ -1,6 +1,7 @@
 # Wiki update log
 
 ## 2026-10-18
+* **Update**: After merging `main` (PRs #246 to #248): key binds only set a flag and the game-thread tick toggles the menu, and a `--keep-open` run keeps its paks. Updated [Invasion Mod features](architecture/invasion-features.md), [Harness and player mods](architecture/other-mods.md), [Scenario run](workflows/scenario-run.md), [Pak mods](workflows/pak-mods.md) and [Fake game kit](testing/fake-game-kit.md).
 * **Update**: The wiki spec moved from `docs/harness/` into `.claude/skills/repo-wiki/spec/`, so the skill is separate from the harness. Updated [Specs, docs and project process](operations/docs-and-specs.md).
 * **Update**: The wiki script moved from `harness/tools/` into the `repo-wiki` skill folder, and PyYAML moved to the dev group. Updated [Source map](architecture/source-map.md), [Python tests and coverage](testing/python-tests.md), [Specs, docs and project process](operations/docs-and-specs.md) and [Install and environment](operations/install-and-environment.md).
 * **Update**: Moved every page to OKF v0.2 front matter: `sources` entries are `{ resource: repo://<path> }` mappings, and each page has `generated`. Added this log.
