@@ -11,8 +11,16 @@ function M.clamp_order(value)
     return math.max(0, math.min(100, value))
 end
 
-function M.debuffed_order(natural, approval, difficulty)
-    return M.clamp_order(natural - M.debuff(approval, difficulty))
+-- The approval bonus of the tech tree counts like real approval, up to 100.
+function M.effective_approval(approval, approval_bonus)
+    return math.min(100, approval + (approval_bonus or 0))
+end
+
+-- modifiers (optional, from the tech tree): order_bonus is added to the natural order, approval_bonus to the approval of the debuff.
+function M.debuffed_order(natural, approval, difficulty, modifiers)
+    modifiers = modifiers or {}
+    local debuff = M.debuff(M.effective_approval(approval, modifiers.approval_bonus), difficulty)
+    return M.clamp_order(natural + (modifiers.order_bonus or 0) - debuff)
 end
 
 -- The game rewrites Region.publicOrder from time to time. A value that differs from the last value
