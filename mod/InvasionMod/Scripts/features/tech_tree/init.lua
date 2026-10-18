@@ -33,8 +33,8 @@ local function slots() return rules.slots_for_level(last_level, config.slots_per
 local function totals() return rules.totals(tree, unlocked_ids(), last_garrison) end
 
 local function totals_text(values)
-    return string.format("%s|%s|%s|%s|%s|%s", values.order_bonus, values.approval_bonus, values.buy_back_multiplier,
-        values.militia_attack_multiplier, values.militia_defence_multiplier, values.manor_storage_bonus)
+    return string.format("%s|%s|%s|%s|%s|%s|%s", values.order_bonus, values.approval_bonus, values.buy_back_multiplier,
+        values.militia_attack_multiplier, values.militia_defence_multiplier, values.manor_storage_bonus, values.retinue_bonus)
 end
 
 -- Push the effects to the features that own the game values. Only a change is pushed.
@@ -45,7 +45,7 @@ local function apply_effects()
     last_applied = text
     bandits.set_modifiers({ order_bonus = values.order_bonus, approval_bonus = values.approval_bonus, buy_back_multiplier = values.buy_back_multiplier })
     unit_balance.set_militia(values.militia_attack_multiplier, values.militia_defence_multiplier)
-    manor_stronghold.set_modifiers({ storage_bonus = values.manor_storage_bonus })
+    manor_stronghold.set_modifiers({ storage_bonus = values.manor_storage_bonus, retinue_bonus = values.retinue_bonus })
     core.log.info(TAG, "TECH_TREE effects applied " .. text)
 end
 

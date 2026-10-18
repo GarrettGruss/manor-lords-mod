@@ -4,11 +4,14 @@
 local core = require("ManorCore")
 local manor = require("HarnessManor")
 local rules = require("features.manor_stronghold.rules")
+local retinue = require("features.manor_stronghold.retinue")
 local config = require("config").manor_stronghold
 
 local TAG = "InvasionMod.manor_stronghold"
 
 local bonus = { storage = 0 }
+
+retinue.install()
 
 local function apply_capacity()
     manor.CAPACITY = rules.storage_capacity(config.storage_base_capacity, bonus.storage)
@@ -20,7 +23,8 @@ apply_capacity()
 local function set_modifiers(values)
     bonus.storage = values.storage_bonus or 0
     apply_capacity()
-    core.log.info(TAG, string.format("MANOR_STRONGHOLD storage_capacity=%d", manor.CAPACITY))
+    retinue.set_bonus(values.retinue_bonus or 0)
+    core.log.info(TAG, string.format("MANOR_STRONGHOLD storage_capacity=%d retinue_bonus=%d", manor.CAPACITY, retinue.bonus()))
 end
 
 local function command_state()
@@ -39,12 +43,17 @@ end
 local function command_put(args) return checked(manor.manor_put({ good = args.good, amount = args.amount })) end
 local function command_take(args) return checked(manor.manor_take({ good = args.good, amount = args.amount })) end
 
+local function command_retinue_state() return retinue.read() end
+local function command_retinue_hire() return retinue.hire() end
+
 local has_commands, commands = pcall(require, "HarnessCommands")
 if has_commands then
     local goods_args = { good = { type = "integer", required = true }, amount = { type = "integer", required = true } }
     commands.register("InvasionMod.manor_state", command_state, {})
     commands.register("InvasionMod.manor_put", command_put, goods_args)
     commands.register("InvasionMod.manor_take", command_take, goods_args)
+    commands.register("InvasionMod.retinue_state", command_retinue_state, {})
+    commands.register("InvasionMod.retinue_hire", command_retinue_hire, {})
 end
 
 core.log.info(TAG, "feature manor_stronghold loaded: capacity " .. manor.CAPACITY)
