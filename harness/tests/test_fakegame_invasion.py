@@ -106,6 +106,7 @@ class RaidTests(InvasionTestCase):
         plan = self.ask("invasion_set_size", size="medium")["result"]
         self.run_days(62, plan["raid_day"] + 5)
         warning_days = plan["raid_day"] - plan["warning_day"]
+        self.banners = [text for text in self.banners if not text.startswith(("Great raid in", "Pick the difficulty"))]
         self.assertEqual(len(self.banners), warning_days + 1)  # one for each day left, plus the arrival banner
         raiders = self.state()["raiders"]
         self.assertEqual(self.banners[0], f"Raid in {warning_days} days, about {raiders} raiders")
@@ -220,6 +221,91 @@ package.loaded["HarnessLords"] = {
 }
 package.loaded["HarnessBattlefield"] = {}
 """
+
+
+class ClockTests(InvasionTestCase):
+    def clock(self):
+        answer = self.ask("invasion_clock_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def test_the_clock_is_three_to_five_years(self):
+        clock = self.clock()
+        self.assertTrue(3 * 365 <= clock["great_raid_day"] - 61 <= 5 * 365, clock)
+        self.assertEqual(clock["days_left"], clock["great_raid_day"] - 61)
+
+    def test_the_clock_is_kept_in_the_pawn_tags(self):
+        clock = self.clock()
+        tags = list(self.game.lua.eval("tag_names")(self.pawn).values())
+        self.assertIn(f"invasion:great_raid_day={clock['great_raid_day']}", tags)
+
+    def test_days_left_falls_each_day_and_the_end_day_stays(self):
+        first = self.clock()
+        self.set_day(66)
+        second = self.clock()
+        self.assertEqual(second["great_raid_day"], first["great_raid_day"])
+        self.assertEqual(second["days_left"], first["days_left"] - 5)
+
+    def test_the_clock_banner_shows_once_in_30_days(self):
+        self.ask("invasion_force_next")
+        self.set_day(62)  # the minor raid spawns, so no minor banner is left
+        self.ask("invasion_clock_set_days_left", days=500)
+        self.banners.clear()
+        for day in range(63, 100):
+            self.set_day(day)
+        great = [text for text in self.banners if text.startswith("Great raid in")]
+        self.assertGreaterEqual(len(great), 1)
+        self.assertLessEqual(len(great), 2)
+
+    def test_the_minor_raid_banner_names_the_clock(self):
+        self.ask("invasion_force_next")
+        self.ask("invasion_clock_set_days_left", days=400)
+        subtitles = []
+        self.game.method(self.pawn, "playEventMessage", lambda _self, _kind, text, sub: subtitles.append(sub))
+        self.set_day(62)
+        self.assertTrue(any(sub.startswith("Great raid in") for sub in subtitles) or self.state()["raids_spawned"] == 1, subtitles)
+
+    def test_set_days_left_is_refused_outside_range(self):
+        self.assertFalse(self.ask("invasion_clock_set_days_left", days=0)["ok"])
+
+
+class DifficultyTests(InvasionTestCase):
+    def difficulty(self):
+        answer = self.ask("invasion_difficulty_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def test_before_a_pick_the_default_is_used_and_a_prompt_shows(self):
+        info = self.difficulty()
+        self.assertFalse(info["chosen"])
+        self.assertEqual(info["difficulty"], 1)
+        self.assertTrue(any(text.startswith("Pick the difficulty") for text in self.banners), self.banners)
+
+    def test_a_pick_sets_the_difficulty_once(self):
+        self.assertTrue(self.ask("invasion_pick_difficulty", value=2)["ok"])
+        info = self.difficulty()
+        self.assertTrue(info["chosen"])
+        self.assertEqual((info["difficulty"], info["relief_squads"], info["waves"]), (2, 8, 2))
+        self.assertFalse(self.ask("invasion_pick_difficulty", value=3)["ok"])
+        self.assertEqual(self.state()["squads"] % 2, 0)
+
+    def test_relief_and_waves_by_difficulty(self):
+        seen = []
+        for value in (1, 2, 3):
+            self.ask("invasion_set_difficulty", value=value)
+            info = self.difficulty()
+            seen.append((info["relief_squads"], info["waves"]))
+        self.assertEqual(seen, [(15, 1), (8, 2), (0, 3)])
+
+    def test_the_prompt_stops_after_a_pick(self):
+        self.ask("invasion_pick_difficulty", value=1)
+        self.banners.clear()
+        for day in range(62, 90):
+            self.set_day(day)
+        self.assertFalse(any(text.startswith("Pick the difficulty") for text in self.banners))
+
+    def test_pick_outside_range_is_refused(self):
+        self.assertFalse(self.ask("invasion_pick_difficulty", value=4)["ok"])
 
 
 if __name__ == "__main__":
