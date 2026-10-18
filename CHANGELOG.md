@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M09.01 (#200): feature `refugees`. A lost vassal sends 30 to 60 percent of its families as a refugee wave to the home region (settleRegion steps of 5 families, tent camp). Commands `refugees_state`, `refugees_vassal_lost`, `refugees_send_wave`. Scenario `refugees-wave`.
 - Mod M08.01 (#197): feature `tribute`. At each season change each handed-over vassal pays goods (fish, timber) into the home stores: production (families x 20) x share (10 to 30 percent by loyalty). Commands `tribute_state`, `tribute_tick_now`. Scenario `tribute-payout`.
 - Mod M12.01 and M12.03 (#195): feature `tech_tree` of `InvasionMod`. Two exclusive paths (Oppression, Prosperity) built from `data/tech_tree/tree.json`; one node slot for each settlement level; 8 draft nodes with effects on Public Order, the Public Order approval, the buy-back price and the militia attack and defence. Commands `tech_tree_state`, `tech_tree_choose_path`, `tech_tree_unlock`. Scenarios `tech-tree-path-choice`, `tech-tree-militia-factor`. Spec `docs/mod/M12-tech_tree/iterations/01-path-choice.md`.
 - Mod M07.02 (#191): the `vassals` feature hands a region that the player claimed and settled to a new AI lord (friendly, builds). The mod declares peace when the lord declares war (config `keep_peace`) and flags a lord that does not build (`stalled`, 10 game days). Scenario `vassals-settled-vassal`. Notes `docs/mod/M07-vassals/implementation-notes/iteration-02-settled-vassal.md`.

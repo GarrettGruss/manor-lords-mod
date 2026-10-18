@@ -21,7 +21,8 @@
     { "name": "vassals", "requires": ["mod_state"], "ids": {} },
     { "name": "tribute", "requires": ["vassals", "raid_behavior"], "ids": {} },
     { "name": "raid_widget", "requires": ["invasion"], "ids": {} },
-    { "name": "tech_tree", "requires": ["bandits", "unit_balance", "mod_state"], "ids": {} }
+    { "name": "tech_tree", "requires": ["bandits", "unit_balance", "mod_state"], "ids": {} },
+    { "name": "refugees", "requires": ["vassals", "bandits"], "ids": {} }
   ],
   "gate_scenarios": []
 }

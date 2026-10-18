@@ -32,4 +32,9 @@ A lost vassal sends 30 to 60 percent of its population as refugees to the home r
 - `scenarios/refugees/refugee_wave.py` (`refugees-wave`).
 
 ## Result
-Not started.
+PASS in the real game (2026-10-18). Notes: `../implementation-notes/iteration-01-refugee-wave.md`.
+- `refugees-wave` on the fixture base: runs `20261018-080228-c98d` and `20261018-080519-52b3` pass (R1 to R5, R7): +5 families, 4 homeless (tent camp in the woods), approval 71 -> 61 in 4 game days, a second wave refused.
+- Fake game tests: `harness/tests/test_fakegame_refugees.py` (8 tests).
+- Finding: a new game start has all 5 families homeless and approval 50 that does not move, so R4 needs the fixture.
+- Deviation: waves come in steps of 5 families (one settleRegion call). A 2 family wave arrives as 5.
+- The wave stays active; iteration 02 ends it.
