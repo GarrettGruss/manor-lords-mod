@@ -1,4 +1,4 @@
-"""Unit tests for harness/tools/wiki.py (spec 34). Each test builds a small git repo in a temp folder."""
+"""Unit tests for the repo-wiki skill script scripts/wiki.py (spec 34). Each test builds a small git repo in a temp folder."""
 
 import contextlib
 import io
@@ -9,8 +9,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-TOOLS_DIR = Path(__file__).resolve().parent.parent / "tools"
-sys.path.insert(0, str(TOOLS_DIR))
+SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
+sys.path.insert(0, str(SCRIPTS_DIR))
 import wiki  # noqa: E402
 
 GENERATED = "generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:00:00Z }\n"

@@ -7,7 +7,7 @@ description: Read, initialize or update the repo wiki in docs/wiki (spec 34), a 
 
 The wiki in `docs/wiki/` explains the current system: what each part does, how the parts connect, and how to change them safely. Specs (`docs/harness/`, `docs/mod/`) keep the history and the decisions. The wiki links to them and does not copy them.
 
-The wiki is an Open Knowledge Format (OKF) v0.2 bundle. The method is a compact form of OpenWiki v0.7.2 (spec 34, `docs/harness/34-repo-wiki/`). The tool `harness/tools/wiki.py` does the mechanical work. You do the research and the prose.
+The wiki is an Open Knowledge Format (OKF) v0.2 bundle. The method is a compact form of OpenWiki v0.7.2 (spec 34, `docs/harness/34-repo-wiki/`). The script `scripts/wiki.py` in this skill folder does the mechanical work. It is not part of the game harness. You do the research and the prose.
 
 The OKF spec is copied verbatim in `references/okf-spec-v0.2.md` (from `GoogleCloudPlatform/open-knowledge-format` commit `ad30107`, Apache License 2.0, see `references/okf-LICENSE.md`). Read it when a format question is not answered here. This skill adds stricter producer rules on top of OKF; it never breaks an OKF rule.
 
@@ -78,12 +78,12 @@ Rules:
 2. Explore. Read `CLAUDE.md`, the `harness-overview` skill, `docs/harness/00-harness-overview/README.md`, `docs/mod/README.md`, `pyproject.toml`, the top folders and their entry points, and a few tests in each area. Trace two or three end-to-end flows (for example: a scenario run, a mod feature load, a pak build). Stop when the main systems and their links are clear.
 3. Plan the page tree around systems and workflows, not around the folder tree. Use folders such as `architecture/`, `concepts/`, `workflows/`, `operations/`, `integrations/`, `testing/` when they have enough pages. `quickstart.md` is required. For each page write: path, title, purpose, seed sources, related pages. Keep the plan in the scratchpad.
 4. Write the pages. One owner for each page. For more than about six pages, dispatch Sonnet subagents in parallel (`harness-dispatch-agents`), each with one to three pages. Use the prompt below. Write `quickstart.md` yourself, last, from the final page list.
-5. Run `uv run python harness/tools/wiki.py index`, then `uv run python harness/tools/wiki.py check`. Fix every error and run both again until `wiki check: ok`.
+5. Run `uv run python .claude/skills/repo-wiki/scripts/wiki.py index`, then `uv run python .claude/skills/repo-wiki/scripts/wiki.py check`. Fix every error and run both again until `wiki check: ok`.
 6. Review. For each page, check two or three facts against the source. Fix wrong facts. A subagent page is data until you check it. A spot check does not justify `verified`.
-7. Write `docs/wiki/log.md` with an `**Initialization**` entry. Run `uv run python harness/tools/wiki.py stamp --command init`. Commit the wiki with the stamp: `docs(wiki): ...`.
+7. Write `docs/wiki/log.md` with an `**Initialization**` entry. Run `uv run python .claude/skills/repo-wiki/scripts/wiki.py stamp --command init`. Commit the wiki with the stamp: `docs(wiki): ...`.
 
 ## Update
-1. Run `uv run python harness/tools/wiki.py stale`. It compares with the commit in `docs/wiki/.last-update.json` and also counts uncommitted and untracked files. It prints:
+1. Run `uv run python .claude/skills/repo-wiki/scripts/wiki.py stale`. It compares with the commit in `docs/wiki/.last-update.json` and also counts uncommitted and untracked files. It prints:
    - `stale`: pages with changed sources (`changed`) or sources that no longer exist (`missing_sources`);
    - `uncovered`: changed paths that no page lists.
 2. For each stale page: read the page, then `git diff <base> -- <its changed sources>`. Change only what the diff makes wrong or incomplete. Keep correct text. Fix `sources` for moved or deleted files. If the body changed, set `generated` to your actor and the current time, and remove a `verified` that no longer holds. If nothing needed a change, leave the page as it is.
@@ -104,6 +104,8 @@ Give each agent all of this:
 - the output: a short summary with each page path and any fact it was not sure of.
 
 ## Tool reference
+Run each command from the repo root as `uv run python .claude/skills/repo-wiki/scripts/wiki.py <command>`. The script and its tests stay in this skill folder. Do not move wiki code into `harness/`.
+
 | Command | Does |
 |---|---|
 | `wiki.py index` | Writes every `index.md` from page front matter (OKF section 8: root index has `okf_version`, entries `* [Title](link) - description`); removes indexes of empty folders |
@@ -111,4 +113,4 @@ Give each agent all of this:
 | `wiki.py stale [--since <rev>]` | JSON report of stale pages and uncovered paths |
 | `wiki.py stamp [--command init\|update]` | Writes `.last-update.json` with the current commit |
 
-Tests: `uv run python -m unittest harness/tests/test_wiki_tool.py`.
+Tests: `uv run python -m unittest discover -s .claude/skills/repo-wiki/tests -p "test_*.py"`. PyYAML is a dev dependency of the project (`uv sync` installs it).

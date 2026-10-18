@@ -17,19 +17,19 @@ The format is a compact form of OpenWiki v0.7.2 (MIT, `langchain-ai/openwiki`). 
 ## Format
 - Pages are Markdown files under `docs/wiki/`, in topic folders such as `architecture/`, `concepts/`, `workflows/`, `operations/`, `integrations/`, `testing/`. The entry page is `docs/wiki/quickstart.md`.
 - `docs/wiki/` is an Open Knowledge Format (OKF) v0.2 bundle. The spec is copied in `.claude/skills/repo-wiki/references/okf-spec-v0.2.md`. Review: `implementation-notes/okf-conformance.md`.
-- Each page starts with YAML front matter (parsed with PyYAML). This wiki requires `type`, `title`, `description` (one sentence), `tags`, `generated: { by, at }` and `sources` (a list of `{ resource: repo://<path> }` mappings; a folder ends with `/`; `https://` URLs are allowed). OKF optional fields (`verified`, `status`, `stale_after`) are checked when present. Other keys are allowed.
+- Each page starts with YAML front matter (parsed with PyYAML, a dev dependency). This wiki requires `type`, `title`, `description` (one sentence), `tags`, `generated: { by, at }` and `sources` (a list of `{ resource: repo://<path> }` mappings; a folder ends with `/`; `https://` URLs are allowed). OKF optional fields (`verified`, `status`, `stale_after`) are checked when present. Other keys are allowed.
 - `index.md` in each folder is generated (OKF section 8). Nobody edits it by hand. The root index has `okf_version: "0.2"` front matter.
 - `log.md` (OKF section 9) records each init and update, newest first.
 - Links are relative to the page. Root-absolute links (`/docs/...`) are errors, because GitHub resolves `/` from the repo root.
 - `docs/wiki/.last-update.json` holds the git commit that the wiki was last checked against.
 
 ## Plan
-1. Tool `harness/tools/wiki.py` with four subcommands:
+1. Script `.claude/skills/repo-wiki/scripts/wiki.py` with four subcommands. The wiki code lives in the skill folder, apart from the game harness (`harness/`):
    - `index`: write every `index.md` from the front matter of the pages.
    - `check`: validate front matter, source paths, links, heading anchors and indexes. Exit 1 with a list of errors.
    - `stale`: list the pages whose sources changed since the last update (committed and uncommitted changes), and changed paths that no page covers.
    - `stamp`: write `.last-update.json` with the current commit.
-2. Tests: `harness/tests/test_wiki_tool.py` (temp repos, no game).
+2. Tests: `.claude/skills/repo-wiki/tests/test_wiki.py` (temp repos, no game).
 3. Skill `.claude/skills/repo-wiki/SKILL.md`: read the wiki, init it, update it. Page jobs may go to Sonnet subagents, one page for each agent.
 4. Acceptance run: init the wiki over this repo with the skill. Notes in `implementation-notes/acceptance-run.md`.
 
@@ -42,8 +42,8 @@ All five acceptance criteria are met (2026-10-18). The init wrote 24 pages. See 
 - Should feature branches update the wiki in the same PR? Proposed: yes, when `stale` lists pages for the changed files.
 
 ## Acceptance criteria
-1. `uv run python -m unittest harness/tests/test_wiki_tool.py` passes.
+1. `uv run python -m unittest discover -s .claude/skills/repo-wiki/tests -p "test_*.py"` passes.
 2. An init run with the skill writes `docs/wiki/` with `quickstart.md` and pages that cover `mod/`, `harness/`, `mcp/` and the doc tracks.
-3. `uv run python harness/tools/wiki.py check` reports no errors on the result.
+3. `uv run python .claude/skills/repo-wiki/scripts/wiki.py check` reports no errors on the result.
 4. After `stamp`, `stale` lists no stale pages. With `--since` set to an older commit, it lists the pages whose sources changed.
 5. The skill and `harness-overview` name the tool and the wiki.

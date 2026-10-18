@@ -1,9 +1,9 @@
 # Maintains the repo wiki in docs/wiki (spec 34), an Open Knowledge Format (OKF) v0.2 bundle. The skill repo-wiki drives it.
 # Run from the repo root:
-#   uv run python harness/tools/wiki.py index        write every index.md
-#   uv run python harness/tools/wiki.py check        validate pages, links, indexes and log.md
-#   uv run python harness/tools/wiki.py stale [--since <rev>]
-#   uv run python harness/tools/wiki.py stamp [--command init|update]
+#   uv run python .claude/skills/repo-wiki/scripts/wiki.py index        write every index.md
+#   uv run python .claude/skills/repo-wiki/scripts/wiki.py check        validate pages, links, indexes and log.md
+#   uv run python .claude/skills/repo-wiki/scripts/wiki.py stale [--since <rev>]
+#   uv run python .claude/skills/repo-wiki/scripts/wiki.py stamp [--command init|update]
 import argparse
 import datetime
 import json

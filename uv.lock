@@ -515,7 +515,6 @@ dependencies = [
     { name = "mcp" },
     { name = "mss" },
     { name = "psutil" },
-    { name = "pyyaml" },
     { name = "streamlit" },
 ]
 
@@ -523,6 +522,7 @@ dependencies = [
 dev = [
     { name = "lupa" },
     { name = "pillow" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -530,7 +530,6 @@ requires-dist = [
     { name = "mcp", specifier = "==1.30.0" },
     { name = "mss", specifier = "==10.2.0" },
     { name = "psutil", specifier = "==7.2.2" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "streamlit", specifier = ">=1.66.0" },
 ]
 
@@ -538,6 +537,7 @@ requires-dist = [
 dev = [
     { name = "lupa", specifier = ">=2.8" },
     { name = "pillow", specifier = ">=12.3.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 
 [[package]]
