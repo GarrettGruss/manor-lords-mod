@@ -38,4 +38,22 @@ function M.count_used(regions, max_vassals)
     return count
 end
 
+-- The growth check is due when enough game days have passed since the handover.
+function M.growth_check_due(handed_day, today, days)
+    return handed_day > 0 and today + 1 - handed_day >= days -- handed_day is stored as day + 1
+end
+
+-- A lord that added fewer than min_new buildings stalled.
+function M.is_stalled(before, now, min_new)
+    return now - before < min_new
+end
+
+-- A relation tag that means war.
+function M.has_war_tag(tags)
+    for _, tag in ipairs(tags or {}) do
+        if tag == "at_war" then return true end
+    end
+    return false
+end
+
 return M
