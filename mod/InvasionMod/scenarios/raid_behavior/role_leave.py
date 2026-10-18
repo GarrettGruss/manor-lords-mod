@@ -8,10 +8,10 @@ from runlib.units import side_count
 
 NAME = "raid-behavior-role-leave"
 DESCRIPTION = "A role raid ends by loot, losses or time and no raider stays on the map."
-LIMIT_S = 900
+LIMIT_S = 1200
 SPEED = 3
 LONG_REASON = "A role raid leaves after up to 25 game days. At speed 3 this takes up to 300 s plus the start."
-DAY_LIMIT = 30  # config max_days is 25; A3 allows 40
+DAY_LIMIT = 40  # config max_days is 25, then the raid walks to a quiet spot
 REASONS = ("loot", "losses", "time")
 GRACE_DAYS = 3
 
@@ -59,10 +59,15 @@ def run(ctx) -> dict:
     added = side_count(ctx.actions.units_census(), "bandit") - bandits_before
     ctx.check("A4 no raider of the raid stays on the map", raid["living"] == 0 and added <= 0, [raid["living"], added])
     population = ctx.mod.command("InvasionMod.raid_behavior_state")["population"]
+    owners = [row.get("owner") or "" for row in ctx.actions.regions_state().get("regions", [])]
+    ctx.check("A7 the player still owns a region", any("MyPawn" in owner for owner in owners), owners)
+    if raid.get("lord_raid"):
+        ctx.check("A7 the plunder tick took goods", raid["plundered"] > 0, raid["plundered"])
     ctx.check("A6 the village still has people", population is not None and population > 0, population)
     ctx.metric("days", days)
-    ctx.metric("leave_reason", raid.get("leave_reason"))
+    ctx.log.info(f"leave reason: {raid.get('leave_reason')}")
     ctx.metric("looted_total", raid["looted_total"])
     ctx.metric("deaths", raid["deaths"])
     ctx.metric("carried_out", raid["carried_out"])
+    ctx.metric("plundered", raid["plundered"])
     return ctx.result()

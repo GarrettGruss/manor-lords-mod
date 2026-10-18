@@ -46,6 +46,11 @@ return {
             ranged_share = 0.25,             -- part of the squads that is ranged
             crossbow_share = { 0.0, 0.5, 0.75 },                 -- part of the ranged squads that is tier II, by difficulty
             melee_tier_weights = { { 70, 30, 0 }, { 40, 40, 20 }, { 20, 40, 40 } }, -- melee tier I, II, III, by difficulty
+            lord_army = {                    -- the raid is the army of an AI lord at war with the player (M03.02); false: bandit squads
+                enabled = true,
+                lord_name = "Hussite Raiders",
+                start_dy = -50000,           -- the army appears this far from the player pawn (HarnessLords limit 60000)
+            },
             raid_spawn_y = -88900,           -- map edge where spawnRaiders put raiders (spec 15 runs). x is the x of the player pawn.
         },
     },
@@ -58,10 +63,15 @@ return {
         exit_y = -85000,        -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
         fallback_good = 16,     -- good type for loot when the nearest store has no goods
         -- M03 iteration 02: a role raid (spawnArmy squads) leaves like a native raid. All values are TBD for playtests.
+        plunder = {                 -- the plunder tick of a lord raid: goods leave the stores while the army stands at the manor
+            battle_radius = 4000,   -- a raider counts as inside this far from the manor (the army stood within 1300 in run 20261018-035856-248b)
+            per_unit_day = 1,       -- goods taken for each raider inside, each game day. The goal is leave.loot_per_raider for each raider.
+        },
         leave = {
             enabled = true,
             loot_per_raider = 4,    -- leaves when the loot taken is this much for each raider of the start (native raiders carry 4 to 5)
             loss_share = 0.5,       -- leaves when this share of the raiders died
+            quiet_distance = 40000, -- a leaving raider is removed only this far from the player pawn (or at exit_y). User decision: no deletion in view.
             max_days = 25,          -- leaves this many game days after the spawn (native raids ended on day 12 to 19)
         },
     },

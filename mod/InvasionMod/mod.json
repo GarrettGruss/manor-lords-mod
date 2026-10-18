@@ -3,7 +3,7 @@
   "display_name": "Invasion Mode",
   "version": "0.1.0",
   "description": "Invasion mode for Manor Lords, built from separate features.",
-  "shared": ["ManorCore", "ModState", "HarnessBandits"],
+  "shared": ["ManorCore", "ModState", "HarnessBandits", "HarnessLords", "HarnessBattlefield"],
   "pak": null,
   "tested": {
     "game": "0.8.111",
