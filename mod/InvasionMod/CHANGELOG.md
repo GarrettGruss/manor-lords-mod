@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Mod M10.01 (#222): feature `finite_resources`. The iron deposit (400 units, TBD) is a mod ledger fed by the building production; when empty the mod sets the player production limit of the good to 0. Commands `finite_resources_state`, `finite_resources_test_set`, `_test_clear`. Scenario `finite-resources-iron`, probe `probe-deposits`.
 - Mod M12.04 (#217): laws and vassal policy gates in `tech_tree.json`. Six laws (Conscription, Forced Labor on Walls, Scorched Earth; Militia Charter, Trade Pacts, Pay Off Warbands), at most 2 in force; effects `tribute_share` and `vassal_loyalty`. `light` and `heavy` vassal policies need a path and a node. Commands `tech_tree_enact_law`, `tech_tree_repeal_law`, `tech_tree_set_vassal_policy`. Scenario `tech-tree-laws`.
 - Feature `unit_balance` (M05.04, #194): config `reach_min`, `reach_max`, `reach_att_add`, `veterancy`. Commands `unit_balance_set` takes `reach_att_add`, `vet_enabled`, `vet_att_per_tier`, `vet_def_per_tier`; the state shows `reach`, `veterans`, `vet_changes`.
 - Mod M08.02 (#214): protection. A raid on a vassal region that ends undefended (left by loot or time) lowers the vassal loyalty by 15; a defended one (destroyed, or left by losses) raises it by 5. `raid_behavior` gets `watch_end` and `target`. Command `tribute_test_raid_result`. Scenario `tribute-protection-and-loyalty`.
