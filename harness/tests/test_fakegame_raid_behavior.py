@@ -310,6 +310,40 @@ class RoleRaidLeaveTests(RaidBehaviorTestCase):
         self.assertFalse(any(unit.dead for unit in self.raiders()))
 
 
+class GreatRaidWinTests(RaidBehaviorTestCase):
+    """The great raid is won when the final army is dead. The relief army (player side) makes no units here."""
+
+    def setUp(self):
+        super().setUp()
+        self.game.method(self.engine, "spawnArmy", lambda _self, _point, names, owner, _company, _days: (
+            None if owner.isBandit is not True else self.make_raiders(len(names))))
+
+    def great(self):
+        answer = self.ask("invasion_great_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def next_day(self):
+        self.calendar.daysTotal = self.calendar.daysTotal + 1
+        self.game.advance(2)
+
+    def test_the_phase_is_won_after_the_final_army_is_dead(self):
+        self.ask("invasion_set_difficulty", value=1)
+        self.assertTrue(self.ask("invasion_great_force_start")["ok"])
+        self.next_day()
+        for _ in range(4):
+            self.ask("invasion_great_skip_wait")
+            self.next_day()
+        self.assertEqual(self.great()["phase"], 2)
+        self.next_day()
+        self.assertEqual(self.great()["phase"], 2)  # the final army lives
+        for unit in self.units:
+            unit.dead = True
+        self.game.advance(2)
+        self.next_day()
+        self.assertEqual(self.great()["phase"], 3)
+
+
 class LordRaidRulesTests(RaidBehaviorTestCase):
     def run_lua(self, code):
         return self.game.lua.eval(f"(function() local rules = require('features.raid_behavior.rules'); {code} end)")()

@@ -77,7 +77,7 @@ end
 -- Why a role raid must leave now, or nil. Only role raids (spawnArmy) are checked: native raids leave on their own.
 -- `leave` has loot_per_raider, loss_share and max_days. Loot taken counts what raiders carry, returned and carried out.
 function M.is_subjugation(raid)
-    return raid.lord ~= nil and raid.lord.kind == "subjugation"
+    return raid.lord ~= nil and (raid.lord.kind == "subjugation" or raid.lord.kind == "great") -- both stay until beaten
 end
 
 function M.leave_reason(raid, day, leave)

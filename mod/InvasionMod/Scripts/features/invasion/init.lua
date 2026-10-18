@@ -7,6 +7,7 @@ local plan_rules = require("features.invasion.plan")
 local great_raid = require("features.invasion.great_raid")
 local difficulty_rules = require("features.invasion.difficulty")
 local target_rules = require("features.invasion.target")
+local relief = require("features.invasion.relief")
 local lord_raid = require("features.invasion.lord_raid")
 local all_config = require("config")
 local config = all_config.invasion
@@ -32,6 +33,10 @@ state:register("sub_warning_day", 0, "integer")
 state:register("sub_squads", 0, "integer")
 state:register("sub_seed", 0, "integer")
 state:register("sub_spawned", 0, "integer")
+state:register("gr_phase", 0, "integer")       -- great raid phase, see great_raid.PHASE
+state:register("gr_wave", 0, "integer")
+state:register("gr_last_day", 0, "integer")
+state:register("gr_seed", 0, "integer")
 state:register("difficulty_chosen", 0, "integer") -- 1 after the player picked the difficulty
 state:register("last_prompt_day", 0, "integer")
 state:register("great_raid_day", 0, "integer") -- absolute game day when the great raid starts (0: the clock has not started)
@@ -170,6 +175,86 @@ local function spawn_raid(today, kind)
     core.show_banner(kind == "subjugation" and "The subjugation raid is here" or "Raiders are here", string.format("About %d raiders", planned_units(kind)))
 end
 
+-- One army group of the great raid (a wave or the final army): a lord army of the template list, watched like a raid.
+-- Returns true, or false and a message. No fallback squads: a retry on the next daily step is better than a double raid.
+local function spawn_great_army(today, list, label, final)
+    local tokens = {}
+    for index, watcher in ipairs(spawn_watchers) do tokens[index] = watcher.before() end
+    local ok, problem, partial = lord_raid.start(list, roles.lord_army)
+    if not ok then
+        -- Armies exist already (a partial spawn): bandit squads on top would make a double army. The caller must not retry.
+        if partial then return false, tostring(problem), true end
+        core.log.error(TAG, "great raid lord army failed, the squads are bandit squads: " .. tostring(problem))
+        local centre = spawn_centre()
+        local spawned, ids = core.spawn_squads(list, { x = centre.x, y = roles.raid_spawn_y, z = centre.z })
+        if not spawned then return false, tostring(ids) end
+        local squads = {}
+        for index, name in ipairs(list) do squads[index] = { id = ids[index] or false, template = name } end
+        problem = { squads = squads, anchor = { x = centre.x, y = centre.y }, fallback = true }
+    end
+    problem.kind = "great"
+    problem.final = final == true
+    raid_squads = problem.squads
+    state:set("raids_spawned", state:get("raids_spawned") + 1)
+    for index, watcher in ipairs(spawn_watchers) do
+        core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = #list, roles = true, lord_raid = problem, kind = "great" })
+    end
+    core.log.info(TAG, string.format("INVASION great %s day=%d squads=%d raiders=%d composition=%s", label, today, #list,
+        plan_rules.expected_units(list, roles.template_units), plan_rules.join(list)))
+    return true
+end
+
+local function great_wave_list()
+    if state:get("gr_seed") == 0 then state:set("gr_seed", math.random(1, plan_rules.MAX_SEED)) end
+    local seed = state:get("gr_seed") + state:get("gr_wave") + 1
+    return plan_rules.composition(clock_config.wave_squads, state:get("difficulty"), roles, plan_rules.lcg(seed))
+end
+
+local function spawn_great_wave(today)
+    local wave = state:get("gr_wave") + 1
+    local ok, problem, partial = spawn_great_army(today, great_wave_list(), "wave " .. wave, false)
+    if not ok and not partial then return core.log.error(TAG, "great raid wave failed, the next daily step tries again: " .. problem) end
+    if not ok then core.log.error(TAG, "great raid wave failed after a partial spawn, the wave counts as spawned: " .. problem) end
+    state:set("gr_wave", wave)
+    state:set("gr_last_day", today)
+    state:set("gr_phase", great_raid.PHASE.waves)
+    core.show_banner(string.format("Great raid: wave %d of %d", wave, difficulty_rules.wave_count(state:get("difficulty"))), "Hold the village until the relief army comes")
+end
+
+local function spawn_relief_and_final(today)
+    local count = difficulty_rules.relief_squads(state:get("difficulty"), clock_config.relief_full_squads)
+    local centre = spawn_centre()
+    if centre == nil then return core.log.error(TAG, "no player pawn: the relief army is not spawned") end
+    local final_list = plan_rules.composition(clock_config.final_squads, clock_config.final_tier_difficulty, roles,
+        plan_rules.lcg(state:get("gr_seed") + 1000))
+    local ok, problem, partial = spawn_great_army(today, final_list, "final", true)
+    if not ok and not partial then return core.log.error(TAG, "great raid final army failed, the next daily step tries again: " .. problem) end
+    if not ok then core.log.error(TAG, "great raid final army failed after a partial spawn, no retry: " .. problem) end
+    state:set("gr_phase", great_raid.PHASE.final)
+    local spot = { x = centre.x + clock_config.relief_offset.x, y = centre.y + clock_config.relief_offset.y, z = centre.z }
+    local sent, why = relief.spawn(great_raid.relief_templates(count, clock_config.relief_templates), spot)
+    core.log.info(TAG, string.format("INVASION great relief day=%d squads=%d spawned=%s%s", today, count, tostring(sent), sent and "" or (" problem=" .. tostring(why))))
+    core.show_banner("The relief army has come", string.format("%d squads of the liege. The final battle begins", count))
+end
+
+local function check_great_win(today)
+    local ok, behavior = pcall(require, "features.raid_behavior.init")
+    if not ok or behavior.final_raid_ended == nil then return end
+    if behavior.final_raid_ended() ~= true then return end
+    state:set("gr_phase", great_raid.PHASE.won)
+    core.log.info(TAG, string.format("INVASION great won day=%d", today))
+    core.show_banner("The great raid is beaten", "The village stands")
+end
+
+local function great_step(today)
+    local phase = state:get("gr_phase")
+    if phase == great_raid.PHASE.won then return end
+    if phase == great_raid.PHASE.final then return check_great_win(today) end
+    local action = great_raid.next_action({ phase = phase, wave = state:get("gr_wave"), waves = difficulty_rules.wave_count(state:get("difficulty")),
+        last_day = state:get("gr_last_day"), today = today, due = great_raid.is_due(state:get("great_raid_day"), today) }, clock_config)
+    if action == "wave" then spawn_great_wave(today) elseif action == "relief" then spawn_relief_and_final(today) end
+end
+
 local function clock_days_left(today)
     return great_raid.days_left(state:get("great_raid_day"), today)
 end
@@ -237,6 +322,7 @@ local function clock_step(today)
     if state:get("great_raid_day") == 0 then start_clock(today) end
     local due = state:get("last_clock_banner_day") + clock_config.banner_every_days <= today
     if due and not great_raid.is_due(state:get("great_raid_day"), today) then show_clock_banner(today) end
+    great_step(today)
 end
 
 local function prompt_step(today)
@@ -333,6 +419,33 @@ local function command_subjugation_force_next()
     return command_subjugation_state()
 end
 
+local function command_great_state()
+    local today = current_day()
+    return { day = today, phase = state:get("gr_phase"), wave = state:get("gr_wave"), waves = difficulty_rules.wave_count(state:get("difficulty")),
+        last_day = state:get("gr_last_day"), great_raid_day = state:get("great_raid_day"),
+        relief_squads = difficulty_rules.relief_squads(state:get("difficulty"), clock_config.relief_full_squads),
+        wave_squads = clock_config.wave_squads, final_squads = clock_config.final_squads, raids_spawned = state:get("raids_spawned") }
+end
+
+-- For tests: the clock ends today.
+local function command_great_force_start()
+    local today = current_day()
+    if today == nil then return nil, "the game day is not available" end
+    if state:get("gr_phase") ~= great_raid.PHASE.clock then return nil, "the great raid has started already" end
+    state:set("great_raid_day", today)
+    last_handled_day = nil
+    return command_great_state()
+end
+
+-- For tests: the wait for the next wave or the relief army is over now.
+local function command_great_skip_wait()
+    local today = current_day()
+    if today == nil then return nil, "the game day is not available" end
+    state:set("gr_last_day", today - 1000)
+    last_handled_day = nil
+    return command_great_state()
+end
+
 local function command_difficulty_state()
     local difficulty = state:get("difficulty")
     return { difficulty = difficulty, chosen = state:get("difficulty_chosen") == 1,
@@ -409,6 +522,9 @@ if has_commands then
     commands.register("InvasionMod.invasion_raid_squads", command_raid_squads, {})
     commands.register("InvasionMod.invasion_set_roles", command_set_roles, { enabled = { type = "boolean", required = true } })
     commands.register("InvasionMod.invasion_state", command_state, {})
+    commands.register("InvasionMod.invasion_great_state", command_great_state, {})
+    commands.register("InvasionMod.invasion_great_force_start", command_great_force_start, {})
+    commands.register("InvasionMod.invasion_great_skip_wait", command_great_skip_wait, {})
     commands.register("InvasionMod.invasion_subjugation_state", command_subjugation_state, {})
     commands.register("InvasionMod.invasion_subjugation_force_next", command_subjugation_force_next, {})
     commands.register("InvasionMod.invasion_difficulty_state", command_difficulty_state, {})
