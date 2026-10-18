@@ -103,6 +103,7 @@ return {
         armored_def_min = 10,          -- a unit with def below this is unarmored (Brigands about 3, militia 5 to 7, mail 10, retinue 62)
         unarmored_def_factor = 0.0,    -- new def = def x factor, for an unarmored unit
         unarmored_block_factor = 0.0,  -- new block = block x factor
+        militia_templates = { "militiaFoot", "spearMilitia", "bowMilitia", "crossbowMilitia" }, -- units of the player with these templates get the M12 factors
     },
     -- M04 bandits, iteration 01. First guesses from M00 decisions 11 to 15 and 28 to 30.
     bandits = {
@@ -161,5 +162,12 @@ return {
         goal = 2,                -- EGameGoals Endless (spec 26): a claim does not end the game
         max_vassals = 3,         -- M00: 2 or 3 vassals in the middle game
         loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
+    },
+    -- M12 tech_tree. The node data is in data/tech_tree/tree.json. Values are TBD for playtests.
+    tech_tree = {
+        enabled = true,
+        poll_ms = 2000,              -- real time between two looks at the settlement level and the garrison
+        slots_per_level = 1,         -- decision 24: one node slot for each settlement level
+        tree_file = "data/tech_tree/tree.json", -- relative to the mod folder
     },
 }
