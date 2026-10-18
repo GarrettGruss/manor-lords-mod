@@ -47,6 +47,7 @@ if config.seed then math.randomseed(config.seed) else math.randomseed(os.time())
 local last_handled_day = nil -- the day of the last daily step in this Lua state
 local raid_squads = {} -- { id, template } of the squads of the last raid made by spawnArmy
 local use_roles = roles.enabled -- the command invasion_set_roles changes it for one session
+local vassal_provider = function() return {} end -- returns the target regions of the vassals (M08 registers it)
 local spawn_watchers = {} -- { before, after } pairs from other features (M03 tracks the raid)
 
 ---------------------------------------------------------------------------------------------
@@ -165,7 +166,7 @@ local function spawn_raid(today, kind)
     state:set("raids_spawned", state:get("raids_spawned") + 1)
     if kind == "subjugation" then state:set("sub_spawned", 1) end
     local home = core.player_region()
-    local target = target_rules.pick(kind, home and core.region_row(home).region or "home", {}, math.random) -- vassal targets: TBD for M07
+    local target = target_rules.pick(kind, home and core.region_row(home).region or "home", vassal_provider(), math.random)
     for index, watcher in ipairs(spawn_watchers) do
         core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = squads, roles = use_roles, lord_raid = lord_info, kind = kind, target = target })
     end
@@ -562,4 +563,9 @@ local function watch_spawn(before, after)
     spawn_watchers[#spawn_watchers + 1] = { before = before, after = after }
 end
 
-return { state = state, watch_spawn = watch_spawn, raid_info = raid_info, pick_difficulty = pick_difficulty }
+-- Another feature registers fn(). It returns a list of vassal region names that a subjugation raid may target.
+local function set_vassal_provider(fn)
+    vassal_provider = fn
+end
+
+return { state = state, set_vassal_provider = set_vassal_provider, watch_spawn = watch_spawn, raid_info = raid_info, pick_difficulty = pick_difficulty }
