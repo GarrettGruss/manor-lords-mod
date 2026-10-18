@@ -24,8 +24,12 @@ class UnitBalanceTestCase(unittest.TestCase):
         self.game.load_mod(self.mod_name)
         self.game.advance(2)
 
-    def make_unit(self, defence, block, dead=False, att=None, pierce=0.0):
+    def make_unit(self, defence, block, dead=False, att=None, pierce=0.0, reach=None, experience=None):
         extra = {} if att is None else {"att": att, "armorPierce": pierce}
+        if reach is not None:
+            extra["range"] = reach
+        if experience is not None:
+            extra["combatExperience"] = experience
         unit = self.game.obj("SMUnit", dead=dead, **{"def": defence}, block=block, **extra)
         number = 5000 + len(self.units)
         self.game.method(unit, "GetAddress", lambda _self, number=number: number)
@@ -126,6 +130,78 @@ class WeaponTests(UnitBalanceTestCase):
 
     def test_a_bad_weapon_factor_is_refused(self):
         self.assertFalse(self.ask("unit_balance_set", att_factor=11)["ok"])
+
+
+class ReachTests(UnitBalanceTestCase):
+    def test_a_pike_unit_gets_more_att(self):
+        unit = self.make_unit(7.0, 7.0, att=4.0, reach=120.0)
+        state = self.apply()
+        self.assertEqual((unit["att"], unit["def"], state["reach"]), (5.0, 0.0, 1))
+
+    def test_a_short_weapon_keeps_its_att(self):
+        unit = self.make_unit(7.0, 7.0, att=5.0, reach=65.0)
+        self.apply()
+        self.assertEqual(unit["att"], 5.0)
+
+    def test_reach_and_armor_add_up_and_off_restores(self):
+        unit = self.make_unit(17.0, 8.0, att=4.0, reach=120.0)
+        self.apply()
+        self.assertEqual(unit["att"], 7.0)
+        self.ask("unit_balance_set", enabled=False)
+        self.assertEqual((unit["att"], unit["armorPierce"]), (4.0, 0.0))
+
+    def test_reach_can_be_switched_off_by_a_zero_value(self):
+        self.ask("unit_balance_set", reach_att_add=0)
+        unit = self.make_unit(7.0, 7.0, att=4.0, reach=120.0)
+        self.apply()
+        self.assertEqual(unit["att"], 4.0)
+
+
+class VeterancyTests(UnitBalanceTestCase):
+    def test_experience_scales_att_and_def_by_tier(self):
+        unit = self.make_unit(62.0, 60.0, att=10.0, experience=3.5)
+        state = self.apply()
+        self.assertAlmostEqual(unit["att"], 11.2)
+        self.assertAlmostEqual(unit["def"], 62.0 * 1.12)
+        self.assertEqual(state["veterans"], 1)
+
+    def test_the_tier_is_capped(self):
+        unit = self.make_unit(62.0, 60.0, att=10.0, experience=99.0)
+        self.apply()
+        self.assertAlmostEqual(unit["att"], 12.0)
+
+    def test_a_rise_in_experience_changes_only_the_difference(self):
+        unit = self.make_unit(62.0, 60.0, att=10.0, experience=1.0)
+        self.apply()
+        unit.combatExperience = 2.0
+        self.apply()
+        self.assertAlmostEqual(unit["att"], 10.8)
+        self.apply()
+        self.assertAlmostEqual(unit["att"], 10.8)
+
+    def test_a_unit_without_experience_is_unchanged(self):
+        unit = self.make_unit(62.0, 60.0, att=10.0, experience=0.4)
+        self.assertEqual(self.apply()["veterans"], 0)
+        self.assertEqual(unit["att"], 10.0)
+
+    def test_veterancy_off_scales_back_and_the_rule_off_restores(self):
+        unit = self.make_unit(62.0, 60.0, att=10.0, experience=2.0)
+        self.apply()
+        self.ask("unit_balance_set", vet_enabled=False)
+        self.assertAlmostEqual(unit["att"], 10.0)
+        self.assertAlmostEqual(unit["def"], 62.0)
+        self.apply()
+        self.assertAlmostEqual(unit["att"], 10.0)
+
+    def test_veterancy_does_not_make_the_base_rules_run_twice(self):
+        unit = self.make_unit(17.0, 8.0, att=4.0, experience=2.0)
+        self.apply()
+        self.apply()
+        self.assertAlmostEqual(unit["att"], 6.0 * 1.08)
+
+    def test_a_bad_veterancy_value_is_refused(self):
+        self.assertFalse(self.ask("unit_balance_set", vet_att_per_tier=2)["ok"])
+        self.assertFalse(self.ask("unit_balance_set", vet_enabled="yes")["ok"])
 
 
 class SwitchTests(UnitBalanceTestCase):

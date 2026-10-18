@@ -2,7 +2,7 @@
 
 Options (run.py --env): UB_PLAYER (template, default spearMilitia), UB_PLAYER_SQUADS (default 1), UB_ENEMY (default Brigands),
 UB_ENEMY_SQUADS (default 2), UB_RULE = on (default) or off, UB_BLOCK_FACTOR (number, default: the config value),
-UB_XP (experience written on the player squads, default 0), UB_VET = on (default) or off (the veterancy rule, when it exists).
+UB_XP (experience written on the player squads, default 0), UB_PLAYER_STATS ("def=17.2,block=40": live writes on the player group, a lever probe), UB_REACH_ADD (att added to pike units), UB_VET_PER_TIER (att and def scale of a veterancy tier), UB_VET = on (default) or off (the veterancy rule, when it exists).
 The rule is off while the groups spawn and the experience is written. Then the settings are applied and one pass runs.
 """
 
@@ -29,6 +29,12 @@ def settings(ctx, rule: bool) -> dict:
         args["block_factor"] = float(block)
     if on_off(ctx, "UB_VET", "on") is False:
         args["vet_enabled"] = False
+    for option, name in (("UB_REACH_ADD", "reach_att_add"), ("UB_VET_PER_TIER", "vet_att_per_tier")):
+        value = ctx.variant_option(option, "")
+        if value:
+            args[name] = float(value)
+            if name == "vet_att_per_tier":
+                args["vet_def_per_tier"] = float(value)
     return args
 
 
@@ -47,6 +53,9 @@ def run(ctx) -> dict:
         if experience > 0:
             for squad in made["answer"]["squads"]:
                 ctx.actions.set_squad_experience(squad["id"], experience)
+        for pair in filter(None, ctx.variant_option("UB_PLAYER_STATS", "").split(",")):
+            field, value = pair.split("=")
+            ctx.actions.set_unit_stat("player", field, float(value))
         ctx.mod.command("InvasionMod.unit_balance_set", **settings(ctx, rule))
         state = ctx.mod.command("InvasionMod.unit_balance_apply")
         ctx.log.info(f"settings: {state}")
