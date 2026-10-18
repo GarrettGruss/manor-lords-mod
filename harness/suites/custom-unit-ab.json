@@ -1,0 +1,23 @@
+{
+  "name": "custom-unit-ab",
+  "scenarios": [
+    {
+      "scenario": "combat-levers",
+      "repeat": 5,
+      "variants": [
+        {"name": "crossbow-vs-brigands", "paks": ["handcannon"], "env": {"LEVER_PLAYER": "crossbowMilitia"}},
+        {"name": "handcannon-vs-brigands", "paks": ["handcannon"], "env": {"LEVER_PLAYER": "handCannon"}}
+      ]
+    },
+    {
+      "scenario": "combat-levers",
+      "repeat": 5,
+      "variants": [
+        {"name": "crossbow-vs-crossbow", "paks": ["handcannon"], "env": {"LEVER_PLAYER": "crossbowMilitia", "LEVER_BANDIT": "crossbowMilitia"}},
+        {"name": "handcannon-vs-crossbow", "paks": ["handcannon"], "env": {"LEVER_PLAYER": "handCannon", "LEVER_BANDIT": "crossbowMilitia"}}
+      ]
+    }
+  ],
+  "time_budget_s": 3600,
+  "flake_retries": 1
+}

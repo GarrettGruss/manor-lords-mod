@@ -35,6 +35,7 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 - A mod pak for a release stays in `mod/<Name>/paks/` and is named in `mod.json` (skill `harness-release`). A committed pak over 10 MB gives a release warning.
 - Spec 18 notes: a pak can add `buildingStats` rows cloned from the tent and retarget a row to another blueprint class (`docs/harness/18-composite-buildings/implementation-notes/composite-pak.md`). Spike #65: `harness/tools/s65_edit_json.py` clones a row (`manor-module-pak.md` in spec 12).
 - After a run killed by a timeout, check `pakmod.py list`.
+- New rows in `DT_UnitTemplates` and `DT_Items` are proven (spec 29). `harness/tools/clone_table_row.py <json> <source row> <new row> --set f=v --array f=1,2` clones a row. `fromjson --to <name>` writes a flat file name: move the files to the full game path in the work folder before `build`. A `--keep-open` run with `--pak` cannot remove the pak; stop the game and run `pakmod.py remove --all`.
 - Only number fields in one table are proven. Test strings, new rows and other tables with a round trip first.
 
 ## Widget pak (UI, spec 16)
