@@ -155,5 +155,113 @@ class RegistryTests(VassalsTestCase):
         self.assertFalse(self.ask("vassals_set_loyalty", slot=2, value=10)["ok"])
 
 
+LORD_STUB = """
+SPAWNED = {}
+RECEIVED = {}
+local old = package.loaded["HarnessLords"]
+old.spawn_ai_lord = function(request)
+    SPAWNED[#SPAWNED + 1] = request.name
+    return { ok = true, lord = #SPAWNED }
+end
+old.lord_relations = function() return { ok = true } end
+old.lord_start_ai = function() return { ok = true } end
+old.lord_receive_region = function(request)
+    RECEIVED[#RECEIVED + 1] = request.lord .. ":" .. request.region
+    return { ok = true }
+end
+"""
+
+
+class HandoverTests(VassalsTestCase):
+    def setUp(self):
+        super().setUp()
+        self.counts = {}
+        self.game.exec(LORD_STUB)
+        self.game.method(self.pawn, "GetAddress", lambda _self: 1)
+        self.home = self.make_region("Home", True, 12)
+        self.regions = [self.home]
+        self.engine.regions = self.game.array(self.regions)
+        self.game.advance(8)
+
+    def make_region(self, name, settled, buildings):
+        region = self.game.obj("Region", ownerPawn=self.pawn, isSettled=settled)
+        self.game.method(region, "GetFName", lambda _self, name=name: self.game.text(name))
+        self.counts[name] = buildings
+        self.game.method(region, "GetBuildings", lambda _self, name=name: self.game.array([self.game.struct()] * self.counts[name]))
+        return region
+
+    def add_region(self, name, settled, buildings=0):
+        region = self.make_region(name, settled, buildings)
+        self.regions.append(region)
+        self.engine.regions = self.game.array(self.regions)
+        return region
+
+    def test_the_first_scan_picks_the_region_with_most_buildings_as_home(self):
+        self.assertEqual(self.state()["home_region"], "Home")
+
+    def test_an_unsettled_claim_is_registered_but_not_handed_over(self):
+        self.add_region("Eichenhau", False)
+        self.game.advance(8)
+        state = self.state()
+        self.assertEqual(state["count"], 1)
+        self.assertEqual(state["vassals"][0]["lord"], "none")
+        self.assertEqual(self.game.exec("return #SPAWNED"), 0)
+
+    def test_a_settled_claim_is_handed_to_a_new_lord(self):
+        region = self.add_region("Eichenhau", False)
+        self.game.advance(8)
+        region.isSettled = True
+        self.game.advance(8)
+        self.assertEqual(self.state()["vassals"][0]["lord"], "Aldric")
+        self.assertEqual(self.game.exec('return SPAWNED[1] .. " " .. RECEIVED[1]'), "Aldric 1:Eichenhau")
+
+    def test_the_handover_runs_once(self):
+        self.add_region("Eichenhau", True)
+        self.game.advance(30)
+        self.assertEqual(self.game.exec("return #RECEIVED"), 1)
+        self.assertEqual(self.game.exec("return #SPAWNED"), 1)
+
+    def test_two_regions_get_two_lords(self):
+        self.add_region("Eichenhau", True)
+        self.add_region("Goldhof", True)
+        self.game.advance(30)
+        self.assertEqual(self.game.exec("return SPAWNED[1] .. SPAWNED[2]"), "AldricBertram")
+
+    def test_a_failed_handover_stops_after_the_attempt_limit(self):
+        self.game.exec('package.loaded["HarnessLords"].lord_receive_region = function() RECEIVED[#RECEIVED + 1] = "x"; return { ok = false, error = "boom" } end')
+        self.add_region("Eichenhau", True)
+        self.game.advance(80)
+        state = self.state()
+        self.assertEqual(state["vassals"][0]["lord"], "none")
+        self.assertIn("boom", state["handover_errors"]["1"])
+        self.assertEqual(self.game.exec("return #RECEIVED"), 3)
+
+    def hand_over_and_wait(self, name="Eichenhau", buildings=4):
+        self.add_region(name, True, buildings)
+        self.game.advance(10)
+        return self.state()
+
+    def test_a_lord_that_builds_nothing_is_flagged_after_ten_days(self):
+        self.hand_over_and_wait()
+        self.calendar.daysTotal = self.calendar.daysTotal + 11
+        self.game.advance(10)
+        row = self.state()["vassals"][0]
+        self.assertTrue(row["stalled"])
+        self.assertIn("invasion:vassal1_stalled=true", self.tags())
+
+    def test_a_lord_that_builds_is_not_flagged(self):
+        self.hand_over_and_wait()
+        self.counts["Eichenhau"] = 14
+        self.calendar.daysTotal = self.calendar.daysTotal + 11
+        self.game.advance(10)
+        self.assertFalse(self.state()["vassals"][0]["stalled"])
+
+    def test_no_check_before_ten_days(self):
+        self.hand_over_and_wait()
+        self.calendar.daysTotal = self.calendar.daysTotal + 5
+        self.game.advance(10)
+        self.assertFalse(self.state()["vassals"][0]["stalled"])
+
+
 if __name__ == "__main__":
     unittest.main()

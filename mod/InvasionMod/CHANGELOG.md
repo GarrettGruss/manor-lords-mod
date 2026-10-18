@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Mod M07.02 (#191): the `vassals` feature hands a region that the player claimed and settled to a new AI lord (friendly, builds). The mod declares peace when the lord declares war (config `keep_peace`) and flags a lord that does not build (`stalled`, 10 game days). Scenario `vassals-settled-vassal`. Notes `docs/mod/M07-vassals/implementation-notes/iteration-02-settled-vassal.md`.
 - Mod M07.01 (#187): feature `vassals` of `InvasionMod`. The mod writes goals = Endless on every start and load (a claim no longer ends the game) and keeps a 3 slot vassal registry with loyalty in ModState. Commands `vassals_state`, `vassals_claim`, `vassals_set_loyalty`, `vassals_set_goal`. Scenario `vassals-claim-without-victory`.
 - Feature `invasion` (M02.06, #186): great raid phases (`gr_*` ModState keys), `great_raid.next_action`, `relief.lua`, config `invasion.great_raid` wave and final values, three `invasion_great_*` commands. `raid_behavior` exports `final_raid_ended`; a `great` raid has no plunder and no leave.
 ### Fixed

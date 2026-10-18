@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M07.02 (#191): the `vassals` feature hands a region that the player claimed and settled to a new AI lord (friendly, builds). The mod declares peace when the lord declares war (config `keep_peace`) and flags a lord that does not build (`stalled`, 10 game days). Scenario `vassals-settled-vassal`. Notes `docs/mod/M07-vassals/implementation-notes/iteration-02-settled-vassal.md`.
 - Mod M07.01 (#187): feature `vassals` of `InvasionMod`. The mod writes goals = Endless on every start and load (a claim no longer ends the game) and keeps a 3 slot vassal registry with loyalty in ModState. Commands `vassals_state`, `vassals_claim`, `vassals_set_loyalty`, `vassals_set_goal`. Scenario `vassals-claim-without-victory`.
 - Mod M02.06 (#186): the great raid runs. When the clock ends, `difficulty` waves of 15 squads come, then the relief army of the liege (15, 8 or 0 squads, player side) and the final army (25 squads). The phase is `won` when the final army is dead. Commands `invasion_great_state`, `invasion_great_force_start`, `invasion_great_skip_wait`. Scenario `invasion-great-raid-waves`.
 - Mod M02.03 (#177): the subjugation raid (major). One large raid (3 x difficulty squads) 60 to 120 game days after the first raid, as the lord army of M03.02, with no plunder tick and no leave rule. The target is the home region as a stand-in (vassals: M07). Commands `invasion_subjugation_state`, `invasion_subjugation_force_next`. Scenario `invasion-subjugation-raid`.
