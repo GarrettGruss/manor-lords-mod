@@ -39,6 +39,8 @@
 --   {"command":"recover_loot","pile":1}                         the goods of the pile go into the stock; the pile is gone
 --   Unit and mercenary commands (spec 10, spikes S7, P5, C1, C2, see mod/shared/HarnessBattle):
 --   {"command":"spawn_units","side":"player","template":"spearMilitia","count":1,"dx":0,"dy":0}   spawnArmy with a chosen template; dx, dy from the player pawn
+--   {"command":"unit_probe","squad":32,"call":"equipTradeWagon"}   spike (spec 29): call one allow-listed no-parameter function on a unit
+--   {"command":"prop_spawn","prop":"Resource_BigCart_C","count":3,"dx":0,"dy":0,"step":400}  spike (spec 29): spawn prop actors near the player; prop_clear destroys them; squad_positions reads a squad
 --   {"command":"battle_state","detail":1}                      living units, experience and casualties of the squads that this mod spawned or hired
 --   {"command":"clear_battle","side":"bandit"}                 kill the units of those squads (of one side if "side" is given) and forget them
 --   {"command":"unit_stats","side":"bandit"}                   mean att, def, block, armorPierce, morale of the living units of the registry (spec 25)
@@ -181,8 +183,9 @@ local tune = require("HarnessTune")
 local garrison = require("HarnessGarrison")
 local gameSetup = require("HarnessGameSetup")
 local harnessSave = require("HarnessSave")
+local encampment = require("HarnessEncampment")
 
-local VERSION = "55"
+local VERSION = "57"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -481,6 +484,10 @@ local COMMANDS = {
     clear_battle = battle.clear_battle,
     set_squad_experience = battle.set_squad_experience,
     unit_stats = battle.unit_stats,
+    unit_probe = battle.unit_probe,
+    prop_spawn = battle.prop_spawn,
+    prop_clear = battle.prop_clear,
+    squad_positions = battle.squad_positions,
     set_unit_stat = battle.set_unit_stat,
     combat_hook = battle.combat_hook,
     tune_state = tune.tune_state,
@@ -574,6 +581,11 @@ local COMMANDS = {
     master_finish = parts.master_finish,
     master_part_remove = parts.master_part_remove,
     master_part_add = parts.master_part_add,
+    encampment_sites = encampment.encampment_sites,
+    encampment_regions = encampment.encampment_regions,
+    encampment_spawn = encampment.encampment_spawn,
+    encampment_list = encampment.encampment_list,
+    encampment_remove = encampment.encampment_remove,
     housing_state = housing.housing_state,
     accommodate_homeless = housing.accommodate_homeless,
     family_state = housing.family_state,

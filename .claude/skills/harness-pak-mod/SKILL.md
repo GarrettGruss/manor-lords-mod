@@ -35,6 +35,7 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 - A mod pak for a release stays in `mod/<Name>/paks/` and is named in `mod.json` (skill `harness-release`). A committed pak over 10 MB gives a release warning.
 - Spec 18 notes: a pak can add `buildingStats` rows cloned from the tent and retarget a row to another blueprint class (`docs/harness/18-composite-buildings/implementation-notes/composite-pak.md`). Spike #65: `harness/tools/s65_edit_json.py` clones a row (`manor-module-pak.md` in spec 12).
 - After a run killed by a timeout, check `pakmod.py list`.
+- New rows in `DT_UnitTemplates` and `DT_Items` are proven (spec 29). `harness/tools/clone_table_row.py <json> <source row> <new row> --set f=v --array f=1,2` clones a row. `fromjson --to <name>` writes a flat file name: move the files to the full game path in the work folder before `build`. A `--keep-open` run with `--pak` cannot remove the pak; stop the game and run `pakmod.py remove --all`.
 - Only number fields in one table are proven. Test strings, new rows and other tables with a round trip first.
 
 ## Widget pak (UI, spec 16)
@@ -56,3 +57,7 @@ Workflow verified 2026-10-14 (note `docs/harness/21-mesh-generation/implementati
 
 ## Mod pack pak (spec 22)
 `pakmod.py buildmod <ModName>` builds `mod/<ModName>/paks/<ModName>_P.pak` from `mod/<ModName>/data/<feature>/patches/*.json` (patch format: spec 22 README) and `data/<feature>/assets/**`. It extracts the tables from the current game paks each time. It fails with the file names on a bad patch, a conflict (same row added, same field set by two features) or a new row outside the feature's `ids` range in `mod.json`. Tables: `buildingStats`, `DT_Upgrades`. Logic: `harness/tools/modpak.py`. Notes: `docs/harness/22-mod-pack-layout/implementation-notes/buildmod.md`.
+
+### Camp or prop without a menu card (spec 30)
+- To change how the game's own spawn looks, retarget the row, not the class: `s65_edit_json.py blueprint <json> 100 /Game/HarnessMod/BM_X BM_X_C` makes every bandit camp use `BM_X` (and saved camps follow at load). The tent class `BM_HomelessTents` stays untouched.
+- To show a mesh in neutral or AI land, use `load_pak_blueprint` then `encampment_spawn` (a plain actor, not saved by the game). `encampment_sites` reads camp masters, `encampment_regions` the region points. Probe: `probe-wagenburg`. Notes: `docs/harness/30-wagenburg-encampment/`.

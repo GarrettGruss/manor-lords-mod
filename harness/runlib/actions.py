@@ -1035,6 +1035,32 @@ class Actions:
         """Region:accomodateHomelessFamilies(nil). Moves homeless families into free homes. The answer has the housing before and after."""
         return self._command("accommodate_homeless")
 
+    # ---- Encampment host test (spec 30, implementation-notes/) ----
+
+    def encampment_sites(self, type_id: int = 100) -> dict:
+        """The building masters of one type (default 100, the bandit camp): location, class, region, owner, parts (read only)."""
+        return self._command("encampment_sites", type=type_id)
+
+    def encampment_regions(self) -> dict:
+        """Every region with owner, settled flag and the world point of the region actor and its town center (read only)."""
+        return self._command("encampment_regions")
+
+    def encampment_spawn(self, class_path: str, x: float, y: float, z: float, yaw: float = 0) -> dict:
+        """Spawn one actor of a loaded class (a BM_ Blueprint from a pak) at a world point. At most 8 live at once."""
+        return self._command("encampment_spawn", **{"class": class_path}, x=x, y=y, z=z, yaw=yaw)
+
+    def load_pak_blueprint(self, name: str) -> dict:
+        """Load /Game/HarnessMod/<name> from an installed pak (asset registry GetAsset) so that StaticFindObject finds its class."""
+        return self._command("load_pak_blueprint", name=name)
+
+    def encampment_list(self) -> dict:
+        """The actors that encampment_spawn made."""
+        return self._command("encampment_list")
+
+    def encampment_remove(self, name: str = "all") -> dict:
+        """Destroy one actor that encampment_spawn made (by name), or all of them."""
+        return self._command("encampment_remove", name=name)
+
     # ---- Composite building parts (spec 18, implementation-notes/part-edit-test.md) ----
 
     def master_parts(self, building: int | None = None, type_id: int | None = None, limit: int = 5, start: int = 1, detail: bool = False,
