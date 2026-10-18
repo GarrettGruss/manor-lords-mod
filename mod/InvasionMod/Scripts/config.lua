@@ -165,6 +165,12 @@ return {
         poll_ms = 2000,          -- real time between two checks of the goal
         goal = 2,                -- EGameGoals Endless (spec 26): a claim does not end the game
         max_vassals = 3,         -- M00: 2 or 3 vassals in the middle game
+        lord_names = { "Aldric", "Bertram", "Conrad" }, -- names of the vassal lords, one for each slot
+        scan_every = 3,          -- a region scan runs every Nth poll
+        handover_attempts = 3,   -- failed handovers of one slot before the mod stops trying (a command retries)
+        keep_peace = true,       -- declare peace again when a vassal lord is at war with the player (TBD: the lords started the war by themselves)
+        growth_check_days = 10,  -- game days after the handover until the mod checks that the lord built
+        growth_min_buildings = 3, -- fewer new buildings than this means the lord stalled (real runs: +10 or +0)
         loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
     },
     -- M12 tech_tree. The node data is in data/tech_tree/tree.json. Values are TBD for playtests.

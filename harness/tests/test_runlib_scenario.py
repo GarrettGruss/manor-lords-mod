@@ -207,7 +207,7 @@ class RegistryTest(unittest.TestCase):
             "raid-sack", "raid-seasons", "raid-spawn", "raid-tiers",
             "raid-timeline", "raid-timer", "refugee-wave", "sack-and-terms-pay-terms", "sack-and-terms-raid-sack", "sack-and-terms-sack", "sack-ruins", "sack-store-trip", "sack-village", "silver-change", "smoke",
             "soak-days", "standin-captives", "standin-outposts", "standin-tribute",
-            "tech-tree-militia-factor", "tech-tree-path-choice", "telemetry-sanity", "time-advance", "ui-countdown", "unit-balance-armored-fight", "unit-balance-armored-kept", "unit-balance-lethality", "unit-balance-role-templates", "unit-data", "vassals-claim-without-victory", "veterancy", "winter-region"])
+            "tech-tree-militia-factor", "tech-tree-path-choice", "telemetry-sanity", "time-advance", "ui-countdown", "unit-balance-armored-fight", "unit-balance-armored-kept", "unit-balance-lethality", "unit-balance-role-templates", "unit-data", "vassals-claim-without-victory", "vassals-settled-vassal", "veterancy", "winter-region"])
         self.assertIn("selftest-timeout", list_scenarios(include_hidden=True))
         self.assertIn("selftest-action", list_scenarios(include_hidden=True))
         self.assertIn("selftest-crash", list_scenarios(include_hidden=True))
