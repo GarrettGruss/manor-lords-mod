@@ -3,7 +3,7 @@
 -- and crashed 120 day runs (issue 163). One loop with a short body keeps the off-thread Lua work small.
 local core = require("ManorCore")
 
-local TICK_MS = 100
+local TICK_MS = 50 -- the menu buttons poll at 50 ms; a slower tick missed short clicks
 local M = {}
 
 local jobs = {}   -- { name, every_ms, next_ms, run }
