@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Mod M08.01 (#197): feature `tribute`. At each season change each handed-over vassal pays goods (fish, timber) into the home stores: production (families x 20) x share (10 to 30 percent by loyalty). Commands `tribute_state`, `tribute_tick_now`. Scenario `tribute-payout`.
 - Mod M07.02 (#191): the `vassals` feature hands a region that the player claimed and settled to a new AI lord (friendly, builds). The mod declares peace when the lord declares war (config `keep_peace`) and flags a lord that does not build (`stalled`, 10 game days). Scenario `vassals-settled-vassal`. Notes `docs/mod/M07-vassals/implementation-notes/iteration-02-settled-vassal.md`.
 - Feature `unit_balance` (M05.03, #183): weapon bonus for armored units. Commands `unit_balance_set` takes `att_factor` and `pierce_add`; `unit_balance_state` shows `weapon`, `att_factor`, `pierce_add`.
 - Feature `raid_widget` (M02.05, #189): the raid menu (pak `raidmenu`, key F8), commands `raid_widget_open`, `raid_widget_close`, `raid_widget_state`, config `raid_widget`. `invasion` exports `raid_info` and `pick_difficulty`; `terms` exports `summary`.

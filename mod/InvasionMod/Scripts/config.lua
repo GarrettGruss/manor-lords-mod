@@ -172,4 +172,13 @@ return {
         growth_min_buildings = 3, -- fewer new buildings than this means the lord stalled (real runs: +10 or +0)
         loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
     },
+    -- M08 tribute. Values are TBD for playtests (M00: 10 to 30 percent of the production).
+    tribute = {
+        enabled = true,
+        poll_ms = 2000,           -- real time between two looks at the season
+        units_per_family = 20,    -- production units of one family in one season (TBD)
+        share_min = 0.10,         -- share of the production at loyalty 0
+        share_max = 0.30,         -- share of the production at loyalty 100
+        goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally (M10 adds iron and salt)
+    },
 }
