@@ -2,7 +2,7 @@
 local M = {}
 
 -- A new raid record. `units` maps a unit key to { loot, x, y }. A unit has no loot and no place until it is seen.
-function M.new_raid(id, start_day, squads, unit_keys)
+function M.new_raid(id, start_day, squads, unit_keys, roles)
     local units, living = {}, 0
     for _, key in ipairs(unit_keys) do
         units[key] = { loot = 0, x = nil, y = nil }
@@ -11,7 +11,7 @@ function M.new_raid(id, start_day, squads, unit_keys)
     return {
         id = id, start_day = start_day, squads = squads, units = units, initial = living, living = living,
         deaths = 0, departures = 0, carried_out = 0, returned = 0, lost = 0, capped = 0, peak_loot = 0,
-        burned = 0, leaving = false, state = living > 0 and "active" or "empty", end_day = nil,
+        burned = 0, leaving = false, roles = roles == true, leave_reason = nil, state = living > 0 and "active" or "empty", end_day = nil,
     }
 end
 
@@ -50,7 +50,9 @@ function M.update(raid, seen, config, day)
             raid.units[key] = nil
             raid.living = raid.living - 1
             local died_in_view = now ~= nil and now.dead
-            if not died_in_view and M.departure_kind(unit, config.exit_y) == "left" then
+            if unit.exiting then
+                raid.departures = raid.departures + 1
+            elseif not died_in_view and M.departure_kind(unit, config.exit_y) == "left" then
                 raid.departures = raid.departures + 1
                 raid.carried_out = raid.carried_out + unit.loot
             else
@@ -70,6 +72,30 @@ end
 -- All goods the raid took so far: carried now, carried off the map, returned to a store, or lost.
 function M.looted_total(raid)
     return M.total_loot(raid) + raid.carried_out + raid.returned + raid.lost
+end
+
+-- Why a role raid must leave now, or nil. Only role raids (spawnArmy) are checked: native raids leave on their own.
+-- `leave` has loot_per_raider, loss_share and max_days. Loot taken counts what raiders carry, returned and carried out.
+function M.leave_reason(raid, day, leave)
+    if not raid.roles or raid.state ~= "active" or raid.leaving or raid.initial < 1 then return nil end
+    if M.looted_total(raid) >= leave.loot_per_raider * raid.initial then return "loot" end
+    if raid.deaths / raid.initial >= leave.loss_share then return "losses" end
+    if day ~= nil and day - raid.start_day >= leave.max_days then return "time" end
+    return nil
+end
+
+-- Start the exit: the loot of every living raider is taken out of the village for good, and each unit is marked.
+-- Returns the keys of the units to remove. A marked unit that disappears counts as a departure, not as a death.
+function M.begin_exit(raid, reason, day)
+    local keys = {}
+    for key, unit in pairs(raid.units) do
+        raid.carried_out = raid.carried_out + unit.loot
+        unit.loot, unit.exiting = 0, true
+        keys[#keys + 1] = key
+    end
+    table.sort(keys)
+    raid.leaving, raid.leave_reason, raid.exit_day = true, reason, day
+    return keys
 end
 
 -- The native AI wrote its leave line: the raid is over for the village, also while the raiders still walk to the map edge.
@@ -106,7 +132,7 @@ function M.summary(raid)
         id = raid.id, start_day = raid.start_day, end_day = raid.end_day, squads = raid.squads, state = raid.state,
         initial = raid.initial, living = raid.living, deaths = raid.deaths, departures = raid.departures,
         loot = M.total_loot(raid), looted_total = M.looted_total(raid), carried_out = raid.carried_out, peak_loot = raid.peak_loot, returned = raid.returned, lost = raid.lost,
-        capped = raid.capped, burned = raid.burned, leaving = raid.leaving,
+        capped = raid.capped, burned = raid.burned, leaving = raid.leaving, roles = raid.roles, leave_reason = raid.leave_reason,
     }
 end
 

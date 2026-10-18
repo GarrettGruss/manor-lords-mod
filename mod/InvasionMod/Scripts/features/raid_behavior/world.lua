@@ -56,6 +56,17 @@ function M.write_loot(unit_object, amount)
     return true
 end
 
+-- Take a raider off the map: the loot goes first (it leaves with the raider), then the unit dies.
+-- just_die is the proven removal (harness kill_units, bandit_kill_squads). A move order is not obeyed (spec 15).
+function M.remove_unit(unit_object)
+    local ok, problem = pcall(function()
+        unit_object.ItemsLooted = 0
+        unit_object:just_die()
+    end)
+    if not ok then return false, tostring(problem) end
+    return true
+end
+
 ---------------------------------------------------------------------------------------------
 -- The village
 ---------------------------------------------------------------------------------------------

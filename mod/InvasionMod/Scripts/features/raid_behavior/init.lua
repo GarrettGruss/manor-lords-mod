@@ -7,6 +7,7 @@ local invasion = require("features.invasion.init")
 local rules = require("features.raid_behavior.rules")
 local world = require("features.raid_behavior.world")
 local config = require("config").raid_behavior
+local leave = config.leave
 
 local TAG = "InvasionMod.raid_behavior"
 local STATE_VERSION = 1
@@ -38,7 +39,7 @@ end
 local function after_spawn(before, info)
     local keys = world.new_keys(before, world.read_units())
     local id = #order + 1
-    local raid = rules.new_raid(id, info.day, info.squads, keys)
+    local raid = rules.new_raid(id, info.day, info.squads, keys, info.roles)
     raids[id] = { raid = raid, burned_base = world.burned_count() or 0, leave_base = world.ai_log_tail_count(LEAVE_TEXT) or 0 }
     order[#order + 1] = id
     if state.loaded then
@@ -46,7 +47,7 @@ local function after_spawn(before, info)
         state:set("raid_start_day", info.day)
         state:set("raid_state", STATE_CODES.active)
     end
-    core.log.info(TAG, string.format("RAID_BEHAVIOR start id=%d day=%d squads=%d raiders=%d", id, info.day, info.squads, #keys))
+    core.log.info(TAG, string.format("RAID_BEHAVIOR start id=%d day=%d squads=%d raiders=%d roles=%s", id, info.day, info.squads, #keys, tostring(info.roles == true)))
 end
 
 invasion.watch_spawn(before_spawn, after_spawn)
@@ -122,11 +123,29 @@ local function log_day(today)
     end
 end
 
+-- A role raid that has taken enough, lost enough or stayed long enough leaves: the loot goes with it and the units are removed.
+local function check_leave(entry, seen, today)
+    local raid = entry.raid
+    if not leave.enabled then return end
+    local reason = rules.leave_reason(raid, today, leave)
+    if reason == nil then return end
+    local keys = rules.begin_exit(raid, reason, today)
+    local removed, failed = 0, 0
+    for _, key in ipairs(keys) do
+        local now = seen[key]
+        local ok = now ~= nil and now.object ~= nil and world.remove_unit(now.object)
+        if ok then removed = removed + 1 else failed = failed + 1 end
+    end
+    core.log.info(TAG, string.format("RAID_BEHAVIOR role raid leaves id=%d day=%s reason=%s units=%d removed=%d failed=%d carried_out=%d",
+        raid.id, tostring(today), reason, #keys, removed, failed, raid.carried_out))
+end
+
 local function step_raid(entry, seen, today, slow_look)
     local raid = entry.raid
     local was_active = raid.state == "active"
     for _, death in ipairs(rules.update(raid, seen, config, today)) do return_loot(entry, death) end
     write_caps(seen)
+    check_leave(entry, seen, today)
     if slow_look then
         refresh_burned(entry)
         check_leave_line(entry, today)

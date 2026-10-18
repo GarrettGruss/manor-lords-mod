@@ -65,6 +65,7 @@ class RaidBehaviorTestCase(unittest.TestCase):
                              assignedSquadID=self.game.struct(Value=7))
         number = 1000 + len(self.units)
         self.game.method(unit, "GetAddress", lambda _self, number=number: number)
+        self.game.method(unit, "just_die", lambda _self, unit=unit: setattr(unit, "dead", True))
         self.units.append(unit)
         return unit
 
@@ -228,6 +229,60 @@ class EndTests(RaidBehaviorTestCase):
         tags = list(self.game.lua.eval("tag_names")(self.pawn).values())
         self.assertIn("invasion:raid_count=1", tags)
         self.assertIn("invasion:raid_state=1", tags)
+
+
+class RoleRaidLeaveTests(RaidBehaviorTestCase):
+    def raiders(self):
+        return self.units[-SQUAD_UNITS:]
+
+    def stores_total(self):
+        return sum(self.stock(store) for store in self.stores)
+
+    def test_a_role_raid_leaves_after_enough_loot_and_the_loot_leaves_with_it(self):
+        self.start_raid()
+        stock = self.stores_total()
+        for unit in self.raiders():
+            unit.ItemsLooted = 4
+        self.game.advance(3)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["leave_reason"], raid["living"]), ("left", "loot", 0))
+        self.assertEqual((raid["departures"], raid["deaths"], raid["carried_out"], raid["returned"]), (SQUAD_UNITS, 0, 4 * SQUAD_UNITS, 0))
+        self.assertEqual(self.stores_total(), stock)
+        self.assertTrue(all(unit.dead for unit in self.raiders()))
+
+    def test_a_role_raid_leaves_after_enough_losses(self):
+        self.start_raid()
+        for unit in self.raiders()[: SQUAD_UNITS // 2]:
+            unit.dead = True
+        self.game.advance(3)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["leave_reason"]), ("left", "losses"))
+        self.assertEqual((raid["deaths"], raid["departures"]), (SQUAD_UNITS // 2, SQUAD_UNITS // 2))
+
+    def test_a_role_raid_leaves_at_the_time_limit(self):
+        self.start_raid()
+        self.calendar.daysTotal = self.calendar.daysTotal + 30
+        self.game.advance(3)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["leave_reason"]), ("left", "time"))
+
+    def test_a_role_raid_below_every_limit_stays(self):
+        self.start_raid()
+        self.raiders()[0].ItemsLooted = 4
+        self.game.advance(3)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["living"], raid.get("leave_reason")), ("active", SQUAD_UNITS, None))
+
+    def test_a_native_raid_is_never_removed(self):
+        self.ask("invasion_set_roles", enabled=False)
+        self.start_raid()
+        for unit in self.raiders():
+            unit.ItemsLooted = 4
+        self.calendar.daysTotal = self.calendar.daysTotal + 30
+        self.game.advance(3)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["roles"], raid["living"]), ("active", False, SQUAD_UNITS))
+        self.assertFalse(any(unit.dead for unit in self.raiders()))
 
 
 if __name__ == "__main__":

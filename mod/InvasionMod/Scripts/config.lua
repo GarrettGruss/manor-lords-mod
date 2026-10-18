@@ -57,6 +57,13 @@ return {
         carry_cap = 10,         -- most loot (ItemsLooted) one raider keeps. Hussite grain 10 (M00). The native AI reaches 4 or 5.
         exit_y = -85000,        -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
         fallback_good = 16,     -- good type for loot when the nearest store has no goods
+        -- M03 iteration 02: a role raid (spawnArmy squads) leaves like a native raid. All values are TBD for playtests.
+        leave = {
+            enabled = true,
+            loot_per_raider = 4,    -- leaves when the loot taken is this much for each raider of the start (native raiders carry 4 to 5)
+            loss_share = 0.5,       -- leaves when this share of the raiders died
+            max_days = 25,          -- leaves this many game days after the spawn (native raids ended on day 12 to 19)
+        },
     },
     -- M05 unit_balance, iteration 01. Unarmored units take more damage (spec 25: def 0 and block 0 doubled the losses of militia).
     unit_balance = {

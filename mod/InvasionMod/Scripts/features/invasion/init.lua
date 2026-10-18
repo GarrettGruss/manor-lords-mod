@@ -120,7 +120,7 @@ local function spawn_raid(today)
     if not ok then return core.log.error(TAG, "raid spawn failed: " .. tostring(problem)) end
     state:set("raids_spawned", state:get("raids_spawned") + 1)
     for index, watcher in ipairs(spawn_watchers) do
-        core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = squads })
+        core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = squads, roles = use_roles })
     end
     core.log.info(TAG, string.format("INVASION spawn day=%d planned_day=%d squads=%d raiders=%d composition=%s roles=%s",
         today, state:get("raid_day"), squads, planned_units(), plan_rules.join(composition_list()), tostring(use_roles)))
