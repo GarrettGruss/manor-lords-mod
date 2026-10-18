@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 
 ## [Unreleased]
 
+### Changed
+- A click is a hook event of a click button (shared module `HarnessClickHooks`), not a poll of `Button:IsPressed`. A short click is no longer missed. The tick is 100 ms (was 40 ms). The pak holds `Border` slots and `WBP_ClickButton`. New command `PolicyMenu.press`. The mod needs the shared modules `ManorCore` and `HarnessClickHooks`.
+
 ## [0.1.0] - 2026-10-14
 
 First pre-release for play testers.
