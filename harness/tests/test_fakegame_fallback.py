@@ -47,6 +47,7 @@ class FallbackTests(HandoverBase):
         self.game.method(self.region, "GetBuildings", lambda _self: self.game.array([building]))
         self.game.advance(10)  # the handover
         self.pawn.silver = 1000
+        self.ask("fallback_set_take_back", mode="clear")
 
     def move(self, slot=1):
         return self.ask("fallback_move", slot=slot)
@@ -105,6 +106,15 @@ class FallbackTests(HandoverBase):
         self.ask("invasion_set_difficulty", value=3)
         self.move()
         self.assertEqual(self.pawn.silver, 1000 - 450)
+
+    def test_the_default_variant_writes_the_owner_and_makes_no_claim_calls(self):
+        self.ask("fallback_set_take_back", mode="write")
+        self.region.ownerPawn = None
+        answer = self.move()
+        self.assertTrue(answer["ok"], answer)
+        self.assertIsNotNone(self.region.ownerPawn)
+        self.assertEqual(self.game.exec("return CALLS[1]"), "settle:Eichenhau")
+        self.assertEqual(self.calls(), ["settle:Eichenhau"])
 
 
 if __name__ == "__main__":
