@@ -134,6 +134,8 @@
 --   {"command":"building_assign_worker","type":125}         put one family without a workplace (or "family":N) to work in the first own building of that type (issue 104, no mouse)
 --   Composite parts (spec 18, see mod/shared/HarnessParts):
 --   {"command":"master_parts","building":123,"limit":5}      parts and extensions of one building master (or "type":3: the first built one; read only)
+--   {"command":"master_artisan","type":3}                  spec 31: artisan job, canMake, workers and extension types of a master (read only); master_parts also takes "ext_limit":N for extension part rows
+--   {"command":"master_artisan_set","type":3,"job":14}      UNSAFE spec 31: write artisanJob (or "extension_type":N: call changeArtisanType) on a master
 --   {"command":"master_site","type":483}                    state of a site, built or not: Region, owner, goods, builders (issue 94, read only)
 --   {"command":"master_set_region","type":483}              write site.Region = the region of the player pawn (issue 94)
 --   {"command":"master_finish","type":483}                  write Data.constructed = true on a site, read it back (issue 94)
@@ -573,6 +575,8 @@ local COMMANDS = {
     upgrade_stat = housing.upgrade_stat,
     building_stat_vector_write = housing.building_stat_vector_write,
     master_parts = parts.master_parts,
+    master_artisan = parts.master_artisan,
+    master_artisan_set = parts.master_artisan_set,
     master_site = parts.master_site,
     master_set_region = parts.master_set_region,
     master_finish = parts.master_finish,
