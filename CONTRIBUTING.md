@@ -15,7 +15,7 @@ This repo is an agent harness for making and testing Manor Lords mods, and the I
 2. **The Invasion Mod** (`mod/InvasionMod/`): one Lua mod and one pak, made of features (`Scripts/features/<f>/`, `data/<f>/patches/`, `scenarios/<f>/`). Harness code must not name the mod or its features (`harness/tests/test_boundary.py`).
 3. **Live control** (`mod/UEBridge`, `vendor/ue4ss-bridge`): a Lua mod and an MCP server. An agent queries the running game through them.
 4. **Outer harness** (`harness/`): scripts that deploy the mods, launch the game, run a test scenario, collect results, and write `runs/<id>/summary.json`.
-5. **Specs and docs**: `openspec/` (living specs and changes), `docs/wiki/` (how the code and the engine work), `design/` (the game design); the old specs are archived in `openspec/changes/archive/<date>-legacy-*/`.
+5. **Specs and docs**: `openspec/` (living specs and changes), `docs/wiki/` (how the code and the engine work), `design/` (design owned by the user: `design/mod/` for the Invasion Mod, `design/harness/` reserved); the old specs are archived in `openspec/changes/archive/<date>-legacy-*/`.
 
 ## Set up
 
@@ -82,7 +82,7 @@ A change passes two review gates. Each gate is one pull request, and each needs 
 - The old specs (`docs/harness/<NN>-*/`, `docs/mod/M<NN>-*/`) are archived unchanged in `openspec/changes/archive/<date>-legacy-*/` (change `archive-legacy-specs`; its `notes/path-map.md` maps each old path). They are read-only history: read them as source material, and do not edit them.
 - Their built behavior is in the living specs (change `backfill-living-specs`). All their open work is an OpenSpec change (change `migrate-legacy-work`; its `notes/inventory-*.md` maps each legacy item to its change).
 - The coverage data that came from spec 10 is in `openspec/specs/harness/coverage/criteria.json` and `criteria.md`. `harness/tools/coverage.py` reads it.
-- `design/` is the game design. The project owner writes it. Do not write game design content unless they ask.
+- `design/mod/` is the game design of the Invasion Mod (`design/harness/` is reserved). The project owner writes it. Do not write game design content unless they ask.
 
 ### Picture evidence
 

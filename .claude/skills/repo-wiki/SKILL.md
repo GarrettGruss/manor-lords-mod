@@ -75,7 +75,7 @@ Rules:
 
 ## Init
 1. Work on a branch (`harness-git-workflow`).
-2. Explore. Read `CLAUDE.md`, the `harness-overview` skill, `openspec/changes/archive/2026-10-15-legacy-00-harness-overview/README.md`, `design/README.md`, `pyproject.toml`, the top folders and their entry points, and a few tests in each area. Trace two or three end-to-end flows (for example: a scenario run, a mod feature load, a pak build). Stop when the main systems and their links are clear.
+2. Explore. Read `CLAUDE.md`, the `harness-overview` skill, `openspec/changes/archive/2026-10-15-legacy-00-harness-overview/README.md`, `design/mod/README.md`, `pyproject.toml`, the top folders and their entry points, and a few tests in each area. Trace two or three end-to-end flows (for example: a scenario run, a mod feature load, a pak build). Stop when the main systems and their links are clear.
 3. Plan the page tree around systems and workflows, not around the folder tree. Use folders such as `architecture/`, `concepts/`, `workflows/`, `operations/`, `integrations/`, `testing/` when they have enough pages. `quickstart.md` is required. For each page write: path, title, purpose, seed sources, related pages. Keep the plan in the scratchpad.
 4. Write the pages. One owner for each page. For more than about six pages, dispatch Sonnet subagents in parallel (`harness-dispatch-agents`), each with one to three pages. Use the prompt below. Write `quickstart.md` yourself, last, from the final page list.
 5. Run `uv run python .claude/skills/repo-wiki/scripts/wiki.py index`, then `uv run python .claude/skills/repo-wiki/scripts/wiki.py check`. Fix every error and run both again until `wiki check: ok`.

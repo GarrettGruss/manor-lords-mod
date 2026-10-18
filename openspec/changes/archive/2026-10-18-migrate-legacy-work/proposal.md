@@ -47,4 +47,4 @@ All of `docs/harness/` and `docs/mod/M01` to `M14` (read only). `design/` (the d
 ## Impact
 
 - New: 27 change folders, 3 inventories.
-- Changed: `CONTRIBUTING.md`, `.claude/skills/harness-git-workflow/SKILL.md`, `docs/harness/README.md`, `design/README.md`, `docs/wiki/operations/docs-and-specs.md`, `CHANGELOG.md`.
+- Changed: `CONTRIBUTING.md`, `.claude/skills/harness-git-workflow/SKILL.md`, `docs/harness/README.md`, `design/mod/README.md`, `docs/wiki/operations/docs-and-specs.md`, `CHANGELOG.md`.

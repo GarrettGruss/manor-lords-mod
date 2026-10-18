@@ -37,4 +37,4 @@ All capabilities in the D1 table of `design.md`, under `harness/`, `process/test
 ## Impact
 
 - New: `openspec/specs/**` (through the archive), `openspec/specs/mod/<feature>/feedback.md`.
-- Changed: `docs/harness/README.md`, `design/README.md` (legacy banners now point to the living specs), the wiki page `docs/wiki/operations/docs-and-specs.md`, `CHANGELOG.md`.
+- Changed: `docs/harness/README.md`, `design/mod/README.md` (legacy banners now point to the living specs), the wiki page `docs/wiki/operations/docs-and-specs.md`, `CHANGELOG.md`.

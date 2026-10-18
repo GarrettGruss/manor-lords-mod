@@ -1,6 +1,6 @@
 # M00 feasibility: raids, plunder, sack and terms
 
-Date: 2026-10-15. Scope: the mechanics of features `invasion`, `raid behavior` and `sack and terms` in `design/invasion-mod.md`, plus difficulty tiers and open questions 1, 5 and 11.
+Date: 2026-10-15. Scope: the mechanics of features `invasion`, `raid behavior` and `sack and terms` in `design/mod/invasion-mod.md`, plus difficulty tiers and open questions 1, 5 and 11.
 Method: read the evidence notes and Lua modules. No game run. No Python run. No other file changed.
 
 ## Rules for the ratings

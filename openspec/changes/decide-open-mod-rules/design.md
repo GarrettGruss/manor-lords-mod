@@ -24,4 +24,4 @@ The change `split-design-brief` moved the M00 open questions to the archive (`op
 | 11 | The land of a lost vassal | 8 | Does it become an enemy region, a bandit camp, or empty land that can be retaken? |
 | 12 | A second invader faction | 12 | Is a mercenary free company (linked to the bandits) needed for the first release? |
 
-The other M00 questions are answered by decisions (`design/decisions.md`), built (living specs), or are open changes (`add-plundered-start`, `add-liege-influence`).
+The other M00 questions are answered by decisions (`design/mod/decisions.md`), built (living specs), or are open changes (`add-plundered-start`, `add-liege-influence`).

@@ -4,7 +4,7 @@ Status: approved with open decisions TBD (2026-10-16). Branch: `feat/27-trailer-
 
 ## Goal
 Build trailer drafts from a timed shot list, and let the agent review each draft at a low token cost.
-The first target is the Invasion Mod trailer (`design/trailer.md`), a YouTube video of 60 seconds or less.
+The first target is the Invasion Mod trailer (`design/mod/trailer.md`), a YouTube video of 60 seconds or less.
 
 The agent cannot play video or audio, and it cannot read a YouTube page's content.
 So the pipeline turns a video into data the agent can read: contact sheets of frames, a timed transcript, and timing and audio reports.

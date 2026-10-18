@@ -89,13 +89,13 @@ Each folder is deployed to `ue4ss\Mods\<name>\`. Folders in `mod/shared/` are me
 
 ## design/
 
-The game design of the Invasion Mod. The user owns it.
+Design documents owned by the user. `harness/` is reserved for a future harness design.
 
 | Path | Owns |
 | --- | --- |
-| `invasion-mod.md` | The guiding philosophy: vision, pillars, core loop, systems, pacing, out of scope. |
-| `decisions.md` | The decision log, with stable numbers ("decision 28"). |
-| `trailer.md` | The trailer brief. |
+| `mod/invasion-mod.md` | The guiding philosophy: vision, pillars, core loop, systems, pacing, out of scope. |
+| `mod/decisions.md` | The decision log, with stable numbers ("decision 28"). |
+| `mod/trailer.md` | The trailer brief. |
 
 ## openspec/
 

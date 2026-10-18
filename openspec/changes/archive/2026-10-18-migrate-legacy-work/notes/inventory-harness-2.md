@@ -37,7 +37,7 @@ Change names: all `x-issue: TBD`, all `skip_specs: true` (no delta spec yet), al
 | 26 plundered start (A3: Lua after the start) | DONE | Moved to the mod design M14 and the change `add-plundered-start` (other group) | #130 closed | no |
 | 26 `start-settings.md` section 8 open questions (which code reads `goals`, preset rows, ruins fields) | DROP | The claim test answered the use case; the rest is research with no user (`start-settings.md` section 5 says no start setting gives ruins) | none | no |
 | 28 README (unit tuning, A1 to A6, restart a session) | DONE | `harness/unit-tuning` (all seven requirements). The session runbook belongs in the wiki | #138 closed | no |
-| 29 Part A hand cannon (recruit card, gun look, speed and range split) | DROP | M00 decision 7: no handgunners (`design/invasion-mod.md` line 284). `recommendation-for-m00.md` "Next steps" are conditional on the design | #178 closed | no |
+| 29 Part A hand cannon (recruit card, gun look, speed and range split) | DROP | M00 decision 7: no handgunners (`design/mod/invasion-mod.md` line 284). `recommendation-for-m00.md` "Next steps" are conditional on the design | #178 closed | no |
 | 29 Part B war wagon | DROP | Same file: war wagons stay out of version 1; stand-in squad only | #178 closed | no |
 | 29 notes and A/B results | DONE | `harness/combat-commands` carries the commands; results stay in legacy notes | #178 closed | no |
 | 30 README (host a, b, c; open: host b mouse run, bandits stuck in ring, mixed camps, grey look, respawn on load, license) | CONVERT | `spike-wagenburg-bandit-camp` (decision by the owner first) | #229 | no |

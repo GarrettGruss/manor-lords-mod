@@ -11,7 +11,7 @@ Decisions taken with the user (2026-10-15):
 - One repo for now. The harness and the mod are split by folders and by rules, not by repos.
 - Two doc tracks:
   - harness specs in `docs/harness/<NN>-<name>/` (the specs 00 to 21 moved there from `docs/specs/`);
-  - mod docs in `docs/mod/` (index `design/README.md`, overview design `design/`).
+  - mod docs in `docs/mod/` (index `design/mod/README.md`, overview design `design/`).
 - The mod ships as ONE pak and ONE Lua mod. Features are separate in the source and are merged at build time.
 - `InvasionMod` is the internal name (folders, code, pak, tags). The player-facing name will change later. It lives only in `mod.json` (`display_name`).
 - The `refugees` feature is built new from its own mod spec. `mod/RefugeeWaves` stays as it is, as a reference example (spec 15, #51).
@@ -55,7 +55,7 @@ mod/InvasionMod/
 2. **Tunables in config.** Every balance value is in `config.lua` under the feature name, not in the logic. Player feedback mostly changes numbers. A tuning change is then a config change with a clear diff. Scenarios set tunables through a named command (as `RefugeeWaves.configure` does today).
 3. **Reserved id ranges.** Each feature gets a block of ids for new rows in each table. The ranges are in `mod.json`. The build fails when a patch uses an id outside its feature's range. The safe id values come from spec 23 (row id range spike).
 4. **No hidden save state.** A feature keeps no state that the game cannot rebuild after a load (the RefugeeWaves rule). If a feature must keep state, its spec says how, before the code.
-5. **Iterations, not rewrites.** A feature grows by iterations. Each iteration has its own file in the feature's mod spec (see `design/README.md`) with acceptance criteria and scenarios.
+5. **Iterations, not rewrites.** A feature grows by iterations. Each iteration has its own file in the feature's mod spec (see `design/mod/README.md`) with acceptance criteria and scenarios.
 6. **One mod version.** The mod has one semver version. A release is gated on the scenarios of ALL enabled features (spec 19 gate).
 7. **No player-facing name in code.** Text for players comes from `display_name` or from text rows, so a rename touches one place.
 
@@ -75,7 +75,7 @@ A row patch is a small JSON file that names a table, a row and the fields to set
 - A disabled feature that adds a visible row (for example a building card) must hide it from Lua, or the feature spec must say why the row is harmless. For v1 the mod is tested with all features on.
 
 ## Plan (small steps, each one commit or more)
-1. Doc tracks: move the harness specs to `docs/harness/` (done), add `design/README.md` (how mod docs are written) and `design/invasion-mod.md` (overview design scaffold for the user).
+1. Doc tracks: move the harness specs to `docs/harness/` (done), add `design/mod/README.md` (how mod docs are written) and `design/mod/invasion-mod.md` (overview design scaffold for the user).
 2. CLAUDE.md and skills: doc paths, mod doc rules, branch names (`feat/M<NN>-<feature>-<iteration>`), the feature rules above.
 3. Skeleton: `mod/InvasionMod/` with `mod.json`, `main.lua`, `config.lua`, the feature loader, one stub feature, and a fake-game test for the loader (order, cycle, missing feature, disabled feature). Check in the real game that `require` of a feature module under `Scripts/features/` works.
 4. Harness: scenario discovery also reads `mod/<Name>/scenarios/**`. Scenario names stay unique.
