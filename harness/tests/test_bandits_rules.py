@@ -74,6 +74,12 @@ class RulesTests(unittest.TestCase):
         self.assertIn("no families", refusal(outstanding=0))
         self.assertIn("no bandit units", refusal(bandit_units=0))
 
+    def test_refund_is_what_the_game_took_up_to_the_price(self):
+        self.assertEqual(self.rules.refund_amount(100, 80, 20), 20)
+        self.assertEqual(self.rules.refund_amount(100, 70, 20), 20)  # income or other costs do not raise the refund
+        self.assertEqual(self.rules.refund_amount(100, 100, 20), 0)
+        self.assertEqual(self.rules.refund_amount(100, 130, 20), 0)
+
     def test_the_price_follows_the_slots_not_the_outstanding_families(self):
         self.assertIn("silver", self.rules.buy_back_refusal(self.facts(outstanding=6, free_slots=3, silver=29), self.cfg()))
         self.assertIsNone(self.rules.buy_back_refusal(self.facts(outstanding=6, free_slots=3, silver=30), self.cfg()))

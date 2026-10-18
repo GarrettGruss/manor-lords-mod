@@ -69,6 +69,14 @@ function M.free_slots(region)
     return nil
 end
 
+function M.game_seconds()
+    local e = engine()
+    if e == nil then return nil end
+    local ok, value = pcall(function() return e:getGameTimeAdjusted() end)
+    if ok and type(value) == "number" then return value end
+    return nil
+end
+
 function M.silver()
     local e = engine()
     if e == nil then return nil end
@@ -94,6 +102,14 @@ function M.send_settle_letter(price)
     if not tagged.ok then return nil, "tag failed: " .. tostring(tagged.error) end
     local sent = bandits.bandit_letter({}, string.format('{"paragraphs":["raider_suggestSettle+%d"]}', price))
     if not sent.ok then return nil, "letter failed: " .. tostring(sent.error) end
+    return true
+end
+
+function M.add_silver(amount)
+    local e = engine()
+    if e == nil then return nil, "no engine" end
+    local ok, problem = pcall(function() e.playerRef.silver = e.playerRef.silver + amount end)
+    if not ok then return nil, tostring(problem) end
     return true
 end
 

@@ -58,16 +58,29 @@ def run(ctx) -> dict:
     answer = ctx.mod.command("InvasionMod.bandits_buy_back")
     ctx.check("the buy-back is accepted at the price rule", answer["accepted"] is True and answer["price"] == price, answer)
     ctx.time.run_game_seconds(40, speed=SPEED)
-    ctx.run_until(lambda: not state(ctx)["buy_back_pending"], 90, what="the buy-back result")
-    ctx.time.run_game_seconds(60, speed=SPEED)
+    for _ in range(8):  # the mod waits in game time; a failed deal ends after 120 game seconds
+        if not state(ctx)["buy_back_pending"]:
+            break
+        ctx.time.run_game_seconds(30, speed=SPEED)
+    ctx.run_until(lambda: not state(ctx)["buy_back_pending"], 30, what="the buy-back result")
+    ctx.time.run_game_seconds(30, speed=SPEED)
     after = state(ctx)
     gain = after["families"] - before["families"]
-    ctx.check("C1 silver went down by exactly the price", before["silver"] - after["silver"] == price, [before["silver"], after["silver"], price])
-    ctx.check("C2 families came back (1 to the free slots)", 1 <= gain <= before["free_slots"], [before["families"], after["families"], before["free_slots"]])
     ctx.check("C3 bandit units went down", bandits(ctx) < units_before, [units_before, bandits(ctx)])
     ctx.check("C3 no bandit units are left", bandits(ctx) == 0, bandits(ctx))
-    ctx.check("C4 outstanding families went down by the families returned", after["outstanding_families"] == before["outstanding_families"] - expected, after)
     ctx.check("the mod recorded the result", len(after["buy_backs"]) == 1 and after["buy_backs"][0]["family_gain"] == gain, after["buy_backs"])
+    # The game brings families back only some of the time (spike S1: 12 of 15 first letters). Both outcomes must be consistent.
+    worked = gain >= 1
+    if worked:
+        ctx.check("C1 silver went down by exactly the price", before["silver"] - after["silver"] == price, [before["silver"], after["silver"], price])
+        ctx.check("C2 families came back (1 to the free slots)", gain <= before["free_slots"], [before["families"], after["families"], before["free_slots"]])
+        ctx.check("C4 outstanding families went down by the families returned",
+                  after["outstanding_families"] == before["outstanding_families"] - expected, after)
+    else:
+        ctx.check("C10 a failed deal gives the silver back", after["silver"] == before["silver"], [before["silver"], after["silver"]])
+        ctx.check("C10 a failed deal keeps the families outstanding", after["outstanding_families"] == before["outstanding_families"], after)
+        ctx.check("C10 the result says what was refunded", after["buy_backs"][0]["refunded"] == price, after["buy_backs"])
+    ctx.metric("deal_worked", 1 if worked else 0)
 
     ctx.time.run_game_days(5, speed=SPEED)
     final = state(ctx)

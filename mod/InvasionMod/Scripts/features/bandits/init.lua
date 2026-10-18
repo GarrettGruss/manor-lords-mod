@@ -153,10 +153,21 @@ local function buy_back()
     local sent, why = world.send_settle_letter(price)
     if not sent then return refuse(why, facts) end
     state:set("bandits_outstanding_families", facts.outstanding - returned)
-    pending = { families_before = world.families(region) or 0, silver_before = facts.silver, price = price, expected = returned, polls = 0 }
+    pending = { families_before = world.families(region) or 0, silver_before = facts.silver, price = price, expected = returned, polls = 0,
+        started = world.game_seconds() or 0 }
     core.log.info(TAG, string.format("BANDITS buy-back sent price=%d expected_families=%d silver=%d free_slots=%d bandit_units=%d",
         price, returned, facts.silver, facts.free_slots, facts.bandit_units))
     return { accepted = true, price = price, expected_families = returned, facts = facts }
+end
+
+-- No family came back: the deal failed. Give back the silver and keep the families in the pool for a later buy-back.
+local function undo_failed_buy_back(result)
+    local refund = rules.refund_amount(pending.silver_before, world.silver() or pending.silver_before, pending.price)
+    local ok, why = true, nil
+    if refund > 0 then ok, why = world.add_silver(refund) end
+    if not ok then core.log.error(TAG, "BANDITS refund failed: " .. tostring(why)) end
+    result.refunded = ok and refund or 0
+    state:set("bandits_outstanding_families", state:get("bandits_outstanding_families") + pending.expected)
 end
 
 local function finish_buy_back(region, timed_out)
@@ -164,12 +175,13 @@ local function finish_buy_back(region, timed_out)
     local result = {
         price = pending.price, expected = pending.expected, family_gain = families - pending.families_before,
         silver_paid = pending.silver_before - (world.silver() or pending.silver_before),
-        bandit_units_left = world.bandit_units(), timed_out = timed_out,
+        bandit_units_left = world.bandit_units(), timed_out = timed_out, refunded = 0,
     }
+    if result.family_gain < 1 then undo_failed_buy_back(result) end
     buy_backs[#buy_backs + 1] = result
     state:set("bandits_returned_families", state:get("bandits_returned_families") + math.max(0, result.family_gain))
-    core.log.info(TAG, string.format("BANDITS buy-back done price=%d paid=%d expected=%d gain=%d bandit_units_left=%s timed_out=%s",
-        result.price, result.silver_paid, result.expected, result.family_gain, tostring(result.bandit_units_left), tostring(timed_out)))
+    core.log.info(TAG, string.format("BANDITS buy-back done price=%d paid=%d expected=%d gain=%d refunded=%d bandit_units_left=%s timed_out=%s",
+        result.price, result.silver_paid, result.expected, result.family_gain, result.refunded, tostring(result.bandit_units_left), tostring(timed_out)))
     pending = nil
 end
 
@@ -181,7 +193,8 @@ local function check_buy_back()
     local region = world.region()
     if region == nil then return end
     local gained = (world.families(region) or 0) > pending.families_before
-    if (world.bandit_units() == 0 and gained) or pending.polls >= config.buy_back.check_limit then
+    local waited = (world.game_seconds() or pending.started) - pending.started
+    if (world.bandit_units() == 0 and gained) or waited >= config.buy_back.give_up_game_seconds then
         finish_buy_back(region, not gained)
     end
 end

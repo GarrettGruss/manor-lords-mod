@@ -59,7 +59,7 @@ return {
             silver_per_family = 10,      -- 2 families cost 20 silver, the amount of the proven letter
             price_multiplier = 1.0,      -- tech nodes (M12): Iron Hand 1.25, Amnesty 0.5
             check_every = 5,             -- polls between two looks at a sent buy-back
-            check_limit = 60,            -- polls before the mod stops waiting for the bandit units to go
+            give_up_game_seconds = 120,  -- game time (not real time, the game may be paused) before a missing family counts as a failed deal
         },
     },
 }

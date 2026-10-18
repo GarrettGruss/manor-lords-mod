@@ -65,4 +65,10 @@ function M.buy_back_refusal(facts, cfg)
     return nil
 end
 
+-- The game takes the silver when it removes the bandits, but it brings back families only some of the time (spike S1: 12 of 15).
+-- When no family came back, the mod gives back what the game took, at most the price.
+function M.refund_amount(silver_before, silver_now, price)
+    return math.max(0, math.min(price, silver_before - silver_now))
+end
+
 return M

@@ -56,6 +56,8 @@ class BanditsTestCase(unittest.TestCase):
         self.game.method(self.region, "getAvailableLivingSpace", lambda _self: self.game.struct(constructed=self.slots, unconstructed=0))
         self.engine = self.game.obj("RTSMultiEngineCPP", playerRef=self.pawn, TemporalComponent=self.calendar,
                                     regions=self.game.array([self.region]), debugLog_AI_general=self.game.array([]))
+        self.clock = 1000.0
+        self.game.method(self.engine, "getGameTimeAdjusted", lambda _self: self.clock)
         self.game.load_mod(self.mod_name)
         self.game.advance(3)
         self.counter = 0
@@ -232,6 +234,28 @@ class BuyBackTests(BanditsTestCase):
         self.assertFalse(state["buy_back_pending"])
         self.assertEqual(state["returned_families"], 2)
         self.assertEqual((state["buy_backs"][0]["silver_paid"], state["buy_backs"][0]["family_gain"]), (20, 2))
+
+    def test_a_failed_deal_gives_the_silver_back_and_keeps_the_families_outstanding(self):
+        self.pawn.silver = 100
+        self.convert()
+        self.ask("bandits_buy_back")
+        self.game.exec("BANDIT_UNITS = 0")
+        self.pawn.silver = 80  # the game took the price, no family came
+        self.clock += 130
+        self.game.advance(8)
+        state = self.state()
+        self.assertFalse(state["buy_back_pending"])
+        self.assertEqual(self.pawn.silver, 100)
+        self.assertEqual(state["outstanding_families"], 2)
+        self.assertEqual(state["returned_families"], 0)
+        self.assertEqual((state["buy_backs"][0]["refunded"], state["buy_backs"][0]["family_gain"]), (20, 0))
+
+    def test_the_mod_waits_in_game_time_for_a_late_family(self):
+        self.convert()
+        self.ask("bandits_buy_back")
+        self.game.exec("BANDIT_UNITS = 0")
+        self.game.advance(10)  # real time passes, the game clock stands still
+        self.assertTrue(self.state()["buy_back_pending"])
 
     def test_the_price_follows_the_free_slots(self):
         self.convert()
