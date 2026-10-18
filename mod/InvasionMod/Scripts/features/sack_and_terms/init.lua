@@ -9,6 +9,7 @@ local raid_world = require("features.raid_behavior.world")
 local rules = require("features.sack_and_terms.rules")
 local world = require("features.sack_and_terms.world")
 local config = require("config").sack_and_terms
+require("features.sack_and_terms.terms")
 local sack_config = config.sack
 
 local TAG = "InvasionMod.sack_and_terms"

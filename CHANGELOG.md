@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M06.02 (#181): tribute terms. A lord raid offers a one-time payment (100 x difficulty silver) or vassalage (yearly tribute 30 x difficulty). Accepting makes the raid leave by the peace route, without a sack.
 - Mod M03.02 follow-up (#172): scenarios `raid-behavior-region-guard` and `raid-behavior-lord-leave-reason` (losses and time reasons) and three session-only test commands in `InvasionMod` (`raid_behavior_test_set_leave`, `_test_take_region`, `_test_kill_raiders`).
 - Mod M06.01 (#173): feature `sack_and_terms`. A role raid that leaves with its loot or at the time limit sacks the town: 20/35/50 percent of buildings, stock and families by difficulty, rounded up, people kept alive; a second sack in 360 days is fatal (tunable).
 - Mod M02.04 (#175): the player picks the difficulty (1 to 3) with `InvasionMod.invasion_pick_difficulty` (once, before the first raid). A prompt banner repeats every 7 game days until then. `difficulty.lua` has the rounding-up rules (relief army 15, 8, 0; waves 1, 2, 3). Command `invasion_difficulty_state`. Scenario `invasion-difficulty-pick`.
