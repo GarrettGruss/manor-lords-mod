@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Mod M03.02 (#168): role raids leave after enough loot, enough losses or a time limit (config `raid_behavior.leave`). The loot leaves with the raid. Scenario `raid-behavior-role-leave`, probes `probe-lord-raid-peace` and `probe-role-raid-peace`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-02-role-raid-leave.md`.
+
 ### Fixed
 - InvasionMod (#163): 120 day runs crashed in the Lua state because four `LoopAsync` loops shared one Lua state. All feature polls now run from one scheduler (`Scripts/scheduler.lua`). raid_behavior reads only raid units; unit_balance reads known units lazily. Scenario `invasion-no-double-raid` A4 asserts on the spawn event (planned raiders) and the timer, not on living raiders. Notes `docs/mod/M02-invasion/implementation-notes/long-run-crash-and-a4.md`.
 
