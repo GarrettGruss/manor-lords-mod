@@ -22,5 +22,23 @@
       "effect": [{ "kind": "militia_attack", "value": 0.10 }, { "kind": "retinue_capacity", "value": 12 }], "layout": { "x": 2, "y": 1 } },
     { "id": "golden_age", "path": "prosperity", "name": "Golden Age", "requires": ["militia_rights"],
       "effect": [{ "kind": "approval", "value": 15 }], "layout": { "x": 3, "y": 1 } }
+  ],
+  "laws": [
+    { "id": "conscription", "path": "oppression", "name": "Conscription", "requires": ["martial_law"],
+      "effect": [{ "kind": "militia_attack", "value": 0.10 }, { "kind": "approval", "value": -5 }] },
+    { "id": "forced_labor_walls", "path": "oppression", "name": "Forced Labor on Walls", "requires": ["iron_hand"],
+      "effect": [{ "kind": "public_order", "value": 5 }, { "kind": "approval", "value": -3 }] },
+    { "id": "scorched_earth", "path": "oppression", "name": "Scorched Earth", "requires": ["veteran_levies"],
+      "effect": [{ "kind": "militia_defence", "value": 0.10 }, { "kind": "tribute_share", "value": -0.25 }] },
+    { "id": "militia_charter", "path": "prosperity", "name": "Militia Charter", "requires": ["fair_courts"],
+      "effect": [{ "kind": "militia_attack", "value": 0.05 }, { "kind": "approval", "value": 2 }] },
+    { "id": "trade_pacts", "path": "prosperity", "name": "Trade Pacts", "requires": ["amnesty"],
+      "effect": [{ "kind": "tribute_share", "value": 0.25 }, { "kind": "vassal_loyalty", "value": 2 }] },
+    { "id": "pay_off_warbands", "path": "prosperity", "name": "Pay Off Warbands", "requires": ["militia_rights"],
+      "effect": [{ "kind": "buy_back_price", "value": -0.25 }] }
+  ],
+  "vassal_policies": [
+    { "policy": "heavy", "path": "oppression", "requires": ["martial_law"] },
+    { "policy": "light", "path": "prosperity", "requires": ["fair_courts"] }
   ]
 }

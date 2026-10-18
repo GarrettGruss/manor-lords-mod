@@ -210,6 +210,7 @@ return {
     tech_tree = {
         enabled = true,
         poll_ms = 2000,              -- real time between two looks at the settlement level and the garrison
+        max_active_laws = 2,         -- M12.04: laws in force at the same time (TBD)
         slots_per_level = 1,         -- decision 24: one node slot for each settlement level
         tree_file = "data/tech_tree/tree.json", -- relative to the mod folder
     },

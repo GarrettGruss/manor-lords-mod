@@ -8,6 +8,8 @@ local json = require("HarnessJson")
 local bandits = require("features.bandits.init")
 local unit_balance = require("features.unit_balance.init")
 local manor_stronghold = require("features.manor_stronghold.init")
+local vassals = require("features.vassals.init")
+local tribute = require("features.tribute.init")
 local tree_module = require("features.tech_tree.tree")
 local rules = require("features.tech_tree.rules")
 local world = require("features.tech_tree.world")
@@ -21,6 +23,7 @@ local tree = tree_module.load_file(world.data_path(config.tree_file), json.decod
 local state = ModState.open("invasion", "pawn", STATE_VERSION)
 state:register("tech_path", rules.NO_PATH, "string")
 state:register("tech_nodes", "", "string")
+state:register("tech_laws", "", "string")
 
 local last_applied = nil -- the last totals pushed to the other features, as text
 local last_level = 0
@@ -30,11 +33,14 @@ local function unlocked_ids() return rules.parse_ids(state:get("tech_nodes")) en
 
 local function slots() return rules.slots_for_level(last_level, config.slots_per_level) end
 
-local function totals() return rules.totals(tree, unlocked_ids(), last_garrison) end
+local function enacted_ids() return rules.parse_ids(state:get("tech_laws")) end
+
+local function totals() return rules.totals(tree, unlocked_ids(), last_garrison, enacted_ids()) end
 
 local function totals_text(values)
-    return string.format("%s|%s|%s|%s|%s|%s|%s", values.order_bonus, values.approval_bonus, values.buy_back_multiplier,
-        values.militia_attack_multiplier, values.militia_defence_multiplier, values.manor_storage_bonus, values.retinue_bonus)
+    return string.format("%s|%s|%s|%s|%s|%s|%s|%s|%s", values.order_bonus, values.approval_bonus, values.buy_back_multiplier,
+        values.militia_attack_multiplier, values.militia_defence_multiplier, values.manor_storage_bonus, values.retinue_bonus,
+        values.tribute_share_multiplier, values.vassal_loyalty_bonus)
 end
 
 -- Push the effects to the features that own the game values. Only a change is pushed.
@@ -46,6 +52,8 @@ local function apply_effects()
     bandits.set_modifiers({ order_bonus = values.order_bonus, approval_bonus = values.approval_bonus, buy_back_multiplier = values.buy_back_multiplier })
     unit_balance.set_militia(values.militia_attack_multiplier, values.militia_defence_multiplier)
     manor_stronghold.set_modifiers({ storage_bonus = values.manor_storage_bonus, retinue_bonus = values.retinue_bonus })
+    tribute.set_share_factor(values.tribute_share_multiplier)
+    vassals.set_loyalty_bonus(values.vassal_loyalty_bonus)
     core.log.info(TAG, "TECH_TREE effects applied " .. text)
 end
 
@@ -87,6 +95,39 @@ local function unlock(node_id)
 end
 
 ---------------------------------------------------------------------------------------------
+-- Laws and vassal policies (M12.04). Mod-owned; the game policy system is not used.
+---------------------------------------------------------------------------------------------
+
+local function enact_law(law_id)
+    local reason = rules.enact_refusal(tree, state:get("tech_path"), unlocked_ids(), enacted_ids(), config.max_active_laws, law_id)
+    if reason ~= nil then return nil, reason end
+    local enacted = enacted_ids()
+    enacted[#enacted + 1] = law_id
+    state:set("tech_laws", rules.join_ids(enacted))
+    apply_effects()
+    core.log.info(TAG, "TECH_TREE law enacted " .. law_id)
+    return true
+end
+
+local function repeal_law(law_id)
+    local kept, found = {}, false
+    for _, id in ipairs(enacted_ids()) do
+        if id == law_id then found = true else kept[#kept + 1] = id end
+    end
+    if not found then return nil, "law '" .. tostring(law_id) .. "' is not in force" end
+    state:set("tech_laws", rules.join_ids(kept))
+    apply_effects()
+    core.log.info(TAG, "TECH_TREE law repealed " .. law_id)
+    return true
+end
+
+local function set_vassal_policy(slot, policy)
+    local reason = rules.vassal_policy_refusal(tree, state:get("tech_path"), unlocked_ids(), policy)
+    if reason ~= nil then return nil, reason end
+    return vassals.set_policy(slot, policy)
+end
+
+---------------------------------------------------------------------------------------------
 -- Named commands for the harness (no eval)
 ---------------------------------------------------------------------------------------------
 
@@ -119,7 +160,7 @@ local function command_state()
     read_world()
     local unlocked = unlocked_ids()
     return {
-        path = state:get("tech_path"), unlocked = unlocked, settlement_level = last_level, slots = slots(), free_slots = slots() - #unlocked,
+        path = state:get("tech_path"), unlocked = unlocked, laws = enacted_ids(), settlement_level = last_level, slots = slots(), free_slots = slots() - #unlocked,
         garrison_squads = last_garrison, totals = totals(), nodes = node_rows(),
         militia = unit_balance.militia_summary(),
     }
@@ -138,12 +179,34 @@ local function command_unlock(args)
     return command_state()
 end
 
+local function command_enact_law(args)
+    local ok, why = enact_law(args.law)
+    if not ok then return nil, why end
+    return command_state()
+end
+
+local function command_repeal_law(args)
+    local ok, why = repeal_law(args.law)
+    if not ok then return nil, why end
+    return command_state()
+end
+
+local function command_set_vassal_policy(args)
+    local ok, why = set_vassal_policy(args.slot, args.policy)
+    if not ok then return nil, why end
+    return command_state()
+end
+
 local has_commands, commands = pcall(require, "HarnessCommands")
 if has_commands then
     commands.register("InvasionMod.tech_tree_state", command_state, {})
     commands.register("InvasionMod.tech_tree_choose_path", command_choose_path, { path = { type = "string", required = true } })
     commands.register("InvasionMod.tech_tree_unlock", command_unlock, { node = { type = "string", required = true } })
+    commands.register("InvasionMod.tech_tree_enact_law", command_enact_law, { law = { type = "string", required = true } })
+    commands.register("InvasionMod.tech_tree_repeal_law", command_repeal_law, { law = { type = "string", required = true } })
+    commands.register("InvasionMod.tech_tree_set_vassal_policy", command_set_vassal_policy,
+        { slot = { type = "integer", required = true }, policy = { type = "string", required = true } })
 end
 
 core.log.info(TAG, string.format("feature tech_tree loaded: %d nodes", #tree.nodes))
-return { tree = tree, state = state, choose_path = choose_path, unlock = unlock, node_rows = node_rows, view = view }
+return { tree = tree, state = state, choose_path = choose_path, unlock = unlock, enact_law = enact_law, repeal_law = repeal_law, node_rows = node_rows, view = view }
