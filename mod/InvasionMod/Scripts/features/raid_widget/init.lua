@@ -181,6 +181,29 @@ if has_commands then
     commands.register("InvasionMod.raid_widget_state", describe, {})
 end
 
+-- SPIKE (spec 34): remove before the final commit.
+local clickhooks = require("HarnessClickHooks")
+local probe = { widget = nil, clicks = 0, log = {} }
+if has_commands then
+    commands.register("InvasionMod.click_probe_open", function()
+        local controller = FindFirstOf("PlayerController")
+        local made, problem = clickhooks.new_button(controller)
+        if not made then return { ok = false, error = problem } end
+        probe.widget = made
+        made:AddToViewport(600)
+        made:SetPositionInViewport({ X = 600, Y = 400 }, false)
+        return { ok = true }
+    end, {})
+    commands.register("InvasionMod.click_probe_state", function()
+        for _, record in ipairs(clickhooks.drain()) do probe.clicks = probe.clicks + 1; probe.log[#probe.log + 1] = record.at end
+        local hovered = false
+        for _, object in ipairs(FindAllOf("Button") or {}) do
+            local full = core.read(function() return object:GetFullName() end) or ""
+            if full:find("WBP_ClickButton", 1, true) and core.read(function() return object:IsHovered() end) == true then hovered = true end
+        end
+        return { ok = true, clicks = probe.clicks, hovered = hovered, times = probe.log }
+    end, {})
+end
 require("scheduler").every(TAG, config.poll_ms, tick)
 -- The key callback runs on the input thread. It must not touch the Lua state beyond one flag:
 -- Lua calls from it raced with the game thread and crashed the game (UE4SS luaH_getint). The tick does the work.
