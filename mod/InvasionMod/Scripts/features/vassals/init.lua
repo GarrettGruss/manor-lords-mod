@@ -13,6 +13,8 @@ local state = ModState.open("invasion", "pawn", STATE_VERSION)
 state:register("vassals_goal_writes", 0, "integer")
 state:register("vassals_home_region", rules.NO_REGION, "string")
 state:register("vassals_last_season", -1, "integer")
+state:register("vassals_lost", 0, "integer")
+state:register("vassals_submissions", 0, "integer")
 for slot = 1, config.max_vassals do
     state:register("vassal" .. slot .. "_region", rules.NO_REGION, "string")
     state:register("vassal" .. slot .. "_lord", rules.NO_REGION, "string")
@@ -23,6 +25,7 @@ for slot = 1, config.max_vassals do
     state:register("vassal" .. slot .. "_stalled", false, "boolean")    -- the lord built nothing in growth_check_days
     state:register("vassal" .. slot .. "_capital", false, "boolean")    -- the player took the region back as the fallback capital (M06.03)
     state:register("vassal" .. slot .. "_policy", "fair", "string")      -- tribute policy: light, fair or heavy (iteration 03)
+    state:register("vassal" .. slot .. "_submitted", false, "boolean")    -- the vassal serves the invader (iteration 04)
 end
 
 local last_goal = nil        -- the goal as read at the last poll
@@ -73,7 +76,7 @@ local function slot_row(slot)
     if region == rules.NO_REGION then return nil end
     return { slot = slot, region = region, lord = state:get(slot_key(slot, "lord")),
         loyalty = state:get(slot_key(slot, "loyalty")), since_day = state:get(slot_key(slot, "since_day")),
-        handed_day = state:get(slot_key(slot, "handed_day")), stalled = state:get(slot_key(slot, "stalled")), capital = state:get(slot_key(slot, "capital")), policy = state:get(slot_key(slot, "policy")) }
+        handed_day = state:get(slot_key(slot, "handed_day")), stalled = state:get(slot_key(slot, "stalled")), capital = state:get(slot_key(slot, "capital")), policy = state:get(slot_key(slot, "policy")), submitted = state:get(slot_key(slot, "submitted")) }
 end
 
 local function slot_rows(with_region)
@@ -191,13 +194,14 @@ local function watch_wars()
                 war_logged[slot] = true
                 core.log.warn(TAG, string.format("VASSALS lord %s is at war with the player (tags: %s)", lord, table.concat(status.tags, ",")))
             end
-            if status and (status.enemy_of_player or rules.has_war_tag(status.tags)) and config.keep_peace then make_peace(slot, status.number) end
+            if status and (status.enemy_of_player or rules.has_war_tag(status.tags)) and config.keep_peace and not state:get(slot_key(slot, "submitted")) then make_peace(slot, status.number) end
         end
     end
 end
 
 local growth_checked = {} -- slot -> true once the growth check ran in this session
 local loyalty_tick -- defined in the policies section below
+local detect_losses, submission_tick -- defined in the loss section below
 
 -- A handed-over lord can fail to build (3 of 6 real runs: AI_build failed to find place). The mod flags it, so that later features do not count on growth.
 local function check_growth()
@@ -230,6 +234,7 @@ local function poll()
     scan_regions()
     watch_wars()
     check_growth()
+    detect_losses()
     loyalty_tick()
 end
 
@@ -276,6 +281,7 @@ loyalty_tick = function()
             core.log.info(TAG, string.format("VASSALS loyalty slot=%d policy=%s %d -> %d", slot, policy_of(slot), row.loyalty, new))
         end
     end
+    submission_tick()
 end
 
 -- Order: send a gift. It costs silver and raises loyalty.
@@ -293,12 +299,89 @@ local function order_gift(slot)
     return { slot = slot, cost = config.gift.cost, loyalty = new }
 end
 
+---------------------------------------------------------------------------------------------
+-- Loss and submission (iteration 04)
+---------------------------------------------------------------------------------------------
+
+local lost_listeners = {}  -- functions called with { slot, region, families, reason } when a vassal is lost
+local lost_events = {}     -- the events of this session, for the state command
+
+-- Another feature asks to hear about lost vassals (refugees send a wave).
+local function on_lost(listener)
+    lost_listeners[#lost_listeners + 1] = listener
+end
+
+-- Free the slot and tell the listeners. The families are read first, because the wave size depends on them.
+local function lose_vassal(slot, reason)
+    local region = state:get(slot_key(slot, "region"))
+    if region == rules.NO_REGION then return nil, "slot " .. slot .. " is empty" end
+    if state:get(slot_key(slot, "capital")) then return nil, "slot " .. slot .. " is the fallback capital" end
+    local event = { slot = slot, region = region, families = world.region_families(region) or 0, reason = reason,
+        lord = state:get(slot_key(slot, "lord")), day = world.current_day() }
+    state:set(slot_key(slot, "region"), rules.NO_REGION)
+    state:set(slot_key(slot, "lord"), rules.NO_REGION)
+    state:set(slot_key(slot, "handed_day"), 0)
+    state:set(slot_key(slot, "stalled"), false)
+    state:set(slot_key(slot, "submitted"), false)
+    state:set("vassals_lost", state:get("vassals_lost") + 1)
+    lost_events[#lost_events + 1] = event
+    core.log.info(TAG, string.format("VASSALS lost slot=%d region=%s families=%d reason=%s", slot, region, event.families, reason))
+    core.show_banner("A vassal is lost", string.format("%s has fallen", region))
+    for _, listener in ipairs(lost_listeners) do core.log.try(TAG, function() listener(event) end) end
+    return event
+end
+
+-- A handed-over vassal whose region is owned by another pawn than its lord was taken.
+detect_losses = function()
+    for slot = 1, config.max_vassals do
+        local lord = state:get(slot_key(slot, "lord"))
+        if lord ~= rules.NO_REGION and not state:get(slot_key(slot, "capital")) then
+            local status = world.lord_status(lord)
+            local owner = world.region_owner(state:get(slot_key(slot, "region")))
+            if status and owner and owner ~= status.object then lose_vassal(slot, "taken") end
+        end
+    end
+end
+
+local function declare(kind, slot)
+    local status = world.lord_status(state:get(slot_key(slot, "lord")))
+    if status == nil then return end
+    local fn = kind == "war" and require("HarnessLords").lord_declare_war or require("HarnessLords").lord_declare_peace
+    local answer = fn({ lord = status.number, target = 0 })
+    core.log.info(TAG, string.format("VASSALS declare %s slot=%d ok=%s error=%s", kind, slot, tostring(answer.ok), tostring(answer.error)))
+end
+
+local function submit(slot)
+    state:set(slot_key(slot, "submitted"), true)
+    state:set("vassals_submissions", state:get("vassals_submissions") + 1)
+    declare("war", slot)
+    core.log.info(TAG, string.format("VASSALS slot=%d submits to the invader (loyalty %d)", slot, state:get(slot_key(slot, "loyalty"))))
+    core.show_banner("A vassal has submitted", string.format("%s serves the invader", state:get(slot_key(slot, "region"))))
+end
+
+local function win_back(slot)
+    state:set(slot_key(slot, "submitted"), false)
+    declare("peace", slot)
+    core.log.info(TAG, string.format("VASSALS slot=%d returns to the player (loyalty %d)", slot, state:get(slot_key(slot, "loyalty"))))
+end
+
+-- Run after the loyalty tick: a vassal at or under the submit loyalty submits; a submitted one at or over the return loyalty returns.
+submission_tick = function()
+    for slot = 1, config.max_vassals do
+        local row = slot_row(slot)
+        if row and row.lord ~= rules.NO_REGION and not row.capital then
+            local action = rules.submission_action(row.loyalty, row.submitted, config.submission)
+            if action == "submit" then submit(slot) elseif action == "return" then win_back(slot) end
+        end
+    end
+end
+
 local function command_state()
     local setup = world.setup_state()
     return {
         day = world.current_day(), goal = last_goal, goal_error = goal_error, goal_writes = state:get("vassals_goal_writes"),
         victory_status = setup and setup.victory_status, count = rules.count_used(slot_regions(), config.max_vassals),
-        vassals = slot_rows(true), home_region = state:get("vassals_home_region"), handover_errors = handover_errors, wars = war_status, peace_calls = peace_calls, keep_peace = config.keep_peace,
+        lost = state:get("vassals_lost"), submissions = state:get("vassals_submissions"), lost_events = lost_events, vassals = slot_rows(true), home_region = state:get("vassals_home_region"), handover_errors = handover_errors, wars = war_status, peace_calls = peace_calls, keep_peace = config.keep_peace,
     }
 end
 
@@ -356,8 +439,37 @@ if has_commands then
         loyalty_tick()
         return command_state()
     end, {})
+    commands.register("InvasionMod.vassals_lose", function(args)
+        local region = state:get(slot_key(args.slot, "region"))
+        local taker
+        if config.loss_region == "take_by_lord" then
+            local excluded = {}
+            for _, name in ipairs(config.lord_names) do excluded[name] = true end
+            taker = world.other_lord_number(excluded)
+            if taker == nil then return nil, "no other AI lord exists to take the region" end
+        end
+        local event, why = lose_vassal(args.slot, "command")
+        if not event then return nil, why end
+        if taker then
+            -- A capture test: another lord owns the region (an owner write, spike S11). It crashed the game in 1 of 1 runs (20261018-093533-4f17).
+            local taken = require("HarnessLords").lord_take_region({ lord = taker, region = region })
+            if not taken.ok then core.log.error(TAG, "VASSALS take region failed: " .. tostring(taken.error)) end
+        end
+        local result = command_state()
+        result.event = event
+        result.taker = taker
+        return result
+    end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals } })
+    commands.register("InvasionMod.vassals_set_loss_region", function(args)
+        config.loss_region = args.mode
+        return command_state()
+    end, { mode = { type = "string", required = true, oneOf = { "forget", "take_by_lord" } } })
+    commands.register("InvasionMod.vassals_submission_tick_now", function()
+        submission_tick()
+        return command_state()
+    end, {})
     commands.register("InvasionMod.vassals_set_goal", command_set_goal, { goal = { type = "integer", required = true, min = 0, max = 3 } })
 end
 
 core.log.info(TAG, "feature vassals loaded")
-return { state = state, policy_of = policy_of, set_policy = set_policy, set_capital = set_capital, region_families = world.region_families, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }
+return { state = state, on_lost = on_lost, lose_vassal = lose_vassal, policy_of = policy_of, set_policy = set_policy, set_capital = set_capital, region_families = world.region_families, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }

@@ -41,6 +41,20 @@ function M.current_season()
     return nil
 end
 
+-- The object name of the pawn that owns a region ("nil" when it has none), or nil when the region is not found.
+function M.region_owner(name)
+    local e = engine()
+    if e == nil then return nil end
+    local count = core.read(function() return e.regions:GetArrayNum() end) or 0
+    for i = 1, count do
+        local region = core.read(function() return e.regions[i] end)
+        if core.shortName(region) == name then
+            return core.shortName(core.read(function() return region.ownerPawn end)) or "nil"
+        end
+    end
+    return nil
+end
+
 -- The rows of all regions (object name, owner, settled flag, families).
 function M.regions()
     local answer = core.regions_state()
@@ -119,6 +133,14 @@ end
 function M.lord_number(name)
     for number, pawn in ipairs(lords()) do
         if lord_name(pawn) == name then return number end
+    end
+    return nil
+end
+
+-- The number of the first AI lord whose name is not in `excluded` (a set of names), or nil.
+function M.other_lord_number(excluded)
+    for number, pawn in ipairs(lords()) do
+        if not excluded[lord_name(pawn)] then return number end
     end
     return nil
 end

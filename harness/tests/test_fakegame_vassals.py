@@ -164,6 +164,14 @@ old.spawn_ai_lord = function(request)
     return { ok = true, lord = #SPAWNED }
 end
 old.lord_relations = function() return { ok = true } end
+old.lord_take_region = function(request)
+    TAKEN = (TAKEN or {})
+    TAKEN[#TAKEN + 1] = request.lord .. ":" .. request.region
+    return { ok = true }
+end
+WARS = {}
+old.lord_declare_war = function(request) WARS[#WARS + 1] = "war:" .. request.lord; return { ok = true } end
+old.lord_declare_peace = function(request) WARS[#WARS + 1] = "peace:" .. request.lord; return { ok = true } end
 old.lord_start_ai = function() return { ok = true } end
 old.lord_receive_region = function(request)
     RECEIVED[#RECEIVED + 1] = request.lord .. ":" .. request.region
@@ -318,6 +326,98 @@ class PolicyTests(HandoverBase):
         self.pawn.silver = 500
         self.ask("vassals_set_loyalty", slot=1, value=95)
         self.assertEqual(self.ask("vassals_order_gift", slot=1)["result"]["loyalty"], 100)
+
+
+class LossTests(HandoverBase):
+    def setUp(self):
+        super().setUp()
+        self.taker = self.game.obj("PawnCPP_AI", lordsName="Hussite", enemies=self.game.array([]))
+        self.game.method(self.taker, "GetFullName", lambda _self: "PawnCPP_AI /Game/Taker")
+        self.hand_over_and_wait()
+        self.game.exec("package.loaded['HarnessLords'].lord_declare_peace = function() return { ok = true } end")
+
+    def row(self):
+        return self.state()["vassals"][0]
+
+    def test_the_default_loss_frees_the_slot_and_leaves_the_land_to_its_lord(self):
+        answer = self.ask("vassals_lose", slot=1)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["count"], 0)
+        self.assertEqual(self.game.exec("return TAKEN and #TAKEN or 0"), 0)
+
+    def test_the_lose_command_frees_the_slot_gives_the_region_to_another_lord_and_keeps_the_event(self):
+        self.ask("vassals_set_loss_region", mode="take_by_lord")
+        answer = self.ask("vassals_lose", slot=1)
+        self.assertTrue(answer["ok"], answer)
+        result = answer["result"]
+        self.assertEqual((result["count"], result["lost"]), (0, 1))
+        self.assertEqual(self.game.exec("return TAKEN[1]"), "1:Eichenhau")
+        event = result["event"]
+        self.assertEqual((event["reason"], event["slot"], event["region"]), ("command", 1, "Eichenhau"))
+
+    def test_an_empty_slot_cannot_be_lost(self):
+        self.assertFalse(self.ask("vassals_lose", slot=2)["ok"])
+
+    def test_the_freed_slot_is_used_again(self):
+        self.ask("vassals_set_loss_region", mode="take_by_lord")
+        self.regions[1].ownerPawn = None  # the real command gives the region to another lord in the same tick
+        self.ask("vassals_lose", slot=1)
+        self.add_region("Goldhof", True, 4)
+        self.game.advance(10)
+        self.assertEqual(self.row()["region"], "Goldhof")
+
+    def test_a_region_that_another_pawn_owns_is_detected_as_taken(self):
+        lord = self.game.obj("PawnCPP_AI", lordsName="Aldric", enemies=self.game.array([]))
+        self.game.method(lord, "GetFName", lambda _self: self.game.text("LordObj"))
+        self.game.method(lord, "GetFullName", lambda _self: "PawnCPP_AI /Game/LordObj")
+        self.engine.relations = self.game.array([])
+        self.game.method(self.engine, "FindAllOf", lambda _self: None)
+        taker = self.game.obj("PawnCPP_AI", lordsName="Hussite", enemies=self.game.array([]))
+        self.game.method(taker, "GetFName", lambda _self: self.game.text("Taker"))
+        self.regions[1].ownerPawn = taker
+        self.game.advance(10)
+        state = self.state()
+        self.assertEqual(state["lost"], 1)
+        self.assertEqual(state["lost_events"][0]["reason"], "taken")
+
+
+class SubmissionTests(HandoverBase):
+    def setUp(self):
+        super().setUp()
+        self.hand_over_and_wait()
+
+    def row(self):
+        return self.state()["vassals"][0]
+
+    def wars(self):
+        return self.game.exec("return table.concat(WARS, ',')")
+
+    def test_a_vassal_at_low_loyalty_submits_and_the_lord_declares_war(self):
+        self.ask("vassals_set_loyalty", slot=1, value=12)
+        self.ask("vassals_set_policy", slot=1, policy="heavy")
+        self.ask("vassals_loyalty_tick_now")  # 12 - 5 = 7
+        self.assertTrue(self.row()["submitted"])
+        self.assertEqual(self.state()["submissions"], 1)
+
+    def test_a_submitted_vassal_returns_at_the_return_loyalty(self):
+        self.ask("vassals_set_loyalty", slot=1, value=5)
+        self.ask("vassals_submission_tick_now")
+        self.assertTrue(self.row()["submitted"])
+        self.ask("vassals_set_loyalty", slot=1, value=39)
+        self.ask("vassals_submission_tick_now")
+        self.assertTrue(self.row()["submitted"])
+        self.ask("vassals_set_loyalty", slot=1, value=40)
+        self.ask("vassals_submission_tick_now")
+        self.assertFalse(self.row()["submitted"])
+
+    def test_a_healthy_vassal_does_not_submit(self):
+        self.ask("vassals_submission_tick_now")
+        self.assertFalse(self.row()["submitted"])
+
+    def test_the_flag_is_kept_in_the_pawn_tags(self):
+        self.ask("vassals_set_loyalty", slot=1, value=5)
+        self.ask("vassals_submission_tick_now")
+        self.assertIn("invasion:vassal1_submitted=true", self.tags())
 
 
 if __name__ == "__main__":

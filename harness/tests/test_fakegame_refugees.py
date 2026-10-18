@@ -89,6 +89,16 @@ class WaveTests(RefugeeTestCase):
             "local r = require('features.refugees.rules'); return r.wave_families(5, 0.3), r.wave_families(1, 0.3), r.calls_for(2, 5, 3), r.calls_for(8, 5, 3), r.calls_for(40, 5, 3)")
         self.assertEqual(tuple(values), (2, 1, 1, 2, 3))
 
+    def test_a_lost_vassal_sends_a_wave_by_itself(self):
+        self.game.exec("package.loaded['HarnessLords'].lord_take_region = function() return { ok = true } end")
+        other = self.game.obj("PawnCPP_AI", lordsName="Hussite", enemies=self.game.array([]))
+        self.game.method(other, "GetFullName", lambda _self: "PawnCPP_AI /Game/Other")
+        self.game.exec("local x = 1")
+        self.assertEqual(self.settle_calls(), 0)
+        answer = self.ask("vassals_lose", slot=1)
+        self.assertTrue(answer["ok"], answer)
+        self.assertTrue(self.refugees()["active"])
+        self.assertEqual(self.settle_calls(), 1)
 
 REBEL_STUB = """
 REBEL_CALLS = {}
@@ -157,7 +167,6 @@ class EndOfWaveTests(RefugeeTestCase):
         self.game.exec("HOME_HOMELESS = 0")
         self.game.advance(5)
         self.assertTrue(self.ask("refugees_vassal_lost", slot=1, share=30)["ok"])
-
 
 if __name__ == "__main__":
     unittest.main()
