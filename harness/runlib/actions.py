@@ -1037,14 +1037,44 @@ class Actions:
 
     # ---- Composite building parts (spec 18, implementation-notes/part-edit-test.md) ----
 
-    def master_parts(self, building: int | None = None, type_id: int | None = None, limit: int = 5, start: int = 1, detail: bool = False) -> dict:
+    def master_parts(self, building: int | None = None, type_id: int | None = None, limit: int = 5, start: int = 1, detail: bool = False,
+                     ext_limit: int = 0) -> dict:
         """Parts (SMBuilding actors) and extensions of one building master, by id or by type (read only). detail=True adds tags and btype (slow in the real game)."""
-        fields = {"limit": limit, "from": start, "detail": int(detail)}
+        fields = {"limit": limit, "from": start, "detail": int(detail), "ext_limit": ext_limit}
         if building is not None:
             fields["building"] = building
         if type_id is not None:
             fields["type"] = type_id
         return self._command("master_parts", **fields)
+
+    def master_artisan(self, building: int | None = None, type_id: int | None = None) -> dict:
+        """Spec 31, read only: artisan job, canMake, workers and extension types of a master (a plot with a workshop extension)."""
+        fields = {}
+        if building is not None:
+            fields["building"] = building
+        if type_id is not None:
+            fields["type"] = type_id
+        return self._command("master_artisan", **fields)
+
+    def master_artisan_set(self, type_id: int = 3, job: int | None = None, extension_type: int | None = None, building: int | None = None,
+                           enable_recipe: int | None = None, disable_recipe: int | None = None, lv: int | None = None) -> dict:
+        """UNSAFE spec 31 spike (the game needs HARNESS_ALLOW_UNSAFE=1): write artisanJob or call changeArtisanType on a master."""
+        fields = {"building": building} if building is not None else {"type": type_id}
+        if job is not None:
+            fields["job"] = job
+        if extension_type is not None:
+            fields["extension_type"] = extension_type
+        if enable_recipe is not None:
+            fields["enable_recipe"] = enable_recipe
+        if disable_recipe is not None:
+            fields["disable_recipe"] = disable_recipe
+        if lv is not None:
+            fields["lv"] = lv
+        return self._command("master_artisan_set", **fields)
+
+    def plot_upgrade(self, upgrade: int, type_id: int = 3, extension: bool = False, slot: int = 0, artisan: bool = False) -> dict:
+        """Spec 15 spike command: addUpgradeRequest (or addExtensionChangeRequest) on the first own master of a type. No mouse."""
+        return self._command("plot_upgrade", upgrade=upgrade, type=type_id, slot=slot, extension=extension, artisan=artisan)
 
     def master_part_remove(self, building: int, index: int, mode: str = "hide") -> dict:
         """UNSAFE test command (the game needs HARNESS_ALLOW_UNSAFE=1): hide, destroy or unlink part `index` (from 1) of a master."""

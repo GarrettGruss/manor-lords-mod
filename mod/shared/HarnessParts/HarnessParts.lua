@@ -85,6 +85,12 @@ local function partRow(index, part, detail)
                   hidden = read(function() return part:IsHidden() end),
                   x = at and read(function() return math.floor(at.X) end), y = at and read(function() return math.floor(at.Y) end),
                   z = at and read(function() return math.floor(at.Z) end) }
+    -- Spec 31: half size of the mesh component bounds (cm), to size a replacement mesh.
+    local extent = read(function() return part.StaticMeshComponent0.Bounds.BoxExtent end)
+    if extent then
+        row.extent = { x = read(function() return math.floor(extent.X) end), y = read(function() return math.floor(extent.Y) end),
+                       z = read(function() return math.floor(extent.Z) end) }
+    end
     -- Opt-in: reading Tags and Data.bType made the command time out in the real game (spike #65, runs s65d-2, s65d-3).
     if detail then
         row.tags = tagsOf(part)
@@ -112,6 +118,7 @@ function M.master_parts(_, raw)
     local master, problem = findMaster(raw)
     if not master then return { ok = false, error = problem } end
     local limit = math.min(numberField(raw, "limit") or 5, M.MAX_PARTS)
+    local extensionLimit = math.min(numberField(raw, "ext_limit") or 0, M.MAX_PARTS)
     local out = { ok = true, building = idOf(master), type = typeOf(master), built = read(function() return master:IsConstructed() end),
                   parts = arrayCount(master.buildings), valid_parts = validCount(master.buildings),
                   rows = partRows(master.buildings, limit, math.max(numberField(raw, "from") or 1, 1), (numberField(raw, "detail") or 0) ~= 0),
@@ -119,8 +126,44 @@ function M.master_parts(_, raw)
     for i = 1, arrayCount(master.Extensions) do
         local extension = master.Extensions[i]
         out.extensions[#out.extensions + 1] = { index = i, type = read(function() return extension.Type end),
-                                                parts = arrayCount(extension.buildings), valid_parts = validCount(extension.buildings) }
+                                                parts = arrayCount(extension.buildings), valid_parts = validCount(extension.buildings),
+                                                rows = partRows(extension.buildings, extensionLimit, 1, false) }
     end
+    return out
+end
+
+-- Spec 31: goods held in the Inventory of a building: { "<good>": amount }. Read only.
+local function inventoryOf(building)
+    local out = {}
+    local array = read(function() return building.Inventory end)
+    for i = 1, array and arrayCount(array) or 0 do
+        local good = array[i]
+        local kind, amount = read(function() return good.Type end), read(function() return good.amt end)
+        if kind and amount and amount > 0 then out[tostring(kind)] = (out[tostring(kind)] or 0) + amount end
+    end
+    return out
+end
+
+-- Spec 31: the artisan state of one master (a burgage plot with a workshop extension). Read only.
+function M.master_artisan(_, raw)
+    local master, problem = findMaster(raw)
+    if not master then return { ok = false, error = problem } end
+    local out = { ok = true, building = idOf(master), type = typeOf(master), built = read(function() return master:IsConstructed() end),
+                  artisan_job = read(function() return master.artisanJob end),
+                  job_type = read(function() return master:getJobType() end),
+                  being_upgraded = read(function() return master.isBeingUpgraded end), lv = read(function() return master.lv end),
+                  max_worker_families = read(function() return master:getMaxWorkerFamilies() end),
+                  assigned_families = arrayCount(master.assignedFamilyIDs), occupant_families = arrayCount(master.occupantFamilyIDs),
+                  active_worker_families = read(function() return master.numActiveWorkerFamilies end),
+                  can_make_anything = read(function() return master:canMakeAnything() end),
+                  orders = arrayCount(master.orders),
+                  inventory = inventoryOf(master),
+                  upgrades_done = {}, can_make = {}, extension_types = {} }
+    local done = read(function() return master.upgradesDone end)
+    for i = 1, done and arrayCount(done) or 0 do out.upgrades_done[#out.upgrades_done + 1] = unwrap(done[i]) end
+    local canMake = read(function() return master.canMake end)
+    for i = 1, canMake and arrayCount(canMake) or 0 do out.can_make[#out.can_make + 1] = unwrap(canMake[i]) end
+    for i = 1, arrayCount(master.Extensions) do out.extension_types[#out.extension_types + 1] = read(function() return master.Extensions[i].Type end) end
     return out
 end
 
@@ -268,6 +311,40 @@ M.master_part_add = unsafe("master_part_add", function(_, raw)
              after = { parts = arrayCount(master.buildings), valid = validCount(master.buildings) },
              new_part = partRow(before.parts + 1, actor), mesh_set = meshOk, mesh_error = meshOk and nil or tostring(meshErr),
              master_linked = linkOk, link_error = linkOk and nil or tostring(linkErr) }
+end)
+
+-- Spec 31 spike, UNSAFE: change the artisan of one master in memory. "job" writes artisanJob (an EJobType number).
+-- "extension_type" calls SMBuildingMaster:changeArtisanType(number). Reports the artisan state before and after. No save function.
+M.master_artisan_set = unsafe("master_artisan_set", function(_, raw)
+    local master, problem = findMaster(raw)
+    if not master then return { ok = false, error = problem } end
+    local job, extensionType = numberField(raw, "job"), numberField(raw, "extension_type")
+    local enable, disable = numberField(raw, "enable_recipe"), numberField(raw, "disable_recipe")
+    local level = numberField(raw, "lv")
+    if job == nil and extensionType == nil and enable == nil and disable == nil and level == nil then return { ok = false, error = "give job, extension_type, enable_recipe or disable_recipe" } end
+    local before = read(function() return master.artisanJob end)
+    if job ~= nil then
+        local ok, err = pcall(function() master.artisanJob = job end)
+        if not ok then return { ok = false, error = "write artisanJob: " .. tostring(err), before = before } end
+    end
+    if extensionType ~= nil then
+        local ok, err = pcall(function() master:changeArtisanType(extensionType) end)
+        if not ok then return { ok = false, error = "changeArtisanType: " .. tostring(err), before = before } end
+    end
+    if level ~= nil then
+        local ok, err = pcall(function() master.lv = level end)
+        if not ok then return { ok = false, error = "write lv: " .. tostring(err), before = before } end
+    end
+    if enable ~= nil then
+        local ok, err = pcall(function() master:EnableRecipe(enable) end)
+        if not ok then return { ok = false, error = "EnableRecipe: " .. tostring(err), before = before } end
+    end
+    if disable ~= nil then
+        local ok, err = pcall(function() master:DisableRecipe(disable) end)
+        if not ok then return { ok = false, error = "DisableRecipe: " .. tostring(err), before = before } end
+    end
+    return { ok = true, building = idOf(master), before = before, after = read(function() return master.artisanJob end),
+             job_type = read(function() return master:getJobType() end), lv = read(function() return master.lv end) }
 end)
 
 return M

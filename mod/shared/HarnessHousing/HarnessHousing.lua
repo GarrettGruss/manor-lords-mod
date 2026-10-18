@@ -397,12 +397,15 @@ function M.plot_upgrade(_, raw)
     for _, id in ipairs(listOf(read(function() return building.upgradesDone end))) do before[#before + 1] = id end
     local request = { buildingMaster = building, upgradeID = upgrade, Slot = slot }
     local extension = (raw or ""):match('"extension"%s*:%s*true') ~= nil
+    local artisan = (raw or ""):match('"artisan"%s*:%s*true') ~= nil
     local ok, err = pcall(function()
-        if extension then pawn:addExtensionChangeRequest(request) else pawn:addUpgradeRequest(request) end
+        if artisan then pawn:addArtisanChangeRequest(request)
+        elseif extension then pawn:addExtensionChangeRequest(request)
+        else pawn:addUpgradeRequest(request) end
     end)
     if not ok then return { ok = false, error = "upgrade request: " .. tostring(err) } end
     return { ok = true, building = read(function() return building:GetFullName() end), type = read(function() return building.Data.bType end),
-             call = extension and "addExtensionChangeRequest" or "addUpgradeRequest", upgrade = upgrade, slot = slot,
+             call = artisan and "addArtisanChangeRequest" or (extension and "addExtensionChangeRequest" or "addUpgradeRequest"), upgrade = upgrade, slot = slot,
              upgrades_before = before, being_upgraded = read(function() return building.isBeingUpgraded end) }
 end
 
