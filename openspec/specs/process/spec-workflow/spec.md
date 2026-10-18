@@ -125,7 +125,7 @@ Each change SHALL have one GitHub issue titled `Change: <change-name>`. Its spec
 - Checked by review.
 
 ### Requirement: Legacy spec folders are read-only
-`docs/harness/` and `docs/mod/` SHALL NOT get new spec folders, new iteration files or new notes, with one exception. Work that has an open issue under a legacy spec on the day of this change MAY finish in its legacy folder. Legacy folders SHALL NOT be moved or renamed. The coverage data of spec 10 (`criteria.json` and the criteria tables of its README) SHALL stay live, because the coverage tool reads them.
+`docs/harness/` and `docs/mod/M<NN>-*/` SHALL be read-only history. No work SHALL happen in them: no new spec folders, iteration files, notes or status lines. All open legacy work SHALL be an OpenSpec change, listed in the inventory of the change `migrate-legacy-work`. Legacy folders SHALL NOT be moved, renamed or deleted. The coverage data of spec 10 (`criteria.json` and the criteria tables of its README) SHALL stay live, because the coverage tool reads them.
 
 #### Scenario: A criterion is verified
 - **WHEN** a criterion of the Invasion Mode brief is verified
@@ -134,14 +134,15 @@ Each change SHALL have one GitHub issue titled `Change: <change-name>`. Its spec
 - Checked by `harness/tools/coverage.py --check-spec`.
 
 #### Scenario: New work for an area with a legacy spec
-- **WHEN** new work touches an area that has only a legacy spec
-- **THEN** the work starts as an OpenSpec change
-- **AND** its delta spec seeds the living spec from the "current state" of the legacy README
+- **WHEN** new work touches an area that has a legacy spec
+- **THEN** the work is an OpenSpec change, and the legacy spec is only read as source material
+- **AND** the change names the legacy file it continues
 - Checked by review.
 
 #### Scenario: Open legacy work
-- **WHEN** an iteration such as M12.02 was already open in its legacy folder before this change
-- **THEN** it may finish and close in that legacy folder
+- **WHEN** an iteration such as M12.02 was still open in its legacy folder on 2026-10-18
+- **THEN** it continues as its OpenSpec change, under the issue that the change names
+- **AND** its legacy folder gets no more edits
 - Checked by review.
 
 ### Requirement: The game design stays with the user

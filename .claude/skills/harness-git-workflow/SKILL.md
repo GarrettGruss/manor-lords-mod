@@ -9,7 +9,7 @@ Rules are in CONTRIBUTING.md (the agent permissions in CLAUDE.md): atomic Conven
 
 ## Branch and commit
 - Gate 1: branch `spec/<change-name>` from an up-to-date `main`. Commit only the change folder (proposal, delta specs, design, tasks). No code, no archive.
-- Gate 2: branch `feat/<change-name>` (or `fix/`, `docs/`, `chore/`) from `main` after gate 1 is merged (or a worktree, see `harness-dispatch-agents`). A change with nothing to build uses one branch and one pull request. Open legacy work keeps its old branch (`feat/<NN>-<name>`, `feat/M<NN>-<feature>-<iteration>`).
+- Gate 2: branch `feat/<change-name>` (or `fix/`, `docs/`, `chore/`) from `main` after gate 1 is merged (or a worktree, see `harness-dispatch-agents`). A change with nothing to build uses one branch and one pull request.
 - Commit: `<type>(<scope>): <summary>` in the imperative, under 72 characters. Types: feat, fix, docs, refactor, test, chore, build, ci. End with the attribution line the session gives (`Co-Authored-By: ...`).
 - One logical change per commit: mod code, harness code, scenarios, tests, docs and notes are separate commits when they can stand alone.
 - A releasable mod has its own `mod/<Name>/CHANGELOG.md` and `mod.json`. Change them in the same commit as a mod change that players see (skill `harness-release`).
