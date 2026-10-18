@@ -18,7 +18,10 @@ Non-goals: see the proposal.
 2. **One config file, no built-in defaults.** Every constant comes from `reliability.json`. A missing key stops the script with a clear message. Reason: the specs name config keys, so values can change without a spec change.
 3. **Domains from ordered globs.** First match wins. `{name}` captures a path part into the domain name.
 4. **Git through `subprocess`** (`git log --numstat`, `git blame --porcelain`). No GitPython. No import from `harness/`.
-5. **Change failure rate by time window; blame only for bug lifetime.**
+5. **Change failure rate by blame, limited by a time window.** A feat fails in a domain when a later fix in that domain changes lines the feat wrote, within `cfr.window_days`. Changed on 2026-10-18: the plain time window gave a rate near 1.0 for busy domains, because the whole history is shorter than the window (`notes/cfr-definition.md`).
+   - `require_capability` on a domain rule: a captured domain with no capability folder falls through to the next rule (`notes/domain-map.md`).
+   - `ignore` globs: docs, change folders, spike tools and binary assets add no churn.
+   - The scenario path question is answered in `notes/scenario-path.md` (`runs.test_files`). The skill spec in the skill folder is the built form of the draft below.
 6. **Run format from config.** `runs.fields` names the JSON keys. Here `commit` reads the short `git` value, which is enough to find flaky failures (same commit, next run).
 7. **Tests use a temporary git repository** with fixed dates and fake run folders.
 
@@ -55,8 +58,8 @@ Each requirement gets a test in `tests/`. Values in brackets are config keys.
 2. **Domain map.** Globs in `domains` are tried in order. The first match wins. `{name}` fills the domain. No match gives `unmapped`. When `capabilities_dir` is set, each domain must have a folder there, or the script stops and names the pattern.
 3. **Commit types.** `commit_types.pattern` finds the type. Types in `commit_types.feat` and `commit_types.fix` count. Merge commits are skipped. A commit counts once in each domain it touches.
 4. **Git report.** Per domain: feat count, fix count, fix-to-feat ratio, churn, change failure rate, median bug lifetime, `no_origin` count, and the `unmapped` churn share.
-5. **Change failure rate.** The share of feat commits followed by a fix in the same domain within `cfr.window_days`.
-   - Example: window 14, fix 5 days after a feat → counts; fix 20 days after → does not.
+5. **Change failure rate.** The share of feat commits whose lines a fix in the same domain changes within `cfr.window_days`.
+   - Example: window 14, a fix changes a line of a feat 5 days later → counts; 20 days later → does not.
 6. **Bug lifetime.** Blame the lines a fix removes or changes on the parent commit. The newest origin commit gives the start. A fix that only adds lines counts in `no_origin`.
    - Example: a line written 3 days before the fix → lifetime between 2.9 and 3.1 days.
 7. **Run report.** Only when `runs` is set. Files from `runs.glob`, sorted by `runs.fields.time`, grouped by `runs.fields.test` and domain. `runs.pass` and `runs.fail` sort verdicts. Other verdicts are counted apart. An unreadable file is listed and skipped.

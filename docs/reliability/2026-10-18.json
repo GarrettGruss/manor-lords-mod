@@ -1,0 +1,1728 @@
+{
+  "date": "2026-10-18",
+  "over_limits": [
+    "harness/agent-tools: change failure rate 0.40 > 0.3 (n=5)",
+    "harness/game-boot: change failure rate 0.57 > 0.3 (n=7)",
+    "mod/unit_balance: change failure rate 0.40 > 0.3 (n=5)"
+  ],
+  "git": {
+    "window_days": 14,
+    "unmapped_churn_share": 0.08621310295176386,
+    "unknown_domains": {
+      "mod/example": "mod/InvasionMod/data/{name}/**"
+    },
+    "domains": {
+      "harness/agent-tools": {
+        "feat": 5,
+        "fix": 5,
+        "churn": 2570,
+        "fix_feat_ratio": {
+          "value": 1.0,
+          "n": 5,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.4,
+          "n": 5,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.07141782407407407,
+          "n": 4,
+          "low_sample": false
+        },
+        "no_origin": 1,
+        "fix_commits": [
+          "5b553a6145 fix(harness-tools): claim a start slot so a second run_scenario is refused",
+          "3d5fade7e2 fix(harness-tools): use the same default run cap as run.py",
+          "1026cad4ad fix(harness-tools): show scenario descriptions and hide test-only scenarios",
+          "95ea3b6ece fix(slots): keep parallel boots and shared locks robust",
+          "ce8ce06c46 fix(slots): share slots, locks and the ledger across worktrees"
+        ]
+      },
+      "harness/building-commands": {
+        "feat": 19,
+        "fix": 2,
+        "churn": 1930,
+        "fix_feat_ratio": {
+          "value": 0.10526315789473684,
+          "n": 19,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.15789473684210525,
+          "n": 19,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.016394675925925924,
+          "n": 2,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "49fd1c5b4a fix(parts): make the slow master_parts tag read opt-in",
+          "dafed51e7c fix(place): remove pivot commands that crash UE4SS"
+        ]
+      },
+      "harness/combat-commands": {
+        "feat": 12,
+        "fix": 0,
+        "churn": 2297,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 12,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 12,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "harness/coverage": {
+        "feat": 2,
+        "fix": 0,
+        "churn": 1522,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "harness/data-tables": {
+        "feat": 5,
+        "fix": 0,
+        "churn": 652,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 5,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 5,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "harness/encampment-commands": {
+        "feat": 2,
+        "fix": 0,
+        "churn": 398,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "harness/fake-game-kit": {
+        "feat": 19,
+        "fix": 3,
+        "churn": 4754,
+        "fix_feat_ratio": {
+          "value": 0.15789473684210525,
+          "n": 19,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.15789473684210525,
+          "n": 19,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.0525462962962963,
+          "n": 3,
+          "low_sample": false
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "a81b43844c fix(mod-state): let each mod serve its own commands and metrics",
+          "ce934a0cfe fix(boot): load the wanted save and fail when a new game starts",
+          "166a1f542a fix(boot): open the new game map through KismetSystemLibrary"
+        ]
+      },
+      "harness/game-actions": {
+        "feat": 55,
+        "fix": 5,
+        "churn": 3565,
+        "fix_feat_ratio": {
+          "value": 0.09090909090909091,
+          "n": 55,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.10909090909090909,
+          "n": 55,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.038246527777777775,
+          "n": 4,
+          "low_sample": false
+        },
+        "no_origin": 1,
+        "fix_commits": [
+          "fd8b4edccc fix(runlib): retry reading a command result that is still being written",
+          "a81b43844c fix(mod-state): let each mod serve its own commands and metrics",
+          "49fd1c5b4a fix(parts): make the slow master_parts tag read opt-in",
+          "4e2a580433 fix(harness): move the default placement click to an open meadow",
+          "3c10a7bb8b fix(meshy): use a game material instance so Meshy meshes show their texture Refs #237"
+        ]
+      },
+      "harness/game-boot": {
+        "feat": 7,
+        "fix": 6,
+        "churn": 1592,
+        "fix_feat_ratio": {
+          "value": 0.8571428571428571,
+          "n": 7,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.5714285714285714,
+          "n": 7,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.0036342592592592594,
+          "n": 6,
+          "low_sample": false
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "0185bfed64 fix(test): remove byte order mark from test scripts",
+          "f1903e644f fix(boot): pause with a clock check and wait for the slot to appear",
+          "1578d7c79b fix(boot): wait for the game clock to start before pausing",
+          "2c021fbac2 fix(boot): hold the pause for 8 s because the game restarts the clock",
+          "ce934a0cfe fix(boot): load the wanted save and fail when a new game starts",
+          "166a1f542a fix(boot): open the new game map through KismetSystemLibrary"
+        ]
+      },
+      "harness/game-setup": {
+        "feat": 1,
+        "fix": 0,
+        "churn": 95,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "harness/game-slots": {
+        "feat": 3,
+        "fix": 2,
+        "churn": 908,
+        "fix_feat_ratio": {
+          "value": 0.6666666666666666,
+          "n": 3,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.6666666666666666,
+          "n": 3,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.10672453703703703,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 1,
+        "fix_commits": [
+          "95ea3b6ece fix(slots): keep parallel boots and shared locks robust",
+          "ce8ce06c46 fix(slots): share slots, locks and the ledger across worktrees"
+        ]
+      },
+      "harness/hot-reload": {
+        "feat": 1,
+        "fix": 0,
+        "churn": 609,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "harness/manor-commands": {
+        "feat": 2,
+        "fix": 0,
+        "churn": 492,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "harness/mesh-pipeline": {
+        "feat": 2,
+        "fix": 2,
+        "churn": 591,
+        "fix_feat_ratio": {
+          "value": 1.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.5,
+          "n": 2,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": 1.040138888888889,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 1,
+        "fix_commits": [
+          "b4d3804c92 fix(genmesh): log the task id at creation and allow resume",
+          "7bc6570a32 fix(meshy): re-cook older Meshy paks with the game material instance Refs #237"
+        ]
+      },
+      "harness/mod-commands": {
+        "feat": 37,
+        "fix": 2,
+        "churn": 6397,
+        "fix_feat_ratio": {
+          "value": 0.05405405405405406,
+          "n": 37,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.05405405405405406,
+          "n": 37,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.028472222222222225,
+          "n": 2,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "a81b43844c fix(mod-state): let each mod serve its own commands and metrics",
+          "9762c68376 fix(manor): count all goods and let builders settle in manor-storage-workers"
+        ]
+      },
+      "harness/mod-releases": {
+        "feat": 4,
+        "fix": 0,
+        "churn": 1488,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 4,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 4,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "harness/pak-mods": {
+        "feat": 4,
+        "fix": 3,
+        "churn": 3238,
+        "fix_feat_ratio": {
+          "value": 0.75,
+          "n": 4,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.5,
+          "n": 4,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 3.791001157407407,
+          "n": 2,
+          "low_sample": true
+        },
+        "no_origin": 1,
+        "fix_commits": [
+          "0acda0764f fix(pakmod): use a mapping name and VER_UE5_5 for UAssetGUI 1.1.0",
+          "e3f766d361 fix(install): keep the real slots safe from uninstall tests",
+          "e16af45fcf fix(run): keep the paks of a --keep-open run in place"
+        ]
+      },
+      "harness/policy-commands": {
+        "feat": 10,
+        "fix": 2,
+        "churn": 1486,
+        "fix_feat_ratio": {
+          "value": 0.2,
+          "n": 10,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.2,
+          "n": 10,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 2.664548611111111,
+          "n": 2,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "a506d66920 fix(screenshot): capture only the game window and hide the UE4SS debug windows",
+          "b3917a1cd9 fix(osinput): fail early when Windows reports no mouse device"
+        ]
+      },
+      "harness/raid-commands": {
+        "feat": 9,
+        "fix": 0,
+        "churn": 2564,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 9,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 9,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "harness/regression-suite": {
+        "feat": 12,
+        "fix": 5,
+        "churn": 3703,
+        "fix_feat_ratio": {
+          "value": 0.4166666666666667,
+          "n": 12,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.08333333333333333,
+          "n": 12,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.06626157407407407,
+          "n": 4,
+          "low_sample": false
+        },
+        "no_origin": 1,
+        "fix_commits": [
+          "432b99da83 fix(suite): stop the game when a suite run times out",
+          "7075493062 fix(suite): list a repeated failed assertion once in the report",
+          "9dba4351b2 fix(test): pick the newest suite report by file time",
+          "4e73123388 fix(raid_behavior): read only new AI log lines; allow 30 days for larger raids",
+          "3490828d81 fix(raid_behavior): write ModState only on change and read the AI log tail"
+        ]
+      },
+      "harness/run-launcher": {
+        "feat": 83,
+        "fix": 16,
+        "churn": 11226,
+        "fix_feat_ratio": {
+          "value": 0.1927710843373494,
+          "n": 83,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.20481927710843373,
+          "n": 83,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.17803819444444444,
+          "n": 16,
+          "low_sample": false
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "32d17fb623 fix(runlib): collect crash reports from the real folder and stop CrashReportClient",
+          "102088cc82 fix(runlib): treat a refused read of boot.json as not ready yet",
+          "a506d66920 fix(screenshot): capture only the game window and hide the UE4SS debug windows",
+          "376bc4fa25 fix(runlib): do not require Steam to be running",
+          "a81b43844c fix(mod-state): let each mod serve its own commands and metrics",
+          "2368e6ab65 fix(tests): stop a preflight test from killing a real game",
+          "9762c68376 fix(manor): count all goods and let builders settle in manor-storage-workers",
+          "ed0ab1ff02 fix(time): close pop-ups during timed runs",
+          "e3f766d361 fix(install): keep the real slots safe from uninstall tests",
+          "95ea3b6ece fix(slots): keep parallel boots and shared locks robust",
+          "ce8ce06c46 fix(slots): share slots, locks and the ledger across worktrees",
+          "ba7b829faf fix(invasion): no bandit fallback after a partial lord raid spawn; add M03 follow-up test commands and scenarios Refs #172",
+          "9aaf988936 fix(test): remove a duplicate scenario name after the merge Refs #194",
+          "45a9eb4260 fix(tech-tree-widget): toggle the menu from the scheduler, not the key callback Refs #245",
+          "e16af45fcf fix(run): keep the paks of a --keep-open run in place",
+          "55390f29e5 fix(policymenu): hook-based clicks through the click button (spec 34)"
+        ]
+      },
+      "harness/save-fixtures": {
+        "feat": 5,
+        "fix": 1,
+        "churn": 1139,
+        "fix_feat_ratio": {
+          "value": 0.2,
+          "n": 5,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.2,
+          "n": 5,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.06527777777777778,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "32d17fb623 fix(runlib): collect crash reports from the real folder and stop CrashReportClient"
+        ]
+      },
+      "harness/save-game": {
+        "feat": 4,
+        "fix": 1,
+        "churn": 625,
+        "fix_feat_ratio": {
+          "value": 0.25,
+          "n": 4,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.25,
+          "n": 4,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 1.7575231481481481,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "ce8ce06c46 fix(slots): share slots, locks and the ledger across worktrees"
+        ]
+      },
+      "harness/settlement-commands": {
+        "feat": 9,
+        "fix": 0,
+        "churn": 1193,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 9,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 9,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "harness/stand-in-mods": {
+        "feat": 3,
+        "fix": 1,
+        "churn": 1281,
+        "fix_feat_ratio": {
+          "value": 0.3333333333333333,
+          "n": 3,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.3333333333333333,
+          "n": 3,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.0525462962962963,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "a81b43844c fix(mod-state): let each mod serve its own commands and metrics"
+        ]
+      },
+      "harness/telemetry-and-assertions": {
+        "feat": 7,
+        "fix": 1,
+        "churn": 625,
+        "fix_feat_ratio": {
+          "value": 0.14285714285714285,
+          "n": 7,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 7,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 1,
+        "fix_commits": [
+          "a81b43844c fix(mod-state): let each mod serve its own commands and metrics"
+        ]
+      },
+      "harness/ue4ss-bridge": {
+        "feat": 2,
+        "fix": 4,
+        "churn": 2669,
+        "fix_feat_ratio": {
+          "value": 2.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 1.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": 0.0015277777777777779,
+          "n": 2,
+          "low_sample": true
+        },
+        "no_origin": 2,
+        "fix_commits": [
+          "30929ab54d fix(bridge): harden UEBridge Lua mod (patches P1, P4, P5, P6)",
+          "c2e3d86c13 fix(bridge): gate eval in the MCP server (patch P2)",
+          "ad72fadf36 fix(bridge): reject nil property and function names (patch P8)",
+          "95ea3b6ece fix(slots): keep parallel boots and shared locks robust"
+        ]
+      },
+      "harness/unit-tuning": {
+        "feat": 2,
+        "fix": 1,
+        "churn": 586,
+        "fix_feat_ratio": {
+          "value": 0.5,
+          "n": 2,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.5,
+          "n": 2,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": 0.009016203703703703,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "e6492dcff8 fix(tune): accept a ready run that has no commands folder yet"
+        ]
+      },
+      "mod/bandits": {
+        "feat": 4,
+        "fix": 1,
+        "churn": 1339,
+        "fix_feat_ratio": {
+          "value": 0.25,
+          "n": 4,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.25,
+          "n": 4,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.06234953703703704,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "43364fdb54 fix(invasion): run all feature polls from one scheduler loop"
+        ]
+      },
+      "mod/core": {
+        "feat": 44,
+        "fix": 9,
+        "churn": 1066,
+        "fix_feat_ratio": {
+          "value": 0.20454545454545456,
+          "n": 44,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.09090909090909091,
+          "n": 44,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.047928240740740743,
+          "n": 5,
+          "low_sample": false
+        },
+        "no_origin": 4,
+        "fix_commits": [
+          "4e73123388 fix(raid_behavior): read only new AI log lines; allow 30 days for larger raids",
+          "9e77d8b013 fix(unit_balance): read known units lazily to cut Lua userdata churn",
+          "6621ddb47a fix(raid_behavior): read only raid units and scan buildings and log every 5th look",
+          "43364fdb54 fix(invasion): run all feature polls from one scheduler loop",
+          "47280b82b6 fix(invasion): order the raid widget after vassals in the feature list Refs #189",
+          "0d9808483f fix(mod): order mod.json features like feature_list",
+          "35220395ec fix(unit_balance): pike reach band from measured ranges Refs #194",
+          "45a9eb4260 fix(tech-tree-widget): toggle the menu from the scheduler, not the key callback Refs #245",
+          "bfad647133 fix(widgets): poll the menu buttons every 50 ms"
+        ]
+      },
+      "mod/example": {
+        "feat": 1,
+        "fix": 0,
+        "churn": 7,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "mod/finite_resources": {
+        "feat": 2,
+        "fix": 0,
+        "churn": 552,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 2,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "mod/invasion": {
+        "feat": 12,
+        "fix": 7,
+        "churn": 2485,
+        "fix_feat_ratio": {
+          "value": 0.5833333333333334,
+          "n": 12,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.25,
+          "n": 12,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.0687037037037037,
+          "n": 7,
+          "low_sample": false
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "9e77d8b013 fix(unit_balance): read known units lazily to cut Lua userdata churn",
+          "cc4216660d fix(invasion): read fewer unit properties for the raid squad report Refs #162",
+          "75468f01ec fix(invasion): save one integer seed for the raid composition instead of a string tag Refs #162",
+          "43364fdb54 fix(invasion): run all feature polls from one scheduler loop",
+          "ab3bd65798 fix(M05): define SIZE_FIT in the raid composition scenario Refs #162",
+          "989882ecb4 fix(invasion): assert A4 on the spawn event, not on living raiders",
+          "ba7b829faf fix(invasion): no bandit fallback after a partial lord raid spawn; add M03 follow-up test commands and scenarios Refs #172"
+        ]
+      },
+      "mod/manor_stronghold": {
+        "feat": 5,
+        "fix": 0,
+        "churn": 1265,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 5,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 5,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "mod/mod_state": {
+        "feat": 1,
+        "fix": 0,
+        "churn": 643,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "mod/raid_behavior": {
+        "feat": 11,
+        "fix": 7,
+        "churn": 2067,
+        "fix_feat_ratio": {
+          "value": 0.6363636363636364,
+          "n": 11,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.09090909090909091,
+          "n": 11,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.13103587962962965,
+          "n": 6,
+          "low_sample": false
+        },
+        "no_origin": 1,
+        "fix_commits": [
+          "b8c1690089 fix(raid_behavior): treat the native leave line as the end of the raid",
+          "4e73123388 fix(raid_behavior): read only new AI log lines; allow 30 days for larger raids",
+          "3490828d81 fix(raid_behavior): write ModState only on change and read the AI log tail",
+          "bb421fff3c fix(raid_behavior): read fewer unit properties to avoid a crash in 2-squad raids",
+          "6621ddb47a fix(raid_behavior): read only raid units and scan buildings and log every 5th look",
+          "43364fdb54 fix(invasion): run all feature polls from one scheduler loop",
+          "ba7b829faf fix(invasion): no bandit fallback after a partial lord raid spawn; add M03 follow-up test commands and scenarios Refs #172"
+        ]
+      },
+      "mod/raid_widget": {
+        "feat": 1,
+        "fix": 1,
+        "churn": 505,
+        "fix_feat_ratio": {
+          "value": 1.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 1.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": 0.3881134259259259,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "45a9eb4260 fix(tech-tree-widget): toggle the menu from the scheduler, not the key callback Refs #245"
+        ]
+      },
+      "mod/refugees": {
+        "feat": 3,
+        "fix": 0,
+        "churn": 704,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 3,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 3,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "mod/sack_and_terms": {
+        "feat": 6,
+        "fix": 0,
+        "churn": 1394,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 6,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 6,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "mod/tech_tree": {
+        "feat": 7,
+        "fix": 1,
+        "churn": 1682,
+        "fix_feat_ratio": {
+          "value": 0.14285714285714285,
+          "n": 7,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 7,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 1,
+        "fix_commits": [
+          "45a9eb4260 fix(tech-tree-widget): toggle the menu from the scheduler, not the key callback Refs #245"
+        ]
+      },
+      "mod/tech_tree_widget": {
+        "feat": 2,
+        "fix": 1,
+        "churn": 602,
+        "fix_feat_ratio": {
+          "value": 0.5,
+          "n": 2,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.5,
+          "n": 2,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": 0.3130671296296296,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "45a9eb4260 fix(tech-tree-widget): toggle the menu from the scheduler, not the key callback Refs #245"
+        ]
+      },
+      "mod/tribute": {
+        "feat": 7,
+        "fix": 0,
+        "churn": 751,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 7,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 7,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "mod/unit_balance": {
+        "feat": 5,
+        "fix": 3,
+        "churn": 1298,
+        "fix_feat_ratio": {
+          "value": 0.6,
+          "n": 5,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.4,
+          "n": 5,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.050208333333333334,
+          "n": 3,
+          "low_sample": false
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "9e77d8b013 fix(unit_balance): read known units lazily to cut Lua userdata churn",
+          "43364fdb54 fix(invasion): run all feature polls from one scheduler loop",
+          "35220395ec fix(unit_balance): pike reach band from measured ranges Refs #194"
+        ]
+      },
+      "mod/vassals": {
+        "feat": 8,
+        "fix": 0,
+        "churn": 1733,
+        "fix_feat_ratio": {
+          "value": 0.0,
+          "n": 8,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 8,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": []
+      },
+      "process/spec-workflow": {
+        "feat": 1,
+        "fix": 1,
+        "churn": 1097,
+        "fix_feat_ratio": {
+          "value": 1.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "bug_lifetime_days": {
+          "value": 0.010752314814814815,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "54a77670fc fix(openspec): quote two config rules that YAML read as mappings"
+        ]
+      },
+      "process/testing-strategy": {
+        "feat": 4,
+        "fix": 1,
+        "churn": 1847,
+        "fix_feat_ratio": {
+          "value": 0.25,
+          "n": 4,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.0,
+          "n": 4,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 0.00011574074074074075,
+          "n": 1,
+          "low_sample": true
+        },
+        "no_origin": 0,
+        "fix_commits": [
+          "0185bfed64 fix(test): remove byte order mark from test scripts"
+        ]
+      },
+      "unmapped": {
+        "feat": 42,
+        "fix": 7,
+        "churn": 7664,
+        "fix_feat_ratio": {
+          "value": 0.16666666666666666,
+          "n": 42,
+          "low_sample": false
+        },
+        "cfr": {
+          "value": 0.09523809523809523,
+          "n": 42,
+          "low_sample": false
+        },
+        "bug_lifetime_days": {
+          "value": 4.8088194444444445,
+          "n": 5,
+          "low_sample": false
+        },
+        "no_origin": 2,
+        "fix_commits": [
+          "a81b43844c fix(mod-state): let each mod serve its own commands and metrics",
+          "b3917a1cd9 fix(osinput): fail early when Windows reports no mouse device",
+          "ed0ab1ff02 fix(time): close pop-ups during timed runs",
+          "95ea3b6ece fix(slots): keep parallel boots and shared locks robust",
+          "75468f01ec fix(invasion): save one integer seed for the raid composition instead of a string tag Refs #162",
+          "2bb3793932 fix(policymenu): toggle the menu from the game-thread tick",
+          "55390f29e5 fix(policymenu): hook-based clicks through the click button (spec 34)"
+        ]
+      }
+    }
+  },
+  "runs": {
+    "skipped": [],
+    "domains": {
+      "harness/run-launcher": {
+        "tests": 36,
+        "runs": 308,
+        "other": 22,
+        "failures": 22,
+        "flaky": 0,
+        "no_commit": 22,
+        "flaky_rate": {
+          "value": 0.0,
+          "n": 308,
+          "low_sample": false
+        },
+        "mttf_hours": {
+          "value": 0.8355555555555556,
+          "n": 13,
+          "low_sample": false
+        },
+        "mttr_hours": {
+          "value": 0.035277777777777776,
+          "n": 13,
+          "low_sample": false
+        }
+      },
+      "mod/invasion": {
+        "tests": 2,
+        "runs": 5,
+        "other": 0,
+        "failures": 4,
+        "flaky": 0,
+        "no_commit": 4,
+        "flaky_rate": {
+          "value": 0.0,
+          "n": 5,
+          "low_sample": false
+        },
+        "mttf_hours": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "mttr_hours": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        }
+      },
+      "mod/tech_tree": {
+        "tests": 1,
+        "runs": 1,
+        "other": 0,
+        "failures": 0,
+        "flaky": 0,
+        "no_commit": 0,
+        "flaky_rate": {
+          "value": 0.0,
+          "n": 1,
+          "low_sample": true
+        },
+        "mttf_hours": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        },
+        "mttr_hours": {
+          "value": null,
+          "n": 0,
+          "low_sample": true
+        }
+      },
+      "unmapped": {
+        "tests": 17,
+        "runs": 86,
+        "other": 4,
+        "failures": 6,
+        "flaky": 0,
+        "no_commit": 6,
+        "flaky_rate": {
+          "value": 0.0,
+          "n": 86,
+          "low_sample": false
+        },
+        "mttf_hours": {
+          "value": 0.38972222222222225,
+          "n": 3,
+          "low_sample": false
+        },
+        "mttr_hours": {
+          "value": 0.1909722222222222,
+          "n": 2,
+          "low_sample": true
+        }
+      }
+    },
+    "tests": {
+      "autosave-protection": {
+        "domain": "harness/run-launcher",
+        "runs": 1,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "battlefield-anchor": {
+        "domain": "harness/run-launcher",
+        "runs": 2,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "counters-ab": {
+        "domain": "harness/run-launcher",
+        "runs": 12,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "datatable-record": {
+        "domain": "harness/run-launcher",
+        "runs": 1,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "datatable-vanilla": {
+        "domain": "harness/run-launcher",
+        "runs": 5,
+        "failures": 1,
+        "flaky": 0,
+        "mttf_hours": 9.735,
+        "mttr_hours": null
+      },
+      "invasion-no-double-raid": {
+        "domain": "mod/invasion",
+        "runs": 4,
+        "failures": 4,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "invasion-raid-widget": {
+        "domain": "mod/invasion",
+        "runs": 1,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "letter-delivery": {
+        "domain": "harness/run-launcher",
+        "runs": 2,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "loot-drop-recovery": {
+        "domain": "harness/run-launcher",
+        "runs": 4,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "manor-storage": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "manor-storage-workers": {
+        "domain": "harness/run-launcher",
+        "runs": 4,
+        "failures": 1,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": 0.10527777777777778
+      },
+      "mercenary-hire": {
+        "domain": "harness/run-launcher",
+        "runs": 4,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "noop": {
+        "domain": "harness/run-launcher",
+        "runs": 80,
+        "failures": 4,
+        "flaky": 0,
+        "mttf_hours": 17.51388888888889,
+        "mttr_hours": 0.01652777777777778
+      },
+      "pak-item-value": {
+        "domain": "harness/run-launcher",
+        "runs": 10,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "place-building": {
+        "domain": "harness/run-launcher",
+        "runs": 12,
+        "failures": 2,
+        "flaky": 0,
+        "mttf_hours": 128.135,
+        "mttr_hours": 0.04069444444444445
+      },
+      "probe-bailey": {
+        "domain": "unmapped",
+        "runs": 6,
+        "failures": 1,
+        "flaky": 0,
+        "mttf_hours": 0.42055555555555557,
+        "mttr_hours": null
+      },
+      "probe-building": {
+        "domain": "unmapped",
+        "runs": 4,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-building2": {
+        "domain": "unmapped",
+        "runs": 12,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-composite": {
+        "domain": "unmapped",
+        "runs": 4,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-composite-pak": {
+        "domain": "unmapped",
+        "runs": 2,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-lord-diplomacy": {
+        "domain": "unmapped",
+        "runs": 1,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-lord-village": {
+        "domain": "unmapped",
+        "runs": 2,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-osmouse": {
+        "domain": "unmapped",
+        "runs": 6,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-policy-followups": {
+        "domain": "unmapped",
+        "runs": 8,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-raid-challenge": {
+        "domain": "unmapped",
+        "runs": 1,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-rebuild": {
+        "domain": "unmapped",
+        "runs": 2,
+        "failures": 2,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-refugee-followups": {
+        "domain": "unmapped",
+        "runs": 8,
+        "failures": 1,
+        "flaky": 0,
+        "mttf_hours": 0.38972222222222225,
+        "mttr_hours": null
+      },
+      "probe-speed-fallback": {
+        "domain": "unmapped",
+        "runs": 6,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-steer": {
+        "domain": "unmapped",
+        "runs": 7,
+        "failures": 1,
+        "flaky": 0,
+        "mttf_hours": 0.22777777777777777,
+        "mttr_hours": 0.03194444444444444
+      },
+      "probe-tutorial-speed": {
+        "domain": "unmapped",
+        "runs": 10,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "probe-workers": {
+        "domain": "unmapped",
+        "runs": 2,
+        "failures": 1,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": 0.35
+      },
+      "raid-behavior": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "raid-politics": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "raid-sack": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "raid-seasons": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "raid-tiers": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "raid-timeline": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "rebuild-cost": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "refugee-wave": {
+        "domain": "unmapped",
+        "runs": 5,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "sack-ruins": {
+        "domain": "harness/run-launcher",
+        "runs": 7,
+        "failures": 1,
+        "flaky": 0,
+        "mttf_hours": 0.07361111111111111,
+        "mttr_hours": 0.005555555555555556
+      },
+      "sack-store-trip": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "sack-village": {
+        "domain": "harness/run-launcher",
+        "runs": 7,
+        "failures": 2,
+        "flaky": 0,
+        "mttf_hours": 0.08722222222222223,
+        "mttr_hours": 0.12305555555555556
+      },
+      "selftest-crash": {
+        "domain": "harness/run-launcher",
+        "runs": 4,
+        "failures": 4,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "silver-change": {
+        "domain": "harness/run-launcher",
+        "runs": 4,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "smoke": {
+        "domain": "harness/run-launcher",
+        "runs": 52,
+        "failures": 3,
+        "flaky": 0,
+        "mttf_hours": 0.06305555555555556,
+        "mttr_hours": 0.035277777777777776
+      },
+      "soak-days": {
+        "domain": "harness/run-launcher",
+        "runs": 11,
+        "failures": 4,
+        "flaky": 0,
+        "mttf_hours": 0.6906944444444445,
+        "mttr_hours": 0.2827777777777778
+      },
+      "standin-captives": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "standin-outposts": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "standin-tribute": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "tech-tree-widget-key": {
+        "domain": "mod/tech_tree",
+        "runs": 1,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "telemetry-sanity": {
+        "domain": "harness/run-launcher",
+        "runs": 10,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "time-advance": {
+        "domain": "harness/run-launcher",
+        "runs": 25,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "ui-countdown": {
+        "domain": "harness/run-launcher",
+        "runs": 4,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "unit-data": {
+        "domain": "harness/run-launcher",
+        "runs": 4,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "veterancy": {
+        "domain": "harness/run-launcher",
+        "runs": 4,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      },
+      "winter-region": {
+        "domain": "harness/run-launcher",
+        "runs": 3,
+        "failures": 0,
+        "flaky": 0,
+        "mttf_hours": null,
+        "mttr_hours": null
+      }
+    }
+  }
+}

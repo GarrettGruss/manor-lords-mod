@@ -15,6 +15,7 @@ A release is one zip for one mod version. Rules are in `openspec/changes/archive
 4. `mod/<Name>/CHANGELOG.md`: Keep a Changelog, one `## [x.y.z] - date` section for each version.
 
 ## Release steps
+0. Run the reliability assessment (skill `reliability-assessment`): `uv run python .claude/skills/reliability-assessment/scripts/reliability.py assess`. Commit the report in `docs/reliability/`. Name each domain of the mod that is over a limit in the release notes (rule `process/reliability-assessment`).
 1. Run each gate scenario in the real game with the final mod files: `uv run python harness/run.py --scenario <name>`. Every run records `runs/<id>/mod_files.json` (SHA-256 of every file under `mod/`). Any later edit of a mod file or a shared module it uses closes the gate. Run it again.
 2. Dry run: `uv run python harness/release.py --mod <Name> --dry-run`. It checks, in order: the manifest, a free tag, the changelog section, the fake tests (`--skip-tests` only for a quick look), the gate, then it builds `dist/<Name>-v<version>.zip` and scans it. `dist/` is git-ignored.
 3. Publish (only when the user asks): merge to `main`, update `main`, then `uv run python harness/release.py --mod <Name> --publish`. It needs a clean tree and HEAD inside `origin/main`. It makes the tag `<name-lower>-v<version>` and runs `gh release create --prerelease` with the zip and the changelog section.
