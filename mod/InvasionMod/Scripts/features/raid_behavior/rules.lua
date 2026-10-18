@@ -15,6 +15,18 @@ function M.new_raid(id, start_day, squads, unit_keys, roles, lord)
     }
 end
 
+-- The raid type: "hussite" for a lord army, "bandit" for the bandit squads of a role raid, nil for a native raid (type unknown).
+function M.raid_type(raid)
+    if raid.lord ~= nil then return "hussite" end
+    if raid.roles then return "bandit" end
+    return nil
+end
+
+-- The carry cap of a raid: the cap of its type, or `carry_cap` when the type is unknown.
+function M.cap_for(raid, config)
+    return (config.carry_caps or {})[M.raid_type(raid)] or config.carry_cap
+end
+
 -- Loot above the carry cap is cut to the cap. Returns the new value and whether it was cut.
 function M.clamp_carry(loot, cap)
     if loot > cap then return cap, true end
@@ -38,10 +50,12 @@ end
 -- `config` has carry_cap and exit_y. `seen[key].new_loot` is the loot cut to the cap (the caller writes it back).
 function M.update(raid, seen, config, day)
     local deaths = {}
+    local cap = M.cap_for(raid, config)
+    raid.carry_cap = cap
     for key, unit in pairs(raid.units) do
         local now = seen[key]
         if now ~= nil and not now.dead then
-            local loot, cut = M.clamp_carry(now.loot or 0, config.carry_cap)
+            local loot, cut = M.clamp_carry(now.loot or 0, cap)
             if cut then raid.capped = raid.capped + 1 end
             now.new_loot = loot
             unit.loot, unit.x, unit.y = loot, now.x or unit.x, now.y or unit.y
@@ -175,7 +189,7 @@ function M.summary(raid)
         id = raid.id, start_day = raid.start_day, end_day = raid.end_day, squads = raid.squads, state = raid.state,
         initial = raid.initial, living = raid.living, deaths = raid.deaths, departures = raid.departures,
         loot = M.total_loot(raid), looted_total = M.looted_total(raid), carried_out = raid.carried_out, peak_loot = raid.peak_loot, returned = raid.returned, lost = raid.lost,
-        capped = raid.capped, burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
+        capped = raid.capped, carry_cap = raid.carry_cap, raid_type = M.raid_type(raid), burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
     }
 end
 

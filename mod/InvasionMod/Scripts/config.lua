@@ -80,7 +80,11 @@ return {
         poll_ms = 1000,         -- real time between two looks at the raiders
         slow_every = 5,         -- the building scan and the AI log scan run every Nth look (they read many objects)
         carry_cap = 10,         -- most loot (ItemsLooted) one raider keeps. Hussite grain 10 (M00). The native AI reaches 4 or 5.
-        exit_y = -85000,        -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
+        carry_caps = {          -- cap by raid type (M00). PROVISIONAL until the loot cap spike (task 1.1). A raid of unknown type uses carry_cap.
+            hussite = 10,       -- Hussite plunder: about 10 grain
+            bandit = 5,         -- bandit plunder: about 5 grain
+        },
+        exit_y = -85000,       -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
         fallback_good = 16,     -- good type for loot when the nearest store has no goods
         -- M03 iteration 02: a role raid (spawnArmy squads) leaves like a native raid. All values are TBD for playtests.
         plunder = {                 -- the plunder tick of a lord raid: goods leave the stores while the army stands at the manor

@@ -13,7 +13,7 @@ The mod SHALL cut the loot (`ItemsLooted`) of a raider to the carry cap of its r
 - **WHEN** a raider of a bandit plunder raid carries 8
 - **THEN** the loot is cut to a value between 1 and 5
 - **AND** the cut is counted in `capped`
-- Not checked yet (planned: `harness/tests/test_fakegame_raid_behavior.py`).
+- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
 #### Scenario: A real raid under the cap by type
 - **WHEN** a Hussite plunder raid and a bandit plunder raid each run until they leave

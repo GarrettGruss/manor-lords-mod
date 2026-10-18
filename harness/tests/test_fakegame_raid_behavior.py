@@ -178,12 +178,31 @@ class LootTests(RaidBehaviorTestCase):
         self.assertEqual((raid["deaths"], raid["departures"], raid["returned"]), (1, 0, 2))
 
     def test_loot_above_the_carry_cap_is_cut(self):
+        # A native raid has no known type, so it uses carry_cap (10).
+        self.ask("invasion_set_roles", enabled=False)
         self.start_raid()
         unit = self.raiders()[0]
         unit.ItemsLooted = 15
         self.game.advance(2)
         self.assertEqual(unit.ItemsLooted, 10)
-        self.assertEqual(self.raid()["capped"], 1)
+        raid = self.raid()
+        self.assertEqual((raid["capped"], raid["carry_cap"], raid.get("raid_type")), (1, 10, None))
+
+    def test_a_bandit_raider_is_cut_to_the_bandit_cap(self):
+        self.start_raid()
+        unit = self.raiders()[0]
+        unit.ItemsLooted = 8
+        self.game.advance(2)
+        self.assertEqual(unit.ItemsLooted, 5)
+        raid = self.raid()
+        self.assertEqual((raid["capped"], raid["carry_cap"], raid["raid_type"]), (1, 5, "bandit"))
+
+    def test_loot_under_the_bandit_cap_is_kept(self):
+        self.start_raid()
+        unit = self.raiders()[0]
+        unit.ItemsLooted = 4
+        self.game.advance(2)
+        self.assertEqual((unit.ItemsLooted, self.raid()["capped"]), (4, 0))
 
     def test_no_store_means_the_loot_is_lost(self):
         self.stores.clear()
