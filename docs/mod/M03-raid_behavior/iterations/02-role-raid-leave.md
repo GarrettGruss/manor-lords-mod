@@ -6,15 +6,13 @@ Branch: `feat/M03-raid_behavior-02-role-raid-leave`. Issue: #168.
 A Hussite role raid (M05.02, `spawnArmy` squads) ends like a native raid. It leaves the map after enough loot or enough losses, and after a time limit.
 Native raids (`spawnRaiders`) and the M04 bandit raids are not changed (M00 decision 31).
 
-## Problem
-`spawnArmy` squads follow the base bandit AI. They do not obey move orders (`docs/harness/15-bandit-settlement/implementation-notes/homeless-rebellion.md`). The native line "enough looted. Leaving map." does not come for them in a reliable way.
-
-## User idea (2026-10-18, primary approach)
-1. Spawn the role raid as the army of an AI lord (the baron model) that is at war with the player, not as plain bandit squads. Proven pieces: `lords_state`, `lord_declare_war`, `lord_declare_peace` (spec 10 spike S11), `spawnArmy` with an owner pawn.
-2. The mod tracks the raid units in Lua. It checks whether they are inside the battle area (the battle marker, or a radius around the village or the target region).
-3. While they are inside, the mod withdraws goods from the player's stores (a plunder tick). The total is managed by the mod. It may scale with raid size and difficulty.
-4. When that amount is reached (or a time limit or loss limit is hit), the mod declares peace between the lord and the player. The units then leave the map. If they do not walk off, the mod removes them at the map edge.
-The user believes (a) the baron AI is hard-coded not to plunder the player, so the Lua plunder tick is the plunder, and (b) declaring peace forces the army to leave.
+## Design (user decision 2026-10-18, replaces the silent-removal design)
+1. A Hussite role raid is the army of an AI lord ("Hussite Raiders") at war with the player (`features/invasion/lord_raid.lua`; `spawnArmy` with the lord as owner, `HarnessLords`).
+2. The challenge battlefield is moved to the player manor with `HarnessBattlefield.battlefield_anchor` (issue #99): the army marches to the manor and stands there.
+3. Plunder is a mod tick: once a game day, goods leave the village stores for each raider that stands within `plunder.battle_radius` of the manor (`raid_behavior`).
+4. The raid leaves when the loot goal (`leave.loot_per_raider` for each raider), the loss share or the time limit is reached. The mod declares peace; the game removes the lord army.
+5. If a challenge is won, the region goes back to the player at once (guard in `raid_behavior`).
+6. Fallback (when the lord raid cannot start, or `lord_army.enabled = false`): bandit squads. They leave as follows (user decision): peace with the bandit lord makes them walk away, and the mod removes a unit only in a quiet spot, at least `leave.quiet_distance` from the player pawn or at the map edge, never in view. The loot leaves with the unit.
 
 ## Spike first
 Verify in the real game before any feature code:
@@ -27,9 +25,10 @@ Notes go to `../implementation-notes/iteration-02-role-raid-leave.md`. If the lo
 - A1: a role raid reaches the leave state when the loot taken is at least `leave_loot_per_raider` x the raiders at the start. Loot per raider: 3 to 10.
 - A2: a role raid reaches the leave state when the share of lost raiders is at least `leave_loss_share` (0.4 to 0.7).
 - A3: a role raid reaches the leave state at `max_days` after the spawn (15 to 40 game days), also when no other rule fired.
-- A4: after the leave state, no raider of the raid stays on the map within 1 to 3 game days (the mod removes them at once). The loot they carry is counted as carried out, not returned to a store.
+- A4: after the leave state, no raider of the raid stays on the map within 1 to 3 game days (peace removes a lord army; the fallback removes units in a quiet spot). The loot they carry is counted as carried out, not returned to a store.
 - A5: native raids (roles off) and bandit raids are not touched: the leave rules never fire for them.
 - A6: the village population after the raid is more than 0. No game crash.
+- A7: the player still owns a region after the raid, and a lord raid took goods from the stores (plundered more than 0).
 
 ## Plan
 - Pure rules in `raid_behavior/rules.lua` (leave decision), tested without the game.
@@ -37,7 +36,9 @@ Notes go to `../implementation-notes/iteration-02-role-raid-leave.md`. If the lo
 - Scenario `raid-behavior-role-leave` plus the fake tests.
 
 ## Result
-Partly done (2026-10-18). Code and fake tests are done; the real-game run is open because the harness run cap was reached.
-- Spike (notes `../implementation-notes/iteration-02-role-raid-leave.md`): the lord route is not feasible as a carrier (a challenge hands the player region to the lord, run `20261018-015009-371a`; without a challenge the lord army does not attack, run `20261018-015705-ee48`). `declarePeace` removes a lord-owned army within 60 game seconds. Peace with the bandit lord only steers a role raid away (run `20261018-020315-51c8`).
-- Mechanism built: loot to 0, then `just_die`; config `raid_behavior.leave` (loot 4 per raider, loss share 0.5, 25 days). 5 new fake tests pass.
-- Open: scenario `raid-behavior-role-leave` in the real game (A1 to A6).
+Result: PASS in the real game (2026-10-18). Notes: `../implementation-notes/iteration-02-role-raid-leave.md`.
+- Scenario `raid-behavior-role-leave`: difficulty 1 `20261018-040610-b669` pass (lord raid, 32 raiders, plundered 128 = 4 per raider over days 208 to 212, peace on day 212, raid ended day 214, region kept); difficulty 2 `20261018-040850-367c` pass.
+- Anchor spike `probe-lord-raid-anchor` `20261018-035856-248b`: the army stood within 1300 units of the manor for 14 game minutes; the challenge stayed open, no region transfer in that time.
+- Earlier fallback design in the real game (bandit squads, quiet-spot removal): run `20261018-035536-1237` (leave on day 213 by losses, units removed day 214, war restored). The run ended as harness_error only because of a string metric (fixed).
+- Regression: `invasion-raid-composition` difficulty 1 `20261018-041117-2d31`, difficulty 3 `20261018-041304-1c3e` pass (a boot crash `20261018-041200-e3d8` before the retry).
+- Not verified: the guard that gives a won region back (no run lost the region); loss and time reasons for a lord raid; a lord raid on a save with several raids in one session.

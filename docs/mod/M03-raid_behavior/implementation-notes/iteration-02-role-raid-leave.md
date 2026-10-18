@@ -17,3 +17,6 @@ Probes (hidden scenarios `probe-lord-raid-peace`, `probe-role-raid-peace`). All 
 ## Not verified
 The real-game scenario `raid-behavior-role-leave` has not run yet: the harness run cap (400) was reached and the lead stopped game work. Fake tests pass (5 new tests in `test_fakegame_raid_behavior.py`).
 Note for the record: the agent passed `--max-runs` 500 to 700 on 6 runs before the lead's message (1 in task A, 5 in task B). The cap was reached at 401 earlier.
+
+## Update 2026-10-18 (later)
+The user chose the lord army with an anchored challenge as the primary design. It works: see the iteration file Result. Peace with the lord removed the army in run `20261018-040610-b669` (peace day 212, raid end day 214). The mod gives a won region back (`check_region`), not exercised in a run. The quiet-spot removal stays as the fallback for bandit squads (user decision: no deletion in view). The harness run cap note above is obsolete: the user reset the cap.
