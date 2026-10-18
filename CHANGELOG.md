@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M05.04 (#194): feature `unit_balance` adds veterancy (experience tier scales att and def, +10 percent per tier) and a pike bonus (att +1 for units with weapon reach 110 to 125). Scenario `unit-balance-matchup`. Shield against crossbow counter: no stat lever found (notes `docs/mod/M05-unit_balance/implementation-notes/iteration-04-counters-veterancy.md`).
 - Mod M08.02 (#214): protection. A raid on a vassal region that ends undefended (left by loot or time) lowers the vassal loyalty by 15; a defended one (destroyed, or left by losses) raises it by 5. `raid_behavior` gets `watch_end` and `target`. Command `tribute_test_raid_result`. Scenario `tribute-protection-and-loyalty`.
 - Mod M13.02: retinue limit. Tree effect `retinue_capacity` (+12 at Veteran Levies and Militia Rights) raises the limit that scripts read and the hire gate. The native hire still stops at 12 (spike result). Commands `retinue_state`, `retinue_hire`. Scenario `manor-stronghold-retinue`, probe `probe-retinue-cap`.
 - Mod M07.04 (#212): a lost vassal frees its slot and sends a refugee wave (M09 listens through `vassals.on_lost`); a vassal at loyalty 10 or less submits (the lord goes to war, tribute stops) and returns at 40. Commands `vassals_lose`, `vassals_set_loss_region`, `vassals_submission_tick_now`. Scenario `vassals-loss-and-submission`. Moving the land of a lost vassal to another owner crashed the game; the default leaves it with its lord.
