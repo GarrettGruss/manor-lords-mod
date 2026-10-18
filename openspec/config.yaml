@@ -29,14 +29,14 @@ context: |
 
 rules:
   proposal:
-    - Link the GitHub issue that tracks the change. Also set `x-issue: <n>` in the change's `.openspec.yaml`.
+    - "Link the GitHub issue that tracks the change. Also set `x-issue: <n>` in the change's `.openspec.yaml`."
     - State the non-goals.
     - Name the legacy doc folder the change continues, if there is one.
   specs:
     - A requirement states behavior a player, a scenario or a harness user can observe.
     - Each spec scenario names its check, as "Checked by `<path>`" (a test scenario or a Python test in `harness/tests/`), says "Checked by review" for a process rule, or says "Not checked yet".
     - For game behavior, write the THEN step as a range (for example "between 30 and 90 game days").
-    - Put the comment `<!-- Issue: #<n> -->` under the first section heading of each delta spec. A line above the first heading fails `openspec validate --strict`.
+    - "Put the comment `<!-- Issue: #<n> -->` under the first section heading of each delta spec. A line above the first heading fails `openspec validate --strict`."
   design:
     - Record open questions with the spike that will answer them.
     - Point to engine facts in the wiki or in `notes/` of this change. Do not copy them.
