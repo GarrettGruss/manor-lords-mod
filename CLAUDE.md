@@ -30,7 +30,9 @@ This file adds only what is specific to agents: replies, subagents, permissions 
 
 - Commits are approved (2026-10-18). Commit each logical change on its branch when it is done. Do not commit to `main`, except the small project-rule changes that CONTRIBUTING.md allows there.
 - Merges (2026-10-18; this narrows the advance approval of 2026-10-17):
-  - Do not merge a gate pull request (spec or implementation) yourself. The user approves and merges it on GitHub. Mark the issue `status: awaiting user`.
+  - Do not merge a gate pull request (spec or implementation) yourself without explicit permission. By default the user approves and merges it on GitHub. Mark the issue `status: awaiting user`.
+  - Explicit permission (2026-10-18): an approved user may tell you in chat to merge a named pull request. A chat message is enough. Then merge it after the full tests pass, and say in the pull request which user approved it in chat. The permission covers only the pull requests that the message names.
+  - Approved users: garrett.g.gruss@gmail.com.
   - Do not start the implementation of a change before its spec pull request is merged.
   - A pull request without a gate (no change folder, no spec change, no acceptance from test results) may be merged by you after the full tests pass.
   - Do not push or merge in any other case unless the user asks.
