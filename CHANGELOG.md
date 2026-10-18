@@ -9,6 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Skill `harness-meshy`: the pipeline for 3D models (Gemini, Meshy, UE import, material instance, pak), cost rules, and the Meshy Pro license quote.
 
 ### Fixed
+- A `--keep-open` run keeps its paks in `~mods`: removing them under the running game hung it on the first open of a pak widget (F9 tech menu). Remove them later with `pakmod.py remove --all`.
 - PolicyMenu: the F7 key callback only sets a flag; the game-thread tick opens and closes the menu (same input-thread race as the InvasionMod F9 hang, PR #246).
 - Tech tree menu: the real F9 key no longer crashes the game (#245). The key callback now only sets a flag; the scheduler opens or closes the menu on the game thread. Same change for the raid widget F8. Scenario `tech-tree-widget-key`.
 - Re-cooked the Wagenburg, wall, keep, big ox shed and weaver shed paks with the game material instance; added `weavermesh_P.pak` and `harness/tools/recook_meshy_pak.py` (spec 33, #237).

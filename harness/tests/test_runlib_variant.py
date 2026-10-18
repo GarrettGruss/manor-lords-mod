@@ -12,7 +12,7 @@ import run as run_module
 from runlib import paks, phases
 from runlib.extra_env import EnvOptionError, masked_for_config, parse_env_options
 from runlib.game import GameInstall, build_game_environment
-from runlib.pak_phases import PAK_PHASE_NAME, install_paks, remove_paks_phase
+from runlib.pak_phases import PAK_PHASE_NAME, install_paks, keep_paks_phase, remove_paks_phase
 from runlib.runfolder import create_run_folder
 from runlib.scenario_context import ScenarioContext
 from runlib.runner import Phase, PhaseContext, PhaseFailed, run_phases
@@ -87,6 +87,14 @@ class PakPhasesTest(unittest.TestCase):
         self.assertFalse(self.pak_in_mods("demo").exists())
         self.assertFalse(self.mods.exists())
         self.assertIn("demo", detail)
+
+    def test_keep_open_leaves_the_pak_for_the_running_game(self):
+        self.ctx.state["notes"] = []
+        install_paks(self.install, self.ctx, ["demo"], self.work)
+        detail = keep_paks_phase().fn(self.ctx)
+        self.assertTrue(self.pak_in_mods("demo").is_file())
+        self.assertIn("demo", detail)
+        self.assertIn("pakmod.py remove --all", self.ctx.state["notes"][-1])
 
     def test_teardown_removes_the_pak_when_an_earlier_phase_failed(self):
         def failing_preflight(ctx):
