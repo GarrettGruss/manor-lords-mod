@@ -181,6 +181,13 @@ return {
         keep_peace = true,       -- declare peace again when a vassal lord is at war with the player (TBD: the lords started the war by themselves)
         growth_check_days = 10,  -- game days after the handover until the mod checks that the lord built
         growth_min_buildings = 3, -- fewer new buildings than this means the lord stalled (real runs: +10 or +0)
+        -- Iteration 03. Policies and the gift order are mod-owned. Values are TBD for playtests.
+        policies = {
+            light = { tribute = 0.5, loyalty = 3 },   -- tribute factor on the M08 share, loyalty change at each season change
+            fair = { tribute = 1.0, loyalty = 0 },
+            heavy = { tribute = 1.5, loyalty = -5 },
+        },
+        gift = { cost = 50, loyalty = 10 },            -- order "send a gift": silver cost and loyalty gain
         loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
     },
     -- M08 tribute. Values are TBD for playtests (M00: 10 to 30 percent of the production).

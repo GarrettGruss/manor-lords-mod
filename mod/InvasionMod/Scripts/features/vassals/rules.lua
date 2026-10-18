@@ -48,6 +48,17 @@ function M.is_stalled(before, now, min_new)
     return now - before < min_new
 end
 
+-- A season tick runs when the season differs from the saved one. A saved -1 means "not known yet": no tick.
+function M.season_changed(current, last)
+    return last >= 0 and current ~= last
+end
+
+-- Why a gift is refused, or nil.
+function M.gift_refusal(silver, gift)
+    if silver < gift.cost then return string.format("not enough silver (%d, need %d)", silver, gift.cost) end
+    return nil
+end
+
 -- A relation tag that means war.
 function M.has_war_tag(tags)
     for _, tag in ipairs(tags or {}) do
