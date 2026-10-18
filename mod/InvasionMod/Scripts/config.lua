@@ -143,8 +143,8 @@ return {
     raid_widget = {
         enabled = true,
         toggle_key = Key.F8,                 -- F7 is the policy menu of the other mod; change here if F8 clashes
-        poll_ms = 50,                        -- real time between two checks of the buttons; a click shorter than this is missed
-        click_cooldown_s = 0.4,
+        poll_ms = 50,                        -- real time between two looks at the click queue (clicks are hook events, spec 34)
+        refresh_ms = 500,                    -- real time between two refreshes of the labels
         z_order = 500,
         position = { X = 300, Y = 150 },
     },
@@ -248,8 +248,8 @@ return {
     tech_tree_widget = {
         enabled = true,
         toggle_key = Key.F9,                 -- F7 is the policy menu and F8 the raid menu
-        poll_ms = 50,                        -- real time between two checks of the buttons; a click shorter than this is missed
-        click_cooldown_s = 0.4,
+        poll_ms = 50,                        -- real time between two looks at the click queue (clicks are hook events, spec 34)
+        refresh_ms = 500,                    -- real time between two refreshes of the labels
         z_order = 500,
         position = { X = 300, Y = 150 },
         step_x = 180, step_y = 60,           -- pixels for one layout unit of a node

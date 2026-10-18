@@ -51,11 +51,8 @@ def add_menu(tree, seed):
         line.set_editor_property("text", "-")
         column.add_child(line)
     for i in range(BUTTON_COUNT):
-        button = unreal.new_object(unreal.Button, tree, "DifficultyButton%d" % i)
-        label = unreal.new_object(unreal.TextBlock, tree, "DifficultyLabel%d" % i)
-        label.set_editor_property("text", "-")
-        button.add_child(label)
-        column.add_child(button)
+        # Lua puts a WBP_ClickButton into this border (spec 34): its OnClicked event is hookable, a Button here is not.
+        column.add_child(unreal.new_object(unreal.Border, tree, "DifficultyButton%d" % i))
 
 
 def drop_graphs(bp):

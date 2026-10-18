@@ -1,20 +1,21 @@
 -- Feature raid_widget (M02 iteration 05, decision 4): one menu for all raid information.
 -- The layout is a cooked Widget Blueprint in the pak raidmenu_P.pak (mod/InvasionMod/ue/make_raid_widget.py): a title, LINE_COUNT text
--- lines and three difficulty buttons. Lua fills the texts and polls the buttons (the Blueprint has no graph, spec 16).
+-- lines and three Borders. Lua puts a click button (WBP_ClickButton, shared module HarnessClickHooks) into each Border.
+-- A click is a hook event, not a poll (spec 34).
 -- F8 opens and closes the menu. A click on a difficulty button picks the difficulty (until the first raid or the first pick).
 -- Rules: game objects are touched on the game thread only (the scheduler runs jobs there). No LoopAsync of its own.
 local core = require("ManorCore")
 local lines = require("features.raid_widget.lines")
 local invasion = require("features.invasion.init")
 local config = require("config").raid_widget
+local clickhooks = require("HarnessClickHooks")
 
 local TAG = "InvasionMod.raid_widget"
 local CLASS_PATH = "/Game/HarnessMod/WBP_RaidMenu.WBP_RaidMenu_C"
 local PACKAGE_PATH, ASSET_NAME = "/Game/HarnessMod", "WBP_RaidMenu"
 local LINE_COUNT, BUTTON_COUNT = 5, 3
-local VISIBLE, COLLAPSED = 0, 1 -- ESlateVisibility
 
-local S = { widget = nil, lines = {}, buttons = {}, picks = 0, last_error = nil }
+local S = { widget = nil, lines = {}, buttons = {}, picks = 0, last_error = nil, shown_lines = {}, last_refresh = 0 }
 local isValid, read = core.isValid, core.read
 
 -- LoadAsset does not load an asset of a mod pak. The asset registry call does (spec 16 pak-widget-spike.md).
@@ -73,22 +74,18 @@ local function refresh()
     local info = invasion.raid_info()
     local texts = lines.all(info, terms_summary())
     for i = 1, LINE_COUNT do
-        if S.lines[i] then S.lines[i]:SetText(FText(texts[i])) end
+        if S.lines[i] and S.shown_lines[i] ~= texts[i] then
+            S.shown_lines[i] = texts[i]
+            S.lines[i]:SetText(FText(texts[i]))
+        end
     end
     for i = 1, BUTTON_COUNT do
-        if S.buttons[i] then S.buttons[i].button:SetVisibility(info.picks_allowed and VISIBLE or COLLAPSED) end
+        if S.buttons[i] then clickhooks.set_visible(S.buttons[i].handle, info.picks_allowed) end
     end
     return true
 end
 
--- A click is a press that ends while the mouse is on the button (same rule as PolicyMenu).
-local function check_button(slot, value)
-    local pressed = read(function() return slot.button:IsPressed() end) == true
-    if pressed then slot.hovered = read(function() return slot.button:IsHovered() end) == true end
-    local released = slot.was_pressed and not pressed
-    slot.was_pressed = pressed
-    if not (released and slot.hovered) or os.clock() - slot.last_click < config.click_cooldown_s then return end
-    slot.last_click = os.clock()
+local function pick(value)
     local result, problem = invasion.pick_difficulty(value)
     if not result then
         S.last_error = problem
@@ -111,12 +108,24 @@ local function tick()
         S.widget = nil
         return
     end
-    for value, slot in ipairs(S.buttons) do check_button(slot, value) end
-    refresh()
+    local clicked = clickhooks.drain(S)
+    for _, handle in ipairs(clicked) do pick(handle.tag.value) end
+    -- The labels change only when the game state changes. A refresh each tick made a lot of Lua garbage.
+    local now = os.clock()
+    if #clicked > 0 or now - S.last_refresh >= config.refresh_ms / 1000 then
+        S.last_refresh = now
+        refresh()
+    end
 end
 
 local function is_open()
     return isValid(S.widget)
+end
+
+local function release_buttons()
+    local handles = {}
+    for _, slot in pairs(S.buttons) do handles[#handles + 1] = slot.handle end
+    clickhooks.release(handles)
 end
 
 local function open()
@@ -125,15 +134,30 @@ local function open()
     if not made then return { ok = false, error = problem } end
     S.widget = made
     S.lines = find_named(made, "TextBlock", "RaidLine", LINE_COUNT)
-    local buttons = find_named(made, "Button", "DifficultyButton", BUTTON_COUNT)
-    local labels = find_named(made, "TextBlock", "DifficultyLabel", BUTTON_COUNT)
+    local borders = find_named(made, "Border", "DifficultyButton", BUTTON_COUNT)
+    local controller = FindFirstOf("PlayerController")
     S.buttons = {}
     for i = 1, BUTTON_COUNT do
-        if buttons[i] and labels[i] then
-            S.buttons[i] = { button = buttons[i], was_pressed = false, hovered = false, last_click = -100 }
-            labels[i]:SetText(FText("Pick difficulty " .. i))
+        if borders[i] then
+            local handle, problem = clickhooks.attach(borders[i], controller, { owner = S, value = i })
+            if not handle then
+                made:RemoveFromParent()
+                S.widget = nil
+                return { ok = false, error = problem }
+            end
+            S.buttons[i] = { handle = handle }
         end
     end
+    local handles = {}
+    for _, slot in pairs(S.buttons) do handles[#handles + 1] = slot.handle end
+    local bound, bind_problem = clickhooks.bind_texts(handles)
+    if not bound then
+        release_buttons()
+        made:RemoveFromParent()
+        S.widget, S.buttons = nil, {}
+        return { ok = false, error = bind_problem }
+    end
+    for i, slot in pairs(S.buttons) do clickhooks.set_text(slot.handle, "Pick difficulty " .. i) end
     if S.lines[1] == nil then
         made:RemoveFromParent()
         S.widget = nil
@@ -147,7 +171,8 @@ end
 
 local function close()
     if is_open() then S.widget:RemoveFromParent() end
-    S.widget, S.lines, S.buttons = nil, {}, {}
+    release_buttons()
+    S.widget, S.lines, S.buttons, S.shown_lines = nil, {}, {}, {}
     return { ok = true }
 end
 
@@ -167,8 +192,8 @@ local function describe()
     end
     local buttons = {}
     for value, slot in pairs(S.buttons) do
-        buttons[#buttons + 1] = { value = value, visibility = read(function() return slot.button:GetVisibility() end),
-            hovered = read(function() return slot.button:IsHovered() end) }
+        buttons[#buttons + 1] = { value = value, visibility = read(function() return slot.handle.widget:GetVisibility() end),
+            hovered = read(function() return slot.handle.widget:IsHovered() end) }
     end
     return { open = is_open(), in_viewport = is_open() and read(function() return S.widget:IsInViewport() end) or false,
         lines = shown, wanted_lines = current_lines(), buttons = buttons, picks = S.picks, last_error = S.last_error }
@@ -181,29 +206,6 @@ if has_commands then
     commands.register("InvasionMod.raid_widget_state", describe, {})
 end
 
--- SPIKE (spec 34): remove before the final commit.
-local clickhooks = require("HarnessClickHooks")
-local probe = { widget = nil, clicks = 0, log = {} }
-if has_commands then
-    commands.register("InvasionMod.click_probe_open", function()
-        local controller = FindFirstOf("PlayerController")
-        local made, problem = clickhooks.new_button(controller)
-        if not made then return { ok = false, error = problem } end
-        probe.widget = made
-        made:AddToViewport(600)
-        made:SetPositionInViewport({ X = 600, Y = 400 }, false)
-        return { ok = true }
-    end, {})
-    commands.register("InvasionMod.click_probe_state", function()
-        for _, record in ipairs(clickhooks.drain()) do probe.clicks = probe.clicks + 1; probe.log[#probe.log + 1] = record.at end
-        local hovered = false
-        for _, object in ipairs(FindAllOf("Button") or {}) do
-            local full = core.read(function() return object:GetFullName() end) or ""
-            if full:find("WBP_ClickButton", 1, true) and core.read(function() return object:IsHovered() end) == true then hovered = true end
-        end
-        return { ok = true, clicks = probe.clicks, hovered = hovered, times = probe.log }
-    end, {})
-end
 require("scheduler").every(TAG, config.poll_ms, tick)
 -- The key callback runs on the input thread. It must not touch the Lua state beyond one flag:
 -- Lua calls from it raced with the game thread and crashed the game (UE4SS luaH_getint). The tick does the work.

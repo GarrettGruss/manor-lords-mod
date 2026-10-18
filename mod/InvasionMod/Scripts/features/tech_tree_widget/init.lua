@@ -1,5 +1,6 @@
 -- Feature tech_tree_widget (M12 iteration 02): the menu of the tech tree.
--- The pak techmenu_P.pak holds a cooked Widget Blueprint with a POOL of node buttons on a canvas (mod/InvasionMod/ue/make_tech_widget.py).
+-- The pak techmenu_P.pak holds a cooked Widget Blueprint with a POOL of Borders on a canvas (mod/InvasionMod/ue/make_tech_widget.py).
+-- Lua puts a click button (WBP_ClickButton, shared module HarnessClickHooks) into each Border. A click is a hook event, not a poll (spec 34).
 -- The tree is data driven: Lua labels, shows, hides, colours and moves the buttons from the nodes of the tech_tree feature
 -- (data/tech_tree/tree.json, with the layout data). A click on a path button or a node button calls the tech_tree feature.
 -- Rules: game objects are touched on the game thread only (the scheduler runs jobs there). No LoopAsync of its own.
@@ -7,14 +8,14 @@ local core = require("ManorCore")
 local lines = require("features.tech_tree_widget.lines")
 local tech_tree = require("features.tech_tree.init")
 local config = require("config").tech_tree_widget
+local clickhooks = require("HarnessClickHooks")
 
 local TAG = "InvasionMod.tech_tree_widget"
 local CLASS_PATH = "/Game/HarnessMod/WBP_TechTreeMenu.WBP_TechTreeMenu_C"
 local PACKAGE_PATH, ASSET_NAME = "/Game/HarnessMod", "WBP_TechTreeMenu"
 local LINE_COUNT, PATH_BUTTON_COUNT, NODE_COUNT, LAW_COUNT = 3, 2, 16, 3
-local VISIBLE, COLLAPSED = 0, 1 -- ESlateVisibility
 
-local S = { widget = nil, lines = {}, laws_line = nil, paths = {}, nodes = {}, laws = {}, clicks = 0, last_error = nil, last_view = nil }
+local S = { widget = nil, lines = {}, laws_line = nil, paths = {}, nodes = {}, laws = {}, clicks = 0, last_error = nil, last_view = nil, shown_lines = {}, shown_laws_line = nil, last_refresh = 0 }
 local isValid, read = core.isValid, core.read
 
 -- LoadAsset does not load an asset of a mod pak. The asset registry call does (spec 16 pak-widget-spike.md).
@@ -57,13 +58,19 @@ local function find_named(widget, class_name, prefix, count)
     return found
 end
 
-local function set_visible(button, shown)
-    pcall(function() button:SetVisibility(shown and VISIBLE or COLLAPSED) end)
+local function set_visible(slot, shown)
+    pcall(clickhooks.set_visible, slot.handle, shown)
+end
+
+local function set_line(index, text)
+    if S.shown_lines[index] == text then return end
+    S.shown_lines[index] = text
+    S.lines[index]:SetText(FText(text))
 end
 
 local function place(slot)
     local position = lines.position(slot.row.layout, config.step_x, config.step_y)
-    local ok, problem = pcall(function() slot.button.Slot:SetPosition(position) end)
+    local ok, problem = pcall(function() slot.border.Slot:SetPosition(position) end)
     if not ok and not S.position_error then
         S.position_error = tostring(problem)
         core.log.warn(TAG, "node position failed: " .. S.position_error)
@@ -75,10 +82,13 @@ local function refresh_nodes(view)
         local slot, row = S.nodes[i], view.nodes[i]
         if slot then
             slot.row = row
-            set_visible(slot.button, row ~= nil)
+            set_visible(slot, row ~= nil)
             if row then
-                slot.label:SetText(FText(lines.node_label(row)))
-                pcall(function() slot.button:SetBackgroundColor(lines.color(row.status)) end)
+                clickhooks.set_text(slot.handle, lines.node_label(row))
+                if slot.status ~= row.status then
+                    slot.status = row.status
+                    pcall(function() slot.handle.widget:SetColorAndOpacity(lines.color(row.status)) end)
+                end
                 place(slot)
             end
         end
@@ -86,13 +96,19 @@ local function refresh_nodes(view)
 end
 
 local function refresh_laws(view)
-    if S.laws_line then S.laws_line:SetText(FText(lines.laws_line(view))) end
+    if S.laws_line then
+        local text = lines.laws_line(view)
+        if S.shown_laws_line ~= text then
+            S.shown_laws_line = text
+            S.laws_line:SetText(FText(text))
+        end
+    end
     for i = 1, LAW_COUNT do
         local slot = S.laws[i]
         if slot then
             slot.row = view.laws[i]
-            set_visible(slot.button, slot.row ~= nil)
-            if slot.row then slot.label:SetText(FText(lines.law_label(slot.row))) end
+            set_visible(slot, slot.row ~= nil)
+            if slot.row then clickhooks.set_text(slot.handle, lines.law_label(slot.row)) end
         end
     end
 end
@@ -103,28 +119,17 @@ local function refresh()
     S.last_view = view
     local texts = lines.header(view)
     for i = 1, LINE_COUNT do
-        if S.lines[i] then S.lines[i]:SetText(FText(texts[i])) end
+        if S.lines[i] then set_line(i, texts[i]) end
     end
     for i = 1, PATH_BUTTON_COUNT do
         local slot = S.paths[i]
         if slot then
-            set_visible(slot.button, view.path_name == nil and view.paths[i] ~= nil)
-            if view.paths[i] then slot.label:SetText(FText(lines.path_label(view.paths[i]))) end
+            set_visible(slot, view.path_name == nil and view.paths[i] ~= nil)
+            if view.paths[i] then clickhooks.set_text(slot.handle, lines.path_label(view.paths[i])) end
         end
     end
     refresh_nodes(view)
     refresh_laws(view)
-    return true
-end
-
--- A click is a press that ends while the mouse is on the button (same rule as PolicyMenu and the raid widget).
-local function was_clicked(slot)
-    local pressed = read(function() return slot.button:IsPressed() end) == true
-    if pressed then slot.hovered = read(function() return slot.button:IsHovered() end) == true end
-    local released = slot.was_pressed and not pressed
-    slot.was_pressed = pressed
-    if not (released and slot.hovered) or os.clock() - slot.last_click < config.click_cooldown_s then return false end
-    slot.last_click = os.clock()
     return true
 end
 
@@ -175,30 +180,42 @@ local function tick()
         S.widget = nil
         return
     end
-    for i, slot in ipairs(S.paths) do
-        if was_clicked(slot) then press_path(i) end
+    local handlers = { path = press_path, node = press_node, law = press_law }
+    local clicked = clickhooks.drain(S)
+    for _, handle in ipairs(clicked) do
+        handlers[handle.tag.kind](handle.tag.index)
     end
-    for i, slot in ipairs(S.nodes) do
-        if was_clicked(slot) then press_node(i) end
+    -- The labels change only when the game state changes. A refresh each tick made a lot of Lua garbage and the Lua state broke.
+    local now = os.clock()
+    if #clicked > 0 or now - S.last_refresh >= config.refresh_ms / 1000 then
+        S.last_refresh = now
+        refresh()
     end
-    for i, slot in ipairs(S.laws) do
-        if was_clicked(slot) then press_law(i) end
-    end
-    refresh()
 end
 
 local function is_open() return isValid(S.widget) end
 
-local function make_slots(widget, prefix, label_prefix, count)
-    local buttons = find_named(widget, "Button", prefix, count)
-    local labels = find_named(widget, "TextBlock", label_prefix, count)
+-- Puts a click button into each Border of the pool. Returns the slots, or nil and a message.
+local function make_slots(widget, prefix, kind, count)
+    local borders = find_named(widget, "Border", prefix, count)
+    local controller = FindFirstOf("PlayerController")
     local slots = {}
     for i = 1, count do
-        if buttons[i] and labels[i] then
-            slots[i] = { button = buttons[i], label = labels[i], was_pressed = false, hovered = false, last_click = -100 }
+        if borders[i] then
+            local handle, problem = clickhooks.attach(borders[i], controller, { owner = S, kind = kind, index = i })
+            if not handle then return nil, problem end
+            slots[i] = { border = borders[i], handle = handle }
         end
     end
     return slots
+end
+
+local function release_slots()
+    local handles = {}
+    for _, group in ipairs({ S.paths, S.nodes, S.laws }) do
+        for _, slot in pairs(group) do handles[#handles + 1] = slot.handle end
+    end
+    clickhooks.release(handles)
 end
 
 local function open()
@@ -210,9 +227,24 @@ local function open()
     end
     S.widget = made
     S.lines = find_named(made, "TextBlock", "TechLine", LINE_COUNT)
-    S.paths = make_slots(made, "PathButton", "PathLabel", PATH_BUTTON_COUNT)
-    S.nodes = make_slots(made, "NodeButton", "NodeLabel", NODE_COUNT)
-    S.laws = make_slots(made, "LawButton", "LawLabel", LAW_COUNT)
+    local slot_problem
+    S.paths, slot_problem = make_slots(made, "PathButton", "path", PATH_BUTTON_COUNT)
+    if S.paths then S.nodes, slot_problem = make_slots(made, "NodeButton", "node", NODE_COUNT) end
+    if S.nodes then S.laws, slot_problem = make_slots(made, "LawButton", "law", LAW_COUNT) end
+    if S.laws then
+        local handles = {}
+        for _, group in ipairs({ S.paths, S.nodes, S.laws }) do
+            for _, slot in pairs(group) do handles[#handles + 1] = slot.handle end
+        end
+        local bound, bind_problem = clickhooks.bind_texts(handles)
+        if not bound then S.laws, slot_problem = nil, bind_problem end
+    end
+    if not (S.paths and S.nodes and S.laws) then
+        release_slots()
+        made:RemoveFromParent()
+        S.widget, S.paths, S.nodes, S.laws = nil, {}, {}, {}
+        return { ok = false, error = slot_problem }
+    end
     S.laws_line = find_named(made, "TextBlock", "LawsLine", 1)[1]
     if S.lines[1] == nil or S.nodes[1] == nil or S.laws[1] == nil or S.laws_line == nil then
         made:RemoveFromParent()
@@ -227,7 +259,9 @@ end
 
 local function close()
     if is_open() then S.widget:RemoveFromParent() end
+    release_slots()
     S.widget, S.lines, S.laws_line, S.paths, S.nodes, S.laws = nil, {}, nil, {}, {}, {}
+    S.shown_lines, S.shown_laws_line = {}, nil
     return { ok = true }
 end
 
@@ -241,8 +275,9 @@ end
 ---------------------------------------------------------------------------------------------
 
 local function button_row(slot, extra)
-    local row = { visibility = read(function() return slot.button:GetVisibility() end), hovered = read(function() return slot.button:IsHovered() end),
-        label = read(function() return slot.label:GetText():ToString() end) }
+    local row = { visibility = read(function() return slot.handle.widget:GetVisibility() end),
+        hovered = read(function() return slot.handle.widget:IsHovered() end),
+        label = read(function() return slot.handle.text:GetText():ToString() end) }
     for key, value in pairs(extra or {}) do row[key] = value end
     return row
 end
@@ -256,7 +291,7 @@ local function describe()
     for i, slot in pairs(S.laws) do laws[#laws + 1] = button_row(slot, { index = i, id = slot.row and slot.row.id, status = slot.row and slot.row.status }) end
     for i, slot in pairs(S.paths) do paths[#paths + 1] = button_row(slot, { index = i }) end
     for i, slot in pairs(S.nodes) do
-        local position = read(function() return slot.button.Slot:GetPosition() end)
+        local position = read(function() return slot.border.Slot:GetPosition() end)
         nodes[#nodes + 1] = button_row(slot, { index = i, id = slot.row and slot.row.id, status = slot.row and slot.row.status,
             x = position and position.X, y = position and position.Y })
     end
