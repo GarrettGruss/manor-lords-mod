@@ -15,6 +15,7 @@ LONG_REASON = "A4 needs 120 game days. One game day takes about 5 wall seconds a
 TOTAL_DAYS = 120
 CHUNK_DAYS = 10
 SPAWN = re.compile(r"INVASION spawn day=")
+SPAWN_RAIDERS = re.compile(r"INVASION spawn .*raiders=(\d+)")
 REFILL = re.compile(r"base raid timer was (\d+),")
 TIMER_FLOOR = 300
 
@@ -59,7 +60,10 @@ def run(ctx) -> dict:
     ctx.check("A4 every lift started from just under the floor (no base raid reset it)", all(value == TIMER_FLOOR - 1 for value in refills), refills)
     added = side_count(ctx.actions.units_census(), "bandit") - bandits_before
     planned_units = SQUAD_UNITS * plan["squads"]
-    # Raiders fight for days after the spawn, so some die before the census. More than planned would mean a second raid.
-    ctx.check("A4 the bandit units are at most the planned raid and not zero", 0 < added <= planned_units, [added, planned_units])
+    spawned = [int(m.group(1)) for m in map(SPAWN_RAIDERS.search, spawns) if m]
+    # Why no survivor minimum: raiders fight for days after the spawn and unarmored units die (M05), so all can be dead.
+    # More units than planned would mean a second raid. The spawn event proves that the planned raid came.
+    ctx.check("A4 the spawn event has exactly the planned raiders", spawned == [planned_units], [spawned, planned_units])
+    # The census is a metric only: the bandits feature (M04) also makes bandit units from families.
     ctx.metric("bandit_units_added", added)
     return ctx.result()
