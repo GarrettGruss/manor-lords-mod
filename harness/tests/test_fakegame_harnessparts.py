@@ -55,6 +55,11 @@ class ReadTests(PartsTests):
     def test_needs_an_id_or_a_type(self):
         self.assertFalse(self.send("master_parts")["ok"])
 
+    def test_artisan_state_is_read_without_the_env_variable(self):
+        answer = self.send("master_artisan", type=87)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual((answer["type"], answer["extension_types"]), (87, []))
+
 
 class RefusedTests(PartsTests):
     def test_remove_and_add_are_refused_without_the_env_variable(self):
@@ -64,6 +69,12 @@ class RefusedTests(PartsTests):
             self.assertIn("HARNESS_ALLOW_UNSAFE=1", answer["error"])
 
 
+    def test_artisan_set_is_refused_without_the_env_variable(self):
+        answer = self.send("master_artisan_set", type=87, job=14)
+        self.assertFalse(answer["ok"])
+        self.assertIn("HARNESS_ALLOW_UNSAFE=1", answer["error"])
+
+
 class HideTests(PartsTests):
     env = {"HARNESS_ALLOW_UNSAFE": "1"}
 
@@ -71,6 +82,14 @@ class HideTests(PartsTests):
         answer = self.send("master_part_remove", type=87, index=2, mode="hide")
         self.assertTrue(answer["ok"], answer)
         self.assertEqual(answer["after"]["parts"], 3)
+
+    def test_artisan_set_writes_the_job_and_reads_it_back(self):
+        answer = self.send("master_artisan_set", type=87, job=14)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["after"], 14)
+
+    def test_artisan_set_needs_a_change(self):
+        self.assertIn("give job", self.send("master_artisan_set", type=87)["error"])
 
     def test_index_and_mode_are_checked(self):
         self.assertIn("index must be", self.send("master_part_remove", type=87, index=9)["error"])
