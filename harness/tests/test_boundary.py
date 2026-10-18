@@ -36,7 +36,7 @@ class BoundaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             (Path(folder) / "a.py").write_text(f"x = '{FORBIDDEN[0]}'\n", encoding="utf-8")
             (Path(folder) / "b.lua").write_text(f"-- {FORBIDDEN[0].lower()}\n", encoding="utf-8")
-            (Path(folder) / "c.py").write_text("x = 'RefugeeWaves'\n", encoding="utf-8")
+            (Path(folder) / "c.py").write_text("x = 'OtherMod'\n", encoding="utf-8")
             self.assertEqual(len(find_violations(Path(folder))), 2)
 
 

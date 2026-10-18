@@ -2,7 +2,7 @@
 
 Usage:
   uv run python harness/tools/genimage.py --list-models
-  uv run python harness/tools/genimage.py --prompt "..." --out mod/PolicyMenu/art/icon.png [--model NAME] [--count N]
+  uv run python harness/tools/genimage.py --prompt "..." --out mod/<Name>/art/icon.png [--model NAME] [--count N]
 
 The API key comes from the environment variable GEMINI_API_KEY. On Windows the
 tool also reads the user-scope value from the registry, because a shell started

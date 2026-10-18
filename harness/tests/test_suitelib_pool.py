@@ -150,7 +150,7 @@ class PoolTest(unittest.TestCase):
     def test_mouse_scenarios_are_exclusive(self):
         from runlib.scenario import is_exclusive
         self.assertTrue(is_exclusive("place-building"))
-        self.assertTrue(is_exclusive("policy-menu"))
+        self.assertTrue(is_exclusive("probe-steer"))
         self.assertFalse(is_exclusive("smoke"))
         self.assertFalse(is_exclusive("no-such-scenario"))
 

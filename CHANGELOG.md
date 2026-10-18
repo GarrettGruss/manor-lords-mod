@@ -17,6 +17,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - New work (harness features, mod features, mod iterations, spikes) starts as an OpenSpec change, with the branch `feat/<change-name>` and the issue `Change: <change-name>`. Findings go to `notes/` in the change and lasting engine facts move into the wiki at the archive. `docs/harness/` and `docs/mod/M<NN>-*/` are read-only legacy; open legacy work may finish there. CLAUDE.md, the skills `harness-overview`, `harness-git-workflow`, `harness-game-spike`, `harness-dispatch-agents`, `harness-coverage`, `harness-meshy`, `repo-wiki` and the wiki follow the new rules.
 - Capability group `mod/core` for the shared parts of the Invasion Mod. A spec scenario may name a Python test as its check, or say "Not checked yet" (`process/spec-workflow`).
 
+### Removed
+- The standalone test mods `mod/RefugeeWaves` and `mod/PolicyMenu` (change `remove-standalone-test-mods`, #261). The Invasion Mod absorbed them: the feature `refugees`, the laws of `tech_tree` and `tech_tree_widget`, and the vassal policies of `vassals`. Also removed: the scenarios `refugee-wave`, `policy-menu` and `policy-menu-clicks`, the test `test_fakegame_refugeewaves.py` and the tool `harness/tools/make_policy_art.py`. To remove the installed copies from the game folder, run `harness\deploy.ps1 -Clean`. The GitHub pre-release `refugeewaves-v0.1.0` stays.
+
 ### Fixed
 - Tech tree and raid menus: a click on a menu button is a hook event and is no longer missed (10 of 10 real clicks counted). The scheduler tick is back at 100 ms: a 50 ms tick broke the Lua state after about 3 minutes with a menu open.
 - A `--keep-open` run keeps its paks in `~mods`: removing them under the running game hung it on the first open of a pak widget (F9 tech menu). Remove them later with `pakmod.py remove --all`.

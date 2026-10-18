@@ -1,5 +1,5 @@
 # Runs inside UnrealEditor-Cmd (-ExecutePythonScript).
-# Makes /Game/HarnessMod/WBP_RaidMenu from a stock engine widget (same method as mod/PolicyMenu/ue/make_widget.py).
+# Makes /Game/HarnessMod/WBP_RaidMenu from a stock engine widget (the method of legacy spec 16).
 # Why a copy: the WidgetTree root widget is a protected property, so Python cannot set it on a new Widget Blueprint.
 # The menu has a title, LINE_COUNT text lines (RaidLine0..) and BUTTON_COUNT difficulty buttons (DifficultyButton0.. with
 # DifficultyLabel0..). Lua fills the texts and polls the buttons. Lua finds the widgets by name (FindAllOf).
