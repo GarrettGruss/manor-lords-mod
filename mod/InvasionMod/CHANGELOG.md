@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Mod M13.02: retinue limit. Tree effect `retinue_capacity` (+12 at Veteran Levies and Militia Rights) raises the limit that scripts read and the hire gate. The native hire still stops at 12 (spike result). Commands `retinue_state`, `retinue_hire`. Scenario `manor-stronghold-retinue`, probe `probe-retinue-cap`.
 - Mod M07.04 (#212): a lost vassal frees its slot and sends a refugee wave (M09 listens through `vassals.on_lost`); a vassal at loyalty 10 or less submits (the lord goes to war, tribute stops) and returns at 40. Commands `vassals_lose`, `vassals_set_loss_region`, `vassals_submission_tick_now`. Scenario `vassals-loss-and-submission`. Moving the land of a lost vassal to another owner crashed the game; the default leaves it with its lord.
 - Mod M13.01 (#207): feature `manor_stronghold`. The capacity of a manor module is 200 units plus the tech tree effect `manor_storage` (+200 at Iron Hand and at Amnesty). Commands `manor_state`, `manor_put`, `manor_take`. Scenario `manor-stronghold-storage` (fixture `manor-bailey`). Spec `docs/mod/M13-manor_stronghold/iterations/01-manor-storage.md`.
 - Mod M07.03 (#209): vassal policies light, fair and heavy (mod-owned, config `vassals.policies`): a loyalty change at each season change and a factor on the tribute share. Order: a gift (50 silver, +10 loyalty). Commands `vassals_set_policy`, `vassals_order_gift`. Scenario `vassals-policies-and-orders`.

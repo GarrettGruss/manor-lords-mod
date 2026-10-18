@@ -117,5 +117,29 @@ class PutAndTakeTests(ManorStorageTestCase):
         self.assertEqual(self.manor("manor_state")["result"]["modules"][0]["total"], 15)
 
 
+class RetinueTests(ManorStorageTestCase):
+    def unlock_militia_rights(self, path, nodes):
+        self.choose(path)
+        self.region.settlementLevel = 3
+        for node in nodes:
+            self.assertTrue(self.unlock(node)["ok"], node)
+        self.game.advance(4)
+
+    def test_militia_rights_gives_the_retinue_bonus(self):
+        self.unlock_militia_rights("prosperity", ["fair_courts", "amnesty", "militia_rights"])
+        self.assertTrue(any("retinue_bonus=12" in line for line in self.game.log_lines()))
+
+    def test_veteran_levies_gives_the_retinue_bonus_on_the_other_path(self):
+        self.unlock_militia_rights("oppression", ["martial_law", "iron_hand", "veteran_levies"])
+        self.assertTrue(any("retinue_bonus=12" in line for line in self.game.log_lines()))
+
+    def test_no_bonus_before_the_node(self):
+        self.unlock_militia_rights("prosperity", ["fair_courts"])
+        self.assertFalse(any("retinue_bonus=12" in line for line in self.game.log_lines()))
+
+    def test_the_retinue_hooks_are_registered(self):
+        self.assertTrue(any("manor_stronghold" in line and "loaded" in line for line in self.game.log_lines()))
+
+
 if __name__ == "__main__":
     unittest.main()

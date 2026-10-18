@@ -34,7 +34,7 @@ Iteration 01 done: manor storage capacity (200 + tech tree bonus). Retinue capac
 
 ## Open questions
 1. Can the mod change manor storage capacity? Yes, as a mod rule: the store is mod-owned (`HarnessManor.CAPACITY`), no row write needed (iteration 01). The base game still does not use the Keep as a store.
-2. Can the mod change real retinue size? Unknown (M00 open question 16). The garrison hook changed a limit, but not real recruits.
+2. Can the mod change real retinue size? Not with hooks: the script limit and the hire gate change, but the native `hireExtraRetinue` stops at the native limit (iteration 02).
 3. Do raiders stop at the manor? No raid was run against the Keep. Needed for the deferred "manor holds" layer.
 4. How many upgrade levels are in version 1?
 
@@ -42,4 +42,4 @@ Iteration 01 done: manor storage capacity (200 + tech tree bonus). Retinue capac
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
 | 01 | manor-storage | Manor storage capacity rises by upgrade. | done (#207) |
-| 02 | retinue-capacity | Retinue size rises by upgrade. | not started |
+| 02 | retinue-capacity | Retinue size rises by upgrade. | spike: limit and gate change, native hire does not |
