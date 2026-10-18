@@ -1,6 +1,6 @@
 # Spec 32: Manor Wagenburg (spike)
 
-Status: in progress (2026-10-18). Issue: see GitHub, "Spec 32: manor wagenburg". Branch: `feat/32-manor-wagenburg`.
+Status: spike done (2026-10-18). Issue: #233. Branch: `feat/32-manor-wagenburg`.
 
 ## Goal
 Find out if the manor system can be used to build a Wagenburg camp.
@@ -23,15 +23,21 @@ The camp then reuses the manor wall collision and pathing: units cannot walk thr
 5. Pathing: spawn enemy units outside, bait inside. Compare the unit positions (`SMUnit.realPos`) with and without the pak.
 6. Notes per topic in `implementation-notes/`, and a recommendation.
 
-## Open questions
-- Which asset does the built wall piece read: the mesh asset, the Blueprint, or a data row?
-- Does a bigger or different mesh change the obstacle footprint (is it read from the mesh)?
-- Can the keep look be changed without the mouse and without a crash?
-- Does the AI or an invasion need its own manor for a separate camp?
+## Result (2026-10-18)
+- The manor can be reskinned. A pak that replaces the wall piece mesh (`SM_MERGED_C_SG_PalisadeWallNarrow_Ubeam`) by a Meshy wagon shows 56 wagons on the ring. A second pak that replaces the keep mesh (`SM_MERGED_C_SG_Manor_MainTower_Lv1_New`) by a Meshy tent builds a tent keep (garrison 24). Notes: `implementation-notes/replacement-test.md`, `meshy-assets.md` (60 credits).
+- The collision is the native obstacle list that a built wall piece adds, not the mesh. The wagon ring read the same 337 obstacles. Bandits (18, 4 runs) entered by the gate, with and without the pak, with no wall crossing. Notes: `data-model.md`, `pathing-test.md`.
+- The swap is global (every manor). A separate enemy camp is not possible this way. Notes: `implementation-notes/invasion-recommendation.md`.
+- Runs `s32-1` to `s32-11` (git-ignored `runs/`). New: command `mesh_actors` (HarnessActions 58), probe `probe-manor-wagenburg`, tool `s32_track_report.py`, paks `s32wall_P.pak`, `s32keep_P.pak`.
+
+## Open questions (original, answered above unless marked open)
+- Which asset does the built wall piece read: the mesh asset, the Blueprint, or a data row? Answer: the mesh asset through `BM_SG_Manor_Wall_Lv1` (`MainBld_470`); a swap by path works.
+- Does a bigger or different mesh change the obstacle footprint (is it read from the mesh)? Answer: no (337 obstacles, same paths).
+- Can the keep look be changed without the mouse and without a crash? Answer: yes (mesh swap, `manor_blueprint_add` flow).
+- Does the AI or an invasion need its own manor for a separate camp? Open: probably yes; an AI manor with a wall was not studied.
 
 ## Acceptance criteria
-- [ ] A note records the data model of wall, gate, tower and keep, and where the collision comes from.
-- [ ] A note records which replacements worked (wall mesh, keep), with run ids and screenshots.
-- [ ] A note records the pathing result with and without the pak (run ids, unit positions).
-- [ ] A recommendation for the Invasion Mod: use, cost and risks.
-- [ ] No AES key in git (diff grep before each commit). Meshy credits are recorded.
+- [x] A note records the data model of wall, gate, tower and keep, and where the collision comes from.
+- [x] A note records which replacements worked (wall mesh, keep), with run ids and screenshots.
+- [x] A note records the pathing result with and without the pak (run ids, unit positions).
+- [x] A recommendation for the Invasion Mod: use, cost and risks.
+- [x] No AES key in git (diff grep before each commit). Meshy credits are recorded.
