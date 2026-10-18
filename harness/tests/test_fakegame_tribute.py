@@ -95,6 +95,12 @@ class TributeTests(HandoverBase):
             self.assertAlmostEqual(payment["share"], (0.10 + 0.20 * payment["loyalty"] / 100) * factor)
 
 
+    def test_a_submitted_vassal_pays_nothing(self):
+        self.ask("vassals_set_loyalty", slot=1, value=5)
+        self.ask("vassals_submission_tick_now")
+        self.change_season()
+        self.assertEqual(self.tribute()["paid_total"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

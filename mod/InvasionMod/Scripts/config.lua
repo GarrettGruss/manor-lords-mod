@@ -188,6 +188,8 @@ return {
             heavy = { tribute = 1.5, loyalty = -5 },
         },
         gift = { cost = 50, loyalty = 10 },            -- order "send a gift": silver cost and loyalty gain
+        submission = { submit_at = 10, return_at = 40 }, -- iteration 04: loyalty at or under submit_at: the vassal serves the invader; at or over return_at it returns (TBD)
+        loss_region = "forget",   -- test loss: "forget" (the lord keeps the land, the slot is freed) or "take_by_lord" (another lord is given the land; crashed the game in the first run)
         loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
     },
     -- M08 tribute. Values are TBD for playtests (M00: 10 to 30 percent of the production).
