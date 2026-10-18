@@ -71,9 +71,9 @@ A tuning-only change (values in a feature `config.lua`) needs no change folder. 
 
 ## Legacy specs
 
-- `docs/harness/` and `docs/mod/M<NN>-*/` get no new spec folders, iterations or notes. `docs/harness/README.md` and `docs/mod/README.md` say so.
+- `docs/harness/` and `docs/mod/M<NN>-*/` are read-only history. No work happens there: no spec folders, iterations, notes or status lines. `docs/harness/README.md` and `docs/mod/README.md` say so.
 - They are not moved or renamed. Code docstrings, skills, issues and the changelog link to them.
-- Work that had an open issue there on 2026-10-18 may finish in its legacy folder, on its old branch.
+- All their open work is an OpenSpec change (change `migrate-legacy-work`, #269). Its `notes/inventory-*.md` maps each legacy item to its change or says why it was dropped or is done.
 - Exception: `docs/harness/10-invasion-testability/criteria.json` and the criteria tables of its README stay live. `harness/tools/coverage.py --check-spec` compares them. See [Python tests and coverage](../testing/python-tests.md).
 - `docs/harness/00-harness-overview/README.md` is the roadmap of the legacy specs.
 

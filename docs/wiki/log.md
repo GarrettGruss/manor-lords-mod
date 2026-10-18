@@ -1,6 +1,7 @@
 # Wiki update log
 
 ## 2026-10-18
+* **Update**: Legacy folders are read-only history, and all open legacy work is OpenSpec changes (change `migrate-legacy-work`, #269). Updated [Specs, docs and project process](operations/docs-and-specs.md).
 * **Update**: The project rules moved from `CLAUDE.md` into `CONTRIBUTING.md` (imported by `CLAUDE.md`). Updated [Specs, docs and project process](operations/docs-and-specs.md), [Quickstart](quickstart.md), [Python tests and coverage](testing/python-tests.md) and [Fake game kit](testing/fake-game-kit.md).
 * **Update**: The scheduler tick is 100 ms again (spec 34). Fixed [Invasion Mod structure](architecture/invasion-mod.md).
 * **Update**: Two review gates per change (spec pull request, implementation pull request), light pull request bodies and picture evidence (change `require-review-evidence`, #264). Updated [Specs, docs and project process](operations/docs-and-specs.md).
