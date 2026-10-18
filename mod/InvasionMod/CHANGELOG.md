@@ -5,6 +5,9 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Feature `invasion` (M02.06, #186): great raid phases (`gr_*` ModState keys), `great_raid.next_action`, `relief.lua`, config `invasion.great_raid` wave and final values, three `invasion_great_*` commands. `raid_behavior` exports `final_raid_ended`; a `great` raid has no plunder and no leave.
+### Fixed
+- Feature `raid_behavior`: a non-number `ItemsLooted` no longer raises an error in the unit scan.
 - Feature `invasion` (M02.03, #177): subjugation raid with its own ModState keys (`sub_*`), `target.lua`, config `invasion.subjugation`. `raid_behavior`: no plunder and no leave for a subjugation raid; the tracker shows `kind`.
 - Feature `sack_and_terms` (M06.02, #181): terms. Commands `terms_state`, `terms_offer`, `terms_accept` (payment or vassalage), `terms_decline`. `raid_behavior` exports `force_leave` and `active_role_raid`. Config `sack_and_terms.terms`.
 - Feature `raid_behavior` (M03.02 follow-up, #172): test commands `raid_behavior_test_set_leave`, `raid_behavior_test_take_region`, `raid_behavior_test_kill_raiders` (session only). Feature `invasion`: a lord raid that fails after a partial spawn adds no bandit squads.

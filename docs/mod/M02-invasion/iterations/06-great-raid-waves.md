@@ -30,4 +30,8 @@ When the great raid clock ends (iteration 02), the great raid runs: `difficulty`
 - Real game: `invasion-great-raid-waves` at difficulty 1.
 
 ## Result
-not started
+Done. Fake game: `GreatRaidTests`, `GreatRaidRulesTests` (invasion) and `GreatRaidWinTests` (raid_behavior, the relief army makes no units) pass.
+Real game, difficulty 1: scenario `invasion-great-raid-waves` passed twice (runs 20261018-055536-6790 and 20261018-055939-5195). Wave 1 had 15 squads, the relief army 15 squads (spawned=true), the final army 25 squads. No crash with 15 + 15 + 25 squads on the map (G5). The win (G4) is covered in the fake game only: the real battle was not fought.
+Speed (game days per wall second at speed 3): baseline 0.097, with 15 squads 0.061 to 0.099, with all squads 0.067 to 0.099. See `implementation-notes/great-raid-performance.md`.
+Fix on the way: a partial spawn of a wave or the final army counts as spawned and is not retried (no double army). `raid_behavior/world.lua` ignores a non-number `ItemsLooted`.
+TBD values kept: `wave_gap_days` 10, `relief_delay_days` 10, `final_squads` 25.
