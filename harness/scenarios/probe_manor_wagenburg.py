@@ -101,6 +101,26 @@ class Track:
         return len(self.samples) >= self.limit
 
 
+WAGON_MESH = "/Game/HarnessMod/WagonM/SM_Wagon"
+TENT_MESH = "/Game/HarnessMod/TentM/SM_KeepTent"
+
+
+def lua_reskin(ctx, wall: bool, keep: bool) -> None:
+    """Part 2: set the meshes of ONE manor from Lua (HarnessWagenburg). HARNESS_LUA_MANOR overrides the manor id (a wrong id must change nothing)."""
+    state = attempt(ctx, "wagen_state before", lambda: ctx.commands.send("wagen_state"))
+    manors = (state or {}).get("manors") or []
+    manor = int(ctx.variant_option("HARNESS_LUA_MANOR", "0")) or (manors[0]["manor"] if manors else 0)
+    fields = {"manor": manor}
+    if wall:
+        fields["wall_mesh"] = WAGON_MESH
+    if keep:
+        fields["keep_mesh"] = TENT_MESH
+    answer = attempt(ctx, "wagen_apply", lambda: ctx.commands.send("wagen_apply", **fields))
+    ctx.metric("lua_changed_wall", (answer or {}).get("changed", {}).get("wall", -1))
+    ctx.metric("lua_changed_keep", (answer or {}).get("changed", {}).get("keep", -1))
+    attempt(ctx, "wagen_state after", lambda: ctx.commands.send("wagen_state"))
+
+
 def build_keep(ctx) -> None:
     manor = flow.find_manor_path(ctx)
     if not manor:
@@ -112,6 +132,10 @@ def build_keep(ctx) -> None:
     flow.mousefree_commit(ctx)
     built = flow.watch_build(ctx, manor, int(ctx.variant_option("HARNESS_DAYS", "30")))
     ctx.metric("keep_built", int(bool(built)))
+    attempt(ctx, "keep mesh users", lambda: ctx.commands.send("mesh_actors", mesh=KEEP_MESH))
+    if ctx.variant_option("HARNESS_LUA", "") in ("keep", "both"):
+        lua_reskin(ctx, True, True)
+        attempt(ctx, "keep mesh users after", lambda: ctx.commands.send("mesh_actors", mesh="SM_KeepTent"))
     x, y, _ = (float(v) for v in ctx.variant_option("HARNESS_SPOT", "13000,-51163,2500").split(","))
     ctx.time.pause()
     for zoom in (3000, 1200):
@@ -137,6 +161,9 @@ def run(ctx) -> dict:
     note(ctx, "ring", centre=centre, radius_cm=round(radius), gate=gate, wall_samples=pieces[:3])
     ctx.metric("ring_radius_cm", round(radius))
     (ctx.run_dir / "ring.json").write_text(json.dumps({"centre": centre, "radius_cm": radius, "pieces": pieces, "gate": gate}), encoding="utf-8")
+    lua = ctx.variant_option("HARNESS_LUA", "")
+    if lua in ("wall", "both"):
+        lua_reskin(ctx, True, False)
     look(ctx, "ring", centre[0], centre[1])
     attempt(ctx, "camera ring centre", lambda: ctx.bridge.centre_camera_on(centre[0], centre[1]))
     if ctx.variant_option("HARNESS_KEEP", "") == "1":
