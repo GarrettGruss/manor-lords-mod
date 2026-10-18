@@ -118,9 +118,13 @@ local function spawn_raid(today)
         local list = composition_list()
         raid_squads = {}
         if roles.lord_army.enabled then
-            ok, problem = lord_raid.start(list, roles.lord_army)
+            local partial
+            ok, problem, partial = lord_raid.start(list, roles.lord_army)
             if ok then
                 raid_squads, lord_info = problem.squads, problem
+            elseif partial then
+                -- Armies exist already. Bandit squads on top would make a double raid. The next daily step tries again.
+                return core.log.error(TAG, "lord raid failed after a partial spawn, no fallback squads: " .. tostring(problem))
             else
                 core.log.error(TAG, "lord raid failed, the squads are bandit squads: " .. tostring(problem))
             end

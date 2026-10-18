@@ -40,7 +40,19 @@ end
 
 -- Squads of the templates (one spawnArmy call each), war, and a challenge whose battlefield stands at the player manor.
 -- Returns true and { lord, anchor = {x, y}, squads = {{ id, template }}, home_region } or false and a message.
+-- A failure after some squads were spawned returns a third value, true: armies are on the map, so the caller must not add
+-- bandit squads on top. The partial army is sent away with peace.
 function M.start(templates, settings)
+    local ok, problem, spawned = M.start_checked(templates, settings)
+    if not ok and spawned then
+        local peace_ok, peace_problem = M.peace()
+        core.log.error(TAG, string.format("lord raid failed after a partial spawn (%s); peace=%s%s", tostring(problem), tostring(peace_ok),
+            peace_ok and "" or (" problem=" .. tostring(peace_problem))))
+    end
+    return ok, problem, spawned
+end
+
+function M.start_checked(templates, settings)
     local lords, battlefield = modules()
     if lords == nil then return false, battlefield end
     local ok, problem = ensure_lord(lords, settings.lord_name)
@@ -51,17 +63,24 @@ function M.start(templates, settings)
     for _, template in ipairs(templates) do
         local answer = lords.lord_spawn_army({ lord = lord_number, template = template, count = 1, dx = 0, dy = settings.start_dy })
         ok, problem = step("lord_spawn_army " .. template, answer)
-        if not ok then return false, problem end
+        if not ok then return false, problem, #squads > 0 end
         squads[#squads + 1] = { id = answer.squads and answer.squads[1] or false, template = template }
     end
     local home = core.player_region()
     local anchored = battlefield.battlefield_anchor({ lord = lord_number })
     ok, problem = step("battlefield_anchor", anchored)
-    if not ok then return false, problem end
+    if not ok then return false, problem, #squads > 0 end
     ok, problem = step("challenge", anchored.challenge)
-    if not ok then return false, problem end
+    if not ok then return false, problem, #squads > 0 end
     return true, { lord = lord_number, anchor = anchored.anchor, squads = squads,
                    home_region = home and core.region_row(home).region or nil }
+end
+
+-- The pawn of the raid lord (a test command writes the region owner with it), or nil.
+function M.lord_pawn()
+    local lords = modules()
+    if lords == nil or lord_number == nil then return nil end
+    return lords.pawn_by_number(lord_number)
 end
 
 -- Peace removes the army of the lord (about 60 game seconds).

@@ -112,6 +112,15 @@ function M.give_region_to_player(region_name)
     return true
 end
 
+-- Test only: write another pawn as the owner of a region (what a won challenge does).
+function M.set_region_owner(region_name, pawn)
+    local region = find_region(region_name)
+    if region == nil then return false, "no region " .. tostring(region_name) end
+    local ok, problem = pcall(function() region.ownerPawn = pawn end)
+    if not ok then return false, tostring(problem) end
+    return true
+end
+
 -- true when the player owns the region, false when not, nil when it cannot be read.
 function M.region_is_players(region_name)
     local player = engine() and read(function() return engine().playerRef end)

@@ -41,4 +41,5 @@ Result: PASS in the real game (2026-10-18). Notes: `../implementation-notes/iter
 - Anchor spike `probe-lord-raid-anchor` `20261018-035856-248b`: the army stood within 1300 units of the manor for 14 game minutes; the challenge stayed open, no region transfer in that time.
 - Earlier fallback design in the real game (bandit squads, quiet-spot removal): run `20261018-035536-1237` (leave on day 213 by losses, units removed day 214, war restored). The run ended as harness_error only because of a string metric (fixed).
 - Regression: `invasion-raid-composition` difficulty 1 `20261018-041117-2d31`, difficulty 3 `20261018-041304-1c3e` pass (a boot crash `20261018-041200-e3d8` before the retry).
-- Not verified: the guard that gives a won region back (no run lost the region); loss and time reasons for a lord raid; a lord raid on a save with several raids in one session.
+- Follow-up (issue #172, branch `fix/M03-raid_behavior-02-followup`): see `../implementation-notes/iteration-02-followup.md`. The items below are now covered there.
+- Was not verified: the guard that gives a won region back (no run lost the region); loss and time reasons for a lord raid; a lord raid on a save with several raids in one session.

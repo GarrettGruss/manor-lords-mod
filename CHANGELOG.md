@@ -6,12 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M03.02 follow-up (#172): scenarios `raid-behavior-region-guard` and `raid-behavior-lord-leave-reason` (losses and time reasons) and three session-only test commands in `InvasionMod` (`raid_behavior_test_set_leave`, `_test_take_region`, `_test_kill_raiders`).
 - Mod M06.01 (#173): feature `sack_and_terms`. A role raid that leaves with its loot or at the time limit sacks the town: 20/35/50 percent of buildings, stock and families by difficulty, rounded up, people kept alive; a second sack in 360 days is fatal (tunable).
 - Mod M02.04 (#175): the player picks the difficulty (1 to 3) with `InvasionMod.invasion_pick_difficulty` (once, before the first raid). A prompt banner repeats every 7 game days until then. `difficulty.lua` has the rounding-up rules (relief army 15, 8, 0; waves 1, 2, 3). Command `invasion_difficulty_state`. Scenario `invasion-difficulty-pick`.
 - Mod M02.02 (#171): the great raid clock. `InvasionMod` keeps the end day of a 3 to 5 game year countdown in ModState (`great_raid_day`) and shows it in the banner (config `invasion.great_raid`). Commands `invasion_clock_state`, `invasion_clock_set_days_left`. Scenario `invasion-great-raid-clock`.
 - Mod M03.02 (#168): a Hussite role raid is the army of an AI lord at war with the player, anchored at the player manor. A plunder tick takes goods from the stores. The raid leaves (peace) after enough loot, enough losses or a time limit (config `raid_behavior.plunder`, `raid_behavior.leave`). A won region goes back to the player. Fallback for bandit squads: removal only in a quiet spot (`leave.quiet_distance`). Scenario `raid-behavior-role-leave`, probes `probe-lord-raid-peace` and `probe-role-raid-peace`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-02-role-raid-leave.md`.
 
 ### Fixed
+- InvasionMod (#172): a lord raid that fails after a partial army spawn no longer adds bandit squads on top (double raid). The partial army is sent away with peace and the next daily step tries again.
 - InvasionMod (#163): 120 day runs crashed in the Lua state because four `LoopAsync` loops shared one Lua state. All feature polls now run from one scheduler (`Scripts/scheduler.lua`). raid_behavior reads only raid units; unit_balance reads known units lazily. Scenario `invasion-no-double-raid` A4 asserts on the spawn event (planned raiders) and the timer, not on living raiders. Notes `docs/mod/M02-invasion/implementation-notes/long-run-crash-and-a4.md`.
 
 ### Added
