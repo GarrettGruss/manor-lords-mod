@@ -15,7 +15,7 @@ COVERS = []
 LIMIT_S = 240
 SIZE_MULTIPLIER = 3  # large
 SETTLE_S = 2
-TOLERANCE = 0.2
+SIZE_FIT = 0.9  # a squad may lose a few units before the first read
 # Mean stats of a vanilla squad (run 20261017-221800-9e31): att, def, armorPierce, units.
 PROFILES = {
     "Brigands": (2.389, 2.778, 0.0, 18), "spearMilitia": (4.031, 6.688, 0.0, 32), "militiaFoot": (5.0, 4.875, 0.0, 32),
