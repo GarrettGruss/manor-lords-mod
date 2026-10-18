@@ -1,7 +1,7 @@
 # Invasion Mod trailer script
 
 Status: draft (2026-10-16). The user owns the story. The agent wrote it down from the chat of 2026-10-16.
-Use: a YouTube trailer, 60 seconds or less. The build and review pipeline is spec 27 (`docs/harness/27-trailer-animatic/`).
+Use: a YouTube trailer, 60 seconds or less. The build and review pipeline is spec 27 (`openspec/changes/archive/2026-10-16-legacy-27-trailer-animatic/`).
 
 ## Style
 - Story parts: storybook panels in a woodcut or manuscript style. Ink lines, parchment texture.

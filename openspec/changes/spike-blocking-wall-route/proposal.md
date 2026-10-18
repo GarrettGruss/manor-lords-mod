@@ -1,6 +1,6 @@
 # Proposal: find a route for a blocking wall outside the manor
 
-Issue: #52. Legacy source: `docs/harness/14-free-walls/README.md`. Legacy issue: #52 (status: blocked, awaiting user).
+Issue: #52. Legacy source: `openspec/changes/archive/2026-10-15-legacy-14-free-walls/README.md`. Legacy issue: #52 (status: blocked, awaiting user).
 
 ## Why
 
@@ -26,7 +26,7 @@ No route is chosen for a wall that blocks units and can be opened in part. The o
 
 ## Legacy folders
 
-- `docs/harness/14-free-walls/` (notes: `implementation-notes/free-walls.md`, `os-mouse-regression.md`).
+- `openspec/changes/archive/2026-10-15-legacy-14-free-walls/` (notes: `implementation-notes/free-walls.md`, `os-mouse-regression.md`).
 
 ## Capabilities
 

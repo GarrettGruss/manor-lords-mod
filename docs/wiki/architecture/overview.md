@@ -17,7 +17,7 @@ sources:
 ---
 # System overview
 
-This repo is an agent harness for making and testing Manor Lords mods. The agent edits a mod, deploys it, runs the real game, reads the result, and repeats. The goal is a trustworthy pass, fail or crash with evidence in about 2 to 3 minutes ([spec 00](../../harness/00-harness-overview/README.md)).
+This repo is an agent harness for making and testing Manor Lords mods. The agent edits a mod, deploys it, runs the real game, reads the result, and repeats. The goal is a trustworthy pass, fail or crash with evidence in about 2 to 3 minutes ([spec 00](../../../openspec/changes/archive/2026-10-15-legacy-00-harness-overview/README.md)).
 
 ## The layers
 

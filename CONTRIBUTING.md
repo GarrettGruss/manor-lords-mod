@@ -15,7 +15,7 @@ This repo is an agent harness for making and testing Manor Lords mods, and the I
 2. **The Invasion Mod** (`mod/InvasionMod/`): one Lua mod and one pak, made of features (`Scripts/features/<f>/`, `data/<f>/patches/`, `scenarios/<f>/`). Harness code must not name the mod or its features (`harness/tests/test_boundary.py`).
 3. **Live control** (`mod/UEBridge`, `vendor/ue4ss-bridge`): a Lua mod and an MCP server. An agent queries the running game through them.
 4. **Outer harness** (`harness/`): scripts that deploy the mods, launch the game, run a test scenario, collect results, and write `runs/<id>/summary.json`.
-5. **Specs and docs**: `openspec/` (living specs and changes), `docs/wiki/` (how the code and the engine work), `docs/harness/` and `docs/mod/` (legacy specs and the game design).
+5. **Specs and docs**: `openspec/` (living specs and changes), `docs/wiki/` (how the code and the engine work), `docs/mod/M00-invasion-mod/` (the game design); the old specs are archived in `openspec/changes/archive/<date>-legacy-*/`.
 
 ## Set up
 
@@ -79,7 +79,7 @@ A change passes two review gates. Each gate is one pull request, and each needs 
 
 ### Legacy specs and the game design
 
-- `docs/harness/<NN>-*/` and `docs/mod/M<NN>-*/` are read-only history. No work happens there. Read them as source material, and do not move, rename or delete them.
+- The old specs (`docs/harness/<NN>-*/`, `docs/mod/M<NN>-*/`) are archived unchanged in `openspec/changes/archive/<date>-legacy-*/` (change `archive-legacy-specs`; its `notes/path-map.md` maps each old path). They are read-only history: read them as source material, and do not edit them.
 - Their built behavior is in the living specs (change `backfill-living-specs`). All their open work is an OpenSpec change (change `migrate-legacy-work`; its `notes/inventory-*.md` maps each legacy item to its change).
 - The coverage data that came from spec 10 is in `openspec/specs/harness/coverage/criteria.json` and `criteria.md`. `harness/tools/coverage.py` reads it.
 - `docs/mod/M00-invasion-mod/` is the game design. The project owner writes it. Do not write game design content unless they ask.

@@ -31,7 +31,7 @@ Every folder in `mod/` except `shared/` is one UE4SS mod. This page covers all o
 
 ### HarnessBoot
 
-Loads the test save from the main menu and says when the game is ready. It does nothing unless the harness turns it on: env `HARNESS_AUTOBOOT=1`, or the file `autoboot.enable` in the harness folder. Spec: `docs/harness/02-save-autoload/`.
+Loads the test save from the main menu and says when the game is ready. It does nothing unless the harness turns it on: env `HARNESS_AUTOBOOT=1`, or the file `autoboot.enable` in the harness folder. Spec: `openspec/changes/archive/2026-10-15-legacy-02-save-autoload/`.
 
 - Env: `HARNESS_TEST_SAVE` (slot name, default `saveGame_0`), `HARNESS_NEW_GAME=1` with `HARNESS_NEW_GAME_MAP` (default `Jagged_Cliffs`) for a fresh start, `HARNESS_RUN_DIR`.
 - State machine: `WAITING_FOR_MENU`, then `LOADING_SAVE` (or `STARTING_NEW_GAME` in new-game mode), `WAITING_FOR_READY`, `DISABLING_AUTOSAVE`, `PAUSING`, `READY`. Each wait has a timeout and can go to `FAILED`. `READY` means the game clock was measured as stopped.
@@ -65,7 +65,7 @@ Places a normal building at a world point without a mouse device (spec 18). It d
 
 - Commands (via `HarnessCommands`, prefix `HarnessPlace.`): `arm`, `disarm`, `state`, `bp`, `press`, `release`. `blueprint_route.lua` serves the `bp` command.
 - Limits: building type 1..600, world coordinates within 200000.
-- Notes: `docs/harness/18-composite-buildings/implementation-notes/mousefree-preview-hook.md`.
+- Notes: `openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/implementation-notes/mousefree-preview-hook.md`.
 
 ### UEBridge
 
@@ -79,7 +79,7 @@ The file-based request and response channel for live control: an external proces
 - They change no game object. The only game read is the day counter (`TemporalComponent.daysTotal`).
 - They register commands and metrics in `HarnessCommands` as `InvasionStandIn.<name>` and `RaidStandIn.<name>`.
 - Purpose: prove that the harness can drive and observe mod-defined state before the real Invasion Mod exists (spec 10, U10). The real mod later passes the same scenarios.
-- Scenarios: `harness/scenarios/standin_outposts.py`, `standin_tribute.py`, `raid_behavior.py`, `raid_seasons.py`, `raid_politics.py`. Tests: `test_fakegame_invasionstandin.py`, `test_fakegame_raidstandin.py`. Notes: `docs/harness/10-invasion-testability/implementation-notes/mod-state-contract.md` and `raid-standin.md`.
+- Scenarios: `harness/scenarios/standin_outposts.py`, `standin_tribute.py`, `raid_behavior.py`, `raid_seasons.py`, `raid_politics.py`. Tests: `test_fakegame_invasionstandin.py`, `test_fakegame_raidstandin.py`. Notes: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/mod-state-contract.md` and `raid-standin.md`.
 
 ## Probes and smoke mods
 

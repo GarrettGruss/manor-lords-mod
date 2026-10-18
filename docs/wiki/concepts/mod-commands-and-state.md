@@ -12,8 +12,8 @@ sources:
   - resource: repo://harness/runlib/commands.py
   - resource: repo://harness/runlib/modstate.py
   - resource: repo://harness/runlib/scenario_context.py
-  - resource: repo://docs/harness/10-invasion-testability/implementation-notes/mod-state-contract.md
-  - resource: repo://docs/mod/M01-mod_state/implementation-notes/tags-module.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/mod-state-contract.md
+  - resource: repo://openspec/changes/archive/2026-10-16-legacy-m01-mod-state/implementation-notes/tags-module.md
 ---
 
 # Mod commands and state
@@ -62,7 +62,7 @@ Use actions while the game is paused. A running game changes silver and stock by
 
 Unsafe spike commands (for example `master_part_add`, `master_artisan_set`, `building_stat_vector_write`) are refused unless the game runs with `HARNESS_ALLOW_UNSAFE=1`. Use that only in test games, never on a user save.
 
-The catalog of commands is `docs/harness/07-feature-test-kit/implementation-notes/actions-catalog.md`. Tests: `harness/tests/test_fakegame_harnessactions.py`, `test_runlib_actions.py`.
+The catalog of commands is `openspec/changes/archive/2026-10-15-legacy-07-feature-test-kit/implementation-notes/actions-catalog.md`. Tests: `harness/tests/test_fakegame_harnessactions.py`, `test_runlib_actions.py`.
 
 ## HarnessCommands: a mod exposes its own commands
 
@@ -121,7 +121,7 @@ state:get("raid_days"); state:set("raid_days", 399)  -- set flushes at once
 - Strings may use only `A-Z a-z 0-9 _ . -`.
 - Safety: never write a `Tags` array through the bridge (crash). The module writes with `FName`. See [safety rules](safety-rules.md).
 
-Scenarios that save use a write run and a read run (`--save`, `--env MODSTATE_PHASE=read`). Test: `test_fakegame_modstate.py`. Notes: `docs/mod/M01-mod_state/implementation-notes/tags-module.md`, `docs/harness/24-mod-save-state/`.
+Scenarios that save use a write run and a read run (`--save`, `--env MODSTATE_PHASE=read`). Test: `test_fakegame_modstate.py`. Notes: `openspec/changes/archive/2026-10-16-legacy-m01-mod-state/implementation-notes/tags-module.md`, `openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/`.
 
 ## Where to extend
 

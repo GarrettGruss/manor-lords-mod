@@ -8,7 +8,7 @@ Current state on the day of this change (2026-10-18):
 - `docs/harness/` has 33 specs (00 to 33, no 20). `docs/mod/` has M00 to M14 and `feature-breakdown.md`.
 - 15 issues are open. Most belong to legacy specs (for example spec 33, M12.02, spec 11).
 - Code docstrings (about 12), skills, `CHANGELOG.md` and issues link to legacy paths.
-- `harness/tools/coverage.py` reads `docs/harness/10-invasion-testability/criteria.json`.
+- `harness/tools/coverage.py` reads `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/criteria.json`.
 - `openspec init --tools claude` (CLI 1.14.3) made 6 skills in `.claude/skills/openspec-*/` and 6 commands in `.claude/commands/opsx/`.
 
 ## Goals / Non-Goals

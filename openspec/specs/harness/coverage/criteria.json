@@ -37,8 +37,8 @@
     ],
     "method_verified": true,
     "verified_by": [
-      "docs/harness/10-invasion-testability/implementation-notes/spike-S2.md",
-      "docs/harness/10-invasion-testability/implementation-notes/spike-S3.md",
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S2.md",
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S3.md",
       "raid-spawn"
     ],
     "reason_human": "",
@@ -215,8 +215,8 @@
     ],
     "method_verified": true,
     "verified_by": [
-      "docs/harness/10-invasion-testability/implementation-notes/spike-S3.md",
-      "docs/harness/10-invasion-testability/implementation-notes/spike-S5.md",
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S3.md",
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S5.md",
       "raid-loot"
     ],
     "reason_human": "",
@@ -238,7 +238,7 @@
     "method_verified": true,
     "verified_by": [
       "loot-drop-recovery",
-      "docs/harness/10-invasion-testability/implementation-notes/spike-R3.md"
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-R3.md"
     ],
     "reason_human": "",
     "spike_note": "method verified on a stand-in ledger (loot-drop-recovery, 3 of 3 runs, 2026-10-10): the base game has NO ground loot (spike-R3.md, spike-S5.md). A kill reports place and carried loot, a recovery adds the goods to the stock, both read back. A real pile and a walking peasant are mod-defined and NOT verified"
@@ -320,7 +320,7 @@
     "method_verified": true,
     "verified_by": [
       "sack-store-trip",
-      "docs/harness/10-invasion-testability/implementation-notes/spike-S6.md"
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S6.md"
     ],
     "reason_human": "",
     "spike_note": "observation method verified in the real game (sack-store-trip, 3 of 3 runs, 2026-10-10): the stock of each named store is read and removed with a loss factor. The base game has no guard or lock: they are rules of the mod; the scenario models them with the loss factor"
@@ -367,7 +367,7 @@
     "verified_by": [
       "counters-ab",
       "suite counters-ab",
-      "docs/harness/10-invasion-testability/implementation-notes/spike-C1.md"
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-C1.md"
     ],
     "reason_human": "",
     "spike_note": "method verified in the real game (counters-ab, 3 of 3 runs, and the suite counters-ab: 8 runs, spear squad against sword squad versus heavy squad against sword squad, player loss rate 0.72 against 0.15, different, p 0.029, expectation met, 2026-10-10): typed squads on both sides with spawnArmy, casualties by template and side, N-run A/B. LIMIT: the base game has no horse or horse archer template (no template has a mount), so spearmen against horse cannot be tested; the method covers the templates that exist (spear, sword, polearm, bow, heavy retinue, brigands, mercenaries). The mod must add its own horse templates (pak) and the same scenario then runs with them"
@@ -389,7 +389,7 @@
     "method_verified": true,
     "verified_by": [
       "veterancy",
-      "docs/harness/10-invasion-testability/implementation-notes/spike-C2.md"
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-C2.md"
     ],
     "reason_human": "",
     "spike_note": "method verified in the real game (veterancy, 3 of 3 runs, 2026-10-10): combatExperience rises in a fight (mean 0.4 to 0.6 after fight 1, 0.9 to 1.3 after fight 2 for the same units by unit id), is kept for a game day, and can be written. Fresh units start at 0 whatever the template row says"
@@ -411,7 +411,7 @@
     "method_verified": true,
     "verified_by": [
       "unit-data",
-      "docs/harness/10-invasion-testability/implementation-notes/spike-S7.md"
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S7.md"
     ],
     "reason_human": "",
     "spike_note": "method verified in the real game (unit-data, 3 of 3 runs, 2026-10-10): DT_UnitTemplates (there is no DT_units) is listed with 6 number fields on 25 rows; writing maxSize 32 -> 10 changed the next squad to 10 units. There is no hit point field. Numbers only; strings, arrays and a pak change of this table are not tried"
@@ -435,7 +435,7 @@
     "method_verified": true,
     "verified_by": [
       "sack-village",
-      "docs/harness/10-invasion-testability/implementation-notes/spike-S6.md"
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S6.md"
     ],
     "reason_human": "",
     "spike_note": "method verified in the real game (sack-village, 3 of 3 runs, 2026-10-10): burn or collapse buildings, remove goods, kill families, counted before and after; the percent rule is checked on the start village (4 or 5 buildings, 79 items, 5 families). The real mod must define what a lost battle takes"
@@ -594,7 +594,7 @@
     "method_verified": true,
     "verified_by": [
       "mercenary-hire",
-      "docs/harness/10-invasion-testability/implementation-notes/spike-P5.md"
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-P5.md"
     ],
     "reason_human": "",
     "spike_note": "method verified in the real game (mercenary-hire, 3 of 3 runs, 2026-10-10): hireMercs on an offered company pays exactly the cost, removes the offer and adds its squads at once (36 to 72 units). The game does not check the cost; the action does. Upkeep is not verified"
@@ -690,8 +690,8 @@
     "verified_by": [
       "scenario manor-storage (hidden, real mouse; 3 of 3 real runs: manor-storage-1, -2, -3)",
       "scenario manor-storage-workers (hidden, real mouse; 3 of 3 real runs: manor-storage-workers-v2-1, -2, -3)",
-      "docs/harness/12-manor-exploration/implementation-notes/storage-m1.md",
-      "docs/harness/12-manor-exploration/implementation-notes/worker-slots.md"
+      "openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/implementation-notes/storage-m1.md",
+      "openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/implementation-notes/worker-slots.md"
     ],
     "reason_human": "",
     "spike_note": "Base game: the Keep (type 57) can be placed and has an Inventory; goods added to it count in the region stock; a worker slot, its role and the assignment come from the DataTable buildingStats and Region:assignFamily, and a worker carries goods into a store. Harness shortcut: the test village cannot finish a Keep (40 builder units needed), so finish_manor_site writes Data.constructed and calls setRegionsManor. Mod-defined: the put and take commands and the 200 unit capacity; the write of the Keep row in buildingStats (job 45 WarehouseWorker, 3 slots, as a Storehouse; in memory only, the base game gives the Keep no worker). Verified with a control: with the slot and no worker no goods arrive, with one assigned family 7 to 8 units arrive in 3 game days with no harness put (the worker chooses the good: rubble or planks). Method verified on the Keep alone, not on a full castle with modules, and not for carrying goods out of the Keep."
@@ -729,7 +729,7 @@
     "method_verified": true,
     "verified_by": [
       "soak-days",
-      "docs/harness/10-invasion-testability/implementation-notes/spike-S8.md"
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S8.md"
     ],
     "reason_human": "",
     "spike_note": "method verified by 3 of 3 soak-days runs (about 120 game days each at 8x); a full 2-year run is extrapolated, see implementation-notes/soak-results.md"
@@ -750,7 +750,7 @@
     ],
     "method_verified": true,
     "verified_by": [
-      "docs/harness/10-invasion-testability/implementation-notes/spike-S10.md",
+      "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S10.md",
       "raid-load"
     ],
     "reason_human": "",

@@ -96,7 +96,7 @@ Verdict per metric (alpha 0.1, medium effect 0.5):
 - `same` if p > 0.1 and |d| < 0.5.
 - `inconclusive` otherwise (large but not significant, or significant but small).
 
-It is a heuristic for small samples. Report the numbers, not only the word. Details: [A/B statistics note](../../harness/10-invasion-testability/implementation-notes/ab-statistics.md).
+It is a heuristic for small samples. Report the numbers, not only the word. Details: [A/B statistics note](../../../openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/ab-statistics.md).
 
 `expect` turns a result into pass or fail. It is met only if the verdict is `different`, the median moved in the wanted direction, and the relative difference is at least `min_rel_diff`. A missing metric or a zero reference median is not met. A missed expectation gives exit code 1.
 

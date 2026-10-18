@@ -2,7 +2,7 @@
 
 ## Context
 
-Legacy source: `docs/mod/M03-raid_behavior/README.md`, open questions 1 and 4. The loot spikes are in `docs/harness/10-invasion-testability/implementation-notes/spike-S5.md` and `spike-S3.md`. The native loot per raider in the real runs is in `docs/mod/M03-raid_behavior/implementation-notes/iteration-01-native-plunder.md`.
+Legacy source: `openspec/changes/archive/2026-10-16-legacy-m03-raid-behavior/README.md`, open questions 1 and 4. The loot spikes are in `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S5.md` and `spike-S3.md`. The native loot per raider in the real runs is in `openspec/changes/archive/2026-10-16-legacy-m03-raid-behavior/implementation-notes/iteration-01-native-plunder.md`.
 
 ## Open questions
 

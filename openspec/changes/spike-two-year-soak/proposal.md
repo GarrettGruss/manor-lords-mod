@@ -1,9 +1,9 @@
 # Proposal: Spike two year soak
 
-Issue: #286. Legacy source: `docs/harness/10-invasion-testability/README.md` (criterion Q1, upgrade U9) and `docs/harness/10-invasion-testability/implementation-notes/open-items.md`.
+Issue: #286. Legacy source: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/README.md` (criterion Q1, upgrade U9) and `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/open-items.md`.
 
 ## Why
-Criterion Q1 says the game does not crash over a simulated 2-year run. A 3.3 hour soak reached day 333 of 730 with no crash and no memory growth. The clock slows over time (2.53 game s per wall s in the first hour, 1.11 over 3.3 hours). A scenario cannot chain runs, because each run loads the fixture again. The 730 day run is not reachable in one run. The soak also has no periodic raid (U9 "not built"). Details: `docs/harness/10-invasion-testability/implementation-notes/soak-results.md` and `open-items.md`.
+Criterion Q1 says the game does not crash over a simulated 2-year run. A 3.3 hour soak reached day 333 of 730 with no crash and no memory growth. The clock slows over time (2.53 game s per wall s in the first hour, 1.11 over 3.3 hours). A scenario cannot chain runs, because each run loads the fixture again. The 730 day run is not reachable in one run. The soak also has no periodic raid (U9 "not built"). Details: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/soak-results.md` and `open-items.md`.
 
 ## What Changes
 - Decide how Q1 is proven: a longer single run (about 8 hours), a stronger start village, or a result that stays at 333 days as a stability proof.
@@ -15,7 +15,7 @@ Criterion Q1 says the game does not crash over a simulated 2-year run. A 3.3 hou
 - Balance checks.
 
 ## Legacy folders
-`docs/harness/10-invasion-testability/` (read only).
+`openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/` (read only).
 
 ## Capabilities
 ### New Capabilities

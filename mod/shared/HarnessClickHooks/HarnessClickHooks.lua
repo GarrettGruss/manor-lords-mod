@@ -4,7 +4,7 @@
 -- calls through ProcessEvent, so RegisterHook sees it. One hook serves every instance.
 -- Use: a menu widget has a Border where a button belongs. attach() puts a click button into the Border. The caller drains
 -- the clicks from its scheduler tick (the hook only pushes to a queue; no game call runs inside the hook).
--- Notes: docs/harness/34-widget-click-hooks/README.md.
+-- Notes: openspec/changes/archive/2026-10-18-legacy-34-widget-click-hooks/README.md.
 local M = {}
 
 local PACKAGE_PATH, ASSET_NAME = "/Game/HarnessMod", "WBP_ClickButton"

@@ -2,7 +2,7 @@
 
 ## Context
 
-Legacy source: `docs/mod/M14-plundered_start/README.md`. The sack tools and the start flow are in `docs/harness/26-game-start-settings/implementation-notes/claim-victory-test.md` and `start-settings.md`. The sack by share is in `docs/harness/10-invasion-testability/implementation-notes/spike-S6.md`. A depopulation ends the game (`spike-S8.md`), so people must stay alive.
+Legacy source: `openspec/changes/archive/2026-10-16-legacy-m14-plundered-start/README.md`. The sack tools and the start flow are in `openspec/changes/archive/2026-10-15-legacy-26-game-start-settings/implementation-notes/claim-victory-test.md` and `start-settings.md`. The sack by share is in `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S6.md`. A depopulation ends the game (`spike-S8.md`), so people must stay alive.
 
 ## Open questions
 

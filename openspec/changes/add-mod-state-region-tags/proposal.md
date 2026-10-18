@@ -1,6 +1,6 @@
 # Proposal: add region state and a size limit to ModState
 
-Issue: #273. Legacy source: `docs/mod/M01-mod_state/README.md` (iteration table row "02 region-state-and-limits", no iteration file).
+Issue: #273. Legacy source: `openspec/changes/archive/2026-10-16-legacy-m01-mod-state/README.md` (iteration table row "02 region-state-and-limits", no iteration file).
 
 ## Why
 
@@ -25,7 +25,7 @@ Open question 1 of M01 (the Tags limit) is still open. Spec 24 marks it open too
 
 ## Legacy folders
 
-`docs/mod/M01-mod_state/` (read-only). Related: `docs/harness/24-mod-save-state/` (open size limit).
+`openspec/changes/archive/2026-10-16-legacy-m01-mod-state/` (read-only). Related: `openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/` (open size limit).
 
 ## Capabilities
 

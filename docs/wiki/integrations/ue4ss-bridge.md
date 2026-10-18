@@ -13,7 +13,7 @@ sources:
   - resource: repo://harness/runlib/bridge_client.py
   - resource: repo://harness/runlib/scenario.py
   - resource: repo://.mcp.json
-  - resource: repo://docs/harness/01-ue4ss-bridge/README.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-01-ue4ss-bridge/README.md
 ---
 
 # UE4SS bridge
@@ -117,7 +117,7 @@ Known limit: a request can still run after the client timed out. After a timeout
 
 ## Tests
 
-`Bridge` takes `one` and `sleep` as parameters, so tests can pass fakes. The Lua side has no unit test: it is checked in the game. Smoke results: `docs/harness/01-ue4ss-bridge/implementation-notes/smoke-test-log.md`.
+`Bridge` takes `one` and `sleep` as parameters, so tests can pass fakes. The Lua side has no unit test: it is checked in the game. Smoke results: `openspec/changes/archive/2026-10-15-legacy-01-ue4ss-bridge/implementation-notes/smoke-test-log.md`.
 
 ## Extend
 

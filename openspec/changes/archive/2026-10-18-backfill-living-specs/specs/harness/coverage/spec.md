@@ -7,7 +7,7 @@ The coverage tool measures how much of the Invasion Mode brief the harness can t
 ## ADDED Requirements
 
 ### Requirement: The criteria file is validated
-The tool `harness/tools/coverage.py` SHALL read the criteria file (default `docs/harness/10-invasion-testability/criteria.json`) as a list of objects with fixed fields. The mark SHALL be `A`, `P` or `H`, and an id SHALL be unique. An `H` criterion SHALL have a `reason_human`. An `A` or `P` criterion SHALL have a `method`. A bad file SHALL stop the tool with exit code 2 and a list of the problems.
+The tool `harness/tools/coverage.py` SHALL read the criteria file (default `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/criteria.json`) as a list of objects with fixed fields. The mark SHALL be `A`, `P` or `H`, and an id SHALL be unique. An `H` criterion SHALL have a `reason_human`. An `A` or `P` criterion SHALL have a `method`. A bad file SHALL stop the tool with exit code 2 and a list of the problems.
 
 
 #### Scenario: A bad criteria file
@@ -76,7 +76,7 @@ The tool SHALL exit with code 2 when a scenario covers an id that the criteria f
 - Checked by `harness/tests/test_coverage.py`.
 
 ### Requirement: The criteria file agrees with the spec tables
-With `--check-spec`, the tool SHALL compare the ids, titles and marks of the criteria file with the criteria tables of the spec README (default `docs/harness/10-invasion-testability/README.md`). It SHALL print each difference and exit with code 1, or print that they agree and exit with code 0.
+With `--check-spec`, the tool SHALL compare the ids, titles and marks of the criteria file with the criteria tables of the spec README (default `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/README.md`). It SHALL print each difference and exit with code 1, or print that they agree and exit with code 0.
 
 #### Scenario: The real files agree
 - **WHEN** `--check-spec` runs on the files of the repo

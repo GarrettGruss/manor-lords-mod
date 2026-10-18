@@ -1,6 +1,6 @@
 # Coverage criteria of the Invasion Mode brief
 
-The criteria matrix that `harness/tools/coverage.py` reads. `--check-spec` compares the tables here with `criteria.json` in this folder. Moved from legacy spec 10 (`docs/harness/10-invasion-testability/README.md`) by the change `move-coverage-criteria-to-openspec` (#279). Update a mark here and in `criteria.json` in the same commit.
+The criteria matrix that `harness/tools/coverage.py` reads. `--check-spec` compares the tables here with `criteria.json` in this folder. Moved from legacy spec 10 (`openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/README.md`) by the change `move-coverage-criteria-to-openspec` (#279). Update a mark here and in `criteria.json` in the same commit.
 
 ## What "90%" means here
 1. The brief is turned into a **criteria list** (below, and as data in `criteria.json`). Each criterion states a measurable game state or event.

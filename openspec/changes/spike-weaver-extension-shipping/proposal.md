@@ -1,6 +1,6 @@
 # Proposal: decide and ship a weaver plot extension
 
-Issue: #230. Legacy source: `docs/harness/31-burgage-extension/README.md`. Legacy issue: #230 (awaiting user).
+Issue: #230. Legacy source: `openspec/changes/archive/2026-10-18-legacy-31-burgage-extension/README.md`. Legacy issue: #230 (awaiting user).
 
 ## Why
 
@@ -22,8 +22,8 @@ The owner must decide if a weaver ships, and which slot it takes. Some real-game
 
 ## Legacy folders
 
-- `docs/harness/31-burgage-extension/` (notes: `data-model.md`, `new-extension-number.md`, `weaver-reskin-recipe.md`, `custom-model.md`).
-- `docs/harness/33-meshy-materials/` (texture fix).
+- `openspec/changes/archive/2026-10-18-legacy-31-burgage-extension/` (notes: `data-model.md`, `new-extension-number.md`, `weaver-reskin-recipe.md`, `custom-model.md`).
+- `openspec/changes/archive/2026-10-18-legacy-33-meshy-materials/` (texture fix).
 
 ## Capabilities
 

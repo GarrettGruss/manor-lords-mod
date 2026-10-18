@@ -10,8 +10,8 @@ sources:
   - resource: repo://mod/InvasionMod/Scripts/config.lua
   - resource: repo://mod/InvasionMod/scenarios/
   - resource: repo://docs/mod/README.md
-  - resource: repo://docs/mod/feature-breakdown.md
-  - resource: repo://docs/mod/M12-tech_tree/implementation-notes/f9-key-crash.md
+  - resource: repo://openspec/changes/archive/2026-10-16-legacy-mod-feature-breakdown/README.md
+  - resource: repo://openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/implementation-notes/f9-key-crash.md
 ---
 # Invasion Mod features
 
@@ -51,22 +51,22 @@ An arrow means "is required by". `example`, `unit_balance` and `manor_stronghold
 | Feature | Spec | Requires | Scenarios |
 | --- | --- | --- | --- |
 | example | none (layout stub) | none | none |
-| mod_state | [M01](../../mod/M01-mod_state/README.md) | none | `scenarios/mod_state/` |
-| invasion | [M02](../../mod/M02-invasion/README.md) | mod_state | `scenarios/invasion/` |
-| raid_widget | [M02](../../mod/M02-invasion/README.md) (iteration 05) | invasion | `scenarios/invasion/raid_widget.py` |
-| raid_behavior | [M03](../../mod/M03-raid_behavior/README.md) | invasion | `scenarios/raid_behavior/` |
-| bandits | [M04](../../mod/M04-bandits/README.md) | invasion | `scenarios/bandits/` |
-| unit_balance | [M05](../../mod/M05-unit_balance/README.md) | none | `scenarios/unit_balance/` |
-| sack_and_terms | [M06](../../mod/M06-sack_and_terms/README.md) | raid_behavior, vassals | `scenarios/sack_and_terms/` |
-| vassals | [M07](../../mod/M07-vassals/README.md) | mod_state | `scenarios/vassals/` |
-| tribute | [M08](../../mod/M08-tribute/README.md) | vassals, raid_behavior | `scenarios/tribute/` |
-| refugees | [M09](../../mod/M09-refugees/README.md) | vassals, bandits | `scenarios/refugees/` |
-| finite_resources | [M10](../../mod/M10-finite_resources/README.md) | mod_state | `scenarios/finite_resources/` |
-| tech_tree | [M12](../../mod/M12-tech_tree/README.md) | bandits, unit_balance, mod_state, manor_stronghold, vassals, tribute | `scenarios/tech_tree/` |
-| tech_tree_widget | [M12](../../mod/M12-tech_tree/README.md) (iteration 02) | tech_tree | `scenarios/tech_tree/widget.py`, `widget_laws.py`, `widget_key.py` |
-| manor_stronghold | [M13](../../mod/M13-manor_stronghold/README.md) | none | `scenarios/manor_stronghold/` |
+| mod_state | [M01](../../../openspec/changes/archive/2026-10-16-legacy-m01-mod-state/README.md) | none | `scenarios/mod_state/` |
+| invasion | [M02](../../../openspec/changes/archive/2026-10-16-legacy-m02-invasion/README.md) | mod_state | `scenarios/invasion/` |
+| raid_widget | [M02](../../../openspec/changes/archive/2026-10-16-legacy-m02-invasion/README.md) (iteration 05) | invasion | `scenarios/invasion/raid_widget.py` |
+| raid_behavior | [M03](../../../openspec/changes/archive/2026-10-16-legacy-m03-raid-behavior/README.md) | invasion | `scenarios/raid_behavior/` |
+| bandits | [M04](../../../openspec/changes/archive/2026-10-16-legacy-m04-bandits/README.md) | invasion | `scenarios/bandits/` |
+| unit_balance | [M05](../../../openspec/changes/archive/2026-10-16-legacy-m05-unit-balance/README.md) | none | `scenarios/unit_balance/` |
+| sack_and_terms | [M06](../../../openspec/changes/archive/2026-10-16-legacy-m06-sack-and-terms/README.md) | raid_behavior, vassals | `scenarios/sack_and_terms/` |
+| vassals | [M07](../../../openspec/changes/archive/2026-10-16-legacy-m07-vassals/README.md) | mod_state | `scenarios/vassals/` |
+| tribute | [M08](../../../openspec/changes/archive/2026-10-16-legacy-m08-tribute/README.md) | vassals, raid_behavior | `scenarios/tribute/` |
+| refugees | [M09](../../../openspec/changes/archive/2026-10-16-legacy-m09-refugees/README.md) | vassals, bandits | `scenarios/refugees/` |
+| finite_resources | [M10](../../../openspec/changes/archive/2026-10-16-legacy-m10-finite-resources/README.md) | mod_state | `scenarios/finite_resources/` |
+| tech_tree | [M12](../../../openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/README.md) | bandits, unit_balance, mod_state, manor_stronghold, vassals, tribute | `scenarios/tech_tree/` |
+| tech_tree_widget | [M12](../../../openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/README.md) (iteration 02) | tech_tree | `scenarios/tech_tree/widget.py`, `widget_laws.py`, `widget_key.py` |
+| manor_stronghold | [M13](../../../openspec/changes/archive/2026-10-16-legacy-m13-manor-stronghold/README.md) | none | `scenarios/manor_stronghold/` |
 
-Specs without code: [M11 liege_influence](../../mod/M11-liege_influence/README.md) is backlog (TBD). [M14 plundered_start](../../mod/M14-plundered_start/README.md) is out of scope for the first release. Neither has a feature folder.
+Specs without code: [M11 liege_influence](../../../openspec/changes/archive/2026-10-16-legacy-m11-liege-influence/README.md) is backlog (TBD). [M14 plundered_start](../../../openspec/changes/archive/2026-10-16-legacy-m14-plundered-start/README.md) is out of scope for the first release. Neither has a feature folder.
 
 ## Features
 
@@ -119,7 +119,7 @@ A lost vassal sends a wave of refugee families to the home region. Families arri
 Commands: `refugees_state`, `refugees_set_timeout`, `refugees_vassal_lost` (test path), `refugees_send_wave`.
 
 ### finite_resources (M10)
-Home deposits (iron first) are a mod-owned stock. The mod counts what player buildings produce (`ProductionTrackerComponent:getGoodsProducedOver`). When the stock is used up it sets the production limit of the good to 0 for the player region (`Region:setProductionLimit`). Goods from vassals do not count and are not blocked. Spike note: `docs/mod/M10-finite_resources/implementation-notes/iteration-01-iron-deposit.md`.
+Home deposits (iron first) are a mod-owned stock. The mod counts what player buildings produce (`ProductionTrackerComponent:getGoodsProducedOver`). When the stock is used up it sets the production limit of the good to 0 for the player region (`Region:setProductionLimit`). Goods from vassals do not count and are not blocked. Spike note: `openspec/changes/archive/2026-10-16-legacy-m10-finite-resources/implementation-notes/iteration-01-iron-deposit.md`.
 Commands: `finite_resources_state`, `finite_resources_test_set`, `finite_resources_test_clear`.
 
 ### manor_stronghold (M13)
@@ -139,7 +139,7 @@ Commands: `tech_tree_widget_open`, `tech_tree_widget_close`, `tech_tree_widget_s
 - Split of files: `rules.lua` is pure logic that fake-game tests run without the game. `world.lua` touches game objects. `init.lua` wires state, scheduler jobs and commands.
 - Season-change ticks (bandits, tribute) store the last handled season in ModState. A load must not repeat a tick.
 - Both widget features obey the rule: game objects only on the game thread, no `LoopAsync` of their own.
-- Key binds: a `RegisterKeyBind` callback runs on the input thread, not the game thread. It only sets a flag (`toggle_requested`); the scheduler tick on the game thread reads it and toggles the menu. Lua work in the callback raced with the game thread and crashed the game in `luaH_getint` (F9, issue #245, [f9-key-crash.md](../../mod/M12-tech_tree/implementation-notes/f9-key-crash.md)).
+- Key binds: a `RegisterKeyBind` callback runs on the input thread, not the game thread. It only sets a flag (`toggle_requested`); the scheduler tick on the game thread reads it and toggles the menu. Lua work in the callback raced with the game thread and crashed the game in `luaH_getint` (F9, issue #245, [f9-key-crash.md](../../../openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/implementation-notes/f9-key-crash.md)).
 - A feature that needs a game fact not yet known has a spike note: in `openspec/changes/<change-name>/notes/` (open or archived changes), or in the legacy `docs/mod/M<NN>-<feature>/implementation-notes/`. Read that note before you change the code.
 
 ## Tests

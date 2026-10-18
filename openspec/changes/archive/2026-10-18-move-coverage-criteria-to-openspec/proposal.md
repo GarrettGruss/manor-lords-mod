@@ -1,6 +1,6 @@
 # Proposal: Move coverage criteria to openspec
 
-Issue: #279. Legacy source: `docs/harness/10-invasion-testability/criteria.json` and the criteria tables in `docs/harness/10-invasion-testability/README.md`.
+Issue: #279. Legacy source: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/criteria.json` and the criteria tables in `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/README.md`.
 
 ## Why
 The coverage data of spec 10 is live. `harness/tools/coverage.py` reads `criteria.json` and checks it against the README tables (`--check-spec`). `CONTRIBUTING.md` keeps it in the legacy folder as an exception. The legacy folders are read only, so a criterion cannot be updated in the right place. The living spec `harness/coverage` names the legacy paths as defaults. This change moves the data into `openspec/` so the legacy folder can be left alone.
@@ -18,7 +18,7 @@ The coverage data of spec 10 is live. `harness/tools/coverage.py` reads `criteri
 - Delete the legacy copy. It stays as history.
 
 ## Legacy folders
-`docs/harness/10-invasion-testability/` (read only; the live data moves out of it).
+`openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/` (read only; the live data moves out of it).
 
 ## Capabilities
 ### New Capabilities

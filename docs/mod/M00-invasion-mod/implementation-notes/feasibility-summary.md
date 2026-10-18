@@ -67,4 +67,4 @@ Row ids for new rows are already spec 23 (#127).
 - Not checked by hand: the other PROVEN items. They come from the reviews' citations.
 
 ## Side finding
-`docs/harness/10-invasion-testability/README.md` says the raid stand-in passed in the real game, but its PENDING section and `raid-standin.md` say the real run is still open. Fix the status line in spec 10.
+`openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/README.md` says the raid stand-in passed in the real game, but its PENDING section and `raid-standin.md` say the real run is still open. Fix the status line in spec 10.

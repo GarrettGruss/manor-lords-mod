@@ -23,7 +23,7 @@ Issue: #261. Branch: `feat/remove-standalone-test-mods`.
 
 ## Legacy folders
 
-`docs/harness/15-bandit-settlement/` and `docs/harness/16-policy-edicts/` (read-only, not changed).
+`openspec/changes/archive/2026-10-15-legacy-15-bandit-settlement/` and `openspec/changes/archive/2026-10-15-legacy-16-policy-edicts/` (read-only, not changed).
 
 ## Capabilities
 

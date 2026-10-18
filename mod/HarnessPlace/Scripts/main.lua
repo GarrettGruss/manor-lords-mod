@@ -3,7 +3,7 @@
 -- DummyBuilding every frame. This mod is opt-in: it does nothing until the command HarnessPlace.place_building_at runs.
 -- Then it hooks the pawn Blueprint tick (ReceiveTick) and the cursor reads (getMouse3d, getMouse), and after each tick
 -- it writes the target point into DummyBuilding. A short script then presses and releases the left mouse button event.
--- Notes: docs/harness/18-composite-buildings/implementation-notes/mousefree-preview-hook.md
+-- Notes: openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/implementation-notes/mousefree-preview-hook.md
 -- Rules: game objects are touched on the game thread only. No save function. No eval.
 
 local log = require("HarnessLog")

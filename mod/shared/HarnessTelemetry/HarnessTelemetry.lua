@@ -1,5 +1,5 @@
 -- HarnessTelemetry: samples game state and appends one JSON line per sample to telemetry.jsonl.
--- Spec: docs/harness/04-telemetry-and-assertions/README.md
+-- Spec: openspec/changes/archive/2026-10-15-legacy-04-telemetry-and-assertions/README.md
 --
 -- Settings (environment variables):
 --   HARNESS_RUN_DIR                 folder for telemetry.jsonl (same default as HarnessLog)

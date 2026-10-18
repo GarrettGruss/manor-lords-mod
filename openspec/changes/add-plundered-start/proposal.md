@@ -1,6 +1,6 @@
 # Proposal: add the start sack for a plundered village
 
-Issue: #274. Legacy source: `docs/mod/M14-plundered_start/README.md` (iteration table row "01 start-sack", no iteration file).
+Issue: #274. Legacy source: `openspec/changes/archive/2026-10-16-legacy-m14-plundered-start/README.md` (iteration table row "01 start-sack", no iteration file).
 
 ## Why
 
@@ -20,7 +20,7 @@ The design (M00) prefers a start in a village that was recently plundered: ruins
 
 ## Legacy folders
 
-`docs/mod/M14-plundered_start/` (read-only). Related: `docs/harness/26-game-start-settings/`.
+`openspec/changes/archive/2026-10-16-legacy-m14-plundered-start/` (read-only). Related: `openspec/changes/archive/2026-10-15-legacy-26-game-start-settings/`.
 
 ## Capabilities
 

@@ -24,7 +24,7 @@ Three living specs still describe the old behavior, so they are not true on `mai
 
 ## Legacy folders
 
-`docs/harness/34-widget-click-hooks/` (read-only source).
+`openspec/changes/archive/2026-10-18-legacy-34-widget-click-hooks/` (read-only source).
 
 ## Capabilities
 

@@ -14,8 +14,8 @@ sources:
   - resource: repo://harness/runlib/fixtures.py
   - resource: repo://harness/runlib/phases.py
   - resource: repo://harness/tests/test_save_call_sites.py
-  - resource: repo://docs/harness/24-mod-save-state/implementation-notes/save-hooks.md
-  - resource: repo://docs/harness/06-dev-loop-and-fixtures/implementation-notes/autosave.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/implementation-notes/save-hooks.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/implementation-notes/autosave.md
 ---
 
 # Safety rules
@@ -57,7 +57,7 @@ Status per CLAUDE.md: `save_game` has fake tests, but it has not run in the real
 
 ## Guard 3: the autosave timer
 
-The autosave timer of the game runs in real time, also while the game is paused (about 10 min after a load). `HarnessBoot` calls `HarnessAutosave.disable()` before READY. It uses `MLGameInstance:SetAutosavePeriodOnPawn` to restart the pawn timer with a period of one year (`DISABLED_PERIOD_S = 31536000`). It fails the boot if the timer is not pushed away. The module never calls a save function and never calls `SetAutosavePeriod` (it may write the settings file). Commands: `autosave_status` (read only), `disable_autosave`. Notes: `docs/harness/06-dev-loop-and-fixtures/implementation-notes/autosave.md`. Test: `test_fakegame_harnessautosave.py`.
+The autosave timer of the game runs in real time, also while the game is paused (about 10 min after a load). `HarnessBoot` calls `HarnessAutosave.disable()` before READY. It uses `MLGameInstance:SetAutosavePeriodOnPawn` to restart the pawn timer with a period of one year (`DISABLED_PERIOD_S = 31536000`). It fails the boot if the timer is not pushed away. The module never calls a save function and never calls `SetAutosavePeriod` (it may write the settings file). Commands: `autosave_status` (read only), `disable_autosave`. Notes: `openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/implementation-notes/autosave.md`. Test: `test_fakegame_harnessautosave.py`.
 
 ## Guard 4: hash of the user's save folder
 

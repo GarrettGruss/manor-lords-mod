@@ -2,7 +2,7 @@
 
 This module holds the pure logic: read patches, check them, apply them to table JSON, copy assets.
 The tools (extract, UAssetGUI, repak) are passed in as functions, so tests run without the game.
-Patch format: docs/harness/22-mod-pack-layout/README.md, section "Row patches".
+Patch format: openspec/changes/archive/2026-10-15-legacy-22-mod-pack-layout/README.md, section "Row patches".
 """
 
 from __future__ import annotations

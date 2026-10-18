@@ -64,7 +64,7 @@ def run(ctx) -> dict:
 | `ctx.expect` | Assertions: `equals`, `in_range`, `at_least`, `at_most`, `changed`, `eventually(name, fn, timeout_s)`. Each call adds one record `{name, ok, value, rule}`. |
 | `ctx.check`, `ctx.check_range` | Plain forms. Prefer `ctx.expect`. |
 | `ctx.fail(name, reason)` | Record a failed assert and return the result. Use it for an impossible action. |
-| `ctx.actions` | Named base-game actions (give goods, spawn raiders, `save_game`, and others). The list is in the [actions catalog](../../harness/07-feature-test-kit/implementation-notes/actions-catalog.md). |
+| `ctx.actions` | Named base-game actions (give goods, spawn raiders, `save_game`, and others). The list is in the [actions catalog](../../../openspec/changes/archive/2026-10-15-legacy-07-feature-test-kit/implementation-notes/actions-catalog.md). |
 | `ctx.mod` | Commands and metrics served by a mod itself. See [Mod commands and state](../concepts/mod-commands-and-state.md). |
 | `ctx.commands`, `ctx.mod_commands` | File channels to the harness mods (`commands/`, `modcmd/` in the run folder). |
 | `ctx.time` | `TimeControl`: `set_speed`, `pause`, `run_game_seconds`, `run_game_days`. |
@@ -92,7 +92,7 @@ def run(ctx) -> dict:
 
 ### Game time
 
-Facts in [time measurements](../../harness/04-telemetry-and-assertions/implementation-notes/time-measurements.md): speed index 1, 2, 3 gives 1, 4, 8 game seconds per wall second. One game day is 40 game seconds. The game drops to 1x when an army is spotted. `TimeControl` checks the speed about once a second and sets it again. It calls the guard (`ctx.popups`) every 2 s, so pop-ups do not stall a run. `run_game_*` methods derive their wall limit as 3 times the expected time plus 10 s, and pause after a timeout. Errors raise `TimeControlError`.
+Facts in [time measurements](../../../openspec/changes/archive/2026-10-15-legacy-04-telemetry-and-assertions/implementation-notes/time-measurements.md): speed index 1, 2, 3 gives 1, 4, 8 game seconds per wall second. One game day is 40 game seconds. The game drops to 1x when an army is spotted. `TimeControl` checks the speed about once a second and sets it again. It calls the guard (`ctx.popups`) every 2 s, so pop-ups do not stall a run. `run_game_*` methods derive their wall limit as 3 times the expected time plus 10 s, and pause after a timeout. Errors raise `TimeControlError`.
 
 ### Real mouse and keyboard
 

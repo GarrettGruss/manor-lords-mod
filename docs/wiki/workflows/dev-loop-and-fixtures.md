@@ -14,9 +14,9 @@ sources:
   - resource: repo://harness/runlib/saveslots.py
   - resource: repo://harness/runlib/phases.py
   - resource: repo://harness/run.py
-  - resource: repo://docs/harness/06-dev-loop-and-fixtures/README.md
-  - resource: repo://docs/harness/06-dev-loop-and-fixtures/implementation-notes/hot-reload.md
-  - resource: repo://docs/harness/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/README.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/implementation-notes/hot-reload.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md
 ---
 
 # Dev loop and fixtures

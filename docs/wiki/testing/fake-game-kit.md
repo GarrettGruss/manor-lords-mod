@@ -13,15 +13,15 @@ sources:
   - resource: repo://harness/tests/fakegame_path.py
   - resource: repo://harness/tests/modstate_support.py
   - resource: repo://harness/tests/battle_support.py
-  - resource: repo://docs/harness/06-dev-loop-and-fixtures/implementation-notes/mock-kit.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/implementation-notes/mock-kit.md
   - resource: repo://CLAUDE.md
   - resource: repo://CONTRIBUTING.md
-  - resource: repo://docs/mod/M12-tech_tree/implementation-notes/f9-key-crash.md
+  - resource: repo://openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/implementation-notes/f9-key-crash.md
 ---
 
 # Fake game kit
 
-The fake game kit runs the real Lua files of `mod/` inside a Lua state that has a fake UE4SS API. No game is needed. It is the fast test layer: a full run takes seconds. The kit was built in spec 06, part B. See [mock-kit.md](../../harness/06-dev-loop-and-fixtures/implementation-notes/mock-kit.md) for the findings and limits, and [fakegame/README.md](../../../harness/tests/fakegame/README.md) for the API table.
+The fake game kit runs the real Lua files of `mod/` inside a Lua state that has a fake UE4SS API. No game is needed. It is the fast test layer: a full run takes seconds. The kit was built in spec 06, part B. See [mock-kit.md](../../../openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/implementation-notes/mock-kit.md) for the findings and limits, and [fakegame/README.md](../../../harness/tests/fakegame/README.md) for the API table.
 
 The kit does not prove that the real game behaves the same. Every behavior was copied from notes. A wrong fake gives a wrong pass. A new finding must be checked in the real game (a spike or a scenario).
 
@@ -78,9 +78,9 @@ UE4SS gives every Lua mod its own Lua state. A shared module such as `HarnessCom
 
 ## Clock and Manor Lords state
 
-`FakeGameClock` copies [pause-and-game-speed.md](../../harness/02-save-autoload/implementation-notes/pause-and-game-speed.md). The clock stands at 0 for `hold_seconds` after `LoadGame`. Then the game starts it at 1x, and that start undoes an early pause. An intro cinematic (`cinematic=(start, end)`) sets `currentUIMode` to 1 and ends with a restart at 1x. `late_revert_after` is a restart with no sign. `pause_works=False` and `starts=False` make broken games.
+`FakeGameClock` copies [pause-and-game-speed.md](../../../openspec/changes/archive/2026-10-15-legacy-02-save-autoload/implementation-notes/pause-and-game-speed.md). The clock stands at 0 for `hold_seconds` after `LoadGame`. Then the game starts it at 1x, and that start undoes an early pause. An intro cinematic (`cinematic=(start, end)`) sets `currentUIMode` to 1 and ends with a restart at 1x. `late_revert_after` is a restart with no sign. `pause_works=False` and `starts=False` make broken games.
 
-`build_manor_lords_state` returns a namespace with `calls`, `clock`, `widget`, `screen`, `engine`, `player`. Options include `wanted_slot_listed`, `save_exists`, `menu_delay`, `slot_list_delay`, `engine_delay`, `clock`. It also builds a fake autosave timer (`SetAutosavePeriodOnPawn`, 600 s period) that counts real time, like the real one ([autosave.md](../../harness/06-dev-loop-and-fixtures/implementation-notes/autosave.md)).
+`build_manor_lords_state` returns a namespace with `calls`, `clock`, `widget`, `screen`, `engine`, `player`. Options include `wanted_slot_listed`, `save_exists`, `menu_delay`, `slot_list_delay`, `engine_delay`, `clock`. It also builds a fake autosave timer (`SetAutosavePeriodOnPawn`, 600 s period) that counts real time, like the real one ([autosave.md](../../../openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/implementation-notes/autosave.md)).
 
 ## Test layers
 
@@ -123,7 +123,7 @@ uv run python -m unittest harness/tests/test_telemetry_mock.py -v
 ## What the kit does not cover
 
 - Lua version. `lupa` embeds Lua 5.5. The game uses 5.4. Do not use 5.5-only features (`global` declarations, read-only `for` variables). The kit cannot warn you.
-- Threads. Real races, locks and crashes are not modeled. The kit runs key bind callbacks as game-thread code, but in the real game they run on the input thread ([f9-key-crash.md](../../mod/M12-tech_tree/implementation-notes/f9-key-crash.md)). A key callback that does Lua work passes here and can crash the game. Hooks are assumed to run on the game thread.
+- Threads. Real races, locks and crashes are not modeled. The kit runs key bind callbacks as game-thread code, but in the real game they run on the input thread ([f9-key-crash.md](../../../openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/implementation-notes/f9-key-crash.md)). A key callback that does Lua work passes here and can crash the game. Hooks are assumed to run on the game thread.
 - Wrappers. Hook arguments are always wrappers. The real game may mix them.
 - Not built: out parameters, `FName` objects, `TMap`, `TSet`, delegates, enums, `UClass` objects. Unknown properties read as nil, the real game may raise an error.
 - `FindFirstOf` returns nil when nothing is found. Some UE4SS versions return an invalid object.
@@ -137,4 +137,4 @@ The project runs the tests on Windows. On Linux or WSL the Lua `mkdir` call abov
 
 - [Python tests and coverage](python-tests.md): the other test layers and the full test set.
 - [Shared Lua modules](../architecture/shared-lua-modules.md): the code these tests cover.
-- Skill `harness-mod-state` for stand-in mods, and spec 07 `docs/harness/07-feature-test-kit/` for the action kit that uses `test_fakegame_harnessactions.py`.
+- Skill `harness-mod-state` for stand-in mods, and spec 07 `openspec/changes/archive/2026-10-15-legacy-07-feature-test-kit/` for the action kit that uses `test_fakegame_harnessactions.py`.

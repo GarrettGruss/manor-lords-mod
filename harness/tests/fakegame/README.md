@@ -1,6 +1,6 @@
 # fakegame: a fake UE4SS API for mod tests
 
-Test a Lua mod without the game. Spec: `docs/harness/06-dev-loop-and-fixtures/` (part B).
+Test a Lua mod without the game. Spec: `openspec/changes/archive/2026-10-15-legacy-06-dev-loop-and-fixtures/` (part B).
 Findings and limits: `implementation-notes/mock-kit.md` in that spec.
 
 Run from the repo root:
@@ -57,7 +57,7 @@ Steps: open `FakeGame`, build a world, `load_mod`, move the fake time, press key
 It returns a namespace with `calls`, `clock`, `widget`, `screen`, `engine`, `player`.
 Options: `wanted_slot_listed`, `save_exists`, `menu_delay`, `slot_list_delay`, `engine_delay`, `clock`.
 
-The clock copies the real game (see `docs/harness/02-save-autoload/implementation-notes/pause-and-game-speed.md`):
+The clock copies the real game (see `openspec/changes/archive/2026-10-15-legacy-02-save-autoload/implementation-notes/pause-and-game-speed.md`):
 it stands at 0 for `hold_seconds` after `LoadGame`, then the game starts it and undoes an earlier pause,
 and the intro cinematic (`cinematic=(start, end)`, `currentUIMode` 1) ends later with a restart at 1x. `late_revert_after` is a restart with no sign (off by default). `PawnCPP.bIsPlayerPaused` is stuck at true until a pause call.
 

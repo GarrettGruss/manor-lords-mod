@@ -3,7 +3,7 @@
 A mod adds commands with HarnessCommands.register and metrics with HarnessCommands.metric.
 Every mod serves them itself, in its own Lua state, through the folder `<run>/modcmd/<ModName>/`.
 `ModState` sends commands there, and reads metrics with the built-in command `harness.metrics`.
-Names follow one rule: `<ModName>.<name>`. See docs/harness/10-invasion-testability/implementation-notes/mod-state-contract.md.
+Names follow one rule: `<ModName>.<name>`. See openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/mod-state-contract.md.
 
 A metric is read from the mod when you ask, so it is always current (a read is one command round trip, about 0.1 s).
 """

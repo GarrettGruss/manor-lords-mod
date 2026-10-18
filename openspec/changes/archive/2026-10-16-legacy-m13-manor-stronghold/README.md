@@ -1,0 +1,46 @@
+# M13: manor-stronghold
+
+Feature folder: `manor_stronghold`. Batch 6.
+
+## Goal
+The manor is the stronghold. The player upgrades it through builds and the tech tree: more storage and a larger retinue.
+
+## Player rules (from M00)
+- Shared manor upgrades, open to both paths:
+  - Manor storage: more capacity. Goods in the manor are the hardest for raiders to reach.
+  - Retinue capacity: a larger retinue.
+- The manor is the safest store (M03 storage tiers).
+- Later layer (deferred): if the town falls but the manor holds, raiders loot and leave when supplies or morale run out.
+
+## Current state
+Iteration 01 done: manor storage capacity (200 + tech tree bonus). Iteration 02: hooks do not raise the native hire. Iteration 03: extra retinue squads work.
+
+## Proven building blocks
+- Goods in the Keep count in the region stock: `openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/implementation-notes/storage-m1.md`.
+- Capacity is a field of the `buildingStats` row: `openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/implementation-notes/storage-and-manor-unlock.md` (capacity effect not measured).
+- Manor levels and module paks: `openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/implementation-notes/manor-lv3.md`, `manor-module-pak.md`, `workaround-m2.md`, `worker-slots.md`.
+- Manor limit: `openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/implementation-notes/manor-limit-99.md`.
+- Bailey buildings: `openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/implementation-notes/bailey-buildings.md`.
+- Retinue size and garrison limit hook (12 to 36): `openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/implementation-notes/larger-formations.md`.
+- Review: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-manor-tech-units.md`.
+- Row ids: `openspec/changes/archive/2026-10-15-legacy-23-row-id-range/README.md`. Confirmed block (decision 3): building ids 2300 to 2399.
+
+## Tunables (M00)
+- Storage capacity per upgrade level.
+- Retinue size per upgrade level.
+
+## Dependencies
+- M12 (the nodes). M03 (storage tiers).
+
+## Open questions
+1. Can the mod change manor storage capacity? Yes, as a mod rule: the store is mod-owned (`HarnessManor.CAPACITY`), no row write needed (iteration 01). The base game still does not use the Keep as a store.
+2. Can the mod change real retinue size? Not with hooks: the script limit and the hire gate change, but the native `hireExtraRetinue` stops at the native limit (iteration 02).
+3. Do raiders stop at the manor? No raid was run against the Keep. Needed for the deferred "manor holds" layer.
+4. How many upgrade levels are in version 1?
+
+## Iterations
+| # | Name | Goal | Result |
+| --- | --- | --- | --- |
+| 01 | manor-storage | Manor storage capacity rises by upgrade. | done (#207) |
+| 02 | retinue-capacity | Retinue size rises by upgrade. | spike: limit and gate change, native hire does not |
+| 03 | retinue-squads | Retinue men above 12 as extra player squads. | works (spawnArmy, 36 men a squad), runs 20261018-141824-1038, 20261018-142051-8932 |

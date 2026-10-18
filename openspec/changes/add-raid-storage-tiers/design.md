@@ -2,7 +2,7 @@
 
 ## Context
 
-Legacy source: `docs/mod/M03-raid_behavior/README.md`, open questions 5 and 6, and tunables "Loss share per trip by store tier" and "Rebuild discount for ruins". The loss share per store, the fire to ruins and the partial rebuild cost were spiked in `docs/harness/10-invasion-testability/implementation-notes/spike-S6.md` and `spike-R8.md`. The manor store is in `docs/harness/12-manor-exploration/implementation-notes/storage-m1.md`.
+Legacy source: `openspec/changes/archive/2026-10-16-legacy-m03-raid-behavior/README.md`, open questions 5 and 6, and tunables "Loss share per trip by store tier" and "Rebuild discount for ruins". The loss share per store, the fire to ruins and the partial rebuild cost were spiked in `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S6.md` and `spike-R8.md`. The manor store is in `openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/implementation-notes/storage-m1.md`.
 
 ## Open questions
 

@@ -1,6 +1,6 @@
 """Mock tests for HarnessEncampment (spec 30): find camp sites, spawn and remove a placed mesh actor.
 
-The fake world follows the facts of docs/harness/30-wagenburg-encampment/implementation-notes (camp master type 100, SpawnActor on the world).
+The fake world follows the facts of openspec/changes/archive/2026-10-18-legacy-30-wagenburg-encampment/implementation-notes (camp master type 100, SpawnActor on the world).
 It tests the Lua logic, not the game.
 """
 

@@ -1,6 +1,6 @@
 # Proposal: add carry caps by raid type
 
-Issue: #275. Legacy source: `docs/mod/M03-raid_behavior/README.md` (iteration table row "03 carry-caps", no iteration file).
+Issue: #275. Legacy source: `openspec/changes/archive/2026-10-16-legacy-m03-raid-behavior/README.md` (iteration table row "03 carry-caps", no iteration file).
 
 ## Why
 
@@ -19,7 +19,7 @@ The design (M00) gives a carry cap per raider that depends on the raid type: Hus
 
 ## Legacy folders
 
-`docs/mod/M03-raid_behavior/` (read-only).
+`openspec/changes/archive/2026-10-16-legacy-m03-raid-behavior/` (read-only).
 
 ## Capabilities
 

@@ -5,7 +5,7 @@ description: Compare two variants over several runs (a pak, an environment setti
 
 # A/B testing with the suite runner
 
-The game is not deterministic. Judge a change over N runs per variant (at least 3, better 5 or more). Spec 10 U4 and `docs/harness/10-invasion-testability/implementation-notes/ab-statistics.md`.
+The game is not deterministic. Judge a change over N runs per variant (at least 3, better 5 or more). Spec 10 U4 and `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/ab-statistics.md`.
 
 ## In the scenario
 Record numbers with `ctx.metric("casualties_spear", value)`. They go to `runs/<id>/metrics.json`. A scenario may also record many numbers per run (for example per tier). Keep names short and stable.

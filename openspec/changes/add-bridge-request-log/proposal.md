@@ -1,6 +1,6 @@
 # Proposal: Add bridge request log
 
-Issue: #270. Legacy source: `docs/harness/01-ue4ss-bridge/README.md` (plan step 5, "Hardening and harness integration").
+Issue: #270. Legacy source: `openspec/changes/archive/2026-10-15-legacy-01-ue4ss-bridge/README.md` (plan step 5, "Hardening and harness integration").
 
 ## Why
 Spec 01 plans "log each request (id, verb, target, duration) to HarnessLog for the run record". The backfill found that the code does not do it (`openspec/changes/archive/2026-10-18-backfill-living-specs/notes/h1-report.md`). The bridge Lua mod only prints, and `UE4SS.log` is buffered. After a failed run an agent cannot see which bridge calls ran.
@@ -16,7 +16,7 @@ Spec 01 plans "log each request (id, verb, target, duration) to HarnessLog for t
 - Rate limits in the bridge.
 
 ## Legacy folders
-`docs/harness/01-ue4ss-bridge/` (read only).
+`openspec/changes/archive/2026-10-15-legacy-01-ue4ss-bridge/` (read only).
 
 ## Capabilities
 ### New Capabilities
