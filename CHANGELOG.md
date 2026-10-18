@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Skill `harness-meshy`: the pipeline for 3D models (Gemini, Meshy, UE import, material instance, pak), cost rules, and the Meshy Pro license quote.
 
 ### Fixed
+- A `--keep-open` run keeps its paks in `~mods`: removing them under the running game hung it on the first open of a pak widget (F9 tech menu). Remove them later with `pakmod.py remove --all`.
+- PolicyMenu: the F7 key callback only sets a flag; the game-thread tick opens and closes the menu (same input-thread race as the InvasionMod F9 hang, PR #246).
+- Tech tree menu: the real F9 key no longer crashes the game (#245). The key callback now only sets a flag; the scheduler opens or closes the menu on the game thread. Same change for the raid widget F8. Scenario `tech-tree-widget-key`.
 - Re-cooked the Wagenburg, wall, keep, big ox shed and weaver shed paks with the game material instance; added `weavermesh_P.pak` and `harness/tools/recook_meshy_pak.py` (spec 33, #237).
 - `probe-wagenburg` takes `HARNESS_BM` to show another Blueprint of a pak.
 - Meshy meshes now render their texture, not flat grey: the import scripts use an instance of a game master material (spec 33, #237).
@@ -53,6 +56,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Mod M03.02 (#168): a Hussite role raid is the army of an AI lord at war with the player, anchored at the player manor. A plunder tick takes goods from the stores. The raid leaves (peace) after enough loot, enough losses or a time limit (config `raid_behavior.plunder`, `raid_behavior.leave`). A won region goes back to the player. Fallback for bandit squads: removal only in a quiet spot (`leave.quiet_distance`). Scenario `raid-behavior-role-leave`, probes `probe-lord-raid-peace` and `probe-role-raid-peace`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-02-role-raid-leave.md`.
 
 ### Fixed
+- Tech tree menu: the real F9 key no longer crashes the game (#245). The key callback now only sets a flag; the scheduler opens or closes the menu on the game thread. Same change for the raid widget F8. Scenario `tech-tree-widget-key`.
 - InvasionMod (#172): a lord raid that fails after a partial army spawn no longer adds bandit squads on top (double raid). The partial army is sent away with peace and the next daily step tries again.
 - InvasionMod (#163): 120 day runs crashed in the Lua state because four `LoopAsync` loops shared one Lua state. All feature polls now run from one scheduler (`Scripts/scheduler.lua`). raid_behavior reads only raid units; unit_balance reads known units lazily. Scenario `invasion-no-double-raid` A4 asserts on the spawn event (planned raiders) and the timer, not on living raiders. Notes `docs/mod/M02-invasion/implementation-notes/long-run-crash-and-a4.md`.
 
@@ -92,6 +96,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Soak (#53): `soak-days` accepts up to 13000 s of wall time (`MAX_LIMIT_S` 13500 s) and wider clock-rate (1.5 to 9) and days (0.2 to 1.1) ranges. A 3.3 h run reached day 333 of 730 with no crash and no memory growth; see spec 10 `open-items.md`.
 
 ### Fixed
+- Tech tree menu: the real F9 key no longer crashes the game (#245). The key callback now only sets a flag; the scheduler opens or closes the menu on the game thread. Same change for the raid widget F8. Scenario `tech-tree-widget-key`.
 - Spec 11: sessions in git worktrees share the game slots, run locks, start claims, run counter, fixture ledger, input lock and save backups with the main checkout (`runlib/shared.py`). Before, a worktree saw only slot 0 and none of the other sessions' locks. `install.ps1` and `uninstall.ps1` use the main checkout's `slots` from a worktree too. Skill `harness-dispatch-agents`: up to 3 agents may use the game, one per slot.
 - Spec 11: parallel games no longer read the save list at the same time (the launch holds `runs/.saves.lock` until the main menu); before, two of three games saw only `autosave`. Lock files survive the Windows delete race (`PermissionError`). Preflight, launch and teardown limits include the lock wait (`RUN_OVERHEAD_S` 1200 s). The bridge client checks the run's own game pid (`UE4SS_BRIDGE_GAME_PID`) instead of `tasklist`, which reported a live game as gone under load.
 - The `test_pakmod` uninstall tests used the real `slots` folder, so the full suite could delete the real slots. They use a temp folder now, and `uninstall.ps1` leaves an install state of another game folder alone.
@@ -146,6 +151,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - RefugeeWaves needs only `ManorCore`. `HarnessCommands` is optional (test commands exist only when it is present).
 
 ### Fixed
+- Tech tree menu: the real F9 key no longer crashes the game (#245). The key callback now only sets a flag; the scheduler opens or closes the menu on the game thread. Same change for the raid widget F8. Scenario `tech-tree-widget-key`.
 - `spawn_ai_lord` failed in the python API because the command field `name` clashed with the argument of `Actions._command`.
 - Hidden probe `probe-composite-pak` and sub-command `blueprint` of `s65_edit_json.py` (spec 18, #69). Result: a pak adds buildingStats rows 123 and 124 cloned from the tent, and a row 87 retarget to `BM_HuntingCamp_C` changes the tent part list (17 to 16 parts). Notes: `docs/harness/18-composite-buildings/implementation-notes/composite-pak.md`.
 - Spike #65 (spec 12): `manor_blueprint_add` takes an optional `mesh` asset path, and `harness/tools/s65_edit_json.py` clones a `buildingStats` row and retargets a planner card. Result: a pak adds a manor module row that the game loads and builds; planner card not yet checked (`implementation-notes/manor-module-pak.md`).
@@ -191,6 +197,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Mod-state contract (spec 10, U10): each mod now serves its own commands and metrics in its own Lua state. The first `HarnessCommands.register` or `HarnessCommands.metric` in a mod starts a poller for `<run>/modcmd/<ModName>/<number>.json`. New `HarnessCommands.metric(name, fn)` and built-in commands `harness.metrics` and `harness.list_commands` (per mod). Python: `ModCommandChannel` and `ModDidNotAnswer` in `runlib/commands.py`; `ctx.mod.commands(mod)` takes the mod name, `ctx.mod.metric/wait_metric` read through `harness.metrics` (always current, no longer from `telemetry.jsonl`), `metrics_window` returns the reads of the scenario (`t`, `values`), new `ctx.mod_commands`. `HarnessActions` no longer relays dotted commands (version 5). `InvasionStandIn` version 2 uses `HarnessCommands.metric`. `HarnessLog.make_dir`. Fake game kit: `FakeGame(separate_states=True)` runs each mod in its own Lua state, and `game.exec(code, state=...)`. Notes: `docs/harness/10-invasion-testability/implementation-notes/mod-state-contract.md`.
 
 ### Fixed
+- Tech tree menu: the real F9 key no longer crashes the game (#245). The key callback now only sets a flag; the scheduler opens or closes the menu on the game thread. Same change for the raid widget F8. Scenario `tech-tree-widget-key`.
 - Runs started a NEW game instead of the fixture save: the game ignores saves in the run's private folder, and `HarnessBoot` passed the load list entry through `:get()`, so `LoadGame` had no slot. `HarnessBoot` now writes `MLGameInstance.savefileToLoad` before `LoadGame` and ends in FAILED when the loaded slot is not the wanted one. Earlier results came from fresh-start villages. Notes: `docs/harness/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md`.
 - Test `test_missing_fixture_source_fails` (`test_runlib_phases.py`) stopped a real running game, because it called the real `_stop_stale_game`. It is patched now. Found by three "game process ended during boot" crashes (exit code 15) in real runs that overlapped with unit tests (spec 10, spike S6).
 - Assertion records turn a Python set into a sorted list, so a scenario that records a set no longer breaks `summary.json` writing (found by `raid-seasons` in the real game).
@@ -302,6 +309,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - MCP dependencies are locked with hashes (`mcp/requirements.in` and `mcp/requirements.txt`) and installed with uv.
 
 ### Fixed
+- Tech tree menu: the real F9 key no longer crashes the game (#245). The key callback now only sets a flag; the scheduler opens or closes the menu on the game thread. Same change for the raid widget F8. Scenario `tech-tree-widget-key`.
 - The command channel retries when the mod still holds a result file open (Windows `PermissionError`) or has written only part of it. A run of 120 reads failed with `PermissionError` before.
 - Crash reports were never copied: the UE crash handler writes into the user's real `Crashes` folder, not the private `LOCALAPPDATA`. `collect` now searches both folders and matches the process id. `teardown` stops the `CrashReportClient.exe` that a crash leaves open.
 - `--keep-open` now prints how to stop the game and delete the private appdata, and says that the user's save files were not compared.
