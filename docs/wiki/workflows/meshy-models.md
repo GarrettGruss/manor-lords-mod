@@ -45,7 +45,7 @@ uv run python harness/tools/genmesh.py resume --task <id> --out <dir>
 - A call takes 6 to 10 minutes. Run it in the background.
 - Cost: about 30 credits for one textured model (`MULTI_IMAGE_TEXTURED_COST`). `check_caps` refuses a call over 60 credits (`MAX_CREDITS_PER_CALL`) or a day over 200 (`MAX_CREDITS_PER_DAY`). The day total comes from `runs/genmesh/log.jsonl`.
 - The task id is logged at once when the task is created, before polling, so a timeout after Meshy charged does not lose it. `resume` downloads an existing task and costs nothing.
-- Record the task id and credits in the implementation notes of the spec. Example: [meshy-assets.md](../../harness/32-manor-wagenburg/implementation-notes/meshy-assets.md).
+- Record the task id and credits in the notes of the change (`openspec/changes/<change-name>/notes/`). Legacy example: [meshy-assets.md](../../harness/32-manor-wagenburg/implementation-notes/meshy-assets.md).
 
 ### 3. Import - headless UE 5.5.4
 The UE project is a separate workspace (the skill names it `mlm-ue`), outside the repo. Copy the scripts from `mod/HarnessActions/ue/` into it. Run each with `UnrealEditor-Cmd.exe <uproject> -ExecutePythonScript=<script> -unattended -nullrhi`. Inputs are environment variables. In Git Bash set `MSYS_NO_PATHCONV=1`, or `/Game/...` becomes a Windows path.

@@ -12,13 +12,16 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 - `harness/`: `run.py` (one run), `run_series.py`, `suite.py` (suites, baselines, A/B), `deploy.ps1`, `runlib/` (library), `scenarios/`, `suites/`, `release.py` and `releaselib/` (mod releases), `tools/` (`coverage.py`, `pakmod.py`, `reload_mods.py`, `fixtures.py`).
 - `harness/install.ps1` and `uninstall.ps1` (spec 11): install backs up the REAL game settings once and writes harness values (low, windowed 1280x720), and builds `slots/<n>`. Uninstall restores the backup. The game reads and writes its settings in the real user folder, so never change cvars with console commands.
 - `mcp/harness_tools` (server `manor-harness`: run_scenario, wait_for_run, read_summary, read_log, ...) and the `ue4ss-bridge` MCP server (live queries into a running game).
-- `docs/harness/NN-name/`: one spec per core feature, with `implementation-notes/` for findings.
-- `docs/mod/`: the Invasion Mod docs (overview design `M00`, feature specs `M<NN>-<feature>/` with iterations). Layout and build rules of the mod: spec 22. Row id range spike: spec 23.
+- `openspec/`: specs and changes (OpenSpec, since 2026-10-18). Living specs in `openspec/specs/<capability>/spec.md` (groups `harness/`, `mod/`, `process/`). Open work in `openspec/changes/<change-name>/` with findings in `notes/`. Done work in `openspec/changes/archive/`. Rules: `openspec/specs/process/spec-workflow/spec.md` and `openspec/config.yaml`. Skills `openspec-propose`, `openspec-apply-change`, `openspec-archive-change`.
+- `docs/harness/NN-name/`: legacy harness specs (read-only), with `implementation-notes/` of past findings.
+- `docs/mod/`: the Invasion Mod design (`M00`, owned by the user) and legacy feature specs `M<NN>-<feature>/` (read-only). Layout and build rules of the mod: spec 22. Row id range spike: spec 23.
+- `docs/wiki/`: how the code and the engine work (skill `repo-wiki`).
 - Git-ignored: `runs/`, `modtools/` (repak, UAssetGUI, work files, the AES key), `harness/pakmod.local.json`, the fixture saves, `slots/`, `dist/`. A worktree has none of them: copy the fixture saves and `pakmod.local.json` from the main checkout. Compiled mod paks (`mod/<Name>/paks/*_P.pak`) may be committed. The AES key never.
 
 ## Which skill for which job
 | Job | Skill |
 |---|---|
+| Plan new work (a change), do it, archive it | `openspec-propose`, `openspec-apply-change`, `openspec-archive-change` |
 | Run a scenario, read a verdict, repeat | `harness-run-scenario` |
 | Write a new test | `harness-write-scenario` |
 | Test logic that a mod defines (raids, outposts, captives) | `harness-mod-state` |

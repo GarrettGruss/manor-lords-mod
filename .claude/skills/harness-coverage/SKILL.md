@@ -31,7 +31,7 @@ The base game lacks outposts, captives, tribute, raid objectives and more. The m
 
 ## Steps after any verification
 1. Edit `criteria.json` (keep the file's line endings) and run `--check-spec`.
-2. Write the new numbers in a `coverage-after-<topic>.md` note in `implementation-notes/` and update the spec README status.
+2. Update the criteria tables in the spec 10 README (`--check-spec` compares them with `criteria.json`). These two files stay live; the rest of spec 10 is legacy and read-only. Write the new numbers in a `coverage-after-<topic>.md` note in the notes folder of the change (`openspec/changes/<change-name>/notes/`).
 3. Add a CHANGELOG line.
 
 ## Other specs

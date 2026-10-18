@@ -21,11 +21,11 @@ A worktree has no git-ignored files. Tell the agent to copy the fixture saves an
 
 ## The prompt (a full prompt every time)
 1. Goal and the spec section or criteria ids it serves.
-2. Absolute file paths to read first (CLAUDE.md, the spec README, related notes and code).
+2. Absolute file paths to read first (CLAUDE.md, the change folder `openspec/changes/<change-name>/`, the living specs it touches, related wiki pages, notes and code).
 3. Branch name, "you may commit, atomic Conventional commits with the Co-Authored-By line, do NOT push or merge".
 4. How to run tests, with the exact commands (`uv run python -m unittest ...` for fake-game tests). Say: "Start every Python command with `uv run python`. Never run `python`, `python3`, `py`, `python -` or `python -c` (Windows Store stub, hangs). No code through stdin. Write a script file."
 5. Limits: game use (only you / not at all), no save functions, key and modtools out of git, which worktrees not to touch, run cap.
-6. The output: notes in `implementation-notes/`, the final short report (verdicts, files, test counts, runs used, what is NOT verified).
+6. The output: notes in `openspec/changes/<change-name>/notes/`, task check marks in its `tasks.md`, the final short report (verdicts, files, test counts, runs used, what is NOT verified).
 7. Say what to do when blocked: stop, report, do not work around a permission block.
 
 ## After the agent reports

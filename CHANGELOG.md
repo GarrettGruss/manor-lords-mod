@@ -8,6 +8,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Skill `repo-wiki` (separate from the harness; spec, script and tests in `.claude/skills/repo-wiki/`): the repo wiki in `docs/wiki/`, an Open Knowledge Format (OKF) v0.2 bundle written with a compact form of the OpenWiki method. Script `.claude/skills/repo-wiki/scripts/wiki.py` (`index`, `check`, `stale`, `stamp`; new dev dependency PyYAML) and skill `repo-wiki` (with the OKF spec as a reference) to read, init and update it with Claude Code.
 - Skill `harness-meshy`: the pipeline for 3D models (Gemini, Meshy, UE import, material instance, pak), cost rules, and the Meshy Pro license quote.
+- OpenSpec (`openspec/`, CLI `@fission-ai/openspec`): living specs in `openspec/specs/`, one change folder per piece of work in `openspec/changes/`, done changes in `openspec/changes/archive/`. Project context and rules in `openspec/config.yaml`. Generated skills `openspec-*` and commands `/opsx:*`. Living spec `process/spec-workflow` (change `adopt-openspec`, #251).
+
+### Changed
+- New work (harness features, mod features, mod iterations, spikes) starts as an OpenSpec change, with the branch `feat/<change-name>` and the issue `Change: <change-name>`. Findings go to `notes/` in the change and lasting engine facts move into the wiki at the archive. `docs/harness/` and `docs/mod/M<NN>-*/` are read-only legacy; open legacy work may finish there. CLAUDE.md, the skills `harness-overview`, `harness-git-workflow`, `harness-game-spike`, `harness-dispatch-agents`, `harness-coverage`, `harness-meshy`, `repo-wiki` and the wiki follow the new rules.
 
 ### Fixed
 - A `--keep-open` run keeps its paks in `~mods`: removing them under the running game hung it on the first open of a pak widget (F9 tech menu). Remove them later with `pakmod.py remove --all`.

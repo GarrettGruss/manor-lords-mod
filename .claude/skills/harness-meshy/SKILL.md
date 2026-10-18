@@ -27,7 +27,7 @@ Plain note: generated models (Customer Output) may be shipped in the mod. Do not
 
 ## Cost
 - About 30 credits for one textured model (`meshy-6`, 2k PBR). `genmesh.py` caps a call at 60 and a day at 200 credits and logs each task in `runs/genmesh/log.jsonl`.
-- Record the task id and the credits in the implementation notes of the spec (see `docs/harness/32-manor-wagenburg/implementation-notes/meshy-assets.md`).
+- Record the task id and the credits in the notes of the change (`openspec/changes/<change-name>/notes/`; legacy example: `docs/harness/32-manor-wagenburg/implementation-notes/meshy-assets.md`).
 - Never create an account. Never buy credits or change the plan. If the key is missing or credits are out, stop and ask the user.
 
 ## Grey material rule

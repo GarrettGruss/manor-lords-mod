@@ -1,0 +1,54 @@
+schema: spec-driven
+
+context: |
+  Project: an agent harness for making and testing Manor Lords mods, and the Invasion Mod built with it.
+  CLAUDE.md holds the full project rules. These are the rules that shape OpenSpec artifacts.
+
+  Writing:
+  - Use simplified technical English: short sentences, common words, one idea per sentence.
+  - Use the same term for the same thing.
+  - "Spec scenario" means an OpenSpec `#### Scenario:` block. "Test scenario" means a harness
+    scenario file in `harness/scenarios/` or `mod/InvasionMod/scenarios/`. Never say only "scenario".
+
+  Capabilities (folders in `openspec/specs/`):
+  - Harness capabilities: `harness/<name>`, for example `harness/run-launcher`.
+  - Invasion Mod features: `mod/<feature>`. `<feature>` is the folder name in
+    `mod/InvasionMod/Scripts/features/<feature>/`.
+  - Process rules: `process/<name>`, for example `process/spec-workflow`.
+
+  Game facts:
+  - The simulation is not deterministic. Acceptance checks assert ranges, not exact values.
+  - A game crash is a result with logs, not a harness failure.
+  - Only the guarded harness action `save_game` may save. Never plan a save call anywhere else.
+
+  Legacy docs:
+  - `docs/harness/<NN>-*/` and `docs/mod/M<NN>-*/` are read-only legacy specs. Read them as source
+    material. Do not add new work there.
+  - `docs/mod/M00-invasion-mod/` is the game design. The user owns it. Do not change it unless asked.
+  - `docs/wiki/` explains how the code and the game engine work. It is not a spec.
+
+rules:
+  proposal:
+    - Link the GitHub issue that tracks the change.
+    - State the non-goals.
+    - Name the legacy doc folder the change continues, if there is one.
+  specs:
+    - A requirement states behavior a player, a scenario or a harness user can observe.
+    - Each spec scenario names the test scenario that checks it, as "Checked by `<path>`", or says "Checked by review" for a process rule.
+    - For game behavior, write the THEN step as a range (for example "between 30 and 90 game days").
+  design:
+    - Record open questions with the spike that will answer them.
+    - Point to engine facts in the wiki or in `notes/` of this change. Do not copy them.
+  tasks:
+    - Each task states how it is verified (a fake game test, a real game run, a command or a review).
+    - Include a task to update the wiki, the skills and `CHANGELOG.md` when the change needs it.
+
+operations:
+  apply:
+    guidance:
+      - Put spike findings in `openspec/changes/<change>/notes/<topic>.md`, one file per topic.
+      - Start every Python command with `uv run python`.
+  archive:
+    guidance:
+      - Before the archive, move engine facts from `notes/` that stay true into the wiki.
+      - Archive inside the pull request of the change, as the last commit before the merge.

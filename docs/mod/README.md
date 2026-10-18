@@ -1,7 +1,15 @@
 # Mod docs: Invasion Mod
 
-This folder holds the design and the feature specs of the Invasion Mod (internal name `InvasionMod`; the player-facing name will change).
-The harness specs are in `docs/harness/`. The layout and build rules of the mod are in harness spec 22 (`docs/harness/22-mod-pack-layout/`).
+This folder holds the design and the legacy feature specs of the Invasion Mod (internal name `InvasionMod`; the player-facing name will change).
+The legacy harness specs are in `docs/harness/`. The layout and build rules of the mod are in harness spec 22 (`docs/harness/22-mod-pack-layout/`).
+
+> **Since 2026-10-18, new mod work is planned in OpenSpec (`openspec/`).** See the archived change `openspec/changes/archive/2026-10-18-adopt-openspec/` (issue #251) and `openspec/specs/process/spec-workflow/spec.md`.
+> - `M00-invasion-mod/` stays here. It is the design. The user owns it.
+> - The `M<NN>-<feature>/` folders are read-only legacy. Do not add iterations or notes. An iteration that had an open issue on 2026-10-18 may finish here.
+> - A new iteration is an OpenSpec change (`openspec/changes/<change-name>/`). Its living spec is `openspec/specs/mod/<feature>/spec.md`. The first change for a feature seeds it from the "Current state" of the legacy README.
+> - Feedback goes to `openspec/specs/mod/<feature>/feedback.md`. The first change for a feature moves the open items from the legacy `feedback.md`.
+>
+> The sections "How a feature spec is written" and "How a feature grows" below describe the legacy process.
 
 ## Documents
 | Doc | What it is | Owner |
@@ -14,7 +22,7 @@ The batch plan that breaks M00 into feature specs is in [`feature-breakdown.md`]
 
 A feature spec is made only when the user breaks a part of the design out into a core feature.
 
-## How a feature spec is written
+## How a feature spec is written (legacy)
 Path: `docs/mod/M<NN>-<feature>/`. `<feature>` is the same name as in `mod/InvasionMod/Scripts/features/<feature>/`, `data/<feature>/` and `scenarios/<feature>/`.
 ```
 M01-<feature>/
@@ -30,7 +38,7 @@ M01-<feature>/
 - One GitHub issue per iteration: `Mod M<NN>.<iteration>: <name>`.
 - Tuning-only changes (values in `config.lua`) need no iteration file. Log them in `feedback.md` and in the mod changelog.
 
-## How a feature grows
+## How a feature grows (legacy)
 1. Feedback comes in. Write it in `feedback.md`.
 2. If it is a number, change the tunable and run the feature's scenarios.
 3. If it changes the rules, write a new iteration file first, then the code.
