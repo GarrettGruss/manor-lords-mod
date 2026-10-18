@@ -5,10 +5,10 @@ description: Safely experiment with the running game to find out what Lua can re
 
 # Run a spike in the real game
 
-A spike answers one question about the engine with evidence. Write the question first (the spec's spike list, for example S4 or S6), then keep the work small.
+A spike answers one question about the engine with evidence. Write the question first (in the proposal or design of the OpenSpec change that needs it), then keep the work small.
 
 ## Setup
-1. Read the existing notes in `docs/harness/*/implementation-notes/` for the same area (spike-S*.md, `actions-catalog.md`). Do not repeat a finished spike.
+1. Read what is known for the same area: the wiki (`docs/wiki/`), notes of open and archived changes (`openspec/changes/**/notes/`), and legacy notes in `docs/harness/*/implementation-notes/` (spike-S*.md, `actions-catalog.md`). Do not repeat a finished spike.
 2. Start a game that stays open: `uv run python harness\run.py --scenario noop --keep-open --run-id <id>` (for a new game: `--new-game --scenario noop --keep-open`) (or a hidden `probe-*` scenario, see `harness/scenarios/probe_raids.py`).
 3. Talk to the game through the bridge (`ue4ss-bridge` MCP tools, or the bridge client from Python with the run's bridge folder; see `harness/README.md`). The MCP bridge tools may point to a different folder than a `--keep-open` run, and they may not be connected. Then use the Python client: set `UE4SS_BRIDGE_DATA_DIR=<run>/bridge`, and call `ue4ss_bridge.server.one(op, ...)` or `server.batch([...])` (from `mcp/`, started with `uv run python <file>`). Ops: `hook`, `events`, `get`, `set`, `call`, `props`, `objects` (arg `class_name`), `funcs` (arg `ref`), `world`. `get` and `set` take `ref` and `name`. Prefer one `batch` call over many single calls: each process start is slow.
 4. Raw Lua eval (`eval_lua`) is approved by the user (2026-10-10) for single-player experiments only. Mods and scenarios must not depend on it.
@@ -55,4 +55,4 @@ When a primitive works: add a data-only action (HarnessActions, validated inputs
 
 ## Write it down
 In a worktree, copy the fixture saves and `harness/pakmod.local.json` from the main checkout first (they are git-ignored).
-One note per spike in the spec's `implementation-notes/` folder: question, method, numbers, verdict, what is not verified. Update the spec README in the same commit.
+One note per spike in the change's notes folder (`openspec/changes/<change-name>/notes/<topic>.md`): question, method, numbers, verdict, what is not verified. If the verdict changes a decision, update the proposal, design or delta spec of the change in the same commit. Before the change is archived, add the facts that stay true to the wiki.

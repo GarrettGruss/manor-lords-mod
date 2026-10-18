@@ -5,7 +5,7 @@ description: Read, initialize or update the repo wiki in docs/wiki, a code wiki 
 
 # Repo wiki
 
-The wiki in `docs/wiki/` explains the current system: what each part does, how the parts connect, and how to change them safely. Specs (`docs/harness/`, `docs/mod/`) keep the history and the decisions. The wiki links to them and does not copy them.
+The wiki in `docs/wiki/` explains the current system: what each part does, how the parts connect, and how to change them safely. Specs keep the required behavior, the history and the decisions: living specs in `openspec/specs/`, open and archived changes in `openspec/changes/`, and the legacy specs in `docs/harness/` and `docs/mod/`. The wiki links to them and does not copy them. When an OpenSpec change is archived, the engine facts that stay true move from its `notes/` into the wiki.
 
 The wiki is an Open Knowledge Format (OKF) v0.2 bundle. The method is a compact form of OpenWiki v0.7.2. This skill is separate from the game harness: its spec (`spec/README.md`, findings in `spec/implementation-notes/`), its script `scripts/wiki.py` and its tests (`tests/`) all live in this skill folder. You do the research and the prose.
 
