@@ -301,4 +301,13 @@ local function watch_leave(fn)
     leave_watchers[#leave_watchers + 1] = fn
 end
 
-return { state = state, watch_leave = watch_leave }
+-- True when the last final-battle raid of the great raid has no living unit. nil when there is no such raid yet.
+local function final_raid_ended()
+    for index = #order, 1, -1 do
+        local raid = raids[order[index]].raid
+        if raid.lord ~= nil and raid.lord.final then return raid.initial > 0 and raid.state ~= "active" end
+    end
+    return nil
+end
+
+return { state = state, watch_leave = watch_leave, final_raid_ended = final_raid_ended }

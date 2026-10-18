@@ -27,6 +27,13 @@ return {
             banner_every_days = 30,
             relief_full_squads = 15,                         -- relief army at difficulty 1 (decisions 17, 26)
             wave_squads = 15,                                -- a large army (decision 16)
+            -- M02 iteration 06: the waves, the relief army and the final battle. All values are TBD for playtests.
+            wave_gap_days = 10,                              -- game days between two waves
+            relief_delay_days = 10,                          -- game days from the last wave to the relief army and the final battle
+            final_squads = 25,                               -- "very large" (more than the 15 of a large army); not scaled by difficulty
+            final_tier_difficulty = 2,                       -- the tier mix of the final army (roles table of this difficulty)
+            relief_templates = { "militiaFoot", "spearMilitia", "bowMilitia", "crossbowMilitia" }, -- the liege squads, cycled
+            relief_offset = { x = 0, y = 2500 },             -- the relief army appears this far from the player pawn
             prompt_every_days = 7,                           -- iteration 04: the pick prompt repeats until the player picks                          -- a banner for the clock when no minor raid banner shows
         },
         -- M02 iteration 03: the subjugation raid (major). One is planned after the first raid. Values are TBD for playtests.
