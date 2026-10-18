@@ -14,7 +14,7 @@ sources:
 
 This repo is an agent harness for Manor Lords mods. An agent edits a Lua mod, deploys it, runs the real game, reads `summary.json`, and repeats. The main product is the Invasion Mod (`mod/InvasionMod/`). The rules for agents are in `CLAUDE.md`. Read its Safety section before you touch saves or the game.
 
-This wiki explains the current system. Specs (`docs/harness/`, `docs/mod/`) hold the history and the decisions. Check an important detail in the source before you rely on it. To keep the wiki current, use the skill `repo-wiki`.
+This wiki explains the current system. Specs hold the required behavior, the history and the decisions: OpenSpec in `openspec/`, and the legacy specs in `docs/harness/` and `docs/mod/`. Check an important detail in the source before you rely on it. To keep the wiki current, use the skill `repo-wiki`.
 
 ## The loop in five lines
 
@@ -51,7 +51,7 @@ Start every Python command with `uv run python`. The project runs on Windows ([I
 | Install the harness, game slots, environment variables | [Install and environment](operations/install-and-environment.md) | - |
 | Run the Python tests or measure coverage | [Python tests and coverage](testing/python-tests.md) | `harness-coverage` |
 | Test Lua without the game | [Fake game kit](testing/fake-game-kit.md) | - |
-| Write a spec, branch, commit, open a PR | [Specs, docs and project process](operations/docs-and-specs.md) | `harness-git-workflow` |
+| Plan a change (OpenSpec), branch, commit, open a PR | [Specs, docs and project process](operations/docs-and-specs.md) | `harness-git-workflow` |
 | Split work between agents | [Specs, docs and project process](operations/docs-and-specs.md#subagents) | `harness-dispatch-agents` |
 
 ## Rules to know first
