@@ -70,7 +70,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
     - This covers `docs`, `fix`, `chore`, features (`feat`, feature or mod iteration branches) and breaking changes.
     - Merge stacked PRs in order. Retarget the next PR to `main` before its merge.
   - Do not push or merge in any other case unless the user asks.
-- Do not commit unless the user asks.
+- Commits are approved by the user (2026-10-18). Commit each logical change on its branch when it is done. Do not commit to `main`, except the small project-rule changes named above.
 - Never skip hooks. Never force push.
 
 ## GitHub issues

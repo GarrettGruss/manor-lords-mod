@@ -76,7 +76,7 @@ The legacy mod layout was `M<NN>-<feature>/` with `README.md`, `iterations/<NN>-
 - One GitHub issue for each change, made when the change folder is made. Title `Change: <change-name>`. The body links the change folder and the branch, and the proposal links the issue. Keep the body current. Use the `gh` CLI. Old issues keep their titles (`Spec <NN>: ...`, `Mod M<NN>.<iteration>: ...`).
 - Status labels: `status: in progress`, `status: blocked`, `status: awaiting user` (with `status: blocked` when the user is the blocker). Comment when the status changes, a spike ends, or a branch merges. Close the issue when the change is merged.
 - Commits are atomic and use Conventional Commits: `<type>(<scope>): <summary>`, imperative, under 72 characters. Reference the issue (`Refs #<n>`, `Closes #<n>` in the final PR).
-- Do not commit unless the user asks. Never skip hooks. Never force push.
+- Commits are approved by the user (2026-10-18): commit each logical change on its branch when it is done. Never skip hooks. Never force push.
 - Done work goes to a pull request. The user approved all PR types in advance (2026-10-17): merge after the full tests pass. The archive commit is the last commit before the merge. Merge stacked PRs in order, and retarget the next PR to `main` before its merge. Do not push or merge in other cases unless the user asks.
 - Details, conflict hints and the test set to run before a push: `.claude/skills/harness-git-workflow/SKILL.md`.
 
