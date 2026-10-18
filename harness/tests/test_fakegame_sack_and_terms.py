@@ -18,12 +18,14 @@ local function census()
              people = { families = village.families, population = village.families * 2 } }
 end
 package.loaded["HarnessSack"] = nil -- HarnessManor may have loaded the real module first
+SACK_REGIONS = {}   -- the region name that each call got
 package.preload["HarnessSack"] = function()
     return {
-        sack_census = function() return { ok = true, census = census() } end,
+        playerRegion = function(name) SACK_REGIONS[#SACK_REGIONS + 1] = "stores:" .. tostring(name); return require("ManorCore").player_region() end,
+        sack_census = function(r) SACK_REGIONS[#SACK_REGIONS + 1] = "census:" .. tostring(r and r.region); return { ok = true, census = census() } end,
         sack_goods = function(r) village.goods[r.good] = village.goods[r.good] - r.amount; return { ok = true, removed = r.amount } end,
-        sack_people = function(r) village.families = village.families - r.count; return { ok = true, families = r.count, people = r.count * 2 } end,
-        sack_buildings = function(r) village.standing = village.standing - r.count; return { ok = true, hit = r.count } end,
+        sack_people = function(r) SACK_REGIONS[#SACK_REGIONS + 1] = "people:" .. tostring(r.region); village.families = village.families - r.count; return { ok = true, families = r.count, people = r.count * 2 } end,
+        sack_buildings = function(r) SACK_REGIONS[#SACK_REGIONS + 1] = "buildings:" .. tostring(r.region); village.standing = village.standing - r.count; return { ok = true, hit = r.count } end,
     }
 end
 """
@@ -132,6 +134,52 @@ class RepeatedSackTests(SackTestCase):
         tags = list(self.game.lua.eval("tag_names")(self.pawn).values())
         self.assertIn("invasion:sack_count=1", tags)
         self.assertIn("invasion:sack_window_count=1", tags)
+
+
+class SackRegionTests(SackTestCase):
+    """M06.04: the sack hits the region under attack, or the home region, and not the first region of the player."""
+
+    def own_regions(self, *names):
+        listing = ", ".join(f'"{name}"' for name in names)
+        self.game.exec(f'require("features.sack_and_terms.world").player_region_names = function() return {{ {listing} }} end')
+
+    def set_home(self, name):
+        self.game.exec(f'require("features.vassals.init").state:set("vassals_home_region", "{name}")')
+
+    def asked(self):
+        return list(self.game.exec("return table.concat(SACK_REGIONS, ',')").split(","))
+
+    def test_a_manual_sack_hits_the_home_region(self):
+        self.own_regions("Capital", "Home")
+        self.set_home("Home")
+        self.sack_now(1)
+        self.assertEqual(self.sack_state()["history"][0]["region"], "Home")
+        self.assertTrue(all(call.endswith(":Home") for call in self.asked()), self.asked())
+
+    def test_the_rule_prefers_the_target_then_the_home_then_nothing(self):
+        self.game.exec("""local rules = require("features.sack_and_terms.rules")
+            RESULT = rules.sack_region("Capital", "Home", { "Capital", "Home" }) .. "," .. rules.sack_region("Gone", "Home", { "Capital", "Home" }) .. "," .. tostring(rules.sack_region("Gone", "none", { "Capital" })) .. "," .. rules.sack_region(nil, "Home", { "Home" })""")
+        self.assertEqual(self.game.exec("return RESULT"), "Capital,Home,nil,Home")
+
+    def test_no_known_region_keeps_the_first_region_of_the_player(self):
+        self.own_regions()
+        self.sack_now(1)
+        self.assertTrue(all(call.endswith(":nil") for call in self.asked()), self.asked())
+
+    def test_a_raid_that_leaves_by_loot_sacks_its_own_target(self):
+        self.own_regions("Capital", "Home")
+        self.set_home("Home")
+        self.game.exec('require("ManorCore").region_row = function() return { region = "Capital" } end') # the raid targets the capital
+        self.make_raid_leave_by_loot()
+        self.assertEqual(self.sack_state()["history"][0]["region"], "Capital")
+        self.assertTrue(all(call.endswith(":Capital") for call in self.asked()), self.asked())
+
+    def test_a_raid_on_a_region_the_player_does_not_own_sacks_the_home_region(self):
+        self.own_regions("Home")
+        self.set_home("Home")
+        self.game.exec('require("ManorCore").region_row = function() return { region = "VassalLand" } end')
+        self.make_raid_leave_by_loot()
+        self.assertEqual(self.sack_state()["history"][0]["region"], "Home")
 
 
 class LostBattleTests(SackTestCase):
