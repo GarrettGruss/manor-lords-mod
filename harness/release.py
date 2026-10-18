@@ -1,7 +1,7 @@
 """Check, build and publish a mod release (spec 19).
 
-  uv run python harness/release.py --mod RefugeeWaves --dry-run
-  uv run python harness/release.py --mod RefugeeWaves --publish
+  uv run python harness/release.py --mod <Name> --dry-run
+  uv run python harness/release.py --mod <Name> --publish
 
 Steps: manifest, version not tagged, changelog section, fake tests, real-game gate, zip, zip scan, then (with --publish)
 tag and GitHub pre-release. Without --publish nothing leaves this PC. Exit code: 0 ok, 1 a check failed.

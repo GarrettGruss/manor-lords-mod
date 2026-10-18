@@ -2,7 +2,7 @@
 	"FileVersion": 3,
 	"EngineAssociation": "5.5",
 	"Category": "",
-	"Description": "Build workspace for the PolicyMenu pak widget (spec 16). Not the real game project.",
+	"Description": "Build workspace for the Invasion Mod pak widgets. Not the real game project.",
 	"Plugins": [
 		{ "Name": "PythonScriptPlugin", "Enabled": true },
 		{ "Name": "EditorScriptingUtilities", "Enabled": true }

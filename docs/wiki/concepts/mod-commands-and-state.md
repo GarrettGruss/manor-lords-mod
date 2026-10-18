@@ -82,7 +82,7 @@ Rules (from the module header):
 - A handler returns a JSON value, or `nil, "message"` to refuse on purpose. A handler slower than 50 ms is logged, not stopped.
 - Requests are decoded as data by `HarnessJson.decode`. There is no eval.
 - Hot reload: each poller writes a random token to `<Mod>/owner.txt` and stops when the file holds another token. This guards against a poller of an old Lua state.
-- Player-safe mods (for example RefugeeWaves) load it with `pcall(require, "HarnessCommands")`, so the test commands exist only when the harness is present.
+- Player-safe mods (the Invasion Mod) load it with `pcall(require, "HarnessCommands")`, so the test commands exist only when the harness is present.
 
 Test: `harness/tests/test_fakegame_harnesscommands.py`.
 

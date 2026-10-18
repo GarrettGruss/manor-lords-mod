@@ -139,7 +139,7 @@ Commands: `tech_tree_widget_open`, `tech_tree_widget_close`, `tech_tree_widget_s
 - Split of files: `rules.lua` is pure logic that fake-game tests run without the game. `world.lua` touches game objects. `init.lua` wires state, scheduler jobs and commands.
 - Season-change ticks (bandits, tribute) store the last handled season in ModState. A load must not repeat a tick.
 - Both widget features obey the rule: game objects only on the game thread, no `LoopAsync` of their own.
-- Key binds: a `RegisterKeyBind` callback runs on the input thread, not the game thread. It only sets a flag (`toggle_requested`); the scheduler tick on the game thread reads it and toggles the menu. Lua work in the callback raced with the game thread and crashed the game in `luaH_getint` (F9, issue #245, [f9-key-crash.md](../../mod/M12-tech_tree/implementation-notes/f9-key-crash.md)). The same applies to `PolicyMenu`.
+- Key binds: a `RegisterKeyBind` callback runs on the input thread, not the game thread. It only sets a flag (`toggle_requested`); the scheduler tick on the game thread reads it and toggles the menu. Lua work in the callback raced with the game thread and crashed the game in `luaH_getint` (F9, issue #245, [f9-key-crash.md](../../mod/M12-tech_tree/implementation-notes/f9-key-crash.md)).
 - A feature that needs a game fact not yet known has a spike note: in `openspec/changes/<change-name>/notes/` (open or archived changes), or in the legacy `docs/mod/M<NN>-<feature>/implementation-notes/`. Read that note before you change the code.
 
 ## Tests

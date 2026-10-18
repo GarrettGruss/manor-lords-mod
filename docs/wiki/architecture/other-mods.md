@@ -1,9 +1,9 @@
 ---
 type: Architecture
 title: Harness and player mods
-description: The Lua mods in mod/ besides the Invasion Mod - harness mods (HarnessBoot, HarnessTelemetry, HarnessReload, HarnessPlace, HarnessActions, UEBridge), player mods (PolicyMenu, RefugeeWaves), stand-in fixtures and probes.
+description: The Lua mods in mod/ besides the Invasion Mod - harness mods (HarnessBoot, HarnessTelemetry, HarnessReload, HarnessPlace, HarnessActions, UEBridge), stand-in fixtures and probes. The standalone player mods were removed.
 tags: [lua, mods, harness, boot, stand-in]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:15:30Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T21:00:00Z }
 sources:
   - resource: repo://mod/HarnessBoot/Scripts/main.lua
   - resource: repo://mod/HarnessTelemetry/Scripts/main.lua
@@ -11,10 +11,6 @@ sources:
   - resource: repo://mod/HarnessPlace/Scripts/main.lua
   - resource: repo://mod/HarnessActions/Scripts/main.lua
   - resource: repo://mod/UEBridge/scripts/main.lua
-  - resource: repo://mod/PolicyMenu/Scripts/main.lua
-  - resource: repo://mod/PolicyMenu/mod.json
-  - resource: repo://mod/RefugeeWaves/Scripts/main.lua
-  - resource: repo://mod/RefugeeWaves/mod.json
   - resource: repo://mod/InvasionStandIn/Scripts/main.lua
   - resource: repo://mod/RaidStandIn/Scripts/main.lua
   - resource: repo://mod/HarnessLoadProbe/Scripts/main.lua
@@ -28,7 +24,6 @@ Every folder in `mod/` except `shared/` is one UE4SS mod. This page covers all o
 | Group | Mods |
 |---|---|
 | Harness mods (run control) | `HarnessBoot`, `HarnessTelemetry`, `HarnessReload`, `HarnessActions`, `HarnessPlace`, `UEBridge` |
-| Player mods (released) | `PolicyMenu`, `RefugeeWaves` |
 | Stand-in fixtures | `InvasionStandIn`, `RaidStandIn` |
 | Probes and smoke mods | `HarnessLoadProbe`, `HarnessLogTest` |
 
@@ -75,31 +70,6 @@ Places a normal building at a world point without a mouse device (spec 18). It d
 ### UEBridge
 
 The file-based request and response channel for live control: an external process writes `request.json` in `<ue4ss>\bridge\`, the mod runs the Lua on the game thread and writes `response.json`. Ops: `hello`, `ping`, `eval`, `batch`. Protocol 3. It is game-agnostic. The MCP server and the eval gate are in [UE4SS bridge](../integrations/ue4ss-bridge.md). The mod has `mod.toml`, `scripts/main.lua`, `scripts/json.lua` and `scripts/settings.lua`.
-
-## Player mods
-
-A player mod must run without the harness. It needs only `ManorCore`. `HarnessCommands` is optional: the mod loads it with `pcall(require, ...)`. Without it only the test commands are missing. Each mod has `mod.json` (name, version, `shared`, `pak`, `tested` versions, `gate_scenarios`) and a `CHANGELOG.md`. The release flow is in [Mod releases](../workflows/releases.md).
-
-### PolicyMenu
-
-A menu that lists the policies of the player region. A click signs or unsigns one (spec 16). F7 opens and closes it. The key callback runs on the input thread, so it only sets a flag; the game-thread tick does the toggle (see [Key binds](invasion-features.md#shared-patterns)).
-
-- The layout is a cooked Widget Blueprint in `policymenu_P.pak`, built by `mod/PolicyMenu/ue/make_widget.py`. Lua fills labels, colors and visibility at run time.
-- The Blueprint has no graph. A click button (`WBP_ClickButton`, shared module `HarnessClickHooks`, spec 34) sits in each `Border`. Its OnClicked hook queues the click. The 100 ms tick drains the queue and calls `Region:setPolicySigned` through `ManorCore`.
-- Commands (prefix `PolicyMenu.`): `open`, `close`, `toggle`, `read`, `press`. Metrics: `clicks`, `entries`.
-- Gate scenario: `policy-menu`.
-
-### RefugeeWaves
-
-A random event: homeless refugee families arrive (spec 15, issue #51).
-
-- Each game month there is a chance (`chance_percent`, default 15) when the village has at least `min_families` families and no wave is active.
-- A wave is 1 to 3 calls of `ManorCore.settle_region`, near the woods (`forest_spot`) or the village (`tent_find_spot`). A banner shows the event.
-- The wave ends when the homeless count is back to the count before the wave. If refugees stay homeless too long, or approval falls under the floor, a share of the wave families leaves and returns as a bandit raid (`ManorCore.rebel_raid_rally`).
-- The mod keeps no state that the game cannot rebuild. After a load, a new Lua state adopts the homeless families it finds as the active wave.
-- It never calls `Region:AddNewFamily` (it crashes the game).
-- Commands (prefix `RefugeeWaves.`): `configure`, `start_wave`, `check`, `status`, `forget_wave`.
-- Gate scenario: `refugee-wave`. Test: `test_fakegame_refugeewaves.py`.
 
 ## Stand-in fixtures
 

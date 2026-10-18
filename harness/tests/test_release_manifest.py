@@ -207,8 +207,12 @@ class ClosureTests(unittest.TestCase):
             shared_closure(root / "Demo", root / "shared", ["Nope"])
         self.assertIn("does not exist", str(caught.exception))
 
-    def test_refugee_waves_needs_no_harness_module(self):
-        mod_dir = REPO_ROOT / "mod" / "RefugeeWaves"
+    def test_a_mod_that_needs_only_manor_core_needs_no_harness_module(self):
+        root = self.make_tree({
+            "Demo/mod.json": json.dumps(changed(shared=["ManorCore"])),
+            "Demo/Scripts/main.lua": 'local core = require("ManorCore")',
+        })
+        mod_dir = root / "Demo"
         manifest = load_manifest(mod_dir)
         closure = shared_closure(mod_dir, REPO_ROOT / "mod" / "shared", manifest["shared"])
         self.assertEqual(closure, ["ManorCore"])

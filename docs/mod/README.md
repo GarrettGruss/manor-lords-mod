@@ -46,5 +46,5 @@ M01-<feature>/
 4. If a feature grows too large, split it into a new feature with its own `M<NN>` spec. `requires` in `mod.json` keeps the load order.
 
 ## References
-- `mod/RefugeeWaves` (spec 15, #51): an example of a small feature with tunables, a configure command and no hidden save state. The `refugees` feature is built new; RefugeeWaves is only a reference.
+- `mod/RefugeeWaves` (spec 15, #51) was a standalone test of refugee waves. The `refugees` feature replaced it, and the mod was removed on 2026-10-18 (change `remove-standalone-test-mods`, #261). The code is in the git history.
 - Test criteria from the first brief: `docs/harness/10-invasion-testability/criteria.json`.

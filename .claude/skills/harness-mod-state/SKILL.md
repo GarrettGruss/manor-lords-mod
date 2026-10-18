@@ -11,7 +11,7 @@ Spec 10 (upgrade U10) and `docs/harness/10-invasion-testability/implementation-n
 UE4SS gives every Lua mod its own Lua state. A shared module (`mod/shared/<Name>/<Name>.lua`) is loaded again in each mod. Tables and functions do not cross between mods. Files and game objects do. Real-game proof: run `20261010-172028-008b` failed when the registry was shared.
 
 ## Player-safe mods
-A mod that players install (RefugeeWaves) must not need harness-only modules. It requires `ManorCore` (`mod/shared/ManorCore/ManorCore.lua`: region, settle region, spot finders, rebel raid, banner, and a logger with a `print` fallback). The Harness modules (HarnessLords, HarnessHousing, HarnessSack, HarnessBandits) call ManorCore, so the code exists once. `HarnessCommands` is optional there: `pcall(require, "HarnessCommands")`, and the test commands exist only when it is present. Rules: skill `harness-release`.
+A mod that players install must not need harness-only modules. It requires `ManorCore` (`mod/shared/ManorCore/ManorCore.lua`: region, settle region, spot finders, rebel raid, banner, and a logger with a `print` fallback). The Harness modules (HarnessLords, HarnessHousing, HarnessSack, HarnessBandits) call ManorCore, so the code exists once. `HarnessCommands` is optional there: `pcall(require, "HarnessCommands")`, and the test commands exist only when it is present. Rules: skill `harness-release`.
 
 ## How a mod exposes commands
 ```lua
@@ -42,7 +42,7 @@ HarnessActions is version 53 on branch 28 (52 on branch 25 and 24; older branche
 Shared module `ModState` (mod M01). A feature of `InvasionMod` calls `ModState.open("invasion", "pawn", version)`, then `state:register(key, default, kind)`, `state:get`, `state:set` (flushes at once). Values are Tags `invasion:<key>=<value>` on the player pawn. They survive a save and a load. Never write Tags through the bridge (crash) and never remove a Tag: ModState overwrites in place. An unregistered key fails loudly. Test commands: `InvasionMod.mod_state_dump`, `mod_state_set`. Feature `invasion` (M02) adds `InvasionMod.invasion_state`, `invasion_force_next`, `invasion_set_difficulty`, `invasion_set_size`. Feature `raid_behavior` (M03) adds `InvasionMod.raid_behavior_state` (raids, living raiders, loot, burned, leaving). Feature `bandits` (M04) adds `InvasionMod.bandits_state`, `bandits_set_approval` and `bandits_tick_now` (optional forced `roll`). Feature `unit_balance` (M05) adds `InvasionMod.unit_balance_state`, `unit_balance_set`, `unit_balance_apply`. Scenarios that save use a write run and a read run (`--save`, `--env MODSTATE_PHASE=read`). Notes: `docs/mod/M01-mod_state/implementation-notes/tags-module.md`.
 
 ## Stand-in mods
-`mod/InvasionStandIn` (outposts, captives, tribute) and `mod/RaidStandIn` (raid timeline, seasons, behavior, tiers, sack, politics) are toy models. They prove the test method for rules the base game does not have. RefugeeWaves (spec 15) is a real mod, not a stand-in. Its scenario is `refugee-wave`.
+`mod/InvasionStandIn` (outposts, captives, tribute) and `mod/RaidStandIn` (raid timeline, seasons, behavior, tiers, sack, politics) are toy models. They prove the test method for rules the base game does not have.
 When the real mod exists, the same scenarios run against it (change the prefix). A criterion is "method verified" on the stand-in and "passing" only on the real mod. Say "a toy model" in every scenario description.
 
 ## Tests
