@@ -327,6 +327,31 @@ function M.mesh_users(_, raw)
     return { ok = true, mesh = wanted, total = total, scanned = scanned, groups = groups }
 end
 
+-- Spike (spec 32), read only: where the actors are whose static mesh component uses a mesh (field "mesh", a name part).
+-- Why: to compare unit paths with the wall pieces of a built manor. At most MAX_ACTORS rows.
+M.MAX_ACTORS = 400
+
+function M.mesh_actors(_, raw)
+    local wanted = textField(raw, "mesh")
+    if not wanted or wanted == "" then return { ok = false, error = "mesh must be a text, for example PalisadeWallNarrow" } end
+    local rows, total = {}, 0
+    for _, component in ipairs(FindAllOf("StaticMeshComponent") or {}) do
+        local mesh = read(function() return component.StaticMesh:GetFullName() end)
+        if mesh and mesh:find(wanted, 1, true) and not component:GetFullName():find("Default__", 1, true) then
+            local owner = read(function() return component:GetOwner() end)
+            local at = owner and read(function() return owner:K2_GetActorLocation() end)
+            if at then
+                total = total + 1
+                if #rows < M.MAX_ACTORS then
+                    rows[#rows + 1] = { owner = read(function() return owner:GetClass():GetFName():ToString() end), x = math.floor(at.X), y = math.floor(at.Y), z = math.floor(at.Z),
+                                        yaw = math.floor(read(function() return owner:K2_GetActorRotation().Yaw end) or 0) }
+                end
+            end
+        end
+    end
+    return { ok = true, mesh = wanted, total = total, actors = rows }
+end
+
 local function buildingById(id)
     for _, building in ipairs(FindAllOf("SMBuildingMaster") or {}) do
         if isValid(building) and roadId(building) == id then return building end

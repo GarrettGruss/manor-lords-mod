@@ -149,6 +149,7 @@
 --   {"command":"building_health","building":123}            spike, read only: type, hp, maxHp, onFire, fireAmt, rubble, built of one building
 --   {"command":"manor_blueprint_add","type":58,"x":0,"y":0,"z":0,"yaw":0,"commit":true}   spike (#63): add a manor planner blueprint (mesh actor tagged bType_<type>) without the mouse, then convertBlueprintsToBuildings
 --   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
+--   {"command":"mesh_actors","mesh":"PalisadeWallNarrow"}   spike (spec 32), read only: owner class and position of the actors whose mesh matches
 --   {"command":"steer_state","squad":41}                    spike #59, read only: owner side, living units, centre and mean unit target of a squad
 --   {"command":"steer_move","squad":41,"x":0,"y":0,"half_width":300}   spike #59: PawnCPP:formALineArmy of the owner pawn, one squad, a line across the way to the point
 --   {"command":"steer_hook","functions":"/Script/ManorLords.PawnCPP:formALineArmy,/Script/ManorLords.PawnCPP:selectSquad"}   spike #59: record the calls of these functions; steer_hook_log reads (and clears) them
@@ -185,7 +186,7 @@ local gameSetup = require("HarnessGameSetup")
 local harnessSave = require("HarnessSave")
 local encampment = require("HarnessEncampment")
 
-local VERSION = "57"
+local VERSION = "58"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -606,6 +607,7 @@ local COMMANDS = {
     manor_blueprint_add = walls.manor_blueprint_add,
     manor_planner = walls.manor_planner,
     mesh_users = walls.mesh_users,
+    mesh_actors = walls.mesh_actors,
     construction_complete = walls.construction_complete,
     path_obstacles_clear = walls.path_obstacles_clear,
     building_stat_write = walls.building_stat_write,
