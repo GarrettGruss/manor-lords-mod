@@ -196,5 +196,9 @@ return {
         share_max = 0.60,
         families_per_call = 5,    -- one settleRegion call adds 5 families (spec 15)
         max_calls = 3,            -- most calls in one wave
+        timeout_days = 45,        -- game days until unhoused refugees turn to bandits (M00: 1 to 2 game months; TBD)
+        poll_ms = 4000,           -- real time between two looks at an active wave
+        max_rebel_families = 6,   -- most families that turn in one go (homeless_rebel limit)
+        families_per_squad = 2,   -- as in bandits
     },
 }

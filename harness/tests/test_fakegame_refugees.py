@@ -90,5 +90,74 @@ class WaveTests(RefugeeTestCase):
         self.assertEqual(tuple(values), (2, 1, 1, 2, 3))
 
 
+REBEL_STUB = """
+REBEL_CALLS = {}
+package.loaded["HarnessBandits"] = {
+    homeless_rebel = function(request)
+        REBEL_CALLS[#REBEL_CALLS + 1] = request.count
+        return { ok = true, families_removed = request.count, squads = { {} }, bandit_units_spawned = 18 }
+    end,
+}
+"""
+
+
+class EndOfWaveTests(RefugeeTestCase):
+    def setUp(self):
+        super().setUp()
+        self.game.exec(REBEL_STUB)
+        self.ask("refugees_vassal_lost", slot=1, share=30)  # 5 families, 3 homeless
+        self.game.advance(5)
+
+    def rebel_calls(self):
+        return self.game.exec("return #REBEL_CALLS")
+
+    def test_the_wave_stays_active_while_refugees_are_homeless(self):
+        self.assertTrue(self.refugees()["active"])
+        self.assertEqual(self.rebel_calls(), 0)
+
+    def test_the_wave_ends_housed_when_the_homeless_are_back_at_the_base(self):
+        self.game.exec("HOME_HOMELESS = 0")
+        self.game.advance(5)
+        state = self.refugees()
+        self.assertEqual((state["active"], state["last_outcome"], state["housed"]), (False, "housed", 1))
+        self.assertEqual(self.rebel_calls(), 0)
+
+    def test_unhoused_refugees_turn_to_bandits_after_the_timeout(self):
+        self.calendar.daysTotal = self.calendar.daysTotal + 44
+        self.game.advance(5)
+        self.assertTrue(self.refugees()["active"])
+        self.calendar.daysTotal = self.calendar.daysTotal + 2
+        self.game.advance(5)
+        state = self.refugees()
+        self.assertEqual((state["active"], state["last_outcome"], state["rebelled"]), (False, "rebelled", 1))
+        self.assertEqual(self.game.exec("return REBEL_CALLS[1]"), 3)
+        self.assertEqual(state["bandit_families"], 3)
+
+    def test_housing_before_the_timeout_prevents_the_rebellion(self):
+        self.calendar.daysTotal = self.calendar.daysTotal + 30
+        self.game.exec("HOME_HOMELESS = 0")
+        self.game.advance(5)
+        self.calendar.daysTotal = self.calendar.daysTotal + 30
+        self.game.advance(5)
+        self.assertEqual(self.rebel_calls(), 0)
+
+    def test_the_timeout_command_shortens_the_timer(self):
+        self.ask("refugees_set_timeout", days=3)
+        self.calendar.daysTotal = self.calendar.daysTotal + 4
+        self.game.advance(5)
+        self.assertEqual(self.refugees()["last_outcome"], "rebelled")
+
+    def test_a_rebellion_that_fails_keeps_the_wave_active(self):
+        self.game.exec('package.loaded["HarnessBandits"].homeless_rebel = function() return { ok = false, error = "boom" } end')
+        self.calendar.daysTotal = self.calendar.daysTotal + 50
+        self.game.advance(5)
+        self.assertTrue(self.refugees()["active"])
+
+    def test_a_new_wave_can_start_after_the_end(self):
+        self.game.exec("HOME_HOMELESS = 0")
+        self.game.advance(5)
+        self.assertTrue(self.ask("refugees_vassal_lost", slot=1, share=30)["ok"])
+
+
 if __name__ == "__main__":
     unittest.main()

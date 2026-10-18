@@ -20,7 +20,10 @@ end
 local function region_object(name)
     local e = engine()
     if e == nil then return nil end
-    for _, region in ipairs(core.listOf(e.regions)) do
+    -- Direct index, no :get() unwrap: fewer calls on the region actors for a poll that runs every few seconds.
+    local count = core.read(function() return e.regions:GetArrayNum() end) or 0
+    for i = 1, count do
+        local region = core.read(function() return e.regions[i] end)
         if core.shortName(region) == name then return region end
     end
     return nil
