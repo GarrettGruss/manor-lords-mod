@@ -25,18 +25,12 @@ A change with something to build SHALL pass two pull requests. The spec pull req
 - Checked by review.
 
 ### Requirement: Each change has one branch and one issue
-Each change SHALL have one GitHub issue titled `Change: <change-name>`. Its spec pull request SHALL use the branch `spec/<change-name>`, and its implementation pull request SHALL use `feat/<change-name>` (or `fix/`, `docs/`, `chore/`), made from `main` after the spec pull request is merged. The issue body SHALL link the change folder and the branches. The change SHALL name its issue in the proposal, in the key `x-issue` of its `.openspec.yaml`, and in a comment `<!-- Issue: #<n> -->` under the first section heading of each delta spec.
+Each change SHALL have one GitHub issue titled `Change: <change-name>`. Its spec pull request SHALL use the branch `spec/<change-name>`, and its implementation pull request SHALL use `feat/<change-name>` (or `fix/`, `docs/`, `chore/`), made from `main` after the spec pull request is merged. The issue body SHALL link the change folder and the branches.
 
 #### Scenario: A new change is proposed
 - **WHEN** a change folder is created
 - **THEN** a GitHub issue `Change: <change-name>` exists with the `status: in progress` label
 - **AND** the proposal links the issue
-- Checked by review.
-
-#### Scenario: A delta spec names its issue
-- **WHEN** a delta spec is written for change issue #264
-- **THEN** the file has the comment `<!-- Issue: #264 -->` under its first section heading, and `.openspec.yaml` has `x-issue: 264`
-- **AND** `openspec validate <change-name> --strict` passes, and the archive does not copy the comment into the living spec
 - Checked by review.
 
 #### Scenario: The implementation branch
@@ -45,6 +39,15 @@ Each change SHALL have one GitHub issue titled `Change: <change-name>`. Its spec
 - Checked by review.
 
 ## ADDED Requirements
+
+### Requirement: A change names its issue
+A change SHALL name its issue in the proposal, in the key `x-issue` of its `.openspec.yaml`, and in a comment `<!-- Issue: #<n> -->` under the first section heading of each delta spec. A line above the first heading SHALL NOT be used, because `openspec validate --strict` rejects it.
+
+#### Scenario: A delta spec names its issue
+- **WHEN** a delta spec is written for change issue #123
+- **THEN** the file has the comment `<!-- Issue: #123 -->` under its first section heading, and `.openspec.yaml` has `x-issue: 123`
+- **AND** `openspec validate <change-name> --strict` passes, and the archive does not copy the comment into the living spec
+- Checked by review.
 
 ### Requirement: Gate 1 is the user's approval of the spec
 A spec pull request SHALL be merged only after the user approves it on GitHub. An agent SHALL NOT merge it and SHALL NOT start the implementation before the merge. Review findings SHALL be fixed in the spec pull request with new commits.
