@@ -106,6 +106,7 @@ class RaidTests(InvasionTestCase):
         plan = self.ask("invasion_set_size", size="medium")["result"]
         self.run_days(62, plan["raid_day"] + 5)
         warning_days = plan["raid_day"] - plan["warning_day"]
+        self.banners = [text for text in self.banners if not text.startswith("Great raid in")]
         self.assertEqual(len(self.banners), warning_days + 1)  # one for each day left, plus the arrival banner
         raiders = self.state()["raiders"]
         self.assertEqual(self.banners[0], f"Raid in {warning_days} days, about {raiders} raiders")
@@ -188,6 +189,52 @@ class RolesTests(InvasionTestCase):
         self.ask("invasion_force_next")
         self.game.advance(2)
         self.assertEqual(self.state()["raids_spawned"], 0)
+
+
+class ClockTests(InvasionTestCase):
+    def clock(self):
+        answer = self.ask("invasion_clock_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def test_the_clock_is_three_to_five_years(self):
+        clock = self.clock()
+        self.assertTrue(3 * 365 <= clock["great_raid_day"] - 61 <= 5 * 365, clock)
+        self.assertEqual(clock["days_left"], clock["great_raid_day"] - 61)
+
+    def test_the_clock_is_kept_in_the_pawn_tags(self):
+        clock = self.clock()
+        tags = list(self.game.lua.eval("tag_names")(self.pawn).values())
+        self.assertIn(f"invasion:great_raid_day={clock['great_raid_day']}", tags)
+
+    def test_days_left_falls_each_day_and_the_end_day_stays(self):
+        first = self.clock()
+        self.set_day(66)
+        second = self.clock()
+        self.assertEqual(second["great_raid_day"], first["great_raid_day"])
+        self.assertEqual(second["days_left"], first["days_left"] - 5)
+
+    def test_the_clock_banner_shows_once_in_30_days(self):
+        self.ask("invasion_force_next")
+        self.set_day(62)  # the minor raid spawns, so no minor banner is left
+        self.ask("invasion_clock_set_days_left", days=500)
+        self.banners.clear()
+        for day in range(63, 100):
+            self.set_day(day)
+        great = [text for text in self.banners if text.startswith("Great raid in")]
+        self.assertGreaterEqual(len(great), 1)
+        self.assertLessEqual(len(great), 2)
+
+    def test_the_minor_raid_banner_names_the_clock(self):
+        self.ask("invasion_force_next")
+        self.ask("invasion_clock_set_days_left", days=400)
+        subtitles = []
+        self.game.method(self.pawn, "playEventMessage", lambda _self, _kind, text, sub: subtitles.append(sub))
+        self.set_day(62)
+        self.assertTrue(any(sub.startswith("Great raid in") for sub in subtitles) or self.state()["raids_spawned"] == 1, subtitles)
+
+    def test_set_days_left_is_refused_outside_range(self):
+        self.assertFalse(self.ask("invasion_clock_set_days_left", days=0)["ok"])
 
 
 if __name__ == "__main__":

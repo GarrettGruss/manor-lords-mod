@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M02.02 (#171): the great raid clock. `InvasionMod` keeps the end day of a 3 to 5 game year countdown in ModState (`great_raid_day`) and shows it in the banner (config `invasion.great_raid`). Commands `invasion_clock_state`, `invasion_clock_set_days_left`. Scenario `invasion-great-raid-clock`.
 - Mod M03.02 (#168): a Hussite role raid is the army of an AI lord at war with the player, anchored at the player manor. A plunder tick takes goods from the stores. The raid leaves (peace) after enough loot, enough losses or a time limit (config `raid_behavior.plunder`, `raid_behavior.leave`). A won region goes back to the player. Fallback for bandit squads: removal only in a quiet spot (`leave.quiet_distance`). Scenario `raid-behavior-role-leave`, probes `probe-lord-raid-peace` and `probe-role-raid-peace`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-02-role-raid-leave.md`.
 
 ### Fixed
