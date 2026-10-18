@@ -4,6 +4,8 @@ local core = require("ManorCore")
 local ModState = require("ModState")
 local vassals = require("features.vassals.init")
 local raid_world = require("features.raid_behavior.world")
+local raid_behavior = require("features.raid_behavior.init")
+local vassal_rules = require("features.vassals.rules")
 local rules = require("features.tribute.rules")
 local config = require("config").tribute
 
@@ -14,6 +16,8 @@ local state = ModState.open("invasion", "pawn", STATE_VERSION)
 state:register("tribute_last_season", -1, "integer")
 state:register("tribute_ticks", 0, "integer")
 state:register("tribute_paid_total", 0, "integer")
+state:register("protection_defended", 0, "integer")
+state:register("protection_failed", 0, "integer")
 
 local share_factor = 1     -- set by the tech tree laws (M12.04)
 local history = {}          -- results of the ticks of this session
@@ -85,6 +89,40 @@ local function run_tick()
     return result
 end
 
+---------------------------------------------------------------------------------------------
+-- Protection (iteration 02): a raid on a vassal region changes the loyalty of the vassal
+---------------------------------------------------------------------------------------------
+
+local protection_events = {}   -- results of this session, for the state command
+
+local function vassal_slot(region)
+    return vassal_rules.slot_of_region(vassals.slot_regions(), require("config").vassals.max_vassals, region)
+end
+
+local function loyalty_of(slot)
+    for _, row in ipairs(vassals.slot_rows()) do
+        if row.slot == slot then return row.loyalty end
+    end
+    return nil
+end
+
+-- Apply the result of a raid that ended. Returns the event, or nil when the raid did not target a vassal.
+local function apply_protection(summary)
+    local slot = summary.target and vassal_slot(summary.target)
+    local outcome = rules.protection_outcome(summary, slot ~= nil)
+    if outcome == nil then return nil end
+    local before = loyalty_of(slot)
+    vassals.set_loyalty(slot, before + rules.loyalty_change(outcome, config.protection))
+    local key = outcome == "defended" and "protection_defended" or "protection_failed"
+    state:set(key, state:get(key) + 1)
+    local event = { slot = slot, region = summary.target, outcome = outcome, raid = summary.id, before = before, after = loyalty_of(slot) }
+    protection_events[#protection_events + 1] = event
+    core.log.info(TAG, string.format("TRIBUTE protection slot=%d raid=%s %s loyalty %d -> %d", slot, tostring(summary.id), outcome, before, event.after))
+    return event
+end
+
+raid_behavior.watch_end(apply_protection)
+
 -- The saved season is set before the tick, so an error in the tick cannot make it run twice.
 local function poll()
     if not state.loaded then return end
@@ -111,12 +149,19 @@ end
 local function command_state()
     return { day = current_day(), season = current_season(), last_season = state:get("tribute_last_season"),
         ticks = state:get("tribute_ticks"), paid_total = state:get("tribute_paid_total"), failed_deposits = failed_deposits,
-        history = history, stock = stock() }
+        history = history, stock = stock(), protection_defended = state:get("protection_defended"),
+        protection_failed = state:get("protection_failed"), protection_events = protection_events }
 end
 
 local has_commands, commands = pcall(require, "HarnessCommands")
 if has_commands then
     commands.register("InvasionMod.tribute_state", command_state, {})
+    -- Test: feed the protection rule with the result of a raid on a region, as the raid tracker does at the end of a raid.
+    commands.register("InvasionMod.tribute_test_raid_result", function(args)
+        local event = apply_protection({ id = args.raid_id or 0, target = args.region, state = args.state, leave_reason = args.leave_reason })
+        return { event = event or false, state = command_state() }
+    end, { region = { type = "string", required = true }, state = { type = "string", required = true, oneOf = { "left", "destroyed" } },
+           leave_reason = { type = "string", oneOf = { "loot", "losses", "time" } }, raid_id = { type = "integer", min = 0, max = 100000 } })
     commands.register("InvasionMod.tribute_tick_now", function()
         run_tick()
         return command_state()

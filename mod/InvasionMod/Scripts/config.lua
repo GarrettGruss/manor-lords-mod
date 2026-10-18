@@ -108,6 +108,17 @@ return {
         heavy_def_min = 40,            -- units with this def or more (retinue 62) are heavy: no weapon bonus
         armored_att_factor = 1.5,      -- new att = att x factor, for an armored unit (def from armored_def_min up to heavy_def_min)
         armored_pierce_add = 2,        -- new armorPierce = armorPierce + amount (poleaxe infantry has 2)
+        -- M05 iteration 04. Spec: docs/mod/M05-unit_balance/iterations/04-counters-veterancy.md. All values TBD by the A/B.
+        reach_min = 110, reach_max = 125, -- units with a weapon reach in this band are pike units (spears 120; swords 65, villagers 100, axes 130)
+        reach_att_add = 1.0,           -- att + amount for a pike unit: spearMilitia att 4 reaches militiaFoot att 5 (data: spear lost 0 of 5 against swords)
+        veterancy = {
+            enabled = true,
+            step = 1.0,                -- experience points for one tier (a fight gives about 0.5 to 1.3 to the mean unit, spike C2)
+            max_tier = 5,
+            att_per_tier = 0.1,        -- att and def are scaled by 1 + tier x this value (0.04 gave no effect in the A/B)
+            def_per_tier = 0.1,
+            every = 5,                 -- the experience of all units is read every Nth pass (a pass is poll_ms)
+        },
     },
     -- M04 bandits, iteration 01. First guesses from M00 decisions 11 to 15 and 28 to 30.
     bandits = {
@@ -199,6 +210,7 @@ return {
         units_per_family = 20,    -- production units of one family in one season (TBD)
         share_min = 0.10,         -- share of the production at loyalty 0
         share_max = 0.30,         -- share of the production at loyalty 100
+        protection = { defended = 5, undefended = -15 }, -- iteration 02: loyalty change of a vassal after a raid on its region (TBD)
         goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally (M10 adds iron and salt)
     },
     -- M13 manor_stronghold. Values are TBD for playtests.
