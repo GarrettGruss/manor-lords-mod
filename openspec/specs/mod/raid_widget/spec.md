@@ -42,7 +42,7 @@ The menu SHALL show five text lines in this order: `Next raid`, `Size estimate`,
 - Checked by `harness/tests/test_fakegame_raid_widget.py`.
 
 ### Requirement: A click on a difficulty button picks the difficulty
-The menu SHALL show three difficulty buttons only while a pick is allowed: the difficulty is not picked and no raid has spawned. A click on button N SHALL pick difficulty N through the same function as `invasion_pick_difficulty`. A click is a press that ends while the mouse is on the button, and a second click within `click_cooldown_s` (default 0.4 s) SHALL be ignored.
+The menu SHALL show three difficulty buttons only while a pick is allowed: the difficulty is not picked and no raid has spawned. A click on button N SHALL pick difficulty N through the same function as `invasion_pick_difficulty`. A click SHALL be the `OnClicked` hook event of a click button of the shared module `HarnessClickHooks`; the hook only queues it, and the feature handles it on its next scheduler tick.
 
 #### Scenario: The player clicks a button
 - **WHEN** the player clicks a difficulty button with the mouse
