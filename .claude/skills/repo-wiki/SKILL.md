@@ -50,6 +50,7 @@ Cover the subset that matters for the topic:
 
 Rules:
 - Write only what the source, the tests or the specs show. Do not guess names, paths or behavior.
+- Write facts about the system, not about your session: no test counts of your shell, no "today" results. A dated fact belongs in a spec note.
 - Dense is good. Do not pad. Do not turn a page into a list of files.
 - Use the writing rules of CLAUDE.md: simplified technical English, short sentences, one term for one thing.
 - Do not read or write secrets: the AES key, `.env` files, tokens. Say only that the setting exists and where.
