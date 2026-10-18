@@ -9,12 +9,12 @@ Use a material INSTANCE of a game master material. The game already has the shad
 - Master: `/Game/NotStronghold/Buildings/TudorWall/tudorWall01`. Texture parameters `AO`, `d`, `n`, `spec`. Scalars `aoFromGroundFade` 512, `br` 0.5, `dirt tiling` 2, `n str` 0, `R` 1, `spec` 0.2. Static switches `Dirt?` false, `spec map?` true. All read from the game's own instance `tudorWall01_combined`, so the shader permutation exists.
 - `mod/HarnessActions/ue/meshy_material.py` makes a stub master at that path in the UE project (never shipped), makes `MI_Meshy` in the asset folder (d = base colour, n = normal, AO = white, spec = roughness), sets sRGB on the colour map and normal-map compression on the normal map, assigns it to the mesh and deletes the imported material.
 - `import_mesh.py` and `import_replace_mesh.py` call it. `retarget_material.py` fixes an already imported mesh (`MESH_PATH`).
-- Pak: copy only `MI_Meshy`, the mesh, `texture_0`, `texture_0_normal`, `texture_0_roughness` (not emission, metallic, and not the stub master). Pak `mod/HarnessActions/paks/wagenmat_P.pak` (3,065,373 bytes, 17 files; no AES key, byte grep).
+- Pak: copy only `MI_Meshy`, the mesh, `texture_0`, `texture_0_normal`, `texture_0_roughness` (not emission, metallic, and not the stub master). Pak `mod/HarnessActions/paks/wagen_P.pak` (was `wagenmat_P.pak`; 17 files, no AES key, byte grep).
 
 ## Proof
-Probe `probe-wagenburg --pak wagen` (before) run `20261018-141100-8f90`; `--pak wagenmat` (after) run `20261018-141940-2d36`. Screenshots in this folder: `before-grey.png` (far, vanilla-material pak), `after-instance.png` (ring of wagons now dark wood with light canvas patches, matching the texture). Full set is in git-ignored `runs/<id>/screenshots/`.
+Probe `probe-wagenburg --pak wagen` (before) run `20261018-141100-8f90`; `--pak wagenmat` (after; this pak is now `wagen_P.pak`) run `20261018-141940-2d36`. Screenshots in this folder: `before-grey.png` (far, vanilla-material pak), `after-instance.png` (ring of wagons now dark wood with light canvas patches, matching the texture). Full set is in git-ignored `runs/<id>/screenshots/`.
 
 ## Open
 - The `spec` and `AO` mapping is a guess (roughness, white). Tune by eye.
-- Old paks (ox shed, weaver, wall, keep tent) need a re-import with the new script and a re-cook. Not done here.
+- Old paks were re-cooked: see `recook-old-paks.md`.
 - Screenshots copy screen pixels; other game windows can cover them.

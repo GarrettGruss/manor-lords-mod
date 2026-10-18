@@ -1,6 +1,6 @@
 """Probe for spec 30: can a Wagenburg mesh stand in for the bandit camp, or be spawned in neutral and AI territory? Research tool, not a test.
 
-Run with the pak that holds BM_Wagenburg (row 100 points at it, row 4000 is a clone of the tent):
+Run with the pak that holds BM_Wagenburg (option HARNESS_BM=<asset> uses another Blueprint of the pak) (row 100 points at it, row 4000 is a clone of the tent):
   run.py --scenario probe-wagenburg --fixture base --pak wagen --slot auto
 Host a: the game spawns a bandit camp (spawn_bandit_camp). The probe reads the camp master, its parts and the bandit units.
 Host c: the probe spawns the Blueprint class as a plain actor in a neutral region and in an AI-owned region.
@@ -13,8 +13,7 @@ NAME = "probe-wagenburg"
 LIMIT_S = 420
 HIDDEN = True
 LONG_REASON = "The probe spawns a camp, moves the camera to three places and takes screenshots."
-CLASS_PATH = "/Game/HarnessMod/BM_Wagenburg.BM_Wagenburg_C"
-PAK_ASSET = "BM_Wagenburg"
+DEFAULT_ASSET = "BM_Wagenburg"
 CAMP_TYPE = 100
 EXTRA_TYPE = 4000
 PART_ROWS = 40
@@ -73,7 +72,10 @@ def host_a(ctx) -> None:
 
 def host_c(ctx) -> None:
     actions = ctx.actions
-    attempt(ctx, "load class", lambda: actions.load_pak_blueprint(PAK_ASSET))
+    # HARNESS_BM names another Blueprint asset of the pak under test (spec 33 re-cook checks of other Meshy paks).
+    pak_asset = ctx.variant_option("HARNESS_BM", DEFAULT_ASSET)
+    class_path = f"/Game/HarnessMod/{pak_asset}.{pak_asset}_C"
+    attempt(ctx, "load class", lambda: actions.load_pak_blueprint(pak_asset))
     regions = (attempt(ctx, "regions", actions.encampment_regions) or {}).get("regions") or []
     player = (attempt(ctx, "housing", actions.housing_state) or {}).get("region", {}).get("name")
     neutral = [r for r in regions if r["owner"] == "<invalid>" and r.get("at")]
@@ -87,7 +89,7 @@ def host_c(ctx) -> None:
         ground = look_at(ctx, f"{label}_before", at["x"], at["y"]) or {}
         z = ground.get("Z", at["z"])
         note(ctx, f"ground {label}", ground=ground, region_z=at["z"], z=z)
-        attempt(ctx, f"spawn {label}", lambda: actions.encampment_spawn(CLASS_PATH, at["x"], at["y"], z))
+        attempt(ctx, f"spawn {label}", lambda: actions.encampment_spawn(class_path, at["x"], at["y"], z))
         look_at(ctx, f"{label}_after", at["x"], at["y"])
     attempt(ctx, "spawned", actions.encampment_list)
     attempt(ctx, "stat extra row", lambda: actions.building_stat(EXTRA_TYPE))
