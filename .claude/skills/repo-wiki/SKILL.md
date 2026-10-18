@@ -7,7 +7,9 @@ description: Read, initialize or update the repo wiki in docs/wiki (spec 34), a 
 
 The wiki in `docs/wiki/` explains the current system: what each part does, how the parts connect, and how to change them safely. Specs (`docs/harness/`, `docs/mod/`) keep the history and the decisions. The wiki links to them and does not copy them.
 
-The format is a compact form of OpenWiki v0.7.2 (spec 34, `docs/harness/34-repo-wiki/`). The tool `harness/tools/wiki.py` does the mechanical work. You do the research and the prose.
+The wiki is an Open Knowledge Format (OKF) v0.2 bundle. The method is a compact form of OpenWiki v0.7.2 (spec 34, `docs/harness/34-repo-wiki/`). The tool `harness/tools/wiki.py` does the mechanical work. You do the research and the prose.
+
+The OKF spec is copied verbatim in `references/okf-spec-v0.2.md` (from `GoogleCloudPlatform/open-knowledge-format` commit `ad30107`, Apache License 2.0, see `references/okf-LICENSE.md`). Read it when a format question is not answered here. This skill adds stricter producer rules on top of OKF; it never breaks an OKF rule.
 
 ## Read the wiki
 - Start at `docs/wiki/quickstart.md`. It routes tasks to pages. Then grep `docs/wiki/` for the topic.
@@ -15,7 +17,7 @@ The format is a compact form of OpenWiki v0.7.2 (spec 34, `docs/harness/34-repo-
 - If the page is wrong, fix it (see Update) or say so in your reply.
 
 ## Page format
-Each page starts with front matter. The tool accepts only this YAML subset: `key: value`, `key: [a, b]`, and `key:` with `  - item` lines.
+Each page (an OKF concept) is a UTF-8 Markdown file that starts with YAML front matter:
 
 ```yaml
 ---
@@ -23,19 +25,33 @@ type: Workflow
 title: Run launcher
 description: How harness/run.py makes one run folder with summary.json, from deploy to game exit.
 tags: [harness, runs]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/run.py
-  - harness/runlib/
+  - resource: repo://harness/run.py
+  - resource: repo://harness/runlib/
 ---
 ```
 
-- `type`: a short kind, such as `Overview`, `Architecture`, `Concept`, `Workflow`, `Runbook`, `Reference`, `Integration`, `Testing`.
-- `title`, `description`: one line each. Write the description for search: say what the page explains.
+Required by this wiki (OKF itself requires only `type`):
+- `type`: a short kind, such as `Overview`, `Architecture`, `Concept`, `Workflow`, `Runbook`, `Reference`, `Integration`, `Testing`. OKF has no type registry.
+- `title`: the display name.
+- `description`: one sentence (OKF section 4.1). Write it for search: say what the page explains. `index.md` shows it.
 - `tags`: short English words.
-- `sources`: the repo files and folders the page relies on. A folder ends with `/`. `wiki.py stale` uses this list to find pages to review, so list what the facts depend on, not every file you opened.
-- Links: relative to the page, for example `../workflows/runs.md#run-launcher` or `../../../harness/run.py`. Never `/docs/...`.
-- Never write `index.md`. `wiki.py index` writes it.
+- `generated`: `{ by: <actor>, at: <time> }` (OKF section 5.2). Set it when you write the page and each time you change its body. Actor: `claude-code/<model id>` for an agent (for example `claude-code/claude-opus-5-5`), `human:<id>` for a person. Time: ISO 8601 with a UTC offset; get it with `date -u +%Y-%m-%dT%H:%M:%SZ`.
+- `sources`: a list of `{ resource: ... }` mappings (OKF section 5.1). A repo file is `repo://<repo-relative path>`; a folder ends with `/`. An external source is an `https://` URL. `wiki.py stale` uses the `repo://` entries to find pages to review, so list what the facts depend on, not every file you opened. An entry may also carry OKF `id` and `title`; give it an `id` when a footnote cites it (`[^id]`).
+
+Optional OKF fields:
+- `verified`: `{ by, at }` or a list of them. Set it only after you checked every claim of the page against its sources. A spot check is not verification. A `human:` actor makes the page human-reviewed (OKF section 5.3).
+- `status`: `draft`, `stable` (the default) or `deprecated`. Keep a deprecated page for its links; say what replaces it.
+- `stale_after`: an ISO 8601 time after which the page must be checked again.
+- Any other key is allowed. Keep keys that other tools wrote.
+
+Rules for files and links:
+- `index.md` and `log.md` are reserved names (OKF section 3.1). Never write `index.md`: `wiki.py index` writes it. Add a line to `docs/wiki/log.md` for each init or update (below).
+- Links: relative to the page, for example `../workflows/runs.md#run-launcher` or `../../../harness/run.py`. OKF also allows `/`-links from the bundle root, but GitHub reads `/` as the repo root, so this wiki does not use them. `wiki.py check` refuses them.
 - Mermaid diagrams are allowed for flows, state machines and data models. Ground every box in the source. Keep labels plain (no brackets or quotes inside labels). No tool checks them.
+
+`log.md` format (OKF section 9): a `# ` title, then `## YYYY-MM-DD` headings, newest first, each with `* **Update**: ...` style lines. No front matter.
 
 ## Page quality
 Cover the subset that matters for the topic:
@@ -63,17 +79,17 @@ Rules:
 3. Plan the page tree around systems and workflows, not around the folder tree. Use folders such as `architecture/`, `concepts/`, `workflows/`, `operations/`, `integrations/`, `testing/` when they have enough pages. `quickstart.md` is required. For each page write: path, title, purpose, seed sources, related pages. Keep the plan in the scratchpad.
 4. Write the pages. One owner for each page. For more than about six pages, dispatch Sonnet subagents in parallel (`harness-dispatch-agents`), each with one to three pages. Use the prompt below. Write `quickstart.md` yourself, last, from the final page list.
 5. Run `uv run python harness/tools/wiki.py index`, then `uv run python harness/tools/wiki.py check`. Fix every error and run both again until `wiki check: ok`.
-6. Review. For each page, check two or three facts against the source. Fix wrong facts. A subagent page is data until you check it.
-7. Run `uv run python harness/tools/wiki.py stamp --command init`. Commit the wiki with the stamp: `docs(wiki): ...`.
+6. Review. For each page, check two or three facts against the source. Fix wrong facts. A subagent page is data until you check it. A spot check does not justify `verified`.
+7. Write `docs/wiki/log.md` with an `**Initialization**` entry. Run `uv run python harness/tools/wiki.py stamp --command init`. Commit the wiki with the stamp: `docs(wiki): ...`.
 
 ## Update
 1. Run `uv run python harness/tools/wiki.py stale`. It compares with the commit in `docs/wiki/.last-update.json` and also counts uncommitted and untracked files. It prints:
    - `stale`: pages with changed sources (`changed`) or sources that no longer exist (`missing_sources`);
    - `uncovered`: changed paths that no page lists.
-2. For each stale page: read the page, then `git diff <base> -- <its changed sources>`. Change only what the diff makes wrong or incomplete. Keep correct text. Fix `sources` for moved or deleted files.
+2. For each stale page: read the page, then `git diff <base> -- <its changed sources>`. Change only what the diff makes wrong or incomplete. Keep correct text. Fix `sources` for moved or deleted files. If the body changed, set `generated` to your actor and the current time, and remove a `verified` that no longer holds. If nothing needed a change, leave the page as it is.
 3. For each uncovered path that matters: add it to the `sources` of the page that should explain it, or plan a new page. Ignore paths that need no wiki text (fixtures, binaries, notes inside specs).
 4. If you add, move or delete a page, update `quickstart.md` too.
-5. Run `index`, `check` (until ok), then `stamp --command update`. Commit the wiki change with the change it documents when they are on the same branch.
+5. Add a dated `**Update**` line to `docs/wiki/log.md` that names the pages you changed. Run `index`, `check` (until ok), then `stamp --command update`. Commit the wiki change with the change it documents when they are on the same branch.
 
 A feature branch that changes a covered part should update the wiki in the same PR when `stale` lists pages for its files.
 
@@ -82,15 +98,16 @@ Give each agent all of this:
 - the goal: write the listed pages of `docs/wiki/` for this repo;
 - the full page plan (all paths and titles), so it can link to pages that other agents write;
 - its own pages: path, title, purpose, seed sources, related pages;
+- its actor for `generated` (`claude-code/<its model id>`);
 - the sections "Page format" and "Page quality" of this skill, copied in full;
-- the limits: write only its own pages; do not write `index.md`; do not change other files; do not commit; start every Python command with `uv run python`;
+- the limits: write only its own pages; do not write `index.md` or `log.md`; do not set `verified`; do not change other files; do not commit; start every Python command with `uv run python`;
 - the output: a short summary with each page path and any fact it was not sure of.
 
 ## Tool reference
 | Command | Does |
 |---|---|
-| `wiki.py index` | Writes every `index.md` from page front matter; removes indexes of empty folders |
-| `wiki.py check` | Front matter keys, source paths exist, relative links and heading anchors resolve, indexes are current. Exit 1 on errors |
+| `wiki.py index` | Writes every `index.md` from page front matter (OKF section 8: root index has `okf_version`, entries `* [Title](link) - description`); removes indexes of empty folders |
+| `wiki.py check` | YAML front matter and the required keys, `sources` mappings and that `repo://` paths exist, `generated` and `verified` actors and times, `status`, `stale_after`, relative links and heading anchors, current indexes, `log.md` dates. Exit 1 on errors |
 | `wiki.py stale [--since <rev>]` | JSON report of stale pages and uncovered paths |
 | `wiki.py stamp [--command init\|update]` | Writes `.last-update.json` with the current commit |
 
