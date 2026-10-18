@@ -17,6 +17,7 @@ local function census()
     return { buildings = { standing = village.standing, total = village.standing }, stock = { total = total, by_good = by_good },
              people = { families = village.families, population = village.families * 2 } }
 end
+package.loaded["HarnessSack"] = nil -- HarnessManor may have loaded the real module first
 package.preload["HarnessSack"] = function()
     return {
         sack_census = function() return { ok = true, census = census() } end,
