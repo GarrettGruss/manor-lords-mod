@@ -45,4 +45,24 @@ function M.season_changed(current, last)
     return last >= 0 and current ~= last
 end
 
+-- Buy-back (iteration 03). Scaled values round up (M00 decision 30).
+function M.buy_back_price(families, cfg)
+    return math.ceil(families * cfg.silver_per_family * cfg.price_multiplier)
+end
+
+function M.families_to_return(outstanding, free_slots)
+    return math.max(0, math.min(outstanding, free_slots))
+end
+
+-- Returns nil when the buy-back may go on, or the reason for the refusal.
+-- facts: outstanding (families), bandit_units, free_slots, silver. cfg: the buy_back config table.
+function M.buy_back_refusal(facts, cfg)
+    if facts.outstanding < 1 then return "no families to bring back" end
+    if facts.bandit_units < 1 then return "no bandit units on the map" end
+    if facts.free_slots < 1 then return "no free home slot" end
+    local price = M.buy_back_price(M.families_to_return(facts.outstanding, facts.free_slots), cfg)
+    if facts.silver < price then return string.format("silver %d is below the price %d", facts.silver, price) end
+    return nil
+end
+
 return M
