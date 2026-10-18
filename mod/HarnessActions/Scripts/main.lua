@@ -149,6 +149,7 @@
 --   {"command":"building_health","building":123}            spike, read only: type, hp, maxHp, onFire, fireAmt, rubble, built of one building
 --   {"command":"manor_blueprint_add","type":58,"x":0,"y":0,"z":0,"yaw":0,"commit":true}   spike (#63): add a manor planner blueprint (mesh actor tagged bType_<type>) without the mouse, then convertBlueprintsToBuildings
 --   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
+--   {"command":"wagen_state"} / {"command":"wagen_apply","manor":123,"wall_mesh":"/Game/HarnessMod/..","keep_mesh":".."} / {"command":"wagen_revert"}   spike (spec 32 part 2): set the wall and keep meshes of ONE manor; revert restores them
 --   {"command":"mesh_actors","mesh":"PalisadeWallNarrow"}   spike (spec 32), read only: owner class and position of the actors whose mesh matches
 --   {"command":"steer_state","squad":41}                    spike #59, read only: owner side, living units, centre and mean unit target of a squad
 --   {"command":"steer_move","squad":41,"x":0,"y":0,"half_width":300}   spike #59: PawnCPP:formALineArmy of the owner pawn, one squad, a line across the way to the point
@@ -185,8 +186,9 @@ local garrison = require("HarnessGarrison")
 local gameSetup = require("HarnessGameSetup")
 local harnessSave = require("HarnessSave")
 local encampment = require("HarnessEncampment")
+local wagenburg = require("HarnessWagenburg")
 
-local VERSION = "58"
+local VERSION = "59"
 local TAG = "HarnessActions"
 local POLL_MS = 100
 local MAX_PARAGRAPHS = 10
@@ -582,6 +584,9 @@ local COMMANDS = {
     master_finish = parts.master_finish,
     master_part_remove = parts.master_part_remove,
     master_part_add = parts.master_part_add,
+    wagen_state = wagenburg.wagen_state,
+    wagen_apply = wagenburg.wagen_apply,
+    wagen_revert = wagenburg.wagen_revert,
     encampment_sites = encampment.encampment_sites,
     encampment_regions = encampment.encampment_regions,
     encampment_spawn = encampment.encampment_spawn,
