@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Meshy meshes now render their texture, not flat grey: the import scripts use an instance of a game master material (spec 33, #237).
+
 ### Added
 - Spec 32 (#233): manor Wagenburg spike. Paks `s32wall_P.pak` (Meshy wagon replaces the manor wall piece mesh) and `s32keep_P.pak` (Meshy tent replaces the keep mesh) reskin a built manor; the wall keeps its collision and gate (bandits entered by the gate in 4 of 4 runs, no wall crossing). New test command `mesh_actors` (HarnessActions 58), probe `probe-manor-wagenburg`, tool `s32_track_report.py`. Notes `docs/harness/32-manor-wagenburg/`.
 - Spec 31 (#230): burgage extension spike. A new extension number is not possible with data (`EExtensionType` is native). A weaver (wool -> yarn, flax -> linen, 1 : 1) works in the tailor slot with a Lua job and recipe write, and a Meshy shed shows as its model. New commands `master_artisan`, `master_artisan_set` (unsafe), flag `artisan` on `plot_upgrade`, and the probe `probe-extension`

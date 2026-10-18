@@ -1,5 +1,9 @@
 import os
+import sys
 import unreal
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import meshy_material  # spec 33: game material instance
 
 # Spec 31. Run headless in UE 5.5.4. Import one FBX, scale it so its longest floor side is TARGET_CM,
 # then copy the mesh to the asset path of a vanilla mesh, so a pak replaces that mesh.
@@ -51,6 +55,8 @@ for asset_path in unreal.EditorAssetLibrary.list_assets(DEST, recursive=False):
         texture.set_editor_property("max_texture_size", limit)
         unreal.EditorAssetLibrary.save_loaded_asset(texture)
         unreal.log("IMPORT texture %s max %d" % (texture.get_name(), limit))
+
+meshy_material.make_game_material(mesh, DEST)
 
 package_path = REPLACE_PATH.rsplit(".", 1)[0]
 if unreal.EditorAssetLibrary.does_asset_exist(package_path):
