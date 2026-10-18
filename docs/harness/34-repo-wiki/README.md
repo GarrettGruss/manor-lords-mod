@@ -32,7 +32,11 @@ The format is a compact form of OpenWiki v0.7.2 (MIT, `langchain-ai/openwiki`). 
 3. Skill `.claude/skills/repo-wiki/SKILL.md`: read the wiki, init it, update it. Page jobs may go to Sonnet subagents, one page for each agent.
 4. Acceptance run: init the wiki over this repo with the skill. Notes in `implementation-notes/acceptance-run.md`.
 
+## Result
+All five acceptance criteria are met (2026-10-18). The init wrote 24 pages. See `implementation-notes/acceptance-run.md` for the run, the review corrections and the findings.
+
 ## Open questions
+- `stale` lists map pages with broad sources (`source-map.md`) for almost any change. Group or rank the output later?
 - Should a hook or a CI job run `wiki.py stale` and warn when the wiki falls behind? Not in this spec.
 - Should feature branches update the wiki in the same PR? Proposed: yes, when `stale` lists pages for the changed files.
 
