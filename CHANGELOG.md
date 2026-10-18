@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M05.03 (#183): feature `unit_balance` gives armored units (def 10 to 40) a weapon bonus (att x1.5, armorPierce +2; config `armored_att_factor`, `armored_pierce_add`, `heavy_def_min`). Armored militia won 5 of 5 against 2.25 times their size in the real game. Scenario `unit-balance-armored-fight`. Notes `docs/mod/M05-unit_balance/implementation-notes/iteration-03-armored-militia.md`.
 - Mod M03.02 follow-up (#172): scenarios `raid-behavior-region-guard` and `raid-behavior-lord-leave-reason` (losses and time reasons) and three session-only test commands in `InvasionMod` (`raid_behavior_test_set_leave`, `_test_take_region`, `_test_kill_raiders`).
 - Mod M06.01 (#173): feature `sack_and_terms`. A role raid that leaves with its loot or at the time limit sacks the town: 20/35/50 percent of buildings, stock and families by difficulty, rounded up, people kept alive; a second sack in 360 days is fatal (tunable).
 - Mod M02.04 (#175): the player picks the difficulty (1 to 3) with `InvasionMod.invasion_pick_difficulty` (once, before the first raid). A prompt banner repeats every 7 game days until then. `difficulty.lua` has the rounding-up rules (relief army 15, 8, 0; waves 1, 2, 3). Command `invasion_difficulty_state`. Scenario `invasion-difficulty-pick`.

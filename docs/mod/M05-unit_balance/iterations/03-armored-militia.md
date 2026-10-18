@@ -14,7 +14,7 @@ Armor investment pays off (M00): an armored militia group beats 1.5 to 2 times i
 - No new call, no pak. Unknown before the spike: do live writes of `att` and `armorPierce` change the fight? (spec 25 did not test it.)
 
 ## Test
-Scenario `unit-balance-armored-fight`: 32 `spearMilitia` against 3 squads of `Brigands` (54 units, 1.69 times). The rule is off while the groups spawn. Then the scenario writes `def + 10` (mail) on the militia (live write by `set_unit_stat` is not per unit, so the scenario adds 10 with one write of 17.2) and switches the rule on. Variants: `UB_WEAPON=off` (att factor 1, pierce add 0) and `UB_WEAPON=on`.
+Scenario `unit-balance-armored-fight`: 32 `spearMilitia` against 3 or 4 squads of `Brigands` (54 or 72 units, 1.69 or 2.25 times). The rule is off while the groups spawn. Then the scenario writes `def + 10` (mail) on the militia (live write by `set_unit_stat` is not per unit, so the scenario adds 10 with one write of 17.2) and switches the rule on. Variants: `UB_WEAPON=off` (att factor 1, pierce add 0) and `UB_WEAPON=on`.
 
 ## Acceptance criteria
 - A1: with the weapon values on, militia with armor win (bandit loss rate 1.0 and militia loss rate below the bandit loss rate) in at least 3 of 5 runs (N >= 5, interleaved with the weapon-off variant).
@@ -23,4 +23,8 @@ Scenario `unit-balance-armored-fight`: 32 `spearMilitia` against 3 squads of `Br
 - A4: fake-game tests for the new rule, restore and command validation. The full suite passes.
 
 ## Result
-not started
+Result: PASS in the real game (2026-10-18). Notes: `../implementation-notes/iteration-03-armored-militia.md`.
+- A1: 5 of 5 valid runs won at 2.25 times (4 Brigands squads, the stricter test), with the weapon bonus on. Vanilla and unarmored militia won 0 of 5.
+- A2: win rate is the same (5 of 5) with armor only, because the unarmored rule strips the bandits. The weapon bonus halves the militia loss rate (0.094 against 0.175, p 0.028 one-sided, N 5 and 5).
+- A3 and A4: 6 new fake tests (16 in the file) pass.
+- Deviation: the test fight is 2.25 times, not 1.5 to 2 times.

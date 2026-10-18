@@ -14,24 +14,48 @@ local settings = {
     enabled = config.enabled,
     unarmored_def_factor = config.unarmored_def_factor,
     unarmored_block_factor = config.unarmored_block_factor,
+    armored_att_factor = config.armored_att_factor,
+    armored_pierce_add = config.armored_pierce_add,
 }
 -- unit address -> record { def_before, block_before, def_after, object } for a unit the rule changed, or false for a unit it skips.
 local known = {}
-local totals = { passes = 0, seen = 0, changed = 0, armored = 0, failed = 0 }
+local totals = { passes = 0, seen = 0, changed = 0, armored = 0, weapon = 0, failed = 0 }
 local last_error = nil
 
 local function address_of(unit)
     return read(function() return unit:GetAddress() end)
 end
 
-local function write_pair(unit, def, block)
+-- Write named stats (name -> value) and read each back.
+local function write_stats(unit, values)
     local ok = pcall(function()
-        unit.def = def
-        unit.block = block
+        for name, value in pairs(values) do unit[name] = value end
     end)
-    local def_back, block_back = read(function() return unit.def end), read(function() return unit.block end)
-    return ok and type(def_back) == "number" and type(block_back) == "number"
-        and math.abs(def_back - def) < TOLERANCE and math.abs(block_back - block) < TOLERANCE
+    if not ok then return false end
+    for name, value in pairs(values) do
+        local back = read(function() return unit[name] end)
+        if type(back) ~= "number" or math.abs(back - value) >= TOLERANCE then return false end
+    end
+    return true
+end
+
+local function write_pair(unit, def, block)
+    return write_stats(unit, { def = def, block = block })
+end
+
+-- An armored unit (not heavy) gets weapon values. Returns a record, or false when the unit has no att or armorPierce.
+local function classify_armored(unit, def)
+    local att, pierce = read(function() return unit.att end), read(function() return unit.armorPierce end)
+    if type(att) ~= "number" or type(pierce) ~= "number" then return false end
+    local new_att, new_pierce = rules.weapon(att, pierce, settings)
+    if not write_stats(unit, { att = new_att, armorPierce = new_pierce }) then
+        totals.failed = totals.failed + 1
+        core.log.error(TAG, string.format("weapon write failed att %s pierce %s", tostring(att), tostring(pierce)))
+        return false
+    end
+    totals.weapon = totals.weapon + 1
+    return { def_before = def, block_before = read(function() return unit.block end), def_after = def,
+             att_before = att, pierce_before = pierce, object = unit }
 end
 
 -- Look at a unit that has no record. Returns a record, false (the rule skips the unit) or nil (look again later).
@@ -41,6 +65,7 @@ local function classify(unit)
     if def == nil or block == nil then return nil end
     totals.seen = totals.seen + 1
     if def >= config.armored_def_min then totals.armored = totals.armored + 1 end
+    if rules.is_armored(def, config.armored_def_min, config.heavy_def_min) then return classify_armored(unit, def) end
     if not rules.is_unarmored(def, block, config.armored_def_min) then return false end
     local new_def, new_block = rules.reduced(def, block, settings)
     if not write_pair(unit, new_def, new_block) then
@@ -102,8 +127,14 @@ end
 local function restore_all()
     local restored = 0
     for key, record in pairs(known) do
-        if record and isValid(record.object) and write_pair(record.object, record.def_before, record.block_before) then
-            restored = restored + 1
+        if record and isValid(record.object) then
+            local ok
+            if record.att_before ~= nil then
+                ok = write_stats(record.object, { att = record.att_before, armorPierce = record.pierce_before })
+            else
+                ok = write_pair(record.object, record.def_before, record.block_before)
+            end
+            if ok then restored = restored + 1 end
         end
         known[key] = nil
     end
@@ -121,7 +152,7 @@ end)
 local function mean_changed()
     local count, def_sum, block_sum = 0, 0, 0
     for _, record in pairs(known) do
-        if record and isValid(record.object) then
+        if record and record.att_before == nil and isValid(record.object) then
             count = count + 1
             def_sum = def_sum + (read(function() return record.object.def end) or 0)
             block_sum = block_sum + (read(function() return record.object.block end) or 0)
@@ -134,13 +165,16 @@ end
 local function command_state()
     return { enabled = settings.enabled, def_factor = settings.unarmored_def_factor, block_factor = settings.unarmored_block_factor,
              armored_def_min = config.armored_def_min, poll_ms = config.poll_ms, passes = totals.passes, seen = totals.seen,
-             changed = totals.changed, armored = totals.armored, failed = totals.failed, tracked = mean_changed(), last_error = last_error }
+             changed = totals.changed, armored = totals.armored, weapon = totals.weapon,
+             att_factor = settings.armored_att_factor, pierce_add = settings.armored_pierce_add, failed = totals.failed, tracked = mean_changed(), last_error = last_error }
 end
 
 -- args: enabled, def_factor, block_factor. Turning the rule off puts the original values back.
 local function command_set(args)
     if args.def_factor ~= nil then settings.unarmored_def_factor = args.def_factor end
     if args.block_factor ~= nil then settings.unarmored_block_factor = args.block_factor end
+    if args.att_factor ~= nil then settings.armored_att_factor = args.att_factor end
+    if args.pierce_add ~= nil then settings.armored_pierce_add = args.pierce_add end
     local restored = 0
     if args.enabled == false and settings.enabled then restored = restore_all() end
     if args.enabled ~= nil then settings.enabled = args.enabled end
@@ -161,7 +195,8 @@ local has_commands, commands = pcall(require, "HarnessCommands")
 if has_commands then
     local factor = { type = "number", min = 0, max = 1 }
     commands.register("InvasionMod.unit_balance_state", command_state, {})
-    commands.register("InvasionMod.unit_balance_set", command_set, { enabled = { type = "boolean" }, def_factor = factor, block_factor = factor })
+    commands.register("InvasionMod.unit_balance_set", command_set, { enabled = { type = "boolean" }, def_factor = factor, block_factor = factor,
+        att_factor = { type = "number", min = 0, max = 10 }, pierce_add = { type = "number", min = 0, max = 50 } })
     commands.register("InvasionMod.unit_balance_apply", command_apply, {})
 end
 

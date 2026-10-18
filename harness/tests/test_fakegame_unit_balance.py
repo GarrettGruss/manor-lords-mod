@@ -24,8 +24,9 @@ class UnitBalanceTestCase(unittest.TestCase):
         self.game.load_mod(self.mod_name)
         self.game.advance(2)
 
-    def make_unit(self, defence, block, dead=False):
-        unit = self.game.obj("SMUnit", dead=dead, **{"def": defence}, block=block)
+    def make_unit(self, defence, block, dead=False, att=None, pierce=0.0):
+        extra = {} if att is None else {"att": att, "armorPierce": pierce}
+        unit = self.game.obj("SMUnit", dead=dead, **{"def": defence}, block=block, **extra)
         number = 5000 + len(self.units)
         self.game.method(unit, "GetAddress", lambda _self, number=number: number)
         self.units.append(unit)
@@ -90,6 +91,41 @@ class RuleTests(UnitBalanceTestCase):
         unit = self.make_unit(8.0, 8.0)
         self.apply()
         self.assertEqual((unit["def"], unit["block"]), (4.0, 2.0))
+
+
+class WeaponTests(UnitBalanceTestCase):
+    def test_an_armored_unit_gets_weapon_values(self):
+        unit = self.make_unit(17.0, 8.0, att=4.0, pierce=0.0)
+        state = self.apply()
+        self.assertEqual((unit["att"], unit["armorPierce"], unit["def"], unit["block"]), (6.0, 2.0, 17.0, 8.0))
+        self.assertEqual((state["weapon"], state["changed"]), (1, 0))
+
+    def test_a_heavy_unit_keeps_its_weapon(self):
+        unit = self.make_unit(62.0, 60.0, att=6.9, pierce=0.9)
+        self.apply()
+        self.assertEqual((unit["att"], unit["armorPierce"]), (6.9, 0.9))
+
+    def test_an_unarmored_unit_keeps_its_weapon(self):
+        unit = self.make_unit(7.0, 7.0, att=4.0, pierce=0.0)
+        self.apply()
+        self.assertEqual((unit["att"], unit["armorPierce"], unit["def"]), (4.0, 0.0, 0.0))
+
+    def test_the_weapon_is_written_once(self):
+        unit = self.make_unit(17.0, 8.0, att=4.0)
+        self.apply()
+        self.apply()
+        self.assertEqual(unit["att"], 6.0)
+
+    def test_the_factors_can_be_set_and_off_restores_the_weapon(self):
+        self.ask("unit_balance_set", att_factor=2.0, pierce_add=1.0)
+        unit = self.make_unit(17.0, 8.0, att=4.0, pierce=1.0)
+        self.apply()
+        self.assertEqual((unit["att"], unit["armorPierce"]), (8.0, 2.0))
+        self.ask("unit_balance_set", enabled=False)
+        self.assertEqual((unit["att"], unit["armorPierce"]), (4.0, 1.0))
+
+    def test_a_bad_weapon_factor_is_refused(self):
+        self.assertFalse(self.ask("unit_balance_set", att_factor=11)["ok"])
 
 
 class SwitchTests(UnitBalanceTestCase):
