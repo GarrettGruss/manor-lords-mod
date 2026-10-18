@@ -43,6 +43,7 @@
     {"glob": "mod/shared/HarnessUnits/**", "domain": "harness/combat-commands"},
     {"glob": "mod/shared/HarnessGarrison/**", "domain": "harness/combat-commands"},
     {"glob": "mod/shared/HarnessSteer/**", "domain": "harness/combat-commands"},
+    {"glob": "mod/shared/HarnessLeads/**", "domain": "harness/combat-commands"},
     {"glob": "mod/shared/HarnessEncampment/**", "domain": "harness/encampment-commands"},
     {"glob": "mod/shared/HarnessWagenburg/**", "domain": "harness/encampment-commands"},
     {"glob": "mod/shared/HarnessManor/**", "domain": "harness/manor-commands"},

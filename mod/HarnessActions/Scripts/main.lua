@@ -154,6 +154,8 @@
 --   {"command":"steer_state","squad":41}                    spike #59, read only: owner side, living units, centre and mean unit target of a squad
 --   {"command":"steer_move","squad":41,"x":0,"y":0,"half_width":300}   spike #59: PawnCPP:formALineArmy of the owner pawn, one squad, a line across the way to the point
 --   {"command":"steer_hook","functions":"/Script/ManorLords.PawnCPP:formALineArmy,/Script/ManorLords.PawnCPP:selectSquad"}   spike #59: record the calls of these functions; steer_hook_log reads (and clears) them
+--   {"command":"lead_unit_gear","squad":41} / {"command":"lead_stance","squad":41,"stance":"aggressive"} / {"command":"lead_spawn_unit","lord":1,"template":"spearMilitia","count":2} / {"command":"lead_squad_camp","lord":1}   spike (#280): GetEquippedID of a squad, SetBehaviourStance, spawnCompleteUnit, Squad.camp fields
+--   {"command":"lead_mesh_list"} / {"command":"lead_mesh_swap","component":"<full name>","mesh":"<object path>"} / {"command":"lead_mesh_swap","component":"<full name>","restore":true}   spike (#280): building mesh swap with SetStaticMesh
 --   Unsafe spike commands: refused unless the game runs with HARNESS_ALLOW_UNSAFE=1 (test games only)
 --   {"command":"construction_complete","building":123}      PawnCPP:constructionComplete on one building
 --   {"command":"path_obstacles_clear"}                      empty the global obstacle list (the next squad spawn crashed the game)
@@ -187,6 +189,7 @@ local gameSetup = require("HarnessGameSetup")
 local harnessSave = require("HarnessSave")
 local encampment = require("HarnessEncampment")
 local wagenburg = require("HarnessWagenburg")
+local leads = require("HarnessLeads")
 
 local VERSION = "59"
 local TAG = "HarnessActions"
@@ -624,6 +627,12 @@ local COMMANDS = {
     steer_rmb = steer.steer_rmb,
     steer_hook = steer.steer_hook,
     steer_hook_log = steer.steer_hook_log,
+    lead_unit_gear = leads.lead_unit_gear,
+    lead_stance = leads.lead_stance,
+    lead_spawn_unit = leads.lead_spawn_unit,
+    lead_squad_camp = leads.lead_squad_camp,
+    lead_mesh_list = leads.lead_mesh_list,
+    lead_mesh_swap = leads.lead_mesh_swap,
 }
 
 local function runCommand(number, raw)
