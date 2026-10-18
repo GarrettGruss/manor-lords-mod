@@ -203,7 +203,7 @@ class RegistryTest(unittest.TestCase):
     def test_hidden_scenarios_are_not_listed_by_default(self):
         self.assertEqual(sorted(list_scenarios()), [
             "autosave-protection", "bandits-buy-back", "bandits-convert-families", "bandits-order-debuff", "bandits-season-tick", "combat-levers", "counters-ab", "datatable-vanilla", "invasion-difficulty-pick", "invasion-first-raid", "invasion-great-raid-clock", "invasion-no-double-raid", "invasion-raid-composition", "letter-delivery", "loot-drop-recovery", "mercenary-hire", "mod-state-default-load", "mod-state-roundtrip", "mod-state-two-saves", "noop", "policy-menu",
-            "raid-behavior", "raid-behavior-loot-return", "raid-behavior-native-plunder", "raid-behavior-role-leave", "raid-load", "raid-loot", "raid-politics",
+            "raid-behavior", "raid-behavior-loot-return", "raid-behavior-lord-leave-reason", "raid-behavior-native-plunder", "raid-behavior-region-guard", "raid-behavior-role-leave", "raid-load", "raid-loot", "raid-politics",
             "raid-sack", "raid-seasons", "raid-spawn", "raid-tiers",
             "raid-timeline", "raid-timer", "refugee-wave", "sack-and-terms-pay-terms", "sack-and-terms-raid-sack", "sack-and-terms-sack", "sack-ruins", "sack-store-trip", "sack-village", "silver-change", "smoke",
             "soak-days", "standin-captives", "standin-outposts", "standin-tribute",
