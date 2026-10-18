@@ -103,4 +103,18 @@ return {
             give_up_game_seconds = 120,  -- game time (not real time, the game may be paused) before a missing family counts as a failed deal
         },
     },
+    -- M06 sack_and_terms, iteration 01. All values are TBD for playtests (M00 gives only the range 20 to 50 percent).
+    sack_and_terms = {
+        enabled = true,
+        sack = {
+            share_min = 20,                  -- percent of buildings, stock and families at difficulty 1 (M00)
+            share_max = 50,                  -- percent at difficulty 3. Linear in between (decision 15), rounded up (decision 28).
+            method = "collapse",             -- how buildings fall: "collapse" (ruin at once) or "fire" (burns, goods inside are lost)
+            min_families_left = 1,           -- a normal sack keeps this many families (spike S8: no people ends the game)
+            lost_reasons = { "loot", "time" }, -- a role raid that leaves for one of these reasons won the battle (TBD rule)
+            window_days = 360,               -- game days of the repeated-sack window, counted from its first sack
+            limit = 2,                       -- the sack that brings the count in the window to this number is fatal
+            fatal = { enabled = true },      -- a fatal sack removes every family and the game ends by itself
+        },
+    },
 }
