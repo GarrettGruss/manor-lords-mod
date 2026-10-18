@@ -68,7 +68,6 @@ Each folder is deployed to `ue4ss\Mods\<name>\`. Folders in `mod/shared/` are me
 | `shared/` | Shared Lua modules: `ManorCore`, `ModState`, `HarnessLog`, `HarnessCommands` and the other `Harness*` modules. |
 | `HarnessBoot/`, `HarnessActions/`, `HarnessTelemetry/`, `HarnessReload/`, `HarnessPlace/` | Harness mods. See [Harness and player mods](other-mods.md). |
 | `UEBridge/` | The bridge Lua mod (`scripts/main.lua`, `json.lua`, `settings.lua`). |
-| `PolicyMenu/`, `RefugeeWaves/` | Player-facing mods. |
 | `InvasionStandIn/`, `RaidStandIn/` | Stand-in mods that test logic a mod defines. |
 | `HarnessLoadProbe/`, `HarnessLogTest/` | Small probe mods. |
 | `InvasionMod/` | The Invasion Mod: `Scripts/` (`main.lua`, `feature_loader.lua`, `feature_list.lua`, `scheduler.lua`, `config.lua`, `features/`), `data/<feature>/` row patches, `scenarios/<feature>/`, `paks/`, `ue/`, `mod.json`. See [Invasion Mod structure](invasion-mod.md). |
