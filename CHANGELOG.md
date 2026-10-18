@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M05.04 (#194): feature `unit_balance` adds veterancy (experience tier scales att and def, +10 percent per tier) and a pike bonus (att +1 for units with weapon reach 110 to 125). Scenario `unit-balance-matchup`. Shield against crossbow counter: no stat lever found (notes `docs/mod/M05-unit_balance/implementation-notes/iteration-04-counters-veterancy.md`).
 - Mod M05.03 (#183): feature `unit_balance` gives armored units (def 10 to 40) a weapon bonus (att x1.5, armorPierce +2; config `armored_att_factor`, `armored_pierce_add`, `heavy_def_min`). Armored militia won 5 of 5 against 2.25 times their size in the real game. Scenario `unit-balance-armored-fight`. Notes `docs/mod/M05-unit_balance/implementation-notes/iteration-03-armored-militia.md`.
 - Mod M02.05 (#189): the raid widget. One pak menu (F8) shows the next raid countdown, the size estimate, the great raid clock, the difficulty and the terms. The player picks the difficulty with a click. Pak `raidmenu_P.pak`, scenario `invasion-raid-widget`.
 - Mod M07.01 (#187): feature `vassals` of `InvasionMod`. The mod writes goals = Endless on every start and load (a claim no longer ends the game) and keeps a 3 slot vassal registry with loyalty in ModState. Commands `vassals_state`, `vassals_claim`, `vassals_set_loyalty`, `vassals_set_goal`. Scenario `vassals-claim-without-victory`.

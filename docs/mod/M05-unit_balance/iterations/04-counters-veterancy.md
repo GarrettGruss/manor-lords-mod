@@ -29,4 +29,10 @@ Also revisit the shield block loss from M05.01 (`unarmored_block_factor` 0 remov
 - A5: fake-game tests for the veterancy tiers, restore and command validation. The full suite passes.
 
 ## Result
-not started
+Result: PARTIAL PASS in the real game (2026-10-18). Notes: `../implementation-notes/iteration-04-counters-veterancy.md`.
+- A1: all three counter pairs measured. Archers against raiders: native (no rule). Pikes against swords: not native; a pike bonus (`reach_att_add` 1, units with weapon reach 110 to 125) turned 1 of 5 wins into 3 of 4. Shields against crossbows: no stat lever works (def 17 to 40 and block 40 change nothing); needs a per-hit rule, open.
+- A2: veterans (experience 5, +10 percent per tier) won 5 of 6 fights, loss rate 0.38 against 0.70 with veterancy off (p 0.035). The first value (+4 percent per tier) had no effect.
+- A3: no crash in about 60 runs with the veterancy poll; one read of `combatExperience` for each unit on every 5th pass.
+- A4: shield decision: keep `unarmored_block_factor` 0 (block kept or removed made no difference against crossbows). Lethality rechecked: ratio 2.6 (target 2 to 3).
+- A5: 12 new fake tests (28 in the file).
+- Deviation: the shield and pavise counter is not delivered.

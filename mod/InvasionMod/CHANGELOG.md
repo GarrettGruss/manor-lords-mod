@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Feature `unit_balance` (M05.04, #194): config `reach_min`, `reach_max`, `reach_att_add`, `veterancy`. Commands `unit_balance_set` takes `reach_att_add`, `vet_enabled`, `vet_att_per_tier`, `vet_def_per_tier`; the state shows `reach`, `veterans`, `vet_changes`.
 - Feature `unit_balance` (M05.03, #183): weapon bonus for armored units. Commands `unit_balance_set` takes `att_factor` and `pierce_add`; `unit_balance_state` shows `weapon`, `att_factor`, `pierce_add`.
 - Feature `raid_widget` (M02.05, #189): the raid menu (pak `raidmenu`, key F8), commands `raid_widget_open`, `raid_widget_close`, `raid_widget_state`, config `raid_widget`. `invasion` exports `raid_info` and `pick_difficulty`; `terms` exports `summary`.
 - Mod M07.01 (#187): feature `vassals` of `InvasionMod`. The mod writes goals = Endless on every start and load (a claim no longer ends the game) and keeps a 3 slot vassal registry with loyalty in ModState. Commands `vassals_state`, `vassals_claim`, `vassals_set_loyalty`, `vassals_set_goal`. Scenario `vassals-claim-without-victory`.
