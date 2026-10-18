@@ -14,15 +14,23 @@ local function checked(label, answer)
     return answer
 end
 
-function M.census()
-    return checked("sack_census", sack_module().sack_census()).census
+-- `region` (optional): the object name of the player region to sack. Without it HarnessSack takes the first region of the player.
+function M.census(region)
+    return checked("sack_census", sack_module().sack_census({ region = region })).census
+end
+
+-- Object names of the regions that the player owns.
+function M.player_region_names()
+    local names = {}
+    for _, row in ipairs(require("features.vassals.world").player_regions() or {}) do names[#names + 1] = row.region end
+    return names
 end
 
 -- Take the goods of a plan out of the stores. The stores are read once and then only consumed, with no read between two calls:
 -- HarnessSack.sack_goods read the inventories again after each unit and crashed the game on a real village (run 20261018-050233-020f).
 -- Returns the units taken.
-local function take_goods(goods)
-    local stores = require("features.raid_behavior.world").stores() or {}
+local function take_goods(goods, region)
+    local stores = require("features.raid_behavior.world").stores(region) or {}
     local taken = 0
     for good, amount in pairs(goods) do
         local left = amount
@@ -40,14 +48,14 @@ end
 
 -- Apply a plan from rules.plan. Goods first (a fire takes goods by itself), then people, then buildings.
 -- Returns the amounts that the game really took.
-function M.apply(plan, method)
+function M.apply(plan, method, region)
     local sack = sack_module()
     core.log.info(TAG, "SACK step goods")
-    local goods_removed = take_goods(plan.goods)
+    local goods_removed = take_goods(plan.goods, region)
     core.log.info(TAG, "SACK step people")
-    local people = checked("sack_people", sack.sack_people({ count = plan.families }))
+    local people = checked("sack_people", sack.sack_people({ count = plan.families, region = region }))
     core.log.info(TAG, "SACK step buildings")
-    local buildings = checked("sack_buildings", sack.sack_buildings({ count = plan.buildings, method = method }))
+    local buildings = checked("sack_buildings", sack.sack_buildings({ count = plan.buildings, method = method, region = region }))
     return { goods_removed = goods_removed, families_removed = people.families, people_removed = people.people, buildings_hit = buildings.hit }
 end
 

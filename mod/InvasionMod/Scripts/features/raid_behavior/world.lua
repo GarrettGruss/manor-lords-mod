@@ -181,8 +181,10 @@ local function goods_of(building)
 end
 
 -- Standing buildings that hold goods: { building, x, y, by_good, id }.
-function M.stores()
-    local region, problem = core.player_region()
+-- `region_name` (optional): the player region to read. Without it: the first region of the player.
+function M.stores(region_name)
+    local region, problem
+    if region_name == nil then region, problem = core.player_region() else region, problem = require("HarnessSack").playerRegion(region_name) end
     if region == nil then return nil, problem end
     local stores = {}
     for _, building in ipairs(listOf(region:GetBuildings())) do
