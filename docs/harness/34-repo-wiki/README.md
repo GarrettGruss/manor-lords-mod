@@ -16,10 +16,11 @@ The format is a compact form of OpenWiki v0.7.2 (MIT, `langchain-ai/openwiki`). 
 
 ## Format
 - Pages are Markdown files under `docs/wiki/`, in topic folders such as `architecture/`, `concepts/`, `workflows/`, `operations/`, `integrations/`, `testing/`. The entry page is `docs/wiki/quickstart.md`.
-- Each page starts with front matter. Keys: `type`, `title`, `description` (one line), `tags` (list), `sources` (list of repo-relative files or folders; a folder ends with `/`). Other keys are allowed and kept.
-- Front matter uses a small YAML subset: `key: value`, `key: [a, b]`, and `key:` followed by `  - item` lines. The tool rejects other syntax.
-- `index.md` in each folder is generated. Nobody edits it by hand. The root index has `okf_version: "0.2"` front matter, as in OpenWiki.
-- Links are relative to the page. Root-absolute links (`/docs/...`) are errors.
+- `docs/wiki/` is an Open Knowledge Format (OKF) v0.2 bundle. The spec is copied in `.claude/skills/repo-wiki/references/okf-spec-v0.2.md`. Review: `implementation-notes/okf-conformance.md`.
+- Each page starts with YAML front matter (parsed with PyYAML). This wiki requires `type`, `title`, `description` (one sentence), `tags`, `generated: { by, at }` and `sources` (a list of `{ resource: repo://<path> }` mappings; a folder ends with `/`; `https://` URLs are allowed). OKF optional fields (`verified`, `status`, `stale_after`) are checked when present. Other keys are allowed.
+- `index.md` in each folder is generated (OKF section 8). Nobody edits it by hand. The root index has `okf_version: "0.2"` front matter.
+- `log.md` (OKF section 9) records each init and update, newest first.
+- Links are relative to the page. Root-absolute links (`/docs/...`) are errors, because GitHub resolves `/` from the repo root.
 - `docs/wiki/.last-update.json` holds the git commit that the wiki was last checked against.
 
 ## Plan
