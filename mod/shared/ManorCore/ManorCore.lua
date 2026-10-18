@@ -420,6 +420,37 @@ function M.spawn_raiders(squads, spot)
     return true
 end
 
+-- The bandit lord: owner of raiders and bandits.
+local function bandit_pawn()
+    for _, pawn in ipairs(FindAllOf("PawnCPP") or {}) do
+        if isValid(pawn) and not pawn:GetFullName():find("Default__", 1, true) and read(function() return pawn.isBandit end) == true then
+            return pawn
+        end
+    end
+    return nil
+end
+
+-- One bandit squad for each template name, at the point. spawnRaiders cannot choose a type (spike S2); spawnArmy can (spike S7).
+-- Returns true and the list of squad ids (empty when the game does not return them), or false and a message.
+function M.spawn_squads(templates, spot)
+    local engineObject = engine()
+    if not engineObject then return false, "no RTSMultiEngineCPP" end
+    local owner = bandit_pawn()
+    if not owner then return false, "no bandit pawn (isBandit)" end
+    local names = {}
+    for index, name in ipairs(templates) do names[index] = FName(name) end
+    local ok, returned = pcall(function() return engineObject:spawnArmy({ X = spot.x, Y = spot.y, Z = spot.z }, names, owner, 0, 0) end)
+    if not ok then return false, "spawnArmy: " .. tostring(returned) end
+    local ids = {}
+    for index = 1, #names do
+        local element = read(function() return returned[index] end)
+        local inner = read(function() return element:get() end)
+        local id = read(function() return (inner or element).Value end)
+        ids[index] = type(id) == "number" and id or false
+    end
+    return true, ids
+end
+
 -- Remove `count` families (they leave), then send one real raid with a forest spot as the target.
 -- See implementation-notes/homeless-rebellion.md of spec 15: the raiders appear at the map edge, walk north, wait at the AI waypoint,
 -- then attack the village.

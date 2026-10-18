@@ -6,7 +6,7 @@ It saves nothing.
 
 import re
 
-from runlib.units import SQUAD_UNITS, side_count
+from runlib.units import side_count
 
 NAME = "invasion-no-double-raid"
 LIMIT_S = 1000
@@ -59,7 +59,7 @@ def run(ctx) -> dict:
     refills = [int(m.group(1)) for m in map(REFILL.search, lines) if m]
     ctx.check("A4 every lift started from just under the floor (no base raid reset it)", all(value == TIMER_FLOOR - 1 for value in refills), refills)
     added = side_count(ctx.actions.units_census(), "bandit") - bandits_before
-    planned_units = SQUAD_UNITS * plan["squads"]
+    planned_units = plan["raiders"]
     spawned = [int(m.group(1)) for m in map(SPAWN_RAIDERS.search, spawns) if m]
     # Why no survivor minimum: raiders fight for days after the spawn and unarmored units die (M05), so all can be dead.
     # More units than planned would mean a second raid. The spawn event proves that the planned raid came.

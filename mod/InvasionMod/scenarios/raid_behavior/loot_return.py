@@ -23,6 +23,7 @@ def run(ctx) -> dict:
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=1)
     ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
     ctx.mod.command("InvasionMod.invasion_set_size", size="small")
+    ctx.mod.command("InvasionMod.invasion_set_roles", enabled=False)  # spawnRaiders: exactly 18 raiders (this scenario counts them)
     ctx.mod.command("InvasionMod.invasion_force_next")
     ctx.run_until(lambda: bool(tracker(ctx)), 30, what="the raid record")
     bandits = side_count(ctx.actions.units_census(), "bandit")
