@@ -6,7 +6,8 @@ The legacy harness specs are in `docs/harness/`. The layout and build rules of t
 > **Since 2026-10-18, new mod work is planned in OpenSpec (`openspec/`).** See the archived change `openspec/changes/archive/2026-10-18-adopt-openspec/` (issue #251) and `openspec/specs/process/spec-workflow/spec.md`.
 > - `M00-invasion-mod/` stays here. It is the design. The user owns it.
 > - The `M<NN>-<feature>/` folders are read-only legacy. Do not add iterations or notes. An iteration that had an open issue on 2026-10-18 may finish here.
-> - A new iteration is an OpenSpec change (`openspec/changes/<change-name>/`). Its living spec is `openspec/specs/mod/<feature>/spec.md`. The first change for a feature seeds it from the "Current state" of the legacy README.
+> - The built behavior of each feature is in its living spec `openspec/specs/mod/<feature>/spec.md` (change `backfill-living-specs`, issue #253). Shared parts: `mod/core`. The standalone test mods RefugeeWaves and PolicyMenu were absorbed by the features `refugees`, `tech_tree` and `tech_tree_widget`; they have no living spec.
+> - A new iteration is an OpenSpec change (`openspec/changes/<change-name>/`). A planned iteration file here is rewritten into a change when its work starts.
 > - Feedback goes to `openspec/specs/mod/<feature>/feedback.md`. The first change for a feature moves the open items from the legacy `feedback.md`.
 >
 > The sections "How a feature spec is written" and "How a feature grows" below describe the legacy process.
