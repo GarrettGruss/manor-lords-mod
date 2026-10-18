@@ -1,6 +1,6 @@
 # Spec 34: Repo wiki
 
-Status: built, acceptance run done (2026-10-18). Issue: not created yet (no `gh` in the WSL shell). Branch: `feat/34-repo-wiki`.
+Status: built, acceptance run done (2026-10-18). Issue: #244. Branch: `feat/34-repo-wiki`.
 
 ## Goal
 A code wiki for this repo in `docs/wiki/`. Claude Code sessions write it and keep it current with the project skill `repo-wiki`. No other runtime, model provider or API key is needed.
