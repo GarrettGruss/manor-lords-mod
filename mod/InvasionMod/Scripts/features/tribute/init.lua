@@ -20,6 +20,7 @@ state:register("protection_defended", 0, "integer")
 state:register("protection_failed", 0, "integer")
 
 local share_factor = 1     -- set by the tech tree laws (M12.04)
+local finite_paid_session = {} -- good name -> units of finite goods (iron, salt) paid in this session (M10.02)
 local history = {}          -- results of the ticks of this session
 local failed_deposits = 0
 
@@ -68,8 +69,14 @@ local function pay_vassal(row)
     for index, good in ipairs(config.goods) do
         if pay_good(good.id, parts[index]) then paid = paid + parts[index] end
     end
+    local finite = {}
+    for _, good in ipairs(config.finite_goods or {}) do
+        local units = rules.amount(rules.production(families, good.units_per_family), share)
+        if pay_good(good.id, units) then finite[good.name] = units else finite[good.name] = 0 end
+        finite_paid_session[good.name] = (finite_paid_session[good.name] or 0) + finite[good.name]
+    end
     return { slot = row.slot, region = row.region, loyalty = row.loyalty, families = families, production = production,
-        share = share, policy = row.policy, amount = amount, paid = paid }
+        share = share, policy = row.policy, amount = amount, paid = paid, finite = finite }
 end
 
 local function run_tick()
@@ -173,7 +180,7 @@ end
 local function command_state()
     return { day = current_day(), season = current_season(), last_season = state:get("tribute_last_season"),
         ticks = state:get("tribute_ticks"), paid_total = state:get("tribute_paid_total"), failed_deposits = failed_deposits,
-        history = history, stock = stock(), protection_defended = state:get("protection_defended"),
+        history = history, stock = stock(), finite_paid = finite_paid_session, protection_defended = state:get("protection_defended"),
         protection_failed = state:get("protection_failed"), protection_events = protection_events, siege = siege_resolved }
 end
 

@@ -41,7 +41,7 @@ class FiniteResourcesTestCase(TechTreeTestCase):
     def row(self):
         answer = self.ask("finite_resources_state")
         self.assertTrue(answer["ok"], answer)
-        return answer["result"]["resources"][0]
+        return next(item for item in answer["result"]["resources"] if item["name"] == "iron")
 
     def limit(self):
         return self.world.limits[IRON]
@@ -80,9 +80,22 @@ class DepositTests(FiniteResourcesTestCase):
         self.produce(5)
         self.assertEqual(self.row()["mined"], 45)
 
+    def test_salt_and_clay_are_deposits_too(self):
+        answer = self.ask("finite_resources_state")
+        rows = {item["name"]: item for item in answer["result"]["resources"]}
+        self.assertEqual({name: (rows[name]["good"], rows[name]["size"]) for name in rows},
+                         {"clay": (146, 500), "iron": (14, 400), "salt": (145, 300)})
+
+    def test_an_empty_salt_deposit_limits_only_salt(self):
+        self.game.advance(12)
+        self.world.produced[145] = 300
+        self.game.advance(12)
+        self.assertEqual(self.world.limits[145], 0)
+        self.assertIsNone(self.limit())
+
     def test_the_test_command_changes_the_good_and_the_size(self):
         answer = self.ask("finite_resources_test_set", resource="iron", good=16, size=5)
-        self.assertEqual((answer["result"]["resources"][0]["good"], answer["result"]["resources"][0]["size"]), (16, 5))
+        self.assertEqual((self.row()["good"], self.row()["size"]), (16, 5))
         self.assertFalse(self.ask("finite_resources_test_set", resource="gold", good=16, size=5)["ok"])
 
     def test_the_stock_is_kept_in_the_pawn_tags(self):

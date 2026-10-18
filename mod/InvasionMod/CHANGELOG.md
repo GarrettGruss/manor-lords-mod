@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Mod M10.02 (#226): salt (300) and clay (500) are finite home deposits like iron (TBD sizes). Vassals pay iron (10 per family) and salt (6 per family) with the tribute (config `tribute.finite_goods`); that supply does not reduce the home deposits. Scenario `finite-resources-vassal-supply`.
 - Mod M06.04 (#224): the sack hits the region under attack (the raid target) or the home region, not the first region of the player (a fallback capital could be first). `HarnessSack` functions take an optional `region`; sack result has `region`. Scenario `sack-and-terms-sack-region`.
 - Mod M10.01 (#222): feature `finite_resources`. The iron deposit (400 units, TBD) is a mod ledger fed by the building production; when empty the mod sets the player production limit of the good to 0. Commands `finite_resources_state`, `finite_resources_test_set`, `_test_clear`. Scenario `finite-resources-iron`, probe `probe-deposits`.
 - Mod M02.07 (#220): vassal targets. A subjugation raid targets a vassal region when a handed-over vassal exists (the home region stays the stand-in otherwise). After 8 game days with half of its units left, the raid takes the vassal: `vassals.lose_vassal(slot, "taken")` (slot freed, refugees; the region owner is not moved). `invasion.set_vassal_provider`, `raid_behavior.active_raids`, `vassals.target_regions`. Scenario `invasion-vassal-targets`.
