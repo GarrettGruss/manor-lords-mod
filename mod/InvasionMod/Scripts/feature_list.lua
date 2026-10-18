@@ -9,6 +9,7 @@ return {
     { name = "bandits", requires = { "invasion" } },
     { name = "sack_and_terms", requires = { "raid_behavior" } },
     { name = "vassals", requires = { "mod_state" } },
+    { name = "tribute", requires = { "vassals", "raid_behavior" } },
     { name = "raid_widget", requires = { "invasion" } },
     { name = "tech_tree", requires = { "bandits", "unit_balance", "mod_state" } },
 }

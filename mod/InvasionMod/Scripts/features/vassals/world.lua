@@ -177,4 +177,14 @@ function M.region_buildings(name)
     return nil
 end
 
+-- Families of one region by object name. Nil when the region is not found.
+function M.region_families(name)
+    local e = engine()
+    if e == nil then return nil end
+    for _, region in ipairs(core.listOf(e.regions)) do
+        if core.shortName(region) == name then return core.read(function() return region:getTotalNumFamilies() end) end
+    end
+    return nil
+end
+
 return M

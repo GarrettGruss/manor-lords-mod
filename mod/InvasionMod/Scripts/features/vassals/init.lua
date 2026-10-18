@@ -282,4 +282,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature vassals loaded")
-return { state = state, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }
+return { state = state, region_families = world.region_families, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }
