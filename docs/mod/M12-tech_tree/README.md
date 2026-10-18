@@ -53,7 +53,7 @@ Iterations 01 and 03 are done: `tech_tree` feature with a JSON tree (`mod/Invasi
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
 | 01 | path-choice | Choose one of two paths; the choice is kept in mod state. | pass, see [iterations/01-path-choice.md](iterations/01-path-choice.md) |
-| 02 | pak-ui | Pak widget that lists nodes and takes the choice. | not started |
+| 02 | pak-ui | Pak widget that lists nodes and takes the choice. | partial: menu shows the data driven tree (U1 to U4 pass); real mouse clicks not verified, see [iterations/02-pak-ui.md](iterations/02-pak-ui.md) |
 | 03 | first-nodes | A few nodes per path with Lua effects. | pass (combined with 01) |
 | 04 | laws-and-vassal-policies | Laws and vassal policies. | not started |
 

@@ -27,4 +27,8 @@ A pak menu for the tech tree (key F9). It shows the path, the free node slots an
 - Real game: `tech-tree-widget --pak techmenu` (EXCLUSIVE: real mouse; no other game window).
 
 ## Result
-not started
+PARTIAL (2026-10-18). U1 to U4 pass in the real game; U5 and U6 (real mouse clicks) are NOT verified.
+- U1 to U4 passed in runs `20261018-075817-9c43` and `20261018-083344-5edb` (the pak loads, the 3 lines equal the wanted lines, 8 node buttons are visible, every node stands at its layout position: `Slot:SetPosition` works and reads back).
+- Every run that reached the click step ended with `InputError: the game window is not in the foreground` (runs 075455-cf44, 080758-34f7, 083344-5edb, 084034-5947). Cause: other agents start and stop games all the time on this PC, so another game window takes the foreground. One run crashed (`075649-b14b`) while another game ran at the same time. The scenario is `EXCLUSIVE`. It must run when no other game runs.
+- Open: run `uv run python harnessun.py --scenario tech-tree-widget --pak techmenu --slot auto` twice when the PC is free; fix the hover scan if needed (scan range x 0.10 to 0.53, y 0.10 to 0.58; the menu stands at viewport 300,150).
+- Notes: `../implementation-notes/iteration-02-pak-ui.md`.
