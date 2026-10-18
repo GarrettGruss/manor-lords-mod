@@ -17,7 +17,7 @@ The player vassalizes a nearby neighbor or founds a vassal region with settlers.
 - No scouting and no intel in version 1.
 
 ## Current state
-Iteration 01 is done (claim without victory): the mod holds goals = Endless and keeps a 3 slot registry with loyalty in the pawn Tags. Iteration 02 is next.
+Iterations 01 and 02 are done. The mod holds goals = Endless, keeps a 3 slot registry with loyalty in the pawn Tags, and hands a player-settled region to a new friendly AI lord. Finding: the lord declares war by itself (the mod declares peace), and it builds only when the region has 4 buildings after the settle call (flagged `stalled` otherwise). Iteration 03 is next.
 
 ## Proven building blocks
 - Claim, settle and hand over a region as an AI-lord region: `docs/harness/10-invasion-testability/implementation-notes/dynamic-lords.md`, `baron-model.md`. A rerun on 2026-10-13 saw no lord build on the base fixture.
@@ -49,9 +49,9 @@ Iteration 01 is done (claim without victory): the mod holds goals = Endless and 
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
 | 01 | claim-without-victory | Set goals = Endless and claim one region as a vassal, with loyalty in region Tags. | done, PASS (#187) |
-| 02 | settled-vassal | Found a vassal with settlers. | not started |
-| 03 | policies-and-orders | Mod-owned policies applied to a vassal. | not started |
-| 04 | loss-and-submission | Lose or submit a vassal. | not started |
+| 02 | settled-vassal | Found a vassal with settlers. | done, PASS with findings (#191) |
+| 03 | policies-and-orders | Mod-owned policies applied to a vassal. | done, PASS (#209) |
+| 04 | loss-and-submission | Lose or submit a vassal. | done, PASS (#212) |
 
 ## Decisions (2026-10-16, M00 items 20 and 21)
 - Model A. No vassals at the start. The player settles a region; the game hands it to a friendly AI lord who rules in the player name.

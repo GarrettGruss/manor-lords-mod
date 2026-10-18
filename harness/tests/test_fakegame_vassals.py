@@ -155,5 +155,270 @@ class RegistryTests(VassalsTestCase):
         self.assertFalse(self.ask("vassals_set_loyalty", slot=2, value=10)["ok"])
 
 
+LORD_STUB = """
+SPAWNED = {}
+RECEIVED = {}
+local old = package.loaded["HarnessLords"]
+old.spawn_ai_lord = function(request)
+    SPAWNED[#SPAWNED + 1] = request.name
+    return { ok = true, lord = #SPAWNED }
+end
+old.lord_relations = function() return { ok = true } end
+old.lord_take_region = function(request)
+    TAKEN = (TAKEN or {})
+    TAKEN[#TAKEN + 1] = request.lord .. ":" .. request.region
+    return { ok = true }
+end
+WARS = {}
+old.lord_declare_war = function(request) WARS[#WARS + 1] = "war:" .. request.lord; return { ok = true } end
+old.lord_declare_peace = function(request) WARS[#WARS + 1] = "peace:" .. request.lord; return { ok = true } end
+old.lord_start_ai = function() return { ok = true } end
+old.lord_receive_region = function(request)
+    RECEIVED[#RECEIVED + 1] = request.lord .. ":" .. request.region
+    return { ok = true }
+end
+"""
+
+
+class HandoverBase(VassalsTestCase):
+    def setUp(self):
+        super().setUp()
+        self.counts = {}
+        self.game.exec(LORD_STUB)
+        self.game.method(self.pawn, "GetAddress", lambda _self: 1)
+        self.home = self.make_region("Home", True, 12)
+        self.regions = [self.home]
+        self.engine.regions = self.game.array(self.regions)
+        self.game.advance(8)
+
+    def make_region(self, name, settled, buildings):
+        region = self.game.obj("Region", ownerPawn=self.pawn, isSettled=settled)
+        self.game.method(region, "GetFName", lambda _self, name=name: self.game.text(name))
+        self.counts[name] = buildings
+        self.game.method(region, "GetBuildings", lambda _self, name=name: self.game.array([self.game.struct()] * self.counts[name]))
+        return region
+
+    def add_region(self, name, settled, buildings=0):
+        region = self.make_region(name, settled, buildings)
+        self.regions.append(region)
+        self.engine.regions = self.game.array(self.regions)
+        return region
+
+    def hand_over_and_wait(self, name="Eichenhau", buildings=4):
+        self.add_region(name, True, buildings)
+        self.game.advance(10)
+        return self.state()
+
+
+class HandoverTests(HandoverBase):
+    def test_the_first_scan_picks_the_region_with_most_buildings_as_home(self):
+        self.assertEqual(self.state()["home_region"], "Home")
+
+    def test_an_unsettled_claim_is_registered_but_not_handed_over(self):
+        self.add_region("Eichenhau", False)
+        self.game.advance(8)
+        state = self.state()
+        self.assertEqual(state["count"], 1)
+        self.assertEqual(state["vassals"][0]["lord"], "none")
+        self.assertEqual(self.game.exec("return #SPAWNED"), 0)
+
+    def test_a_settled_claim_is_handed_to_a_new_lord(self):
+        region = self.add_region("Eichenhau", False)
+        self.game.advance(8)
+        region.isSettled = True
+        self.game.advance(8)
+        self.assertEqual(self.state()["vassals"][0]["lord"], "Aldric")
+        self.assertEqual(self.game.exec('return SPAWNED[1] .. " " .. RECEIVED[1]'), "Aldric 1:Eichenhau")
+
+    def test_the_handover_runs_once(self):
+        self.add_region("Eichenhau", True)
+        self.game.advance(30)
+        self.assertEqual(self.game.exec("return #RECEIVED"), 1)
+        self.assertEqual(self.game.exec("return #SPAWNED"), 1)
+
+    def test_two_regions_get_two_lords(self):
+        self.add_region("Eichenhau", True)
+        self.add_region("Goldhof", True)
+        self.game.advance(30)
+        self.assertEqual(self.game.exec("return SPAWNED[1] .. SPAWNED[2]"), "AldricBertram")
+
+    def test_a_failed_handover_stops_after_the_attempt_limit(self):
+        self.game.exec('package.loaded["HarnessLords"].lord_receive_region = function() RECEIVED[#RECEIVED + 1] = "x"; return { ok = false, error = "boom" } end')
+        self.add_region("Eichenhau", True)
+        self.game.advance(80)
+        state = self.state()
+        self.assertEqual(state["vassals"][0]["lord"], "none")
+        self.assertIn("boom", state["handover_errors"]["1"])
+        self.assertEqual(self.game.exec("return #RECEIVED"), 3)
+
+    def hand_over_and_wait(self, name="Eichenhau", buildings=4):
+        self.add_region(name, True, buildings)
+        self.game.advance(10)
+        return self.state()
+
+    def test_a_lord_that_builds_nothing_is_flagged_after_ten_days(self):
+        self.hand_over_and_wait()
+        self.calendar.daysTotal = self.calendar.daysTotal + 11
+        self.game.advance(10)
+        row = self.state()["vassals"][0]
+        self.assertTrue(row["stalled"])
+        self.assertIn("invasion:vassal1_stalled=true", self.tags())
+
+    def test_a_lord_that_builds_is_not_flagged(self):
+        self.hand_over_and_wait()
+        self.counts["Eichenhau"] = 14
+        self.calendar.daysTotal = self.calendar.daysTotal + 11
+        self.game.advance(10)
+        self.assertFalse(self.state()["vassals"][0]["stalled"])
+
+    def test_no_check_before_ten_days(self):
+        self.hand_over_and_wait()
+        self.calendar.daysTotal = self.calendar.daysTotal + 5
+        self.game.advance(10)
+        self.assertFalse(self.state()["vassals"][0]["stalled"])
+
+
+class PolicyTests(HandoverBase):
+    def setUp(self):
+        super().setUp()
+        self.hand_over_and_wait()
+        self.pawn.silver = 200
+
+    def row(self):
+        return self.state()["vassals"][0]
+
+    def test_the_default_policy_is_fair(self):
+        self.assertEqual(self.row()["policy"], "fair")
+
+    def test_heavy_lowers_and_light_raises_loyalty_at_a_season_change(self):
+        for policy, want in (("heavy", 45), ("light", 48)):
+            self.assertTrue(self.ask("vassals_set_policy", slot=1, policy=policy)["ok"])
+            self.ask("vassals_loyalty_tick_now")
+            self.assertEqual(self.row()["loyalty"], want, policy)
+
+    def test_fair_keeps_the_loyalty(self):
+        self.ask("vassals_loyalty_tick_now")
+        self.assertEqual(self.row()["loyalty"], 50)
+
+    def test_a_real_season_change_ticks_once(self):
+        self.ask("vassals_set_policy", slot=1, policy="heavy")
+        self.game.advance(5)
+        self.calendar.Season = (self.calendar.Season + 1) % 4
+        self.game.advance(10)
+        self.assertEqual(self.row()["loyalty"], 45)
+
+    def test_unknown_policy_and_empty_slot_are_refused(self):
+        self.assertFalse(self.ask("vassals_set_policy", slot=1, policy="harsh")["ok"])
+        self.assertFalse(self.ask("vassals_set_policy", slot=2, policy="heavy")["ok"])
+
+    def test_the_policy_is_kept_in_the_pawn_tags(self):
+        self.ask("vassals_set_policy", slot=1, policy="light")
+        self.assertIn("invasion:vassal1_policy=light", self.tags())
+
+    def test_a_gift_costs_silver_and_raises_loyalty(self):
+        answer = self.ask("vassals_order_gift", slot=1)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual((answer["result"]["loyalty"], self.pawn.silver), (60, 150))
+
+    def test_a_gift_is_refused_without_silver_and_loyalty_stays_at_100(self):
+        self.pawn.silver = 10
+        self.assertFalse(self.ask("vassals_order_gift", slot=1)["ok"])
+        self.pawn.silver = 500
+        self.ask("vassals_set_loyalty", slot=1, value=95)
+        self.assertEqual(self.ask("vassals_order_gift", slot=1)["result"]["loyalty"], 100)
+
+
+class LossTests(HandoverBase):
+    def setUp(self):
+        super().setUp()
+        self.taker = self.game.obj("PawnCPP_AI", lordsName="Hussite", enemies=self.game.array([]))
+        self.game.method(self.taker, "GetFullName", lambda _self: "PawnCPP_AI /Game/Taker")
+        self.hand_over_and_wait()
+        self.game.exec("package.loaded['HarnessLords'].lord_declare_peace = function() return { ok = true } end")
+
+    def row(self):
+        return self.state()["vassals"][0]
+
+    def test_the_default_loss_frees_the_slot_and_leaves_the_land_to_its_lord(self):
+        answer = self.ask("vassals_lose", slot=1)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["count"], 0)
+        self.assertEqual(self.game.exec("return TAKEN and #TAKEN or 0"), 0)
+
+    def test_the_lose_command_frees_the_slot_gives_the_region_to_another_lord_and_keeps_the_event(self):
+        self.ask("vassals_set_loss_region", mode="take_by_lord")
+        answer = self.ask("vassals_lose", slot=1)
+        self.assertTrue(answer["ok"], answer)
+        result = answer["result"]
+        self.assertEqual((result["count"], result["lost"]), (0, 1))
+        self.assertEqual(self.game.exec("return TAKEN[1]"), "1:Eichenhau")
+        event = result["event"]
+        self.assertEqual((event["reason"], event["slot"], event["region"]), ("command", 1, "Eichenhau"))
+
+    def test_an_empty_slot_cannot_be_lost(self):
+        self.assertFalse(self.ask("vassals_lose", slot=2)["ok"])
+
+    def test_the_freed_slot_is_used_again(self):
+        self.ask("vassals_set_loss_region", mode="take_by_lord")
+        self.regions[1].ownerPawn = None  # the real command gives the region to another lord in the same tick
+        self.ask("vassals_lose", slot=1)
+        self.add_region("Goldhof", True, 4)
+        self.game.advance(10)
+        self.assertEqual(self.row()["region"], "Goldhof")
+
+    def test_a_region_that_another_pawn_owns_is_detected_as_taken(self):
+        lord = self.game.obj("PawnCPP_AI", lordsName="Aldric", enemies=self.game.array([]))
+        self.game.method(lord, "GetFName", lambda _self: self.game.text("LordObj"))
+        self.game.method(lord, "GetFullName", lambda _self: "PawnCPP_AI /Game/LordObj")
+        self.engine.relations = self.game.array([])
+        self.game.method(self.engine, "FindAllOf", lambda _self: None)
+        taker = self.game.obj("PawnCPP_AI", lordsName="Hussite", enemies=self.game.array([]))
+        self.game.method(taker, "GetFName", lambda _self: self.game.text("Taker"))
+        self.regions[1].ownerPawn = taker
+        self.game.advance(10)
+        state = self.state()
+        self.assertEqual(state["lost"], 1)
+        self.assertEqual(state["lost_events"][0]["reason"], "taken")
+
+
+class SubmissionTests(HandoverBase):
+    def setUp(self):
+        super().setUp()
+        self.hand_over_and_wait()
+
+    def row(self):
+        return self.state()["vassals"][0]
+
+    def wars(self):
+        return self.game.exec("return table.concat(WARS, ',')")
+
+    def test_a_vassal_at_low_loyalty_submits_and_the_lord_declares_war(self):
+        self.ask("vassals_set_loyalty", slot=1, value=12)
+        self.ask("vassals_set_policy", slot=1, policy="heavy")
+        self.ask("vassals_loyalty_tick_now")  # 12 - 5 = 7
+        self.assertTrue(self.row()["submitted"])
+        self.assertEqual(self.state()["submissions"], 1)
+
+    def test_a_submitted_vassal_returns_at_the_return_loyalty(self):
+        self.ask("vassals_set_loyalty", slot=1, value=5)
+        self.ask("vassals_submission_tick_now")
+        self.assertTrue(self.row()["submitted"])
+        self.ask("vassals_set_loyalty", slot=1, value=39)
+        self.ask("vassals_submission_tick_now")
+        self.assertTrue(self.row()["submitted"])
+        self.ask("vassals_set_loyalty", slot=1, value=40)
+        self.ask("vassals_submission_tick_now")
+        self.assertFalse(self.row()["submitted"])
+
+    def test_a_healthy_vassal_does_not_submit(self):
+        self.ask("vassals_submission_tick_now")
+        self.assertFalse(self.row()["submitted"])
+
+    def test_the_flag_is_kept_in_the_pawn_tags(self):
+        self.ask("vassals_set_loyalty", slot=1, value=5)
+        self.ask("vassals_submission_tick_now")
+        self.assertIn("invasion:vassal1_submitted=true", self.tags())
+
+
 if __name__ == "__main__":
     unittest.main()

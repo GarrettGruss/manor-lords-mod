@@ -23,7 +23,7 @@ Two mutually exclusive paths, oppression and prosperity. Laws, vassal policies a
 - Brief A doctrines (Bulwark, Warband, Pact) give ideas for the nodes.
 
 ## Current state
-Not started.
+Iterations 01 and 03 are done: `tech_tree` feature with a JSON tree (`mod/InvasionMod/data/tech_tree/tree.json`), path pick, node slots by settlement level, and effects through `bandits` and `unit_balance`. Named commands `tech_tree_state`, `tech_tree_choose_path`, `tech_tree_unlock`. The widget (02) and the laws (04) are open.
 
 ## Proven building blocks
 - Policy system is not usable (`enactPolicy` false in 95 tries): `docs/harness/16-policy-edicts/README.md`, `implementation-notes/policy-followups.md`, `policies.md`.
@@ -52,9 +52,9 @@ Not started.
 ## Iterations
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
-| 01 | path-choice | Choose one of two paths; the choice is kept in mod state. | not started |
-| 02 | pak-ui | Pak widget that lists nodes and takes the choice. | not started |
-| 03 | first-nodes | A few nodes per path with Lua effects. | not started |
+| 01 | path-choice | Choose one of two paths; the choice is kept in mod state. | pass, see [iterations/01-path-choice.md](iterations/01-path-choice.md) |
+| 02 | pak-ui | Pak widget that lists nodes and takes the choice. | partial: menu shows the data driven tree (U1 to U4 pass); real mouse clicks not verified, see [iterations/02-pak-ui.md](iterations/02-pak-ui.md) |
+| 03 | first-nodes | A few nodes per path with Lua effects. | pass (combined with 01) |
 | 04 | laws-and-vassal-policies | Laws and vassal policies. | not started |
 
 ## Follow-up decisions (2026-10-16)

@@ -38,4 +38,40 @@ function M.count_used(regions, max_vassals)
     return count
 end
 
+-- The growth check is due when enough game days have passed since the handover.
+function M.growth_check_due(handed_day, today, days)
+    return handed_day > 0 and today + 1 - handed_day >= days -- handed_day is stored as day + 1
+end
+
+-- A lord that added fewer than min_new buildings stalled.
+function M.is_stalled(before, now, min_new)
+    return now - before < min_new
+end
+
+-- A season tick runs when the season differs from the saved one. A saved -1 means "not known yet": no tick.
+function M.season_changed(current, last)
+    return last >= 0 and current ~= last
+end
+
+-- Why a gift is refused, or nil.
+function M.gift_refusal(silver, gift)
+    if silver < gift.cost then return string.format("not enough silver (%d, need %d)", silver, gift.cost) end
+    return nil
+end
+
+-- What a vassal does at a season change: "submit" at or under submit_at, "return" at or over return_at when submitted, else nil.
+function M.submission_action(loyalty, submitted, config)
+    if not submitted and loyalty <= config.submit_at then return "submit" end
+    if submitted and loyalty >= config.return_at then return "return" end
+    return nil
+end
+
+-- A relation tag that means war.
+function M.has_war_tag(tags)
+    for _, tag in ipairs(tags or {}) do
+        if tag == "at_war" then return true end
+    end
+    return false
+end
+
 return M

@@ -31,6 +31,8 @@ local last_ticks = {}     -- the tick results, for the state command
 local overwrites = 0      -- how often the game replaced the mod's value
 local pending = nil       -- a sent buy-back that is not finished: { families_before, silver_before, price, expected, polls }
 local buy_backs = {}      -- the results, for the state command
+-- Set by the tech tree (M12): a Public Order bonus, an approval bonus (used for the debuff only) and a buy-back price factor.
+local modifiers = { order_bonus = 0, approval_bonus = 0, buy_back_multiplier = 1 }
 
 local function difficulty()
     return invasion.state:get("difficulty")
@@ -62,8 +64,8 @@ local function apply_debuff()
         core.log.info(TAG, string.format("BANDITS game rewrote order mod_value=%d game_value=%d", written_order, values.order))
     end
     natural_order = natural
-    debuff = rules.debuff(values.approval, difficulty())
-    local target = rules.debuffed_order(natural, values.approval, difficulty())
+    debuff = rules.debuff(rules.effective_approval(values.approval, modifiers.approval_bonus), difficulty())
+    local target = rules.debuffed_order(natural, values.approval, difficulty(), modifiers)
     if values.order ~= target then
         local ok, why = world.write_order(region, target)
         if not ok then return core.log.error(TAG, "order write failed: " .. why) end
@@ -128,6 +130,14 @@ end
 -- Buy-back (iteration 03): the player pays silver and the families come back through the native negotiation letter
 ---------------------------------------------------------------------------------------------
 
+-- The price config with the tech tree factor (Iron Hand 1.25, Amnesty 0.5).
+local function price_config()
+    local cfg = {}
+    for key, value in pairs(config.buy_back) do cfg[key] = value end
+    cfg.price_multiplier = config.buy_back.price_multiplier * modifiers.buy_back_multiplier
+    return cfg
+end
+
 local function buy_back_facts(region)
     return {
         outstanding = state:get("bandits_outstanding_families"), bandit_units = world.bandit_units() or 0,
@@ -146,10 +156,10 @@ local function buy_back()
     local region, problem = world.region()
     if region == nil then return refuse("no region: " .. tostring(problem)) end
     local facts = buy_back_facts(region)
-    local reason = rules.buy_back_refusal(facts, config.buy_back)
+    local reason = rules.buy_back_refusal(facts, price_config())
     if reason ~= nil then return refuse(reason, facts) end
     local returned = rules.families_to_return(facts.outstanding, facts.free_slots)
-    local price = rules.buy_back_price(returned, config.buy_back)
+    local price = rules.buy_back_price(returned, price_config())
     local sent, why = world.send_settle_letter(price)
     if not sent then return refuse(why, facts) end
     state:set("bandits_outstanding_families", facts.outstanding - returned)
@@ -225,7 +235,7 @@ local function command_state()
         natural_order = natural_order, written_order = written_order, debuff = debuff, overwrites = overwrites,
         families = region and world.families(region), converted_families = state:get("bandits_converted_families"),
         outstanding_families = state:get("bandits_outstanding_families"), returned_families = state:get("bandits_returned_families"),
-        buy_back_pending = pending ~= nil, buy_backs = buy_backs,
+        buy_back_pending = pending ~= nil, buy_backs = buy_backs, modifiers = modifiers, buy_back_multiplier = modifiers.buy_back_multiplier,
         free_slots = region and world.free_slots(region), silver = world.silver(),
         season = world.current_season(), last_season = state:get("bandits_last_season"), rolls = state:get("bandits_rolls"), last_tick_day = state:get("bandits_last_tick_day"), ticks = last_ticks,
     }
@@ -258,5 +268,16 @@ if has_commands then
     commands.register("InvasionMod.bandits_tick_now", command_tick_now, { roll = { type = "number", required = false, min = 0, max = 1 } })
 end
 
+-- Called by the tech tree. Takes effect at once.
+local function set_modifiers(values)
+    modifiers = {
+        order_bonus = values.order_bonus or 0, approval_bonus = values.approval_bonus or 0,
+        buy_back_multiplier = values.buy_back_multiplier or 1,
+    }
+    if state.loaded then apply_debuff() end
+    core.log.info(TAG, string.format("BANDITS modifiers order_bonus=%s approval_bonus=%s buy_back_multiplier=%s",
+        tostring(modifiers.order_bonus), tostring(modifiers.approval_bonus), tostring(modifiers.buy_back_multiplier)))
+end
+
 core.log.info(TAG, "feature bandits loaded")
-return { state = state }
+return { state = state, set_modifiers = set_modifiers }

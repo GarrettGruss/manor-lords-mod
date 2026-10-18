@@ -7,7 +7,12 @@ return {
     { name = "raid_behavior", requires = { "invasion" } },
     { name = "unit_balance", requires = {} },
     { name = "bandits", requires = { "invasion" } },
-    { name = "sack_and_terms", requires = { "raid_behavior" } },
+    { name = "sack_and_terms", requires = { "raid_behavior", "vassals" } },
     { name = "vassals", requires = { "mod_state" } },
+    { name = "tribute", requires = { "vassals", "raid_behavior" } },
     { name = "raid_widget", requires = { "invasion" } },
+    { name = "manor_stronghold", requires = {} },
+    { name = "tech_tree", requires = { "bandits", "unit_balance", "mod_state", "manor_stronghold" } },
+    { name = "refugees", requires = { "vassals", "bandits" } },
+    { name = "tech_tree_widget", requires = { "tech_tree" } },
 }

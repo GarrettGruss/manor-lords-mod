@@ -15,7 +15,7 @@ Vassals send supplies to the home region. They expect protection. Failed protect
 - Vassal policies and the path change the tribute rate (M12).
 
 ## Current state
-Not started.
+Iteration 01 is done: each season change each handed-over vassal pays goods (share 10 to 30 percent of a family based production, by loyalty) into a home store.
 
 ## Proven building blocks
 - Silver, wealth and influence payouts by game calls: `docs/harness/10-invasion-testability/implementation-notes/spike-P5.md`.
@@ -43,7 +43,7 @@ Not started.
 ## Iterations
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
-| 01 | tribute-payout | A vassal pays a share of its production each period. | not started |
+| 01 | tribute-payout | A vassal pays a share of its production each period. | done, PASS (#197) |
 | 02 | protection-and-loyalty | Failed protection lowers loyalty and tribute. | not started |
 
 ## Decisions (2026-10-16, M00 item 21)

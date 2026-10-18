@@ -103,6 +103,7 @@ return {
         armored_def_min = 10,          -- a unit with def below this is unarmored (Brigands about 3, militia 5 to 7, mail 10, retinue 62)
         unarmored_def_factor = 0.0,    -- new def = def x factor, for an unarmored unit
         unarmored_block_factor = 0.0,  -- new block = block x factor
+        militia_roles = { 0, 2 },      -- EUnitRole Husband and Son: units of the player pawn with these roles are militia
         -- M05 iteration 03: armor needs a weapon to pay off (spec 25: armor alone did not win). Values TBD by the A/B.
         heavy_def_min = 40,            -- units with this def or more (retinue 62) are heavy: no weapon bonus
         armored_att_factor = 1.5,      -- new att = att x factor, for an armored unit (def from armored_def_min up to heavy_def_min)
@@ -168,6 +169,16 @@ return {
             tribute_days = 360,              -- game days between two tributes
             poll_ms = 2000,                  -- real time between two looks at the tribute day
         },
+        -- M06 iteration 03. Fallback capital, simplest form. All values TBD (playtests).
+        fallback = {
+            cost_base = 150,                 -- silver = cost_base x difficulty
+            min_buildings = 8,               -- "fortified" for now: the vassal region has at least this many buildings (TBD)
+            grain_goods = { 172, 1, 30 },    -- goods that move with the capital, first one the home stores hold: Bread, Grain, Fish
+            grain_amount = 20,               -- units moved from the home stores
+            take_back = "write",             -- how the region returns to the player: "clear" (clear owner, player claim) or "write" (owner write only)
+            family_calls = 1,                -- settleRegion calls on the new capital, 5 families each
+            deposit_tries = 10,              -- buildings tried when the grain is put into the new capital
+        },
     },
     -- M07 vassals. Values are TBD for playtests (M00 gives no loyalty numbers).
     vassals = {
@@ -175,6 +186,64 @@ return {
         poll_ms = 2000,          -- real time between two checks of the goal
         goal = 2,                -- EGameGoals Endless (spec 26): a claim does not end the game
         max_vassals = 3,         -- M00: 2 or 3 vassals in the middle game
+        lord_names = { "Aldric", "Bertram", "Conrad" }, -- names of the vassal lords, one for each slot
+        scan_every = 3,          -- a region scan runs every Nth poll
+        handover_attempts = 3,   -- failed handovers of one slot before the mod stops trying (a command retries)
+        keep_peace = true,       -- declare peace again when a vassal lord is at war with the player (TBD: the lords started the war by themselves)
+        growth_check_days = 10,  -- game days after the handover until the mod checks that the lord built
+        growth_min_buildings = 3, -- fewer new buildings than this means the lord stalled (real runs: +10 or +0)
+        -- Iteration 03. Policies and the gift order are mod-owned. Values are TBD for playtests.
+        policies = {
+            light = { tribute = 0.5, loyalty = 3 },   -- tribute factor on the M08 share, loyalty change at each season change
+            fair = { tribute = 1.0, loyalty = 0 },
+            heavy = { tribute = 1.5, loyalty = -5 },
+        },
+        gift = { cost = 50, loyalty = 10 },            -- order "send a gift": silver cost and loyalty gain
+        submission = { submit_at = 10, return_at = 40 }, -- iteration 04: loyalty at or under submit_at: the vassal serves the invader; at or over return_at it returns (TBD)
+        loss_region = "forget",   -- test loss: "forget" (the lord keeps the land, the slot is freed) or "take_by_lord" (another lord is given the land; crashed the game in the first run)
         loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
+    },
+    -- M08 tribute. Values are TBD for playtests (M00: 10 to 30 percent of the production).
+    tribute = {
+        enabled = true,
+        poll_ms = 2000,           -- real time between two looks at the season
+        units_per_family = 20,    -- production units of one family in one season (TBD)
+        share_min = 0.10,         -- share of the production at loyalty 0
+        share_max = 0.30,         -- share of the production at loyalty 100
+        goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally (M10 adds iron and salt)
+    },
+    -- M13 manor_stronghold. Values are TBD for playtests.
+    manor_stronghold = {
+        enabled = true,
+        storage_base_capacity = 200,  -- units of goods in one manor module (spec 12)
+    },
+    -- M12 tech_tree. The node data is in data/tech_tree/tree.json. Values are TBD for playtests.
+    tech_tree = {
+        enabled = true,
+        poll_ms = 2000,              -- real time between two looks at the settlement level and the garrison
+        slots_per_level = 1,         -- decision 24: one node slot for each settlement level
+        tree_file = "data/tech_tree/tree.json", -- relative to the mod folder
+    },
+    -- M12 iteration 02: the tech tree menu. Needs the pak techmenu_P.pak.
+    tech_tree_widget = {
+        enabled = true,
+        toggle_key = Key.F9,                 -- F7 is the policy menu and F8 the raid menu
+        poll_ms = 200,                       -- real time between two checks of the buttons and the texts
+        click_cooldown_s = 0.4,
+        z_order = 500,
+        position = { X = 300, Y = 150 },
+        step_x = 180, step_y = 60,           -- pixels for one layout unit of a node
+    },
+    -- M09 refugees. Values are TBD for playtests (M00: 30 to 60 percent of the vassal population).
+    refugees = {
+        enabled = true,
+        share_min = 0.30,         -- share of the vassal families that flee
+        share_max = 0.60,
+        families_per_call = 5,    -- one settleRegion call adds 5 families (spec 15)
+        max_calls = 3,            -- most calls in one wave
+        timeout_days = 45,        -- game days until unhoused refugees turn to bandits (M00: 1 to 2 game months; TBD)
+        poll_ms = 4000,           -- real time between two looks at an active wave
+        max_rebel_families = 6,   -- most families that turn in one go (homeless_rebel limit)
+        families_per_squad = 2,   -- as in bandits
     },
 }

@@ -14,7 +14,7 @@ A lost vassal sends refugees to the home region. The player must house and feed 
 - Refugees wait in the game's homeless tent (building type 87).
 
 ## Current state
-Not started.
+Iterations 01 and 02 are done: `refugees_vassal_lost` sends a wave (5 family steps) through settleRegion to the home tent camp. A wave ends housed (the player builds homes) or turns into bandits after 45 game days.
 
 ## Proven building blocks
 - Refugees lower approval (71 to 59 in 5 days): `docs/harness/15-bandit-settlement/implementation-notes/homeless-refugees.md`.
@@ -43,5 +43,5 @@ Not started.
 ## Iterations
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
-| 01 | refugee-wave | A lost vassal sends a wave sized by its population. | not started |
-| 02 | housing-and-timeout | Housed refugees become villagers. Unhoused ones turn into bandits after the timer. | not started |
+| 01 | refugee-wave | A lost vassal sends a wave sized by its population. | done, PASS (#200) |
+| 02 | housing-and-timeout | Housed refugees become villagers. Unhoused ones turn into bandits after the timer. | done, PASS (#202) |
