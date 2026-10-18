@@ -438,4 +438,103 @@ function M.hire_mercenaries(request)
              hired_before = hiredBefore, hired_after = hiredCount(engineObject), offers_after = #offers(engineObject) }
 end
 
+
+---------------------------------------------------------------------------------------------
+-- Spike probe (spec 29): call one allow-listed function without parameters on one registered unit
+---------------------------------------------------------------------------------------------
+
+-- Why a fixed list: the probe must not become a general call. Each function is known to take no parameters.
+M.PROBE_CALLS = { equipTradeWagon = true, isWagonEquipped = true, getEquippedWagon = true }
+
+local function describe(value)
+    if value == nil then return "nil" end
+    local ok, text = pcall(function()
+        if value.IsValid and value:IsValid() then return value:GetFullName() end
+        return tostring(value)
+    end)
+    return ok and text or "unreadable"
+end
+
+-- request.raw holds the request text. Fields: "squad" (registered id), "index" (1-based unit, default 1), "call" (a name of PROBE_CALLS).
+function M.unit_probe(_, raw)
+    local squad = tonumber((raw or ""):match('"squad"%s*:%s*(%d+)'))
+    local index = tonumber((raw or ""):match('"index"%s*:%s*(%d+)')) or 1
+    local call = (raw or ""):match('"call"%s*:%s*"(%w+)"')
+    if not squad or not registry[squad] then return { ok = false, error = "squad is not a registered squad id" } end
+    if not call or not M.PROBE_CALLS[call] then return { ok = false, error = "call must be one of equipTradeWagon, isWagonEquipped, getEquippedWagon" } end
+    local seen = 0
+    for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+        if isValid(unit) and read(function() return unit.assignedSquadID.Value end) == squad then
+            seen = seen + 1
+            if seen == index then
+                local ok, answer = pcall(function() return unit[call](unit) end)
+                return { ok = true, unit = describe(unit), call = call, call_ok = ok, answer = describe(answer),
+                         pos = read(function() local p = unit:K2_GetActorLocation(); return { x = p.X, y = p.Y, z = p.Z } end) }
+            end
+        end
+    end
+    return { ok = false, error = "squad has fewer units than index", units = seen }
+end
+
+
+-- Spike (spec 29, part B): prop actors the probe made, so that the probe can destroy only its own actors.
+local props = {}
+M.PROP_CLASSES = {
+    Resource_BigCart_C = "/Game/CPP_BP/Resources/Resource_BigCart.Resource_BigCart_C",
+    Resource_TimberCart_C = "/Game/CPP_BP/Resources/Resource_TimberCart.Resource_TimberCart_C",
+    Resource_Handcart_C = "/Game/CPP_BP/Resources/Resource_Handcart.Resource_Handcart_C",
+    Obstacle = "/Script/ManorLords.Obstacle",
+}
+M.MAX_PROPS = 12
+
+-- Fields: "prop" (a key of PROP_CLASSES), "count", "dx", "dy" (offset of the first prop from the player pawn), "step" (distance between props along y).
+function M.prop_spawn(_, raw)
+    local key = (raw or ""):match('"prop"%s*:%s*"([%w_]+)"')
+    local classPath = key and M.PROP_CLASSES[key]
+    if not classPath then return { ok = false, error = "prop must be one of Resource_BigCart_C, Resource_TimberCart_C, Resource_Handcart_C, Obstacle" } end
+    local count = tonumber((raw or ""):match('"count"%s*:%s*(%d+)')) or 1
+    local dx = tonumber((raw or ""):match('"dx"%s*:%s*(-?%d+)')) or 0
+    local dy = tonumber((raw or ""):match('"dy"%s*:%s*(-?%d+)')) or 0
+    local step = tonumber((raw or ""):match('"step"%s*:%s*(%d+)')) or 400
+    if count < 1 or #props + count > M.MAX_PROPS then return { ok = false, error = "too many props" } end
+    local class = StaticFindObject(classPath)
+    if not class or not class:IsValid() then return { ok = false, error = "class not loaded: " .. classPath } end
+    local pawn = engine() and pawnOf("player", engine())
+    if not pawn then return { ok = false, error = "player pawn not found" } end
+    local origin = pawn:K2_GetActorLocation()
+    local world = pawn:GetWorld()
+    local placed = {}
+    for i = 0, count - 1 do
+        local at = { X = origin.X + dx, Y = origin.Y + dy + i * step, Z = origin.Z }
+        local ok, actor = pcall(function() return world:SpawnActor(class, at, { Pitch = 0, Yaw = 0, Roll = 0 }) end)
+        if not ok or not actor or not actor:IsValid() then return { ok = false, error = "spawn failed: " .. tostring(actor), placed = placed } end
+        props[#props + 1] = actor
+        placed[#placed + 1] = { x = at.X, y = at.Y, z = at.Z }
+    end
+    return { ok = true, placed = placed, total = #props }
+end
+
+function M.prop_clear()
+    local killed = 0
+    for _, actor in ipairs(props) do
+        if isValid(actor) and pcall(function() actor:K2_DestroyActor() end) then killed = killed + 1 end
+    end
+    props = {}
+    return { ok = true, destroyed = killed }
+end
+
+-- The positions of the living units of one registered squad (field "squad"). Read only.
+function M.squad_positions(_, raw)
+    local squad = tonumber((raw or ""):match('"squad"%s*:%s*(%d+)'))
+    if not squad or not registry[squad] then return { ok = false, error = "squad is not a registered squad id" } end
+    local rows = {}
+    for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+        if isValid(unit) and read(function() return unit.assignedSquadID.Value end) == squad and read(function() return unit.dead end) ~= true then
+            local p = read(function() return unit.realPos end)
+            if p and #rows < M.MAX_DETAIL_UNITS then rows[#rows + 1] = { x = math.floor(p.X), y = math.floor(p.Y) } end
+        end
+    end
+    return { ok = true, units = rows }
+end
+
 return M

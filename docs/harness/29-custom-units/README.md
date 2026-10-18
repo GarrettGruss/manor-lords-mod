@@ -1,6 +1,6 @@
 # Spec 29: Custom units (spike)
 
-Status: queued (2026-10-18). Starts after the current Invasion Mod work. Issue: #178. Branch: `feat/29-custom-units`.
+Status: DONE (2026-10-18). Issue: #178. Branch: `feat/29-custom-units-spike`. Notes: `implementation-notes/`. Recommendation for M00: `implementation-notes/recommendation-for-m00.md`.
 
 ## Goal
 Find out whether the mod can add two new unit types:
@@ -51,3 +51,18 @@ Both were cut from M00 as technical limits (decision 7: no handgunners; Factions
 - A3: a verdict for the war wagon with the best stand-in found, and run ids.
 - A4: notes in `implementation-notes/` (one file per topic), and a recommendation for M00 (bring hand cannons or war wagons back, or keep them out).
 - A5: no game crash left unexplained; the AES key is never committed.
+
+## Results (2026-10-18)
+| Question | Verdict | Evidence |
+|---|---|---|
+| A1 new unit row loads | proven | `part-a-row-layout-and-load.md`, run `20261018-110301-5a1b` |
+| A1 spawns | proven (32 units) | same |
+| A1 fights | proven | `part-a-ab-results.md` |
+| A1 recruitable | blocked by data alone (5 fixed recruit cards); widget pak or `unitType` rewrite untested | `part-a-gun-look-and-recruit.md` |
+| A1 gun-like look | blocked (crossbow model; gun sounds and smoke exist but are not connected by data) | same |
+| A2 A/B hand cannon against crossbow, N=5 | hand cannon much stronger vs Brigands (p 0.008); duel inconclusive (p 0.33); suite `20261018-110435-6c0f` | `part-a-ab-results.md` |
+| A3 war wagon | vehicle blocked; stand-in squad `warWagon` spawns and fights (runs `20261018-115406-6f39`, `20261018-115541-0937`); spawned carts do not touch the path obstacle list | `part-b-war-wagon.md` |
+| A4 notes and recommendation | done | `implementation-notes/` |
+| A5 no unexplained crash | no crash in any run; AES key not committed | run summaries |
+
+Answers to the open questions: (1) yes, a new row name loads and spawns. (2) Range, damage and armor pierce are item fields, not template or code. (3) No vehicle class that pathing respects. (4) Not recruitable by data alone.
