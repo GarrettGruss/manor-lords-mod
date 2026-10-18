@@ -16,7 +16,7 @@ A lost battle sacks the town instead of deleting the game. The invader offers tr
 - Vassals expect protection. A vassal that is not protected may submit to the invader (M07).
 
 ## Current state
-Iteration 01 done (2026-10-18): a lost battle sacks the town. Notes: `implementation-notes/iteration-01-sack.md`. The first part (sack and terms in the home town) does not need vassals. The fallback capital waits for M07.
+Iterations 01 and 02 done (2026-10-18). Terms notes: `implementation-notes/iteration-02-terms.md`. Iteration 01: a lost battle sacks the town. Notes: `implementation-notes/iteration-01-sack.md`. The first part (sack and terms in the home town) does not need vassals. The fallback capital waits for M07.
 
 ## Proven building blocks
 - Sack by share of buildings, stock and families (`HarnessSack`): `docs/harness/10-invasion-testability/implementation-notes/spike-S6.md` (50% buildings, 49.4% stock, 40% families).
@@ -53,7 +53,7 @@ Iteration 01 done (2026-10-18): a lost battle sacks the town. Notes: `implementa
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
 | 01 | sack-after-defeat | A lost battle runs `HarnessSack` rules and the game continues. | done, see the iteration file |
-| 02 | tribute-terms | One-time payment and yearly tribute terms. | not started |
+| 02 | tribute-terms | One-time payment and yearly tribute terms. | done, see the iteration file |
 | 03 | fallback-capital | Move to a fortified vassal (needs M07). | not started |
 
 ## Follow-up decisions (2026-10-16)
