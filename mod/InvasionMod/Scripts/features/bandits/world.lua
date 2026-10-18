@@ -63,4 +63,54 @@ function M.rebel(count, families_per_squad)
     return answer
 end
 
+function M.free_slots(region)
+    local ok, value = pcall(function() return region:getAvailableLivingSpace().constructed end)
+    if ok and type(value) == "number" then return value end
+    return nil
+end
+
+function M.game_seconds()
+    local e = engine()
+    if e == nil then return nil end
+    local ok, value = pcall(function() return e:getGameTimeAdjusted() end)
+    if ok and type(value) == "number" then return value end
+    return nil
+end
+
+function M.silver()
+    local e = engine()
+    if e == nil then return nil end
+    local ok, value = pcall(function() return e.playerRef.silver end)
+    if ok and type(value) == "number" then return value end
+    return nil
+end
+
+function M.bandit_units()
+    local ok, units = pcall(require, "HarnessUnits")
+    if not ok then return nil end
+    local counted, counts = pcall(units.counts)
+    if not counted then return nil end
+    return counts.by_side.bandit or 0
+end
+
+-- The native negotiation letter: tag "attacking", then raider_suggestSettle+<price>. The game takes the price and does not check it.
+-- bandit_letter reads its paragraphs from the raw request text, so the text is built here.
+function M.send_settle_letter(price)
+    local ok, bandits = pcall(require, "HarnessBandits")
+    if not ok then return nil, "HarnessBandits is not available: " .. tostring(bandits) end
+    local tagged = bandits.bandit_tag({ tag = "attacking" })
+    if not tagged.ok then return nil, "tag failed: " .. tostring(tagged.error) end
+    local sent = bandits.bandit_letter({}, string.format('{"paragraphs":["raider_suggestSettle+%d"]}', price))
+    if not sent.ok then return nil, "letter failed: " .. tostring(sent.error) end
+    return true
+end
+
+function M.add_silver(amount)
+    local e = engine()
+    if e == nil then return nil, "no engine" end
+    local ok, problem = pcall(function() e.playerRef.silver = e.playerRef.silver + amount end)
+    if not ok then return nil, tostring(problem) end
+    return true
+end
+
 return M

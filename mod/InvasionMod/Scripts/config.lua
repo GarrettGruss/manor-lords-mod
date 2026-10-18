@@ -79,5 +79,11 @@ return {
         families_per_conversion = 2,     -- families removed by one successful roll
         families_per_squad = 2,          -- one Brigands squad (18 units) per 2 families (spike 15 proposal)
         min_families_left = 1,           -- the village never loses its last family to this feature
+        buy_back = {                     -- iteration 03. Starting values, tuned in playtests.
+            silver_per_family = 10,      -- 2 families cost 20 silver, the amount of the proven letter
+            price_multiplier = 1.0,      -- tech nodes (M12): Iron Hand 1.25, Amnesty 0.5
+            check_every = 5,             -- polls between two looks at a sent buy-back
+            give_up_game_seconds = 120,  -- game time (not real time, the game may be paused) before a missing family counts as a failed deal
+        },
     },
 }

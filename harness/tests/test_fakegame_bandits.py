@@ -18,6 +18,18 @@ package.loaded["HarnessBandits"] = {
         LAST_REBEL = request
         return { ok = true, families_removed = request.count, squads = { {} }, bandit_units_spawned = 18 }
     end,
+    bandit_tag = function(request)
+        TAGS = (TAGS or 0) + 1
+        return { ok = true }
+    end,
+    bandit_letter = function(_, raw)
+        if LETTER_OK ~= false then LETTERS = (LETTERS or 0) + 1 end
+        LAST_LETTER = raw
+        return { ok = LETTER_OK ~= false }
+    end,
+}
+package.loaded["HarnessUnits"] = {
+    counts = function() return { by_side = { bandit = BANDIT_UNITS or 0 } } end,
 }
 """
 
@@ -38,9 +50,14 @@ class BanditsTestCase(unittest.TestCase):
         self.calendar = self.game.obj("TemporalComponent", daysTotal=61, daysUntilNextRaid=730, Season=1)
         self.region = self.game.obj("Region", ownerPawn=self.pawn, publicOrder=100, Approval=65)
         self.families = 10
+        self.slots = 4
+        self.pawn.silver = 83
         self.game.method(self.region, "getTotalNumFamilies", lambda _self: self.families)
+        self.game.method(self.region, "getAvailableLivingSpace", lambda _self: self.game.struct(constructed=self.slots, unconstructed=0))
         self.engine = self.game.obj("RTSMultiEngineCPP", playerRef=self.pawn, TemporalComponent=self.calendar,
                                     regions=self.game.array([self.region]), debugLog_AI_general=self.game.array([]))
+        self.clock = 1000.0
+        self.game.method(self.engine, "getGameTimeAdjusted", lambda _self: self.clock)
         self.game.load_mod(self.mod_name)
         self.game.advance(3)
         self.counter = 0
@@ -176,6 +193,112 @@ class DistributionTests(BanditsTestCase):
         for order, chance in ((80, 0.0), (60, 0.10), (40, 0.25), (10, 0.50)):
             hits = sum(1 for _ in range(20000) if rules.should_convert(order, bands, random.random()))
             self.assertAlmostEqual(hits / 20000, chance, delta=0.015, msg=f"order {order}")
+
+
+class BuyBackTests(BanditsTestCase):
+    """C1, C4 to C7 in the fake game. The stub plays the game: it records the letter, the test moves silver, units and families."""
+
+    def convert(self):
+        self.ask("bandits_set_approval", value=0)
+        self.game.advance(3)
+        self.ask("bandits_tick_now", roll=0.0)
+        self.game.exec("BANDIT_UNITS = 18")
+        self.families -= 2
+
+    def letter(self):
+        return self.game.exec("return LAST_LETTER"), self.game.exec("return LETTERS or 0")
+
+    def test_a_conversion_adds_outstanding_families(self):
+        self.convert()
+        self.assertEqual(self.state()["outstanding_families"], 2)
+
+    def test_buy_back_sends_the_letter_with_the_price(self):
+        self.convert()
+        answer = self.ask("bandits_buy_back")["result"]
+        self.assertTrue(answer["accepted"], answer)
+        self.assertEqual((answer["price"], answer["expected_families"]), (20, 2))
+        raw, count = self.letter()
+        self.assertEqual(count, 1)
+        self.assertIn("raider_suggestSettle+20", raw)
+        self.assertEqual(self.game.exec("return TAGS"), 1)
+        self.assertEqual(self.state()["outstanding_families"], 0)
+
+    def test_the_result_is_recorded_when_the_bandits_are_gone(self):
+        self.convert()
+        self.ask("bandits_buy_back")
+        self.game.exec("BANDIT_UNITS = 0")
+        self.pawn.silver = 63
+        self.families += 2
+        self.game.advance(8)
+        state = self.state()
+        self.assertFalse(state["buy_back_pending"])
+        self.assertEqual(state["returned_families"], 2)
+        self.assertEqual((state["buy_backs"][0]["silver_paid"], state["buy_backs"][0]["family_gain"]), (20, 2))
+
+    def test_a_failed_deal_gives_the_silver_back_and_keeps_the_families_outstanding(self):
+        self.pawn.silver = 100
+        self.convert()
+        self.ask("bandits_buy_back")
+        self.game.exec("BANDIT_UNITS = 0")
+        self.pawn.silver = 80  # the game took the price, no family came
+        self.clock += 130
+        self.game.advance(8)
+        state = self.state()
+        self.assertFalse(state["buy_back_pending"])
+        self.assertEqual(self.pawn.silver, 100)
+        self.assertEqual(state["outstanding_families"], 2)
+        self.assertEqual(state["returned_families"], 0)
+        self.assertEqual((state["buy_backs"][0]["refunded"], state["buy_backs"][0]["family_gain"]), (20, 0))
+
+    def test_the_mod_waits_in_game_time_for_a_late_family(self):
+        self.convert()
+        self.ask("bandits_buy_back")
+        self.game.exec("BANDIT_UNITS = 0")
+        self.game.advance(10)  # real time passes, the game clock stands still
+        self.assertTrue(self.state()["buy_back_pending"])
+
+    def test_the_price_follows_the_free_slots(self):
+        self.convert()
+        self.slots = 1
+        answer = self.ask("bandits_buy_back")["result"]
+        self.assertEqual((answer["price"], answer["expected_families"]), (10, 1))
+        self.assertEqual(self.state()["outstanding_families"], 1)
+
+    def refused(self, reason_part):
+        before = self.state()["outstanding_families"], self.letter()[1]
+        answer = self.ask("bandits_buy_back")["result"]
+        self.assertFalse(answer["accepted"], answer)
+        self.assertIn(reason_part, answer["reason"])
+        self.assertEqual((self.state()["outstanding_families"], self.letter()[1]), before)
+
+    def test_refused_when_silver_is_short(self):
+        self.convert()
+        self.pawn.silver = 19
+        self.refused("silver")
+
+    def test_refused_without_free_homes(self):
+        self.convert()
+        self.slots = 0
+        self.refused("free home")
+
+    def test_refused_when_nothing_is_outstanding(self):
+        self.game.exec("BANDIT_UNITS = 18")
+        self.refused("no families")
+
+    def test_refused_without_bandit_units(self):
+        self.convert()
+        self.game.exec("BANDIT_UNITS = 0")
+        self.refused("no bandit units")
+
+    def test_a_failed_letter_changes_nothing(self):
+        self.convert()
+        self.game.exec("LETTER_OK = false")
+        self.refused("letter failed")
+
+    def test_a_second_buy_back_waits_for_the_first(self):
+        self.convert()
+        self.ask("bandits_buy_back")
+        self.refused("still running")
 
 
 if __name__ == "__main__":

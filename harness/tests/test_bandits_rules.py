@@ -46,5 +46,44 @@ class RulesTests(unittest.TestCase):
         self.assertTrue(self.rules.season_changed(0, 3))  # autumn to winter
 
 
+    def cfg(self, multiplier=1.0):
+        return self.lua.table_from({"silver_per_family": 10, "price_multiplier": multiplier})
+
+    def facts(self, **changes):
+        base = {"outstanding": 2, "bandit_units": 18, "free_slots": 4, "silver": 100}
+        base.update(changes)
+        return self.lua.table_from(base)
+
+    def test_buy_back_price_and_tech_multipliers(self):
+        # C8: Iron Hand 1.25 and Amnesty 0.5, rounded up
+        self.assertEqual([self.rules.buy_back_price(n, self.cfg(1.0)) for n in (1, 2)], [10, 20])
+        self.assertEqual([self.rules.buy_back_price(n, self.cfg(1.25)) for n in (1, 2)], [13, 25])
+        self.assertEqual([self.rules.buy_back_price(n, self.cfg(0.5)) for n in (1, 2)], [5, 10])
+
+    def test_families_to_return_is_limited_by_free_slots(self):
+        self.assertEqual(self.rules.families_to_return(2, 4), 2)
+        self.assertEqual(self.rules.families_to_return(5, 3), 3)
+        self.assertEqual(self.rules.families_to_return(0, 3), 0)
+
+    def test_buy_back_refusals(self):
+        refusal = lambda **changes: self.rules.buy_back_refusal(self.facts(**changes), self.cfg())  # noqa: E731
+        self.assertIsNone(refusal())
+        self.assertIsNone(refusal(silver=20))  # exactly the price
+        self.assertIn("silver", refusal(silver=19))
+        self.assertIn("free home", refusal(free_slots=0))
+        self.assertIn("no families", refusal(outstanding=0))
+        self.assertIn("no bandit units", refusal(bandit_units=0))
+
+    def test_refund_is_what_the_game_took_up_to_the_price(self):
+        self.assertEqual(self.rules.refund_amount(100, 80, 20), 20)
+        self.assertEqual(self.rules.refund_amount(100, 70, 20), 20)  # income or other costs do not raise the refund
+        self.assertEqual(self.rules.refund_amount(100, 100, 20), 0)
+        self.assertEqual(self.rules.refund_amount(100, 130, 20), 0)
+
+    def test_the_price_follows_the_slots_not_the_outstanding_families(self):
+        self.assertIn("silver", self.rules.buy_back_refusal(self.facts(outstanding=6, free_slots=3, silver=29), self.cfg()))
+        self.assertIsNone(self.rules.buy_back_refusal(self.facts(outstanding=6, free_slots=3, silver=30), self.cfg()))
+
+
 if __name__ == "__main__":
     unittest.main()

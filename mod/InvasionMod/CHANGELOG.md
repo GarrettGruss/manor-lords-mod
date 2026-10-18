@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Feature `bandits` (M04.03, #167): coin buy-back. Command `bandits_buy_back` refuses when silver is short, no home is free, or no family is outstanding; otherwise it sends the settle letter with the price. A failed deal (no family in 120 game seconds) is refunded. New config `bandits.buy_back` (`silver_per_family`, `price_multiplier`). State shows `outstanding_families`, `returned_families`, `free_slots`, `silver`, `buy_backs`.
 - Hussite roles (M05.02, #162): the raid plan stores `composition_seed`; the raid spawns one squad for each planned template through `spawnArmy` (config `invasion.roles`). Commands `invasion_set_roles`, `invasion_raid_squads`. `invasion_state` reports `composition` and the unit count of the composition.
 - Feature `bandits` (M04.02, #161): one conversion roll per season change (saved last season, no repeat after a load). The config key `tick_days` is removed. State command shows `season` and `last_season`.
 - Mod M05.01 (#156): feature `unit_balance` of `InvasionMod`. A poll cuts `def` and `block` of unarmored units (def below 10) to 0, for all sides. Commands `unit_balance_state`, `unit_balance_set`, `unit_balance_apply`; scenarios `unit-balance-lethality`, `unit-balance-armored-kept`; suite `unit-balance-ab`. Real game: militia loss rate x2.14 (p 0.058). Notes `docs/mod/M05-unit_balance/implementation-notes/iteration-01-unarmored-lethality.md`.
