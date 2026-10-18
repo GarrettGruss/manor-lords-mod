@@ -71,7 +71,7 @@ local function run_tick()
     local day = current_day()
     local result = { day = day, payments = {} }
     for _, row in ipairs(vassals.slot_rows()) do
-        if row and row.lord ~= "none" then result.payments[#result.payments + 1] = pay_vassal(row) end
+        if row and row.lord ~= "none" and not row.submitted then result.payments[#result.payments + 1] = pay_vassal(row) end
     end
     local total = 0
     for _, payment in ipairs(result.payments) do total = total + payment.paid end

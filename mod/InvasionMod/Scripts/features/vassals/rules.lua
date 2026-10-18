@@ -59,6 +59,13 @@ function M.gift_refusal(silver, gift)
     return nil
 end
 
+-- What a vassal does at a season change: "submit" at or under submit_at, "return" at or over return_at when submitted, else nil.
+function M.submission_action(loyalty, submitted, config)
+    if not submitted and loyalty <= config.submit_at then return "submit" end
+    if submitted and loyalty >= config.return_at then return "return" end
+    return nil
+end
+
 -- A relation tag that means war.
 function M.has_war_tag(tags)
     for _, tag in ipairs(tags or {}) do

@@ -51,7 +51,7 @@ Iterations 01 and 02 are done. The mod holds goals = Endless, keeps a 3 slot reg
 | 01 | claim-without-victory | Set goals = Endless and claim one region as a vassal, with loyalty in region Tags. | done, PASS (#187) |
 | 02 | settled-vassal | Found a vassal with settlers. | done, PASS with findings (#191) |
 | 03 | policies-and-orders | Mod-owned policies applied to a vassal. | done, PASS (#209) |
-| 04 | loss-and-submission | Lose or submit a vassal. | not started |
+| 04 | loss-and-submission | Lose or submit a vassal. | done, PASS (#212) |
 
 ## Decisions (2026-10-16, M00 items 20 and 21)
 - Model A. No vassals at the start. The player settles a region; the game hands it to a friendly AI lord who rules in the player name.

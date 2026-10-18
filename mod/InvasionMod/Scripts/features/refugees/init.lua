@@ -144,5 +144,11 @@ if has_commands then
         { families = { type = "integer", required = true, min = 1, max = 100 }, share = share })
 end
 
+-- A lost vassal sends refugees (M00: a wave of 30 to 60 percent of its families).
+vassals.on_lost(function(event)
+    local wave, problem = send_wave(event.families)
+    if wave == nil then core.log.warn(TAG, "REFUGEES no wave for the lost vassal " .. event.region .. ": " .. tostring(problem)) end
+end)
+
 core.log.info(TAG, "feature refugees loaded")
 return { state = state, send_wave = send_wave }
