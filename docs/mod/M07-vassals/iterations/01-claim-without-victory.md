@@ -30,4 +30,8 @@ The mod sets goals = Endless (EGameGoals 2) on every start and every load, so a 
 - `scenarios/vassals/claim_without_victory.py` (`vassals-claim-without-victory`): V1 to V6. Run with `--new-game` (V3 needs it) and once with the default fixture (V1, V2, V4 to V6; V3 is not visible there because the base fixture does not end in victory).
 
 ## Result
-Not started.
+PASS in the real game (2026-10-18). Notes: `../implementation-notes/iteration-01-claim-without-victory.md`.
+- `vassals-claim-without-victory` on a new game: runs `20261018-055246-4163` and `20261018-055546-b692` pass (V1 to V6). A third run on the fixture `base`: `20261018-055901-17ca` passes.
+- V3 on a new game: the Growth default (goals 3) was written to 2 by the mod; the claim left the victory status at 0 and the player owned the region. Without the mod, spec 26 saw status 2 in 3 of 3 runs.
+- Fake game tests: `harness/tests/test_fakegame_vassals.py` (11 tests: goal write and rewrite, registry in the Tags, refusals, loyalty clamp).
+- Deviation: the claim is a test command (`vassals_claim`). Detection of the player own claim and settle comes in iteration 02.
