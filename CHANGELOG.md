@@ -5,11 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Skill `harness-meshy`: the pipeline for 3D models (Gemini, Meshy, UE import, material instance, pak), cost rules, and the Meshy Pro license quote.
+
 ### Fixed
 - Meshy meshes now render their texture, not flat grey: the import scripts use an instance of a game master material (spec 33, #237).
 
 ### Added
 - Spec 32 part 2 (#233): per-manor Wagenburg reskin from Lua. Module `HarnessWagenburg` (HarnessActions 59): commands `wagen_state`, `wagen_apply`, `wagen_revert` set the wall and keep meshes of one manor to pak meshes (pak `s32lua_P.pak`, new assets with the spec 33 material instance). Collision and gate unchanged. The reskin must be applied again after a manor rebuild. Notes `docs/harness/32-manor-wagenburg/implementation-notes/per-manor-lua-reskin.md`.
+- Mod M13.03 (#215): extra retinue squads above the native limit of 12. Command `retinue_squad_hire` pays 36 x the hire cost and spawns a player squad of `retinue_tier1` (spawnArmy); each 12 of the retinue bonus allows one squad. Command `retinue_squad_state`. Scenario `manor-stronghold-retinue-squads`, probe `probe-retinue-squads`.
+- Mod M12.05 (#236): the tech tree menu lists the laws of the chosen path and has buttons to enact and repeal them (pak `techmenu_P.pak` rebuilt with a laws line and 3 law buttons). `tech_tree.view()` returns `laws`. Command `tech_tree_widget_press` calls the click handlers without the mouse. Scenario `tech-tree-widget-laws`. Real clicks: open (#203).
 - Spec 32 (#233): manor Wagenburg spike. Paks `s32wall_P.pak` (Meshy wagon replaces the manor wall piece mesh) and `s32keep_P.pak` (Meshy tent replaces the keep mesh) reskin a built manor; the wall keeps its collision and gate (bandits entered by the gate in 4 of 4 runs, no wall crossing). New test command `mesh_actors` (HarnessActions 58), probe `probe-manor-wagenburg`, tool `s32_track_report.py`. Notes `docs/harness/32-manor-wagenburg/`.
 - Spec 31 (#230): burgage extension spike. A new extension number is not possible with data (`EExtensionType` is native). A weaver (wool -> yarn, flax -> linen, 1 : 1) works in the tailor slot with a Lua job and recipe write, and a Meshy shed shows as its model. New commands `master_artisan`, `master_artisan_set` (unsafe), flag `artisan` on `plot_upgrade`, and the probe `probe-extension`
 - Spec 30 (#229): Wagenburg encampment spike. A Meshy ring of war wagons shows in the game as the bandit camp (row 100 retargeted by pak) and as a spawned actor in neutral and AI regions. New test commands `encampment_sites`, `encampment_regions`, `encampment_spawn`, `encampment_list`, `encampment_remove` (HarnessActions 57), probe `probe-wagenburg`, pak `wagen_P.pak`. Notes `docs/harness/30-wagenburg-encampment/`.

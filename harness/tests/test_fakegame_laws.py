@@ -130,3 +130,29 @@ class VassalPolicyTests(LawTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WidgetLawTests(LawTestCase):
+    def wanted_line(self):
+        return self.ask("tech_tree_widget_state")["result"]["wanted_laws_line"]
+
+    def test_the_laws_line_follows_the_laws_in_force(self):
+        self.assertEqual(self.wanted_line(), "Laws: choose a path first")
+        self.prosperity(["fair_courts", "amnesty"])
+        self.assertEqual(self.wanted_line(), "Laws: 0 of 2 in force")
+        self.enact("trade_pacts")
+        self.assertEqual(self.wanted_line(), "Laws: 1 of 2 in force")
+
+    def test_the_law_labels_say_what_a_click_does(self):
+        self.prosperity(["fair_courts", "amnesty"])
+        self.enact("trade_pacts")
+        labels = self.game.exec(
+            "local lines = require('features.tech_tree_widget.lines'); local out = {};"
+            " for _, law in ipairs(require('features.tech_tree.init').view().laws) do out[#out + 1] = lines.law_label(law) end;"
+            " return table.concat(out, '|')")
+        self.assertEqual(labels, "Enact Militia Charter|[in force] Trade Pacts (repeal)|Pay Off Warbands (closed)")
+
+    def test_press_needs_an_open_widget(self):
+        answer = self.ask("tech_tree_widget_press", kind="law", index=1)
+        self.assertFalse(answer["ok"])
+        self.assertIn("not open", answer["error"])

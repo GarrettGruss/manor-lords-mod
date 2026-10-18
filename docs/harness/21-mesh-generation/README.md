@@ -46,7 +46,7 @@ Use the same pipeline for a main tent part and a construction mesh for row 483. 
 
 ## Open questions
 
-- The exact license text (the terms page was not readable by the agent). The user checks it in the account before any release.
+- (Answered 2026-10-18) The license: Pro plan terms are quoted in `.claude/skills/harness-meshy/SKILL.md`. Generated models may be shipped in the mod.
 - Does an AI PBR texture look right next to the game's photo textures? Option: reuse a vanilla material and take only the geometry.
 - Are the normal map and UV conventions right after FBX import in UE 5.5.4?
 - Does a prop part need collision?
@@ -56,12 +56,12 @@ Use the same pipeline for a main tent part and a construction mesh for row 483. 
 - [ ] `genmesh.py` exists with fake tests, a credit cap and a spend log. No key in git (diff grep run before each commit).
 - [ ] One Meshy mesh shows in the game as a building part, at the right scale (within 10 % of the expected size), base on the ground, no missing texture, at most 3000 triangles, in a harness screenshot.
 - [ ] The note records credits used, quality and problems, and a verdict (use Meshy, use Blender, or both).
-- [ ] The license decision for a public release is written down with its source.
+- [x] The license decision for a public release is written down with its source (skill `harness-meshy`).
 
 ## Spike A result (2026-10-14)
 
 - [x] A note records the real cost and quality of the first spike (`implementation-notes/spike-a-ladder.md`: 30 credits, 2000-triangle target, 3500 vertices).
 - [x] One generated mesh shows in the game, at the right scale (about 3 m, within 10 percent of the plan), in a screenshot taken by the harness (`runs/s21a-1/screenshots/`, git-ignored). Base on the ground. No missing texture.
-- [ ] The license decision for a public release (open).
+- [x] The license decision for a public release is written down: skill `harness-meshy` (Pro plan terms quoted).
 - [x] No key in git (grep the diff). Spend is logged (`runs/genmesh/log.jsonl`) and capped (60 per call, 200 per day).
 - [ ] Frame time within noise (not measured).
