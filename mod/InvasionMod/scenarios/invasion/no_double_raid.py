@@ -64,6 +64,6 @@ def run(ctx) -> dict:
     # Why no survivor minimum: raiders fight for days after the spawn and unarmored units die (M05), so all can be dead.
     # More units than planned would mean a second raid. The spawn event proves that the planned raid came.
     ctx.check("A4 the spawn event has exactly the planned raiders", spawned == [planned_units], [spawned, planned_units])
-    ctx.check("A4 the living bandit units are at most the planned raid", 0 <= added <= planned_units, [added, planned_units])
+    # The census is a metric only: the bandits feature (M04) also makes bandit units from families.
     ctx.metric("bandit_units_added", added)
     return ctx.result()
