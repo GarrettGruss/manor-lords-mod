@@ -104,6 +104,10 @@ return {
         unarmored_def_factor = 0.0,    -- new def = def x factor, for an unarmored unit
         unarmored_block_factor = 0.0,  -- new block = block x factor
         militia_roles = { 0, 2 },      -- EUnitRole Husband and Son: units of the player pawn with these roles are militia
+        -- M05 iteration 03: armor needs a weapon to pay off (spec 25: armor alone did not win). Values TBD by the A/B.
+        heavy_def_min = 40,            -- units with this def or more (retinue 62) are heavy: no weapon bonus
+        armored_att_factor = 1.5,      -- new att = att x factor, for an armored unit (def from armored_def_min up to heavy_def_min)
+        armored_pierce_add = 2,        -- new armorPierce = armorPierce + amount (poleaxe infantry has 2)
     },
     -- M04 bandits, iteration 01. First guesses from M00 decisions 11 to 15 and 28 to 30.
     bandits = {

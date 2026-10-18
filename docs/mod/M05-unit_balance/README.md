@@ -57,5 +57,5 @@ Iteration 02 (hussite-roles) is done in the mod: the raid plan of M02 stores a c
 | --- | --- | --- | --- |
 | 01 | unarmored-lethality | Apply the live `def` and `block` write to unarmored units, for each new squad. | pass (x2.14 militia loss rate), see [iterations/01-unarmored-lethality.md](iterations/01-unarmored-lethality.md) |
 | 02 | hussite-roles | Hussite roles from existing foot rows, by tier (decision 7). | pass: raids spawn a planned composition of 10 templates by tier, see [iterations/02-hussite-roles.md](iterations/02-hussite-roles.md) |
-| 03 | armored-militia | Armor plus weapon values so militia beat 1.5 times as many bandits. | not started |
+| 03 | armored-militia | Armor plus weapon values so militia beat 1.5 times as many bandits. | pass: armored militia won 5 of 5 against 2.25 times its size; the weapon bonus halves the losses, see [iterations/03-armored-militia.md](iterations/03-armored-militia.md) |
 | 04 | counters-veterancy | Counters and veterancy. | not started |
