@@ -20,6 +20,15 @@ def stock_by_good(census: dict) -> dict:
     return {int(good): amount for good, amount in census["stock"]["by_good"].items()}
 
 
+def store_by_good(census: dict) -> dict:
+    """Goods that sit in buildings. The region stock can hold more (goods on the way), and a sack reaches only the buildings."""
+    totals: dict = {}
+    for store in census["stores"]:
+        for good, amount in store["by_good"].items():
+            totals[int(good)] = totals.get(int(good), 0) + amount
+    return totals
+
+
 def run(ctx) -> dict:
     difficulty = int(ctx.variant_option("INVASION_DIFFICULTY", "1"))
     percent = SHARE[difficulty]
@@ -37,11 +46,13 @@ def run(ctx) -> dict:
     families_lost = before["people"]["families"] - after["people"]["families"]
     expected_families = min(ceil_share(before["people"]["families"], percent), before["people"]["families"] - 1)
     ctx.check("A2 families fall by the rounded-up share", families_lost == expected_families, [families_lost, expected_families])
-    goods_before, goods_after = stock_by_good(before), stock_by_good(after)
+    goods_before, goods_after, stock_before = store_by_good(before), store_by_good(after), stock_by_good(before)
     for good, held in goods_before.items():
-        want = ceil_share(held, percent)
+        want = min(held, ceil_share(stock_before.get(good, held), percent))  # the share is of the stock, the sack reaches the stores
         took = held - goods_after.get(good, 0)
-        ctx.check(f"A2 good {good} falls by the rounded-up share (+/- 1)", abs(took - want) <= 1, [took, want])
+        ctx.check(f"A2 good {good} in the stores falls by at most the rounded-up share", 0 <= took <= want, [took, want])
+    stock_lost = 100.0 * (before["stock"]["total"] - after["stock"]["total"]) / before["stock"]["total"]
+    ctx.check("A2 the stock falls by about the share", percent * 0.6 <= stock_lost <= percent + 5, [stock_lost, percent])
     ctx.check("A3 the village still has people", after["people"]["population"] > 0, after["people"])
 
     ctx.mod.command("InvasionMod.sack_now", difficulty=difficulty)

@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M06.01 (#173): feature `sack_and_terms`. A role raid that leaves with its loot or at the time limit sacks the town: 20/35/50 percent of buildings, stock and families by difficulty, rounded up, people kept alive; a second sack in 360 days is fatal (tunable).
 - Mod M03.02 (#168): a Hussite role raid is the army of an AI lord at war with the player, anchored at the player manor. A plunder tick takes goods from the stores. The raid leaves (peace) after enough loot, enough losses or a time limit (config `raid_behavior.plunder`, `raid_behavior.leave`). A won region goes back to the player. Fallback for bandit squads: removal only in a quiet spot (`leave.quiet_distance`). Scenario `raid-behavior-role-leave`, probes `probe-lord-raid-peace` and `probe-role-raid-peace`. Notes `docs/mod/M03-raid_behavior/implementation-notes/iteration-02-role-raid-leave.md`.
 
 ### Fixed

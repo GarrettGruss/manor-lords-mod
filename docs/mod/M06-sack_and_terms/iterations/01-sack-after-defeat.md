@@ -35,4 +35,9 @@ A lost battle sacks the town. The game continues. The sack uses the native mecha
 - Fake game tests: `harness/tests/test_fakegame_sack_and_terms.py`.
 
 ## Result
-Not started.
+PASS in the real game (2026-10-18, save of day 205: 24 buildings, 10 families).
+- `sack-and-terms-sack`: difficulty 1 `20261018-050628-0dab`, 2 `20261018-050747-d64d`, 3 `20261018-051320-061d`.
+- `sack-and-terms-raid-sack`: difficulty 1 `20261018-050944-cbde` (leave by loot, one sack), difficulty 2 `20261018-051417-6f67`.
+- Fake tests: 11 in `test_fakegame_sack_and_terms.py`. Full suite: only the 5 known install_scripts failures.
+- Not verified: the fatal sack in the real game (depopulation end), fire method, the `time` reason in a real run.
+- Deviation: goods are taken by the mod (`world.take_goods`), not by `HarnessSack.sack_goods`. See the notes.
