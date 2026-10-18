@@ -453,15 +453,34 @@ local function command_difficulty_state()
         waves = difficulty_rules.wave_count(difficulty), wave_squads = clock_config.wave_squads }
 end
 
-local function command_pick_difficulty(args)
+-- Shared by the named command and the raid widget. Returns the difficulty state, or nil and a message.
+local function pick_difficulty(value)
     if state:get("difficulty_chosen") == 1 then return nil, "the difficulty was picked already" end
     if state:get("raids_spawned") > 0 then return nil, "the first raid was spawned already" end
-    if not difficulty_rules.valid(args.value) then return nil, "difficulty must be 1 to 3" end
-    state:set("difficulty", args.value)
+    if not difficulty_rules.valid(value) then return nil, "difficulty must be 1 to 3" end
+    state:set("difficulty", value)
     state:set("difficulty_chosen", 1)
     replan_size()
-    core.log.info(TAG, "INVASION difficulty picked " .. args.value)
+    core.log.info(TAG, "INVASION difficulty picked " .. value)
     return command_difficulty_state()
+end
+
+local function command_pick_difficulty(args)
+    return pick_difficulty(args.value)
+end
+
+-- Everything the raid widget shows about raids, in one table (M02 iteration 05). Days are nil when not known.
+local function raid_info()
+    local today = current_day()
+    local raid_day, great_day = state:get("raid_day"), state:get("great_raid_day")
+    return {
+        day = today, difficulty = state:get("difficulty"), difficulty_chosen = state:get("difficulty_chosen") == 1,
+        raid_days_left = (today and raid_day > 0) and (raid_day - today) or nil,
+        raiders = state:get("squads") > 0 and planned_units() or nil, squads = state:get("squads"),
+        great_days_left = (today and great_day > 0) and clock_days_left(today) or nil,
+        great_phase = state:get("gr_phase"), great_wave = state:get("gr_wave"), great_waves = difficulty_rules.wave_count(state:get("difficulty")),
+        picks_allowed = state:get("difficulty_chosen") ~= 1 and state:get("raids_spawned") == 0,
+    }
 end
 
 local function command_set_difficulty(args)
@@ -543,4 +562,4 @@ local function watch_spawn(before, after)
     spawn_watchers[#spawn_watchers + 1] = { before = before, after = after }
 end
 
-return { state = state, watch_spawn = watch_spawn }
+return { state = state, watch_spawn = watch_spawn, raid_info = raid_info, pick_difficulty = pick_difficulty }

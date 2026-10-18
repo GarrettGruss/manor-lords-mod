@@ -123,6 +123,15 @@ return {
             give_up_game_seconds = 120,  -- game time (not real time, the game may be paused) before a missing family counts as a failed deal
         },
     },
+    -- M02 iteration 05: the raid widget (one menu for all raid information). Needs the pak raidmenu_P.pak.
+    raid_widget = {
+        enabled = true,
+        toggle_key = Key.F8,                 -- F7 is the policy menu of the other mod; change here if F8 clashes
+        poll_ms = 200,                       -- real time between two checks of the buttons and the texts
+        click_cooldown_s = 0.4,
+        z_order = 500,
+        position = { X = 300, Y = 150 },
+    },
     -- M06 sack_and_terms, iteration 01. All values are TBD for playtests (M00 gives only the range 20 to 50 percent).
     sack_and_terms = {
         enabled = true,
