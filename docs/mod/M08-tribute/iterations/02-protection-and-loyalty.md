@@ -35,4 +35,7 @@ A vassal expects protection. A raid on a vassal region that the player does not 
 - The raid-end plumbing (target, watcher) is covered by fake game tests. The real-game scenario feeds raid results through the test command, because a raid does not yet target a vassal region (iteration M02.03 follow-up).
 
 ## Result
-not started
+PASS in the real game (2026-10-18). Notes: `../implementation-notes/iteration-02-protection-and-loyalty.md`.
+- `tribute-protection-and-loyalty`: runs `20261018-095952-b2f2` and `20261018-100253-706b` pass (P1 to P6).
+- Fake game tests: `test_fakegame_tribute.py` (5 new tests), `test_fakegame_raid_behavior.py` (end watcher).
+- Deviation: the real run feeds raid results through `tribute_test_raid_result`. A raid targets a vassal only after the M02.03 follow-up (vassal-targets).
