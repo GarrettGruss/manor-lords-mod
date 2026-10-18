@@ -8,7 +8,7 @@
 
 - [x] 2.1 Record the broken relative links before the move; verify with the link checker (9, all example links in the OKF reference)
 - [x] 2.2 Move the 49 legacy entries with `git mv` and rewrite all references with a script that keeps line endings; verify with the link checker (still 9) and `git diff --numstat` (no whole-file rewrites)
-- [x] 2.3 Remove `docs/harness/README.md`, rewrite `docs/mod/README.md`; verify that no reference outside the `CHANGELOG.md` files names an old path
+- [x] 2.3 Remove `docs/harness/README.md`, rewrite `design/README.md`; verify that no reference outside the `CHANGELOG.md` files names an old path
 
 ## 3. Rules and docs
 

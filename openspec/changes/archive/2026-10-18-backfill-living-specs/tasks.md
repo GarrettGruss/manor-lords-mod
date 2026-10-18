@@ -20,7 +20,7 @@
 
 ## 4. Docs
 
-- [x] 4.1 Point the legacy banners (`docs/harness/README.md`, `docs/mod/README.md`) and the wiki page `docs-and-specs.md` to the living specs; verify with `wiki.py check`
+- [x] 4.1 Point the legacy banners (`docs/harness/README.md`, `design/README.md`) and the wiki page `docs-and-specs.md` to the living specs; verify with `wiki.py check`
 - [x] 4.2 Add the change to `CHANGELOG.md`; verify by review
 
 ## Workflow follow-up

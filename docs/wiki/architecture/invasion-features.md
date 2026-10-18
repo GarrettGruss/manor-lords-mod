@@ -9,13 +9,13 @@ sources:
   - resource: repo://mod/InvasionMod/Scripts/feature_list.lua
   - resource: repo://mod/InvasionMod/Scripts/config.lua
   - resource: repo://mod/InvasionMod/scenarios/
-  - resource: repo://docs/mod/README.md
+  - resource: repo://design/README.md
   - resource: repo://openspec/changes/archive/2026-10-16-legacy-mod-feature-breakdown/README.md
   - resource: repo://openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/implementation-notes/f9-key-crash.md
 ---
 # Invasion Mod features
 
-The mod loads features in dependency order. See [Invasion Mod structure](invasion-mod.md) for the loader, the scheduler and the config. This page says what each feature does now. It does not add design. The design is in [`docs/mod/M00-invasion-mod/`](../../mod/M00-invasion-mod/README.md), which the user writes. Mod doc rules: [`docs/mod/README.md`](../../mod/README.md).
+The mod loads features in dependency order. See [Invasion Mod structure](invasion-mod.md) for the loader, the scheduler and the config. This page says what each feature does now. It does not add design. The design is in [`design/`](../../../design/invasion-mod.md), which the user writes. Mod doc rules: [`design/README.md`](../../../design/README.md).
 
 Every command name starts with `InvasionMod.`. The tables omit that prefix. Commands are registered with `HarnessCommands`. The harness and the agent call them. Mods and scenarios do not use eval. Most features have a `*_state` command that returns the current values.
 

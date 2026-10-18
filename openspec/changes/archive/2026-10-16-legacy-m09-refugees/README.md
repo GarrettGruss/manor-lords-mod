@@ -22,7 +22,7 @@ Iterations 01 and 02 are done: `refugees_vassal_lost` sends a wave (5 family ste
 - Lua can house refugees (5 to 0 homeless in 12 days): `openspec/changes/archive/2026-10-15-legacy-15-bandit-settlement/implementation-notes/refugee-cycle.md`, `refugee-followups.md`.
 - Lost-vassal refugees through `settleRegion` (5 families per call): `immigration-surge.md`, `refugee-waves-mod.md` in the same folder.
 - Homeless tent: `openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/implementation-notes/ml-homeless-tent.md`, `openspec/changes/archive/2026-10-15-legacy-15-bandit-settlement/implementation-notes/tent-slot-limit.md`.
-- Review: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-bandits-refugees.md`.
+- Review: `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-bandits-refugees.md`.
 - Mod state: M01.
 
 ## Tunables (M00)

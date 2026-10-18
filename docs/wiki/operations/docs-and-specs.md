@@ -11,7 +11,7 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-18-adopt-openspec/
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-00-harness-overview/README.md
   - resource: repo://.claude/skills/repo-wiki/spec/README.md
-  - resource: repo://docs/mod/README.md
+  - resource: repo://design/README.md
   - resource: repo://openspec/changes/archive/2026-10-16-legacy-mod-feature-breakdown/README.md
   - resource: repo://.claude/skills/
   - resource: repo://.claude/skills/harness-git-workflow/SKILL.md
@@ -29,7 +29,7 @@ The rules are in `CONTRIBUTING.md` (for everyone; `CLAUDE.md` imports it and add
 | Living specs | `openspec/specs/<capability>/spec.md` | The behavior that is true on `main`: requirements with spec scenarios. No status logs, no plans. |
 | Open changes | `openspec/changes/<change-name>/` | One piece of work: `proposal.md`, delta specs in `specs/`, `design.md`, `tasks.md`, findings in `notes/`. |
 | Archive | `openspec/changes/archive/YYYY-MM-DD-<change-name>/` | Done changes with their full context. |
-| Game design | `docs/mod/M00-invasion-mod/` | The Invasion Mod design. The user owns it. |
+| Game design | `design/` | The Invasion Mod design. The user owns it. |
 | Legacy specs | `openspec/changes/archive/<date>-legacy-*/` | The old specs (`docs/harness/<NN>-*/`, `docs/mod/M<NN>-*/`) from before 2026-10-18, archived unchanged. Read-only. |
 | Wiki | `docs/wiki/` | How the code and the engine work. |
 

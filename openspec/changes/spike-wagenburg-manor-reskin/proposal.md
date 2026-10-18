@@ -19,7 +19,7 @@ A separate enemy camp with a real wall is not proven. The recommendation is in `
 
 - Animation, siege rules, balance.
 - New native code.
-- Game design text. The owner writes it in `docs/mod/M00-invasion-mod/`.
+- Game design text. The owner writes it in `design/`.
 
 ## Legacy folders
 

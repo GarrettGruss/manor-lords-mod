@@ -1,7 +1,7 @@
 # M00: Invasion Mod overview design
 
 Status: draft (2026-10-15), updated with the feasibility decisions (see "Feasibility decisions"). Design content comes from two user briefs. The agent merged them. The user owns the decisions.
-Feature breakdown: [`../feature-breakdown.md`](../../../openspec/changes/archive/2026-10-16-legacy-mod-feature-breakdown/README.md).
+Feature breakdown: [`../../../../docs/mod/feature-breakdown.md`](../2026-10-16-legacy-mod-feature-breakdown/README.md).
 Feasibility review: `implementation-notes/feasibility-summary.md`.
 Internal name: `InvasionMod`. Player-facing name: to be decided (it lives only in `mod.json` `display_name`).
 
@@ -169,20 +169,20 @@ The core features. Each one becomes a feature spec `docs/mod/M<NN>-<feature>/` w
 
 | Feature | Short goal | Depends on | Spec |
 | --- | --- | --- | --- |
-| invasion | Schedule plunder raids (minor), subjugation raids (major) and the great raid. Show a countdown and a size estimate. | none | [M02](../../../openspec/changes/archive/2026-10-16-legacy-m02-invasion/) |
-| raid behavior | Start the native plunder AI. Loot of a killed raider goes back to the store. Carry caps. Native rout. | invasion | [M03](../../../openspec/changes/archive/2026-10-16-legacy-m03-raid-behavior/) |
-| bandits | Low approval, low regional wealth or no home turns villagers into bandits. Fight them or pay coin to bring them back. | approval, regional wealth | [M04](../../../openspec/changes/archive/2026-10-16-legacy-m04-bandits/) |
-| refugees | A lost vassal sends refugees. They lower approval and eat food. Unhoused refugees become bandits. | vassals, bandits | [M09](../../../openspec/changes/archive/2026-10-16-legacy-m09-refugees/) |
-| vassals | Vassalize a neighbor or found one with settlers. Indirect control through policies and orders. | regions | [M07](../../../openspec/changes/archive/2026-10-16-legacy-m07-vassals/) |
-| tribute | Vassals send supplies. They expect protection. Failed protection lowers loyalty. | vassals, invasion | [M08](../../../openspec/changes/archive/2026-10-16-legacy-m08-tribute/) |
-| liege and influence | Tribute to the liege gives influence. Influence buys aid, villagers, weapons or tools. | tribute | [M11](../../../openspec/changes/archive/2026-10-16-legacy-m11-liege-influence/) |
-| sack and terms | A lost battle sacks the town. Tribute terms, fallback capital. | invasion, vassals | [M06](../../../openspec/changes/archive/2026-10-16-legacy-m06-sack-and-terms/) |
-| manor stronghold | The manor is the stronghold. Upgrade it through builds and the tech tree: manor storage, retinue capacity. | tech tree | [M13](../../../openspec/changes/archive/2026-10-16-legacy-m13-manor-stronghold/) |
-| finite resources | Home deposits of iron, salt and similar run out. Vassals are the permanent source. | vassals | [M10](../../../openspec/changes/archive/2026-10-16-legacy-m10-finite-resources/) |
-| plundered start | Start in a damaged village. | none | [M14](../../../openspec/changes/archive/2026-10-16-legacy-m14-plundered-start/) |
-| tech tree | Two exclusive paths: oppression and prosperity. Laws and vassal policies. Lua effects, custom UI from a pak. | approval, bandits | [M12](../../../openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/) |
-| mod state | Keep the mod's own values (countdown, loyalty, influence, path, tech, deposits, schedule) with each save. | none | [M01](../../../openspec/changes/archive/2026-10-16-legacy-m01-mod-state/) (harness spike 24, #128) |
-| unit balance | Hussite unit roles from existing foot units. Counters. Veterancy. Much higher damage to unarmored units. | none | [M05](../../../openspec/changes/archive/2026-10-16-legacy-m05-unit-balance/) |
+| invasion | Schedule plunder raids (minor), subjugation raids (major) and the great raid. Show a countdown and a size estimate. | none | [M02](../2026-10-16-legacy-m02-invasion/) |
+| raid behavior | Start the native plunder AI. Loot of a killed raider goes back to the store. Carry caps. Native rout. | invasion | [M03](../2026-10-16-legacy-m03-raid-behavior/) |
+| bandits | Low approval, low regional wealth or no home turns villagers into bandits. Fight them or pay coin to bring them back. | approval, regional wealth | [M04](../2026-10-16-legacy-m04-bandits/) |
+| refugees | A lost vassal sends refugees. They lower approval and eat food. Unhoused refugees become bandits. | vassals, bandits | [M09](../2026-10-16-legacy-m09-refugees/) |
+| vassals | Vassalize a neighbor or found one with settlers. Indirect control through policies and orders. | regions | [M07](../2026-10-16-legacy-m07-vassals/) |
+| tribute | Vassals send supplies. They expect protection. Failed protection lowers loyalty. | vassals, invasion | [M08](../2026-10-16-legacy-m08-tribute/) |
+| liege and influence | Tribute to the liege gives influence. Influence buys aid, villagers, weapons or tools. | tribute | [M11](../2026-10-16-legacy-m11-liege-influence/) |
+| sack and terms | A lost battle sacks the town. Tribute terms, fallback capital. | invasion, vassals | [M06](../2026-10-16-legacy-m06-sack-and-terms/) |
+| manor stronghold | The manor is the stronghold. Upgrade it through builds and the tech tree: manor storage, retinue capacity. | tech tree | [M13](../2026-10-16-legacy-m13-manor-stronghold/) |
+| finite resources | Home deposits of iron, salt and similar run out. Vassals are the permanent source. | vassals | [M10](../2026-10-16-legacy-m10-finite-resources/) |
+| plundered start | Start in a damaged village. | none | [M14](../2026-10-16-legacy-m14-plundered-start/) |
+| tech tree | Two exclusive paths: oppression and prosperity. Laws and vassal policies. Lua effects, custom UI from a pak. | approval, bandits | [M12](../2026-10-16-legacy-m12-tech-tree/) |
+| mod state | Keep the mod's own values (countdown, loyalty, influence, path, tech, deposits, schedule) with each save. | none | [M01](../2026-10-16-legacy-m01-mod-state/) (harness spike 24, #128) |
+| unit balance | Hussite unit roles from existing foot units. Counters. Veterancy. Much higher damage to unarmored units. | none | [M05](../2026-10-16-legacy-m05-unit-balance/) |
 
 ## Build plan
 Manor Lords has limited mod support. AI behavior, regions and new law systems are the riskiest parts. Build in this order:

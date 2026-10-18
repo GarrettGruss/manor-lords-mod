@@ -15,7 +15,7 @@ Change names: all `x-issue: TBD`, all `skip_specs: true` (no delta spec yet), al
 | 14 `os-mouse-regression.md` (issue #115) | DONE | Fixed (`check_mouse_present`); issue #115 closed | #115 closed | no |
 | 15 README "Feature: refugee waves", feature plan, feature criteria | DONE | Built in the Invasion Mod as `mod/refugees` (living spec). The standalone mod `RefugeeWaves` was removed (README line 80 to 100 plan is obsolete) | #51, #61 closed | no |
 | 15 reverse direction (`homeless_rebel`, rally in the woods, `rebel_raid_rally`) | DONE | `harness/settlement-commands` and `mod/bandits` ("Unhoused refugees turn into bandits" in `mod/refugees`) | #51 closed | no |
-| 15 open: choose the rally point, why `spawnArmy` squads give no family | DROP | Raiders cannot be steered: feasibility decision 1 (`docs/mod/M00-invasion-mod/implementation-notes/feasibility-summary.md`, "Design changes needed" row 1) | none | no |
+| 15 open: choose the rally point, why `spawnArmy` squads give no family | DROP | Raiders cannot be steered: feasibility decision 1 (`openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-summary.md`, "Design changes needed" row 1) | none | no |
 | 15 open: `family_add` crash (0x3c1), `turnToBandit` crash cause | DROP | Do not use; `settle_region` and `homeless_rebel` replace them (README "Not usable" table row; `settlement-commands` spec says families can be added) | none | no |
 | 15 open: tent placement without the mouse, tent slot writes | DROP | Done as "not possible" (`tent-slot-limit.md`, `tent-placement.md`); the mod uses `settleRegion` for tents | none | no |
 | 15 open: whole-family add, third `settle_region`, bad plot ground | DROP | Not needed by `mod/refugees` (waves in steps of 5 with `settleRegion`) | none | no |
@@ -37,7 +37,7 @@ Change names: all `x-issue: TBD`, all `skip_specs: true` (no delta spec yet), al
 | 26 plundered start (A3: Lua after the start) | DONE | Moved to the mod design M14 and the change `add-plundered-start` (other group) | #130 closed | no |
 | 26 `start-settings.md` section 8 open questions (which code reads `goals`, preset rows, ruins fields) | DROP | The claim test answered the use case; the rest is research with no user (`start-settings.md` section 5 says no start setting gives ruins) | none | no |
 | 28 README (unit tuning, A1 to A6, restart a session) | DONE | `harness/unit-tuning` (all seven requirements). The session runbook belongs in the wiki | #138 closed | no |
-| 29 Part A hand cannon (recruit card, gun look, speed and range split) | DROP | M00 decision 7: no handgunners (`docs/mod/M00-invasion-mod/README.md` line 284). `recommendation-for-m00.md` "Next steps" are conditional on the design | #178 closed | no |
+| 29 Part A hand cannon (recruit card, gun look, speed and range split) | DROP | M00 decision 7: no handgunners (`design/invasion-mod.md` line 284). `recommendation-for-m00.md` "Next steps" are conditional on the design | #178 closed | no |
 | 29 Part B war wagon | DROP | Same file: war wagons stay out of version 1; stand-in squad only | #178 closed | no |
 | 29 notes and A/B results | DONE | `harness/combat-commands` carries the commands; results stay in legacy notes | #178 closed | no |
 | 30 README (host a, b, c; open: host b mouse run, bandits stuck in ring, mixed camps, grey look, respawn on load, license) | CONVERT | `spike-wagenburg-bandit-camp` (decision by the owner first) | #229 | no |

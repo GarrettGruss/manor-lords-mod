@@ -26,7 +26,7 @@ Iterations 01 and 02 done (2026-10-18). Terms notes: `implementation-notes/itera
 - Silver payments by game calls: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-P5.md`. The game does not check the cost.
 - Settled second region grows: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/dynamic-lords.md`.
 - Owner change of a region: `baron-model.md` in the same folder.
-- Review: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-raids.md`.
+- Review: `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-raids.md`.
 - Mod state: M01.
 
 ## Tunables (M00)

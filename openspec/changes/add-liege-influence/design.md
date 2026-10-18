@@ -2,7 +2,7 @@
 
 ## Context
 
-Legacy source: `openspec/changes/archive/2026-10-16-legacy-m11-liege-influence/README.md`. Decision 9 of M00 is in `docs/mod/M00-invasion-mod/README.md`. The review of the liege rules is `docs/mod/M00-invasion-mod/implementation-notes/feasibility-vassals.md`. Silver, wealth and influence payouts by game calls: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-P5.md`.
+Legacy source: `openspec/changes/archive/2026-10-16-legacy-m11-liege-influence/README.md`. Decision 9 of M00 is in `design/invasion-mod.md`. The review of the liege rules is `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-vassals.md`. Silver, wealth and influence payouts by game calls: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-P5.md`.
 
 ## Open questions
 

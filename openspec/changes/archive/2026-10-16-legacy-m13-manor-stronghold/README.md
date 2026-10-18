@@ -22,7 +22,7 @@ Iteration 01 done: manor storage capacity (200 + tech tree bonus). Iteration 02:
 - Manor limit: `openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/implementation-notes/manor-limit-99.md`.
 - Bailey buildings: `openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/implementation-notes/bailey-buildings.md`.
 - Retinue size and garrison limit hook (12 to 36): `openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/implementation-notes/larger-formations.md`.
-- Review: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-manor-tech-units.md`.
+- Review: `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-manor-tech-units.md`.
 - Row ids: `openspec/changes/archive/2026-10-15-legacy-23-row-id-range/README.md`. Confirmed block (decision 3): building ids 2300 to 2399.
 
 ## Tunables (M00)

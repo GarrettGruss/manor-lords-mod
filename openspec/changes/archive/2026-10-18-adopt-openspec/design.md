@@ -56,7 +56,7 @@ OpenSpec needs `#### Scenario:` headings. The harness already uses "scenario" fo
 
 ## Risks / Trade-offs
 
-- [Risk] Two places to look during the move (legacy and `openspec/`). → `docs/harness/README.md`, `docs/mod/README.md` and the wiki page say which is which. CLAUDE.md states the rule.
+- [Risk] Two places to look during the move (legacy and `openspec/`). → `docs/harness/README.md`, `design/README.md` and the wiki page say which is which. CLAUDE.md states the rule.
 - [Risk] The CLI is a second toolchain (Node). → Only validate and archive need it. Tests do not. The skills say how to install it.
 - [Risk] Claude Code runs on Windows and in WSL. The CLI must be installed in each shell that runs it. → The wiki page names the install command.
 - [Risk] OpenSpec sends anonymous usage stats by default. → The wiki page names the opt-out (`OPENSPEC_TELEMETRY=0` or `openspec config set telemetry.enabled false`). The user decides.

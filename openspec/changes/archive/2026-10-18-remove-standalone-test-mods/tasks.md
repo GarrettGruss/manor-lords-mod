@@ -12,7 +12,7 @@
 ## 3. Docs
 
 - [x] 3.1 Update the skills `harness-overview`, `harness-mod-state`, `harness-pak-mod`, `harness-release` and `harness-write-scenario`; verify with `git grep` that no skill names the removed mods as current
-- [x] 3.2 Update the wiki pages that name the mods and `docs/mod/README.md`; verify with `wiki.py check`
+- [x] 3.2 Update the wiki pages that name the mods and `design/README.md`; verify with `wiki.py check`
 - [x] 3.3 Add the removal to `CHANGELOG.md` under Removed; verify by review
 
 ## 4. Checks

@@ -9,7 +9,7 @@
 ## 2. Project rules
 
 - [x] 2.1 Update CLAUDE.md sections "Specs and notes", "Git", "GitHub issues" and "Architecture" to the OpenSpec rules; verify by review against `specs/process/spec-workflow/spec.md`
-- [x] 2.2 Add `docs/harness/README.md` (legacy, read-only) and update `docs/mod/README.md` to point new work to `openspec/`; verify both links resolve
+- [x] 2.2 Add `docs/harness/README.md` (legacy, read-only) and update `design/README.md` to point new work to `openspec/`; verify both links resolve
 
 ## 3. Skills and wiki
 

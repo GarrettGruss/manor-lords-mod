@@ -20,7 +20,7 @@ After `adopt-openspec`, `openspec/specs/` holds only the process rules. The beha
 - No code change.
 - No engine facts or spike numbers in requirements. They stay in legacy notes and the wiki.
 - Planned iterations are not converted into changes in this change (D6 in `design.md`).
-- No change to `docs/mod/M00-invasion-mod/`.
+- No change to `design/`.
 
 ## Legacy folders
 
@@ -37,4 +37,4 @@ All capabilities in the D1 table of `design.md`, under `harness/`, `process/test
 ## Impact
 
 - New: `openspec/specs/**` (through the archive), `openspec/specs/mod/<feature>/feedback.md`.
-- Changed: `docs/harness/README.md`, `docs/mod/README.md` (legacy banners now point to the living specs), the wiki page `docs/wiki/operations/docs-and-specs.md`, `CHANGELOG.md`.
+- Changed: `docs/harness/README.md`, `design/README.md` (legacy banners now point to the living specs), the wiki page `docs/wiki/operations/docs-and-specs.md`, `CHANGELOG.md`.

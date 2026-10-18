@@ -22,7 +22,7 @@ The design (M00) says the player is sworn to a liege. Tribute to the liege gives
 
 ## Legacy folders
 
-`openspec/changes/archive/2026-10-16-legacy-m11-liege-influence/` (read-only). Related: `docs/mod/M00-invasion-mod/` (design, owned by the user).
+`openspec/changes/archive/2026-10-16-legacy-m11-liege-influence/` (read-only). Related: `design/` (design, owned by the user).
 
 ## Capabilities
 

@@ -3,7 +3,7 @@
 Issue: #133. Legacy source: `openspec/changes/archive/2026-10-16-legacy-27-trailer-animatic/README.md`. Legacy issue: #133.
 
 ## Why
-The Invasion Mod trailer (`docs/mod/M00-invasion-mod/trailer.md`) needs drafts and a cheap review. The agent cannot play video or audio. Spec 27 plans a pipeline: a shot list, a build tool, and a review pack of frames, transcript and reports. The spec is approved, but nothing is built (no `trailer/` folder). Four decisions are open (TTS for Czech, gameplay capture, asset storage, folder place).
+The Invasion Mod trailer (`design/trailer.md`) needs drafts and a cheap review. The agent cannot play video or audio. Spec 27 plans a pipeline: a shot list, a build tool, and a review pack of frames, transcript and reports. The spec is approved, but nothing is built (no `trailer/` folder). Four decisions are open (TTS for Czech, gameplay capture, asset storage, folder place).
 
 ## What Changes
 - The user answers the four open questions (see `design.md`).

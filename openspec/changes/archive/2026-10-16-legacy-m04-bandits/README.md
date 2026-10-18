@@ -21,7 +21,7 @@ Iteration 01 (low-order-bandits) is done: the Public Order debuff and the conver
 - `homeless_rebel` removes families and bandits appear: `openspec/changes/archive/2026-10-15-legacy-15-bandit-settlement/implementation-notes/homeless-rebellion.md`, `bandit-settlement.md`.
 - Coin buy-back through the negotiation letter, with conditions (hand-set "attacking" tag, free home slots, no price check by the game): `homeless-rebellion.md` part 4.
 - The player fights bandits with normal squads: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-C1.md`.
-- `Region.publicOrder` reads and writes: `openspec/changes/archive/2026-10-15-legacy-07-feature-test-kit/implementation-notes/actions-catalog.md`, `openspec/changes/archive/2026-10-15-legacy-04-telemetry-and-assertions`. (`regionalWealth` also reads and writes: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-bandits-refugees.md`.)
+- `Region.publicOrder` reads and writes: `openspec/changes/archive/2026-10-15-legacy-07-feature-test-kit/implementation-notes/actions-catalog.md`, `openspec/changes/archive/2026-10-15-legacy-04-telemetry-and-assertions`. (`regionalWealth` also reads and writes: `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-bandits-refugees.md`.)
 - Approval reads fine and the game recalculates it every 1 to 3 days (same review). Whether approval still triggers bandits is open question 4.
 - Event messages and HUD: `openspec/changes/archive/2026-10-15-legacy-02-save-autoload/implementation-notes/in-game-messages-and-hud.md`.
 - Mod state: M01. Combat levers for bandits: M05.

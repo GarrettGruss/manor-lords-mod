@@ -3,7 +3,7 @@
 The skill `repo-wiki` ran an init over the repo on branch `feat/34-repo-wiki` (later renamed `feat/repo-wiki-skill`), in a WSL (Linux) shell.
 
 ## What ran
-1. Explore: CLAUDE.md, `harness-overview`, `harness/README.md`, `docs/mod/README.md`, `mcp/README.md`, the folder tree.
+1. Explore: CLAUDE.md, `harness-overview`, `harness/README.md`, `design/README.md`, `mcp/README.md`, the folder tree.
 2. Plan: 23 pages plus `quickstart.md` in six folders (`architecture`, `concepts`, `integrations`, `operations`, `testing`, `workflows`).
 3. Pages: 9 Sonnet subagents in parallel, two or three pages each, with the prompt from the skill. Time: about 1.5 to 7.5 minutes per agent. The main session wrote `quickstart.md`.
 4. `wiki.py index` wrote 7 indexes. The first `wiki.py check` after the quickstart reported `wiki check: ok`. The agents had used `check` on their own pages before.

@@ -18,7 +18,7 @@ The Invasion Mod design (decision 7) left war wagons out because "the game canno
 
 - Animation, siege rules, garrison logic, balance.
 - War wagon units (that is spec 29, closed: stand-in squad only).
-- Game design text. The owner writes the design in `docs/mod/M00-invasion-mod/`.
+- Game design text. The owner writes the design in `design/`.
 
 ## Legacy folders
 

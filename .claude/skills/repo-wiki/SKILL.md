@@ -5,7 +5,7 @@ description: Read, initialize or update the repo wiki in docs/wiki, a code wiki 
 
 # Repo wiki
 
-The wiki in `docs/wiki/` explains the current system: what each part does, how the parts connect, and how to change them safely. Specs keep the required behavior, the history and the decisions: living specs in `openspec/specs/`, open and archived changes in `openspec/changes/`, and the legacy specs in `docs/harness/` and `docs/mod/`. The wiki links to them and does not copy them. When an OpenSpec change is archived, the engine facts that stay true move from its `notes/` into the wiki.
+The wiki in `docs/wiki/` explains the current system: what each part does, how the parts connect, and how to change them safely. Specs keep the required behavior, the history and the decisions: living specs in `openspec/specs/`, open and archived changes in `openspec/changes/`, and the archived legacy specs in `openspec/changes/archive/<date>-legacy-*/`. The game design is in `design/`. The wiki links to them and does not copy them. When an OpenSpec change is archived, the engine facts that stay true move from its `notes/` into the wiki.
 
 The wiki is an Open Knowledge Format (OKF) v0.2 bundle. The method is a compact form of OpenWiki v0.7.2. This skill is separate from the game harness: its spec (`spec/README.md`, findings in `spec/implementation-notes/`), its script `scripts/wiki.py` and its tests (`tests/`) all live in this skill folder. You do the research and the prose.
 
@@ -75,7 +75,7 @@ Rules:
 
 ## Init
 1. Work on a branch (`harness-git-workflow`).
-2. Explore. Read `CLAUDE.md`, the `harness-overview` skill, `openspec/changes/archive/2026-10-15-legacy-00-harness-overview/README.md`, `docs/mod/README.md`, `pyproject.toml`, the top folders and their entry points, and a few tests in each area. Trace two or three end-to-end flows (for example: a scenario run, a mod feature load, a pak build). Stop when the main systems and their links are clear.
+2. Explore. Read `CLAUDE.md`, the `harness-overview` skill, `openspec/changes/archive/2026-10-15-legacy-00-harness-overview/README.md`, `design/README.md`, `pyproject.toml`, the top folders and their entry points, and a few tests in each area. Trace two or three end-to-end flows (for example: a scenario run, a mod feature load, a pak build). Stop when the main systems and their links are clear.
 3. Plan the page tree around systems and workflows, not around the folder tree. Use folders such as `architecture/`, `concepts/`, `workflows/`, `operations/`, `integrations/`, `testing/` when they have enough pages. `quickstart.md` is required. For each page write: path, title, purpose, seed sources, related pages. Keep the plan in the scratchpad.
 4. Write the pages. One owner for each page. For more than about six pages, dispatch Sonnet subagents in parallel (`harness-dispatch-agents`), each with one to three pages. Use the prompt below. Write `quickstart.md` yourself, last, from the final page list.
 5. Run `uv run python .claude/skills/repo-wiki/scripts/wiki.py index`, then `uv run python .claude/skills/repo-wiki/scripts/wiki.py check`. Fix every error and run both again until `wiki check: ok`.

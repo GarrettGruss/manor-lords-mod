@@ -30,7 +30,7 @@ Iterations 01 and 03 are done: `tech_tree` feature with a JSON tree (`mod/Invasi
 - Custom UI from a pak (Widget Blueprint): `openspec/changes/archive/2026-10-15-legacy-16-policy-edicts/implementation-notes/pak-widget-spike.md`, `pak-widget-plan.md`, `policy-menu.md`, `ui-art.md`.
 - Pak build and data rows: `openspec/changes/archive/2026-10-15-legacy-09-asset-mods/implementation-notes/pak-spike-findings.md`, `tooling.md`. Skill `harness-pak-mod`.
 - Row ids: `openspec/changes/archive/2026-10-15-legacy-23-row-id-range/README.md`. Confirmed block (decision 3): building ids 2200 to 2299. Upgrade ids 117 to 999.
-- Tech data tables (`DT_RegionDevelopmentTech`): `docs/mod/M00-invasion-mod/implementation-notes/feasibility-manor-tech-units.md` (read and write test is open).
+- Tech data tables (`DT_RegionDevelopmentTech`): `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-manor-tech-units.md` (read and write test is open).
 - Mod state: M01.
 
 ## Tunables (M00)
