@@ -17,4 +17,9 @@ function M.share_from_roll(roll, share_min, share_max)
     return share_min + (share_max - share_min) * roll
 end
 
+-- The timer ran out: start_day is stored as day + 1.
+function M.timed_out(start_day, today, timeout_days)
+    return start_day > 0 and today + 1 - start_day >= timeout_days
+end
+
 return M

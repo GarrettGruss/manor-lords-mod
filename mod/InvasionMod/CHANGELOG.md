@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Mod M09.02 (#202): a refugee wave ends `housed` when the homeless count is back at the base, or `rebelled` after `refugees.timeout_days` (45): the unhoused families (at most 6) turn into bandits through `homeless_rebel`. Command `refugees_set_timeout`. Scenario `refugees-housing-and-timeout`.
 - Mod M09.01 (#200): feature `refugees`. A lost vassal sends 30 to 60 percent of its families as a refugee wave to the home region (settleRegion steps of 5 families, tent camp). Commands `refugees_state`, `refugees_vassal_lost`, `refugees_send_wave`. Scenario `refugees-wave`.
 - Mod M08.01 (#197): feature `tribute`. At each season change each handed-over vassal pays goods (fish, timber) into the home stores: production (families x 20) x share (10 to 30 percent by loyalty). Commands `tribute_state`, `tribute_tick_now`. Scenario `tribute-payout`.
 - Mod M12.01 and M12.03 (#195): feature `tech_tree` of `InvasionMod`. Two exclusive paths (Oppression, Prosperity) built from `data/tech_tree/tree.json`; one node slot for each settlement level; 8 draft nodes with effects on Public Order, the Public Order approval, the buy-back price and the militia attack and defence. Commands `tech_tree_state`, `tech_tree_choose_path`, `tech_tree_unlock`. Scenarios `tech-tree-path-choice`, `tech-tree-militia-factor`. Spec `docs/mod/M12-tech_tree/iterations/01-path-choice.md`.
