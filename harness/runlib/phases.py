@@ -16,7 +16,7 @@ from pathlib import Path
 from . import fixtures, gameslots, saveslots
 from .actions import ActionNotPossible
 from .environment import MOD_FILES_NAME, gather_environment, hash_mod_files, hash_mods
-from .pak_phases import install_paks, remove_paks_phase
+from .pak_phases import install_paks, keep_paks_phase, remove_paks_phase
 from .game import (
     DEFAULT_TELEMETRY_INTERVAL_S,
     DEFAULT_TEST_SAVE,
@@ -572,7 +572,11 @@ def build_real_phases(
         Phase("collect", _collect(install), 60, always_run=True),
         Phase("teardown", _teardown(install, keep_open), 30 + LOCK_WAIT_S, always_run=True),
     ]
-    if pak_names:
+    if pak_names and keep_open:
+        # The game is still running and loads pak assets lazily (a widget on its first open). Removing the pak under it
+        # hung the game on F9 (techmenu-session-1 to -3). The paks stay; the next run with --pak replaces them.
+        phases.append(keep_paks_phase())
+    elif pak_names:
         # After teardown: the game is stopped by then, so it no longer holds the pak file.
         phases.append(remove_paks_phase(install))
     return phases

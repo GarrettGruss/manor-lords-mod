@@ -53,3 +53,17 @@ def _remove_paks(install: GameInstall):
 
 def remove_paks_phase(install: GameInstall) -> Phase:
     return Phase(PAK_PHASE_NAME, _remove_paks(install), 30, always_run=True)
+
+
+def _keep_paks(ctx: PhaseContext) -> str | None:
+    names = ctx.state.get("paks_installed", [])
+    if not names:
+        return None
+    ctx.state["notes"].append(f"--keep-open: the paks {names} stay in ~mods while the game runs; remove them after the game "
+                               "stops with: uv run python harness/tools/pakmod.py remove --all")
+    return f"paks kept (--keep-open): {names}"
+
+
+def keep_paks_phase() -> Phase:
+    """The pak phase of a --keep-open run: it leaves the paks in place, because the running game still reads them."""
+    return Phase(PAK_PHASE_NAME, _keep_paks, 5, always_run=True)
