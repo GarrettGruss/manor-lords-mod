@@ -3,7 +3,7 @@ type: Runbook
 title: Install and environment
 description: How to set up the PC for the harness - uv and the venv, install.ps1 and uninstall.ps1 (settings backup, game slots), deploy.ps1, Windows paths and the key environment variables.
 tags: [install, slots, uv, environment, windows]
-generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:04:01Z }
 sources:
   - resource: repo://harness/install.ps1
   - resource: repo://harness/uninstall.ps1
@@ -32,7 +32,7 @@ sources:
 ## Python with uv
 
 The project is a uv project: `pyproject.toml`, `uv.lock`, Python 3.12 or newer, venv `.venv`.
-- Runtime dependencies: `mcp==1.30.0`, `mss`, `psutil`, `streamlit`. Dev group: `lupa` (fake game kit), `pillow`.
+- Runtime dependencies: `mcp==1.30.0`, `mss`, `psutil`, `streamlit`. Dev group: `lupa` (fake game kit), `pillow`, `pyyaml` (the `repo-wiki` skill script).
 - Make the venv: `uv sync`.
 - Start every Python command with uv: `uv run python harness\run.py --scenario smoke`. Tests: `uv run python -m unittest discover -s harness/tests -p "test_fakegame_*.py"`.
 - Never call `python`, `python3` or `py` directly. On this PC they are the Windows Store stub, which waits forever. Do not pipe code into Python on stdin.

@@ -3,7 +3,7 @@ type: Testing
 title: Python tests and coverage
 description: The Python unit tests of the harness (runlib, suitelib, releaselib, tools, install scripts), the full test set and how to run it, test helpers and fakes, and the coverage tool for the Invasion Mode criteria.
 tags: [testing, unittest, python, coverage, criteria]
-generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:03:40Z }
 sources:
   - resource: repo://harness/tests/
   - resource: repo://harness/tools/coverage.py
@@ -55,7 +55,7 @@ A test file imports a path helper first, so its package is importable: `runlib_p
 | Install and slots | `test_install_scripts.py`, `test_parallel_slots.py` | `install.ps1` and `uninstall.ps1` with temp folders and real PowerShell (skipped when PowerShell is missing), and parallel game slots. |
 | Lua mods | `test_fakegame_*.py`, `test_telemetry_mock.py`, `lua_syntax.py`, `boot_state_machine.py` | See [Fake game kit](fake-game-kit.md). |
 | Rules | `test_boundary.py`, `test_save_call_sites.py`, `test_invasion_plan_roles.py`, `test_bandits_rules.py` | Repo rules as tests. `test_boundary.py` fails if harness code names the Invasion Mod (spec 22: the harness must not know the mod). `test_save_call_sites.py` fails if any code file other than `HarnessSave.lua` names a game save function. |
-| Tools | `test_coverage.py`, `test_wiki_tool.py`, `test_reload_mods.py` | `harness/tools/coverage.py`, `harness/tools/wiki.py`, `harness/tools/reload_mods.py`. |
+| Tools | `test_coverage.py`, `test_reload_mods.py` | `harness/tools/coverage.py`, `harness/tools/reload_mods.py`. |
 
 ## Fakes and helpers
 
@@ -64,7 +64,7 @@ A test file imports a path helper first, so its package is importable: `runlib_p
 - `harness/tests/suitelib_fakes.py` has `make_suite`, `entry`, `result`, `summary`, `FakeClock` and `FakeRunOne` to test the suite runner without a process or real time.
 - `modstate_support.py`, `battle_support.py`, `saveslot_support.py` build fake worlds for the fake game kit tests.
 
-A test must not touch the real save folder, the real game folder or the network. Use temp folders (`tempfile`). Several tests build a small git repo in a temp folder (`test_wiki_tool.py`).
+A test must not touch the real save folder, the real game folder or the network. Use temp folders (`tempfile`).
 
 ## Coverage tool
 
@@ -104,4 +104,4 @@ Set `method_verified: true` only when a scenario tagged with the criterion passe
 
 ## Platform
 
-The project runs the tests on Windows. Some `test_runlib*`, `test_parallel_slots` and many `test_fakegame_*` tests fail on Linux or WSL, because they use Windows paths, PowerShell or the Windows `mkdir` of `HarnessLog` (see [Fake game kit](fake-game-kit.md#windows-only)). The platform-neutral groups (`test_suitelib*`, `test_harness_tools*`, `test_coverage`, `test_release_*`, `test_wiki_tool`) also pass there. Run the full set on Windows before you merge.
+The project runs the tests on Windows. Some `test_runlib*`, `test_parallel_slots` and many `test_fakegame_*` tests fail on Linux or WSL, because they use Windows paths, PowerShell or the Windows `mkdir` of `HarnessLog` (see [Fake game kit](fake-game-kit.md#windows-only)). The platform-neutral groups (`test_suitelib*`, `test_harness_tools*`, `test_coverage`, `test_release_*`) also pass there. Run the full set on Windows before you merge.

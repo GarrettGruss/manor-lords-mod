@@ -3,7 +3,7 @@ type: Reference
 title: Specs, docs and project process
 description: How harness specs, mod docs and iterations, implementation notes, GitHub issues, branches, the changelog, skills and the wiki fit together.
 tags: [process, specs, docs, git, changelog, skills, wiki]
-generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:03:40Z }
 sources:
   - resource: repo://CLAUDE.md
   - resource: repo://docs/harness/00-harness-overview/README.md
@@ -83,8 +83,8 @@ Use the `sonnet` model for subagents when possible. Do not spawn one for a small
 
 ## The wiki
 
-- Spec: `docs/harness/34-repo-wiki/`. Entry page: `docs/wiki/quickstart.md`. Skill: `repo-wiki`. Tool: `harness/tools/wiki.py` with `index`, `check`, `stale` and `stamp`.
-- Run `uv run python harness/tools/wiki.py stale` after a change. It lists pages whose sources changed. Update those pages in the same branch, then run `index`, `check` and `stamp`.
+- Spec: `docs/harness/34-repo-wiki/`. Entry page: `docs/wiki/quickstart.md`. Skill: `repo-wiki`. Its script `.claude/skills/repo-wiki/scripts/wiki.py` (`index`, `check`, `stale`, `stamp`) and its tests live in the skill folder, apart from the game harness.
+- Run `uv run python .claude/skills/repo-wiki/scripts/wiki.py stale` after a change. It lists pages whose sources changed. Update those pages in the same branch, then run `index`, `check` and `stamp`.
 - `index.md` files are generated. Do not edit them by hand.
 
 ## Where things go

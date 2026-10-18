@@ -3,7 +3,7 @@ type: Reference
 title: Source map
 description: What each top folder and main subfolder of the repo owns, the entry files, and which paths are git-ignored.
 tags: [architecture, layout, folders, gitignore]
-generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:03:40Z }
 sources:
   - resource: repo://.gitignore
   - resource: repo://CLAUDE.md
@@ -28,7 +28,7 @@ Read [System overview](overview.md) first for how the parts work together.
 | `CHANGELOG.md` | Keep a Changelog file. User-visible changes go under `Unreleased`. |
 | `pyproject.toml`, `uv.lock`, `.python-version` | The uv project (Python 3.12, venv `.venv`). `mcp==1.30.0` is pinned. |
 | `.mcp.json` | Starts the two MCP servers over stdio. |
-| `.claude/` | `settings.json` (permissions) and `skills/`. |
+| `.claude/` | `settings.json` (permissions) and `skills/`. A skill folder may hold its own scripts and tests (for example `skills/repo-wiki/scripts/wiki.py`); they are not part of the game harness. |
 | `harness/` | The outer harness. See below. |
 | `mod/` | Lua mods, shared Lua modules and the Invasion Mod. |
 | `mcp/` | The two MCP servers. |
@@ -53,7 +53,7 @@ Read [System overview](overview.md) first for how the parts work together.
 | `suites/` | Suite JSON files (for example `core.json`, `smoke.json`). |
 | `baselines/` | Baseline ranges (`smoke.json`, `time-advance.json`, `telemetry-sanity.json`). |
 | `fixtures/fixtures.json` | The fixture list. The fixture saves are in `harness/fixtures/saves/` (git-ignored). |
-| `tools/` | Command line tools: `wiki.py`, `coverage.py`, `pakmod.py`, `modpak.py`, `reload_mods.py`, `fixtures.py`, `load_save.py`, `collect_crash.py`, `genmesh.py`, `genimage.py`, `recook_meshy_pak.py`. Files named `s<NNN>_*.py` are one-off spike scripts. |
+| `tools/` | Command line tools: `coverage.py`, `pakmod.py`, `modpak.py`, `reload_mods.py`, `fixtures.py`, `load_save.py`, `collect_crash.py`, `genmesh.py`, `genimage.py`, `recook_meshy_pak.py`. Files named `s<NNN>_*.py` are one-off spike scripts. |
 | `raidstandin/` | Python client for the RaidStandIn mod. |
 | `vanilla/` | `itemStats.json`, vanilla item data. |
 | `tests/` | All Python and fake-game tests. See [Python tests](../testing/python-tests.md) and [Fake game kit](../testing/fake-game-kit.md). |
