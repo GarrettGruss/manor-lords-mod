@@ -1,5 +1,9 @@
 import os
+import sys
 import unreal
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import meshy_material  # spec 33: game material instance
 
 # Run headless in UE 5.5.4. Imports one FBX with its textures and material,
 # then logs the bounds (cm) and triangle count so the size can be checked.
@@ -47,3 +51,5 @@ for asset_path in unreal.EditorAssetLibrary.list_assets(DEST, recursive=False):
     texture.set_editor_property("max_texture_size", limit)
     unreal.EditorAssetLibrary.save_loaded_asset(texture)
     unreal.log("IMPORT texture %s max %d" % (name, limit))
+
+meshy_material.make_game_material(mesh, DEST)
