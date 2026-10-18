@@ -32,7 +32,7 @@ The rules are in `CLAUDE.md`, in `openspec/config.yaml` and in the living spec `
 | Legacy specs | `docs/harness/<NN>-*/`, `docs/mod/M<NN>-*/` | Specs before 2026-10-18. Read-only. |
 | Wiki | `docs/wiki/` | How the code and the engine work. |
 
-Capability groups: `harness/<name>`, `mod/<feature>` (the folder name in `mod/InvasionMod/Scripts/features/`, plus `mod/core` for the shared parts), `mods/<name>` (standalone player mods such as `mods/policy-menu`) and `process/<name>`. The change `backfill-living-specs` (#253) wrote the built behavior of all legacy specs into living specs. Its `design.md` maps each legacy spec to its capabilities. Run `openspec list --specs` for the list.
+Capability groups: `harness/<name>`, `mod/<feature>` (the folder name in `mod/InvasionMod/Scripts/features/`, plus `mod/core` for the shared parts) and `process/<name>`. The standalone test mods RefugeeWaves and PolicyMenu were absorbed by the Invasion Mod and have no spec. The change `backfill-living-specs` (#253) wrote the built behavior of all legacy specs into living specs. Its `design.md` maps each legacy spec to its capabilities. Run `openspec list --specs` for the list.
 
 The wiki explains the current system. Specs keep the required behavior, the history and the decisions. The wiki links to specs and does not copy them.
 

@@ -70,8 +70,6 @@ Each capability is owned by one agent so no two agents write the same file. Path
 | MC | `mod/tech_tree` | M12 | feature `tech_tree` |
 | MC | `mod/tech_tree_widget` | M12 (widget) | feature `tech_tree_widget` |
 | MC | `mod/manor_stronghold` | M13 | feature `manor_stronghold` |
-| MC | `mods/refugee-waves` | 15 | `mod/RefugeeWaves` |
-| MC | `mods/policy-menu` | 16 | `mod/PolicyMenu` |
 
 No capability: spec 13 (inspection of community mods, findings only), M00 (the design, owned by the user), M11 and M14 (not started), `feature-breakdown.md` (a plan). The agent of a group may drop a capability that has no built behavior, and must say so in its report.
 
@@ -81,8 +79,8 @@ A requirement is written only when the code on `main` does it. The agent checks 
 ### D3: Checks
 A spec scenario names a test scenario (`harness/scenarios/`, `mod/InvasionMod/scenarios/`) or a Python test (`harness/tests/`). If there is none, it says "Not checked yet". This needs the MODIFIED requirement in `specs/process/spec-workflow/spec.md`.
 
-### D4: Two new capability groups
-`mod/core` holds the shared parts of the Invasion Mod (loader, scheduler, config). `mods/<name>` holds standalone player mods (`RefugeeWaves`, `PolicyMenu`). This needs the MODIFIED requirement in `specs/process/spec-workflow/spec.md`.
+### D4: One new capability group
+`mod/core` holds the shared parts of the Invasion Mod (loader, scheduler, config). This needs the MODIFIED requirement in `specs/process/spec-workflow/spec.md`.
 
 ### D5: Feedback files are copied
 For each mod feature with a legacy `feedback.md`, the open items are copied to `openspec/specs/mod/<feature>/feedback.md`. The legacy file stays.
@@ -99,10 +97,13 @@ For each mod feature with a legacy `feedback.md`, the open items are copied to `
 Decided by the user on 2026-10-18. Planned legacy iterations and spike follow-ups stay in their legacy folders. The first change that starts such work rewrites the legacy iteration into a change folder. No change folders or issues are made for them now.
 
 ### D7: Results of the conversion
-- 47 delta specs, 352 requirements. 58 spec scenarios say "Not checked yet". The group reports are in `notes/`.
+- 45 delta specs, 338 requirements. 56 spec scenarios say "Not checked yet". The group reports are in `notes/`.
 - Dropped: `harness/trailer-pipeline` (spec 27 has a plan only, nothing is built).
 - One overlap was fixed: the Hussite role composition is only in `mod/invasion` (code in `invasion/plan.lua`), not in `mod/unit_balance`.
 - No legacy mod spec had open feedback items, so no `feedback.md` was copied.
 - Gap: `harness/deploy.ps1` has no capability. A later change can add `harness/deploy`.
 - Checks: every "Checked by" path exists. The checks were named, not run. Many mod checks are fake-game tests only.
 - A spot check against the code confirmed the scheduler tick (50 ms), the uniform raid size class, the tribute defaults and the `save_game` slot guard. The wiki said 100 ms for the tick; this change fixes it.
+
+### D8: The standalone test mods have no spec
+Decided by the user on 2026-10-18. `mod/RefugeeWaves` and `mod/PolicyMenu` were standalone tests. The Invasion Mod absorbed them: refugee waves are the feature `refugees`, and policies are the laws of `tech_tree`, the laws list of `tech_tree_widget` and the mod-owned vassal policies of `vassals`. The first drafts `mods/refugee-waves` and `mods/policy-menu` were removed, and so was the `mods/` group. RefugeeWaves behavior that the feature does not have (a random wave each game month, its own load handling) is not specified. The code folders of the two mods are not changed by this change.

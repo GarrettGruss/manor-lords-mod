@@ -3,21 +3,21 @@
 ## MODIFIED Requirements
 
 ### Requirement: Capabilities use three groups
-A capability path SHALL start with `harness/`, `mod/`, `mods/` or `process/`. A `mod/<feature>` path SHALL use the feature folder name from `mod/InvasionMod/Scripts/features/<feature>/`, or `mod/core` for the shared parts of the Invasion Mod. A `mods/<name>` path is a standalone player mod outside the Invasion Mod, with `<name>` in kebab-case.
+A capability path SHALL start with `harness/`, `mod/` or `process/`. A `mod/<feature>` path SHALL use the feature folder name from `mod/InvasionMod/Scripts/features/<feature>/`, or `mod/core` for the shared parts of the Invasion Mod. Player behavior SHALL be specified only as part of the Invasion Mod; the earlier standalone test mods have no capability.
 
 #### Scenario: A new mod feature capability
 - **WHEN** a change adds the first requirement for the Invasion Mod feature `invasion`
 - **THEN** its delta spec path is `specs/mod/invasion/spec.md`
 - Checked by review.
 
-#### Scenario: A standalone player mod
-- **WHEN** a change adds requirements for the player mod `mod/PolicyMenu/`
-- **THEN** its delta spec path is `specs/mods/policy-menu/spec.md`
+#### Scenario: The shared parts of the Invasion Mod
+- **WHEN** a change adds requirements for the feature loader or the scheduler
+- **THEN** its delta spec path is `specs/mod/core/spec.md`
 - Checked by review.
 
 #### Scenario: A path outside the groups
-- **WHEN** a change uses a capability path such as `specs/raids/spec.md`
-- **THEN** the review rejects the change until the path starts with `harness/`, `mod/`, `mods/` or `process/`
+- **WHEN** a change uses a capability path such as `specs/raids/spec.md` or `specs/mods/policy-menu/spec.md`
+- **THEN** the review rejects the change until the path starts with `harness/`, `mod/` or `process/`
 - Checked by review.
 
 ### Requirement: Spec scenarios name their test scenario

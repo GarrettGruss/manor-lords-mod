@@ -8,10 +8,10 @@ After `adopt-openspec`, `openspec/specs/` holds only the process rules. The beha
 
 ## What Changes
 
-- Add one living spec for each capability with built behavior: about 30 harness capabilities, 16 Invasion Mod capabilities and 2 standalone player mods. The capability map is in `design.md` (D1).
+- Add one living spec for each capability with built behavior: 28 harness capabilities and 15 Invasion Mod capabilities. The capability map is in `design.md` (D1).
 - Each requirement states built behavior on `main`, with spec scenarios that name their check.
 - Copy the open items of each legacy mod `feedback.md` to `openspec/specs/mod/<feature>/feedback.md`.
-- Change two process rules: two more capability groups (`mod/core`, `mods/<name>`), and checks may be Python tests or "Not checked yet".
+- Change two process rules: one more capability group (`mod/core`), and checks may be Python tests or "Not checked yet".
 - This reverses decision D4 of `adopt-openspec` ("seed on first touch") at the user's request. The rule that the first change seeds a living spec still holds for capabilities that are not in the map.
 
 ## Non-goals
@@ -19,7 +19,7 @@ After `adopt-openspec`, `openspec/specs/` holds only the process rules. The beha
 - No deletion, move or rename of legacy specs, notes or iteration files.
 - No code change.
 - No engine facts or spike numbers in requirements. They stay in legacy notes and the wiki.
-- Planned iterations are not converted into changes in this change (open question in `design.md`).
+- Planned iterations are not converted into changes in this change (D6 in `design.md`).
 - No change to `docs/mod/M00-invasion-mod/`.
 
 ## Legacy folders
@@ -29,10 +29,10 @@ All of `docs/harness/` and `docs/mod/M01` to `M14`, as listed in `design.md` D1.
 ## Capabilities
 
 ### New Capabilities
-All capabilities in the D1 table of `design.md`, under `harness/`, `process/testing-strategy`, `mod/` and `mods/`.
+All capabilities in the D1 table of `design.md`, under `harness/`, `process/testing-strategy` and `mod/`.
 
 ### Modified Capabilities
-- `process/spec-workflow`: two more capability groups, and the rule for checks.
+- `process/spec-workflow`: the `mod/core` group, no standalone mods, and the rule for checks.
 
 ## Impact
 

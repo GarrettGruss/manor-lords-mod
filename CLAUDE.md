@@ -31,7 +31,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 
 - Specs and changes live in `openspec/`. Use the OpenSpec CLI (`openspec`) and the `openspec-*` skills (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`).
   - The rules are in the living spec `openspec/specs/process/spec-workflow/spec.md` and in `openspec/config.yaml`. Read both before you plan work.
-  - Living specs: `openspec/specs/<capability>/spec.md`. They describe only what is true on `main`. Capability groups: `harness/<name>`, `mod/<feature>` (and `mod/core`), `mods/<name>` for standalone player mods, `process/<name>`.
+  - Living specs: `openspec/specs/<capability>/spec.md`. They describe only what is true on `main`. Capability groups: `harness/<name>`, `mod/<feature>` (and `mod/core`), `process/<name>`.
   - Changes: `openspec/changes/<change-name>/` (proposal, delta specs, design, tasks). `<change-name>` is kebab-case and starts with a verb. Every new harness feature, mod feature, mod iteration and spike starts as a change. Write the change before the code.
   - Archive: `openspec/changes/archive/YYYY-MM-DD-<change-name>/`. Done changes go there with `openspec archive`.
   - Run `openspec validate <change-name> --strict` before you open a pull request.

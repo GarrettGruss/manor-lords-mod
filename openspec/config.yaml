@@ -14,7 +14,6 @@ context: |
   - Harness capabilities: `harness/<name>`, for example `harness/run-launcher`.
   - Invasion Mod features: `mod/<feature>`. `<feature>` is the folder name in
     `mod/InvasionMod/Scripts/features/<feature>/`. The shared parts (loader, scheduler, config): `mod/core`.
-  - Standalone player mods: `mods/<name>` in kebab-case, for example `mods/policy-menu`.
   - Process rules: `process/<name>`, for example `process/spec-workflow`.
 
   Game facts:
