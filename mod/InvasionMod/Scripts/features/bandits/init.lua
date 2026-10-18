@@ -128,10 +128,7 @@ local function poll()
     check_season(today)
 end
 
-LoopAsync(config.poll_ms, function()
-    ExecuteInGameThread(function() core.log.try(TAG, poll) end)
-    return false
-end)
+require("scheduler").every(TAG, config.poll_ms, poll)
 
 ---------------------------------------------------------------------------------------------
 -- Named commands for the harness (no eval)

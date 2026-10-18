@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- InvasionMod (#163): 120 day runs crashed in the Lua state because four `LoopAsync` loops shared one Lua state. All feature polls now run from one scheduler (`Scripts/scheduler.lua`). raid_behavior reads only raid units; unit_balance reads known units lazily. Scenario `invasion-no-double-raid` A4 asserts on the spawn event (planned raiders) and the timer, not on living raiders. Notes `docs/mod/M02-invasion/implementation-notes/long-run-crash-and-a4.md`.
+
 ### Added
 - Mod M05.02 (#162): Hussite roles. The raid plan of `InvasionMod` stores a composition seed; the raid spawns one `spawnArmy` squad for each planned template (melee tiers I to III, bows, crossbows; config `invasion.roles`, values TBD). `ManorCore.spawn_squads`; commands `InvasionMod.invasion_set_roles`, `invasion_raid_squads`; scenarios `unit-balance-role-templates`, `invasion-raid-composition`. The raid unit count is now the sum of the template sizes. Real game, difficulty 1 and 3: composition equals the plan. Notes `docs/mod/M05-unit_balance/implementation-notes/iteration-02-hussite-roles.md`.
 - Mod M04.02 (#161): the `bandits` feature rolls once per season change instead of every 30 game days. The last season is saved in ModState (`bandits_last_season`), so a load does not repeat a season. Scenario `bandits-season-tick`. Notes `docs/mod/M04-bandits/implementation-notes/iteration-02-season-tick.md`.

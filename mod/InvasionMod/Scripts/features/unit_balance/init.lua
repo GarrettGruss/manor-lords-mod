@@ -64,14 +64,27 @@ local function record_still_holds(unit, record)
     return read(function() return unit.def end) == record.def_after
 end
 
+-- Why a lazy recheck: every property read makes a Lua userdata, and long runs crashed in the Lua state (issue 163).
+-- A known unit costs no read of def, unless the unit count changed or every Nth pass.
+local last_count = -1
+
+local function needs_recheck(count)
+    local changed = count ~= last_count
+    last_count = count
+    return changed or totals.passes % config.recheck_every == 0
+end
+
 local function pass()
     totals.passes = totals.passes + 1
     local present = {}
-    for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
-        local key = isValid(unit) and address_of(unit) or nil
+    local units = FindAllOf("SMUnit") or {}
+    local recheck = needs_recheck(#units)
+    for _, unit in ipairs(units) do
+        local key = address_of(unit)
         if key ~= nil then
             present[key] = true
-            if known[key] == nil or not record_still_holds(unit, known[key]) then known[key] = classify(unit) end
+            local record = known[key]
+            if record == nil or (recheck and not record_still_holds(unit, record)) then known[key] = classify(unit) end
         end
     end
     forget_missing(present)
@@ -97,9 +110,8 @@ local function restore_all()
     return restored
 end
 
-LoopAsync(config.poll_ms, function()
-    if settings.enabled then ExecuteInGameThread(safe_pass) end
-    return false
+require("scheduler").every(TAG, config.poll_ms, function()
+    if settings.enabled then safe_pass() end
 end)
 
 ---------------------------------------------------------------------------------------------

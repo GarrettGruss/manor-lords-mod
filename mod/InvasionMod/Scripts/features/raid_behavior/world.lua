@@ -16,15 +16,15 @@ local function unit_key(unit)
     return read(function() return unit:GetAddress() end)
 end
 
--- Every unit now: key -> { loot, x, y, dead, object }.
+-- The units now: key -> { loot, x, y, dead, object }. With `tracked` (a set of keys) only those units are read.
 -- Few reads on purpose: a read of every property of every unit once a second crashed the game in raids of 2 squads
 -- (spike notes of M03.01). A dead unit is read for `dead` only. The place is read only for a unit that carries loot.
-function M.read_units()
+function M.read_units(tracked)
     local out = {}
     for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
         if isValid(unit) then
             local key = unit_key(unit)
-            if key ~= nil then
+            if key ~= nil and (tracked == nil or tracked[key]) then
                 local row = { dead = read(function() return unit.dead end) == true, loot = 0, object = unit }
                 if not row.dead then
                     row.loot = read(function() return unit.ItemsLooted end) or 0
