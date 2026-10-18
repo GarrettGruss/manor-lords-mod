@@ -4,6 +4,9 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Fixed
+- Mod M12 (#245): the real F9 key no longer crashes the game. The key callback of the tech tree menu and the raid widget only sets a flag; the scheduler tick opens or closes the menu on the game thread. Scenario `tech-tree-widget-key`.
+
 ### Added
 - Mod M13.03 (#215): extra retinue squads above the native limit of 12. Command `retinue_squad_hire` pays 36 x the hire cost and spawns a player squad of `retinue_tier1` (spawnArmy); each 12 of the retinue bonus allows one squad. Command `retinue_squad_state`. Scenario `manor-stronghold-retinue-squads`, probe `probe-retinue-squads`.
 - Mod M12.05 (#236): the tech tree menu lists the laws of the chosen path and has buttons to enact and repeal them (pak `techmenu_P.pak` rebuilt with a laws line and 3 law buttons). `tech_tree.view()` returns `laws`. Command `tech_tree_widget_press` calls the click handlers without the mouse. Scenario `tech-tree-widget-laws`. Real clicks: open (#203).

@@ -99,7 +99,14 @@ local function check_button(slot, value)
     refresh()
 end
 
+local toggle_requested = false
+local toggle -- defined below
+
 local function tick()
+    if toggle_requested then
+        toggle_requested = false
+        core.log.try(TAG, toggle)
+    end
     if not isValid(S.widget) then
         S.widget = nil
         return
@@ -144,7 +151,7 @@ local function close()
     return { ok = true }
 end
 
-local function toggle()
+function toggle()
     if is_open() then return close() end
     return open()
 end
@@ -175,9 +182,9 @@ if has_commands then
 end
 
 require("scheduler").every(TAG, config.poll_ms, tick)
-RegisterKeyBind(config.toggle_key, function()
-    ExecuteInGameThread(function() core.log.try(TAG, toggle) end)
-end)
+-- The key callback runs on the input thread. It must not touch the Lua state beyond one flag:
+-- Lua calls from it raced with the game thread and crashed the game (UE4SS luaH_getint). The tick does the work.
+RegisterKeyBind(config.toggle_key, function() toggle_requested = true end)
 
 core.log.info(TAG, "feature raid_widget loaded (F8 opens and closes the menu)")
 return { open = open, close = close }
