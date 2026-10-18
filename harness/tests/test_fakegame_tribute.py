@@ -145,6 +145,49 @@ class TributeTests(HandoverBase):
         self.raid_result("Eichenhau", "destroyed")
         self.assertEqual(self.loyalty(), 100)
 
+    # -- vassal targets and siege (M02 iteration 07) ----------------------------------------
+
+    def stub_raid(self, living=18, age=9, target="Eichenhau", kind="subjugation"):
+        today = self.calendar.daysTotal
+        self.game.exec(f'''require("features.raid_behavior.init").active_raids = function()
+            return {{ {{ id = 7, kind = "{kind}", state = "active", target = "{target}", start_day = {today - age}, initial = 18, living = {living} }} }}
+        end''')
+        self.game.advance(4)
+
+    def test_the_target_regions_are_the_handed_over_vassals(self):
+        self.assertEqual(self.game.exec("local r = require('features.vassals.init').target_regions(); return table.concat(r, ',')"), "Eichenhau")
+
+    def test_a_submitted_vassal_is_no_target(self):
+        self.ask("vassals_set_loyalty", slot=1, value=5)
+        self.ask("vassals_submission_tick_now")
+        self.assertEqual(self.game.exec("return #require('features.vassals.init').target_regions()"), 0)
+
+    def test_a_subjugation_raid_that_held_8_days_takes_the_vassal(self):
+        self.stub_raid(living=18, age=9)
+        state = self.state()
+        self.assertEqual(state["lost"], 1)  # the fake region keeps its player owner, so the scan registers it again; the real region stays with its lord
+        self.assertEqual(state["lost_events"][0]["reason"], "taken")
+        self.assertEqual(self.tribute()["siege"], {"7": "taken"})
+
+    def test_the_vassal_is_lost_only_once(self):
+        self.stub_raid(age=9)
+        self.stub_raid(age=20)
+        self.assertEqual(self.state()["lost"], 1)
+
+    def test_a_raid_younger_than_8_days_takes_nothing(self):
+        self.stub_raid(age=5)
+        self.assertEqual(self.state()["lost"], 0)
+
+    def test_a_beaten_raid_fails_and_the_vassal_stays(self):
+        self.stub_raid(living=8, age=9)
+        self.assertEqual(self.state()["lost"], 0)
+        self.assertEqual(self.tribute()["siege"], {"7": "failed"})
+
+    def test_a_plunder_raid_or_a_raid_on_home_takes_nothing(self):
+        self.stub_raid(age=9, kind="plunder")
+        self.stub_raid(age=9, target="Home")
+        self.assertEqual(self.state()["lost"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

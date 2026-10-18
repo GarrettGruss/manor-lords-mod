@@ -32,4 +32,8 @@ The subjugation raid picks a vassal region as its target when a vassal exists (M
 - Real game: `invasion-vassal-targets`.
 
 ## Result
-not started
+PASS in the real game (2026-10-18). Notes: `../implementation-notes/iteration-07-vassal-targets.md`.
+- `invasion-vassal-targets`: runs `20261018-101057-b182` and `20261018-102102-8d29` pass (V1, V3, V5, V6). The vassal fell about 8 game days after the spawn, reason `taken`, owner not written.
+- `invasion-subjugation-raid` still passes (`20261018-102504-fcd9`).
+- Fake game tests: `test_fakegame_tribute.py` (8 new), `test_fakegame_invasion.py` (`VassalProviderTests`). V4 (beaten raid) is covered in the fake game only.
+- Flaky runs: see the notes (one harness_error, one native crash).

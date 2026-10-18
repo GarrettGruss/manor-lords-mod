@@ -376,6 +376,15 @@ submission_tick = function()
     end
 end
 
+-- Regions that a subjugation raid may attack: handed-over vassals that serve the player.
+local function target_regions()
+    local regions = {}
+    for _, row in ipairs(slot_rows()) do
+        if row.lord ~= rules.NO_REGION and not row.capital and not row.submitted then regions[#regions + 1] = row.region end
+    end
+    return regions
+end
+
 local function command_state()
     local setup = world.setup_state()
     return {
@@ -472,4 +481,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature vassals loaded")
-return { state = state, on_lost = on_lost, lose_vassal = lose_vassal, policy_of = policy_of, set_policy = set_policy, set_capital = set_capital, region_families = world.region_families, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }
+return { state = state, on_lost = on_lost, lose_vassal = lose_vassal, policy_of = policy_of, set_policy = set_policy, set_capital = set_capital, region_families = world.region_families, target_regions = target_regions, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }
