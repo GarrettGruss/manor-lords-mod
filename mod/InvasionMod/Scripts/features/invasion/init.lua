@@ -5,6 +5,7 @@ local core = require("ManorCore")
 local ModState = require("ModState")
 local plan_rules = require("features.invasion.plan")
 local great_raid = require("features.invasion.great_raid")
+local difficulty_rules = require("features.invasion.difficulty")
 local lord_raid = require("features.invasion.lord_raid")
 local all_config = require("config")
 local config = all_config.invasion
@@ -25,6 +26,8 @@ state:register("squads", 0, "integer")
 state:register("composition_seed", 0, "integer") -- seed of the template picks; the composition is computed from it (0: none yet)
 state:register("raids_spawned", 0, "integer")
 state:register("last_banner_day", 0, "integer")
+state:register("difficulty_chosen", 0, "integer") -- 1 after the player picked the difficulty
+state:register("last_prompt_day", 0, "integer")
 state:register("great_raid_day", 0, "integer") -- absolute game day when the great raid starts (0: the clock has not started)
 state:register("last_clock_banner_day", 0, "integer")
 
@@ -183,7 +186,16 @@ local function clock_step(today)
     if due and not great_raid.is_due(state:get("great_raid_day"), today) then show_clock_banner(today) end
 end
 
+local function prompt_step(today)
+    if state:get("difficulty_chosen") == 1 then return end
+    if state:get("last_prompt_day") ~= 0 and today - state:get("last_prompt_day") < clock_config.prompt_every_days then return end
+    state:set("last_prompt_day", today)
+    local ok = core.show_banner("Pick the difficulty: 1, 2 or 3", string.format("Now %d. Use the command invasion_pick_difficulty", state:get("difficulty")))
+    core.log.info(TAG, string.format("INVASION difficulty prompt day=%d current=%d shown=%s", today, state:get("difficulty"), tostring(ok)))
+end
+
 local function daily_step(today)
+    prompt_step(today)
     minor_raid_step(today)
     clock_step(today)
 end
@@ -248,6 +260,24 @@ local function command_clock_set_days_left(args)
     return command_clock_state()
 end
 
+local function command_difficulty_state()
+    local difficulty = state:get("difficulty")
+    return { difficulty = difficulty, chosen = state:get("difficulty_chosen") == 1,
+        relief_squads = difficulty_rules.relief_squads(difficulty, clock_config.relief_full_squads),
+        waves = difficulty_rules.wave_count(difficulty), wave_squads = clock_config.wave_squads }
+end
+
+local function command_pick_difficulty(args)
+    if state:get("difficulty_chosen") == 1 then return nil, "the difficulty was picked already" end
+    if state:get("raids_spawned") > 0 then return nil, "the first raid was spawned already" end
+    if not difficulty_rules.valid(args.value) then return nil, "difficulty must be 1 to 3" end
+    state:set("difficulty", args.value)
+    state:set("difficulty_chosen", 1)
+    replan_size()
+    core.log.info(TAG, "INVASION difficulty picked " .. args.value)
+    return command_difficulty_state()
+end
+
 local function command_set_difficulty(args)
     state:set("difficulty", args.value)
     replan_size()
@@ -306,6 +336,8 @@ if has_commands then
     commands.register("InvasionMod.invasion_raid_squads", command_raid_squads, {})
     commands.register("InvasionMod.invasion_set_roles", command_set_roles, { enabled = { type = "boolean", required = true } })
     commands.register("InvasionMod.invasion_state", command_state, {})
+    commands.register("InvasionMod.invasion_difficulty_state", command_difficulty_state, {})
+    commands.register("InvasionMod.invasion_pick_difficulty", command_pick_difficulty, { value = { type = "integer", required = true, min = 1, max = 3 } })
     commands.register("InvasionMod.invasion_clock_state", command_clock_state, {})
     commands.register("InvasionMod.invasion_clock_set_days_left", command_clock_set_days_left, { days = { type = "integer", required = true, min = 1, max = 2000 } })
     commands.register("InvasionMod.invasion_force_next", command_force_next, {})
