@@ -268,12 +268,21 @@ end
 -- Start
 ---------------------------------------------------------------------------------------------
 
-RegisterKeyBind(CONFIG.toggle_key, function()
-    ExecuteInGameThread(function() log.try(TAG, toggleMenu) end)
-end)
+-- The key callback runs on the input thread. It only sets a flag: Lua work there raced with the game thread and
+-- crashed or hung the game (InvasionMod F9, PR #246). The game-thread tick does the toggle.
+local toggleRequested = false
+RegisterKeyBind(CONFIG.toggle_key, function() toggleRequested = true end)
+
+local function tickWithToggle()
+    if toggleRequested then
+        toggleRequested = false
+        toggleMenu()
+    end
+    tick()
+end
 
 LoopAsync(CONFIG.poll_ms, function()
-    ExecuteInGameThread(function() log.try(TAG, tick) end)
+    ExecuteInGameThread(function() log.try(TAG, tickWithToggle) end)
     return false
 end)
 
