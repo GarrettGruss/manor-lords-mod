@@ -250,6 +250,7 @@ end
 -- Policies and orders (iteration 03). Mod-owned: the game policy system is not used (enactPolicy returned false in 95 tries).
 ---------------------------------------------------------------------------------------------
 
+local loyalty_bonus = 0 -- set by the tech tree laws (M12.04): added to the loyalty change of each vassal
 local last_season_tick = nil -- the season of the last loyalty tick, read from ModState on the first use
 
 local function policy_of(slot)
@@ -275,7 +276,7 @@ loyalty_tick = function()
     for slot = 1, config.max_vassals do
         local row = slot_row(slot)
         if row and row.lord ~= rules.NO_REGION and not row.capital then
-            local change = config.policies[policy_of(slot)].loyalty
+            local change = config.policies[policy_of(slot)].loyalty + loyalty_bonus
             local new = rules.clamp_loyalty(row.loyalty + change)
             set_loyalty(slot, new)
             core.log.info(TAG, string.format("VASSALS loyalty slot=%d policy=%s %d -> %d", slot, policy_of(slot), row.loyalty, new))
@@ -481,4 +482,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature vassals loaded")
-return { state = state, on_lost = on_lost, lose_vassal = lose_vassal, policy_of = policy_of, set_policy = set_policy, set_capital = set_capital, region_families = world.region_families, target_regions = target_regions, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }
+return { state = state, set_loyalty_bonus = function(value) loyalty_bonus = value end, on_lost = on_lost, lose_vassal = lose_vassal, policy_of = policy_of, set_policy = set_policy, set_capital = set_capital, region_families = world.region_families, target_regions = target_regions, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }

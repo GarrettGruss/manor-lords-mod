@@ -9,6 +9,8 @@ M.EFFECT_KINDS = {
     militia_attack = "percent",
     militia_defence = "percent",
     retinue_capacity = "add",      -- value is added to the retinue limit of the manor (men)
+    tribute_share = "percent",     -- value is a change of the tribute share of all vassals (0.25 is +25%)
+    vassal_loyalty = "add",        -- value is added to the loyalty change of each vassal at every season change
     manor_storage = "add",         -- value is added to the capacity of a manor module (units of goods)
 }
 
@@ -114,7 +116,52 @@ local function fill_default_layout(nodes, by_id, paths)
     end
 end
 
--- Build the tree from a decoded document. Returns { paths, path_ids, nodes (in file order), by_id }.
+-- Laws (M12.04): { id, path, name, requires (node ids of the same path), effect }. The id may not equal a node id.
+local function read_laws(doc, by_id, path_ids)
+    local laws, laws_by_id = {}, {}
+    if doc.laws == nil then return laws, laws_by_id end
+    require_type(doc.laws, "table", "'laws'")
+    for _, raw in ipairs(doc.laws) do
+        require_type(raw, "table", "a law")
+        local id = require_type(raw.id, "string", "law id")
+        if by_id[id] or laws_by_id[id] then fail("law id '" .. id .. "' is not unique") end
+        if not path_ids[raw.path] then fail("law '" .. id .. "' has unknown path '" .. tostring(raw.path) .. "'") end
+        require_type(raw.name, "string", "name of law '" .. id .. "'")
+        require_type(raw.requires, "table", "'requires' of law '" .. id .. "'")
+        require_type(raw.effect, "table", "'effect' of law '" .. id .. "'")
+        if #raw.effect < 1 then fail("law '" .. id .. "' has no effect") end
+        local law = { id = id, path = raw.path, name = raw.name, requires = {}, effects = {} }
+        for _, required in ipairs(raw.requires) do
+            local node = by_id[required]
+            if node == nil then fail("law '" .. id .. "' requires unknown node '" .. tostring(required) .. "'") end
+            if node.path ~= raw.path then fail("law '" .. id .. "' requires '" .. required .. "' of another path") end
+            law.requires[#law.requires + 1] = required
+        end
+        for _, effect in ipairs(raw.effect) do law.effects[#law.effects + 1] = read_effect(effect, id) end
+        laws[#laws + 1] = law
+        laws_by_id[id] = law
+    end
+    return laws, laws_by_id
+end
+
+-- Vassal policies that need a path and nodes (M12.04): { policy, path, requires }. The policy "fair" is always open.
+local function read_policy_gates(doc, by_id, path_ids)
+    local gates = {}
+    if doc.vassal_policies == nil then return gates end
+    require_type(doc.vassal_policies, "table", "'vassal_policies'")
+    for _, raw in ipairs(doc.vassal_policies) do
+        local name = require_type(raw.policy, "string", "vassal policy name")
+        if not path_ids[raw.path] then fail("vassal policy '" .. name .. "' has unknown path '" .. tostring(raw.path) .. "'") end
+        require_type(raw.requires, "table", "'requires' of vassal policy '" .. name .. "'")
+        for _, required in ipairs(raw.requires) do
+            if by_id[required] == nil then fail("vassal policy '" .. name .. "' requires unknown node '" .. tostring(required) .. "'") end
+        end
+        gates[name] = { path = raw.path, requires = raw.requires }
+    end
+    return gates
+end
+
+-- Build the tree from a decoded document. Returns { paths, path_ids, nodes (in file order), by_id, laws, laws_by_id, policy_gates }.
 function M.build(doc)
     require_type(doc, "table", "the document")
     if doc.version ~= 1 then fail("unsupported version " .. tostring(doc.version)) end
@@ -131,7 +178,9 @@ function M.build(doc)
     check_requires(nodes, by_id)
     check_cycles(nodes, by_id)
     fill_default_layout(nodes, by_id, paths)
-    return { paths = paths, path_ids = path_ids, nodes = nodes, by_id = by_id }
+    local laws, laws_by_id = read_laws(doc, by_id, path_ids)
+    return { paths = paths, path_ids = path_ids, nodes = nodes, by_id = by_id, laws = laws, laws_by_id = laws_by_id,
+             policy_gates = read_policy_gates(doc, by_id, path_ids) }
 end
 
 -- Read and build a tree from a file. `decode` is HarnessJson.decode.

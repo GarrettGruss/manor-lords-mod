@@ -7,6 +7,7 @@ M.NO_PATH = "none"
 local TOTAL_KEY = {
     public_order = "order_bonus", approval = "approval_bonus", buy_back_price = "buy_back_multiplier",
     militia_attack = "militia_attack_multiplier", militia_defence = "militia_defence_multiplier", manor_storage = "manor_storage_bonus", retinue_capacity = "retinue_bonus",
+    tribute_share = "tribute_share_multiplier", vassal_loyalty = "vassal_loyalty_bonus",
 }
 
 -- Decision 24: one node slot for each settlement level.
@@ -52,10 +53,14 @@ end
 -- Sum the effects of the unlocked nodes.
 -- Result: order_bonus and approval_bonus (sums); buy_back_multiplier, militia_attack_multiplier and militia_defence_multiplier (products).
 -- An effect with min_garrison_squads counts only when garrison_squads reaches it.
-function M.totals(tree, unlocked, garrison_squads)
-    local totals = { order_bonus = 0, approval_bonus = 0, buy_back_multiplier = 1, militia_attack_multiplier = 1, militia_defence_multiplier = 1, manor_storage_bonus = 0, retinue_bonus = 0 }
-    for _, id in ipairs(unlocked) do
-        for _, effect in ipairs(tree.by_id[id].effects) do
+function M.totals(tree, unlocked, garrison_squads, enacted)
+    local totals = { order_bonus = 0, approval_bonus = 0, buy_back_multiplier = 1, militia_attack_multiplier = 1, militia_defence_multiplier = 1, manor_storage_bonus = 0, retinue_bonus = 0,
+        tribute_share_multiplier = 1, vassal_loyalty_bonus = 0 }
+    local sources = {}
+    for _, id in ipairs(unlocked) do sources[#sources + 1] = tree.by_id[id] end
+    for _, id in ipairs(enacted or {}) do sources[#sources + 1] = tree.laws_by_id[id] end
+    for _, source in ipairs(sources) do
+        for _, effect in ipairs(source.effects) do
             if effect.min_garrison_squads == nil or (garrison_squads or 0) >= effect.min_garrison_squads then
                 local key = TOTAL_KEY[effect.kind]
                 if tree_module.EFFECT_KINDS[effect.kind] == "add" then
@@ -76,15 +81,41 @@ function M.describe_totals(totals)
     if totals.approval_bonus ~= 0 then parts[#parts + 1] = string.format("Approval %+d", totals.approval_bonus) end
     if (totals.manor_storage_bonus or 0) ~= 0 then parts[#parts + 1] = string.format("Manor storage %+d", totals.manor_storage_bonus) end
     if (totals.retinue_bonus or 0) ~= 0 then parts[#parts + 1] = string.format("Retinue %+d", totals.retinue_bonus) end
+    if (totals.vassal_loyalty_bonus or 0) ~= 0 then parts[#parts + 1] = string.format("Vassal loyalty %+d", totals.vassal_loyalty_bonus) end
     local factors = {
         { "Buy-back price", totals.buy_back_multiplier }, { "Militia attack", totals.militia_attack_multiplier },
-        { "Militia defence", totals.militia_defence_multiplier },
+        { "Militia defence", totals.militia_defence_multiplier }, { "Tribute", totals.tribute_share_multiplier or 1 },
     }
     for _, factor in ipairs(factors) do
         if math.abs(factor[2] - 1) > 1e-9 then parts[#parts + 1] = string.format("%s x%.2f", factor[1], factor[2]) end
     end
     if #parts == 0 then return "none" end
     return table.concat(parts, ", ")
+end
+
+-- Returns nil when the law may be enacted, or the reason. `max_active` limits the laws in force at the same time (TBD).
+function M.enact_refusal(tree, current_path, unlocked, enacted, max_active, law_id)
+    local law = tree.laws_by_id[law_id]
+    if law == nil then return "unknown law '" .. tostring(law_id) .. "'" end
+    if current_path == M.NO_PATH then return "no path is chosen" end
+    if law.path ~= current_path then return "law '" .. law_id .. "' belongs to the other path" end
+    if contains(enacted, law_id) then return "law '" .. law_id .. "' is already in force" end
+    for _, required in ipairs(law.requires) do
+        if not contains(unlocked, required) then return "law '" .. law_id .. "' needs the node '" .. required .. "' first" end
+    end
+    if #enacted >= max_active then return string.format("no free law place (%d in force of %d)", #enacted, max_active) end
+    return nil
+end
+
+-- Returns nil when the vassal policy may be set, or the reason. A policy without a gate is open.
+function M.vassal_policy_refusal(tree, current_path, unlocked, policy)
+    local gate = tree.policy_gates[policy]
+    if gate == nil then return nil end
+    if current_path ~= gate.path then return "policy '" .. policy .. "' belongs to the path " .. gate.path end
+    for _, required in ipairs(gate.requires) do
+        if not contains(unlocked, required) then return "policy '" .. policy .. "' needs the node '" .. required .. "' first" end
+    end
+    return nil
 end
 
 -- The state of a node for the menu: "unlocked", "available", "other_path" or "locked" (with the reason of the refusal).

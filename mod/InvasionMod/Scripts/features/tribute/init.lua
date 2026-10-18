@@ -19,6 +19,7 @@ state:register("tribute_paid_total", 0, "integer")
 state:register("protection_defended", 0, "integer")
 state:register("protection_failed", 0, "integer")
 
+local share_factor = 1     -- set by the tech tree laws (M12.04)
 local history = {}          -- results of the ticks of this session
 local failed_deposits = 0
 
@@ -60,7 +61,7 @@ local function pay_vassal(row)
     local families = vassals.region_families(row.region) or 0
     local production = rules.production(families, config.units_per_family)
     local factor = (require("config").vassals.policies[row.policy] or { tribute = 1.0 }).tribute -- vassal policy (M07.03)
-    local share = rules.share(row.loyalty, config.share_min, config.share_max) * factor
+    local share = rules.share(row.loyalty, config.share_min, config.share_max) * factor * share_factor
     local amount = rules.amount(production, share)
     local parts = rules.split(amount, #config.goods)
     local paid = 0
@@ -192,4 +193,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature tribute loaded")
-return { state = state, run_tick = run_tick }
+return { state = state, run_tick = run_tick, set_share_factor = function(value) share_factor = value end }
