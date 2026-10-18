@@ -29,19 +29,22 @@ context: |
 
 rules:
   proposal:
-    - Link the GitHub issue that tracks the change.
+    - "Link the GitHub issue that tracks the change. Also set `x-issue: <n>` in the change's `.openspec.yaml`."
     - State the non-goals.
     - Name the legacy doc folder the change continues, if there is one.
   specs:
     - A requirement states behavior a player, a scenario or a harness user can observe.
     - Each spec scenario names its check, as "Checked by `<path>`" (a test scenario or a Python test in `harness/tests/`), says "Checked by review" for a process rule, or says "Not checked yet".
     - For game behavior, write the THEN step as a range (for example "between 30 and 90 game days").
+    - "Put the comment `<!-- Issue: #<n> -->` under the first section heading of each delta spec. A line above the first heading fails `openspec validate --strict`."
   design:
     - Record open questions with the spike that will answer them.
     - Point to engine facts in the wiki or in `notes/` of this change. Do not copy them.
   tasks:
     - Each task states how it is verified (a fake game test, a real game run, a command or a review).
     - Include a task to update the wiki, the skills and `CHANGELOG.md` when the change needs it.
+    - When a result is visual (UI, text on screen, models, materials, placement and geometry, units in the world, world results the player sees), include a task to capture picture evidence into `evidence/` with `ctx.screenshot(name)`.
+    - End with a task for the test results table of the implementation pull request.
 
 operations:
   apply:
@@ -51,4 +54,5 @@ operations:
   archive:
     guidance:
       - Before the archive, move engine facts from `notes/` that stay true into the wiki.
-      - Archive inside the pull request of the change, as the last commit before the merge.
+      - Archive in the implementation pull request (gate 2), as its last commit before it is submitted for review. A change with nothing to build archives in its single pull request.
+      - Never archive in a spec pull request (gate 1).

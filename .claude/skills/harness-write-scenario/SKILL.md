@@ -32,7 +32,8 @@ Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a 
 - `ctx.metric(name, value)`: a number for A/B statistics (see `harness-ab-testing`).
 - `ctx.order_with_mouse(...)`: a real right click that sends a player squad to a point (HarnessSteer, spec 10). Lua-only orders do nothing. Scenarios with it are `HIDDEN`.
 - `ctx.click_with_mouse(fx, fy)` (real left click on a UI button), `ctx.hover_with_mouse(fx, fy)` and `ctx.press_key(osinput.VK_F9)`: used by the scenarios `tech-tree-widget` and `tech-tree-widget-key`. Find a button by hover (poll `IsHovered` from a mod command). Repeated `bring_to_front` opened the Windows task switcher, so `focus_game` skips it when the game is in front.
-- `ctx.screenshot(name)` (a capture of the game window, `runlib.phases.capture_game_window`), `ctx.snapshot()`, `ctx.notes`, `ctx.fail(name, reason)`.
+- `ctx.screenshot(name)` (a capture of the game window, `runlib.phases.capture_game_window`, saved as `runs/<id>/screenshots/<name>.png`), `ctx.snapshot()`, `ctx.notes`, `ctx.fail(name, reason)`.
+- Picture evidence: a test scenario for a visual result (UI and text on screen, models, materials, placement and geometry, units in the world, world results the player sees) takes a `ctx.screenshot` at the moment that proves the criterion, with a clear name. Copy the picture, compressed and at most 1280x720, to `openspec/changes/<change-name>/evidence/` and list it in `evidence/README.md` with the test scenario and run id (CLAUDE.md, specs section).
 
 ## Rules
 - The game is not deterministic. Assert ranges, not exact values, for anything stochastic. Use `equals` for flags and names.

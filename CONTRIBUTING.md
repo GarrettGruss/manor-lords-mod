@@ -22,48 +22,73 @@ This repo is an agent harness for making and testing Manor Lords mods, and the I
 
 ## How work flows
 
-Every new harness feature, mod feature, mod iteration and spike is an OpenSpec change. Write the change before the code.
+Every new harness feature, mod feature, mod iteration and spike is an OpenSpec change. A change passes two review gates. Each gate is one pull request, and each needs the project owner's approval on GitHub.
 
-1. **Plan.**
-   - Create the change: `openspec new change <change-name>`, or `/opsx:propose` in Claude Code. `<change-name>` is kebab-case and starts with a verb, for example `add-great-raid-clock`.
-   - Write the proposal, the delta specs, the design (when needed) and the tasks.
-   - Create the issue `Change: <change-name>` with the label `status: in progress`. Link it in the proposal.
-2. **Branch.** Create `feat/<change-name>` (or `fix/`, `docs/`, `chore/`) from an up-to-date `main`.
-3. **Build.**
-   - Do the tasks and check them off in `tasks.md`.
+### Gate 1: the spec pull request
+
+1. Create the change: `openspec new change <change-name>`, or `/opsx:propose` in Claude Code. `<change-name>` is kebab-case and starts with a verb, for example `add-great-raid-clock`.
+2. Create the issue `Change: <change-name>` with the label `status: in progress`.
+3. Name the issue in three places:
+   - in the proposal;
+   - as `x-issue: <n>` in the change's `.openspec.yaml`;
+   - as a comment `<!-- Issue: #<n> -->` under the first section heading of each delta spec. A line above the first heading fails `--strict`.
+4. Write the proposal, the delta specs, the design (when needed) and the tasks. Run `openspec validate <change-name> --strict`.
+5. Open the pull request from the branch `spec/<change-name>`, with `Refs #<n>`. It holds only the change folder: no code and no archive.
+6. The owner reviews the behavior. Fix findings with new commits. The owner approves and merges. After the merge, the change is open on `main` as approved work, and the living specs are not changed yet.
+
+### Gate 2: the implementation pull request
+
+1. Create `feat/<change-name>` (or `fix/`, `docs/`, `chore/`) from `main` after gate 1 is merged.
+2. Do the tasks and check them off in `tasks.md`.
    - Put findings in `openspec/changes/<change-name>/notes/<topic>.md`, one file per topic.
-   - When a finding changes a decision, update the proposal, design or delta spec in the same commit.
-4. **Check.**
-   - Run the tests (below).
-   - Run `openspec validate <change-name> --strict`.
-5. **Archive.**
-   - Move the engine facts that stay true from `notes/` into the wiki.
-   - Run `openspec archive <change-name> --yes` and commit it as `docs(openspec): archive <change-name>`. This merges the delta specs into `openspec/specs/` and moves the change to `openspec/changes/archive/`.
-6. **Pull request.** Open it with `Closes #<n>`. It merges only after the full tests pass.
+   - If the work shows that a requirement must change, change the delta spec and name it in the "Spec changes" section of the pull request.
+3. Run the tests (below) and `openspec validate <change-name> --strict`. Capture picture evidence when the result is visual (below).
+4. Move the engine facts that stay true from `notes/` into the wiki.
+5. Archive as the last commit: `openspec archive <change-name> --yes`, committed as `docs(openspec): archive <change-name>`. This merges the delta specs into `openspec/specs/` and moves the change to `openspec/changes/archive/`.
+6. Open the pull request with `Closes #<n>`. It is now in its final state. The owner reviews the test results and the evidence, approves and merges.
+
+A change with nothing to build (process rules, docs) uses one pull request: the change folder and its archive. A pull request without a change folder, a spec change or test acceptance (for example a typo fix in the wiki) needs no gate.
 
 A tuning-only change (values in a feature `config.lua`) needs no change folder. Log it in the feature feedback file and the mod changelog.
 
 The folders `docs/harness/` and `docs/mod/M<NN>-*/` are read-only legacy specs. Do not add work there. `docs/mod/M00-invasion-mod/` is the game design. Its owner is the project owner; do not change it unless they ask.
 
+### Picture evidence
+
+Pictures are required when the result is visual:
+
+- UI features: menus, widgets, banners, letters and other text on screen.
+- 3D models, and materials and textures.
+- Building placement and geometry.
+- Units in the world: models, equipment, banners.
+- World results the player sees: ruins, camps, construction sites.
+
+Numeric rules are proven by test results, not by pictures.
+
+Take pictures with `ctx.screenshot(name)` in a test scenario. Commit them in plain git to `openspec/changes/<change-name>/evidence/`:
+- compressed, at most 1280x720, about 1 MB per change;
+- each one listed in `evidence/README.md` with its test scenario and run id.
+
+In the pull request, link each picture with the commit SHA, so the link survives the archive and the merge.
+
 ### Before you merge
 
 Check these points, also when you merge in the GitHub web UI:
 
-- [ ] `openspec list` on the branch shows no open change of this PR. The archive commit is the last change commit in the PR.
-- [ ] The full test set passes (below).
+- [ ] Gate 1: the pull request holds only the change folder, and `openspec validate --strict` passes.
+- [ ] Gate 2: `openspec list` on the branch does not show the change, because the archive commit is the last commit.
+- [ ] Gate 2: the test results table and the evidence are in the pull request.
 - [ ] `CHANGELOG.md` has the user-visible changes under `Unreleased`.
 - [ ] The wiki and the skills that the change affects are updated, and `wiki.py check` passes.
-
-A merge without the archive commit leaves the change open on `main`, and the living specs stay old.
 
 ## Commits and pull requests
 
 - **Commits:**
   - Make atomic commits: one commit is one logical change.
   - Use Conventional Commits: `<type>(<scope>): <summary>`, in the imperative, under 72 characters. Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`. Mark a breaking change with `!` and a `BREAKING CHANGE:` footer.
-  - Reference the issue: `Refs #<n>` in commits, `Closes #<n>` in the final pull request.
+  - Reference the issue: `Refs #<n>` in commits and in the spec pull request, `Closes #<n>` in the implementation pull request.
   - Check the staged files (`git diff --cached --stat`) before each commit.
-- **Pull requests:** the body has the sections Summary, Test results and Not verified.
+- **Pull requests:** keep the body light. Use the template `.github/pull_request_template.md`: Summary, Spec changes, Test results (a table: check, run id or test file, verdict, key number or range), Evidence and Not verified. No raw logs. Write "None" for an empty section.
 - **Forbidden:** never force push and never skip hooks. If a pushed commit is wrong, fix it with a new commit.
 - **Not in git:** `runs/`, `slots/`, `modtools/`, original game paks, extracts and the pak AES key. Compiled mod paks (`*_P.pak`) may be committed. Before you commit a pak or a pak tool change, search the diff for the AES key.
 
@@ -99,6 +124,7 @@ Write replies, docs and code comments in simplified technical English:
 |---|---|
 | New work | A change in `openspec/changes/<change-name>/` |
 | A finding from a spike | `openspec/changes/<change-name>/notes/<topic>.md` |
+| Picture evidence | `openspec/changes/<change-name>/evidence/`, listed in its `README.md` |
 | An engine fact that stays true | The matching page in `docs/wiki/`, before the archive |
 | A user-visible change | `CHANGELOG.md`, under `Unreleased` |
 | Player feedback for a mod feature | `openspec/specs/mod/<feature>/feedback.md` |

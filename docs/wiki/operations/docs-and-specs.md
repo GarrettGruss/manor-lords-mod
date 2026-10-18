@@ -16,6 +16,7 @@ sources:
   - resource: repo://.claude/skills/
   - resource: repo://.claude/skills/harness-git-workflow/SKILL.md
   - resource: repo://CHANGELOG.md
+  - resource: repo://.github/pull_request_template.md
 ---
 # Specs, docs and project process
 
@@ -38,11 +39,24 @@ The wiki explains the current system. Specs keep the required behavior, the hist
 
 ## The OpenSpec loop
 
+A change passes two review gates (user, 2026-10-18). Each gate is one pull request that the user approves and merges on GitHub. Agents do not merge gate pull requests.
+
 1. Propose. Create the change (`openspec new change <change-name>`, or the skill `openspec-propose`, `/opsx:propose`). `<change-name>` is kebab-case and starts with a verb, for example `add-great-raid-clock`. Every new harness feature, mod feature, mod iteration and spike starts as a change. Write the change before the code.
+   - Name the issue in the proposal, as `x-issue: <n>` in `.openspec.yaml`, and as `<!-- Issue: #<n> -->` under the first section heading of each delta spec.
 2. Write the artifacts. `openspec instructions <artifact> --change <change-name> --json` gives the template plus the project context and rules from `openspec/config.yaml`.
-3. Apply. Do the tasks and check them off in `tasks.md` (skill `openspec-apply-change`). Spike findings go to `notes/<topic>.md`, one file per topic. When a note changes a decision, update the proposal, design or delta spec in the same commit.
-4. Validate. `openspec validate <change-name> --strict` must pass before the pull request.
-5. Archive. Move the engine facts that stay true from `notes/` into the wiki. Then run `openspec archive <change-name> --yes` as the last commit of the pull request. It merges the delta specs into `openspec/specs/` and moves the folder to the archive.
+3. Gate 1, spec pull request. Branch `spec/<change-name>`. Only the change folder, no code, no archive. `openspec validate <change-name> --strict` must pass. The user approves the behavior. After the merge, the change is open on `main` as approved work that is not built; `openspec list` shows it.
+4. Apply. On `feat/<change-name>`, made from `main` after gate 1. Do the tasks and check them off in `tasks.md` (skill `openspec-apply-change`). Spike findings go to `notes/<topic>.md`, one file per topic. When a note changes a decision, update the proposal, design or delta spec in the same commit, and name it under "Spec changes" in the pull request.
+5. Evidence. Run the tests. When the result is visual, put pictures in `evidence/` (see below).
+6. Archive. Move the engine facts that stay true from `notes/` into the wiki. Then run `openspec archive <change-name> --yes` as the last commit. It merges the delta specs into `openspec/specs/` and moves the folder to the archive.
+7. Gate 2, implementation pull request. Open it only now, in its final state. The user approves the test results and the evidence.
+
+A change with nothing to build (process rules, docs) uses one pull request with the change and its archive.
+
+### Pull request body and evidence
+
+The body is light and follows `.github/pull_request_template.md`: Summary, Spec changes, Test results (a table: check, run id or test file, verdict, key number or range), Evidence, Not verified. No raw logs.
+
+Pictures are required when a result is visual: UI features and text on screen, 3D models, materials and textures, building placement and geometry, units in the world, and world results the player sees. Numeric rules are proven by test results. Pictures come from `ctx.screenshot(name)` (`runs/<id>/screenshots/`). They are committed in plain git to `openspec/changes/<change-name>/evidence/`, compressed, at most 1280x720, about 1 MB per change, and each is listed in `evidence/README.md` with its test scenario and run id. The pull request links them with the commit SHA.
 
 Useful commands: `openspec list` (open changes), `openspec list --specs`, `openspec show <name>`, `openspec status --change <name>`, `openspec view` (dashboard).
 
@@ -72,12 +86,13 @@ The legacy mod layout was `M<NN>-<feature>/` with `README.md`, `iterations/<NN>-
 
 ## Branches, issues, commits
 
-- One branch for each change: `feat/<change-name>` (or `fix/`, `docs/`, `chore/`), from an up-to-date `main`. Open legacy work keeps its old branch name.
-- One GitHub issue for each change, made when the change folder is made. Title `Change: <change-name>`. The body links the change folder and the branch, and the proposal links the issue. Keep the body current. Use the `gh` CLI. Old issues keep their titles (`Spec <NN>: ...`, `Mod M<NN>.<iteration>: ...`).
+- Two branches for a change with something to build: `spec/<change-name>` (gate 1) and `feat/<change-name>` (or `fix/`, `docs/`, `chore/`; gate 2, made after gate 1 is merged). Open legacy work keeps its old branch name.
+- One GitHub issue for each change, made when the change folder is made. Title `Change: <change-name>`. The body links the change folder and the branches, and the proposal links the issue. Keep the body current. Use the `gh` CLI. Old issues keep their titles (`Spec <NN>: ...`, `Mod M<NN>.<iteration>: ...`).
 - Status labels: `status: in progress`, `status: blocked`, `status: awaiting user` (with `status: blocked` when the user is the blocker). Comment when the status changes, a spike ends, or a branch merges. Close the issue when the change is merged.
-- Commits are atomic and use Conventional Commits: `<type>(<scope>): <summary>`, imperative, under 72 characters. Reference the issue (`Refs #<n>`, `Closes #<n>` in the final PR).
+- Commits are atomic and use Conventional Commits: `<type>(<scope>): <summary>`, imperative, under 72 characters. Reference the issue (`Refs #<n>` in commits and the spec PR, `Closes #<n>` in the implementation PR).
 - Commits are approved by the user (2026-10-18): commit each logical change on its branch when it is done. Never skip hooks. Never force push.
-- Done work goes to a pull request. The user approved all PR types in advance (2026-10-17): merge after the full tests pass. The archive commit is the last commit before the merge. Merge stacked PRs in order, and retarget the next PR to `main` before its merge. Do not push or merge in other cases unless the user asks.
+- Gate pull requests (spec and implementation) are merged by the user after approval on GitHub. A pull request without a gate (no change folder, no spec change, no test acceptance) may be merged by an agent after the full tests pass. Merge stacked PRs in order, and retarget the next PR to `main` before its merge. Do not push or merge in other cases unless the user asks.
+- `gh pr edit` fails on this repo (a GraphQL error about classic projects). Change a body with `gh api -X PATCH repos/GarrettGruss/manor-lords-mod/pulls/<n> -F "body=@<file>"`.
 - Details, conflict hints and the test set to run before a push: `.claude/skills/harness-git-workflow/SKILL.md`.
 
 ## Changelog
@@ -104,6 +119,7 @@ Use the `sonnet` model for subagents when possible. Do not spawn one for a small
 | --- | --- |
 | New work (feature, iteration, spike) | A change: `openspec/changes/<change-name>/` |
 | A finding from a spike | `openspec/changes/<change-name>/notes/<topic>.md` |
+| Picture evidence | `openspec/changes/<change-name>/evidence/`, listed in its `README.md` |
 | A changed decision | The proposal, design or delta spec of the change, same commit as the note |
 | An engine fact that stays true | The matching wiki page, before the archive |
 | A user-visible change | `CHANGELOG.md`, `Unreleased` |

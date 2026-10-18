@@ -1,6 +1,8 @@
 # Wiki update log
 
 ## 2026-10-18
+* **Update**: The scheduler tick is 100 ms again (spec 34). Fixed [Invasion Mod structure](architecture/invasion-mod.md).
+* **Update**: Two review gates per change (spec pull request, implementation pull request), light pull request bodies and picture evidence (change `require-review-evidence`, #264). Updated [Specs, docs and project process](operations/docs-and-specs.md).
 * **Update**: Removed the standalone test mods RefugeeWaves and PolicyMenu (change `remove-standalone-test-mods`, #261). Updated [Harness and player mods](architecture/other-mods.md), [Source map](architecture/source-map.md), [Invasion Mod features](architecture/invasion-features.md), [Mod commands and state](concepts/mod-commands-and-state.md) and [Mod releases](workflows/releases.md).
 * **Update**: Living specs for all built legacy behavior (change `backfill-living-specs`, #253), and the capability group `mod/core`. The standalone test mods have no spec. Updated [Specs, docs and project process](operations/docs-and-specs.md). Fixed the scheduler tick (50 ms, not 100 ms) in [Invasion Mod structure](architecture/invasion-mod.md).
 * **Update**: The repo adopted OpenSpec (change `adopt-openspec`, #251). New work is planned in `openspec/`, and `docs/harness/` and `docs/mod/M<NN>-*/` are read-only legacy. Rewrote [Specs, docs and project process](operations/docs-and-specs.md). Updated [Source map](architecture/source-map.md), [Quickstart](quickstart.md), [Invasion Mod features](architecture/invasion-features.md) and [Meshy models](workflows/meshy-models.md).
