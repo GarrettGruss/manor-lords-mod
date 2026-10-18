@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Feature `raid_behavior` (M03.02 follow-up, #172): test commands `raid_behavior_test_set_leave`, `raid_behavior_test_take_region`, `raid_behavior_test_kill_raiders` (session only). Feature `invasion`: a lord raid that fails after a partial spawn adds no bandit squads.
 - Feature `raid_behavior` (M03.02, #168): a Hussite role raid is a lord army anchored at the manor (`features/invasion/lord_raid.lua`, config `invasion.roles.lord_army`) with a plunder tick; it leaves by peace after enough loot, losses or time. Fallback squads are removed only in a quiet spot. Config `raid_behavior.leave`. The state command shows `roles` and `leave_reason`.
 - Feature `bandits` (M04.03, #167): coin buy-back. Command `bandits_buy_back` refuses when silver is short, no home is free, or no family is outstanding; otherwise it sends the settle letter with the price. A failed deal (no family in 120 game seconds) is refunded. New config `bandits.buy_back` (`silver_per_family`, `price_multiplier`). State shows `outstanding_families`, `returned_families`, `free_slots`, `silver`, `buy_backs`.
 - Hussite roles (M05.02, #162): the raid plan stores `composition_seed`; the raid spawns one squad for each planned template through `spawnArmy` (config `invasion.roles`). Commands `invasion_set_roles`, `invasion_raid_squads`. `invasion_state` reports `composition` and the unit count of the composition.

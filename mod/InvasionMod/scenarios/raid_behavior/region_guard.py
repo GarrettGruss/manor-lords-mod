@@ -6,7 +6,7 @@ that the player owns the region again. It saves nothing.
 
 NAME = "raid-behavior-region-guard"
 DESCRIPTION = "A region that the raid lord took goes back to the player."
-LIMIT_S = 600
+LIMIT_S = 300
 SPEED = 3
 LOOK_SECONDS = 30
 
@@ -33,8 +33,11 @@ def run(ctx) -> dict:
 
     taken = ctx.mod.command("InvasionMod.raid_behavior_test_take_region")
     region = taken["region"]
-    ctx.check("the lord took the region (test command)", not player_owns(ctx, region), region)
     ctx.time.run_game_seconds(LOOK_SECONDS, speed=SPEED)
+    # The guard acts within one look (about 5 s), so a read of the owner right after the command may see the player already.
+    # The log line proves that the lord had the region.
+    log = (ctx.run_dir / "mod.log").read_text(encoding="utf-8", errors="replace")
+    ctx.check("the guard saw the lord as owner and gave the region back", f"region {region} was taken by the lord, given back=true" in log, region)
     ctx.check("the region is the player's again", player_owns(ctx, region), region)
     population = ctx.mod.command("InvasionMod.raid_behavior_state")["population"]
     ctx.check("the village still has people", population is not None and population > 0, population)

@@ -5,6 +5,8 @@ Test commands set small leave values for this session: the loot rule is switched
 The scenario runs game days until the raid has left, then checks the reason and that no raider stays. It saves nothing.
 """
 
+import re
+
 from runlib.units import side_count
 
 NAME = "raid-behavior-lord-leave-reason"
@@ -60,8 +62,14 @@ def run(ctx) -> dict:
         ctx.log.info(f"day {days}: {raid}")
     ctx.check("the raid left", raid["state"] == "left", [raid["state"], days])
     ctx.check("the leave reason is the wanted one", raid.get("leave_reason") == reason, raid.get("leave_reason"))
-    if reason == "time":
-        ctx.check("the time rule fired near max_days", days <= MAX_DAYS_TEST + 2, days)
+    log = (ctx.run_dir / "mod.log").read_text(encoding="utf-8", errors="replace")
+    fired = re.search(r"role raid must leave id=\d+ day=(\d+) reason=" + reason, log)
+    ctx.check("the leave rule fired once in the log", fired is not None, reason)
+    if fired and reason == "time":
+        waited = int(fired.group(1)) - raid["start_day"]
+        ctx.check("the time rule fired at max_days", waited == MAX_DAYS_TEST, waited)
+    if fired:
+        ctx.metric("walk_off_days", raid["start_day"] + days - int(fired.group(1)))
     for _ in range(GRACE_DAYS):
         if record(ctx)["living"] == 0:
             break
