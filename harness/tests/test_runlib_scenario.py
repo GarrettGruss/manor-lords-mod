@@ -205,7 +205,7 @@ class RegistryTest(unittest.TestCase):
             "autosave-protection", "bandits-buy-back", "bandits-convert-families", "bandits-order-debuff", "bandits-season-tick", "combat-levers", "counters-ab", "datatable-vanilla", "invasion-difficulty-pick", "invasion-first-raid", "invasion-great-raid-clock", "invasion-no-double-raid", "invasion-raid-composition", "invasion-subjugation-raid", "letter-delivery", "loot-drop-recovery", "mercenary-hire", "mod-state-default-load", "mod-state-roundtrip", "mod-state-two-saves", "noop", "policy-menu",
             "raid-behavior", "raid-behavior-loot-return", "raid-behavior-lord-leave-reason", "raid-behavior-native-plunder", "raid-behavior-region-guard", "raid-behavior-role-leave", "raid-load", "raid-loot", "raid-politics",
             "raid-sack", "raid-seasons", "raid-spawn", "raid-tiers",
-            "raid-timeline", "raid-timer", "refugee-wave", "sack-and-terms-raid-sack", "sack-and-terms-sack", "sack-ruins", "sack-store-trip", "sack-village", "silver-change", "smoke",
+            "raid-timeline", "raid-timer", "refugee-wave", "sack-and-terms-pay-terms", "sack-and-terms-raid-sack", "sack-and-terms-sack", "sack-ruins", "sack-store-trip", "sack-village", "silver-change", "smoke",
             "soak-days", "standin-captives", "standin-outposts", "standin-tribute",
             "telemetry-sanity", "time-advance", "ui-countdown", "unit-balance-armored-kept", "unit-balance-lethality", "unit-balance-role-templates", "unit-data", "veterancy", "winter-region"])
         self.assertIn("selftest-timeout", list_scenarios(include_hidden=True))
