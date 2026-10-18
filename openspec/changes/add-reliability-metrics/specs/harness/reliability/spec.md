@@ -54,7 +54,15 @@ For each `fix` commit, the report SHALL find the commits that last changed the l
 - Not checked yet (planned: `harness/tests/test_reliability_git.py`).
 
 ### Requirement: The run report gives failure and repair times per test scenario
-`reliability.py runs` SHALL read every `runs/*/summary.json` and order the runs by `started`. It SHALL group them by test scenario and by domain. The verdicts `fail` and `crash` SHALL count as a failure. Other verdicts except `pass` SHALL be counted apart. For each group the report SHALL give: run count, failure count, flaky count, MTTF (median time from a pass to the next real failure) and MTTR (median time from a real failure to the next pass). An unreadable summary SHALL be listed and skipped.
+`reliability.py runs` SHALL read every `runs/*/summary.json` and order the runs by `started`. It SHALL group them by test scenario and by domain. The verdicts `fail` and `crash` SHALL count as a failure. Other verdicts except `pass` SHALL be counted apart. For each group the report SHALL give: run count, failure count, flaky count, MTTF and MTTR. An unreadable summary SHALL be listed and skipped.
+
+#### Scenario: Verdicts that are not pass or fail
+- **WHEN** a test scenario has one run with the verdict `harness_error`
+- **THEN** that run is counted apart and is not a failure
+- Not checked yet (planned: `harness/tests/test_reliability_runs.py`).
+
+### Requirement: MTTF and MTTR are medians of real failures
+MTTF SHALL be the median time from a pass to the next real failure. MTTR SHALL be the median time from a real failure to the next pass. A real failure is a failure that is not flaky.
 
 #### Scenario: A failure and a repair
 - **WHEN** a test scenario passes at hour 0, fails at hour 10 on commit A, and passes at hour 14 on commit B
