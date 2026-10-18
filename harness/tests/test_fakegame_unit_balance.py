@@ -167,23 +167,23 @@ class VeterancyTests(UnitBalanceTestCase):
     def test_experience_scales_att_and_def_by_tier(self):
         unit = self.make_unit(62.0, 60.0, att=10.0, experience=3.5)
         state = self.apply()
-        self.assertAlmostEqual(unit["att"], 11.2)
-        self.assertAlmostEqual(unit["def"], 62.0 * 1.12)
+        self.assertAlmostEqual(unit["att"], 13.0)
+        self.assertAlmostEqual(unit["def"], 62.0 * 1.3)
         self.assertEqual(state["veterans"], 1)
 
     def test_the_tier_is_capped(self):
         unit = self.make_unit(62.0, 60.0, att=10.0, experience=99.0)
         self.apply()
-        self.assertAlmostEqual(unit["att"], 12.0)
+        self.assertAlmostEqual(unit["att"], 15.0)
 
     def test_a_rise_in_experience_changes_only_the_difference(self):
         unit = self.make_unit(62.0, 60.0, att=10.0, experience=1.0)
         self.apply()
         unit.combatExperience = 2.0
         self.apply()
-        self.assertAlmostEqual(unit["att"], 10.8)
+        self.assertAlmostEqual(unit["att"], 12.0)
         self.apply()
-        self.assertAlmostEqual(unit["att"], 10.8)
+        self.assertAlmostEqual(unit["att"], 12.0)
 
     def test_a_unit_without_experience_is_unchanged(self):
         unit = self.make_unit(62.0, 60.0, att=10.0, experience=0.4)
@@ -203,7 +203,7 @@ class VeterancyTests(UnitBalanceTestCase):
         unit = self.make_unit(17.0, 8.0, att=4.0, experience=2.0)
         self.apply()
         self.apply()
-        self.assertAlmostEqual(unit["att"], 6.0 * 1.08)
+        self.assertAlmostEqual(unit["att"], 6.0 * 1.2)
 
     def test_a_bad_veterancy_value_is_refused(self):
         self.assertFalse(self.ask("unit_balance_set", vet_att_per_tier=2)["ok"])

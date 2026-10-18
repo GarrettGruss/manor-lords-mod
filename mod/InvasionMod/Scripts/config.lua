@@ -114,8 +114,8 @@ return {
             enabled = true,
             step = 1.0,                -- experience points for one tier (a fight gives about 0.5 to 1.3 to the mean unit, spike C2)
             max_tier = 5,
-            att_per_tier = 0.04,       -- att and def are scaled by 1 + tier x this value
-            def_per_tier = 0.04,
+            att_per_tier = 0.1,        -- att and def are scaled by 1 + tier x this value (0.04 gave no effect in the A/B)
+            def_per_tier = 0.1,
             every = 5,                 -- the experience of all units is read every Nth pass (a pass is poll_ms)
         },
     },
