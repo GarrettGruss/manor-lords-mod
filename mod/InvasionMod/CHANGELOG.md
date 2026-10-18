@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Mod M12.04 (#217): laws and vassal policy gates in `tech_tree.json`. Six laws (Conscription, Forced Labor on Walls, Scorched Earth; Militia Charter, Trade Pacts, Pay Off Warbands), at most 2 in force; effects `tribute_share` and `vassal_loyalty`. `light` and `heavy` vassal policies need a path and a node. Commands `tech_tree_enact_law`, `tech_tree_repeal_law`, `tech_tree_set_vassal_policy`. Scenario `tech-tree-laws`.
 - Feature `unit_balance` (M05.04, #194): config `reach_min`, `reach_max`, `reach_att_add`, `veterancy`. Commands `unit_balance_set` takes `reach_att_add`, `vet_enabled`, `vet_att_per_tier`, `vet_def_per_tier`; the state shows `reach`, `veterans`, `vet_changes`.
 - Mod M08.02 (#214): protection. A raid on a vassal region that ends undefended (left by loot or time) lowers the vassal loyalty by 15; a defended one (destroyed, or left by losses) raises it by 5. `raid_behavior` gets `watch_end` and `target`. Command `tribute_test_raid_result`. Scenario `tribute-protection-and-loyalty`.
 - Mod M13.02: retinue limit. Tree effect `retinue_capacity` (+12 at Veteran Levies and Militia Rights) raises the limit that scripts read and the hire gate. The native hire still stops at 12 (spike result). Commands `retinue_state`, `retinue_hire`. Scenario `manor-stronghold-retinue`, probe `probe-retinue-cap`.

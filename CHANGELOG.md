@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Mod M12.04 (#217): laws and vassal policy gates in `tech_tree.json`. Six laws (Conscription, Forced Labor on Walls, Scorched Earth; Militia Charter, Trade Pacts, Pay Off Warbands), at most 2 in force; effects `tribute_share` and `vassal_loyalty`. `light` and `heavy` vassal policies need a path and a node. Commands `tech_tree_enact_law`, `tech_tree_repeal_law`, `tech_tree_set_vassal_policy`. Scenario `tech-tree-laws`.
 - Mod M05.04 (#194): feature `unit_balance` adds veterancy (experience tier scales att and def, +10 percent per tier) and a pike bonus (att +1 for units with weapon reach 110 to 125). Scenario `unit-balance-matchup`. Shield against crossbow counter: no stat lever found (notes `docs/mod/M05-unit_balance/implementation-notes/iteration-04-counters-veterancy.md`).
 - Mod M08.02 (#214): protection. A raid on a vassal region that ends undefended (left by loot or time) lowers the vassal loyalty by 15; a defended one (destroyed, or left by losses) raises it by 5. `raid_behavior` gets `watch_end` and `target`. Command `tribute_test_raid_result`. Scenario `tribute-protection-and-loyalty`.
 - Mod M13.02: retinue limit. Tree effect `retinue_capacity` (+12 at Veteran Levies and Militia Rights) raises the limit that scripts read and the hire gate. The native hire still stops at 12 (spike result). Commands `retinue_state`, `retinue_hire`. Scenario `manor-stronghold-retinue`, probe `probe-retinue-cap`.
