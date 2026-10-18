@@ -141,6 +141,21 @@ local function node_rows()
     return rows
 end
 
+-- The laws of the chosen path with a status: enacted, available or locked (plus the reason).
+local function law_rows(path, unlocked)
+    local enacted, rows = enacted_ids(), {}
+    local in_force = {}
+    for _, id in ipairs(enacted) do in_force[id] = true end
+    for _, law in ipairs(tree.laws) do
+        if law.path == path then
+            local reason = rules.enact_refusal(tree, path, unlocked, enacted, config.max_active_laws, law.id)
+            local status = in_force[law.id] and "enacted" or (reason == nil and "available" or "locked")
+            rows[#rows + 1] = { id = law.id, name = law.name, status = status, reason = reason }
+        end
+    end
+    return rows
+end
+
 -- Everything the menu shows, in one table. Status per node: unlocked, available, locked or other_path.
 local function view()
     read_world()
@@ -152,7 +167,7 @@ local function view()
     local path_name = tree.path_ids[path] and tree.path_ids[path].name or nil
     return {
         path = path, path_name = path_name, level = last_level, slots = slots(), free_slots = slots() - #unlocked,
-        effects = rules.describe_totals(totals()), nodes = rows, paths = tree.paths,
+        effects = rules.describe_totals(totals()), nodes = rows, paths = tree.paths, laws = law_rows(path, unlocked), max_laws = config.max_active_laws,
     }
 end
 
