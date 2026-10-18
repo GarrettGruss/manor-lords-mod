@@ -83,7 +83,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 
 ## Skills
 
-- Project skills are in `.claude/skills/`. Start with `harness-overview`. It lists the skills for running scenarios, writing scenarios, mod state, game spikes, A/B tests, pak mods, debugging runs, coverage, delegating to agents, Meshy models and the git workflow.
+- Project skills are in `.claude/skills/`. Start with `harness-overview`. It lists the skills for running scenarios, writing scenarios, mod state, game spikes, A/B tests, pak mods, debugging runs, coverage, delegating to agents, Meshy models, the repo wiki (`repo-wiki`, `docs/wiki/`) and the git workflow.
 - Update a skill in the same commit when you change the way the harness works.
 
 ## Architecture

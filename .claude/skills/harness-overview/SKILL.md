@@ -14,6 +14,7 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 - `mcp/harness_tools` (server `manor-harness`: run_scenario, wait_for_run, read_summary, read_log, ...) and the `ue4ss-bridge` MCP server (live queries into a running game).
 - `docs/harness/NN-name/`: one spec per core feature, with `implementation-notes/` for findings.
 - `docs/mod/`: the Invasion Mod docs (overview design `M00`, feature specs `M<NN>-<feature>/` with iterations). Layout and build rules of the mod: spec 22. Row id range spike: spec 23.
+- `docs/wiki/`: the repo wiki, a code map grounded in the current source (spec 34). Start at `docs/wiki/quickstart.md`. Skill `repo-wiki`; tool `harness/tools/wiki.py`.
 - Git-ignored: `runs/`, `modtools/` (repak, UAssetGUI, work files, the AES key), `harness/pakmod.local.json`, the fixture saves, `slots/`, `dist/`. A worktree has none of them: copy the fixture saves and `pakmod.local.json` from the main checkout. Compiled mod paks (`mod/<Name>/paks/*_P.pak`) may be committed. The AES key never.
 
 ## Which skill for which job
@@ -31,6 +32,7 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 | Commit, PR, merge | `harness-git-workflow` |
 | Release a mod to play testers | `harness-release` |
 | Make a 3D model (Gemini, Meshy, UE import) | `harness-meshy` |
+| Read, init or update the repo wiki (`docs/wiki/`) | `repo-wiki` |
 
 ## Facts that save time
 - UE 5.5.4 shipping game. Game folder `C:\Program Files (x86)\Steam\steamapps\common\Manor Lords`. The game runs without Steam.
