@@ -182,6 +182,11 @@ return {
         share_max = 0.30,         -- share of the production at loyalty 100
         goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally (M10 adds iron and salt)
     },
+    -- M13 manor_stronghold. Values are TBD for playtests.
+    manor_stronghold = {
+        enabled = true,
+        storage_base_capacity = 200,  -- units of goods in one manor module (spec 12)
+    },
     -- M12 tech_tree. The node data is in data/tech_tree/tree.json. Values are TBD for playtests.
     tech_tree = {
         enabled = true,
