@@ -29,6 +29,9 @@ The camp then reuses the manor wall collision and pathing: units cannot walk thr
 - The swap is global (every manor). A separate enemy camp is not possible this way. Notes: `implementation-notes/invasion-recommendation.md`.
 - Runs `s32-1` to `s32-11` (git-ignored `runs/`). New: command `mesh_actors` (HarnessActions 58), probe `probe-manor-wagenburg`, tool `s32_track_report.py`, paks `s32wall_P.pak`, `s32keep_P.pak`.
 
+## Part 2 result (2026-10-18): per-manor reskin from Lua
+- One manor can be reskinned from Lua without a global mesh replacement: the pak adds the wagon and tent as new assets and `wagen_apply` (HarnessActions 59) sets the meshes of the wall and keep actors of that manor. Collision unchanged (337 obstacles, 0 crossings). A wrong manor id changes nothing. The reskin is lost when the manor rebuilds (keep commit, probably load) and must be applied again. Notes: `implementation-notes/per-manor-lua-reskin.md`. Runs `s32b-1` to `s32b-7`.
+
 ## Open questions (original, answered above unless marked open)
 - Which asset does the built wall piece read: the mesh asset, the Blueprint, or a data row? Answer: the mesh asset through `BM_SG_Manor_Wall_Lv1` (`MainBld_470`); a swap by path works.
 - Does a bigger or different mesh change the obstacle footprint (is it read from the mesh)? Answer: no (337 obstacles, same paths).
