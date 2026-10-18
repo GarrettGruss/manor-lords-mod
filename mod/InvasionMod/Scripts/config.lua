@@ -24,7 +24,10 @@ return {
         base_timer_refill = 700,
         great_raid = {                                       -- M02 iteration 02: the clock to the great raid (365 game days a year)
             min_days = 3 * 365, max_days = 5 * 365,          -- M00 balance target: 3 to 5 game years
-            banner_every_days = 30,                          -- a banner for the clock when no minor raid banner shows
+            banner_every_days = 30,
+            relief_full_squads = 15,                         -- relief army at difficulty 1 (decisions 17, 26)
+            wave_squads = 15,                                -- a large army (decision 16)
+            prompt_every_days = 7,                           -- iteration 04: the pick prompt repeats until the player picks                          -- a banner for the clock when no minor raid banner shows
         },
         poll_ms = 300,                                       -- real time between two checks of the game day
         seed = nil,                                          -- nil: seed from the clock
