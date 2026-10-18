@@ -15,6 +15,7 @@ sources:
   - resource: repo://harness/tests/battle_support.py
   - resource: repo://docs/harness/06-dev-loop-and-fixtures/implementation-notes/mock-kit.md
   - resource: repo://CLAUDE.md
+  - resource: repo://CONTRIBUTING.md
   - resource: repo://docs/mod/M12-tech_tree/implementation-notes/f9-key-crash.md
 ---
 
@@ -98,7 +99,7 @@ Helper modules build shared fake worlds: `modstate_support.py` (engine and calen
 
 ## Commands
 
-Run from the repo root. Always start with `uv run python` (CLAUDE.md).
+Run from the repo root. Always start with `uv run python` (CONTRIBUTING.md, Set up).
 
 ```
 uv run python -m unittest discover -s harness/tests -p "test_fakegame_*.py"

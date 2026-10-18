@@ -15,6 +15,7 @@ sources:
   - resource: repo://.claude/skills/harness-git-workflow/SKILL.md
   - resource: repo://pyproject.toml
   - resource: repo://CLAUDE.md
+  - resource: repo://CONTRIBUTING.md
 ---
 
 # Python tests and coverage
@@ -23,7 +24,7 @@ All harness tests are `unittest` files in `harness/tests/`. No game is needed fo
 
 ## Run the tests
 
-Start every Python command with `uv run python` (CLAUDE.md). Run from the repo root.
+Start every Python command with `uv run python` (CONTRIBUTING.md, Set up). Run from the repo root.
 
 ```
 uv run python -m unittest discover -s harness/tests -p "test_runlib*.py"

@@ -6,6 +6,7 @@ tags: [process, specs, openspec, docs, git, changelog, skills, wiki]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T18:00:00Z }
 sources:
   - resource: repo://CLAUDE.md
+  - resource: repo://CONTRIBUTING.md
   - resource: repo://openspec/config.yaml
   - resource: repo://openspec/changes/archive/2026-10-18-adopt-openspec/
   - resource: repo://docs/harness/README.md
@@ -20,7 +21,7 @@ sources:
 ---
 # Specs, docs and project process
 
-The rules are in `CLAUDE.md`, in `openspec/config.yaml` and in the living spec `openspec/specs/process/spec-workflow/spec.md`. This page shows how the parts fit together.
+The rules are in `CONTRIBUTING.md` (for everyone; `CLAUDE.md` imports it and adds agent permissions and the full safety list), in `openspec/config.yaml` and in the living spec `openspec/specs/process/spec-workflow/spec.md`. This page shows how the parts fit together.
 
 ## Where things live
 

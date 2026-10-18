@@ -1,6 +1,7 @@
 # Wiki update log
 
 ## 2026-10-18
+* **Update**: The project rules moved from `CLAUDE.md` into `CONTRIBUTING.md` (imported by `CLAUDE.md`). Updated [Specs, docs and project process](operations/docs-and-specs.md), [Quickstart](quickstart.md), [Python tests and coverage](testing/python-tests.md) and [Fake game kit](testing/fake-game-kit.md).
 * **Update**: The scheduler tick is 100 ms again (spec 34). Fixed [Invasion Mod structure](architecture/invasion-mod.md).
 * **Update**: Two review gates per change (spec pull request, implementation pull request), light pull request bodies and picture evidence (change `require-review-evidence`, #264). Updated [Specs, docs and project process](operations/docs-and-specs.md).
 * **Update**: Removed the standalone test mods RefugeeWaves and PolicyMenu (change `remove-standalone-test-mods`, #261). Updated [Harness and player mods](architecture/other-mods.md), [Source map](architecture/source-map.md), [Invasion Mod features](architecture/invasion-features.md), [Mod commands and state](concepts/mod-commands-and-state.md) and [Mod releases](workflows/releases.md).
