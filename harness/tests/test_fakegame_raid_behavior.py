@@ -35,6 +35,8 @@ class RaidBehaviorTestCase(unittest.TestCase):
         self.engine = self.game.obj("RTSMultiEngineCPP", playerRef=self.pawn, TemporalComponent=self.calendar,
                                     regions=self.game.array([self.region]), debugLog_AI_general=self.game.array([]))
         self.game.method(self.engine, "spawnRaiders", lambda _self, squads, _centre: self.make_raiders(squads))
+        self.bandit = self.game.obj("PawnCPP", isBandit=True)
+        self.game.method(self.engine, "spawnArmy", lambda _self, _point, names, _owner, _company, _days: self.make_raiders(len(names)))
         self.add_store("Supplies_5", x=0.0, y=0.0, goods=[(16, 10), (3, 4)])
         self.add_store("Supplies_9", x=5000.0, y=5000.0, goods=[(7, 2)])
         self.game.load_mod(self.mod_name)

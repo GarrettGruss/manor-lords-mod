@@ -7,7 +7,7 @@ It saves nothing.
 
 import re
 
-from runlib.units import SQUAD_UNITS, side_count
+from runlib.units import side_count
 
 NAME = "invasion-first-raid"
 LIMIT_S = 900
@@ -44,6 +44,8 @@ def run(ctx) -> dict:
     ctx.check("A1 the planned day is 30 to 90 days after the plan", 30 <= wait <= 90, wait)
     ctx.check("A1 the warning time is 14 to 56 days", 14 <= warning <= 56, warning)
     ctx.check("A3 planned squads = multiplier x difficulty", plan["squads"] == expected_squads, plan["squads"])
+    ctx.check("A3 the composition has one template for each squad", len(plan["composition"].split("-")) == expected_squads, plan["composition"])
+    planned_units = plan["raiders"]  # the sum of the squad sizes of the composition (M05 iteration 02)
 
     bandits_before = side_count(ctx.actions.units_census(), "bandit")
     while plan["raids_spawned"] == 0 and plan["day"] <= plan["raid_day"] + MAX_DAYS_PAST_PLAN:
@@ -66,7 +68,8 @@ def run(ctx) -> dict:
     ctx.check("A2 no day has two banners", len(banners) == len(shown), len(banners))
 
     spawned_units = side_count(ctx.actions.units_census(), "bandit") - bandits_before
-    ctx.check("A3 spawned unit count = 18 x planned squads", spawned_units == SQUAD_UNITS * expected_squads, spawned_units)
+    ctx.check("A3 spawned unit count = planned units (a few raiders may die at once)", 0.9 * planned_units <= spawned_units <= planned_units,
+              [spawned_units, planned_units])
     # The forced size comes after the first check. A banner of the plan day can show the random size from before.
     estimates = {raiders for day, _, raiders in banners if day > plan_day}
     ctx.check("A5 every banner estimate equals the spawned size", estimates == {spawned_units}, [sorted(estimates), spawned_units])

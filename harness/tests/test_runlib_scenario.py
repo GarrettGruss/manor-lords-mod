@@ -202,12 +202,12 @@ class RealScenarioTest(ContextTestCase):
 class RegistryTest(unittest.TestCase):
     def test_hidden_scenarios_are_not_listed_by_default(self):
         self.assertEqual(sorted(list_scenarios()), [
-            "autosave-protection", "bandits-convert-families", "bandits-order-debuff", "bandits-season-tick", "combat-levers", "counters-ab", "datatable-vanilla", "invasion-first-raid", "invasion-no-double-raid", "letter-delivery", "loot-drop-recovery", "mercenary-hire", "mod-state-default-load", "mod-state-roundtrip", "mod-state-two-saves", "noop", "policy-menu",
+            "autosave-protection", "bandits-convert-families", "bandits-order-debuff", "bandits-season-tick", "combat-levers", "counters-ab", "datatable-vanilla", "invasion-first-raid", "invasion-no-double-raid", "invasion-raid-composition", "letter-delivery", "loot-drop-recovery", "mercenary-hire", "mod-state-default-load", "mod-state-roundtrip", "mod-state-two-saves", "noop", "policy-menu",
             "raid-behavior", "raid-behavior-loot-return", "raid-behavior-native-plunder", "raid-load", "raid-loot", "raid-politics",
             "raid-sack", "raid-seasons", "raid-spawn", "raid-tiers",
             "raid-timeline", "raid-timer", "refugee-wave", "sack-ruins", "sack-store-trip", "sack-village", "silver-change", "smoke",
             "soak-days", "standin-captives", "standin-outposts", "standin-tribute",
-            "telemetry-sanity", "time-advance", "ui-countdown", "unit-balance-armored-kept", "unit-balance-lethality", "unit-data", "veterancy", "winter-region"])
+            "telemetry-sanity", "time-advance", "ui-countdown", "unit-balance-armored-kept", "unit-balance-lethality", "unit-balance-role-templates", "unit-data", "veterancy", "winter-region"])
         self.assertIn("selftest-timeout", list_scenarios(include_hidden=True))
         self.assertIn("selftest-action", list_scenarios(include_hidden=True))
         self.assertIn("selftest-crash", list_scenarios(include_hidden=True))

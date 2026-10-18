@@ -24,6 +24,30 @@ return {
         base_timer_refill = 700,
         poll_ms = 300,                                       -- real time between two checks of the game day
         seed = nil,                                          -- nil: seed from the clock
+        -- M05 iteration 02: Hussite roles of a raid (decision 7). All weights and shares are TBD for playtests.
+        -- Templates are rows of DT_UnitTemplates, checked in the real game (docs/mod/M05-unit_balance/iterations/02-hussite-roles.md).
+        roles = {
+            enabled = true,                  -- false: the raid is spawned with spawnRaiders (Brigands only, 18 units a squad)
+            templates = {
+                melee = {
+                    { "Brigands", "spearMilitia" },             -- tier I
+                    { "militiaFoot", "mercenary_infantry" },    -- tier II: sword and axe infantry
+                    { "retinue_tier3", "brigandPolearms" },     -- tier III: retinue and poleaxe infantry
+                },
+                ranged = {
+                    { "bowMilitia", "brigandArchers" },                 -- tier I: bows
+                    { "crossbowMilitia", "mercenary_crossbowmen" },     -- tier II: crossbows
+                },
+            },
+            template_units = {               -- units in one squad, measured with spawnArmy
+                Brigands = 18, spearMilitia = 32, militiaFoot = 32, mercenary_infantry = 36, retinue_tier3 = 36, brigandPolearms = 36,
+                bowMilitia = 32, brigandArchers = 36, crossbowMilitia = 32, mercenary_crossbowmen = 36,
+            },
+            ranged_share = 0.25,             -- part of the squads that is ranged
+            crossbow_share = { 0.0, 0.5, 0.75 },                 -- part of the ranged squads that is tier II, by difficulty
+            melee_tier_weights = { { 70, 30, 0 }, { 40, 40, 20 }, { 20, 40, 40 } }, -- melee tier I, II, III, by difficulty
+            raid_spawn_y = -88900,           -- map edge where spawnRaiders put raiders (spec 15 runs). x is the x of the player pawn.
+        },
     },
     -- M03 raid_behavior, iteration 01. The native plunder AI is left alone.
     raid_behavior = {
