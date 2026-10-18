@@ -26,6 +26,7 @@ state:register("raid_returned", 0, "integer")
 state:register("raid_lost", 0, "integer")
 state:register("raid_burned", 0, "integer")
 
+local leave_watchers = {}  -- functions called with the raid summary when a role raid begins to leave (M06 sack)
 local raids = {}            -- raid id -> { raid, burned_base, leave_base }
 local order = {}            -- raid ids in start order
 local last_logged_day = nil
@@ -157,6 +158,7 @@ local function check_leave(entry, seen, today)
         if raid.lord ~= nil then ok, problem = lord_raid.peace() else ok, problem = world.make_peace() end
         core.log.info(TAG, string.format("RAID_BEHAVIOR role raid must leave id=%d day=%s reason=%s peace=%s%s", raid.id, tostring(today),
             reason, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
+        for _, watcher in ipairs(leave_watchers) do core.log.try(TAG, watcher, rules.summary(raid)) end
     end
     local keys = rules.exit_quiet(raid, seen, world.home(), { distance = leave.quiet_distance, exit_y = config.exit_y })
     if #keys == 0 then return end
@@ -254,6 +256,39 @@ end
 
 if has_commands then
     commands.register("InvasionMod.raid_behavior_state", command_state, {})
+    -- Test commands. They change the leave rules for this session only (not saved) and act on the raid of this session.
+    commands.register("InvasionMod.raid_behavior_test_set_leave", function(args)
+        for _, key in ipairs({ "loot_per_raider", "loss_share", "max_days" }) do
+            if args[key] ~= nil then leave[key] = args[key] end
+        end
+        return { loot_per_raider = leave.loot_per_raider, loss_share = leave.loss_share, max_days = leave.max_days }
+    end, { loot_per_raider = { type = "number", min = 0, max = 1000 }, loss_share = { type = "number", min = 0, max = 10 },
+           max_days = { type = "integer", min = 0, max = 1000 } })
+    -- Test: make the raid lord the owner of the home region, as a won challenge does. The guard must give it back.
+    commands.register("InvasionMod.raid_behavior_test_take_region", function()
+        local lord = raids[order[#order]] and raids[order[#order]].raid.lord
+        local pawn = lord_raid.lord_pawn()
+        if lord == nil or lord.home_region == nil or pawn == nil then return nil, "no lord raid" end
+        local ok, problem = world.set_region_owner(lord.home_region, pawn)
+        if not ok then return nil, problem end
+        return { region = lord.home_region }
+    end, {})
+    -- Test: kill a share of the living raiders of the last raid (just_die) so the loss rule can fire.
+    commands.register("InvasionMod.raid_behavior_test_kill_raiders", function(args)
+        local entry = raids[order[#order]]
+        if entry == nil then return nil, "no raid" end
+        local seen = world.read_units(tracked_keys(), false)
+        local living = {}
+        for key, row in pairs(seen) do
+            if not row.dead and row.object ~= nil then living[#living + 1] = row.object end
+        end
+        local want = math.ceil(#living * args.share)
+        local killed = 0
+        for index = 1, want do
+            if world.remove_unit(living[index]) then killed = killed + 1 end
+        end
+        return { living = #living, killed = killed }
+    end, { share = { type = "number", required = true, min = 0, max = 1 } })
     commands.register("InvasionMod.raid_behavior_claim_back", function(args)
         local ok, problem = world.give_region_to_player(args.region)
         return { ok = ok, problem = problem }
@@ -261,4 +296,9 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature raid_behavior loaded")
-return { state = state }
+-- Another feature registers fn(summary). It runs once when a role raid begins to leave.
+local function watch_leave(fn)
+    leave_watchers[#leave_watchers + 1] = fn
+end
+
+return { state = state, watch_leave = watch_leave }

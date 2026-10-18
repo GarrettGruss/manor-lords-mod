@@ -190,6 +190,38 @@ class RolesTests(InvasionTestCase):
         self.game.advance(2)
         self.assertEqual(self.state()["raids_spawned"], 0)
 
+    def test_a_lord_raid_that_fails_after_a_partial_spawn_adds_no_bandit_squads(self):
+        self.game.exec(LORD_STUBS, state=self.mod_name)
+        self.ask("invasion_set_size", size="medium")
+        self.ask("invasion_set_difficulty", value=2)
+        self.ask("invasion_force_next")
+        self.game.advance(2)
+        self.assertEqual(self.armies, [])
+        self.assertEqual(self.raids, [])
+        self.assertEqual(self.game.exec("return STUB_LOG.spawned", state=self.mod_name), 1)
+        self.assertEqual(self.game.exec("return STUB_LOG.peace", state=self.mod_name), 1)
+        self.assertEqual(self.state()["raids_spawned"], 0)
+
+
+# Stand-ins of HarnessLords and HarnessBattlefield: the first army spawns, the second fails.
+LORD_STUBS = """
+STUB_LOG = { spawned = 0, peace = 0 }
+package.loaded["HarnessLords"] = {
+    spawn_ai_lord = function() return { ok = true, lord = 1 } end,
+    lord_relations = function() return { ok = true } end,
+    lord_start_ai = function() return { ok = true } end,
+    lord_declare_war = function() return { ok = true } end,
+    lord_declare_peace = function() STUB_LOG.peace = STUB_LOG.peace + 1; return { ok = true } end,
+    pawn_by_number = function() return nil end,
+    lord_spawn_army = function()
+        if STUB_LOG.spawned >= 1 then return { ok = false, error = "second army failed" } end
+        STUB_LOG.spawned = STUB_LOG.spawned + 1
+        return { ok = true, squads = { 7 } }
+    end,
+}
+package.loaded["HarnessBattlefield"] = {}
+"""
+
 
 class ClockTests(InvasionTestCase):
     def clock(self):
