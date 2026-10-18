@@ -35,6 +35,11 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
   - Changes: `openspec/changes/<change-name>/` (proposal, delta specs, design, tasks). `<change-name>` is kebab-case and starts with a verb. Every new harness feature, mod feature, mod iteration and spike starts as a change. Write the change before the code.
   - Archive: `openspec/changes/archive/YYYY-MM-DD-<change-name>/`. Done changes go there with `openspec archive`.
   - Run `openspec validate <change-name> --strict` before you open a pull request.
+  - A change names its issue in the proposal, in `x-issue: <n>` of its `.openspec.yaml`, and in a comment `<!-- Issue: #<n> -->` under the first section heading of each delta spec. A line above the first heading fails `--strict`.
+- Picture evidence is required when a result is visual (rules from the user, 2026-10-18):
+  - Cases: UI features (menus, widgets, banners, letters, text on screen), 3D models, materials and textures, building placement and geometry, units in the world, and world results the player sees (ruins, camps, construction sites).
+  - Numeric rules are proven by test results, not by pictures.
+  - Commit pictures in plain git to `openspec/changes/<change-name>/evidence/`: compressed, at most 1280x720, about 1 MB per change. List each picture in `evidence/README.md` with its test scenario and run id. Use `ctx.screenshot(name)` in a test scenario.
 - Each spec scenario for harness or mod behavior names its check ("Checked by `<path>`": a test scenario or a Python test), or says "Not checked yet". It states ranges, not exact values.
   - "Spec scenario" is an OpenSpec `#### Scenario:` block. "Test scenario" is a harness scenario file. Do not say only "scenario".
 - Store findings and notes in the change they belong to: `openspec/changes/<change-name>/notes/<topic>.md`.
@@ -58,16 +63,18 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
   - Write the summary in the imperative mood. Keep it under 72 characters.
   - Example: `feat(deploy): verify file hashes after copy`.
 - Remote: `origin` is `git@github.com:GarrettGruss/manor-lords-mod.git`. The default branch is `main`.
-- Use one branch for each OpenSpec change.
-  - Name it `feat/<change-name>`, the same as the change folder. Use `fix/`, `docs/` or `chore/` for those types. Example: `feat/add-great-raid-clock`.
+- A change passes two review gates (user, 2026-10-18). Each gate is one pull request:
+  - Gate 1, spec pull request: branch `spec/<change-name>` from an up-to-date `main`. It holds only the change folder (proposal, delta specs, design, tasks). No code, no archive. The user approves the spec. Do not start the implementation before it is merged.
+  - Gate 2, implementation pull request: branch `feat/<change-name>` (or `fix/`, `docs/`, `chore/`), made from `main` after gate 1 is merged. It holds the code, tests, notes, evidence, checked tasks and changelog entries. Its last commit before review is the archive (`openspec archive <change-name> --yes`), so it shows the final state. The user approves the test evidence.
+  - If the implementation changes a delta spec, name it in the "Spec changes" section. The user reviews it in gate 2.
+  - A change with nothing to build (process rules, docs) uses one pull request: the change folder and its archive.
   - Open legacy work keeps its old branch name (`feat/<NN>-<name>`, `feat/M<NN>-<feature>-<iteration>`).
-  - Create the branch from an up-to-date `main`. Do the change artifacts, code, notes, and changelog entries on that branch.
   - Keep commits atomic on the branch.
   - Small changes that do not belong to one change (for example `chore` or `docs` for the project rules) may go to `main`.
-  - When work is done and ready for `main`, push the branch and open a pull request so it can be reviewed. Link the issue.
-  - Archive the change (`openspec archive <change-name> --yes`) as the last commit of the pull request, before the merge.
-  - Merge rules: every PR type is approved by the user in advance (2026-10-17). Merge it after the full tests pass.
-    - This covers `docs`, `fix`, `chore`, features (`feat`, feature or mod iteration branches) and breaking changes.
+  - The pull request body is light: Summary, Spec changes, Test results (a table: check, run id or test file, verdict, key number or range), Evidence (pictures, linked with the commit SHA), Not verified. No raw logs. Write "None" for an empty section. The template is `.github/pull_request_template.md`.
+  - Merge rules (user, 2026-10-18; this narrows the advance approval of 2026-10-17):
+    - Do not merge a gate pull request (spec or implementation) yourself. The user approves and merges it on GitHub. Mark the issue `status: awaiting user`.
+    - A pull request without a gate (no change folder, no spec change, no acceptance from test results, for example a typo fix in the wiki) may be merged by you after the full tests pass.
     - Merge stacked PRs in order. Retarget the next PR to `main` before its merge.
   - Do not push or merge in any other case unless the user asks.
 - Commits are approved by the user (2026-10-18). Commit each logical change on its branch when it is done. Do not commit to `main`, except the small project-rule changes named above.
@@ -76,7 +83,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
 ## GitHub issues
 
 - Every OpenSpec change has one GitHub issue that tracks its status. Create the issue when the change folder is created.
-  - Title: `Change: <change-name>`. Link the change folder and the branch in the body. The proposal links the issue.
+  - Title: `Change: <change-name>`. Link the change folder and the branches in the body. The proposal links the issue. One issue covers both gates.
   - Old issues keep their titles (`Spec <NN>: ...`, `Mod M<NN>.<iteration>: ...`).
   - Keep the body current: what works, what is open, and the next step.
 - Create and manage issues with the `gh` CLI (`gh issue create`, `gh issue edit`, `gh issue comment`, `gh issue close`).
@@ -85,7 +92,7 @@ The agent edits a mod, deploys it, runs the game, reads the result, and repeats.
   - `status: blocked`: work cannot continue. Say what blocks it in a comment.
   - `status: awaiting user`: the user must act or decide. Use it together with `status: blocked` when the user is the blocker.
 - Add a comment when the status changes, a spike ends, or a branch is merged. Close the issue when the feature is merged and done.
-- Reference the issue in commits and pull requests of the feature (`Refs #<n>`, or `Closes #<n>` in the final pull request).
+- Reference the issue in commits and pull requests of the feature (`Refs #<n>` in commits and in the spec pull request, `Closes #<n>` in the implementation pull request).
 
 ## Changelog
 
