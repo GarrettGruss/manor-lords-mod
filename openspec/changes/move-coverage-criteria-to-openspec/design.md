@@ -9,3 +9,10 @@
 
 ## Decision D1: copy first, then switch
 Copy the data, switch the defaults, run `--check-spec`, and only then update the docs. This keeps the tool working at each commit.
+
+## Decisions taken (2026-10-18)
+
+The user accepted the plan to move the coverage data together with the legacy specs ("I accept", 2026-10-18). The proposals of the open questions were taken:
+- D2: the files are `openspec/specs/harness/coverage/criteria.json` and `criteria.md`. A test archive on a copy of `openspec/` keeps both files.
+- D3: the tables stay a Markdown document that `--check-spec` compares with the JSON. The tool behavior does not change; only its default paths change.
+- D4: the legacy copy gets no note. The whole legacy folder moves into the archive in the change `archive-legacy-specs`.

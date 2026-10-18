@@ -7,12 +7,12 @@ The tool `harness/tools/coverage.py` SHALL read the criteria file (default `open
 #### Scenario: A bad criteria file
 - **WHEN** a criterion has a missing field, a bad mark, a duplicate id, or no reason for `H`
 - **THEN** the tool exits with code 2 and names each problem
-- Not checked yet (planned: `harness/tests/test_coverage.py`).
+- Checked by `harness/tests/test_coverage.py`.
 
 #### Scenario: The real file
 - **WHEN** the tool loads the criteria file of the repo
 - **THEN** the file is valid and every id is unique
-- Not checked yet (planned: `harness/tests/test_coverage.py`).
+- Checked by `harness/tests/test_coverage.py`.
 
 ### Requirement: The criteria file agrees with the spec tables
 With `--check-spec`, the tool SHALL compare the ids, titles and marks of the criteria file with the criteria tables of the criteria document (default `openspec/specs/harness/coverage/criteria.md`). It SHALL print each difference and exit with code 1, or print that they agree and exit with code 0.
@@ -20,9 +20,9 @@ With `--check-spec`, the tool SHALL compare the ids, titles and marks of the cri
 #### Scenario: The real files agree
 - **WHEN** `--check-spec` runs on the files of the repo
 - **THEN** the exit code is 0
-- Not checked yet (planned: `harness/tests/test_coverage.py`).
+- Checked by `harness/tests/test_coverage.py`.
 
 #### Scenario: A changed table
 - **WHEN** the spec table has another id, title or mark than the criteria file
 - **THEN** the tool names the difference and exits with code 1
-- Not checked yet (planned: `harness/tests/test_coverage.py`).
+- Checked by `harness/tests/test_coverage.py`.
