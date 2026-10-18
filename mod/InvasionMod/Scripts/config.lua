@@ -29,6 +29,12 @@ return {
             wave_squads = 15,                                -- a large army (decision 16)
             prompt_every_days = 7,                           -- iteration 04: the pick prompt repeats until the player picks                          -- a banner for the clock when no minor raid banner shows
         },
+        -- M02 iteration 03: the subjugation raid (major). One is planned after the first raid. Values are TBD for playtests.
+        subjugation = {
+            enabled = true,
+            wait_days_min = 60, wait_days_max = 120,         -- game days from the first raid spawn to the subjugation raid
+            size_class = 3,                                  -- large: squads = 3 x difficulty (TBD, "major" has no size rule in M00)
+        },
         poll_ms = 300,                                       -- real time between two checks of the game day
         seed = nil,                                          -- nil: seed from the clock
         -- M05 iteration 02: Hussite roles of a raid (decision 7). All weights and shares are TBD for playtests.

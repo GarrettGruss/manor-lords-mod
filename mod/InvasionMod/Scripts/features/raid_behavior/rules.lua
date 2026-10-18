@@ -76,8 +76,13 @@ end
 
 -- Why a role raid must leave now, or nil. Only role raids (spawnArmy) are checked: native raids leave on their own.
 -- `leave` has loot_per_raider, loss_share and max_days. Loot taken counts what raiders carry, returned and carried out.
+function M.is_subjugation(raid)
+    return raid.lord ~= nil and raid.lord.kind == "subjugation"
+end
+
 function M.leave_reason(raid, day, leave)
     if not raid.roles or raid.state ~= "active" or raid.leave_reason ~= nil or raid.leaving or raid.initial < 1 then return nil end
+    if M.is_subjugation(raid) then return nil end -- a subjugation raid stays until it is beaten or wins (M02.03)
     if M.looted_total(raid) >= leave.loot_per_raider * raid.initial then return "loot" end
     if raid.deaths / raid.initial >= leave.loss_share then return "losses" end
     if day ~= nil and day - raid.start_day >= leave.max_days then return "time" end
@@ -98,7 +103,7 @@ end
 -- Goods the plunder tick takes today: `per_unit_day` for each living raider that stands within `battle_radius` of the anchor
 -- (the player manor). Once a day. At most what is missing to the loot goal of the leave rule. A lord raid only.
 function M.plunder_amount(raid, seen, plunder, leave, day)
-    if raid.lord == nil or raid.state ~= "active" or raid.leave_reason ~= nil or day == nil or raid.last_plunder_day == day then return 0 end
+    if raid.lord == nil or M.is_subjugation(raid) or raid.state ~= "active" or raid.leave_reason ~= nil or day == nil or raid.last_plunder_day == day then return 0 end
     raid.last_plunder_day = day
     local inside = 0
     for key in pairs(raid.units) do
@@ -170,7 +175,7 @@ function M.summary(raid)
         id = raid.id, start_day = raid.start_day, end_day = raid.end_day, squads = raid.squads, state = raid.state,
         initial = raid.initial, living = raid.living, deaths = raid.deaths, departures = raid.departures,
         loot = M.total_loot(raid), looted_total = M.looted_total(raid), carried_out = raid.carried_out, peak_loot = raid.peak_loot, returned = raid.returned, lost = raid.lost,
-        capped = raid.capped, burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason,
+        capped = raid.capped, burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason, kind = (raid.lord and raid.lord.kind) or "plunder",
     }
 end
 
