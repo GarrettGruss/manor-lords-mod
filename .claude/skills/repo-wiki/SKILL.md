@@ -1,13 +1,13 @@
 ---
 name: repo-wiki
-description: Read, initialize or update the repo wiki in docs/wiki (spec 34), a code wiki for agents and people that is grounded in the current source and tests. Use when asked to document the codebase, when a change makes wiki pages stale, or when you need a map of an unfamiliar part of the repo.
+description: Read, initialize or update the repo wiki in docs/wiki, a code wiki for agents and people that is grounded in the current source and tests. Use when asked to document the codebase, when a change makes wiki pages stale, or when you need a map of an unfamiliar part of the repo.
 ---
 
 # Repo wiki
 
 The wiki in `docs/wiki/` explains the current system: what each part does, how the parts connect, and how to change them safely. Specs (`docs/harness/`, `docs/mod/`) keep the history and the decisions. The wiki links to them and does not copy them.
 
-The wiki is an Open Knowledge Format (OKF) v0.2 bundle. The method is a compact form of OpenWiki v0.7.2 (spec 34, `docs/harness/34-repo-wiki/`). The script `scripts/wiki.py` in this skill folder does the mechanical work. It is not part of the game harness. You do the research and the prose.
+The wiki is an Open Knowledge Format (OKF) v0.2 bundle. The method is a compact form of OpenWiki v0.7.2. This skill is separate from the game harness: its spec (`spec/README.md`, findings in `spec/implementation-notes/`), its script `scripts/wiki.py` and its tests (`tests/`) all live in this skill folder. You do the research and the prose.
 
 The OKF spec is copied verbatim in `references/okf-spec-v0.2.md` (from `GoogleCloudPlatform/open-knowledge-format` commit `ad30107`, Apache License 2.0, see `references/okf-LICENSE.md`). Read it when a format question is not answered here. This skill adds stricter producer rules on top of OKF; it never breaks an OKF rule.
 

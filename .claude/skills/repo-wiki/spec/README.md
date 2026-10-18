@@ -1,6 +1,8 @@
-# Spec 34: Repo wiki
+# Spec: repo-wiki skill
 
-Status: built, acceptance run done (2026-10-18). Issue: #244. Branch: `feat/34-repo-wiki`.
+Status: built, acceptance run done (2026-10-18). Issue: #244. Branch: `feat/repo-wiki-skill`.
+
+This spec belongs to the skill, not to the game harness. The skill (`SKILL.md`), this spec, the script `scripts/wiki.py` and the tests `tests/` live together in `.claude/skills/repo-wiki/`. No harness code or harness doc depends on them.
 
 ## Goal
 A code wiki for this repo in `docs/wiki/`. Claude Code sessions write it and keep it current with the project skill `repo-wiki`. No other runtime, model provider or API key is needed.
@@ -24,7 +26,7 @@ The format is a compact form of OpenWiki v0.7.2 (MIT, `langchain-ai/openwiki`). 
 - `docs/wiki/.last-update.json` holds the git commit that the wiki was last checked against.
 
 ## Plan
-1. Script `.claude/skills/repo-wiki/scripts/wiki.py` with four subcommands. The wiki code lives in the skill folder, apart from the game harness (`harness/`):
+1. Script `.claude/skills/repo-wiki/scripts/wiki.py` with four subcommands:
    - `index`: write every `index.md` from the front matter of the pages.
    - `check`: validate front matter, source paths, links, heading anchors and indexes. Exit 1 with a list of errors.
    - `stale`: list the pages whose sources changed since the last update (committed and uncommitted changes), and changed paths that no page covers.
@@ -46,4 +48,4 @@ All five acceptance criteria are met (2026-10-18). The init wrote 24 pages. See 
 2. An init run with the skill writes `docs/wiki/` with `quickstart.md` and pages that cover `mod/`, `harness/`, `mcp/` and the doc tracks.
 3. `uv run python .claude/skills/repo-wiki/scripts/wiki.py check` reports no errors on the result.
 4. After `stamp`, `stale` lists no stale pages. With `--since` set to an older commit, it lists the pages whose sources changed.
-5. The skill and `harness-overview` name the tool and the wiki.
+5. The skill names the tool and the wiki, and CLAUDE.md points to the skill. The harness (`harness/`, `docs/harness/`, the harness skills) does not name the skill.

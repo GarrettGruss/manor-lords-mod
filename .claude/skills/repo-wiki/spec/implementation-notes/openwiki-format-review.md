@@ -21,8 +21,8 @@ Source: a clone of `langchain-ai/openwiki` v0.7.2 (commit `6c14bff`) in `../open
    - Page manifest `.page-manifest.json` with the git head of each page, used to scope updates (`src/generation/page-manifest.ts`).
    - Run state, the page queue and the MCP lifecycle (`src/generation/repository-run.ts`, `src/integrations/`).
 
-## What spec 34 keeps
-| OpenWiki | Spec 34 |
+## What the skill keeps
+| OpenWiki | repo-wiki skill |
 |---|---|
 | Page tree with `quickstart.md` | Same, under `docs/wiki/` |
 | OKF front matter `type`, `title`, `description`, `tags` | Same, plus `sources` |

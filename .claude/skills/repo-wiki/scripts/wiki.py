@@ -1,4 +1,4 @@
-# Maintains the repo wiki in docs/wiki (spec 34), an Open Knowledge Format (OKF) v0.2 bundle. The skill repo-wiki drives it.
+# Maintains the repo wiki in docs/wiki (spec: .claude/skills/repo-wiki/spec/), an Open Knowledge Format (OKF) v0.2 bundle. The skill repo-wiki drives it.
 # Run from the repo root:
 #   uv run python .claude/skills/repo-wiki/scripts/wiki.py index        write every index.md
 #   uv run python .claude/skills/repo-wiki/scripts/wiki.py check        validate pages, links, indexes and log.md
@@ -446,7 +446,7 @@ def repo_root_from(start):
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(description="Maintain the repo wiki in docs/wiki (spec 34, OKF v0.2).")
+    parser = argparse.ArgumentParser(description="Maintain the repo wiki in docs/wiki (OKF v0.2; skill repo-wiki).")
     parser.add_argument("--repo", default=".", help="a path inside the repo (default: current folder)")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("index", help="write every index.md from the page front matter")

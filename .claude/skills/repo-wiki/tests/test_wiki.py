@@ -1,4 +1,4 @@
-"""Unit tests for the repo-wiki skill script scripts/wiki.py (spec 34). Each test builds a small git repo in a temp folder."""
+"""Unit tests for the repo-wiki skill script scripts/wiki.py (spec: .claude/skills/repo-wiki/spec/). Each test builds a small git repo in a temp folder."""
 
 import contextlib
 import io

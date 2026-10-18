@@ -1,6 +1,6 @@
 # Acceptance run (init, 2026-10-18)
 
-The skill `repo-wiki` ran an init over the repo on branch `feat/34-repo-wiki`, in a WSL (Linux) shell.
+The skill `repo-wiki` ran an init over the repo on branch `feat/34-repo-wiki` (later renamed `feat/repo-wiki-skill`), in a WSL (Linux) shell.
 
 ## What ran
 1. Explore: CLAUDE.md, `harness-overview`, `harness/README.md`, `docs/mod/README.md`, `mcp/README.md`, the folder tree.
@@ -17,7 +17,7 @@ The skill `repo-wiki` ran an init over the repo on branch `feat/34-repo-wiki`, i
 | 2 init writes the wiki | 24 pages, about 2,500 lines. They cover `mod/`, `harness/`, `mcp/`, `docs/` |
 | 3 check is clean | `wiki check: ok` |
 | 4 stale | After `stamp`: 0 stale pages, 0 uncovered paths. `stale --since HEAD~10`: 68 changed paths, 15 stale pages, 0 uncovered |
-| 5 skill and overview | `repo-wiki` skill; `harness-overview` and CLAUDE.md name it |
+| 5 skill and overview | `repo-wiki` skill; `harness-overview` and CLAUDE.md named it. Later the spec, script and tests moved into the skill folder, and `harness-overview` stopped naming it, to keep the skill apart from the harness |
 
 `test_boundary.py`, `test_save_call_sites.py` and `coverage.py --check-spec` still pass with the new files.
 
