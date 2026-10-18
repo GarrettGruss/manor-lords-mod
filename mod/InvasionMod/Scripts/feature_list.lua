@@ -12,4 +12,5 @@ return {
     { name = "tribute", requires = { "vassals", "raid_behavior" } },
     { name = "raid_widget", requires = { "invasion" } },
     { name = "tech_tree", requires = { "bandits", "unit_balance", "mod_state" } },
+    { name = "refugees", requires = { "vassals", "bandits" } },
 }

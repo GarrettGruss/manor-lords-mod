@@ -189,4 +189,12 @@ return {
         slots_per_level = 1,         -- decision 24: one node slot for each settlement level
         tree_file = "data/tech_tree/tree.json", -- relative to the mod folder
     },
+    -- M09 refugees. Values are TBD for playtests (M00: 30 to 60 percent of the vassal population).
+    refugees = {
+        enabled = true,
+        share_min = 0.30,         -- share of the vassal families that flee
+        share_max = 0.60,
+        families_per_call = 5,    -- one settleRegion call adds 5 families (spec 15)
+        max_calls = 3,            -- most calls in one wave
+    },
 }
