@@ -33,6 +33,7 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 | Split work between agents | `harness-dispatch-agents` |
 | Commit, PR, merge | `harness-git-workflow` |
 | Release a mod to play testers | `harness-release` |
+| Measure regression risk per spec domain | `reliability-assessment` |
 | Make a 3D model (Gemini, Meshy, UE import) | `harness-meshy` |
 
 ## Facts that save time

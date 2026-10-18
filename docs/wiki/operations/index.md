@@ -3,3 +3,4 @@
 * [Debugging runs](debugging-runs.md) - How to find the cause of a run that crashed, timed out, failed or ended in harness_error, where each log and crash report lands, and how to collect a late crash from a kept-open game.
 * [Specs, docs and project process](docs-and-specs.md) - How OpenSpec specs and changes, the legacy harness and mod specs, notes, GitHub issues, branches, the changelog, skills and the wiki fit together.
 * [Install and environment](install-and-environment.md) - How to set up the PC for the harness - uv and the venv, install.ps1 and uninstall.ps1 (settings backup, game slots), deploy.ps1, Windows paths and the key environment variables.
+* [Reliability assessment](reliability-assessment.md) - How the reliability-assessment skill measures regression risk per spec domain from git history and run results, and how the project uses the result.
