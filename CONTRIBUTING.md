@@ -81,7 +81,7 @@ A change passes two review gates. Each gate is one pull request, and each needs 
 
 - `docs/harness/<NN>-*/` and `docs/mod/M<NN>-*/` are read-only history. No work happens there. Read them as source material, and do not move, rename or delete them.
 - Their built behavior is in the living specs (change `backfill-living-specs`). All their open work is an OpenSpec change (change `migrate-legacy-work`; its `notes/inventory-*.md` maps each legacy item to its change).
-- Exception: the coverage data of spec 10 (`criteria.json` and the criteria tables of its README) stays live. `harness/tools/coverage.py` reads it.
+- The coverage data that came from spec 10 is in `openspec/specs/harness/coverage/criteria.json` and `criteria.md`. `harness/tools/coverage.py` reads it.
 - `docs/mod/M00-invasion-mod/` is the game design. The project owner writes it. Do not write game design content unless they ask.
 
 ### Picture evidence

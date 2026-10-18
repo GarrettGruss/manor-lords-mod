@@ -5,12 +5,12 @@ description: Measure and update how much of the Invasion Mode brief is testable 
 
 # Coverage of the Invasion Mode criteria
 
-Source of truth: `docs/harness/10-invasion-testability/criteria.json` (40 criteria). The spec README has the same table. The tool: `harness/tools/coverage.py`.
+Source of truth: `openspec/specs/harness/coverage/criteria.json` (40 criteria). `openspec/specs/harness/coverage/criteria.md` has the same tables. The tool: `harness/tools/coverage.py`.
 
 ## Commands
 ```
 uv run python harness\tools\coverage.py              # shares, blocked list, gap list
-uv run python harness\tools\coverage.py --check-spec # criteria.json and the spec tables must agree
+uv run python harness\tools\coverage.py --check-spec # criteria.json and criteria.md must agree
 uv run python harness\tools\coverage.py --json
 uv run python harness\tools\coverage.py --min-verified 0.9   # exit code for a gate
 ```
@@ -31,9 +31,9 @@ The base game lacks outposts, captives, tribute, raid objectives and more. The m
 
 ## Steps after any verification
 1. Edit `criteria.json` (keep the file's line endings) and run `--check-spec`.
-2. Update the criteria tables in the spec 10 README (`--check-spec` compares them with `criteria.json`). These two files stay live; the rest of spec 10 is legacy and read-only. Write the new numbers in a `coverage-after-<topic>.md` note in the notes folder of the change (`openspec/changes/<change-name>/notes/`).
+2. Update the criteria tables in `openspec/specs/harness/coverage/criteria.md` (`--check-spec` compares them with `criteria.json`). Write the new numbers in a `coverage-after-<topic>.md` note in the notes folder of the change (`openspec/changes/<change-name>/notes/`).
 3. Add a CHANGELOG line.
 
 ## Other specs
-Specs 12 to 19 have no `criteria.json`. Their status is in each spec README. Only spec 10 feeds the 90% goal. Check the number with the tool before you quote it.
+Only the criteria in `openspec/specs/harness/coverage/` feed the 90% goal (they came from legacy spec 10). Check the number with the tool before you quote it.
 The gap list in the tool output is the work list. Prefer the primitive that unlocks several criteria (for example sack primitives unlock S1, R7, R8). Engine-dependent criteria need a real-game spike (skill `harness-game-spike`).

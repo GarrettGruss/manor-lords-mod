@@ -74,7 +74,7 @@ A tuning-only change (values in a feature `config.lua`) needs no change folder. 
 - `docs/harness/` and `docs/mod/M<NN>-*/` are read-only history. No work happens there: no spec folders, iterations, notes or status lines. `docs/harness/README.md` and `docs/mod/README.md` say so.
 - They are not moved or renamed. Code docstrings, skills, issues and the changelog link to them.
 - All their open work is an OpenSpec change (change `migrate-legacy-work`, #269). Its `notes/inventory-*.md` maps each legacy item to its change or says why it was dropped or is done.
-- Exception: `docs/harness/10-invasion-testability/criteria.json` and the criteria tables of its README stay live. `harness/tools/coverage.py --check-spec` compares them. See [Python tests and coverage](../testing/python-tests.md).
+- The coverage data moved out of spec 10 to `openspec/specs/harness/coverage/criteria.json` and `criteria.md` (change `move-coverage-criteria-to-openspec`, #279). `harness/tools/coverage.py --check-spec` compares them. See [Python tests and coverage](../testing/python-tests.md).
 - `docs/harness/00-harness-overview/README.md` is the roadmap of the legacy specs.
 
 The legacy mod layout was `M<NN>-<feature>/` with `README.md`, `iterations/<NN>-<name>.md`, `feedback.md` and `implementation-notes/`. An OpenSpec change replaces an iteration file. The living spec replaces the "current state" part of the README. See [Invasion Mod structure](../architecture/invasion-mod.md).
@@ -125,5 +125,5 @@ Use the `sonnet` model for subagents when possible. Do not spawn one for a small
 | An engine fact that stays true | The matching wiki page, before the archive |
 | A user-visible change | `CHANGELOG.md`, `Unreleased` |
 | Player feedback | `openspec/specs/mod/<feature>/feedback.md` |
-| A verified Invasion Mode criterion | `docs/harness/10-invasion-testability/criteria.json` and its README tables |
+| A verified Invasion Mode criterion | `openspec/specs/harness/coverage/criteria.json` and `criteria.md` |
 | A how-the-system-works explanation | The matching wiki page |

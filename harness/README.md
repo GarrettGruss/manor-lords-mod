@@ -436,7 +436,7 @@ Without a pak the scenario compares 24 `itemStats` rows with `harness/vanilla/it
 Tests: `uv run python -m unittest discover -s harness/tests -p "test_pakmod.py" -v` and `test_runlib_itemtable.py`.
 
 ## Coverage of a feature (criteria and COVERS)
-The tool `harness/tools/coverage.py` measures how many criteria of spec 10 (Invasion Mode) have a verified test method. Data: `docs/harness/10-invasion-testability/criteria.json`.
+The tool `harness/tools/coverage.py` measures how many criteria of spec 10 (Invasion Mode) have a verified test method. Data: `openspec/specs/harness/coverage/criteria.json` and the tables in `openspec/specs/harness/coverage/criteria.md`.
 - Tag a scenario: add a module constant `COVERS = ["T1", "T2"]` (criterion ids). The tool reads it with `ast`. It never runs the scenario file. An unknown id is an error.
 - Mark a criterion verified: a scenario that covers it and has a passing run (newest `runs/*/summary.json` of that scenario with verdict `pass`) counts. A spike result counts too: set `method_verified` to true in `criteria.json` and list the evidence (note path or scenario name) in `verified_by`.
 - Run: `uv run python harness\tools\coverage.py` (options: `--json`, `--min-verified 0.9`, `--runs-root`, `--criteria`, `--check-spec`). Exit code 0 is ok, 1 is a failed check, 2 is bad input.
