@@ -231,6 +231,10 @@ return {
     manor_stronghold = {
         enabled = true,
         storage_base_capacity = 200,  -- units of goods in one manor module (spec 12)
+        -- M13.03: extra retinue squads above the native limit of 12 men (made with spawnArmy, paid by the mod). TBD.
+        squad_template = "retinue_tier1",
+        squad_men = 36,               -- men in one squad (measured, run 20261018-141330-93b7)
+        bonus_per_squad = 12,         -- retinue bonus (tech tree) needed for each extra squad
     },
     -- M12 tech_tree. The node data is in data/tech_tree/tree.json. Values are TBD for playtests.
     tech_tree = {
