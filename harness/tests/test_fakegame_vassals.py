@@ -270,5 +270,55 @@ class HandoverTests(HandoverBase):
         self.assertFalse(self.state()["vassals"][0]["stalled"])
 
 
+class PolicyTests(HandoverBase):
+    def setUp(self):
+        super().setUp()
+        self.hand_over_and_wait()
+        self.pawn.silver = 200
+
+    def row(self):
+        return self.state()["vassals"][0]
+
+    def test_the_default_policy_is_fair(self):
+        self.assertEqual(self.row()["policy"], "fair")
+
+    def test_heavy_lowers_and_light_raises_loyalty_at_a_season_change(self):
+        for policy, want in (("heavy", 45), ("light", 48)):
+            self.assertTrue(self.ask("vassals_set_policy", slot=1, policy=policy)["ok"])
+            self.ask("vassals_loyalty_tick_now")
+            self.assertEqual(self.row()["loyalty"], want, policy)
+
+    def test_fair_keeps_the_loyalty(self):
+        self.ask("vassals_loyalty_tick_now")
+        self.assertEqual(self.row()["loyalty"], 50)
+
+    def test_a_real_season_change_ticks_once(self):
+        self.ask("vassals_set_policy", slot=1, policy="heavy")
+        self.game.advance(5)
+        self.calendar.Season = (self.calendar.Season + 1) % 4
+        self.game.advance(10)
+        self.assertEqual(self.row()["loyalty"], 45)
+
+    def test_unknown_policy_and_empty_slot_are_refused(self):
+        self.assertFalse(self.ask("vassals_set_policy", slot=1, policy="harsh")["ok"])
+        self.assertFalse(self.ask("vassals_set_policy", slot=2, policy="heavy")["ok"])
+
+    def test_the_policy_is_kept_in_the_pawn_tags(self):
+        self.ask("vassals_set_policy", slot=1, policy="light")
+        self.assertIn("invasion:vassal1_policy=light", self.tags())
+
+    def test_a_gift_costs_silver_and_raises_loyalty(self):
+        answer = self.ask("vassals_order_gift", slot=1)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual((answer["result"]["loyalty"], self.pawn.silver), (60, 150))
+
+    def test_a_gift_is_refused_without_silver_and_loyalty_stays_at_100(self):
+        self.pawn.silver = 10
+        self.assertFalse(self.ask("vassals_order_gift", slot=1)["ok"])
+        self.pawn.silver = 500
+        self.ask("vassals_set_loyalty", slot=1, value=95)
+        self.assertEqual(self.ask("vassals_order_gift", slot=1)["result"]["loyalty"], 100)
+
+
 if __name__ == "__main__":
     unittest.main()

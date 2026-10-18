@@ -33,6 +33,14 @@ function M.set_goal(goal)
     return answer
 end
 
+function M.current_season()
+    local e = engine()
+    if e == nil then return nil end
+    local ok, value = pcall(function() return e.TemporalComponent.Season end)
+    if ok and type(value) == "number" then return math.floor(value) end
+    return nil
+end
+
 -- The rows of all regions (object name, owner, settled flag, families).
 function M.regions()
     local answer = core.regions_state()

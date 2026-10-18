@@ -12,6 +12,7 @@ local STATE_VERSION = 1
 local state = ModState.open("invasion", "pawn", STATE_VERSION)
 state:register("vassals_goal_writes", 0, "integer")
 state:register("vassals_home_region", rules.NO_REGION, "string")
+state:register("vassals_last_season", -1, "integer")
 for slot = 1, config.max_vassals do
     state:register("vassal" .. slot .. "_region", rules.NO_REGION, "string")
     state:register("vassal" .. slot .. "_lord", rules.NO_REGION, "string")
@@ -21,6 +22,7 @@ for slot = 1, config.max_vassals do
     state:register("vassal" .. slot .. "_handed_buildings", 0, "integer") -- buildings of the region at the handover
     state:register("vassal" .. slot .. "_stalled", false, "boolean")    -- the lord built nothing in growth_check_days
     state:register("vassal" .. slot .. "_capital", false, "boolean")    -- the player took the region back as the fallback capital (M06.03)
+    state:register("vassal" .. slot .. "_policy", "fair", "string")      -- tribute policy: light, fair or heavy (iteration 03)
 end
 
 local last_goal = nil        -- the goal as read at the last poll
@@ -71,7 +73,7 @@ local function slot_row(slot)
     if region == rules.NO_REGION then return nil end
     return { slot = slot, region = region, lord = state:get(slot_key(slot, "lord")),
         loyalty = state:get(slot_key(slot, "loyalty")), since_day = state:get(slot_key(slot, "since_day")),
-        handed_day = state:get(slot_key(slot, "handed_day")), stalled = state:get(slot_key(slot, "stalled")), capital = state:get(slot_key(slot, "capital")) }
+        handed_day = state:get(slot_key(slot, "handed_day")), stalled = state:get(slot_key(slot, "stalled")), capital = state:get(slot_key(slot, "capital")), policy = state:get(slot_key(slot, "policy")) }
 end
 
 local function slot_rows(with_region)
@@ -195,6 +197,7 @@ local function watch_wars()
 end
 
 local growth_checked = {} -- slot -> true once the growth check ran in this session
+local loyalty_tick -- defined in the policies section below
 
 -- A handed-over lord can fail to build (3 of 6 real runs: AI_build failed to find place). The mod flags it, so that later features do not count on growth.
 local function check_growth()
@@ -227,6 +230,7 @@ local function poll()
     scan_regions()
     watch_wars()
     check_growth()
+    loyalty_tick()
 end
 
 require("scheduler").every(TAG, config.poll_ms, poll)
@@ -235,6 +239,58 @@ require("scheduler").every(TAG, config.poll_ms, poll)
 local function set_capital(slot)
     state:set(slot_key(slot, "capital"), true)
     state:set(slot_key(slot, "lord"), rules.NO_REGION)
+end
+
+---------------------------------------------------------------------------------------------
+-- Policies and orders (iteration 03). Mod-owned: the game policy system is not used (enactPolicy returned false in 95 tries).
+---------------------------------------------------------------------------------------------
+
+local last_season_tick = nil -- the season of the last loyalty tick, read from ModState on the first use
+
+local function policy_of(slot)
+    return state:get(slot_key(slot, "policy"))
+end
+
+local function set_policy(slot, name)
+    if config.policies[name] == nil then return nil, "unknown policy " .. tostring(name) end
+    if slot_row(slot) == nil then return nil, "slot " .. slot .. " is empty" end
+    state:set(slot_key(slot, "policy"), name)
+    core.log.info(TAG, string.format("VASSALS policy slot=%d %s", slot, name))
+    return true
+end
+
+-- At each season change the loyalty of each handed-over vassal moves by the loyalty change of its policy.
+loyalty_tick = function()
+    local season = world.current_season()
+    if season == nil then return end
+    local last = state:get("vassals_last_season")
+    if last < 0 then return state:set("vassals_last_season", season) end
+    if not rules.season_changed(season, last) then return end
+    state:set("vassals_last_season", season) -- saved first: an error below cannot repeat the tick
+    for slot = 1, config.max_vassals do
+        local row = slot_row(slot)
+        if row and row.lord ~= rules.NO_REGION and not row.capital then
+            local change = config.policies[policy_of(slot)].loyalty
+            local new = rules.clamp_loyalty(row.loyalty + change)
+            set_loyalty(slot, new)
+            core.log.info(TAG, string.format("VASSALS loyalty slot=%d policy=%s %d -> %d", slot, policy_of(slot), row.loyalty, new))
+        end
+    end
+end
+
+-- Order: send a gift. It costs silver and raises loyalty.
+local function order_gift(slot)
+    local row = slot_row(slot)
+    if row == nil or row.lord == rules.NO_REGION or row.capital then return nil, "slot " .. slot .. " has no handed-over vassal" end
+    local silver = require("features.bandits.world").silver() or 0
+    local refusal = rules.gift_refusal(silver, config.gift)
+    if refusal then return nil, refusal end
+    local paid, why = require("features.bandits.world").add_silver(-config.gift.cost)
+    if not paid then return nil, "payment failed: " .. tostring(why) end
+    local new = rules.clamp_loyalty(row.loyalty + config.gift.loyalty)
+    set_loyalty(slot, new)
+    core.log.info(TAG, string.format("VASSALS gift slot=%d cost=%d loyalty %d -> %d", slot, config.gift.cost, row.loyalty, new))
+    return { slot = slot, cost = config.gift.cost, loyalty = new }
 end
 
 local function command_state()
@@ -285,8 +341,23 @@ if has_commands then
     commands.register("InvasionMod.vassals_set_loyalty", command_set_loyalty,
         { slot = { type = "integer", required = true, min = 1, max = config.max_vassals }, value = { type = "number", required = true, min = -1000, max = 1000 } })
     commands.register("InvasionMod.vassals_set_keep_peace", command_set_keep_peace, { value = { type = "boolean", required = true } })
+    commands.register("InvasionMod.vassals_set_policy", function(args)
+        local ok, why = set_policy(args.slot, args.policy)
+        if not ok then return nil, why end
+        return command_state()
+    end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals }, policy = { type = "string", required = true } })
+    commands.register("InvasionMod.vassals_order_gift", function(args)
+        local result, why = order_gift(args.slot)
+        if not result then return nil, why end
+        return result
+    end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals } })
+    commands.register("InvasionMod.vassals_loyalty_tick_now", function()
+        state:set("vassals_last_season", ((world.current_season() or 0) + 1) % 4) -- a season that differs from the current one
+        loyalty_tick()
+        return command_state()
+    end, {})
     commands.register("InvasionMod.vassals_set_goal", command_set_goal, { goal = { type = "integer", required = true, min = 0, max = 3 } })
 end
 
 core.log.info(TAG, "feature vassals loaded")
-return { state = state, set_capital = set_capital, region_families = world.region_families, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }
+return { state = state, policy_of = policy_of, set_policy = set_policy, set_capital = set_capital, region_families = world.region_families, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }
