@@ -32,7 +32,7 @@ The rules are in `CLAUDE.md`, in `openspec/config.yaml` and in the living spec `
 | Legacy specs | `docs/harness/<NN>-*/`, `docs/mod/M<NN>-*/` | Specs before 2026-10-18. Read-only. |
 | Wiki | `docs/wiki/` | How the code and the engine work. |
 
-Capability groups: `harness/<name>`, `mod/<feature>` (the folder name in `mod/InvasionMod/Scripts/features/`) and `process/<name>`. A living spec is made when the first change touches its capability. That change seeds it from the "current state" of the legacy README.
+Capability groups: `harness/<name>`, `mod/<feature>` (the folder name in `mod/InvasionMod/Scripts/features/`, plus `mod/core` for the shared parts), `mods/<name>` (standalone player mods such as `mods/policy-menu`) and `process/<name>`. The change `backfill-living-specs` (#253) wrote the built behavior of all legacy specs into living specs. Its `design.md` maps each legacy spec to its capabilities. Run `openspec list --specs` for the list.
 
 The wiki explains the current system. Specs keep the required behavior, the history and the decisions. The wiki links to specs and does not copy them.
 
@@ -48,7 +48,7 @@ Useful commands: `openspec list` (open changes), `openspec list --specs`, `opens
 
 ### Spec scenarios and test scenarios
 
-OpenSpec calls its examples `#### Scenario:`. The harness calls its test files scenarios too. The project uses two terms: a **spec scenario** is the OpenSpec block, and a **test scenario** is a file in `harness/scenarios/` or `mod/InvasionMod/scenarios/`. Each spec scenario for harness or mod behavior names its test scenario ("Checked by `<path>`"). THEN steps for game behavior state ranges, because the simulation is not deterministic. See [Writing scenarios](../workflows/writing-scenarios.md).
+OpenSpec calls its examples `#### Scenario:`. The harness calls its test files scenarios too. The project uses two terms: a **spec scenario** is the OpenSpec block, and a **test scenario** is a file in `harness/scenarios/` or `mod/InvasionMod/scenarios/`. Each spec scenario for harness or mod behavior names its check ("Checked by `<path>`": a test scenario, or a Python test in `harness/tests/` for behavior that runs without the game), or says "Not checked yet". THEN steps for game behavior state ranges, because the simulation is not deterministic. See [Writing scenarios](../workflows/writing-scenarios.md).
 
 ### Tuning and feedback
 
