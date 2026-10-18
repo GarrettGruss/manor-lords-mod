@@ -189,6 +189,16 @@ return {
         slots_per_level = 1,         -- decision 24: one node slot for each settlement level
         tree_file = "data/tech_tree/tree.json", -- relative to the mod folder
     },
+    -- M12 iteration 02: the tech tree menu. Needs the pak techmenu_P.pak.
+    tech_tree_widget = {
+        enabled = true,
+        toggle_key = Key.F9,                 -- F7 is the policy menu and F8 the raid menu
+        poll_ms = 200,                       -- real time between two checks of the buttons and the texts
+        click_cooldown_s = 0.4,
+        z_order = 500,
+        position = { X = 300, Y = 150 },
+        step_x = 180, step_y = 60,           -- pixels for one layout unit of a node
+    },
     -- M09 refugees. Values are TBD for playtests (M00: 30 to 60 percent of the vassal population).
     refugees = {
         enabled = true,

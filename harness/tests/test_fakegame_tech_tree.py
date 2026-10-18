@@ -273,3 +273,29 @@ class MilitiaFactorTests(TechTreeTestCase):
         self.unlock_militia_rights()
         self.game.advance(12)
         self.assertAlmostEqual(self.militia.att, 11.0)
+
+
+class WidgetFeatureTests(TechTreeTestCase):
+    """The pak cannot load in the fake game: these tests cover the text rules, the view and the message without the pak."""
+
+    def test_open_without_the_pak_gives_a_clear_message(self):
+        answer = self.ask("tech_tree_widget_open")
+        self.assertTrue(answer["ok"], answer)
+        self.assertFalse(answer["result"]["ok"])
+        self.assertTrue(answer["result"]["error"])
+
+    def test_the_wanted_lines_follow_the_tree(self):
+        wanted = self.ask("tech_tree_widget_state")["result"]["wanted_lines"]
+        self.assertEqual(wanted[0], "Path: not chosen yet")
+        self.assertEqual(wanted[1], "Node slots: 1 free of 1 (settlement level 1)")
+        self.assertEqual(wanted[2], "Effects: none")
+        self.choose("oppression")
+        self.unlock("martial_law")
+        wanted = self.ask("tech_tree_widget_state")["result"]["wanted_lines"]
+        self.assertEqual(wanted, ["Path: Oppression (final)", "Node slots: 0 free of 1 (settlement level 1)", "Effects: Public Order +10"])
+
+    def test_effect_text_lists_every_change(self):
+        text = self.game.exec(
+            "return require('features.tech_tree.rules').describe_totals({ order_bonus = 25, approval_bonus = 0, buy_back_multiplier = 1.25,"
+            " militia_attack_multiplier = 1, militia_defence_multiplier = 1.1 })")
+        self.assertEqual(text, "Public Order +25, Buy-back price x1.25, Militia defence x1.10")
