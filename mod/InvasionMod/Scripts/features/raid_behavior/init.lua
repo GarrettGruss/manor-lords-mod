@@ -26,6 +26,7 @@ state:register("raid_returned", 0, "integer")
 state:register("raid_lost", 0, "integer")
 state:register("raid_burned", 0, "integer")
 
+local leave_watchers = {}  -- functions called with the raid summary when a role raid begins to leave (M06 sack)
 local raids = {}            -- raid id -> { raid, burned_base, leave_base }
 local order = {}            -- raid ids in start order
 local last_logged_day = nil
@@ -157,6 +158,7 @@ local function check_leave(entry, seen, today)
         if raid.lord ~= nil then ok, problem = lord_raid.peace() else ok, problem = world.make_peace() end
         core.log.info(TAG, string.format("RAID_BEHAVIOR role raid must leave id=%d day=%s reason=%s peace=%s%s", raid.id, tostring(today),
             reason, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
+        for _, watcher in ipairs(leave_watchers) do core.log.try(TAG, watcher, rules.summary(raid)) end
     end
     local keys = rules.exit_quiet(raid, seen, world.home(), { distance = leave.quiet_distance, exit_y = config.exit_y })
     if #keys == 0 then return end
@@ -294,4 +296,9 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature raid_behavior loaded")
-return { state = state }
+-- Another feature registers fn(summary). It runs once when a role raid begins to leave.
+local function watch_leave(fn)
+    leave_watchers[#leave_watchers + 1] = fn
+end
+
+return { state = state, watch_leave = watch_leave }
