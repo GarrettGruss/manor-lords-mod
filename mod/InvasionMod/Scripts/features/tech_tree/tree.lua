@@ -8,6 +8,7 @@ M.EFFECT_KINDS = {
     buy_back_price = "percent",    -- value is a change of the buy-back price (0.25 is +25%)
     militia_attack = "percent",
     militia_defence = "percent",
+    manor_storage = "add",         -- value is added to the capacity of a manor module (units of goods)
 }
 
 local function fail(message) error("tech tree data: " .. message, 0) end
