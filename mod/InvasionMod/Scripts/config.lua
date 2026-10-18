@@ -154,4 +154,12 @@ return {
             poll_ms = 2000,                  -- real time between two looks at the tribute day
         },
     },
+    -- M07 vassals. Values are TBD for playtests (M00 gives no loyalty numbers).
+    vassals = {
+        enabled = true,
+        poll_ms = 2000,          -- real time between two checks of the goal
+        goal = 2,                -- EGameGoals Endless (spec 26): a claim does not end the game
+        max_vassals = 3,         -- M00: 2 or 3 vassals in the middle game
+        loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
+    },
 }
