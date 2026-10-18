@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Skill `repo-wiki` (separate from the harness; spec, script and tests in `.claude/skills/repo-wiki/`): the repo wiki in `docs/wiki/`, an Open Knowledge Format (OKF) v0.2 bundle written with a compact form of the OpenWiki method. Script `.claude/skills/repo-wiki/scripts/wiki.py` (`index`, `check`, `stale`, `stamp`; new dev dependency PyYAML) and skill `repo-wiki` (with the OKF spec as a reference) to read, init and update it with Claude Code.
 - Skill `harness-meshy`: the pipeline for 3D models (Gemini, Meshy, UE import, material instance, pak), cost rules, and the Meshy Pro license quote.
 
 ### Fixed
