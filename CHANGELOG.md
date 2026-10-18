@@ -6,9 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 34 (#254): event driven button clicks for pak widgets. Shared module `HarnessClickHooks` and the pak widget `WBP_ClickButton` (a graph copied from an engine widget; its OnClicked event is hooked). Scenario `tech-tree-widget-clicks`.
 - Skill `harness-meshy`: the pipeline for 3D models (Gemini, Meshy, UE import, material instance, pak), cost rules, and the Meshy Pro license quote.
 
 ### Fixed
+- Tech tree and raid menus: a click on a menu button is a hook event and is no longer missed (10 of 10 real clicks counted). The scheduler tick is back at 100 ms: a 50 ms tick broke the Lua state after about 3 minutes with a menu open.
 - A `--keep-open` run keeps its paks in `~mods`: removing them under the running game hung it on the first open of a pak widget (F9 tech menu). Remove them later with `pakmod.py remove --all`.
 - PolicyMenu: the F7 key callback only sets a flag; the game-thread tick opens and closes the menu (same input-thread race as the InvasionMod F9 hang, PR #246).
 - Tech tree menu: the real F9 key no longer crashes the game (#245). The key callback now only sets a flag; the scheduler opens or closes the menu on the game thread. Same change for the raid widget F8. Scenario `tech-tree-widget-key`.

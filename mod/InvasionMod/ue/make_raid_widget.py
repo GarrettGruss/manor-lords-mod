@@ -52,7 +52,9 @@ def add_menu(tree, seed):
         column.add_child(line)
     for i in range(BUTTON_COUNT):
         # Lua puts a WBP_ClickButton into this border (spec 34): its OnClicked event is hookable, a Button here is not.
-        column.add_child(unreal.new_object(unreal.Border, tree, "DifficultyButton%d" % i))
+        slot = unreal.new_object(unreal.Border, tree, "DifficultyButton%d" % i)
+        slot.set_editor_property("brush_color", unreal.LinearColor(0, 0, 0, 0))  # a Border paints white by default
+        column.add_child(slot)
 
 
 def drop_graphs(bp):

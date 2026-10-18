@@ -42,6 +42,12 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 ## Widget pak (UI, spec 16)
 A cooked Widget Blueprint is a pak too. Sources: mod/PolicyMenu/ue/ (copy to the UE workspace C:\Users\garre\development\mlm-ue\ManorLords). Make the asset: UnrealEditor-Cmd.exe <uproject> -ExecutePythonScript=make_widget.py -unattended -nullrhi. Cook: -run=cook -targetplatform=Windows -unversioned -nopak -skipeditorcontent (20 s when cached). Copy the cooked .uasset and .uexp into the pak work folder, then run pakmod.py build. Load from Lua with AssetRegistryHelpers:GetAsset. Do not run the editor while a game screenshot is taken. Details: spec 16 policy-menu-followups.md.
 
+## Widget clicks (spec 34)
+A Button in our cooked widget has no hookable click (no graph). Use the click button pattern instead. Shared module `mod/shared/HarnessClickHooks` (add `"HarnessClickHooks"` to `shared` in mod.json), pak widget `WBP_ClickButton` (make it with `mod/shared/HarnessClickHooks/ue/make_click_button.py` in the UE workspace, copy the cooked `WBP_ClickButton.uasset` and `.uexp` into every menu pak work folder).
+- In the menu script use a `Border` (brush colour alpha 0) where a button belongs. In Lua: `handle = clickhooks.attach(border, controller, {owner = S, ...})` for each button, then ONE `clickhooks.bind_texts(handles)`, then `set_text`, `set_visible`. In the scheduler tick: `for _, h in ipairs(clickhooks.drain(S)) do ... end`. Call `release(handles)` when the menu closes.
+- Why a copy: editor Python cannot create graph nodes. The click button is a copy of `/AudioWidgets/AudioButtonToggle/AudioButtonToggle` (its Button01 OnClicked is a UFunction that `RegisterHook` sees). Details and the Lua state finding (do not tick faster than 100 ms, do not rewrite labels each tick, no `FindAllOf` for each button): `docs/harness/34-widget-click-hooks/`.
+- Test: scenario `tech-tree-widget-clicks` (real mouse, EXCLUSIVE).
+
 ## UI art (images for a widget pak)
 - Make images with `uv run python harness/tools/genimage.py --prompt "..." --out <file.png>` (Gemini API, key from `GEMINI_API_KEY`; never print it). `--list-models` shows the image models. Every call is logged in `runs/genimage/log.jsonl`; keep a set small and check the spend.
 - Keep one shared style prompt per art set (see `harness/tools/make_policy_art.py`). Ask for "no text, no letters": the model still writes words sometimes, so look at every image.
