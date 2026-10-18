@@ -86,7 +86,7 @@ From spec 22:
 
 ## Scheduler
 
-`scheduler.every(name, every_ms, run)` registers a job. The first job starts one `LoopAsync` of 50 ms (the menu buttons poll at 50 ms; a slower tick missed short clicks). Each tick adds 50 ms to a clock and calls `ExecuteInGameThread(run_due)`. `run_due` runs the due jobs through `core.log.try`, so an error is logged with a stack trace and does not stop other jobs.
+`scheduler.every(name, every_ms, run)` registers a job. The first job starts one `LoopAsync` of 100 ms (spec 34: menu clicks are hook events, so no faster tick is needed; a 50 ms tick broke the Lua state after about 3 minutes with a menu open). Each tick adds 100 ms to a clock and calls `ExecuteInGameThread(run_due)`. `run_due` runs the due jobs through `core.log.try`, so an error is logged with a stack trace and does not stop other jobs.
 
 Why one loop: every `LoopAsync` callback runs Lua on its own thread. Several loops raced with the game thread and crashed 120-day runs (issue 163). Features must not start a `LoopAsync` of their own. Jobs run on the game thread, so they may touch UObjects.
 
