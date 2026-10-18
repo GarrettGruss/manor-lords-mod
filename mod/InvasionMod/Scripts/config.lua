@@ -103,6 +103,7 @@ return {
         armored_def_min = 10,          -- a unit with def below this is unarmored (Brigands about 3, militia 5 to 7, mail 10, retinue 62)
         unarmored_def_factor = 0.0,    -- new def = def x factor, for an unarmored unit
         unarmored_block_factor = 0.0,  -- new block = block x factor
+        militia_roles = { 0, 2 },      -- EUnitRole Husband and Son: units of the player pawn with these roles are militia
         -- M05 iteration 03: armor needs a weapon to pay off (spec 25: armor alone did not win). Values TBD by the A/B.
         heavy_def_min = 40,            -- units with this def or more (retinue 62) are heavy: no weapon bonus
         armored_att_factor = 1.5,      -- new att = att x factor, for an armored unit (def from armored_def_min up to heavy_def_min)
@@ -171,5 +172,12 @@ return {
         growth_check_days = 10,  -- game days after the handover until the mod checks that the lord built
         growth_min_buildings = 3, -- fewer new buildings than this means the lord stalled (real runs: +10 or +0)
         loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
+    },
+    -- M12 tech_tree. The node data is in data/tech_tree/tree.json. Values are TBD for playtests.
+    tech_tree = {
+        enabled = true,
+        poll_ms = 2000,              -- real time between two looks at the settlement level and the garrison
+        slots_per_level = 1,         -- decision 24: one node slot for each settlement level
+        tree_file = "data/tech_tree/tree.json", -- relative to the mod folder
     },
 }

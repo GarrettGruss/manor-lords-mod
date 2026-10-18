@@ -16,10 +16,17 @@ local settings = {
     unarmored_block_factor = config.unarmored_block_factor,
     armored_att_factor = config.armored_att_factor,
     armored_pierce_add = config.armored_pierce_add,
+    militia_attack_factor = 1, -- set by the tech tree (M12): Militia Rights 1.1
+    militia_defence_factor = 1, -- set by the tech tree (M12): Veteran Levies 1.1
 }
 -- unit address -> record { def_before, block_before, def_after, object } for a unit the rule changed, or false for a unit it skips.
 local known = {}
-local totals = { passes = 0, seen = 0, changed = 0, armored = 0, weapon = 0, failed = 0 }
+local totals = { passes = 0, seen = 0, changed = 0, armored = 0, weapon = 0, failed = 0, militia = 0 }
+-- unit address -> record of a unit of the player militia (the M12 factors apply) or false for another unit.
+local militia_known = {}
+-- Why the role and not the template: a unit has no readable template (unitTemp reads None). Militia are villagers with the role Husband (0) or Son (2) (measured in run 20261018-071923-11f8).
+local militia_roles = {}
+for _, role in ipairs(config.militia_roles) do militia_roles[role] = true end
 local last_error = nil
 
 local function address_of(unit)
@@ -84,8 +91,8 @@ local function forget_missing(present)
 end
 
 -- A record whose unit def is not the written value belongs to a new unit on a reused address.
-local function record_still_holds(unit, record)
-    if not record then return true end
+local function record_still_holds(unit, record, key)
+    if not record or type(militia_known[key]) == "table" then return true end
     return read(function() return unit.def end) == record.def_after
 end
 
@@ -99,6 +106,100 @@ local function needs_recheck(count)
     return changed or totals.passes % config.recheck_every == 0
 end
 
+---------------------------------------------------------------------------------------------
+-- Militia factors (M12 tech tree): att, def and block of a unit of the player militia are scaled by a factor
+---------------------------------------------------------------------------------------------
+
+local STATS = { "att", "def", "block" }
+
+local function militia_factors_active()
+    return settings.militia_attack_factor ~= 1 or settings.militia_defence_factor ~= 1
+end
+
+local function factor_of(stat)
+    if stat == "att" then return settings.militia_attack_factor end
+    return settings.militia_defence_factor
+end
+
+-- Why the squad map: a unit has no owner. The side comes from the squad of the unit (HarnessUnits).
+local function squad_sides()
+    local ok, units = pcall(require, "HarnessUnits")
+    if not ok then return nil, "HarnessUnits is not available" end
+    return units.squadMap()
+end
+
+local function is_player_militia(unit, sides)
+    local squad_id = read(function() return unit.assignedSquadID.Value end)
+    local squad = squad_id and sides[squad_id]
+    if not squad or squad.side ~= "player" then return false end
+    local role = read(function() return unit.currentUnitRole end)
+    return role ~= nil and militia_roles[role] == true
+end
+
+-- Put the base values back on a militia unit. Returns true when the write worked.
+local function reset_militia(record)
+    if not isValid(record.object) then return false end
+    return write_stats(record.object, record.base)
+end
+
+local function apply_militia(unit, record)
+    local wanted = {}
+    for _, stat in ipairs(STATS) do wanted[stat] = record.base[stat] * factor_of(stat) end
+    local ok = write_stats(unit, wanted)
+    if not ok then totals.failed = totals.failed + 1 end
+    record.att_factor, record.def_factor = settings.militia_attack_factor, settings.militia_defence_factor
+end
+
+local function new_militia_record(unit)
+    local base = {}
+    for _, stat in ipairs(STATS) do
+        base[stat] = read(function() return unit[stat] end)
+        if type(base[stat]) ~= "number" then return nil end
+    end
+    totals.militia = totals.militia + 1
+    return { object = unit, base = base }
+end
+
+local last_militia_count = -1
+
+local function militia_summary_count()
+    local count = 0
+    for _, record in pairs(militia_known) do
+        if record then count = count + 1 end
+    end
+    return count
+end
+
+local function militia_pass(units, recheck)
+    local sides, problem = squad_sides()
+    if sides == nil then
+        last_error = tostring(problem)
+        return core.log.error(TAG, "militia pass: " .. last_error)
+    end
+    local present = {}
+    for _, unit in ipairs(units) do
+        local key = address_of(unit)
+        if key ~= nil then
+            present[key] = true
+            local record = militia_known[key]
+            if record == nil or (recheck and record == false) then
+                record = is_player_militia(unit, sides) and new_militia_record(unit) or false
+                militia_known[key] = record
+            end
+            local stale = record and (record.att_factor ~= settings.militia_attack_factor or record.def_factor ~= settings.militia_defence_factor)
+            if stale then apply_militia(unit, record) end
+        end
+    end
+    for key in pairs(militia_known) do
+        if not present[key] then militia_known[key] = nil end
+    end
+    local count = militia_summary_count()
+    if count ~= last_militia_count then
+        last_militia_count = count
+        core.log.info(TAG, string.format("UNIT_BALANCE militia units=%d of %d", count, #units))
+    end
+end
+
 local function pass()
     totals.passes = totals.passes + 1
     local present = {}
@@ -109,10 +210,11 @@ local function pass()
         if key ~= nil then
             present[key] = true
             local record = known[key]
-            if record == nil or (recheck and not record_still_holds(unit, record)) then known[key] = classify(unit) end
+            if record == nil or (recheck and not record_still_holds(unit, record, key)) then known[key] = classify(unit) end
         end
     end
     forget_missing(present)
+    if militia_factors_active() or next(militia_known) ~= nil then militia_pass(units, recheck) end
 end
 
 local function safe_pass()
@@ -126,6 +228,10 @@ end
 -- Put the original values back on the units that the rule changed. Returns the number of restored units.
 local function restore_all()
     local restored = 0
+    for key, record in pairs(militia_known) do
+        if record and reset_militia(record) then restored = restored + 1 end
+        militia_known[key] = nil
+    end
     for key, record in pairs(known) do
         if record and isValid(record.object) then
             local ok
@@ -149,6 +255,26 @@ end)
 -- Named commands for the harness (no eval)
 ---------------------------------------------------------------------------------------------
 
+-- Called by the tech tree. A factor of 1 puts the base values back at the next pass.
+local function set_militia(attack_factor, defence_factor)
+    settings.militia_attack_factor = attack_factor
+    settings.militia_defence_factor = defence_factor
+    core.log.info(TAG, string.format("UNIT_BALANCE militia factors attack=%s defence=%s", tostring(attack_factor), tostring(defence_factor)))
+end
+
+local function militia_summary()
+    local units, sample = 0, nil
+    for _, record in pairs(militia_known) do
+        if record then
+            units = units + 1
+            if sample == nil and isValid(record.object) then
+                sample = { base_att = record.base.att, att = read(function() return record.object.att end) }
+            end
+        end
+    end
+    return { attack_factor = settings.militia_attack_factor, defence_factor = settings.militia_defence_factor, units = units, sample = sample }
+end
+
 local function mean_changed()
     local count, def_sum, block_sum = 0, 0, 0
     for _, record in pairs(known) do
@@ -166,7 +292,8 @@ local function command_state()
     return { enabled = settings.enabled, def_factor = settings.unarmored_def_factor, block_factor = settings.unarmored_block_factor,
              armored_def_min = config.armored_def_min, poll_ms = config.poll_ms, passes = totals.passes, seen = totals.seen,
              changed = totals.changed, armored = totals.armored, weapon = totals.weapon,
-             att_factor = settings.armored_att_factor, pierce_add = settings.armored_pierce_add, failed = totals.failed, tracked = mean_changed(), last_error = last_error }
+             att_factor = settings.armored_att_factor, pierce_add = settings.armored_pierce_add, failed = totals.failed, tracked = mean_changed(), last_error = last_error,
+             militia = militia_summary() }
 end
 
 -- args: enabled, def_factor, block_factor. Turning the rule off puts the original values back.
@@ -201,4 +328,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature unit_balance loaded")
-return { restore_all = restore_all }
+return { restore_all = restore_all, set_militia = set_militia, militia_summary = militia_summary }
