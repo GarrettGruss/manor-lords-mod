@@ -34,7 +34,7 @@ The user decided on 2026-10-18 to deprecate the legacy rules and move all legacy
 
 ## Legacy folders
 
-All of `docs/harness/` and `docs/mod/M01` to `M14` (read only). `docs/mod/M00-invasion-mod/` (the design) is not legacy work.
+All of `docs/harness/` and `docs/mod/M01` to `M14` (read only). `design/` (the design) is not legacy work.
 
 ## Capabilities
 
@@ -47,4 +47,4 @@ All of `docs/harness/` and `docs/mod/M01` to `M14` (read only). `docs/mod/M00-in
 ## Impact
 
 - New: 27 change folders, 3 inventories.
-- Changed: `CONTRIBUTING.md`, `.claude/skills/harness-git-workflow/SKILL.md`, `docs/harness/README.md`, `docs/mod/README.md`, `docs/wiki/operations/docs-and-specs.md`, `CHANGELOG.md`.
+- Changed: `CONTRIBUTING.md`, `.claude/skills/harness-git-workflow/SKILL.md`, `docs/harness/README.md`, `design/mod/README.md`, `docs/wiki/operations/docs-and-specs.md`, `CHANGELOG.md`.

@@ -115,7 +115,7 @@ Each change SHALL have one branch `feat/<change-name>` (or `fix/`, `docs/`, `cho
 - Checked by review.
 
 ### Requirement: The game design stays with the user
-`docs/mod/M00-invasion-mod/` SHALL stay outside `openspec/`. A change SHALL only read it as source material, unless the user asks for a design change.
+`design/` SHALL stay outside `openspec/`. A change SHALL only read it as source material, unless the user asks for a design change.
 
 #### Scenario: A change uses a design rule
 - **WHEN** a mod change needs a player rule from the design

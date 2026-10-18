@@ -18,7 +18,7 @@ Iteration 01 done: a mod ledger for iron, fed by the production counter; an empt
 - Mod state (deposit stock in region Tags): M01, `openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/README.md`.
 - Game data tables: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/game-data-tables.md`.
 - Goods in and out of a store (`GiveItemByID`, `consumeGoodNoCheck`): `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S6.md`.
-- Review of the deposit rules: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-vassals.md`.
+- Review of the deposit rules: `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-vassals.md`.
 
 ## Tunables (M00)
 - Deposit size per resource, so that it lasts 2 to 4 game years at normal use.

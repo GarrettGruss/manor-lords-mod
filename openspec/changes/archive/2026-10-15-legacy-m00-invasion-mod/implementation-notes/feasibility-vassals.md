@@ -1,7 +1,7 @@
 # Feasibility: vassals, tribute, liege, finite resources, plundered start
 
 Date: 2026-10-15. Reviewer: read-only review of the evidence in `docs/harness/` and `mod/shared/`. No game run. No Python run.
-Design source: `docs/mod/M00-invasion-mod/README.md`.
+Design source: `design/mod/invasion-mod.md`.
 
 ## Rating key
 - PROVEN: shown in the real game by a note.

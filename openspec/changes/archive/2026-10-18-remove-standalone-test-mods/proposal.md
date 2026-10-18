@@ -12,7 +12,7 @@ Issue: #261. Branch: `feat/remove-standalone-test-mods`.
 - Remove their test scenarios `harness/scenarios/refugee_wave.py`, `policy_menu.py` and `policy_menu_clicks.py`, the fake-game test `harness/tests/test_fakegame_refugeewaves.py` and the art tool `harness/tools/make_policy_art.py`.
 - Fix the tests that used the two mods as examples (`test_release_manifest.py`, `test_suitelib_pool.py`, `test_boundary.py`, `test_runlib_scenario.py`).
 - Fix comments and docstrings that point to the removed files.
-- Update the skills, the wiki, `docs/mod/README.md` and `CHANGELOG.md`.
+- Update the skills, the wiki, `design/mod/README.md` and `CHANGELOG.md`.
 
 ## Non-goals
 
@@ -36,5 +36,5 @@ Issue: #261. Branch: `feat/remove-standalone-test-mods`.
 ## Impact
 
 - Removed: `mod/RefugeeWaves/`, `mod/PolicyMenu/`, two test scenarios, one fake-game test, one tool.
-- Changed: four Python tests, `harness/release.py` and `harness/tools/genimage.py` docstrings, comments in two Invasion Mod widgets and its UE workspace, five skills, six wiki pages, `docs/mod/README.md`, `CHANGELOG.md`.
+- Changed: four Python tests, `harness/release.py` and `harness/tools/genimage.py` docstrings, comments in two Invasion Mod widgets and its UE workspace, five skills, six wiki pages, `design/mod/README.md`, `CHANGELOG.md`.
 - The release tool keeps working: the Invasion Mod is the only releasable mod left.

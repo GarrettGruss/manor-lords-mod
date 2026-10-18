@@ -21,10 +21,22 @@ context: |
   - A game crash is a result with logs, not a harness failure.
   - Only the guarded harness action `save_game` may save. Never plan a save call anywhere else.
 
-  Legacy docs:
+  Game design (the user owns it; do not change it unless asked):
+  - `design/mod/invasion-mod.md` is the guiding philosophy of every mod spec. `design/mod/decisions.md` is the
+    decision log; cite decisions by number ("decision 28").
+  - Vision: a lieutenant lord in Franconia during the Hussite Wars restores order while an invader raids
+    in announced waves, unrest grows inside, and the liege expects duty. A lost battle sacks the town; it
+    does not end the game.
+  - Pillars: (1) order is the goal; (2) rule through others: vassals only by policies and orders;
+    (3) scarcity forces expansion: home resources are finite, vassals supply; (4) dread from knowing:
+    raids are announced, the great raid has a visible clock; (5) raids have goals, battles can end by
+    native rout; (6) one path of rule: oppression or prosperity, exclusive.
+  - Out of scope for now: multiplayer, building inside vassal regions, new models or animations, raid
+    types other than plunder and subjugation, intel and scouting.
+
+  Other docs:
   - The old legacy specs are archived unchanged in `openspec/changes/archive/<date>-legacy-*/`. They are
     read-only history. Read them as source material. Do not edit them.
-  - `docs/mod/M00-invasion-mod/` is the game design. The user owns it. Do not change it unless asked.
   - `docs/wiki/` explains how the code and the game engine work. It is not a spec.
 
 rules:
@@ -32,6 +44,7 @@ rules:
     - "Link the GitHub issue that tracks the change. Also set `x-issue: <n>` in the change's `.openspec.yaml`."
     - State the non-goals.
     - Name the legacy doc folder the change continues, if there is one.
+    - A mod proposal names the section of `design/mod/invasion-mod.md` (or the decision number) it serves, and says how it keeps the design pillars. It must not contradict a pillar; if it would, stop and ask the user.
   specs:
     - A requirement states behavior a player, a scenario or a harness user can observe.
     - Each spec scenario names its check, as "Checked by `<path>`" (a test scenario or a Python test in `harness/tests/`), says "Checked by review" for a process rule, or says "Not checked yet".

@@ -4,7 +4,7 @@ Status: approved with open decisions TBD (2026-10-16). Branch: `feat/27-trailer-
 
 ## Goal
 Build trailer drafts from a timed shot list, and let the agent review each draft at a low token cost.
-The first target is the Invasion Mod trailer (`docs/mod/M00-invasion-mod/trailer.md`), a YouTube video of 60 seconds or less.
+The first target is the Invasion Mod trailer (`design/mod/trailer.md`), a YouTube video of 60 seconds or less.
 
 The agent cannot play video or audio, and it cannot read a YouTube page's content.
 So the pipeline turns a video into data the agent can read: contact sheets of frames, a timed transcript, and timing and audio reports.
@@ -76,7 +76,7 @@ All decisions are TBD. The user decides them before version 0 starts.
 1. Piper or a cloud TTS for the Czech lines? **Decision: TBD.**
 2. Which scenario sets up the gameplay shots (a raid on a burning village)? Can the harness move the camera, or does the user record those clips by hand? **Decision: TBD.**
 3. Where do large assets live: only on the local disk, or in Git LFS? **Decision: TBD.**
-4. Does `trailer/` belong in the repo root, or under `docs/mod/M00-invasion-mod/`? **Decision: TBD.**
+4. Does `trailer/` belong in the repo root, or under `design/`? **Decision: TBD.**
 
 ## Acceptance criteria
 - A1: `build.py` turns a YAML with text-card shots and TTS voice into an mp4 of 60 seconds or less.

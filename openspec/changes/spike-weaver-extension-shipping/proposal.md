@@ -17,7 +17,7 @@ The owner must decide if a weaver ships, and which slot it takes. Some real-game
 ## Non-goals
 
 - A new extension number. It needs native code and is out of reach.
-- Game design text. The owner writes it in `docs/mod/M00-invasion-mod/`.
+- Game design text. The owner writes it in `design/`.
 - Calling a save function outside the guarded action `save_game`.
 
 ## Legacy folders

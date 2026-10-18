@@ -24,7 +24,7 @@ Iteration 01 done (2026-10-17): feature `raid_behavior` tracks the raid, cuts lo
 - Goods back to a store with `GiveItemByID`: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S6.md`.
 - Loss share per store, sack, fire to ruins, partial rebuild cost: `spike-S6.md`, `spike-R8.md`.
 - Manor store: `openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/implementation-notes/storage-m1.md`.
-- Review: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-raids.md`.
+- Review: `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-raids.md`.
 - Mod state: M01. Raid start: M02.
 - Row ids: `openspec/changes/archive/2026-10-15-legacy-23-row-id-range/README.md`. Confirmed block (decision 3): building ids 1300 to 1399.
 

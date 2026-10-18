@@ -14,7 +14,7 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 - `mcp/harness_tools` (server `manor-harness`: run_scenario, wait_for_run, read_summary, read_log, ...) and the `ue4ss-bridge` MCP server (live queries into a running game).
 - `openspec/`: specs and changes (OpenSpec, since 2026-10-18). Living specs in `openspec/specs/<capability>/spec.md` (groups `harness/`, `mod/`, `process/`). Open work in `openspec/changes/<change-name>/` with findings in `notes/`. Done work in `openspec/changes/archive/`. Rules: `openspec/specs/process/spec-workflow/spec.md` and `openspec/config.yaml`. Skills `openspec-propose`, `openspec-apply-change`, `openspec-archive-change`.
 - `openspec/changes/archive/<date>-legacy-<NN>-<name>/` and `<date>-legacy-m<NN>-<feature>/`: the old harness and mod specs, archived unchanged, with `implementation-notes/` of past findings (path map: the change `archive-legacy-specs`).
-- `docs/mod/`: the Invasion Mod design (`M00`, owned by the user). Layout and build rules of the mod: legacy spec 22. Row id range spike: legacy spec 23.
+- `design/mod/`: the Invasion Mod design (`invasion-mod.md`, `decisions.md`, `trailer.md`; owned by the user). `design/harness/` is reserved. Layout and build rules of the mod: legacy spec 22. Row id range spike: legacy spec 23.
 - `docs/wiki/`: how the code and the engine work (skill `repo-wiki`).
 - Git-ignored: `runs/`, `modtools/` (repak, UAssetGUI, work files, the AES key), `harness/pakmod.local.json`, the fixture saves, `slots/`, `dist/`. A worktree has none of them: copy the fixture saves and `pakmod.local.json` from the main checkout. Compiled mod paks (`mod/<Name>/paks/*_P.pak`) may be committed. The AES key never.
 

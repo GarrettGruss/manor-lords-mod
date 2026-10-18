@@ -55,7 +55,7 @@ Each capability is owned by one agent so no two agents write the same file. Path
 | H3 | `harness/game-setup` | 26 | `HarnessGameSetup` |
 | H3 | `harness/encampment-commands` | 30 | `HarnessEncampment` |
 | H3 | `harness/data-tables` | 10, 09 (live table reads) | `HarnessDataTable`, `ManorCore` |
-| MA | `mod/core` | 22 (Lua skeleton), `docs/mod/README.md` | `mod/InvasionMod/Scripts/*.lua`, `mod.json` |
+| MA | `mod/core` | 22 (Lua skeleton), `design/mod/README.md` | `mod/InvasionMod/Scripts/*.lua`, `mod.json` |
 | MA | `mod/mod_state` | M01, 24 | `mod/shared/ModState`, feature `mod_state` |
 | MA | `mod/invasion` | M02 | feature `invasion` |
 | MA | `mod/raid_widget` | M02 (widget) | feature `raid_widget` |

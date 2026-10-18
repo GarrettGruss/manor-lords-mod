@@ -20,7 +20,7 @@ Iteration 01 is done: each season change each handed-over vassal pays goods (sha
 ## Proven building blocks
 - Silver, wealth and influence payouts by game calls: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-P5.md`.
 - `GiveItemByID` adds goods to a store with space: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S6.md`.
-- Review of vassal tribute (goods transfer between regions is unknown): `docs/mod/M00-invasion-mod/implementation-notes/feasibility-vassals.md`.
+- Review of vassal tribute (goods transfer between regions is unknown): `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-vassals.md`.
 - Production read under another owner is not tested: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/dynamic-lords.md`.
 - Mod state with region Tags: M01.
 

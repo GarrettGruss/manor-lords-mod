@@ -25,12 +25,12 @@ OpenSpec separates these jobs. `openspec/specs/` holds the current behavior. `op
 - No bulk conversion of the 48 legacy specs. Specs grow from real changes.
 - No move or rename of legacy folders. Code docstrings, skills, issues and the changelog link to them.
 - No custom OpenSpec schema now. The default `spec-driven` schema is used. The `notes/` folder is a project rule, not an artifact.
-- No change to `docs/mod/M00-invasion-mod/`. The user owns the design.
+- No change to `design/`. The user owns the design.
 - No change to harness code or mod code.
 
 ## Legacy folders
 
-This change replaces the process rules in CLAUDE.md ("Specs and notes", "Git", "GitHub issues") and in `docs/mod/README.md`. It does not continue one legacy spec.
+This change replaces the process rules in CLAUDE.md ("Specs and notes", "Git", "GitHub issues") and in `design/mod/README.md`. It does not continue one legacy spec.
 
 ## Capabilities
 
@@ -43,6 +43,6 @@ This change replaces the process rules in CLAUDE.md ("Specs and notes", "Git", "
 ## Impact
 
 - New: `openspec/`, `.claude/commands/opsx/`, `.claude/skills/openspec-*/`.
-- Changed docs: `CLAUDE.md`, `docs/harness/README.md` (new), `docs/mod/README.md`, `docs/wiki/operations/docs-and-specs.md`, `CHANGELOG.md`.
+- Changed docs: `CLAUDE.md`, `docs/harness/README.md` (new), `design/mod/README.md`, `docs/wiki/operations/docs-and-specs.md`, `CHANGELOG.md`.
 - Changed skills: `harness-overview`, `harness-git-workflow`, `harness-game-spike`, `harness-dispatch-agents`, `harness-coverage`, `repo-wiki`.
 - New tool dependency: the OpenSpec CLI (`@fission-ai/openspec`, Node 20.19 or later). It is needed only to validate and archive changes. Tests and the harness do not need it.

@@ -24,7 +24,7 @@ Iterations 01 and 02 are done. The mod holds goals = Endless, keeps a 3 slot reg
 - Goals = Endless (2) on `MLGameInstance` stops the victory cinematic on a claim, 3 of 3: `openspec/changes/archive/2026-10-15-legacy-26-game-start-settings/implementation-notes/claim-victory-test.md`, `start-settings.md`.
 - The victory problem before the fix: `openspec/changes/archive/2026-10-15-legacy-15-bandit-settlement/implementation-notes/settler-camp.md`.
 - Policy effects are native and `enactPolicy` returned false in 95 tries, so vassal policies are mod-owned: `openspec/changes/archive/2026-10-15-legacy-16-policy-edicts/implementation-notes/policy-followups.md`.
-- Review: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-vassals.md`.
+- Review: `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-vassals.md`.
 - Mod state with region Tags: M01.
 
 ## Tunables (M00)

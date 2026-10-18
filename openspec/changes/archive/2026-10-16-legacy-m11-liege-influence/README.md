@@ -22,7 +22,7 @@ Not started.
 - Mod state: M01 (`openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/README.md`).
 - Silver, wealth and influence payouts by game calls: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-P5.md`.
 - Mercenary hire: `spike-P5.md`. Spawn of an army with an owner: `openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S7.md`.
-- Review of the liege rules: `docs/mod/M00-invasion-mod/implementation-notes/feasibility-vassals.md`.
+- Review of the liege rules: `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/implementation-notes/feasibility-vassals.md`.
 - Mod menu examples: `openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/implementation-notes/ml-mod-menu.md`.
 
 ## Tunables (M00)

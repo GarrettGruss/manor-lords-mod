@@ -13,3 +13,15 @@
 | 7 | Iron mine test; measured use rate for the 2 to 4 year target; a stock the player sees; clay from vassals; AI lords | `M10-finite_resources/iterations/01`, `02` | Which to measure or build? | Tuning-only items need no change folder. |
 | 8 | A UI for the bandit buy-back | `M04-bandits/iterations/03-coin-buy-back.md` (README open question 6) | Diplomacy entry, a button, or none? | The command is built. |
 | 9 | Raiders treat the manor store differently | `M13-manor_stronghold/README.md` | None. | Covered by `add-raid-storage-tiers`. |
+
+## Open questions of the archived M00 design (added 2026-10-18)
+
+The change `split-design-brief` moved the M00 open questions to the archive (`openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/README.md`, "Open questions"). These are not answered yet:
+
+| # | Item | M00 question | Question |
+|---|---|---|---|
+| 10 | Effects on a region the player does not control | 4 (open part) | Which effects may Lua apply to an AI lord's region? |
+| 11 | The land of a lost vassal | 8 | Does it become an enemy region, a bandit camp, or empty land that can be retaken? |
+| 12 | A second invader faction | 12 | Is a mercenary free company (linked to the bandits) needed for the first release? |
+
+The other M00 questions are answered by decisions (`design/mod/decisions.md`), built (living specs), or are open changes (`add-plundered-start`, `add-liege-influence`).

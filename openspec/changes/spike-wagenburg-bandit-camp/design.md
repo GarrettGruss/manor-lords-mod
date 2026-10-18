@@ -4,7 +4,7 @@
 
 | # | Question | Who decides | How it is answered |
 |---|---|---|---|
-| 1 | Does the Wagenburg camp become part of the Invasion Mod (bandit camps, invader camps, both, or none)? | Project owner | Owner reply on the issue; update of the design in `docs/mod/M00-invasion-mod/` by the owner |
+| 1 | Does the Wagenburg camp become part of the Invasion Mod (bandit camps, invader camps, both, or none)? | Project owner | Owner reply on the issue; update of the design in `design/` by the owner |
 | 2 | Does the Meshy license allow a public release of the model? | Project owner (checks the account terms) | Owner reply |
 | 3 | Does a player-built camp (host b, new row in the block 4000 to 4099) place with the real mouse? | Spike | Task 2.1 |
 | 4 | Do bandit units get stuck in the ring? Not tested. | Spike | Task 2.2 |
