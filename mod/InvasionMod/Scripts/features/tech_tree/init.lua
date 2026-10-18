@@ -98,6 +98,21 @@ local function node_rows()
     return rows
 end
 
+-- Everything the menu shows, in one table. Status per node: unlocked, available, locked or other_path.
+local function view()
+    read_world()
+    local unlocked, path = unlocked_ids(), state:get("tech_path")
+    local rows = node_rows()
+    for _, row in ipairs(rows) do
+        row.status, row.reason = rules.node_status(tree, path, unlocked, slots(), row.id)
+    end
+    local path_name = tree.path_ids[path] and tree.path_ids[path].name or nil
+    return {
+        path = path, path_name = path_name, level = last_level, slots = slots(), free_slots = slots() - #unlocked,
+        effects = rules.describe_totals(totals()), nodes = rows, paths = tree.paths,
+    }
+end
+
 local function command_state()
     read_world()
     local unlocked = unlocked_ids()
@@ -129,4 +144,4 @@ if has_commands then
 end
 
 core.log.info(TAG, string.format("feature tech_tree loaded: %d nodes", #tree.nodes))
-return { tree = tree, state = state, choose_path = choose_path, unlock = unlock, node_rows = node_rows }
+return { tree = tree, state = state, choose_path = choose_path, unlock = unlock, node_rows = node_rows, view = view }

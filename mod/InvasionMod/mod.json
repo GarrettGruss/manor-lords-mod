@@ -20,7 +20,8 @@
     { "name": "sack_and_terms", "requires": ["raid_behavior"], "ids": {} },
     { "name": "vassals", "requires": ["mod_state"], "ids": {} },
     { "name": "raid_widget", "requires": ["invasion"], "ids": {} },
-    { "name": "tech_tree", "requires": ["bandits", "unit_balance", "mod_state"], "ids": {} }
+    { "name": "tech_tree", "requires": ["bandits", "unit_balance", "mod_state"], "ids": {} },
+    { "name": "tech_tree_widget", "requires": ["tech_tree"], "ids": {} }
   ],
   "gate_scenarios": []
 }

@@ -11,4 +11,5 @@ return {
     { name = "vassals", requires = { "mod_state" } },
     { name = "raid_widget", requires = { "invasion" } },
     { name = "tech_tree", requires = { "bandits", "unit_balance", "mod_state" } },
+    { name = "tech_tree_widget", requires = { "tech_tree" } },
 }
