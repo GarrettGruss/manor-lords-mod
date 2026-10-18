@@ -18,7 +18,7 @@ STEP_X = 180
 STEP_Y = 60
 # The geometry calls of the widget return a zero size in the real game, so the scenario finds a button by hover.
 SCAN_X = tuple(round(0.10 + 0.025 * step, 3) for step in range(18))
-SCAN_Y = tuple(round(0.10 + 0.02 * step, 3) for step in range(26))
+SCAN_Y = tuple(round(0.10 + 0.02 * step, 3) for step in range(36))
 
 
 def widget(ctx) -> dict:

@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spec 34 (#254): event driven button clicks for pak widgets. Shared module `HarnessClickHooks` and the pak widget `WBP_ClickButton` (a graph copied from an engine widget; its OnClicked event is hooked). Scenario `tech-tree-widget-clicks`.
 - Skill `repo-wiki` (separate from the harness; spec, script and tests in `.claude/skills/repo-wiki/`): the repo wiki in `docs/wiki/`, an Open Knowledge Format (OKF) v0.2 bundle written with a compact form of the OpenWiki method. Script `.claude/skills/repo-wiki/scripts/wiki.py` (`index`, `check`, `stale`, `stamp`; new dev dependency PyYAML) and skill `repo-wiki` (with the OKF spec as a reference) to read, init and update it with Claude Code.
 - Skill `harness-meshy`: the pipeline for 3D models (Gemini, Meshy, UE import, material instance, pak), cost rules, and the Meshy Pro license quote.
 - OpenSpec (`openspec/`, CLI `@fission-ai/openspec`): living specs in `openspec/specs/`, one change folder per piece of work in `openspec/changes/`, done changes in `openspec/changes/archive/`. Project context and rules in `openspec/config.yaml`. Generated skills `openspec-*` and commands `/opsx:*`. Living spec `process/spec-workflow` (change `adopt-openspec`, #251).
@@ -14,6 +15,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - New work (harness features, mod features, mod iterations, spikes) starts as an OpenSpec change, with the branch `feat/<change-name>` and the issue `Change: <change-name>`. Findings go to `notes/` in the change and lasting engine facts move into the wiki at the archive. `docs/harness/` and `docs/mod/M<NN>-*/` are read-only legacy; open legacy work may finish there. CLAUDE.md, the skills `harness-overview`, `harness-git-workflow`, `harness-game-spike`, `harness-dispatch-agents`, `harness-coverage`, `harness-meshy`, `repo-wiki` and the wiki follow the new rules.
 
 ### Fixed
+- Tech tree and raid menus: a click on a menu button is a hook event and is no longer missed (10 of 10 real clicks counted). The scheduler tick is back at 100 ms: a 50 ms tick broke the Lua state after about 3 minutes with a menu open.
 - A `--keep-open` run keeps its paks in `~mods`: removing them under the running game hung it on the first open of a pak widget (F9 tech menu). Remove them later with `pakmod.py remove --all`.
 - PolicyMenu: the F7 key callback only sets a flag; the game-thread tick opens and closes the menu (same input-thread race as the InvasionMod F9 hang, PR #246).
 - Tech tree menu: the real F9 key no longer crashes the game (#245). The key callback now only sets a flag; the scheduler opens or closes the menu on the game thread. Same change for the raid widget F8. Scenario `tech-tree-widget-key`.

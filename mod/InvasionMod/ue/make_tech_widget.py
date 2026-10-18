@@ -45,9 +45,10 @@ def make_text(tree, name, text):
 
 
 def make_button(tree, button_name, label_name):
-    button = unreal.new_object(unreal.Button, tree, button_name)
-    button.add_child(make_text(tree, label_name, "-"))
-    return button
+    # Lua puts a WBP_ClickButton into this border (spec 34): its OnClicked event is hookable, a Button here is not.
+    slot = unreal.new_object(unreal.Border, tree, button_name)
+    slot.set_editor_property("brush_color", unreal.LinearColor(0, 0, 0, 0))  # a Border paints white by default
+    return slot
 
 
 def add_path_row(tree, column):
