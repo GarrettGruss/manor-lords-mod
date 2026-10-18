@@ -23,4 +23,4 @@ The player picks the difficulty (1 to 3) at the start (decision 11). Everything 
 - `scenarios/invasion/difficulty_pick.py` (D1 to D4).
 
 ## Result
-not started
+PASS in the real game (2026-10-18). Scenario `invasion-difficulty-pick`, difficulty 2 run `20261018-051059-708f`, difficulty 3 run `20261018-051215-fb86`: D1 to D4 pass. Fake game `DifficultyTests` pass. The pick is a named command; the menu and a start screen come with the widget (iteration 05). Scaling helpers in `difficulty.lua` round up; the relief army and wave count are ready for iteration 06.

@@ -106,7 +106,7 @@ class RaidTests(InvasionTestCase):
         plan = self.ask("invasion_set_size", size="medium")["result"]
         self.run_days(62, plan["raid_day"] + 5)
         warning_days = plan["raid_day"] - plan["warning_day"]
-        self.banners = [text for text in self.banners if not text.startswith("Great raid in")]
+        self.banners = [text for text in self.banners if not text.startswith(("Great raid in", "Pick the difficulty"))]
         self.assertEqual(len(self.banners), warning_days + 1)  # one for each day left, plus the arrival banner
         raiders = self.state()["raiders"]
         self.assertEqual(self.banners[0], f"Raid in {warning_days} days, about {raiders} raiders")
@@ -235,6 +235,45 @@ class ClockTests(InvasionTestCase):
 
     def test_set_days_left_is_refused_outside_range(self):
         self.assertFalse(self.ask("invasion_clock_set_days_left", days=0)["ok"])
+
+
+class DifficultyTests(InvasionTestCase):
+    def difficulty(self):
+        answer = self.ask("invasion_difficulty_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def test_before_a_pick_the_default_is_used_and_a_prompt_shows(self):
+        info = self.difficulty()
+        self.assertFalse(info["chosen"])
+        self.assertEqual(info["difficulty"], 1)
+        self.assertTrue(any(text.startswith("Pick the difficulty") for text in self.banners), self.banners)
+
+    def test_a_pick_sets_the_difficulty_once(self):
+        self.assertTrue(self.ask("invasion_pick_difficulty", value=2)["ok"])
+        info = self.difficulty()
+        self.assertTrue(info["chosen"])
+        self.assertEqual((info["difficulty"], info["relief_squads"], info["waves"]), (2, 8, 2))
+        self.assertFalse(self.ask("invasion_pick_difficulty", value=3)["ok"])
+        self.assertEqual(self.state()["squads"] % 2, 0)
+
+    def test_relief_and_waves_by_difficulty(self):
+        seen = []
+        for value in (1, 2, 3):
+            self.ask("invasion_set_difficulty", value=value)
+            info = self.difficulty()
+            seen.append((info["relief_squads"], info["waves"]))
+        self.assertEqual(seen, [(15, 1), (8, 2), (0, 3)])
+
+    def test_the_prompt_stops_after_a_pick(self):
+        self.ask("invasion_pick_difficulty", value=1)
+        self.banners.clear()
+        for day in range(62, 90):
+            self.set_day(day)
+        self.assertFalse(any(text.startswith("Pick the difficulty") for text in self.banners))
+
+    def test_pick_outside_range_is_refused(self):
+        self.assertFalse(self.ask("invasion_pick_difficulty", value=4)["ok"])
 
 
 if __name__ == "__main__":
