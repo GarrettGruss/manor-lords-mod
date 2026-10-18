@@ -3,7 +3,7 @@
 This folder holds the design and the legacy feature specs of the Invasion Mod (internal name `InvasionMod`; the player-facing name will change).
 The legacy harness specs are in `docs/harness/`. The layout and build rules of the mod are in harness spec 22 (`docs/harness/22-mod-pack-layout/`).
 
-> **Since 2026-10-18, new mod work is planned in OpenSpec (`openspec/`).** See the change `adopt-openspec` (issue #251) and `openspec/specs/process/spec-workflow/spec.md`.
+> **Since 2026-10-18, new mod work is planned in OpenSpec (`openspec/`).** See the archived change `openspec/changes/archive/2026-10-18-adopt-openspec/` (issue #251) and `openspec/specs/process/spec-workflow/spec.md`.
 > - `M00-invasion-mod/` stays here. It is the design. The user owns it.
 > - The `M<NN>-<feature>/` folders are read-only legacy. Do not add iterations or notes. An iteration that had an open issue on 2026-10-18 may finish here.
 > - A new iteration is an OpenSpec change (`openspec/changes/<change-name>/`). Its living spec is `openspec/specs/mod/<feature>/spec.md`. The first change for a feature seeds it from the "Current state" of the legacy README.

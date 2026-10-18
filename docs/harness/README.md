@@ -1,6 +1,6 @@
 # Harness specs (legacy, read-only)
 
-Since 2026-10-18, new work is planned in OpenSpec (`openspec/`). See the change `adopt-openspec` (issue #251) and the living spec `openspec/specs/process/spec-workflow/spec.md`.
+Since 2026-10-18, new work is planned in OpenSpec (`openspec/`). See the archived change `openspec/changes/archive/2026-10-18-adopt-openspec/` (issue #251) and the living spec `openspec/specs/process/spec-workflow/spec.md`.
 
 - Do not add new spec folders, notes or plans here.
 - Do not move or rename these folders. Code, skills, issues and the changelog link to them.

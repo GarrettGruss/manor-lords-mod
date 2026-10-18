@@ -7,7 +7,7 @@ generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T18:00:00Z }
 sources:
   - resource: repo://CLAUDE.md
   - resource: repo://openspec/config.yaml
-  - resource: repo://openspec/changes/adopt-openspec/
+  - resource: repo://openspec/changes/archive/2026-10-18-adopt-openspec/
   - resource: repo://docs/harness/README.md
   - resource: repo://docs/harness/00-harness-overview/README.md
   - resource: repo://.claude/skills/repo-wiki/spec/README.md
