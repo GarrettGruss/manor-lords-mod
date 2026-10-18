@@ -24,11 +24,13 @@ The mod sets the price and checks it, because the game does not (`homeless-rebel
 - Refused, with a reason and no change, when: no outstanding families; no bandit units; no free home slot; silver is below the price.
 - On success: price is charged, bandit units go down, families return, outstanding goes down by the families returned.
 
-## Open question (spike S1, first task of the implementation)
+## Open question (spike S1, answered)
 Spec 15 found that the letter returns families for raid squads (`spawnRaiders`: 5 of 5 tries) but not for `spawnArmy` squads, which `homeless_rebel` mode `home` makes (0 of 3 tries). The conversion of iteration 01 uses mode `home`.
 S1 measures this again with the conversion squads. If it still gives no family, the mod returns the families by another proven route and the note records which one. The route must not use `Region:AddNewFamily` (crash). Candidates: a decoy raid before the letter; `settle_region`. A route that overfills the free slots is capped by the mod or refused.
 
 ## Acceptance criteria
+- Added after spike S1: the game returns families in 12 of 15 first letters. C1 to C4 hold when families come back. C10 holds when they do not.
+- C10: a failed deal (no family returns within 120 game seconds): the silver is back to its value before the letter, outstanding families are unchanged, the result has `refunded` equal to the price.
 - C1: with outstanding families F, free slots S, silver P0: after the buy-back, silver = P0 - price (exact, silver read while paused), and price = ceil(min(F, S) x 10 x multiplier).
 - C2: families return: families after - families before is between 1 and min(F, S) (range, because the game may fill fewer or the village may grow).
 - C3: bandit units after < bandit units before, and 0 within 120 game seconds.
@@ -44,4 +46,10 @@ S1 measures this again with the conversion squads. If it still gives no family, 
 - `scenarios/bandits/buy_back.py` (`bandits-buy-back`): C1 to C7 and C9 in the real game.
 
 ## Result
-Not run yet.
+PASS in the real game (2026-10-18). Notes: `../implementation-notes/iteration-03-coin-buy-back.md`.
+- Spike S1: the letter returns families for the conversion squads in 12 of 15 first letters (+2 families each time, vacant slots 4 to 2). In 3 tries it took the silver, removed the bandits and gave no family. A second letter in the same game gave nothing in 6 of 6 tries. Cause open. The mod now refunds on a failed deal (C10).
+- `bandits-buy-back`: runs `20261018-015930-1211` (failed deal, C10 checks pass: silver 100 back, 2 families still outstanding, refunded 20), `20261018-020227-dd05` and `20261018-020504-b610` (deal worked, +2 families, silver 100 to 80, bandit units 36 to 0, 2 outstanding to 0) pass. Runs `-015406-1e47` and the runs `-011706-785b`, `-011938-44f9`, `-012921-0043` of the first scenario version passed with the same numbers. C5 (silver 5: refused, nothing changed) and C7 (nothing outstanding: refused) passed in every run. C9 (5 game days) passed in every passing run.
+- Runs that did not pass: `-012543-c784` (first scenario version, 0 families: this is the failed deal that led to C10); `-015119-ffea` and `-015636-c64b` (scenario wait was too short for the 120 game second give-up, scenario fixed); `-012215-4744` (harness_error in the 5 day wait, bridge blocked 15 s).
+- Fake game tests: 12 new tests in `test_fakegame_bandits.py` (`BuyBackTests`) and 5 in `test_bandits_rules.py`. C6 (no free home slot) is covered there only.
+- Deviation: families do not return every time (see C10). The price is only kept when they do.
+- Known gaps: no UI (command only); the native letter in the diplomacy screen is not priced by the mod; the 5 day wait harness_error (issue 163 family).
