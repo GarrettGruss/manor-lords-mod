@@ -182,7 +182,8 @@ local function spawn_great_army(today, list, label, final)
     for index, watcher in ipairs(spawn_watchers) do tokens[index] = watcher.before() end
     local ok, problem, partial = lord_raid.start(list, roles.lord_army)
     if not ok then
-        if partial then return false, tostring(problem) end -- armies exist already: bandit squads on top would make a double army
+        -- Armies exist already (a partial spawn): bandit squads on top would make a double army. The caller must not retry.
+        if partial then return false, tostring(problem), true end
         core.log.error(TAG, "great raid lord army failed, the squads are bandit squads: " .. tostring(problem))
         local centre = spawn_centre()
         local spawned, ids = core.spawn_squads(list, { x = centre.x, y = roles.raid_spawn_y, z = centre.z })
@@ -211,8 +212,9 @@ end
 
 local function spawn_great_wave(today)
     local wave = state:get("gr_wave") + 1
-    local ok, problem = spawn_great_army(today, great_wave_list(), "wave " .. wave, false)
-    if not ok then return core.log.error(TAG, "great raid wave failed, the next daily step tries again: " .. problem) end
+    local ok, problem, partial = spawn_great_army(today, great_wave_list(), "wave " .. wave, false)
+    if not ok and not partial then return core.log.error(TAG, "great raid wave failed, the next daily step tries again: " .. problem) end
+    if not ok then core.log.error(TAG, "great raid wave failed after a partial spawn, the wave counts as spawned: " .. problem) end
     state:set("gr_wave", wave)
     state:set("gr_last_day", today)
     state:set("gr_phase", great_raid.PHASE.waves)
@@ -225,8 +227,9 @@ local function spawn_relief_and_final(today)
     if centre == nil then return core.log.error(TAG, "no player pawn: the relief army is not spawned") end
     local final_list = plan_rules.composition(clock_config.final_squads, clock_config.final_tier_difficulty, roles,
         plan_rules.lcg(state:get("gr_seed") + 1000))
-    local ok, problem = spawn_great_army(today, final_list, "final", true)
-    if not ok then return core.log.error(TAG, "great raid final army failed, the next daily step tries again: " .. problem) end
+    local ok, problem, partial = spawn_great_army(today, final_list, "final", true)
+    if not ok and not partial then return core.log.error(TAG, "great raid final army failed, the next daily step tries again: " .. problem) end
+    if not ok then core.log.error(TAG, "great raid final army failed after a partial spawn, no retry: " .. problem) end
     state:set("gr_phase", great_raid.PHASE.final)
     local spot = { x = centre.x + clock_config.relief_offset.x, y = centre.y + clock_config.relief_offset.y, z = centre.z }
     local sent, why = relief.spawn(great_raid.relief_templates(count, clock_config.relief_templates), spot)

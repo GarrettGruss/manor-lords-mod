@@ -350,6 +350,98 @@ class SubjugationTests(InvasionTestCase):
         self.assertTrue(self.sub()["spawned"])
 
 
+class GreatRaidTests(InvasionTestCase):
+    def great(self):
+        answer = self.ask("invasion_great_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def enemy_armies(self):
+        return [army for army in self.armies if army[3]]
+
+    def relief_armies(self):
+        return [army for army in self.armies if not army[3]]
+
+    def start_great_raid(self, difficulty):
+        self.ask("invasion_set_difficulty", value=difficulty)
+        self.assertTrue(self.ask("invasion_great_force_start")["ok"])
+        self.set_day(62)
+
+    def run_to_final(self):
+        for _ in range(8):
+            self.ask("invasion_great_skip_wait")
+            self.set_day(self.calendar.daysTotal + 1)
+        return self.great()
+
+    def test_the_clock_end_spawns_wave_one_with_15_squads(self):
+        self.start_great_raid(1)
+        info = self.great()
+        self.assertEqual((info["phase"], info["wave"]), (1, 1))
+        self.assertEqual([len(army[0]) for army in self.enemy_armies()], [15])
+
+    def check_difficulty(self, difficulty, relief):
+        self.start_great_raid(difficulty)
+        info = self.run_to_final()
+        self.assertEqual((info["phase"], info["wave"]), (2, difficulty))
+        great = [len(army[0]) for army in self.enemy_armies() if len(army[0]) in (15, 25)]
+        self.assertEqual(great, [15] * difficulty + [25])
+        self.assertEqual(sum(len(army[0]) for army in self.relief_armies()), relief)
+
+    def test_difficulty_1_has_1_wave_and_15_relief_squads(self):
+        self.check_difficulty(1, 15)
+
+    def test_difficulty_2_has_2_waves_and_8_relief_squads(self):
+        self.check_difficulty(2, 8)
+
+    def test_difficulty_3_has_3_waves_and_no_relief(self):
+        self.check_difficulty(3, 0)
+
+    def test_the_final_army_is_not_scaled_by_difficulty(self):
+        self.start_great_raid(3)
+        self.run_to_final()
+        self.assertEqual(len(self.enemy_armies()[-1][0]), 25)
+
+    def test_nothing_spawns_twice(self):
+        self.start_great_raid(1)
+        before = self.run_to_final()
+        relief = len(self.relief_armies())
+        for _ in range(5):
+            self.set_day(self.calendar.daysTotal + 20)
+        after = self.great()
+        self.assertEqual((after["phase"], after["wave"], len(self.relief_armies())), (before["phase"], before["wave"], relief))
+
+    def test_force_start_is_refused_after_the_start(self):
+        self.start_great_raid(1)
+        self.assertFalse(self.ask("invasion_great_force_start")["ok"])
+
+
+class GreatRaidRulesTests(unittest.TestCase):
+    def action(self, at):
+        game = FakeGame()
+        game.start()
+        self.addCleanup(game.close)
+        game.exec(f'package.path = "{(find_pack_mod() / "Scripts").as_posix()}/?.lua;" .. package.path')
+        code = (f"local g = require('features.invasion.great_raid'); return tostring(g.next_action({at}, "
+                "{ wave_gap_days = 10, relief_delay_days = 10 }))")
+        return game.lua.eval(f"(function() {code} end)")()
+
+    def test_clock_phase_waits_until_due(self):
+        self.assertEqual(self.action("{ phase = 0, wave = 0, waves = 1, last_day = 0, today = 5, due = false }"), "nil")
+        self.assertEqual(self.action("{ phase = 0, wave = 0, waves = 1, last_day = 0, today = 5, due = true }"), "wave")
+
+    def test_next_wave_after_the_gap(self):
+        self.assertEqual(self.action("{ phase = 1, wave = 1, waves = 2, last_day = 100, today = 109 }"), "nil")
+        self.assertEqual(self.action("{ phase = 1, wave = 1, waves = 2, last_day = 100, today = 110 }"), "wave")
+
+    def test_relief_after_the_last_wave(self):
+        self.assertEqual(self.action("{ phase = 1, wave = 2, waves = 2, last_day = 100, today = 109 }"), "nil")
+        self.assertEqual(self.action("{ phase = 1, wave = 2, waves = 2, last_day = 100, today = 110 }"), "relief")
+
+    def test_final_and_won_do_nothing(self):
+        self.assertEqual(self.action("{ phase = 2, wave = 2, waves = 2, last_day = 0, today = 999 }"), "nil")
+        self.assertEqual(self.action("{ phase = 3, wave = 2, waves = 2, last_day = 0, today = 999 }"), "nil")
+
+
 class TargetRulesTests(unittest.TestCase):
     def run_lua(self, code):
         game = FakeGame()
