@@ -3,22 +3,23 @@ type: Architecture
 title: Harness and player mods
 description: The Lua mods in mod/ besides the Invasion Mod - harness mods (HarnessBoot, HarnessTelemetry, HarnessReload, HarnessPlace, HarnessActions, UEBridge), player mods (PolicyMenu, RefugeeWaves), stand-in fixtures and probes.
 tags: [lua, mods, harness, boot, stand-in]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - mod/HarnessBoot/Scripts/main.lua
-  - mod/HarnessTelemetry/Scripts/main.lua
-  - mod/HarnessReload/Scripts/main.lua
-  - mod/HarnessPlace/Scripts/main.lua
-  - mod/HarnessActions/Scripts/main.lua
-  - mod/UEBridge/scripts/main.lua
-  - mod/PolicyMenu/Scripts/main.lua
-  - mod/PolicyMenu/mod.json
-  - mod/RefugeeWaves/Scripts/main.lua
-  - mod/RefugeeWaves/mod.json
-  - mod/InvasionStandIn/Scripts/main.lua
-  - mod/RaidStandIn/Scripts/main.lua
-  - mod/HarnessLoadProbe/Scripts/main.lua
-  - mod/HarnessLogTest/Scripts/main.lua
-  - harness/deploy.ps1
+  - resource: repo://mod/HarnessBoot/Scripts/main.lua
+  - resource: repo://mod/HarnessTelemetry/Scripts/main.lua
+  - resource: repo://mod/HarnessReload/Scripts/main.lua
+  - resource: repo://mod/HarnessPlace/Scripts/main.lua
+  - resource: repo://mod/HarnessActions/Scripts/main.lua
+  - resource: repo://mod/UEBridge/scripts/main.lua
+  - resource: repo://mod/PolicyMenu/Scripts/main.lua
+  - resource: repo://mod/PolicyMenu/mod.json
+  - resource: repo://mod/RefugeeWaves/Scripts/main.lua
+  - resource: repo://mod/RefugeeWaves/mod.json
+  - resource: repo://mod/InvasionStandIn/Scripts/main.lua
+  - resource: repo://mod/RaidStandIn/Scripts/main.lua
+  - resource: repo://mod/HarnessLoadProbe/Scripts/main.lua
+  - resource: repo://mod/HarnessLogTest/Scripts/main.lua
+  - resource: repo://harness/deploy.ps1
 ---
 # Harness and player mods
 

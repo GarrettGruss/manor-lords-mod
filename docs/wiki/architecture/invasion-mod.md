@@ -3,20 +3,21 @@ type: Architecture
 title: Invasion Mod structure
 description: How mod/InvasionMod is built - one Lua mod and one pak made of features, with main.lua, feature_loader, feature_list, scheduler, config, mod.json, data patches and scenarios.
 tags: [invasion-mod, lua, features, pak, loader]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - mod/InvasionMod/Scripts/main.lua
-  - mod/InvasionMod/Scripts/feature_loader.lua
-  - mod/InvasionMod/Scripts/feature_list.lua
-  - mod/InvasionMod/Scripts/scheduler.lua
-  - mod/InvasionMod/Scripts/config.lua
-  - mod/InvasionMod/mod.json
-  - mod/InvasionMod/data/
-  - mod/InvasionMod/scenarios/
-  - mod/InvasionMod/ue/
-  - docs/harness/22-mod-pack-layout/README.md
-  - docs/harness/22-mod-pack-layout/implementation-notes/buildmod.md
-  - harness/tools/modpak.py
-  - harness/tests/test_fakegame_featureloader.py
+  - resource: repo://mod/InvasionMod/Scripts/main.lua
+  - resource: repo://mod/InvasionMod/Scripts/feature_loader.lua
+  - resource: repo://mod/InvasionMod/Scripts/feature_list.lua
+  - resource: repo://mod/InvasionMod/Scripts/scheduler.lua
+  - resource: repo://mod/InvasionMod/Scripts/config.lua
+  - resource: repo://mod/InvasionMod/mod.json
+  - resource: repo://mod/InvasionMod/data/
+  - resource: repo://mod/InvasionMod/scenarios/
+  - resource: repo://mod/InvasionMod/ue/
+  - resource: repo://docs/harness/22-mod-pack-layout/README.md
+  - resource: repo://docs/harness/22-mod-pack-layout/implementation-notes/buildmod.md
+  - resource: repo://harness/tools/modpak.py
+  - resource: repo://harness/tests/test_fakegame_featureloader.py
 ---
 # Invasion Mod structure
 

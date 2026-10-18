@@ -3,17 +3,18 @@ type: Testing
 title: Fake game kit
 description: How Lua mods are tested without the game, using lupa and the fakegame kit (FakeGame, prelude.lua, clock, Manor Lords state), the test layers, the kit limits, and how to write a mod test.
 tags: [testing, lua, lupa, fakegame, mods]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/tests/fakegame/
-  - harness/tests/test_fakegame_kit.py
-  - harness/tests/test_fakegame_example.py
-  - harness/tests/lua_syntax.py
-  - harness/tests/boot_state_machine.py
-  - harness/tests/fakegame_path.py
-  - harness/tests/modstate_support.py
-  - harness/tests/battle_support.py
-  - docs/harness/06-dev-loop-and-fixtures/implementation-notes/mock-kit.md
-  - CLAUDE.md
+  - resource: repo://harness/tests/fakegame/
+  - resource: repo://harness/tests/test_fakegame_kit.py
+  - resource: repo://harness/tests/test_fakegame_example.py
+  - resource: repo://harness/tests/lua_syntax.py
+  - resource: repo://harness/tests/boot_state_machine.py
+  - resource: repo://harness/tests/fakegame_path.py
+  - resource: repo://harness/tests/modstate_support.py
+  - resource: repo://harness/tests/battle_support.py
+  - resource: repo://docs/harness/06-dev-loop-and-fixtures/implementation-notes/mock-kit.md
+  - resource: repo://CLAUDE.md
 ---
 
 # Fake game kit

@@ -3,16 +3,17 @@ type: Overview
 title: System overview
 description: The layers of the harness (game mods, live control bridge, outer harness, MCP tools) and how one edit, deploy, run and read loop flows through them.
 tags: [architecture, harness, loop, bridge, mcp]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - CLAUDE.md
-  - harness/README.md
-  - harness/run.py
-  - harness/deploy.ps1
-  - harness/runlib/bridge_client.py
-  - mcp/ue4ss_bridge/server.py
-  - mcp/harness_tools/server.py
-  - mod/
-  - .mcp.json
+  - resource: repo://CLAUDE.md
+  - resource: repo://harness/README.md
+  - resource: repo://harness/run.py
+  - resource: repo://harness/deploy.ps1
+  - resource: repo://harness/runlib/bridge_client.py
+  - resource: repo://mcp/ue4ss_bridge/server.py
+  - resource: repo://mcp/harness_tools/server.py
+  - resource: repo://mod/
+  - resource: repo://.mcp.json
 ---
 # System overview
 

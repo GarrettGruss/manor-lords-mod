@@ -3,16 +3,17 @@ type: Concept
 title: Mod commands and state
 description: How Python scenarios call into Lua mods through HarnessActions, HarnessCommands and metrics, and how mods keep values in a save with ModState.
 tags: [lua, commands, metrics, modstate, scenarios]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - mod/HarnessActions/Scripts/main.lua
-  - mod/shared/HarnessCommands/HarnessCommands.lua
-  - mod/shared/ModState/ModState.lua
-  - harness/runlib/actions.py
-  - harness/runlib/commands.py
-  - harness/runlib/modstate.py
-  - harness/runlib/scenario_context.py
-  - docs/harness/10-invasion-testability/implementation-notes/mod-state-contract.md
-  - docs/mod/M01-mod_state/implementation-notes/tags-module.md
+  - resource: repo://mod/HarnessActions/Scripts/main.lua
+  - resource: repo://mod/shared/HarnessCommands/HarnessCommands.lua
+  - resource: repo://mod/shared/ModState/ModState.lua
+  - resource: repo://harness/runlib/actions.py
+  - resource: repo://harness/runlib/commands.py
+  - resource: repo://harness/runlib/modstate.py
+  - resource: repo://harness/runlib/scenario_context.py
+  - resource: repo://docs/harness/10-invasion-testability/implementation-notes/mod-state-contract.md
+  - resource: repo://docs/mod/M01-mod_state/implementation-notes/tags-module.md
 ---
 
 # Mod commands and state

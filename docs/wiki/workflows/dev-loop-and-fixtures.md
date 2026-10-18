@@ -3,19 +3,20 @@ type: Workflow
 title: Dev loop and fixtures
 description: How to reload Lua mods in a running game without a restart (HarnessReload, reload_mods.py) and how fixture saves are stored, installed into a free slot, loaded and cleaned up (fixtures.py, load_save.py, saveslots).
 tags: [hot-reload, fixtures, saves, dev-loop]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - mod/HarnessReload/Scripts/main.lua
-  - harness/tools/reload_mods.py
-  - harness/tools/fixtures.py
-  - harness/tools/load_save.py
-  - harness/fixtures/fixtures.json
-  - harness/runlib/fixtures.py
-  - harness/runlib/saveslots.py
-  - harness/runlib/phases.py
-  - harness/run.py
-  - docs/harness/06-dev-loop-and-fixtures/README.md
-  - docs/harness/06-dev-loop-and-fixtures/implementation-notes/hot-reload.md
-  - docs/harness/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md
+  - resource: repo://mod/HarnessReload/Scripts/main.lua
+  - resource: repo://harness/tools/reload_mods.py
+  - resource: repo://harness/tools/fixtures.py
+  - resource: repo://harness/tools/load_save.py
+  - resource: repo://harness/fixtures/fixtures.json
+  - resource: repo://harness/runlib/fixtures.py
+  - resource: repo://harness/runlib/saveslots.py
+  - resource: repo://harness/runlib/phases.py
+  - resource: repo://harness/run.py
+  - resource: repo://docs/harness/06-dev-loop-and-fixtures/README.md
+  - resource: repo://docs/harness/06-dev-loop-and-fixtures/implementation-notes/hot-reload.md
+  - resource: repo://docs/harness/06-dev-loop-and-fixtures/implementation-notes/fixture-load-bug.md
 ---
 
 # Dev loop and fixtures

@@ -1,19 +1,20 @@
 ---
 type: Workflow
 title: Pak mods
-description: How the harness changes game data through a repacked pak - extract a table, patch rows, build, install, run with --pak, and build the Invasion Mod pak from row patches. Includes the AES key rule.
+description: How the harness changes game data through a repacked pak (extract, patch rows, build, install, run with --pak, build the Invasion Mod pak) and the AES key rule.
 tags: [pak, data, repak, uassetgui, buildmod]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/tools/pakmod.py
-  - harness/tools/modpak.py
-  - harness/runlib/pak_phases.py
-  - harness/runlib/paks.py
-  - harness/run.py
-  - harness/tests/test_pakmod.py
-  - harness/tests/test_modpak.py
-  - mod/InvasionMod/mod.json
-  - mod/InvasionMod/data/
-  - .claude/skills/harness-pak-mod/SKILL.md
+  - resource: repo://harness/tools/pakmod.py
+  - resource: repo://harness/tools/modpak.py
+  - resource: repo://harness/runlib/pak_phases.py
+  - resource: repo://harness/runlib/paks.py
+  - resource: repo://harness/run.py
+  - resource: repo://harness/tests/test_pakmod.py
+  - resource: repo://harness/tests/test_modpak.py
+  - resource: repo://mod/InvasionMod/mod.json
+  - resource: repo://mod/InvasionMod/data/
+  - resource: repo://.claude/skills/harness-pak-mod/SKILL.md
 ---
 
 # Pak mods

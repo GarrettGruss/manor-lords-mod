@@ -3,15 +3,16 @@ type: Reference
 title: Specs, docs and project process
 description: How harness specs, mod docs and iterations, implementation notes, GitHub issues, branches, the changelog, skills and the wiki fit together.
 tags: [process, specs, docs, git, changelog, skills, wiki]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - CLAUDE.md
-  - docs/harness/00-harness-overview/README.md
-  - docs/harness/34-repo-wiki/README.md
-  - docs/mod/README.md
-  - docs/mod/feature-breakdown.md
-  - .claude/skills/
-  - .claude/skills/harness-git-workflow/SKILL.md
-  - CHANGELOG.md
+  - resource: repo://CLAUDE.md
+  - resource: repo://docs/harness/00-harness-overview/README.md
+  - resource: repo://docs/harness/34-repo-wiki/README.md
+  - resource: repo://docs/mod/README.md
+  - resource: repo://docs/mod/feature-breakdown.md
+  - resource: repo://.claude/skills/
+  - resource: repo://.claude/skills/harness-git-workflow/SKILL.md
+  - resource: repo://CHANGELOG.md
 ---
 # Specs, docs and project process
 

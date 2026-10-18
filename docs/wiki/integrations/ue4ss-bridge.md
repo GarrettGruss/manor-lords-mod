@@ -3,16 +3,17 @@ type: Integration
 title: UE4SS bridge
 description: How the vendored ue4ss-bridge works - the UEBridge Lua mod, the file protocol with request.json and response.json, the Python MCP server and client, environment variables, the eval gate and the harness patches.
 tags: [bridge, ue4ss, mcp, lua, live-control]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - mcp/ue4ss_bridge/server.py
-  - mcp/README.md
-  - mod/UEBridge/scripts/main.lua
-  - mod/UEBridge/scripts/settings.lua
-  - vendor/ue4ss-bridge/PATCHES.md
-  - harness/runlib/bridge_client.py
-  - harness/runlib/scenario.py
-  - .mcp.json
-  - docs/harness/01-ue4ss-bridge/README.md
+  - resource: repo://mcp/ue4ss_bridge/server.py
+  - resource: repo://mcp/README.md
+  - resource: repo://mod/UEBridge/scripts/main.lua
+  - resource: repo://mod/UEBridge/scripts/settings.lua
+  - resource: repo://vendor/ue4ss-bridge/PATCHES.md
+  - resource: repo://harness/runlib/bridge_client.py
+  - resource: repo://harness/runlib/scenario.py
+  - resource: repo://.mcp.json
+  - resource: repo://docs/harness/01-ue4ss-bridge/README.md
 ---
 
 # UE4SS bridge

@@ -3,17 +3,18 @@ type: Workflow
 title: Mod releases
 description: How harness/release.py checks a mod and builds a play-test zip - manifest, changelog, fake tests, real-game gate, zip layout, key scan, tag and GitHub pre-release.
 tags: [release, zip, gate, manifest, changelog]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/release.py
-  - harness/releaselib/
-  - harness/runlib/environment.py
-  - harness/tests/test_release_cli.py
-  - harness/tests/test_release_gate.py
-  - harness/tests/test_release_manifest.py
-  - harness/tests/test_release_zip.py
-  - docs/harness/19-mod-releases/README.md
-  - mod/InvasionMod/mod.json
-  - .claude/skills/harness-release/SKILL.md
+  - resource: repo://harness/release.py
+  - resource: repo://harness/releaselib/
+  - resource: repo://harness/runlib/environment.py
+  - resource: repo://harness/tests/test_release_cli.py
+  - resource: repo://harness/tests/test_release_gate.py
+  - resource: repo://harness/tests/test_release_manifest.py
+  - resource: repo://harness/tests/test_release_zip.py
+  - resource: repo://docs/harness/19-mod-releases/README.md
+  - resource: repo://mod/InvasionMod/mod.json
+  - resource: repo://.claude/skills/harness-release/SKILL.md
 ---
 
 # Mod releases

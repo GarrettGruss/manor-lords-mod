@@ -3,11 +3,12 @@ type: Architecture
 title: Shared Lua modules
 description: What the modules in mod/shared are, how mods load them, the rules they all follow, and which of them have fake-game tests.
 tags: [lua, shared, modules, harness]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - mod/shared/
-  - mod/HarnessActions/Scripts/main.lua
-  - harness/deploy.ps1
-  - harness/tests/fakegame/README.md
+  - resource: repo://mod/shared/
+  - resource: repo://mod/HarnessActions/Scripts/main.lua
+  - resource: repo://harness/deploy.ps1
+  - resource: repo://harness/tests/fakegame/README.md
 ---
 # Shared Lua modules
 

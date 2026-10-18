@@ -1,13 +1,14 @@
 ---
 type: Overview
 title: Quickstart
-description: Entry page of the repo wiki. What the repo is, the edit-deploy-run-read loop in five lines, and a task map that routes each common job to the wiki page, skill and spec to read.
+description: Entry page of the repo wiki with what the repo is, the edit-deploy-run-read loop, and a task map that routes each common job to its wiki page and skill.
 tags: [quickstart, navigation, harness, mod]
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - CLAUDE.md
-  - .claude/skills/harness-overview/SKILL.md
-  - harness/run.py
-  - mod/InvasionMod/mod.json
+  - resource: repo://CLAUDE.md
+  - resource: repo://.claude/skills/harness-overview/SKILL.md
+  - resource: repo://harness/run.py
+  - resource: repo://mod/InvasionMod/mod.json
 ---
 # Quickstart
 

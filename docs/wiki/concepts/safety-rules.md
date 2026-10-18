@@ -3,18 +3,19 @@ type: Concept
 title: Safety rules
 description: The rules that protect the user's real save folder and the game from harness code, with the guards that enforce them (guarded save_game, autosave push, save hash guard, slot ledger) and the crash-prone calls to avoid.
 tags: [safety, saves, autosave, crash]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - CLAUDE.md
-  - mod/shared/HarnessSave/HarnessSave.lua
-  - mod/shared/HarnessAutosave/HarnessAutosave.lua
-  - mod/HarnessBoot/Scripts/main.lua
-  - harness/runlib/harness_save.py
-  - harness/runlib/saveslots.py
-  - harness/runlib/fixtures.py
-  - harness/runlib/phases.py
-  - harness/tests/test_save_call_sites.py
-  - docs/harness/24-mod-save-state/implementation-notes/save-hooks.md
-  - docs/harness/06-dev-loop-and-fixtures/implementation-notes/autosave.md
+  - resource: repo://CLAUDE.md
+  - resource: repo://mod/shared/HarnessSave/HarnessSave.lua
+  - resource: repo://mod/shared/HarnessAutosave/HarnessAutosave.lua
+  - resource: repo://mod/HarnessBoot/Scripts/main.lua
+  - resource: repo://harness/runlib/harness_save.py
+  - resource: repo://harness/runlib/saveslots.py
+  - resource: repo://harness/runlib/fixtures.py
+  - resource: repo://harness/runlib/phases.py
+  - resource: repo://harness/tests/test_save_call_sites.py
+  - resource: repo://docs/harness/24-mod-save-state/implementation-notes/save-hooks.md
+  - resource: repo://docs/harness/06-dev-loop-and-fixtures/implementation-notes/autosave.md
 ---
 
 # Safety rules

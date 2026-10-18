@@ -3,17 +3,18 @@ type: Reference
 title: Source map
 description: What each top folder and main subfolder of the repo owns, the entry files, and which paths are git-ignored.
 tags: [architecture, layout, folders, gitignore]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - .gitignore
-  - CLAUDE.md
-  - harness/
-  - mod/
-  - mcp/
-  - vendor/ue4ss-bridge/
-  - docs/
-  - .claude/skills/
-  - .mcp.json
-  - pyproject.toml
+  - resource: repo://.gitignore
+  - resource: repo://CLAUDE.md
+  - resource: repo://harness/
+  - resource: repo://mod/
+  - resource: repo://mcp/
+  - resource: repo://vendor/ue4ss-bridge/
+  - resource: repo://docs/
+  - resource: repo://.claude/skills/
+  - resource: repo://.mcp.json
+  - resource: repo://pyproject.toml
 ---
 # Source map
 

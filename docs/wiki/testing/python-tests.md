@@ -3,17 +3,18 @@ type: Testing
 title: Python tests and coverage
 description: The Python unit tests of the harness (runlib, suitelib, releaselib, tools, install scripts), the full test set and how to run it, test helpers and fakes, and the coverage tool for the Invasion Mode criteria.
 tags: [testing, unittest, python, coverage, criteria]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/tests/
-  - harness/tools/coverage.py
-  - harness/runlib/fake_phases.py
-  - harness/tests/stub_launcher.py
-  - harness/tests/suitelib_fakes.py
-  - docs/harness/10-invasion-testability/criteria.json
-  - .claude/skills/harness-coverage/SKILL.md
-  - .claude/skills/harness-git-workflow/SKILL.md
-  - pyproject.toml
-  - CLAUDE.md
+  - resource: repo://harness/tests/
+  - resource: repo://harness/tools/coverage.py
+  - resource: repo://harness/runlib/fake_phases.py
+  - resource: repo://harness/tests/stub_launcher.py
+  - resource: repo://harness/tests/suitelib_fakes.py
+  - resource: repo://docs/harness/10-invasion-testability/criteria.json
+  - resource: repo://.claude/skills/harness-coverage/SKILL.md
+  - resource: repo://.claude/skills/harness-git-workflow/SKILL.md
+  - resource: repo://pyproject.toml
+  - resource: repo://CLAUDE.md
 ---
 
 # Python tests and coverage

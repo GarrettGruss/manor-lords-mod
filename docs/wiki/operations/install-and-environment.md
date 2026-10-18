@@ -3,20 +3,21 @@ type: Runbook
 title: Install and environment
 description: How to set up the PC for the harness - uv and the venv, install.ps1 and uninstall.ps1 (settings backup, game slots), deploy.ps1, Windows paths and the key environment variables.
 tags: [install, slots, uv, environment, windows]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/install.ps1
-  - harness/uninstall.ps1
-  - harness/installstate.ps1
-  - harness/deploy.ps1
-  - harness/runlib/gameslots.py
-  - harness/runlib/shared.py
-  - harness/runlib/game.py
-  - harness/runlib/runfolder.py
-  - harness/runlib/environment.py
-  - pyproject.toml
-  - mcp/README.md
-  - harness/tests/test_install_scripts.py
-  - docs/harness/11-parallel-game-slots/README.md
+  - resource: repo://harness/install.ps1
+  - resource: repo://harness/uninstall.ps1
+  - resource: repo://harness/installstate.ps1
+  - resource: repo://harness/deploy.ps1
+  - resource: repo://harness/runlib/gameslots.py
+  - resource: repo://harness/runlib/shared.py
+  - resource: repo://harness/runlib/game.py
+  - resource: repo://harness/runlib/runfolder.py
+  - resource: repo://harness/runlib/environment.py
+  - resource: repo://pyproject.toml
+  - resource: repo://mcp/README.md
+  - resource: repo://harness/tests/test_install_scripts.py
+  - resource: repo://docs/harness/11-parallel-game-slots/README.md
 ---
 
 # Install and environment

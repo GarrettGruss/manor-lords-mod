@@ -3,14 +3,15 @@ type: Workflow
 title: Suites, baselines and A/B tests
 description: How suite.py runs a suite file of scenarios, repeats and variants, checks baselines, compares variants with small-sample statistics, writes report.json and report.md, and how run_series.py differs.
 tags: [suite, baseline, ab-test, statistics, harness]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/suite.py
-  - harness/suitelib/
-  - harness/suites/
-  - harness/baselines/
-  - harness/run_series.py
-  - harness/runlib/series.py
-  - .claude/skills/harness-ab-testing/SKILL.md
+  - resource: repo://harness/suite.py
+  - resource: repo://harness/suitelib/
+  - resource: repo://harness/suites/
+  - resource: repo://harness/baselines/
+  - resource: repo://harness/run_series.py
+  - resource: repo://harness/runlib/series.py
+  - resource: repo://.claude/skills/harness-ab-testing/SKILL.md
 ---
 
 # Suites, baselines and A/B tests

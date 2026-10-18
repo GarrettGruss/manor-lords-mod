@@ -3,13 +3,14 @@ type: Reference
 title: Invasion Mod features
 description: The features of mod/InvasionMod - what each one implements now, its named commands, its dependencies on other features, and its mod spec.
 tags: [invasion-mod, features, commands, dependencies]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - mod/InvasionMod/Scripts/features/
-  - mod/InvasionMod/Scripts/feature_list.lua
-  - mod/InvasionMod/Scripts/config.lua
-  - mod/InvasionMod/scenarios/
-  - docs/mod/README.md
-  - docs/mod/feature-breakdown.md
+  - resource: repo://mod/InvasionMod/Scripts/features/
+  - resource: repo://mod/InvasionMod/Scripts/feature_list.lua
+  - resource: repo://mod/InvasionMod/Scripts/config.lua
+  - resource: repo://mod/InvasionMod/scenarios/
+  - resource: repo://docs/mod/README.md
+  - resource: repo://docs/mod/feature-breakdown.md
 ---
 # Invasion Mod features
 

@@ -3,14 +3,15 @@ type: Integration
 title: Harness MCP tools
 description: The manor-harness MCP server - its ten tools, the start-and-poll run model, slots, size and path limits, and which module each tool calls.
 tags: [mcp, tools, agent, runs, slots]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - mcp/harness_tools/server.py
-  - mcp/harness_tools/tools.py
-  - .mcp.json
-  - docs/harness/05-agent-tools/README.md
-  - docs/harness/11-parallel-game-slots/README.md
-  - harness/tests/test_harness_tools_tools.py
-  - harness/tests/test_harness_tools_mcp.py
+  - resource: repo://mcp/harness_tools/server.py
+  - resource: repo://mcp/harness_tools/tools.py
+  - resource: repo://.mcp.json
+  - resource: repo://docs/harness/05-agent-tools/README.md
+  - resource: repo://docs/harness/11-parallel-game-slots/README.md
+  - resource: repo://harness/tests/test_harness_tools_tools.py
+  - resource: repo://harness/tests/test_harness_tools_mcp.py
 ---
 
 # Harness MCP tools

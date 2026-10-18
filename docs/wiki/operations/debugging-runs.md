@@ -3,14 +3,15 @@ type: Runbook
 title: Debugging runs
 description: How to find the cause of a run that crashed, timed out, failed or ended in harness_error, where each log and crash report lands, and how to collect a late crash from a kept-open game.
 tags: [harness, debugging, crash, logs]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/runlib/latecrash.py
-  - harness/tools/collect_crash.py
-  - harness/runlib/phases.py
-  - harness/runlib/game.py
-  - harness/runlib/summary.py
-  - .claude/skills/harness-debug-run/SKILL.md
-  - docs/harness/03-run-launcher/implementation-notes/real-crash-report.md
+  - resource: repo://harness/runlib/latecrash.py
+  - resource: repo://harness/tools/collect_crash.py
+  - resource: repo://harness/runlib/phases.py
+  - resource: repo://harness/runlib/game.py
+  - resource: repo://harness/runlib/summary.py
+  - resource: repo://.claude/skills/harness-debug-run/SKILL.md
+  - resource: repo://docs/harness/03-run-launcher/implementation-notes/real-crash-report.md
 ---
 
 # Debugging runs

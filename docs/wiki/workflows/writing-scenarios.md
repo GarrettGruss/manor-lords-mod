@@ -3,17 +3,18 @@ type: Workflow
 title: Writing scenarios
 description: How to write a harness scenario module, the ScenarioContext API (time, expect, run_until, actions, metrics, mouse), limits, coverage tags, hidden scenarios, mod-owned scenarios and tests.
 tags: [scenario, harness, assertions, testing]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/runlib/scenario.py
-  - harness/runlib/scenario_context.py
-  - harness/runlib/timectl.py
-  - harness/runlib/expectations.py
-  - harness/runlib/waiting.py
-  - harness/runlib/telemetry.py
-  - harness/scenarios/smoke.py
-  - harness/tools/coverage.py
-  - harness/tests/test_runlib_scenario.py
-  - .claude/skills/harness-write-scenario/SKILL.md
+  - resource: repo://harness/runlib/scenario.py
+  - resource: repo://harness/runlib/scenario_context.py
+  - resource: repo://harness/runlib/timectl.py
+  - resource: repo://harness/runlib/expectations.py
+  - resource: repo://harness/runlib/waiting.py
+  - resource: repo://harness/runlib/telemetry.py
+  - resource: repo://harness/scenarios/smoke.py
+  - resource: repo://harness/tools/coverage.py
+  - resource: repo://harness/tests/test_runlib_scenario.py
+  - resource: repo://.claude/skills/harness-write-scenario/SKILL.md
 ---
 
 # Writing scenarios

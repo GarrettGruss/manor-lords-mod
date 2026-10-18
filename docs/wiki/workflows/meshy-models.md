@@ -3,15 +3,16 @@ type: Workflow
 title: Meshy models
 description: Pipeline that makes a 3D model for the game - Gemini reference images, Meshy generation, headless UE import, game material instance, cook and pak - with costs, caps and the grey material cause.
 tags: [meshy, gemini, mesh, unreal, pak, material]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/tools/genmesh.py
-  - harness/tools/genimage.py
-  - harness/tools/recook_meshy_pak.py
-  - harness/tests/test_genmesh.py
-  - mod/HarnessActions/ue/
-  - .claude/skills/harness-meshy/SKILL.md
-  - docs/harness/21-mesh-generation/README.md
-  - docs/harness/33-meshy-materials/README.md
+  - resource: repo://harness/tools/genmesh.py
+  - resource: repo://harness/tools/genimage.py
+  - resource: repo://harness/tools/recook_meshy_pak.py
+  - resource: repo://harness/tests/test_genmesh.py
+  - resource: repo://mod/HarnessActions/ue/
+  - resource: repo://.claude/skills/harness-meshy/SKILL.md
+  - resource: repo://docs/harness/21-mesh-generation/README.md
+  - resource: repo://docs/harness/33-meshy-materials/README.md
 ---
 
 # Meshy models

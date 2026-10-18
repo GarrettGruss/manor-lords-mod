@@ -3,12 +3,13 @@ type: Concept
 title: Run folder and verdicts
 description: What is in runs/<id>/ after a run, the fields of summary.json and config.json, the five verdicts with their exit codes and precedence, and the size limit of the summary.
 tags: [harness, runs, summary, verdict]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/runlib/summary.py
-  - harness/runlib/runfolder.py
-  - harness/runlib/runner.py
-  - harness/runlib/phases.py
-  - harness/run.py
+  - resource: repo://harness/runlib/summary.py
+  - resource: repo://harness/runlib/runfolder.py
+  - resource: repo://harness/runlib/runner.py
+  - resource: repo://harness/runlib/phases.py
+  - resource: repo://harness/run.py
 ---
 
 # Run folder and verdicts

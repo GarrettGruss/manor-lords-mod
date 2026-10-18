@@ -3,15 +3,16 @@ type: Workflow
 title: Scenario run
 description: How harness/run.py runs one scenario end to end through the phases preflight, deploy, launch, boot, scenario, collect and teardown, with its options, environment variables, locks, run cap and failure rules.
 tags: [harness, runs, launcher, phases]
+generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-18T15:30:28Z }
 sources:
-  - harness/run.py
-  - harness/runlib/runner.py
-  - harness/runlib/phases.py
-  - harness/runlib/game.py
-  - harness/runlib/runfolder.py
-  - harness/deploy.ps1
-  - mod/HarnessBoot/
-  - docs/harness/03-run-launcher/README.md
+  - resource: repo://harness/run.py
+  - resource: repo://harness/runlib/runner.py
+  - resource: repo://harness/runlib/phases.py
+  - resource: repo://harness/runlib/game.py
+  - resource: repo://harness/runlib/runfolder.py
+  - resource: repo://harness/deploy.ps1
+  - resource: repo://mod/HarnessBoot/
+  - resource: repo://docs/harness/03-run-launcher/README.md
 ---
 
 # Scenario run
