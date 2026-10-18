@@ -20,6 +20,7 @@ for slot = 1, config.max_vassals do
     state:register("vassal" .. slot .. "_handed_day", 0, "integer")      -- game day of the handover, 0 when not handed over
     state:register("vassal" .. slot .. "_handed_buildings", 0, "integer") -- buildings of the region at the handover
     state:register("vassal" .. slot .. "_stalled", false, "boolean")    -- the lord built nothing in growth_check_days
+    state:register("vassal" .. slot .. "_capital", false, "boolean")    -- the player took the region back as the fallback capital (M06.03)
 end
 
 local last_goal = nil        -- the goal as read at the last poll
@@ -70,7 +71,7 @@ local function slot_row(slot)
     if region == rules.NO_REGION then return nil end
     return { slot = slot, region = region, lord = state:get(slot_key(slot, "lord")),
         loyalty = state:get(slot_key(slot, "loyalty")), since_day = state:get(slot_key(slot, "since_day")),
-        handed_day = state:get(slot_key(slot, "handed_day")), stalled = state:get(slot_key(slot, "stalled")) }
+        handed_day = state:get(slot_key(slot, "handed_day")), stalled = state:get(slot_key(slot, "stalled")), capital = state:get(slot_key(slot, "capital")) }
 end
 
 local function slot_rows(with_region)
@@ -164,7 +165,7 @@ local function scan_regions()
     for _, row in ipairs(rows) do
         if row.region ~= home then
             local slot = rules.slot_of_region(slot_regions(), config.max_vassals, row.region) or register_vassal(row.region)
-            if slot ~= nil and row.settled and state:get(slot_key(slot, "lord")) == rules.NO_REGION then try_hand_over(slot, row.region) end
+            if slot ~= nil and row.settled and state:get(slot_key(slot, "lord")) == rules.NO_REGION and not state:get(slot_key(slot, "capital")) then try_hand_over(slot, row.region) end
         end
     end
 end
@@ -230,6 +231,12 @@ end
 
 require("scheduler").every(TAG, config.poll_ms, poll)
 
+-- The player took the region of this slot back as the fallback capital: the scan must not hand it to a lord again.
+local function set_capital(slot)
+    state:set(slot_key(slot, "capital"), true)
+    state:set(slot_key(slot, "lord"), rules.NO_REGION)
+end
+
 local function command_state()
     local setup = world.setup_state()
     return {
@@ -282,4 +289,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature vassals loaded")
-return { state = state, region_families = world.region_families, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }
+return { state = state, set_capital = set_capital, region_families = world.region_families, register_vassal = register_vassal, set_loyalty = set_loyalty, slot_rows = slot_rows, slot_regions = slot_regions }
