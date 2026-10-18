@@ -103,6 +103,10 @@ return {
         armored_def_min = 10,          -- a unit with def below this is unarmored (Brigands about 3, militia 5 to 7, mail 10, retinue 62)
         unarmored_def_factor = 0.0,    -- new def = def x factor, for an unarmored unit
         unarmored_block_factor = 0.0,  -- new block = block x factor
+        -- M05 iteration 03: armor needs a weapon to pay off (spec 25: armor alone did not win). Values TBD by the A/B.
+        heavy_def_min = 40,            -- units with this def or more (retinue 62) are heavy: no weapon bonus
+        armored_att_factor = 1.5,      -- new att = att x factor, for an armored unit (def from armored_def_min up to heavy_def_min)
+        armored_pierce_add = 2,        -- new armorPierce = armorPierce + amount (poleaxe infantry has 2)
     },
     -- M04 bandits, iteration 01. First guesses from M00 decisions 11 to 15 and 28 to 30.
     bandits = {
@@ -122,6 +126,15 @@ return {
             check_every = 5,             -- polls between two looks at a sent buy-back
             give_up_game_seconds = 120,  -- game time (not real time, the game may be paused) before a missing family counts as a failed deal
         },
+    },
+    -- M02 iteration 05: the raid widget (one menu for all raid information). Needs the pak raidmenu_P.pak.
+    raid_widget = {
+        enabled = true,
+        toggle_key = Key.F8,                 -- F7 is the policy menu of the other mod; change here if F8 clashes
+        poll_ms = 200,                       -- real time between two checks of the buttons and the texts
+        click_cooldown_s = 0.4,
+        z_order = 500,
+        position = { X = 300, Y = 150 },
     },
     -- M06 sack_and_terms, iteration 01. All values are TBD for playtests (M00 gives only the range 20 to 50 percent).
     sack_and_terms = {

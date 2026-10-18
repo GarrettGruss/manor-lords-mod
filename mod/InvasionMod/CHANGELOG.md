@@ -6,10 +6,10 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ### Added
 - Mod M07.02 (#191): the `vassals` feature hands a region that the player claimed and settled to a new AI lord (friendly, builds). The mod declares peace when the lord declares war (config `keep_peace`) and flags a lord that does not build (`stalled`, 10 game days). Scenario `vassals-settled-vassal`. Notes `docs/mod/M07-vassals/implementation-notes/iteration-02-settled-vassal.md`.
+- Feature `unit_balance` (M05.03, #183): weapon bonus for armored units. Commands `unit_balance_set` takes `att_factor` and `pierce_add`; `unit_balance_state` shows `weapon`, `att_factor`, `pierce_add`.
+- Feature `raid_widget` (M02.05, #189): the raid menu (pak `raidmenu`, key F8), commands `raid_widget_open`, `raid_widget_close`, `raid_widget_state`, config `raid_widget`. `invasion` exports `raid_info` and `pick_difficulty`; `terms` exports `summary`.
 - Mod M07.01 (#187): feature `vassals` of `InvasionMod`. The mod writes goals = Endless on every start and load (a claim no longer ends the game) and keeps a 3 slot vassal registry with loyalty in ModState. Commands `vassals_state`, `vassals_claim`, `vassals_set_loyalty`, `vassals_set_goal`. Scenario `vassals-claim-without-victory`.
 - Feature `invasion` (M02.06, #186): great raid phases (`gr_*` ModState keys), `great_raid.next_action`, `relief.lua`, config `invasion.great_raid` wave and final values, three `invasion_great_*` commands. `raid_behavior` exports `final_raid_ended`; a `great` raid has no plunder and no leave.
-### Fixed
-- Feature `raid_behavior`: a non-number `ItemsLooted` no longer raises an error in the unit scan.
 - Feature `invasion` (M02.03, #177): subjugation raid with its own ModState keys (`sub_*`), `target.lua`, config `invasion.subjugation`. `raid_behavior`: no plunder and no leave for a subjugation raid; the tracker shows `kind`.
 - Feature `sack_and_terms` (M06.02, #181): terms. Commands `terms_state`, `terms_offer`, `terms_accept` (payment or vassalage), `terms_decline`. `raid_behavior` exports `force_leave` and `active_role_raid`. Config `sack_and_terms.terms`.
 - Feature `raid_behavior` (M03.02 follow-up, #172): test commands `raid_behavior_test_set_leave`, `raid_behavior_test_take_region`, `raid_behavior_test_kill_raiders` (session only). Feature `invasion`: a lord raid that fails after a partial spawn adds no bandit squads.
@@ -24,6 +24,9 @@ Each entry names its feature. Format: Keep a Changelog.
 - Feature `bandits` (M04.01, #155): low approval lowers Public Order (debuff = ceil((100 - approval) x difficulty), written again after each game rewrite), and low Public Order turns families into bandits through `homeless_rebel` (fixed 30 day tick, bands 10, 25 and 50 percent). Commands `bandits_state`, `bandits_set_approval`, `bandits_tick_now`.
 - Feature `raid_behavior` (M03.01, #144): raid tracker, carry cap, loot of a dead raider back to the nearest store. Command `raid_behavior_state`. The `invasion` feature gets `watch_spawn` for other features.
 - Feature `invasion` (M02.01, #143): one scheduled minor raid, daily countdown banner, base raid timer kept high. Commands `invasion_state`, `invasion_force_next`, `invasion_set_difficulty`, `invasion_set_size`.
+
+### Fixed
+- Feature `raid_behavior`: a non-number `ItemsLooted` no longer raises an error in the unit scan (M02.06, #186).
 
 ### Changed
 - Feature `mod_state`: `mod_state_dump` returns only its selftest keys.
