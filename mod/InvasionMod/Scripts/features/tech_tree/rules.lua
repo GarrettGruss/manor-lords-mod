@@ -69,4 +69,29 @@ function M.totals(tree, unlocked, garrison_squads)
     return totals
 end
 
+-- The text for the effect totals, for the menu. Neutral values are left out.
+function M.describe_totals(totals)
+    local parts = {}
+    if totals.order_bonus ~= 0 then parts[#parts + 1] = string.format("Public Order %+d", totals.order_bonus) end
+    if totals.approval_bonus ~= 0 then parts[#parts + 1] = string.format("Approval %+d", totals.approval_bonus) end
+    local factors = {
+        { "Buy-back price", totals.buy_back_multiplier }, { "Militia attack", totals.militia_attack_multiplier },
+        { "Militia defence", totals.militia_defence_multiplier },
+    }
+    for _, factor in ipairs(factors) do
+        if math.abs(factor[2] - 1) > 1e-9 then parts[#parts + 1] = string.format("%s x%.2f", factor[1], factor[2]) end
+    end
+    if #parts == 0 then return "none" end
+    return table.concat(parts, ", ")
+end
+
+-- The state of a node for the menu: "unlocked", "available", "other_path" or "locked" (with the reason of the refusal).
+function M.node_status(tree, current_path, unlocked, slots, node_id)
+    if contains(unlocked, node_id) then return "unlocked" end
+    local reason = M.unlock_refusal(tree, current_path, unlocked, slots, node_id)
+    if reason == nil then return "available" end
+    if current_path ~= M.NO_PATH and tree.by_id[node_id].path ~= current_path then return "other_path", reason end
+    return "locked", reason
+end
+
 return M
