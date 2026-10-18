@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Skill `harness-meshy`: the pipeline for 3D models (Gemini, Meshy, UE import, material instance, pak), cost rules, and the Meshy Pro license quote.
+
 ### Fixed
 - Meshy meshes now render their texture, not flat grey: the import scripts use an instance of a game master material (spec 33, #237).
 

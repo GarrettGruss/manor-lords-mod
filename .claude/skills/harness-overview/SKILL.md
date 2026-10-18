@@ -30,6 +30,7 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 | Split work between agents | `harness-dispatch-agents` |
 | Commit, PR, merge | `harness-git-workflow` |
 | Release a mod to play testers | `harness-release` |
+| Make a 3D model (Gemini, Meshy, UE import) | `harness-meshy` |
 
 ## Facts that save time
 - UE 5.5.4 shipping game. Game folder `C:\Program Files (x86)\Steam\steamapps\common\Manor Lords`. The game runs without Steam.

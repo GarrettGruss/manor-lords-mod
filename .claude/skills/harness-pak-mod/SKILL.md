@@ -32,6 +32,7 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 ## Traps
 - UAssetGUI exits 0 on errors and can write a useless "RawExport" JSON that still round-trips. `tojson` now fails on it. A missing mapping is the usual cause.
 - Compiled mod paks (`*_P.pak`) may be committed (user decision 2026-10-13). A mod keeps its pak at `mod/<Name>/paks/<pak>_P.pak`. Original game paks, extracts, `.usmap` files, `modtools/work` files and the AES key stay out of git. Grep the diff for the key before each commit. The work folder is `modtools/work` (git-ignored).
+- To put a 3D model in a pak, see skill `harness-meshy` (import, material instance, cook).
 - A mod pak for a release stays in `mod/<Name>/paks/` and is named in `mod.json` (skill `harness-release`). A committed pak over 10 MB gives a release warning.
 - Spec 18 notes: a pak can add `buildingStats` rows cloned from the tent and retarget a row to another blueprint class (`docs/harness/18-composite-buildings/implementation-notes/composite-pak.md`). Spike #65: `harness/tools/s65_edit_json.py` clones a row (`manor-module-pak.md` in spec 12).
 - After a run killed by a timeout, check `pakmod.py list`.
