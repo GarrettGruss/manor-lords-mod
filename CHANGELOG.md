@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Skill `reliability-assessment` (change `add-reliability-metrics`, #289): a reusable script that reports change failure rate, fix-to-feat ratio, churn, bug lifetime, MTTF, MTTR and flaky rate per spec domain. One config file (`reliability.json`) holds the domain map, the run format and all limits. The first report is in `docs/reliability/2026-10-18.md`. New process rules `process/reliability-assessment`; a `feat` proposal has a `Reliability risk` section; the release steps start with an assessment.
 - `CONTRIBUTING.md`: setup, the OpenSpec change flow with a merge checklist (the archive commit must be in the PR), commits, tests, safety and writing style.
 - Pull request template `.github/pull_request_template.md`: Summary, Spec changes, Test results table, Evidence, Not verified (change `require-review-evidence`, #264).
 - Spec 34 (#254): event driven button clicks for pak widgets. Shared module `HarnessClickHooks` and the pak widget `WBP_ClickButton` (a graph copied from an engine widget; its OnClicked event is hooked). Scenario `tech-tree-widget-clicks`.
