@@ -6,6 +6,7 @@ local ModState = require("ModState")
 local plan_rules = require("features.invasion.plan")
 local great_raid = require("features.invasion.great_raid")
 local difficulty_rules = require("features.invasion.difficulty")
+local target_rules = require("features.invasion.target")
 local lord_raid = require("features.invasion.lord_raid")
 local all_config = require("config")
 local config = all_config.invasion
@@ -26,6 +27,11 @@ state:register("squads", 0, "integer")
 state:register("composition_seed", 0, "integer") -- seed of the template picks; the composition is computed from it (0: none yet)
 state:register("raids_spawned", 0, "integer")
 state:register("last_banner_day", 0, "integer")
+state:register("sub_day", 0, "integer")         -- subjugation raid: planned day (0: not planned)
+state:register("sub_warning_day", 0, "integer")
+state:register("sub_squads", 0, "integer")
+state:register("sub_seed", 0, "integer")
+state:register("sub_spawned", 0, "integer")
 state:register("difficulty_chosen", 0, "integer") -- 1 after the player picked the difficulty
 state:register("last_prompt_day", 0, "integer")
 state:register("great_raid_day", 0, "integer") -- absolute game day when the great raid starts (0: the clock has not started)
@@ -83,19 +89,27 @@ end
 
 -- Only the seed is saved: it is one integer (a string tag crashed the game, see the notes). The list follows from the seed,
 -- the squads and the difficulty, so a size or difficulty change gives a new list with the same random picks.
-local function ensure_seed()
-    if state:get("composition_seed") == 0 then state:set("composition_seed", math.random(1, plan_rules.MAX_SEED)) end
+-- A raid kind ("plunder" or "subjugation") keeps its own squads and seed in ModState.
+local KEYS = {
+    plunder = { squads = "squads", seed = "composition_seed" },
+    subjugation = { squads = "sub_squads", seed = "sub_seed" },
+}
+
+local function ensure_seed(kind)
+    local key = KEYS[kind or "plunder"].seed
+    if state:get(key) == 0 then state:set(key, math.random(1, plan_rules.MAX_SEED)) end
 end
 
-local function composition_list()
-    ensure_seed()
-    return plan_rules.composition(state:get("squads"), state:get("difficulty"), roles, plan_rules.lcg(state:get("composition_seed")))
+local function composition_list(kind)
+    kind = kind or "plunder"
+    ensure_seed(kind)
+    return plan_rules.composition(state:get(KEYS[kind].squads), state:get("difficulty"), roles, plan_rules.lcg(state:get(KEYS[kind].seed)))
 end
 
-local function planned_units()
-    local squads = state:get("squads")
+local function planned_units(kind)
+    local squads = state:get(KEYS[kind or "plunder"].squads)
     if not use_roles or squads < 1 then return squads * config.squad_units end
-    return plan_rules.expected_units(composition_list(), roles.template_units)
+    return plan_rules.expected_units(composition_list(kind), roles.template_units)
 end
 
 local function make_plan(today)
@@ -106,8 +120,9 @@ local function make_plan(today)
         today, plan.raid_day, plan.warning_day, plan.size_class, plan.squads, state:get("difficulty"), plan_rules.join(composition_list())))
 end
 
-local function spawn_raid(today)
-    local squads = state:get("squads")
+local function spawn_raid(today, kind)
+    kind = kind or "plunder"
+    local squads = state:get(KEYS[kind].squads)
     local centre = spawn_centre()
     if centre == nil then return core.log.error(TAG, "no player pawn: the raid is not spawned") end
     local tokens = {}
@@ -115,12 +130,13 @@ local function spawn_raid(today)
     local ok, problem
     local lord_info = nil
     if use_roles then
-        local list = composition_list()
+        local list = composition_list(kind)
         raid_squads = {}
         if roles.lord_army.enabled then
             ok, problem = lord_raid.start(list, roles.lord_army)
             if ok then
                 raid_squads, lord_info = problem.squads, problem
+                lord_info.kind = kind
             else
                 core.log.error(TAG, "lord raid failed, the squads are bandit squads: " .. tostring(problem))
             end
@@ -138,12 +154,16 @@ local function spawn_raid(today)
     end
     if not ok then return core.log.error(TAG, "raid spawn failed: " .. tostring(problem)) end
     state:set("raids_spawned", state:get("raids_spawned") + 1)
+    if kind == "subjugation" then state:set("sub_spawned", 1) end
+    local home = core.player_region()
+    local target = target_rules.pick(kind, home and core.region_row(home).region or "home", {}, math.random) -- vassal targets: TBD for M07
     for index, watcher in ipairs(spawn_watchers) do
-        core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = squads, roles = use_roles, lord_raid = lord_info })
+        core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = squads, roles = use_roles, lord_raid = lord_info, kind = kind, target = target })
     end
-    core.log.info(TAG, string.format("INVASION spawn day=%d planned_day=%d squads=%d raiders=%d composition=%s roles=%s",
-        today, state:get("raid_day"), squads, planned_units(), plan_rules.join(composition_list()), tostring(use_roles)))
-    core.show_banner("Raiders are here", string.format("About %d raiders", planned_units()))
+    local planned_day = kind == "subjugation" and state:get("sub_day") or state:get("raid_day")
+    core.log.info(TAG, string.format("INVASION spawn day=%d planned_day=%d squads=%d raiders=%d composition=%s roles=%s kind=%s target=%s stand_in=%s",
+        today, planned_day, squads, planned_units(kind), plan_rules.join(composition_list(kind)), tostring(use_roles), kind, tostring(target.region), tostring(target.stand_in)))
+    core.show_banner(kind == "subjugation" and "The subjugation raid is here" or "Raiders are here", string.format("About %d raiders", planned_units(kind)))
 end
 
 local function clock_days_left(today)
@@ -180,6 +200,35 @@ local function minor_raid_step(today)
     if today >= state:get("warning_day") and state:get("last_banner_day") ~= today then show_countdown(today, days_left) end
 end
 
+local function make_subjugation_plan(today)
+    local sub = config.subjugation
+    local wait = plan_rules.pick(math.random, sub.wait_days_min, sub.wait_days_max)
+    local warning = math.min(plan_rules.pick(math.random, config.warning_days_min, config.warning_days_max), wait)
+    state:set("sub_day", today + wait)
+    state:set("sub_warning_day", today + wait - warning)
+    state:set("sub_squads", plan_rules.squads(sub.size_class, state:get("difficulty"), config.size_multipliers))
+    ensure_seed("subjugation")
+    core.log.info(TAG, string.format("INVASION subjugation plan day=%d sub_day=%d warning_day=%d squads=%d composition=%s", today,
+        today + wait, today + wait - warning, state:get("sub_squads"), plan_rules.join(composition_list("subjugation"))))
+end
+
+local function show_subjugation_countdown(today, days_left)
+    local text = "Subjugation " .. plan_rules.banner_text(days_left, planned_units("subjugation")):lower()
+    local ok = core.show_banner(text, great_raid.text(clock_days_left(today)))
+    state:set("last_clock_banner_day", today)
+    state:set("last_banner_day", today)
+    core.log.info(TAG, string.format("INVASION subjugation banner day=%d days_left=%d raiders=%d shown=%s", today, days_left, planned_units("subjugation"), tostring(ok)))
+end
+
+-- The subjugation raid comes after the first (plunder) raid. It is a major raid on a vassal region (stand-in: the home region).
+local function subjugation_step(today)
+    if not config.subjugation.enabled or state:get("raids_spawned") < 1 or state:get("sub_spawned") == 1 then return end
+    if state:get("sub_day") == 0 then make_subjugation_plan(today) end
+    local days_left = state:get("sub_day") - today
+    if days_left <= 0 then return spawn_raid(today, "subjugation") end
+    if today >= state:get("sub_warning_day") and state:get("last_banner_day") ~= today then show_subjugation_countdown(today, days_left) end
+end
+
 local function clock_step(today)
     if state:get("great_raid_day") == 0 then start_clock(today) end
     local due = state:get("last_clock_banner_day") + clock_config.banner_every_days <= today
@@ -197,6 +246,7 @@ end
 local function daily_step(today)
     prompt_step(today)
     minor_raid_step(today)
+    subjugation_step(today)
     clock_step(today)
 end
 
@@ -258,6 +308,25 @@ local function command_clock_set_days_left(args)
     if today == nil then return nil, "the game day is not available" end
     state:set("great_raid_day", today + args.days)
     return command_clock_state()
+end
+
+local function command_subjugation_state()
+    local today = current_day()
+    local sub_day = state:get("sub_day")
+    return { day = today, sub_day = sub_day, warning_day = state:get("sub_warning_day"), squads = state:get("sub_squads"),
+        raiders = planned_units("subjugation"), spawned = state:get("sub_spawned") == 1, days_left = (today and sub_day > 0) and (sub_day - today) or nil,
+        composition = state:get("sub_squads") > 0 and plan_rules.join(composition_list("subjugation")) or "none" }
+end
+
+-- For tests: the subjugation raid spawns on the next check (it must be planned already).
+local function command_subjugation_force_next()
+    local today = current_day()
+    if today == nil then return nil, "the game day is not available" end
+    if state:get("sub_spawned") == 1 then return nil, "the subjugation raid was spawned already" end
+    if state:get("sub_day") == 0 then return nil, "the subjugation raid is not planned yet" end
+    state:set("sub_day", today)
+    last_handled_day = nil
+    return command_subjugation_state()
 end
 
 local function command_difficulty_state()
@@ -336,6 +405,8 @@ if has_commands then
     commands.register("InvasionMod.invasion_raid_squads", command_raid_squads, {})
     commands.register("InvasionMod.invasion_set_roles", command_set_roles, { enabled = { type = "boolean", required = true } })
     commands.register("InvasionMod.invasion_state", command_state, {})
+    commands.register("InvasionMod.invasion_subjugation_state", command_subjugation_state, {})
+    commands.register("InvasionMod.invasion_subjugation_force_next", command_subjugation_force_next, {})
     commands.register("InvasionMod.invasion_difficulty_state", command_difficulty_state, {})
     commands.register("InvasionMod.invasion_pick_difficulty", command_pick_difficulty, { value = { type = "integer", required = true, min = 1, max = 3 } })
     commands.register("InvasionMod.invasion_clock_state", command_clock_state, {})

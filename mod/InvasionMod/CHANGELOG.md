@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Feature `invasion` (M02.03, #177): subjugation raid with its own ModState keys (`sub_*`), `target.lua`, config `invasion.subjugation`. `raid_behavior`: no plunder and no leave for a subjugation raid; the tracker shows `kind`.
 - Feature `invasion` (M02.04, #175): difficulty pick command and prompt banner, ModState keys `difficulty_chosen`, `last_prompt_day`, rules in `difficulty.lua`. Commands `invasion_pick_difficulty`, `invasion_difficulty_state`.
 - Feature `invasion` (M02.02, #171): great raid clock of 3 to 5 game years in ModState (`great_raid_day`, `last_clock_banner_day`), shown in the second banner line and in a banner every 30 days. Commands `invasion_clock_state`, `invasion_clock_set_days_left`. Config `invasion.great_raid`.
 - Feature `raid_behavior` (M03.02, #168): a Hussite role raid is a lord army anchored at the manor (`features/invasion/lord_raid.lua`, config `invasion.roles.lord_army`) with a plunder tick; it leaves by peace after enough loot, losses or time. Fallback squads are removed only in a quiet spot. Config `raid_behavior.leave`. The state command shows `roles` and `leave_reason`.

@@ -106,7 +106,7 @@ class RaidTests(InvasionTestCase):
         plan = self.ask("invasion_set_size", size="medium")["result"]
         self.run_days(62, plan["raid_day"] + 5)
         warning_days = plan["raid_day"] - plan["warning_day"]
-        self.banners = [text for text in self.banners if not text.startswith(("Great raid in", "Pick the difficulty"))]
+        self.banners = [text for text in self.banners if not text.startswith(("Great raid in", "Pick the difficulty", "Subjugation"))]
         self.assertEqual(len(self.banners), warning_days + 1)  # one for each day left, plus the arrival banner
         raiders = self.state()["raiders"]
         self.assertEqual(self.banners[0], f"Raid in {warning_days} days, about {raiders} raiders")
@@ -222,7 +222,8 @@ class ClockTests(InvasionTestCase):
         for day in range(63, 100):
             self.set_day(day)
         great = [text for text in self.banners if text.startswith("Great raid in")]
-        self.assertGreaterEqual(len(great), 1)
+        subjugation = [text for text in self.banners if text.startswith("Subjugation")]  # these banners carry the clock in their subtitle
+        self.assertGreaterEqual(len(great) + len(subjugation), 1)
         self.assertLessEqual(len(great), 2)
 
     def test_the_minor_raid_banner_names_the_clock(self):
@@ -274,6 +275,65 @@ class DifficultyTests(InvasionTestCase):
 
     def test_pick_outside_range_is_refused(self):
         self.assertFalse(self.ask("invasion_pick_difficulty", value=4)["ok"])
+
+class SubjugationTests(InvasionTestCase):
+    def sub(self):
+        answer = self.ask("invasion_subjugation_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def after_first_raid(self):
+        self.ask("invasion_force_next")
+        self.set_day(62)
+        self.assertEqual(self.state()["raids_spawned"], 1)
+
+    def test_no_plan_before_the_first_raid(self):
+        self.assertEqual(self.sub()["sub_day"], 0)
+
+    def test_the_plan_follows_the_first_raid_and_is_large(self):
+        self.ask("invasion_set_difficulty", value=2)
+        self.after_first_raid()
+        sub = self.sub()
+        self.assertTrue(60 <= sub["sub_day"] - 61 <= 120, sub)
+        self.assertEqual(sub["squads"], 6)
+        self.assertEqual(len(sub["composition"].split("-")), 6)
+
+    def test_the_subjugation_raid_spawns_once_on_its_day(self):
+        self.after_first_raid()
+        armies_before = len(self.armies)
+        sub = self.sub()
+        self.set_day(sub["sub_day"] + 1)
+        self.assertTrue(self.sub()["spawned"])
+        self.assertEqual(self.state()["raids_spawned"], 2)
+        self.assertEqual(len(self.armies) - armies_before, 1)
+        self.assertEqual(len(self.armies[-1][0]), self.sub()["squads"])
+        self.set_day(sub["sub_day"] + 40)
+        self.assertEqual(self.state()["raids_spawned"], 2)
+
+    def test_force_next_needs_a_plan(self):
+        self.assertFalse(self.ask("invasion_subjugation_force_next")["ok"])
+        self.after_first_raid()
+        self.assertTrue(self.ask("invasion_subjugation_force_next")["ok"])
+        self.game.advance(2)
+        self.assertTrue(self.sub()["spawned"])
+
+
+class TargetRulesTests(unittest.TestCase):
+    def run_lua(self, code):
+        game = FakeGame()
+        game.start()
+        self.addCleanup(game.close)
+        game.exec(f'package.path = "{(find_pack_mod() / "Scripts").as_posix()}/?.lua;" .. package.path')
+        return game.lua.eval(f"(function() local target = require('features.invasion.target'); {code} end)")()
+
+    def test_plunder_always_hits_home(self):
+        self.assertEqual(self.run_lua("local t = target.pick('plunder', 'home', {'v1'}, function(a, b) return b end); return t.region .. tostring(t.stand_in)"), "homefalse")
+
+    def test_subjugation_without_vassals_uses_home_as_stand_in(self):
+        self.assertEqual(self.run_lua("local t = target.pick('subjugation', 'home', {}, math.random); return t.region .. tostring(t.stand_in)"), "hometrue")
+
+    def test_subjugation_picks_a_vassal(self):
+        self.assertEqual(self.run_lua("local t = target.pick('subjugation', 'home', {'a', 'b'}, function(a, b) return b end); return t.region .. tostring(t.stand_in)"), "bfalse")
 
 
 if __name__ == "__main__":
