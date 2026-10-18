@@ -173,6 +173,15 @@ return {
         growth_min_buildings = 3, -- fewer new buildings than this means the lord stalled (real runs: +10 or +0)
         loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
     },
+    -- M08 tribute. Values are TBD for playtests (M00: 10 to 30 percent of the production).
+    tribute = {
+        enabled = true,
+        poll_ms = 2000,           -- real time between two looks at the season
+        units_per_family = 20,    -- production units of one family in one season (TBD)
+        share_min = 0.10,         -- share of the production at loyalty 0
+        share_max = 0.30,         -- share of the production at loyalty 100
+        goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally (M10 adds iron and salt)
+    },
     -- M12 tech_tree. The node data is in data/tech_tree/tree.json. Values are TBD for playtests.
     tech_tree = {
         enabled = true,
@@ -189,5 +198,17 @@ return {
         z_order = 500,
         position = { X = 300, Y = 150 },
         step_x = 180, step_y = 60,           -- pixels for one layout unit of a node
+    },
+    -- M09 refugees. Values are TBD for playtests (M00: 30 to 60 percent of the vassal population).
+    refugees = {
+        enabled = true,
+        share_min = 0.30,         -- share of the vassal families that flee
+        share_max = 0.60,
+        families_per_call = 5,    -- one settleRegion call adds 5 families (spec 15)
+        max_calls = 3,            -- most calls in one wave
+        timeout_days = 45,        -- game days until unhoused refugees turn to bandits (M00: 1 to 2 game months; TBD)
+        poll_ms = 4000,           -- real time between two looks at an active wave
+        max_rebel_families = 6,   -- most families that turn in one go (homeless_rebel limit)
+        families_per_squad = 2,   -- as in bandits
     },
 }

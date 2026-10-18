@@ -172,7 +172,7 @@ end
 """
 
 
-class HandoverTests(VassalsTestCase):
+class HandoverBase(VassalsTestCase):
     def setUp(self):
         super().setUp()
         self.counts = {}
@@ -196,6 +196,13 @@ class HandoverTests(VassalsTestCase):
         self.engine.regions = self.game.array(self.regions)
         return region
 
+    def hand_over_and_wait(self, name="Eichenhau", buildings=4):
+        self.add_region(name, True, buildings)
+        self.game.advance(10)
+        return self.state()
+
+
+class HandoverTests(HandoverBase):
     def test_the_first_scan_picks_the_region_with_most_buildings_as_home(self):
         self.assertEqual(self.state()["home_region"], "Home")
 
