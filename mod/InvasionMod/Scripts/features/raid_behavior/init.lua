@@ -305,6 +305,15 @@ local function watch_leave(fn)
     leave_watchers[#leave_watchers + 1] = fn
 end
 
+-- True when the last final-battle raid of the great raid has no living unit. nil when there is no such raid yet.
+local function final_raid_ended()
+    for index = #order, 1, -1 do
+        local raid = raids[order[index]].raid
+        if raid.lord ~= nil and raid.lord.final then return raid.initial > 0 and raid.state ~= "active" end
+    end
+    return nil
+end
+
 -- Make the active role raid leave now (for example after the player accepted terms). Returns true, or false and a message.
 local function force_leave(reason)
     for _, id in ipairs(order) do
@@ -325,4 +334,4 @@ local function active_role_raid()
     return nil
 end
 
-return { state = state, watch_leave = watch_leave, force_leave = force_leave, active_role_raid = active_role_raid }
+return { state = state, watch_leave = watch_leave, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }

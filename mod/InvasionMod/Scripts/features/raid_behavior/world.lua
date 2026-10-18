@@ -33,7 +33,8 @@ function M.read_units(tracked, all_places)
             if key ~= nil and (tracked == nil or tracked[key]) then
                 local row = { dead = read(function() return unit.dead end) == true, loot = 0, object = unit }
                 if not row.dead then
-                    row.loot = read(function() return unit.ItemsLooted end) or 0
+                    local looted = read(function() return unit.ItemsLooted end)
+                    row.loot = type(looted) == "number" and looted or 0 -- a unit of another class can return an actor here
                     if row.loot > 0 or all_places then
                         local at = read(function() return unit.realPos end)
                         row.x, row.y = at and read(function() return at.X end), at and read(function() return at.Y end)
