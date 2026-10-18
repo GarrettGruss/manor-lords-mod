@@ -108,7 +108,7 @@ return {
         armored_att_factor = 1.5,      -- new att = att x factor, for an armored unit (def from armored_def_min up to heavy_def_min)
         armored_pierce_add = 2,        -- new armorPierce = armorPierce + amount (poleaxe infantry has 2)
         -- M05 iteration 04. Spec: docs/mod/M05-unit_balance/iterations/04-counters-veterancy.md. All values TBD by the A/B.
-        reach_min = 100,               -- units with this weapon reach or more (spears 120) are pike units
+        reach_min = 110, reach_max = 125, -- units with a weapon reach in this band are pike units (spears 120; swords 65, villagers 100, axes 130)
         reach_att_add = 1.0,           -- att + amount for a pike unit: spearMilitia att 4 reaches militiaFoot att 5 (data: spear lost 0 of 5 against swords)
         veterancy = {
             enabled = true,

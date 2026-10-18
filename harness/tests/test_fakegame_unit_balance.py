@@ -150,6 +150,12 @@ class ReachTests(UnitBalanceTestCase):
         self.ask("unit_balance_set", enabled=False)
         self.assertEqual((unit["att"], unit["armorPierce"]), (4.0, 0.0))
 
+    def test_villager_and_axe_reach_are_not_pike_reach(self):
+        villager = self.make_unit(7.0, 7.0, att=1.0, reach=100.0)
+        axe = self.make_unit(7.0, 7.0, att=6.0, reach=130.0)
+        self.apply()
+        self.assertEqual((villager["att"], axe["att"]), (1.0, 6.0))
+
     def test_reach_can_be_switched_off_by_a_zero_value(self):
         self.ask("unit_balance_set", reach_att_add=0)
         unit = self.make_unit(7.0, 7.0, att=4.0, reach=120.0)

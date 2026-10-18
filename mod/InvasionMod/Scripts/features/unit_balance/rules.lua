@@ -29,11 +29,16 @@ function M.plan(v, settings, config)
         plan.armored = true
         plan.writes.att, plan.writes.armorPierce = M.weapon(v.att, v.armorPierce, settings)
     end
-    if settings.reach_att_add > 0 and type(v.range) == "number" and v.range >= config.reach_min and type(v.att) == "number" then
+    if settings.reach_att_add > 0 and M.is_pike(v.range, config) and type(v.att) == "number" then
         plan.reach = true
         plan.writes.att = (plan.writes.att or v.att) + settings.reach_att_add
     end
     return plan
+end
+
+-- A pike unit has a spear: weapon reach in [reach_min, reach_max]. Measured: spears 120, axes 130 and up, swords 65, villagers 100.
+function M.is_pike(range, config)
+    return type(range) == "number" and range >= config.reach_min and range <= config.reach_max
 end
 
 -- Experience tier: one tier for each `step` points, at most `max_tier`.

@@ -56,7 +56,7 @@ end
 local function read_unit_values(unit, def, block)
     local values = { def = def, block = block, range = read(function() return unit.range end) }
     local wants_weapon = rules.is_armored(def, config.armored_def_min, config.heavy_def_min)
-        or (type(values.range) == "number" and values.range >= config.reach_min)
+        or rules.is_pike(values.range, config)
     if wants_weapon then
         values.att = read(function() return unit.att end)
         values.armorPierce = read(function() return unit.armorPierce end)
