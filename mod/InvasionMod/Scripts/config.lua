@@ -203,6 +203,15 @@ return {
         loss_region = "forget",   -- test loss: "forget" (the lord keeps the land, the slot is freed) or "take_by_lord" (another lord is given the land; crashed the game in the first run)
         loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
     },
+    -- M10 finite_resources. Home deposits are a mod-owned stock. Values are TBD for playtests (M00: last 2 to 4 game years at normal use).
+    finite_resources = {
+        enabled = true,
+        poll_ms = 5000,            -- real time between two looks at the production of the buildings
+        window_days = 36500,       -- getGoodsProducedOver window: the whole life of a building
+        resources = {
+            iron = { good = 14, size = 400 }, -- EItemType IronOre; units that the iron mines may still produce
+        },
+    },
     -- M08 tribute. Values are TBD for playtests (M00: 10 to 30 percent of the production).
     tribute = {
         enabled = true,
