@@ -57,3 +57,7 @@ Workflow verified 2026-10-14 (note `docs/harness/21-mesh-generation/implementati
 
 ## Mod pack pak (spec 22)
 `pakmod.py buildmod <ModName>` builds `mod/<ModName>/paks/<ModName>_P.pak` from `mod/<ModName>/data/<feature>/patches/*.json` (patch format: spec 22 README) and `data/<feature>/assets/**`. It extracts the tables from the current game paks each time. It fails with the file names on a bad patch, a conflict (same row added, same field set by two features) or a new row outside the feature's `ids` range in `mod.json`. Tables: `buildingStats`, `DT_Upgrades`. Logic: `harness/tools/modpak.py`. Notes: `docs/harness/22-mod-pack-layout/implementation-notes/buildmod.md`.
+
+### Camp or prop without a menu card (spec 30)
+- To change how the game's own spawn looks, retarget the row, not the class: `s65_edit_json.py blueprint <json> 100 /Game/HarnessMod/BM_X BM_X_C` makes every bandit camp use `BM_X` (and saved camps follow at load). The tent class `BM_HomelessTents` stays untouched.
+- To show a mesh in neutral or AI land, use `load_pak_blueprint` then `encampment_spawn` (a plain actor, not saved by the game). `encampment_sites` reads camp masters, `encampment_regions` the region points. Probe: `probe-wagenburg`. Notes: `docs/harness/30-wagenburg-encampment/`.
