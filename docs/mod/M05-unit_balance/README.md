@@ -18,6 +18,8 @@ Make armor matter in battle. Give the Hussites roles from existing foot units. A
 ## Current state
 Iteration 01 (unarmored-lethality) is done in the mod: feature `unit_balance` cuts def and block of unarmored units (def below 10) to 0 for all sides. Real-game A/B: militia loss rate x2.14 (p 0.058, N 6). Notes: `implementation-notes/iteration-01-unarmored-lethality.md`. The lever research is done (spec 25). The tuning tool is done in spec 28.
 
+Iteration 02 (hussite-roles) is done in the mod: the raid plan of M02 stores a composition seed. The raid spawns one `spawnArmy` squad for each planned template (tiers by difficulty, config `invasion.roles`, values TBD). Open question 3 is answered: melee I `Brigands`, `spearMilitia`; II `militiaFoot`, `mercenary_infantry`; III `retinue_tier3`, `brigandPolearms`; bows `bowMilitia`, `brigandArchers`; crossbows `crossbowMilitia`, `mercenary_crossbowmen`. Role raids attack at once (not like `spawnRaiders` raiders). Notes: `implementation-notes/iteration-02-hussite-roles.md`.
+
 ## Proven building blocks
 - Lever results: `docs/harness/25-combat-lethality/implementation-notes/ab-results.md`, `levers.md`.
   - The live write of `def` and `block` on units works and holds for a whole fight. Militia loss rate went from 0.33 to 0.61 with def 0 and block 0 (p 0.002).
@@ -54,6 +56,6 @@ Iteration 01 (unarmored-lethality) is done in the mod: feature `unit_balance` cu
 | # | Name | Goal | Result |
 | --- | --- | --- | --- |
 | 01 | unarmored-lethality | Apply the live `def` and `block` write to unarmored units, for each new squad. | pass (x2.14 militia loss rate), see [iterations/01-unarmored-lethality.md](iterations/01-unarmored-lethality.md) |
-| 02 | hussite-roles | Hussite roles from existing foot rows, by tier (decision 7). | not started |
+| 02 | hussite-roles | Hussite roles from existing foot rows, by tier (decision 7). | pass: raids spawn a planned composition of 10 templates by tier, see [iterations/02-hussite-roles.md](iterations/02-hussite-roles.md) |
 | 03 | armored-militia | Armor plus weapon values so militia beat 1.5 times as many bandits. | not started |
 | 04 | counters-veterancy | Counters and veterancy. | not started |
