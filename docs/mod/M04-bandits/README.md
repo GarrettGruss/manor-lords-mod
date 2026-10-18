@@ -36,7 +36,7 @@ Iteration 01 (low-order-bandits) is done: the Public Order debuff and the conver
 - Feeds M09 (refugees with no home) and M12 (path effects).
 
 ## Open questions
-1. What is the buy-back price? The game does not check it, so the mod must set it. M00 gives no number.
+1. Answered (iteration 03, TBD): 10 silver per family times a multiplier (Iron Hand 1.25, Amnesty 0.5). Open: why the letter gives no family in about 1 of 5 tries.
 2. Which 30-day homeless timer does the game use? (Spike 8 in `feasibility-summary.md`: open.)
 3. Where do the bandits camp, and how long do they stay before a raid? M00 gives no rule.
 4. Is the chance per family or per region, per tick? M00 and the decision do not say. Also: does the old approval cause stay beside Public Order?
@@ -48,7 +48,7 @@ Iteration 01 (low-order-bandits) is done: the Public Order debuff and the conver
 | --- | --- | --- | --- |
 | 01 | low-order-bandits | Low Public Order turns families into bandits through `homeless_rebel`. | pass (see iteration file) |
 | 02 | season-tick | Seasonal tick with the 75, 50 and 25 percent thresholds. | pass (see iteration file) |
-| 03 | coin-buy-back | Pay coin to bring bandits back. | not started |
+| 03 | coin-buy-back | Pay coin to bring bandits back. | pass (see iteration file) |
 
 ## Follow-up decisions (2026-10-16)
 See M00 "User decisions", items 11 to 15. They override the open questions above where they answer them.
