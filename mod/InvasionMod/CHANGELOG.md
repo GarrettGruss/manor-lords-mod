@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Mod M12.01 and M12.03 (#195): feature `tech_tree` of `InvasionMod`. Two exclusive paths (Oppression, Prosperity) built from `data/tech_tree/tree.json`; one node slot for each settlement level; 8 draft nodes with effects on Public Order, the Public Order approval, the buy-back price and the militia attack and defence. Commands `tech_tree_state`, `tech_tree_choose_path`, `tech_tree_unlock`. Scenarios `tech-tree-path-choice`, `tech-tree-militia-factor`. Spec `docs/mod/M12-tech_tree/iterations/01-path-choice.md`.
 - Feature `raid_widget` (M02.05, #189): the raid menu (pak `raidmenu`, key F8), commands `raid_widget_open`, `raid_widget_close`, `raid_widget_state`, config `raid_widget`. `invasion` exports `raid_info` and `pick_difficulty`; `terms` exports `summary`.
 - Mod M07.01 (#187): feature `vassals` of `InvasionMod`. The mod writes goals = Endless on every start and load (a claim no longer ends the game) and keeps a 3 slot vassal registry with loyalty in ModState. Commands `vassals_state`, `vassals_claim`, `vassals_set_loyalty`, `vassals_set_goal`. Scenario `vassals-claim-without-victory`.
 - Feature `invasion` (M02.06, #186): great raid phases (`gr_*` ModState keys), `great_raid.next_action`, `relief.lua`, config `invasion.great_raid` wave and final values, three `invasion_great_*` commands. `raid_behavior` exports `final_raid_ended`; a `great` raid has no plunder and no leave.

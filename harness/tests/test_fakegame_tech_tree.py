@@ -239,3 +239,37 @@ class EffectTests(TechTreeTestCase):
         militia = self.state()["militia"]
         self.assertAlmostEqual(militia["attack_factor"], 1.1)
         self.assertEqual(militia["defence_factor"], 1)
+
+
+class MilitiaFactorTests(TechTreeTestCase):
+    def make_unit(self, squad, role, number):
+        unit = self.game.obj("SMUnit", dead=False, att=10.0, block=2.0, assignedSquadID=self.game.struct(Value=squad),
+                             currentUnitRole=role, **{"def": 20.0})
+        self.game.method(unit, "GetAddress", lambda _self: number)
+        return unit
+
+    def setUp(self):
+        super().setUp()
+        self.game.exec('SQUAD_MAP = { [7] = { side = "player" }, [8] = { side = "bandit" } }')
+        self.militia = self.make_unit(7, 0, 6001)
+        self.bandit = self.make_unit(8, 0, 6002)
+        self.retinue = self.make_unit(7, 5, 6003)
+
+    def unlock_militia_rights(self):
+        self.choose("prosperity")
+        self.region.settlementLevel = 3
+        for node in ("fair_courts", "amnesty", "militia_rights"):
+            self.assertTrue(self.unlock(node)["ok"])
+        self.game.advance(8)
+
+    def test_only_player_militia_gets_the_attack_factor(self):
+        self.unlock_militia_rights()
+        self.assertAlmostEqual(self.militia.att, 11.0)
+        self.assertEqual(self.bandit.att, 10.0)
+        self.assertEqual(self.retinue.att, 10.0)
+        self.assertEqual(self.militia.block, 2.0)
+
+    def test_the_factor_is_not_applied_twice(self):
+        self.unlock_militia_rights()
+        self.game.advance(12)
+        self.assertAlmostEqual(self.militia.att, 11.0)

@@ -22,8 +22,9 @@ local known = {}
 local totals = { passes = 0, seen = 0, changed = 0, armored = 0, failed = 0, militia = 0 }
 -- unit address -> record of a unit of the player militia (the M12 factors apply) or false for another unit.
 local militia_known = {}
-local militia_templates = {}
-for _, name in ipairs(config.militia_templates) do militia_templates[name] = true end
+-- Why the role and not the template: a unit has no readable template (unitTemp reads None). Militia are villagers with the role Husband (0).
+local militia_roles = {}
+for _, role in ipairs(config.militia_roles) do militia_roles[role] = true end
 local last_error = nil
 
 local function address_of(unit)
@@ -106,8 +107,8 @@ local function is_player_militia(unit, sides)
     local squad_id = read(function() return unit.assignedSquadID.Value end)
     local squad = squad_id and sides[squad_id]
     if not squad or squad.side ~= "player" then return false end
-    local template = read(function() return unit.unitTemp:ToString() end)
-    return template ~= nil and militia_templates[template] == true
+    local role = read(function() return unit.currentUnitRole end)
+    return role ~= nil and militia_roles[role] == true
 end
 
 local function write_stats(unit, values)
@@ -140,9 +141,22 @@ local function new_militia_record(unit)
     return { object = unit, base = base }
 end
 
+local last_militia_count = -1
+
+local function militia_summary_count()
+    local count = 0
+    for _, record in pairs(militia_known) do
+        if record then count = count + 1 end
+    end
+    return count
+end
+
 local function militia_pass(units, recheck)
-    local sides = squad_sides()
-    if sides == nil then return end
+    local sides, problem = squad_sides()
+    if sides == nil then
+        last_error = tostring(problem)
+        return core.log.error(TAG, "militia pass: " .. last_error)
+    end
     local present = {}
     for _, unit in ipairs(units) do
         local key = address_of(unit)
@@ -159,6 +173,11 @@ local function militia_pass(units, recheck)
     end
     for key in pairs(militia_known) do
         if not present[key] then militia_known[key] = nil end
+    end
+    local count = militia_summary_count()
+    if count ~= last_militia_count then
+        last_militia_count = count
+        core.log.info(TAG, string.format("UNIT_BALANCE militia units=%d of %d", count, #units))
     end
 end
 
@@ -211,6 +230,26 @@ end)
 -- Named commands for the harness (no eval)
 ---------------------------------------------------------------------------------------------
 
+-- Called by the tech tree. A factor of 1 puts the base values back at the next pass.
+local function set_militia(attack_factor, defence_factor)
+    settings.militia_attack_factor = attack_factor
+    settings.militia_defence_factor = defence_factor
+    core.log.info(TAG, string.format("UNIT_BALANCE militia factors attack=%s defence=%s", tostring(attack_factor), tostring(defence_factor)))
+end
+
+local function militia_summary()
+    local units, sample = 0, nil
+    for _, record in pairs(militia_known) do
+        if record then
+            units = units + 1
+            if sample == nil and isValid(record.object) then
+                sample = { base_att = record.base.att, att = read(function() return record.object.att end) }
+            end
+        end
+    end
+    return { attack_factor = settings.militia_attack_factor, defence_factor = settings.militia_defence_factor, units = units, sample = sample }
+end
+
 local function mean_changed()
     local count, def_sum, block_sum = 0, 0, 0
     for _, record in pairs(known) do
@@ -243,21 +282,6 @@ local function command_set(args)
     local state = command_state()
     state.restored = restored
     return state
-end
-
--- Called by the tech tree. A factor of 1 puts the base values back at the next pass.
-local function set_militia(attack_factor, defence_factor)
-    settings.militia_attack_factor = attack_factor
-    settings.militia_defence_factor = defence_factor
-    core.log.info(TAG, string.format("UNIT_BALANCE militia factors attack=%s defence=%s", tostring(attack_factor), tostring(defence_factor)))
-end
-
-local function militia_summary()
-    local units = 0
-    for _, record in pairs(militia_known) do
-        if record then units = units + 1 end
-    end
-    return { attack_factor = settings.militia_attack_factor, defence_factor = settings.militia_defence_factor, units = units }
 end
 
 -- One pass now. With the rule off it does nothing.

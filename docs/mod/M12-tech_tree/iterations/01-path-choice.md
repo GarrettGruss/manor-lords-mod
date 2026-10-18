@@ -1,6 +1,6 @@
 # M12 iterations 01 and 03: path-choice and first-nodes
 
-Branch: `feat/M12-tech_tree-01-path-choice`. Issue: see the pull request. Iteration 03 (first-nodes) is combined with 01 because the node effects are small.
+Branch: `feat/M12-tech_tree-01-path-choice`. Issue: #195. Iteration 03 (first-nodes) is combined with 01 because the node effects are small.
 
 ## Goal
 The player picks one of two exclusive paths. The mod builds the tree from a JSON file. The player unlocks nodes for free, one slot for each settlement level. The node effects reach the game through existing features. Commands only; the widget is iteration 02.
@@ -48,4 +48,8 @@ M00 decisions 22 (exclusive paths, final choices, draft nodes), 23 (data driven)
 - Militia att and def writes are covered by fake game tests only. A real-game check needs a player militia unit; the base `def` of unarmored militia is 0 after M05, so Veteran Levies has no visible effect on them (TBD).
 
 ## Result
-not started
+PASS in the real game (2026-10-18). Notes: `../implementation-notes/iteration-01-path-choice.md`.
+- `tech-tree-path-choice`: runs `20261018-065608-83f3`, `20261018-065952-80fe` and `20261018-073126-77c6` pass (T1 to T13). Public Order followed `natural + bonus - debuff` (40 to 50 to 75 at approval 40) and the buy-back of 2 families cost 25 silver with Iron Hand.
+- `tech-tree-militia-factor`: runs `20261018-072731-ca37` and `20261018-072903-f30c` pass (M1 to M3). The saved game has 20 militia units (role Husband or Son); their live `att` was 1.1 times the base and stayed so for 20 game seconds.
+- Fake game tests: `harness/tests/test_fakegame_tech_tree.py` (25 tests: loader refusals, path, slots, effects, militia factors).
+- Deviations: the militia is found by role (Husband, Son), not by template, because `unitTemp` reads `None`. Test squads of `spawn_units` have role Soldier and are not changed. Veteran Levies has no visible effect on unarmored militia (def is 0 after M05).

@@ -103,7 +103,7 @@ return {
         armored_def_min = 10,          -- a unit with def below this is unarmored (Brigands about 3, militia 5 to 7, mail 10, retinue 62)
         unarmored_def_factor = 0.0,    -- new def = def x factor, for an unarmored unit
         unarmored_block_factor = 0.0,  -- new block = block x factor
-        militia_templates = { "militiaFoot", "spearMilitia", "bowMilitia", "crossbowMilitia" }, -- units of the player with these templates get the M12 factors
+        militia_roles = { 0, 2 },      -- EUnitRole Husband and Son: units of the player pawn with these roles are militia
     },
     -- M04 bandits, iteration 01. First guesses from M00 decisions 11 to 15 and 28 to 30.
     bandits = {
