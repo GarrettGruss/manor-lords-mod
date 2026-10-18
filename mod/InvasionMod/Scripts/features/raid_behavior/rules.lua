@@ -175,7 +175,7 @@ function M.summary(raid)
         id = raid.id, start_day = raid.start_day, end_day = raid.end_day, squads = raid.squads, state = raid.state,
         initial = raid.initial, living = raid.living, deaths = raid.deaths, departures = raid.departures,
         loot = M.total_loot(raid), looted_total = M.looted_total(raid), carried_out = raid.carried_out, peak_loot = raid.peak_loot, returned = raid.returned, lost = raid.lost,
-        capped = raid.capped, burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason, kind = (raid.lord and raid.lord.kind) or "plunder",
+        capped = raid.capped, burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
     }
 end
 

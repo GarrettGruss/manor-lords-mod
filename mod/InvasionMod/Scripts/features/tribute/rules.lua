@@ -28,4 +28,17 @@ function M.season_changed(current, last)
     return last >= 0 and current ~= last
 end
 
+-- How a raid ended for the protection of a vassal: "defended" when the player killed the raid or made it leave by losses,
+-- "undefended" for any other end. A raid that does not target a vassal region gives nil.
+function M.protection_outcome(summary, is_vassal_region)
+    if summary.target == nil or not is_vassal_region then return nil end
+    if summary.state == "destroyed" or summary.leave_reason == "losses" then return "defended" end
+    return "undefended"
+end
+
+function M.loyalty_change(outcome, protection)
+    if outcome == "defended" then return protection.defended end
+    return protection.undefended
+end
+
 return M

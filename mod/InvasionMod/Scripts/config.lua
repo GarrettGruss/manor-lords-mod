@@ -210,6 +210,7 @@ return {
         units_per_family = 20,    -- production units of one family in one season (TBD)
         share_min = 0.10,         -- share of the production at loyalty 0
         share_max = 0.30,         -- share of the production at loyalty 100
+        protection = { defended = 5, undefended = -15 }, -- iteration 02: loyalty change of a vassal after a raid on its region (TBD)
         goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally (M10 adds iron and salt)
     },
     -- M13 manor_stronghold. Values are TBD for playtests.

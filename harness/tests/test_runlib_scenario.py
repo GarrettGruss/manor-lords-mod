@@ -207,7 +207,7 @@ class RegistryTest(unittest.TestCase):
             "raid-sack", "raid-seasons", "raid-spawn", "raid-tiers",
             "raid-timeline", "raid-timer", "refugee-wave", "refugees-housing-and-timeout", "refugees-wave", "sack-and-terms-fallback-capital", "sack-and-terms-pay-terms", "sack-and-terms-raid-sack", "sack-and-terms-sack", "sack-ruins", "sack-store-trip", "sack-village", "silver-change", "smoke",
             "soak-days", "standin-captives", "standin-outposts", "standin-tribute",
-            "tech-tree-militia-factor", "tech-tree-path-choice", "tech-tree-widget", "telemetry-sanity", "time-advance", "tribute-payout", "ui-countdown", "unit-balance-armored-fight", "unit-balance-armored-kept", "unit-balance-lethality", "unit-balance-matchup", "unit-balance-role-templates", "unit-data", "vassals-claim-without-victory", "vassals-loss-and-submission", "vassals-policies-and-orders", "vassals-settled-vassal", "veterancy", "winter-region"])
+            "tech-tree-militia-factor", "tech-tree-path-choice", "tech-tree-widget", "telemetry-sanity", "time-advance", "tribute-payout", "tribute-protection-and-loyalty", "ui-countdown", "unit-balance-armored-fight", "unit-balance-armored-kept", "unit-balance-lethality", "unit-balance-matchup", "unit-balance-role-templates", "unit-data", "vassals-claim-without-victory", "vassals-loss-and-submission", "vassals-policies-and-orders", "vassals-settled-vassal", "veterancy", "winter-region"])
         self.assertIn("selftest-timeout", list_scenarios(include_hidden=True))
         self.assertIn("selftest-action", list_scenarios(include_hidden=True))
         self.assertIn("selftest-crash", list_scenarios(include_hidden=True))
