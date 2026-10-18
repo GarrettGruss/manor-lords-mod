@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Meshy meshes now render their texture, not flat grey: the import scripts use an instance of a game master material (spec 33, #237).
+
 ### Added
 - Mod M13.03 (#215): extra retinue squads above the native limit of 12. Command `retinue_squad_hire` pays 36 x the hire cost and spawns a player squad of `retinue_tier1` (spawnArmy); each 12 of the retinue bonus allows one squad. Command `retinue_squad_state`. Scenario `manor-stronghold-retinue-squads`, probe `probe-retinue-squads`.
 - Spec 32 (#233): manor Wagenburg spike. Paks `s32wall_P.pak` (Meshy wagon replaces the manor wall piece mesh) and `s32keep_P.pak` (Meshy tent replaces the keep mesh) reskin a built manor; the wall keeps its collision and gate (bandits entered by the gate in 4 of 4 runs, no wall crossing). New test command `mesh_actors` (HarnessActions 58), probe `probe-manor-wagenburg`, tool `s32_track_report.py`. Notes `docs/harness/32-manor-wagenburg/`.
