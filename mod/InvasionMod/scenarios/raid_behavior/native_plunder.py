@@ -40,6 +40,9 @@ def run(ctx) -> dict:
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=difficulty)
     ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
     plan = ctx.mod.command("InvasionMod.invasion_set_size", size=size)
+    # This scenario checks the tracker under the native AI of spawnRaiders raiders (they stand, loot and leave).
+    # Hussite role raids (spawnArmy) act differently: they attack at once (M05 iteration 02 notes).
+    plan = ctx.mod.command("InvasionMod.invasion_set_roles", enabled=False)
     bandits_before = side_count(ctx.actions.units_census(), "bandit")
     population_before = ctx.mod.command("InvasionMod.raid_behavior_state")["population"]
     ctx.mod.command("InvasionMod.invasion_force_next")
