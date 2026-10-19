@@ -37,3 +37,7 @@ The owner must decide if a weaver ships, and which slot it takes. Some real-game
 
 - Pak `mod/HarnessActions/paks/weavermesh_P.pak`, probe `probe_extension.py`, commands `master_artisan`, `master_artisan_set`, `plot_upgrade` (living spec `harness/building-commands`: unsafe commands).
 - If shipped: a new mod feature and a `DT_Upgrades` row edit in the mod pack.
+
+## Closed
+
+Closed 2026-10-19 without shipping (issue #230). The owner asked: if a pak can only overwrite an existing extension slot, archive the change and note it in the wiki. The finding holds (a new extension type needs native code), so the change is archived and the fact is in `docs/wiki/workflows/pak-mods.md`. All open tasks are cancelled.
