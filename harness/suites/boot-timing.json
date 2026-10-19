@@ -1,0 +1,6 @@
+{
+  "name": "boot-timing",
+  "scenarios": [{"scenario": "boot-timing", "repeat": 5}],
+  "time_budget_s": 900,
+  "flake_retries": 0
+}
