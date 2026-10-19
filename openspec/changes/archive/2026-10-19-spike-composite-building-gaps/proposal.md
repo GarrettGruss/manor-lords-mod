@@ -2,6 +2,8 @@
 
 Issue: #104. Legacy source: `openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/README.md`. Legacy issues: #104 (open, "Spike: building access points and a 4-oxen stable"); #69 and #94 are closed.
 
+Closed without build by owner decision, 2026-10-19.
+
 ## Why
 
 Spec 18 proved that a pak can add a composite building and that a real click can place it. Some items stayed open:
