@@ -1,5 +1,8 @@
 # Wiki update log
 
+## 2026-10-19
+* **Update**: Added [Engine limits found by spikes](concepts/engine-limits.md): buildings inside the manor bailey are not possible (change `spike-bailey-buildings`, #68).
+
 ## 2026-10-18
 * **Update**: The game design moved to `design/mod/` (philosophy, decision log, trailer brief; `design/harness/` is reserved; change `split-design-brief`, #292). The original M00 and its feasibility reviews are archived. Updated [Source map](architecture/source-map.md) and the links of all pages.
 * **Update**: The legacy specs moved into `openspec/changes/archive/<date>-legacy-*/` (change `archive-legacy-specs`, #288) and the coverage data into `openspec/specs/harness/coverage/` (#279). Rewrote the links of all pages; updated [Specs, docs and project process](operations/docs-and-specs.md), [Quickstart](quickstart.md), [Invasion Mod structure](architecture/invasion-mod.md) and [Python tests and coverage](testing/python-tests.md).
