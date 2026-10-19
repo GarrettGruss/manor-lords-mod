@@ -20,6 +20,7 @@ A run starts the game, loads a test save, runs one scenario, collects logs, and 
 - Repeat: `uv run python harness\run_series.py --scenario <name> --runs 3`.
 - Suite with baselines and A/B variants: `uv run python harness\suite.py --suite <name>` (`--list` shows them). Add `--slots all` (or a number) to run on all installed game slots at once. Scenarios with `EXCLUSIVE = True` (real mouse) then run with no other game.
 - List scenarios: `run.py --list-scenarios` (add `--include-test-scenarios` for hidden ones).
+- Boot timing check: the test scenario `boot-timing` (the clock stays still for 30 s after READY; boot.json order, boot seconds and pause calls in range). Run the suite `boot-timing` (5 runs, no flake retries) before and after a change to `HarnessBoot`.
 
 ## In a worktree
 The fixture saves and `harness/pakmod.local.json` are git-ignored. Copy them from the main checkout `C:\Users\garre\development\manor-lords-mod` first. For `--pak` runs, the AES key is not in the worktree: load it from the main checkout `modtools\work\aes_key.txt` into `MANORLORDS_AES_KEY` inside the command. Never print it.
