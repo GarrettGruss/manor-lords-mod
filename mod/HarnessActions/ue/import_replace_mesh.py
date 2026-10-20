@@ -19,6 +19,7 @@ BIG, SMALL = 1024, 512
 REPLACE_PATHS = [REPLACE_PATH] + [p for p in os.environ.get("EXTRA_REPLACE_PATHS", "").split(",") if p]
 # BASE_TO_GROUND=1: move the mesh so its lowest point is at z=0 (Meshy meshes have the pivot at the centre).
 BASE_TO_GROUND = os.environ.get("BASE_TO_GROUND") == "1"
+ALBEDO_OVERRIDE = os.environ.get("ALBEDO_OVERRIDE")  # PNG that replaces the colour map (a colour test)
 
 
 def import_with_scale(scale: float, z_shift: float = 0.0):
@@ -61,6 +62,21 @@ if BASE_TO_GROUND:
 unreal.log("IMPORT scale %.4f size_cm %.1f %.1f %.1f min_z %.1f" % (scale, size.x, size.y, size.z, box.min.z))
 unreal.log("IMPORT vertices %d" % unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem).get_number_verts(mesh, 0))
 unreal.log("IMPORT materials %s" % [str(m.material_interface.get_path_name()) for m in mesh.static_materials])
+
+def override_albedo(png_path: str) -> None:
+    task = unreal.AssetImportTask()
+    task.set_editor_property("filename", png_path)
+    task.set_editor_property("destination_path", DEST)
+    task.set_editor_property("destination_name", "texture_0")
+    task.set_editor_property("automated", True)
+    task.set_editor_property("replace_existing", True)
+    task.set_editor_property("save", True)
+    unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
+    unreal.log("IMPORT albedo override %s" % png_path)
+
+
+if ALBEDO_OVERRIDE:
+    override_albedo(ALBEDO_OVERRIDE)
 
 for asset_path in unreal.EditorAssetLibrary.list_assets(DEST, recursive=False):
     texture = unreal.load_asset(asset_path)
