@@ -1,6 +1,7 @@
 # Wiki update log
 
 ## 2026-10-19
+* **Update**: [Mod commands and state](concepts/mod-commands-and-state.md) has the ModState Tag limits: 1000 entries survive save and load, an entry over 1023 chars becomes `ERROR_NAME_SIZE_EXCEEDED`, quick save and autosave keep the Tags, and Tags on lords and buildings survive (change `spike-mod-state-limits`, #283).
 * **Update**: Added [Engine limits found by spikes](concepts/engine-limits.md): buildings inside the manor bailey are not possible (change `spike-bailey-buildings`, #68).
 * **Update**: A new backyard extension type needs native code; only an existing slot can be reused (change `spike-weaver-extension-shipping`, #230). Updated [Pak mods](workflows/pak-mods.md).
 

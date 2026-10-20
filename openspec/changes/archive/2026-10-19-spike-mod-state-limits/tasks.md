@@ -10,4 +10,4 @@
 ## 3. Close
 - [x] 3.1 Add a limit test scenario if the numbers are stable. Done: `mod/InvasionMod/scenarios/mod_state/tags_limits.py` (moved from `harness/scenarios/spike_tags_limits.py`), commands renamed `tags_limit_write` and `tags_limit_read`, fake game tests in `test_fakegame_modstate.py`. No new real run: the proof is runs spike-tags-w2, w3, r1 and r2 (`notes/tags-limits.md`).
 - [x] 3.2 Update the wiki page on ModState and `CHANGELOG.md`. Verified by `wiki.py check`.
-- [ ] 3.3 Fill the test results table of the implementation pull request.
+- [x] 3.3 Fill the test results table of the implementation pull request.
