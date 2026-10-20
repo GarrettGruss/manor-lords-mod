@@ -48,6 +48,7 @@ Start every Python command with `uv run python`. The project runs on Windows ([I
 | Drive runs through MCP tools | [Harness MCP tools](integrations/harness-mcp-tools.md) | `harness-run-scenario` |
 | Change game data tables | [Pak mods](workflows/pak-mods.md) | `harness-pak-mod` |
 | Make a 3D model | [Meshy models](workflows/meshy-models.md) | `harness-meshy` |
+| Make a 3D model with the Meshy agent CLI | [Meshy models](workflows/meshy-models.md) | `harness-meshy-agent` |
 | Release a mod to play testers | [Mod releases](workflows/releases.md) | `harness-release` |
 | Install the harness, game slots, environment variables | [Install and environment](operations/install-and-environment.md) | - |
 | Run the Python tests or measure coverage | [Python tests and coverage](testing/python-tests.md) | `harness-coverage` |
