@@ -5,7 +5,7 @@
 
 ## 2. Decisions
 - [x] 2.1 Ask the user about the stale slot `saveGame_48`. Verified by the answer in the note.
-- [ ] 2.2 Decide with the user if option C is needed. Verified by the answer in `design.md`.
+- [x] 2.2 Decide with the user if option C is needed. Verified by the answer in `design.md`.
 
 ## 3. Close
 - [x] 3.1 Add a limit test scenario if the numbers are stable. Done: `mod/InvasionMod/scenarios/mod_state/tags_limits.py` (moved from `harness/scenarios/spike_tags_limits.py`), commands renamed `tags_limit_write` and `tags_limit_read`, fake game tests in `test_fakegame_modstate.py`. No new real run: the proof is runs spike-tags-w2, w3, r1 and r2 (`notes/tags-limits.md`).

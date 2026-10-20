@@ -7,4 +7,4 @@
 | Do Tags on AI lords or buildings survive a save and a load? | A spike | Task 1.2 |
 | Do a quick save and an autosave keep the pawn Tags? | A spike, with the user playing | Task 1.3 |
 | What happens to the stale slot `saveGame_48`? | The user | Task 2.1 |
-| Is option C (a side file) needed? | The user, after 1.1 | Only if 1.1 shows the limit is too low for a planned feature. |
+| Is option C (a side file) needed? | The user, after 1.1 | No (owner, 2026-10-19): 1000 entries survive save and load, and an entry holds up to 1023 chars. |
