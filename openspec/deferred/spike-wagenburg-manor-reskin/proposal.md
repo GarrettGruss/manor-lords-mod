@@ -10,8 +10,9 @@ A separate enemy camp with a real wall is not proven. The recommendation is in `
 
 ## What Changes
 
-- The owner decides: a player Wagenburg manor (global or per manor), an enemy camp study, or stop.
-- Open checks run: an AI lord manor and wall, a closed gate, defenders on the wall, wall damage and fire, several rings, save and load with and without the pak.
+- Owner answers of 2026-10-19: the player's manor must not change (no global pak swap, no per-manor swap of it). The Meshy models are the owner's and may be released. The first real `save_game` call is approved. The change `spike-wagenburg-bandit-camp` (#229) is the fallback.
+- Route left: a per-manor Lua reskin of a non-player manor (AI lord, invader or enemy). If task 2.1 finds none, stop and fall back to #229.
+- Open checks run: an AI lord manor and wall (first), a closed gate, defenders on the wall, wall damage and fire, several rings, save and load with and without the pak.
 - Optional models: gate, outer tower, taller wagon.
 - If the owner approves: ship the reskin through the Invasion Mod, with a delta spec.
 

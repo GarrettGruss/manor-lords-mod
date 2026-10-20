@@ -44,6 +44,7 @@ Every new harness feature, mod feature, mod iteration and spike is an OpenSpec c
 - **Living specs:** `openspec/specs/<capability>/spec.md`. They describe only what is true on `main`. Capability groups: `harness/<name>`, `mod/<feature>` (and `mod/core` for the shared parts of the Invasion Mod), `process/<name>`.
 - **Changes:** `openspec/changes/<change-name>/` (proposal, delta specs, design, tasks). `<change-name>` is kebab-case and starts with a verb, for example `add-great-raid-clock`.
 - **Archive:** `openspec/changes/archive/YYYY-MM-DD-<change-name>/`.
+- **Deferred:** `openspec/deferred/<change-name>/`. The owner postponed these changes. See [`openspec/deferred/README.md`](openspec/deferred/README.md).
 
 A change passes two review gates. Each gate is one pull request, and each needs the project owner's approval on GitHub.
 
