@@ -12,7 +12,7 @@
 
 ## 3. Tribute menu (pak widget)
 
-- [ ] 3.1 Make the widget asset `WBP_LiegeTribute` with an editor script in `mod/InvasionMod/ue/` (as `make_raid_widget.py`), use `Border` placeholders for buttons, cook it, and add it to the pak work folder; verify with `pakmod.py buildmod InvasionMod`
+- [x] 3.1 Make the widget asset `WBP_LiegeTribute` with an editor script in `mod/InvasionMod/ue/` (as `make_raid_widget.py`), use `Border` placeholders for buttons, cook it, and add it to the pak work folder; verify with `pakmod.py buildmod InvasionMod`
 - [ ] 3.2 Copy the cooked `WBP_ClickButton` into the pak work folder and add `HarnessClickHooks` to `shared` in `mod.json`; verify with `pakmod.py list` and a deploy
 - [ ] 3.3 Write the menu script in the feature (load the widget with `AssetRegistryHelpers:GetAsset`, `clickhooks.attach` and `bind_texts`, drain clicks in the scheduler tick, `release` on close); the menu calls the same code as `liege_send_tribute`; verify with fake game tests and a real game run
 - [ ] 3.4 Make sure that the menu does not tick faster than 100 ms and does not rewrite labels each tick; verify by review and the scenario in 4.1
