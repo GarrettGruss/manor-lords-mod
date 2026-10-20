@@ -3,7 +3,7 @@
 ## 1. Decisions
 
 - [x] 1.1 Get the user's answers to the open questions in `design.md` (done 2026-10-19: menu, no decay, no cap, 10 tribute for 1 influence, silver from the lord's treasury, command name, start); verify by review of `design.md`
-- [ ] 1.2 Get the answers to the new open questions 7 to 9 in `design.md` (how the menu opens, how the amount is chosen, influence format); verify by review of `design.md`
+- [x] 1.2 Get the answers to the new open questions 7 to 9 in `design.md` (how the menu opens, how the amount is chosen, influence format); verify by review of `design.md`
 
 ## 2. Code
 

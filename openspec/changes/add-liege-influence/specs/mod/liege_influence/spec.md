@@ -69,7 +69,7 @@ The tribute action SHALL be available as the named command `InvasionMod.liege_se
 - Not checked yet (planned: `mod/InvasionMod/scenarios/liege_influence/send_tribute.py`).
 
 ### Requirement: Tribute menu
-The mod SHALL provide a pak widget menu in which the player sends silver to the liege. The menu SHALL show the influence and the silver of the lord's treasury. The menu SHALL update both values after a tribute. The player SHALL open the root of the menu from the game UI with the mouse, in at most 2 clicks. Opening it SHALL NOT need a hotkey. The rule covers only the root menu, not the submenus inside it. How the amount is chosen is open question 8 in `design.md`.
+The mod SHALL provide a pak widget menu in which the player sends silver to the liege. The menu SHALL show the influence and the silver of the lord's treasury. The menu SHALL update both values after a tribute. The player SHALL open the root of the menu from the game UI with the mouse, in at most 2 clicks. Opening it SHALL NOT need a hotkey. The rule covers only the root menu, not the submenus inside it.
 
 #### Scenario: Sending tribute in the menu
 - **WHEN** the player opens the menu and sends a tribute
@@ -84,4 +84,12 @@ The mod SHALL provide a pak widget menu in which the player sends silver to the 
 #### Scenario: The menu opens in at most 2 clicks
 - **WHEN** the player is in the normal game view with no mod menu open
 - **THEN** the player opens the tribute menu with at most 2 clicks on game UI elements, and no key press
+- Not checked yet (planned: `mod/InvasionMod/scenarios/liege_influence/tribute_menu.py`).
+
+### Requirement: One tribute button
+The tribute menu SHALL have one tribute button. A click SHALL send `tribute_button_amount` silver (default 200) through the tribute command. The influence SHALL show in the same menu.
+
+#### Scenario: One click on the tribute button
+- **WHEN** the lord's treasury has at least 200 silver and the player clicks the tribute button once
+- **THEN** the lord's treasury falls by 200 and the influence rises by 20
 - Not checked yet (planned: `mod/InvasionMod/scenarios/liege_influence/tribute_menu.py`).
