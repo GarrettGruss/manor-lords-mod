@@ -86,7 +86,11 @@ class FakeVillageChannel:
     def _sack_buildings(self, before, method, count=None, percent=None):
         want = count if count is not None else sack.share(sack.standing(before), percent)
         hit = min(want, sack.standing(before))
-        self.state = village(standing=sack.standing(before) - hit, rubble=sack.rubble(before) + hit, stock=before["stock"]["by_good"])
+        if method == "fire":   # the real game: a burning building is not rubble yet
+            self.state = village(standing=sack.standing(before), rubble=sack.rubble(before), burning=sack.burning(before) + hit,
+                                 stock=before["stock"]["by_good"])
+        else:
+            self.state = village(standing=sack.standing(before) - hit, rubble=sack.rubble(before) + hit, stock=before["stock"]["by_good"])
         return {"wanted": want, "hit": hit, "before": before, "after": self.state}
 
     def _sack_goods(self, before, percent=None, good=None, amount=None, store=None):
@@ -144,7 +148,8 @@ class SackActionTests(unittest.TestCase):
         self.assertTrue(actions.sack_buildings(percent=50, method="fire")["ok"])
         self.assertEqual(channel.sent[-1], ("sack_buildings", {"percent": 50, "method": "fire"}))
         self.assertTrue(actions.sack_buildings(count=1)["ok"])
-        self.assertEqual(sack.rubble(actions.sack_census()), 3)
+        census = actions.sack_census()
+        self.assertEqual(sack.rubble(census), 1)
         self.assertTrue(expect.result()["passed"])
 
     def test_a_building_action_that_hits_less_than_wanted_fails(self):
