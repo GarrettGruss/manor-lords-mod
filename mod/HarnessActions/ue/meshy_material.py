@@ -25,6 +25,14 @@ if MEGASCANS:
     SCALAR_PARAMS = {"AO": 0.7, "Roughness": 0.7942860126495361, "spec": 0.400952011346817, "diff mul": 1.0, "blendSnow": 0.0, "proxyFx_snow": 0.0}
     SWITCH_PARAMS = {"Has Normal": True, "Has roughness?": False, "Use AO": True,
                     "applyWetnessAndSnowFx": False, "useVertexForSnow": False}
+# MASTER_MATERIAL=basicshape: parent is the engine material BasicShapeMaterial (in the game paks). It has no
+# texture parameter, only the vector parameter `Color`. A colour test: it shows if a plain material draws at all.
+BASIC_SHAPE = os.environ.get("MASTER_MATERIAL") == "basicshape"
+VECTOR_PARAMS = {}
+if BASIC_SHAPE:
+    MASTER_PATH = "/Engine/BasicShapes/BasicShapeMaterial"
+    TEXTURE_PARAMS, SCALAR_PARAMS, SWITCH_PARAMS = [], {}, {}
+    VECTOR_PARAMS = {"Color": unreal.LinearColor(1.0, 0.0, 0.0, 1.0)}
 WHITE_TEXTURE = "/Engine/EngineResources/WhiteSquareTexture"
 EDIT = unreal.MaterialEditingLibrary
 
@@ -85,6 +93,16 @@ def make_game_material(mesh, folder: str, spec_name: str = "texture_0_roughness"
     tools = unreal.AssetToolsHelpers.get_asset_tools()
     instance = tools.create_asset("MI_Meshy", folder, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
     instance.set_editor_property("parent", master)
+    if BASIC_SHAPE:
+        unreal.log("MATERIAL basicshape vector params %s" % [str(n) for n in EDIT.get_vector_parameter_names(master)])
+        for name, value in VECTOR_PARAMS.items():
+            EDIT.set_material_instance_vector_parameter_value(instance, name, value)
+        EDIT.update_material_instance(instance)
+        unreal.EditorAssetLibrary.save_asset(instance_path)
+        for index in range(len(mesh.static_materials)):
+            mesh.set_material(index, instance)
+        unreal.EditorAssetLibrary.save_loaded_asset(mesh)
+        return instance
     white = unreal.load_asset(WHITE_TEXTURE)
     color_name, normal_name = ("Base", "Normal") if MEGASCANS else ("d", "n")
     EDIT.set_material_instance_texture_parameter_value(instance, color_name, load_texture(folder, "texture_0"))
