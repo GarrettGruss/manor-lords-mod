@@ -123,7 +123,7 @@ Check these points, also when you merge in the GitHub web UI:
 - **Remote:** `origin` is `git@github.com:GarrettGruss/manor-lords-mod.git`. The default branch is `main`.
 - **Pull requests:** keep the body light. Use the template `.github/pull_request_template.md`: Summary, Spec changes, Test results (a table: check, run id or test file, verdict, key number or range), Evidence and Not verified. No raw logs. Write "None" for an empty section. Merge stacked pull requests in order, and retarget the next one to `main` before its merge.
 - **Forbidden:** never force push and never skip hooks. If a pushed commit is wrong, fix it with a new commit.
-- **Not in git:** `runs/`, `slots/`, `modtools/`, original game paks, extracts and the pak AES key. Compiled mod paks (`*_P.pak`) may be committed, also when they hold modified game data. Before you commit a pak or a pak tool change, search the diff for the AES key.
+- **Not in git:** `runs/`, `slots/`, `modtools/`, original game paks, extracts and the pak AES key (it lives only in the gitignored `modtools/work/aes_key.txt` and `.env`). Compiled mod paks (`*_P.pak`) may be committed, also when they hold modified game data. Before you commit a pak or a pak tool change, search the diff for the AES key.
 
 Details and merge-conflict hints: [`.claude/skills/harness-git-workflow/SKILL.md`](.claude/skills/harness-git-workflow/SKILL.md).
 
