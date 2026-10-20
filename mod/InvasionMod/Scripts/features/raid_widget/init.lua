@@ -99,7 +99,37 @@ end
 local toggle_requested = false
 local toggle -- defined below
 
+-- Spike 308: a "Mods" button put straight into the viewport. A click toggles the raid menu.
+local is_open_fn
+local entry = { handle = nil, clicks = 0 }
+
+local function entry_open()
+    local x, y = 100, 100
+    if entry.handle and isValid(entry.handle.widget) then return { ok = true, already_open = true } end
+    local controller = FindFirstOf("PlayerController")
+    local handle, problem = clickhooks.create_standalone(controller, { owner = entry })
+    if not handle then return { ok = false, error = problem } end
+    local bound, bind_problem = clickhooks.bind_texts({ handle })
+    if not bound then return { ok = false, error = bind_problem } end
+    clickhooks.set_text(handle, "Mods")
+    handle.widget:AddToViewport(config.z_order + 5)
+    handle.widget:SetPositionInViewport({ X = x or 20, Y = y or 20 }, false)
+    entry.handle = handle
+    return { ok = true }
+end
+
+local function entry_state()
+    local h = entry.handle
+    return { exists = h ~= nil and isValid(h.widget), clicks = entry.clicks,
+        in_viewport = h ~= nil and read(function() return h.widget:IsInViewport() end) or false,
+        hovered = h ~= nil and read(function() return h.widget:IsHovered() end) or false, raid_open = is_open_fn and is_open_fn() or false }
+end
+
 local function tick()
+    for _ in ipairs(clickhooks.drain(entry)) do
+        entry.clicks = entry.clicks + 1
+        toggle_requested = true
+    end
     if toggle_requested then
         toggle_requested = false
         core.log.try(TAG, toggle)
@@ -121,6 +151,8 @@ end
 local function is_open()
     return isValid(S.widget)
 end
+
+is_open_fn = is_open
 
 local function release_buttons()
     local handles = {}
@@ -204,6 +236,8 @@ if has_commands then
     commands.register("InvasionMod.raid_widget_open", open, {})
     commands.register("InvasionMod.raid_widget_close", close, {})
     commands.register("InvasionMod.raid_widget_state", describe, {})
+    commands.register("InvasionMod.spike_entry_open", entry_open, {})
+    commands.register("InvasionMod.spike_entry_state", entry_state, {})
 end
 
 require("scheduler").every(TAG, config.poll_ms, tick)

@@ -1,5 +1,5 @@
 ## 1. Spike
-- [ ] 1.1 Find how a pak or Lua adds a clickable entry point to the game UI (HUD button or a button in an existing game menu). Write `notes/ui-entry-point.md`.
+- [x] 1.1 Find how a pak or Lua adds a clickable entry point to the game UI (HUD button or a button in an existing game menu). Write `notes/ui-entry-point.md`.
 - [ ] 1.2 Owner picks the entry point and answers design question 2.
 
 ## 2. Build
