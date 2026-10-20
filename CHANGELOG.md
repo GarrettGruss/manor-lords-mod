@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Test scenario `soak-days` samples units, buildings, game days and memory every 120 wall seconds (change `spike-two-year-soak`, #286).
 - Test scenario `mod-state-tags-limits` and mod commands `tags_limit_write` and `tags_limit_read` (change `spike-mod-state-limits`, #283): Tags limits are measured. One Tag name must be under 1024 chars; 1000 entries, lord and building Tags, quick save and autosave all survive. A load restarts the autosave timer (#311).
 - `harness/tools/aes_env.py` writes the pak AES key into a gitignored `.env`; `pakmod.py` reads it when `MANORLORDS_AES_KEY` is not set.
 - Bridge request log (change `add-bridge-request-log`, #270): the UEBridge Lua mod writes one live `mod.log` line for each request (id, verb, target, duration, error text of a failure). No property value and no Lua source. Patch P9; fake game test `test_fakegame_uebridge.py`.

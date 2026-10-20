@@ -5,10 +5,10 @@
 
 ## 2. Decision and result
 - [x] 2.1 Ask the user the questions in `design.md`. Verified by the answers in `design.md`.
-- [ ] 2.2 If the user wants a periodic raid, add it to the soak scenario. Verified by a fake game test and a real run.
+- [x] 2.2 If the user wants a periodic raid, add it to the soak scenario. Verified by a fake game test and a real run. Not needed: the owner decided no periodic raid.
 - [x] 2.3 Run the chosen soak once in the real game. Verified by a run id: no crash, memory range, clock rate range.
 - [ ] 2.4 Update criterion Q1 in `criteria.json` only if its state changes. Verified by `uv run python harness/tools/coverage.py --check-spec`.
 
 ## 3. Close
-- [ ] 3.1 Update `CHANGELOG.md` if a scenario changes. Verified by review.
+- [x] 3.1 Update `CHANGELOG.md` if a scenario changes. Verified by review.
 - [ ] 3.2 Fill the test results table of the implementation pull request.
