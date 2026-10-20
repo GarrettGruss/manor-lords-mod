@@ -1,5 +1,7 @@
 # Proposal: find out if buildings can stand inside the manor bailey
 
+Closed as not possible by owner decision, 2026-10-19.
+
 Issue: #68. Legacy source: `openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/README.md`. Legacy issue: #68 (status: blocked, awaiting user).
 
 ## Why

@@ -1,6 +1,7 @@
 # Wiki update log
 
 ## 2026-10-19
+* **Update**: Added [Engine limits found by spikes](concepts/engine-limits.md): buildings inside the manor bailey are not possible (change `spike-bailey-buildings`, #68).
 * **Update**: A new backyard extension type needs native code; only an existing slot can be reused (change `spike-weaver-extension-shipping`, #230). Updated [Pak mods](workflows/pak-mods.md).
 
 ## 2026-10-18

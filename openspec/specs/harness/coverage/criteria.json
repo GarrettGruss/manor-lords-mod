@@ -702,7 +702,7 @@
     "method": "placement inside the manor area succeeds with the workaround and is refused without it (A/B)",
     "pillar": "defense",
     "mark": "A",
-    "blocked_by": null,
+    "blocked_by": "native placement check (not possible, owner decision 2026-10-19, #68)",
     "spikes": [
       "S12"
     ],
@@ -710,7 +710,7 @@
     "method_verified": false,
     "verified_by": [],
     "reason_human": "",
-    "spike_note": "Not verified. Spec 12 evidence: the placement check is native C++ (9 hooks on candidate functions got 0 events); no data table holds a manor rule; Region.manor is one reference; a second Keep is refused while a type 57 building exists; collision off and an empty finalBorder on the Keep did not free its footprint. A bailey (committed planner modules) could not be built, so the refusal inside the area was not tested. See implementation-notes/workaround-m2.md in spec 12."
+    "spike_note": "Not possible (owner decision 2026-10-19, #68; see docs/wiki/concepts/engine-limits.md). Spec 12 evidence: the placement check is native C++ (9 hooks on candidate functions got 0 events); no data table holds a manor rule; Region.manor is one reference; a second Keep is refused while a type 57 building exists; collision off and an empty finalBorder on the Keep did not free its footprint. A bailey (committed planner modules) could not be built, so the refusal inside the area was not tested. See implementation-notes/workaround-m2.md in spec 12."
   },
   {
     "id": "Q1",
