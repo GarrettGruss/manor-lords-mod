@@ -25,3 +25,6 @@
 - Import fix: `import_replace_mesh.py` deletes the destination folder before it imports. Before, a second import kept the old textures and the old import translation.
 - Pak rebuilt: 19 files, 3,338,836 bytes (3 replaced paths kept, `BASE_TO_GROUND`). No AES key in the pak or in the diff.
 - Scenario: waits for `bVisible`, keeps the game at speed 1 so the camera follows the pawn, centres on the component location, turns the camera with the pawn yaw. The mod command `mesh_actors` has a new option `materials` (component name, materials with parents).
+
+## Master swap to MegascansStandard (2026-10-20)
+Tried the master of `MI_SS_Shrine5`. The colours stay pale. Details and run ids: `swap-shrines.md`. The pak was not replaced. `meshy_material.py` keeps the option `MASTER_MATERIAL=megascans` (default unchanged).

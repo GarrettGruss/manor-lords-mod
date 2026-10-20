@@ -9,12 +9,22 @@ an instance. Make an instance with our textures. The stub is never shipped: copy
 /Game/HarnessMod to the pak. At run time the game loads its real master.
 Parameters were read from the game's own instance `tudorWall01_combined` (see the spec 33 notes).
 """
+import os
 import unreal
 
 MASTER_PATH = "/Game/NotStronghold/Buildings/TudorWall/tudorWall01"
 TEXTURE_PARAMS = ["AO", "d", "n", "spec"]
 SCALAR_PARAMS = {"aoFromGroundFade": 512.0, "br": 0.5, "dirt tiling": 2.0, "n str": 0.0, "R": 1.0, "spec": 0.2}
 SWITCH_PARAMS = {"Dirt?": False, "spec map?": True}
+# MASTER_MATERIAL=megascans: parent is the master of the game's own MI_SS_Shrine5, because tudorWall01 renders
+# brown wood and thatch pale. Names and values were read from MI_SS_Shrine5 (notes/swap-shrines.md).
+MEGASCANS = os.environ.get("MASTER_MATERIAL") == "megascans"
+if MEGASCANS:
+    MASTER_PATH = "/Game/Megascans/MegascansStandard"
+    TEXTURE_PARAMS = ["Base", "Normal", "AO"]
+    SCALAR_PARAMS = {"AO": 0.7, "Roughness": 0.7942860126495361, "spec": 0.400952011346817, "diff mul": 1.0, "blendSnow": 0.0, "proxyFx_snow": 0.0}
+    SWITCH_PARAMS = {"Has Normal": True, "Has roughness?": False, "Use AO": True,
+                    "applyWetnessAndSnowFx": False, "useVertexForSnow": False}
 WHITE_TEXTURE = "/Engine/EngineResources/WhiteSquareTexture"
 EDIT = unreal.MaterialEditingLibrary
 
@@ -76,10 +86,12 @@ def make_game_material(mesh, folder: str, spec_name: str = "texture_0_roughness"
     instance = tools.create_asset("MI_Meshy", folder, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
     instance.set_editor_property("parent", master)
     white = unreal.load_asset(WHITE_TEXTURE)
-    EDIT.set_material_instance_texture_parameter_value(instance, "d", load_texture(folder, "texture_0"))
-    EDIT.set_material_instance_texture_parameter_value(instance, "n", load_texture(folder, "texture_0_normal"))
+    color_name, normal_name = ("Base", "Normal") if MEGASCANS else ("d", "n")
+    EDIT.set_material_instance_texture_parameter_value(instance, color_name, load_texture(folder, "texture_0"))
+    EDIT.set_material_instance_texture_parameter_value(instance, normal_name, load_texture(folder, "texture_0_normal"))
     EDIT.set_material_instance_texture_parameter_value(instance, "AO", white)
-    EDIT.set_material_instance_texture_parameter_value(instance, "spec", load_texture(folder, spec_name))
+    if not MEGASCANS:
+        EDIT.set_material_instance_texture_parameter_value(instance, "spec", load_texture(folder, spec_name))
     for name, value in SCALAR_PARAMS.items():
         EDIT.set_material_instance_scalar_parameter_value(instance, name, value)
     for name, value in SWITCH_PARAMS.items():

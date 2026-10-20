@@ -12,3 +12,5 @@ Test scenario: `meshy-agent-house` (`harness/scenarios/meshy_house.py`), fixture
 | `vanilla_house_side_a.jpg` | 20261020-060520-4786 | none | Vanilla house from the side. |
 
 Verdict: the house is drawn with the Meshy texture (black beams, cream plaster, dark roof) but it is pale. The brown wood and brown thatch of the Meshy texture do not show. See `notes/import.md`, section "White house".
+
+Master swap test (2026-10-20): parent `MegascansStandard` (runs `20261020-162700-401e`, `20261020-163127-2b75`). The house stayed white and grey, so these pictures were not kept and the pak above is unchanged. See `notes/swap-shrines.md`.
