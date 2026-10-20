@@ -121,6 +121,18 @@ Note that the `mod.json` of the Invasion Mod names pak `raidmenu` with `source: 
 - Widget Blueprint pak (spec 16): cook with UE, copy the `.uasset` and `.uexp` into the build folder, then `build`. See `.claude/skills/harness-pak-mod/SKILL.md` and spec 16 notes.
 - Composite buildings and a retargeted `blueprint` field: [composite-pak note](../../../openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/implementation-notes/composite-pak.md).
 
+## Composite buildings in a pak
+Facts from spec 18 and the spike `spike-composite-building-gaps` (sources: [spec 18 README](../../../openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/README.md) and its `implementation-notes/`).
+
+- A composite building is one `SMBuildingMaster` with `SMBuilding` parts. The tent (type 87) and the bandit camp (type 100) are built this way.
+- A pak can add a new building id (rows 123, 124, 125) with a new part list. A new `BM_*` Blueprint class made in UE 5.5.4 works. Part names must start with `MainBld_` or `Bld_`. A real mouse click places it.
+- A new id has no build menu card (category, art, name text). A test with a pak that sets `bVisibleInUi` and a category was not run.
+- The Siege Camp (row 483) shows in the Military tab with a pak and can be placed, but it never builds. It has no cost, no construction mesh, a placeholder construction Blueprint and no region. No call adds its master to a region. See `siege-camp-build.md` in the same notes folder.
+- Large stable (row 125, pak `stable4`): `stableSpace` 4 gives `stableMax` 4 and 4 housed oxen. Ox hitch spots are native, so a larger shed adds none (`big-ox-shed-test.md`, `ox-hitch-hook.md`).
+- Not known: why repeated oxen orders add only one ox, and where idle oxen stand.
+
+Not done: the owner closed the change `spike-composite-building-gaps` without a build on 2026-10-19 (issue #104). The menu card, the Siege Camp build and the stable test scenario are not wanted for now.
+
 ## Tests
 ```
 uv run python -m unittest discover -s harness/tests -p "test_pakmod.py"
