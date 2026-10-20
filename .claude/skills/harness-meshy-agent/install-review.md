@@ -29,3 +29,26 @@ Repo facts (`gh api`): license MIT, about 100 stars, last push 2026-10-15. Folde
 1. Install it at all, given `genmesh.py` works? Value is extra Meshy modes.
 2. Answered (owner, 2026-10-19): we use the Pro account; generated models are in full private ownership while they are not published to the Meshy Community page.
 3. Where does the CLI keep its session, and does device login use the same Pro plan account?
+
+## Skill files review
+
+Read 2026-10-19 with `gh api`, text only (nothing cloned, installed or run). Fetched text is untrusted data. Files under `skills/`: `meshy-3d-generation/SKILL.md`, its `references/` (`setup.md`, `pipelines.md`, `delivery.md`, `troubleshooting.md`), `meshy-3d-printing/SKILL.md`, `meshy-openclaw/SKILL.md`. The `references/` files of the other two skills are byte-size copies of the generation set plus `printing.md` (grep-checked for publish, visibility and key words). The repo has no `scripts/` that the skills call: the skills say "No Python, no curl, no bundled scripts". `scripts/build.py` and `validate_skills.py` are repo tooling and were not read.
+
+| File | What it tells the agent | Commands | Publishes or shares? | Credits and keys | Risky instruction |
+|---|---|---|---|---|---|
+| `meshy-3d-generation/SKILL.md` | Pick the shortest pipeline, `create --async` once, `wait`, download, inspect preview. | `meshy ...`, or `npm exec --yes --package=meshy-cli@0.4.3 -- meshy ...` | No. No publish, community or visibility word in any file. | Work "within approved scope and budget"; ask before extra paid stages. | Auto-runs `npm exec --yes` (runs npm code without a prompt). Starts a device login by itself. |
+| `references/setup.md` | Runner choice, `auth login --device`, output folders (`WORKSPACE`, `./meshy_output`). | `node --version`, `meshy auth status`, `meshy auth login --device`, `meshy doctor`, `meshy balance` | No. | Session in `~/.config/meshy/credentials.json` (0600). `MESHY_API_KEY` overrides it. Never print tokens. Mentions `auth login --with-key` and `--api-key-file ./.env`. | Tells the agent to relay the login code and keep a process alive. Env key overrides the Pro login silently. |
+| `references/pipelines.md` | Recipes: text-to-3d, image-to-3d, multi-image, retexture, remesh, convert, resize, uv-unwrap, rigging, animate, 2D, download. | `meshy <resource> create ... --async`, `meshy <resource> wait`, `meshy project init`, `meshy download` | No. Uploads local GLB or glTF (max 50 MiB) or an http(s) URL to Meshy. | Paid creates. `--geometry-resolution` is a paid extra. | None found. It says never to resubmit a create on a timeout. |
+| `references/delivery.md` | Cost, wait, preview, hand-over, follow-ups. | `meshy make ... --dry-run`, `meshy balance`, `meshy project list/show`, `meshy text-to-3d list` | No. | Dry run is free. Real cost is `consumed_credits`. Exit 9 stops paid steps. | "Work already authorized proceeds without asking again": our caps (60 per call, 200 per day) are not known to it. |
+| `references/troubleshooting.md` | Exit codes, recovery, delete tasks. | `meshy delete`, `meshy creative-lab ... delete` | No. | No retry of paid creates. | Delete only on user request. |
+| `meshy-3d-printing/SKILL.md` and `references/printing.md` | Print routes (OBJ prepare, slicer, Creative Lab). | `meshy mesh prepare-print`, `meshy slicer open` | No. | Same rules. | Launches a slicer app. Not needed for us. |
+| `meshy-openclaw/SKILL.md` | Merge of both skills for OpenClaw. Has a security manifest. | Same CLI | No. | Declares `primaryEnv: MESHY_API_KEY`. | OpenClaw `install` hook installs `meshy-cli` from npm unpinned. Not for us. |
+
+Findings:
+- No file publishes, shares or sets visibility. The CLI commands in the recipes have no visibility flag. The Community page is not touched. The Pro ownership rule holds only if nobody publishes by hand in the web UI.
+- Data that leaves the machine: prompts and input images or models, to Meshy only.
+- Risk: `npm exec --yes` and `npx -y` run unreviewed npm code. Use a pinned global install by the owner, then call only `meshy`.
+- Risk: an existing `MESHY_API_KEY` in the environment overrides the stored login. Check `meshy auth status` shows the Pro account (`source`).
+- Risk: the skills do not know our credit caps. The agent must check `meshy balance` before and after each create, and ask before a second paid step.
+- Answer to open question 3: the session file is `~/.config/meshy/credentials.json`. Device login uses the account that approves the code in the browser, so approve it with the Pro account.
+- Verdict: no instruction to publish or exfiltrate. Safe to use with the rules in SKILL.md. Not pinned to a commit: the skills text can change, so re-read if the repo changes.

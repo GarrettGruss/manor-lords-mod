@@ -35,6 +35,25 @@ Safety review points before you run anything:
 4. Record the task id and credits by hand in `openspec/changes/<change-name>/notes/meshy-assets.md` (`genmesh.py` does not log CLI tasks).
 5. Import, cook, pak and test: `harness-meshy` steps 3 to 6 (grey material rule applies).
 
+## Commands for a house (CLI 0.4.3, reviewed in `install-review.md`)
+The CLI has no visibility or publish flag. Tasks stay private in the account. Never publish in the web UI.
+Run every command separately and read its JSON. `WORKSPACE` is `runs/genmesh/<name>`.
+
+1. Check balance: `meshy balance --output-schema v1 --format json --no-update-check`
+2. Image-to-3d house (best, from a Gemini reference image of our own; untextured geometry first, fewer credits; the grey material rule applies later):
+   `meshy image-to-3d create --image-url "runs/genmesh/<name>/ref.png" --model-type standard --should-texture false --target-formats glb --async --output-schema v1 --format json --no-update-check`
+   Reference must be PNG or JPG. Low poly option: `--model-type smart-topology --target-polycount 10000` instead of `--model-type standard`.
+3. Text-to-3d house: `meshy text-to-3d create --mode preview --prompt "<house description>" --target-formats glb --async --output-schema v1 --format json --no-update-check`
+4. Read `result.submission.task_id` as `TASK_ID`, then:
+   `meshy project init --root "runs/genmesh/<name>" --name "<name>" --task-id TASK_ID --task-type image-to-3d --workspace "runs/genmesh/<name>" --output-schema v1 --format json --no-update-check`
+   `meshy image-to-3d wait TASK_ID --timeout 600 --project "PROJECT_DIR" --stage geometry --workspace "runs/genmesh/<name>" --output-schema v1 --format json --no-update-check`
+   (`PROJECT_DIR` is `result.project_dir` of the init result. For text-to-3d use `text-to-3d` and `--stage preview`.)
+5. Optional FBX: `meshy convert create --input-task-id TASK_ID --target-formats fbx --async --project "PROJECT_DIR" --stage convert --workspace "runs/genmesh/<name>" ...` then `wait` through `convert`. GLB is the default and is enough for the harness-meshy import.
+6. Download: `meshy download --task-json "PROJECT_DIR/task_TASK_ID.json" --model-format glb --output "runs/genmesh/<name>/model.glb" --project "PROJECT_DIR" --stage delivered --workspace "runs/genmesh/<name>" --output-schema v1 --format json --no-update-check`
+   Check the output name against what `genmesh.py` writes in that folder. Add `--overwrite` only on purpose.
+7. Check balance again. Record task id and credits (`consumed_credits`) in `notes/meshy-assets.md`.
+Cost: the CLI has no price command for create steps except `meshy make "<text>" --dry-run`; use https://docs.meshy.ai/en/api/pricing.
+
 ## Keys and secrets
 - Never commit or write an API key, a token or the CLI session file in the repo.
 - Meshy output is shipped under the Pro plan terms quoted in `harness-meshy`.
