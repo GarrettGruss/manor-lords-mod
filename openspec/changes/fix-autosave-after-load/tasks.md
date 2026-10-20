@@ -10,5 +10,5 @@
 
 ## 3. Close
 
-- [ ] 3.1 Real check: `--keep-open` run, owner loads a save, `autosave_status` shows the timer far away. Verified by the run id in the pull request.
+- [x] 3.1 Real check: `--keep-open` run, owner loads a save, `autosave_status` shows the timer far away. Verified by the run id in the pull request. (run 20261020-113640-0e3b, notes/fixture-save-load.md; console load of the fixture slot, not a menu load)
 - [x] 3.2 Update the wiki page on autosave, the skill `harness-run-scenario` (keep-open note) and `CHANGELOG.md`. Verified by `wiki.py check`.

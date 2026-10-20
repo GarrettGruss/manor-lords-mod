@@ -18,6 +18,11 @@ def run(ctx) -> dict:
     before = ctx.actions.autosave_status()
     expect.at_least("autosave timer is far away at READY (s)", before.get("remaining_s", 0), MIN_REMAINING_S)
 
+    # The map reads savefileToLoad on open (HarnessBoot comment). It keeps the fixture slot name, so this load reads the fixture save file.
+    instance = "first:MLGameInstance"
+    slot = ctx.bridge.read_property(instance, "savefileToLoad")
+    ctx.metric("slot_name_length", len(slot or ""))
+    expect.equals("a save slot is set for the load", bool(slot), True)
     ctx.bridge._result("console", command="open " + MAP)
     time.sleep(WAIT_AFTER_LOAD_S)
 
