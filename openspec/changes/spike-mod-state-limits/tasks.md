@@ -1,6 +1,6 @@
 ## 1. Tests
-- [ ] 1.1 Limit test: write 10, 100 and 1000 entries and one long entry, make a harness save with `save_game`, load it. Verified by a real run and `notes/tags-limits.md` (counts, sizes, times as ranges).
-- [ ] 1.2 Write a marker in the Tags of an AI lord and of one building, save, load, read back. Verified by a real run. Never write Tags through the bridge `set` (it crashes the game); use Lua `FName`.
+- [x] 1.1 Limit test: write 10, 100 and 1000 entries and one long entry, make a harness save with `save_game`, load it. Verified by a real run and `notes/tags-limits.md` (counts, sizes, times as ranges).
+- [x] 1.2 Write a marker in the Tags of an AI lord and of one building, save, load, read back. Verified by a real run. Never write Tags through the bridge `set` (it crashes the game); use Lua `FName`.
 - [x] 1.3 Ask the user to make a quick save and wait for an autosave, then load and read the pawn Tags. Verified by a real run and a note. No probe calls a save function.
 
 ## 2. Decisions
