@@ -18,3 +18,12 @@ Date 2026-10-20. Branch `feat/11-parallel-game-slots` (95ea3b6). Suite `core` (5
 - The first attempt failed in preflight: the gitignored fixtures `harness/fixtures/saves` were missing in the worktree. They were copied from the main checkout (ignored by git).
 - `--slots 3` first failed with "only 1 game slot installed": `gameslots.SLOTS_DIR` is `REPO_ROOT/slots`, and a worktree has no `slots` folder. The slots are in the main checkout. A junction `slots` in the worktree to the main `slots` fixed it. Finding: slot lookup does not work from a worktree without this. Owner question: make `SLOTS_DIR` use the main checkout (as `install.ps1` does)?
 - No game file was changed. `install.ps1` was not run.
+
+## Exclusive scenario (task 2.1)
+Suite `tmp-excl` (suite-20261020-070359-539d, `--slots 3`, 184.3 s, verdict drift, 5/5 passed): smoke x2, `tmp-excl` x1 (a temporary copy of smoke with `EXCLUSIVE = True`, not committed), time-advance x2.
+Run start times (from each `summary.json`; `report.json` has no per-run start, so the summaries were used) and durations:
+- smoke x2: both start 07:03:59, 54.0 s and 64.1 s (end by 07:05:03).
+- tmp-excl: start 07:05:04, 47.4 s (end 07:05:51). It ran alone: the 2 smoke runs had ended, and the next runs had not started.
+- time-advance x2: both start 07:05:52, 65.7 s and 71.1 s.
+Result: no other run overlaps the exclusive run. Non-exclusive runs ran 2 at a time (3 slots, 2 jobs per round for the rest).
+Gap: `report.json` should record per-run start and end times, so this check does not need the run folders.

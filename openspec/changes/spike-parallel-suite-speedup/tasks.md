@@ -4,8 +4,8 @@
 - [x] 1.3 Compare wall time and the result ranges. Write `notes/speedup.md`. Verified by review of the note.
 
 ## 2. Exclusive scenario and conflicts
-- [ ] 2.1 Run a parallel suite with one `EXCLUSIVE` scenario. Verified by the run start and end times in `report.json`: no other run overlaps it.
-- [ ] 2.2 Check focus, audio and a second-instance lock during 3 parallel runs. Verified by the run summaries and `notes/conflicts.md`.
+- [x] 2.1 Run a parallel suite with one `EXCLUSIVE` scenario. Verified by the run start and end times in `report.json`: no other run overlaps it.
+- [x] 2.2 Check focus, audio and a second-instance lock during 3 parallel runs. Verified by the run summaries and `notes/conflicts.md`.
 - [ ] 2.3 Check that no slot folder, game file or key is in git. Verified by `git status` and a grep of the diff for the key.
 
 ## 3. Bridge timeout
