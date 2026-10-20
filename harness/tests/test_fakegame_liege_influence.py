@@ -77,7 +77,7 @@ class LiegeInfluenceTests(VassalsTestCase):
         self.send(100)
         wanted = self.ask("liege_menu_state")["result"]["wanted_texts"]
         self.assertEqual(wanted["InfluenceText"], "Influence: 10")
-        self.assertEqual(wanted["TributeInfoText"], "Tribute: 200 silver")
+        self.assertEqual(wanted["TributeInfoText"], "Tribute: 200 silver (you have 900)")
         self.assertFalse(self.ask("liege_menu_state")["result"]["open"])
 
     def test_close_without_an_open_menu_is_fine(self):

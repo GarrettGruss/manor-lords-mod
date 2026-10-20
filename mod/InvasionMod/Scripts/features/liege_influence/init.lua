@@ -25,6 +25,16 @@ local function silver()
     return nil
 end
 
+-- A direct write to silver does not raise the HUD update event, so the lord panel keeps the old number (spike 2026-10-19).
+-- The panel's own updatePlayerStats function reads playerRef.silver again.
+local function refresh_hud()
+    local ok, problem = pcall(function()
+        local panel = FindFirstOf("W_HUD_LordPanel_V2_C")
+        if core.isValid(panel) then panel:updatePlayerStats() end
+    end)
+    if not ok then core.log.warn(TAG, "HUD refresh failed: " .. tostring(problem)) end
+end
+
 -- The menu and the command call this function. Returns a result table, or nil and a reason.
 local function send_tribute(amount)
     local before = silver()
@@ -35,6 +45,7 @@ local function send_tribute(amount)
     end
     local ok, problem = pcall(function() engine().playerRef.silver = before - amount end)
     if not ok then return nil, "silver write failed: " .. tostring(problem) end
+    refresh_hud()
     local influence_before = state:get("liege_influence")
     state:set("liege_influence", influence_before + rules.gain(amount, config.influence_per_unit))
     local result = { amount = amount, silver_before = before, silver = silver(), influence_before = influence_before,
@@ -105,7 +116,7 @@ end
 local function wanted_texts()
     return {
         InfluenceText = string.format("Influence: %g", math.floor((state:get("liege_influence") or 0) * 100 + 0.5) / 100),
-        TributeInfoText = string.format("Tribute: %d silver", config.tribute_button_amount),
+        TributeInfoText = string.format("Tribute: %d silver (you have %d)", config.tribute_button_amount, silver() or 0),
     }
 end
 
@@ -118,6 +129,8 @@ local function refresh()
         if S.texts[name] and S.shown[name] ~= text then
             S.shown[name] = text
             S.texts[name]:SetText(FText(text))
+            -- The silver changed (a tribute, or another mod): keep the HUD number in step with the menu.
+            if name == "TributeInfoText" then refresh_hud() end
         end
     end
     return true
