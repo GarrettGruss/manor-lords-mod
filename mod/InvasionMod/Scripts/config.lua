@@ -232,6 +232,10 @@ return {
         enabled = true,
         influence_per_unit = 0.1,        -- influence for 1 silver of tribute (10 silver give 1 influence)
         tribute_button_amount = 200,     -- silver sent by one click of the menu button
+        poll_ms = 100,                   -- real time between two looks at the click queue of the menu (never faster)
+        refresh_ms = 500,                -- real time between two refreshes of the menu labels
+        z_order = 500,
+        position = { X = 300, Y = 150 },
     },
     -- M13 manor_stronghold. Values are TBD for playtests.
     manor_stronghold = {

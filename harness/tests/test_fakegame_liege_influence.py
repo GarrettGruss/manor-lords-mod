@@ -6,6 +6,7 @@ They run the real Lua files. They do not prove how the real game behaves (see th
 import unittest
 
 import fakegame_path  # noqa: F401
+from test_fakegame_modstate import find_pack_mod
 from test_fakegame_vassals import VassalsTestCase
 
 
@@ -65,6 +66,28 @@ class LiegeInfluenceTests(VassalsTestCase):
         before = self.influence()
         self.send(200)
         self.assertAlmostEqual(self.influence(), before + 20)
+
+    def test_open_menu_without_the_pak_gives_a_clear_message(self):
+        answer = self.ask("liege_menu_open")
+        self.assertTrue(answer["ok"], answer)
+        self.assertFalse(answer["result"]["ok"])
+        self.assertTrue(answer["result"]["error"])
+
+    def test_menu_state_wants_the_influence_and_tribute_texts(self):
+        self.send(100)
+        wanted = self.ask("liege_menu_state")["result"]["wanted_texts"]
+        self.assertEqual(wanted["InfluenceText"], "Influence: 10")
+        self.assertEqual(wanted["TributeInfoText"], "Tribute: 200 silver")
+        self.assertFalse(self.ask("liege_menu_state")["result"]["open"])
+
+    def test_close_without_an_open_menu_is_fine(self):
+        self.assertTrue(self.ask("liege_menu_close")["result"]["ok"])
+
+    def test_the_menu_tick_is_not_faster_than_100_ms(self):
+        self.game.exec('require("config").liege_influence.poll_ms = 10')
+        # the scheduler floor is in the feature code
+        source = (find_pack_mod() / "Scripts" / "features" / "liege_influence" / "init.lua").read_text(encoding="utf-8")
+        self.assertIn("math.max(100, config.poll_ms)", source)
 
 
 if __name__ == "__main__":
