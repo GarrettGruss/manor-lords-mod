@@ -111,6 +111,11 @@ Note that the `mod.json` of the Invasion Mod names pak `raidmenu` with `source: 
 - Paths are checked with `require_inside`: nothing may leave `work_dir`.
 - Tool calls have timeouts (repak 300 s, UAssetGUI 120 s).
 
+## Limit: no new backyard extension type
+- A pak cannot add a new backyard (burgage plot) extension type. The type list `EExtensionType` is a native enum with 17 values (0 to 16). A new `DT_Upgrades` row 117 (key = 100 + type) loads, and the game accepts `Type` 17. But the plot gets 0 parts, no cost, no job and no production. Evidence: [new-extension-number.md](../../../openspec/changes/archive/2026-10-18-legacy-31-burgage-extension/implementation-notes/new-extension-number.md), runs `s31-ext17-1` and `s31-ext17-2`.
+- A pak and Lua can only reuse an existing slot, for example the tailor (Type 6): Lua sets the job and the recipe after every load, and a pak model replaces the slot mesh. The old extension is lost.
+- The weaver extension was not shipped (spike `spike-weaver-extension-shipping`, issue #230, closed 2026-10-19). A new job needs a stand-alone building (new `buildingStats` row) instead.
+
 ## Related kinds of pak
 - Models in a pak: [Meshy models](meshy-models.md).
 - Widget Blueprint pak (spec 16): cook with UE, copy the `.uasset` and `.uexp` into the build folder, then `build`. See `.claude/skills/harness-pak-mod/SKILL.md` and spec 16 notes.
