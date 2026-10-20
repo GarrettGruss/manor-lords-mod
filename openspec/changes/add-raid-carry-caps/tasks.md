@@ -2,7 +2,7 @@
 
 ## 1. Spikes
 
-- [ ] 1.1 Write a value above the cap into `ItemsLooted` in a real raid and watch whether the raider keeps looting; verify with a real game run, and write `notes/loot-cap-spike.md`
+- [x] 1.1 Write a value above the cap into `ItemsLooted` in a real raid and watch whether the raider keeps looting; verify with a real game run, and write `notes/loot-cap-spike.md`
 - [x] 1.2 Decide where the raid type comes from for the tracker; verify by review of `design.md`
 
 ## 2. Code
