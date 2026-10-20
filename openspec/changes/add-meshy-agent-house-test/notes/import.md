@@ -34,3 +34,10 @@ Tried the master of `MI_SS_Shrine5`. The colours stay pale. Details and run ids:
 - Cooked `texture_0` (pak) and game `J_Shrine5_baseTexBaked`: same asset properties via `pakmod.py tojson`. Both PF_DXT1, no SRGB or CompressionSettings override (so defaults: sRGB on, TC_Default). Only ImportedSize and LightingGuid differ.
 - So the texture import settings are NOT the cause. `fix_texture_settings` already sets sRGB true for the colour map.
 - Next ideas (not tried): the mesh has no vertex colours, and the masters may use vertex colour for paint or tint (white or black default); compare with a game mesh that has vertex colours.
+
+## Vertex colour and parameter name check (2026-10-20, run 20261020-170034-d780, probe run 20261020-170327-cce2)
+- Vanilla `SM_MERGED_C_SG_Cottage_Lv1_C_UBeam` (cooked uexp): LOD0 has a colour vertex buffer (stride 4, 17065 vertices), the first bytes are `ff ff ff ff` (white). Our Meshy mesh: colour buffer stride 0, 0 vertices (none).
+- Parameter names: `d`, `n`, `spec`, `AO` in our MI_Meshy match the game instance `tudorWall01_combined` (names were copied from it). Live: the house component draws `MI_Meshy <- tudorWall01`. So a name mismatch is not the cause.
+- The cooked master has no expression graph (UV channel, vertex colour use not readable). Its names include `palette_buildings`, `proceduralPaint`, `TINT`, `stretchAmt`, a height map (`tudorWall01_h`) and POM.
+- Live `GetTextureParameterValue` probe failed (the bridge call needs the object path string, not the returned object dict). Not repeated: the 2 run cap was used.
+- Vertex colour write on import: not tried.
