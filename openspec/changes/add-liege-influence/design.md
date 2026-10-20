@@ -24,6 +24,6 @@ The menu is a cooked Widget Blueprint in the Invasion Mod pak (skill `harness-pa
 4. What does the player send: silver or goods? Answered 2026-10-19: silver from the lord's treasury.
 5. The command name `InvasionMod.liege_send_tribute`. Answered 2026-10-19: accepted.
 6. Start of the feature. Answered 2026-10-19: approved.
-7. Answered (owner, 2026-10-19): all mod menus open from the game UI without a hotkey, in at most 2 clicks.
+7. Answered (owner, 2026-10-19 and 2026-10-20): the root of each mod menu opens from the game UI without a hotkey, in at most 2 clicks. Submenus inside a root menu are exempt (for example a tech menu with branching paths). A general rule for all mod menus goes to `mod/core` in a separate change.
 8. New: how does the player choose the amount (fixed buttons such as 10 and 100, or a free input)? The owner decides.
 9. New: does influence show as a whole number or with a fraction (a tribute of 5 gives 0.5)? The owner decides.

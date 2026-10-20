@@ -69,7 +69,7 @@ The tribute action SHALL be available as the named command `InvasionMod.liege_se
 - Not checked yet (planned: `mod/InvasionMod/scenarios/liege_influence/send_tribute.py`).
 
 ### Requirement: Tribute menu
-The mod SHALL provide a pak widget menu in which the player sends silver to the liege. The menu SHALL show the influence and the silver of the lord's treasury. The menu SHALL update both values after a tribute. The player SHALL open the menu from the game UI with the mouse, in at most 2 clicks. The menu SHALL NOT need a hotkey. How the amount is chosen is open question 8 in `design.md`.
+The mod SHALL provide a pak widget menu in which the player sends silver to the liege. The menu SHALL show the influence and the silver of the lord's treasury. The menu SHALL update both values after a tribute. The player SHALL open the root of the menu from the game UI with the mouse, in at most 2 clicks. Opening it SHALL NOT need a hotkey. The rule covers only the root menu, not the submenus inside it. How the amount is chosen is open question 8 in `design.md`.
 
 #### Scenario: Sending tribute in the menu
 - **WHEN** the player opens the menu and sends a tribute
