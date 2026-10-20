@@ -4,13 +4,14 @@ Issue: #271. Legacy source: `openspec/changes/archive/2026-10-16-legacy-m11-lieg
 
 ## Why
 
-The design (M00) says the player is sworn to a liege. Tribute to the liege gives influence, and influence buys aid, villagers, weapons or tools. M11 is not started. It is a backlog feature (M00 decision 9, 2026-10-16): the liege is off-screen and only a custom menu represents it. The user decided on 2026-10-18 that all open legacy work moves into changes, so the first step gets a change. This change stays in the backlog until the user starts it.
+The design (M00) says the player is sworn to a liege. Tribute to the liege gives influence, and influence buys aid, villagers, weapons or tools. M11 is a backlog feature (M00 decision 9, 2026-10-16): the liege is off-screen and only a custom menu represents it. The owner answered the open questions on 2026-10-19 and approved the start (see `design.md`).
 
 ## What Changes
 
-- The mod keeps an influence value (mod-owned, in ModState).
-- A tribute sent to the liege raises the influence.
-- The influence is shown by a named command.
+- The mod keeps an influence value (mod-owned, in ModState). It does not decay and has no cap.
+- The player sends silver from the lord's treasury to the liege through a pak widget menu.
+- 10 silver of tribute gives 1 influence (`influence_per_unit` is 0.1, set in the feature config).
+- The command `InvasionMod.liege_send_tribute` is the action behind the menu and is used by tests. The command `InvasionMod.liege_state` shows the influence.
 
 ## Non-goals
 
@@ -18,7 +19,7 @@ The design (M00) says the player is sworn to a liege. Tribute to the liege gives
 - A liege aid call and a military aid army (legacy iteration 03).
 - Path effects of M12 on influence (oppression: military success, prosperity: tribute and wealth).
 - The relief army of the great raid. M02 owns it until M11 starts.
-- A menu. The first step uses a named command (see open question 2 in `design.md`).
+- Sending goods or silver from the regional treasury.
 
 ## Legacy folders
 
@@ -27,13 +28,14 @@ The design (M00) says the player is sworn to a liege. Tribute to the liege gives
 ## Capabilities
 
 ### New Capabilities
-- `mod/liege_influence`: the influence value and how tribute raises it.
+- `mod/liege_influence`: the influence value, the tribute menu and how tribute raises influence.
 
 ### Modified Capabilities
 - None.
 
 ## Impact
 
-- New feature folder `mod/InvasionMod/Scripts/features/liege_influence/`, `data/liege_influence/` if it needs data, and `scenarios/liege_influence/`.
-- It requires `mod_state` and `tribute`.
+- New feature folder `mod/InvasionMod/Scripts/features/liege_influence/`, `data/liege_influence/` for the widget asset, and `scenarios/liege_influence/`.
+- A new widget in the Invasion Mod pak (`ue/` sources, cooked asset).
+- It requires `mod_state` and `tribute`, and the shared module `HarnessClickHooks`.
 - Wiki, the mod feature list and CHANGELOG.
