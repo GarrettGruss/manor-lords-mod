@@ -6,7 +6,7 @@
 ## 2. Exclusive scenario and conflicts
 - [x] 2.1 Run a parallel suite with one `EXCLUSIVE` scenario. Verified by the run start and end times in `report.json`: no other run overlaps it.
 - [x] 2.2 Check focus, audio and a second-instance lock during 3 parallel runs. Verified by the run summaries and `notes/conflicts.md`.
-- [ ] 2.3 Check that no slot folder, game file or key is in git. Verified by `git status` and a grep of the diff for the key.
+- [x] 2.3 Check that no slot folder, game file or key is in git. Verified by `git status` and a grep of the diff for the key.
 
 ## 3. Bridge timeout
 - [ ] 3.1 Count bridge timeouts in the parallel runs. Ask the user for the decision. Verified by the decision in `design.md`.
