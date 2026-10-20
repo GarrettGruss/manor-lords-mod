@@ -570,6 +570,7 @@ local function stepPausing()
         if os.time() - pausing.stoppedSince >= CLOCK_STOPPED_SECONDS then
             if writeReadyMarker(engine, clock) then
                 setState("READY")
+                autosave.guard_loads(log, TAG)
             else
                 fail("could not write ready.marker")
             end

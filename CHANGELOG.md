@@ -36,6 +36,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - Meshy meshes drew a pale fallback material: `meshy_material.py` now sets no static switch overrides and uses the game master `MegascansStandard` (#320).
+- The harness pushes the autosave timer away again after every world load in a kept-open game, so a load no longer brings back a real autosave after 10 minutes (change `fix-autosave-after-load`, #315).
 - `harness/tools/s29_command.py` works in a `--keep-open` run before the first command; it no longer needs a `commands` folder (#312).
 - The `--keep-open` teardown note gives a `game-close.ps1` command that runs under the default script policy (#313).
 - Tech tree and raid menus: a click on a menu button is a hook event and is no longer missed (10 of 10 real clicks counted). The scheduler tick is back at 100 ms: a 50 ms tick broke the Lua state after about 3 minutes with a menu open.
