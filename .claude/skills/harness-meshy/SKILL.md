@@ -6,8 +6,15 @@ description: Make a 3D model for Manor Lords with Gemini reference images and Me
 # Meshy models (specs 21, 30, 31, 32, 33)
 
 Use this skill when a task needs a new 3D model in the game. Check first if a vanilla mesh is enough.
+For Meshy modes that `genmesh.py` lacks (owner-installed CLI), see `harness-meshy-agent`.
 
 ## Approved tools (user, 2026-10-18): Gemini is approved for reference images. Meshy is used on the Pro plan.
+
+## IMPORTANT: Meshy Pro account and private ownership (owner, 2026-10-19)
+We use a Meshy **Pro** account. Its license for the models we generate:
+- Ownership: full private ownership. Commercial use: allowed, with full commercial rights. Attribution: not required.
+- Condition: we keep private ownership only if we do NOT publish the models to the Meshy Community page, and our input assets (prompts, reference images) do not violate third-party copyrights.
+- So: never publish, share or make public a model on the Meshy Community page. Keep task visibility private. Use only our own or licensed input images.
 
 ## Meshy license (Pro plan), quoted from the Meshy terms:
 
