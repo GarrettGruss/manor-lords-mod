@@ -1,7 +1,7 @@
 # process/reliability-assessment Specification
 
 ## Purpose
-TBD - created by archiving change add-reliability-metrics. Update Purpose after archive.
+How this repo measures regression risk per spec domain with the skill `reliability-assessment`: when an assessment runs, where its report goes, and how the result is used in planning and release.
 
 ## Requirements
 
