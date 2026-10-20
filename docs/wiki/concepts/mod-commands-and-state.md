@@ -121,6 +121,15 @@ state:get("raid_days"); state:set("raid_days", 399)  -- set flushes at once
 - Strings may use only `A-Z a-z 0-9 _ . -`.
 - Safety: never write a `Tags` array through the bridge (crash). The module writes with `FName`. See [safety rules](safety-rules.md).
 
+Limits (change `spike-mod-state-limits`, #283):
+
+- One Tag name must be under 1024 chars. A longer name is not cut: the engine turns it into `ERROR_NAME_SIZE_EXCEEDED` at write time, and the content is lost.
+- 1000 entries of 43 chars on the pawn survive a save and a load with the same text. Writing 1000 takes under 5 ms, a save grows about 3 KB, and no slowdown of save or boot was seen. Counts above 1000 were not tested.
+- Tags on an AI lord and on a building survive a save and a load.
+- A quick save and an autosave keep the pawn Tags, as a menu save does.
+- A load restarts the game 10 minute autosave timer (the boot protection does not survive a load; #311). Run `disable_autosave` after a load.
+- Test scenario `mod-state-tags-limits` (`mod/InvasionMod/scenarios/mod_state/tags_limits.py`, hidden) with the commands `tags_limit_write` and `tags_limit_read`. Its "lng" check fails on purpose.
+
 Scenarios that save use a write run and a read run (`--save`, `--env MODSTATE_PHASE=read`). Test: `test_fakegame_modstate.py`. Notes: `openspec/changes/archive/2026-10-16-legacy-m01-mod-state/implementation-notes/tags-module.md`, `openspec/changes/archive/2026-10-15-legacy-24-mod-save-state/`.
 
 ## Where to extend

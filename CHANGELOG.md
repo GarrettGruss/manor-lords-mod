@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Test scenario `mod-state-tags-limits` and mod commands `tags_limit_write` and `tags_limit_read` (change `spike-mod-state-limits`, #283): Tags limits are measured. One Tag name must be under 1024 chars; 1000 entries, lord and building Tags, quick save and autosave all survive. A load restarts the autosave timer (#311).
+
 - Bridge request log (change `add-bridge-request-log`, #270): the UEBridge Lua mod writes one live `mod.log` line for each request (id, verb, target, duration, error text of a failure). No property value and no Lua source. Patch P9; fake game test `test_fakegame_uebridge.py`.
 - Test scenario `boot-timing` and suite `boot-timing` (change `add-boot-timing-regression-tests`, #295): after READY the clock stays still for 30 s, `boot.json` has the six save states in order, and boot seconds and pause calls are in the range of 413 past runs. The scenario is mapped to the domain `harness/game-boot` in `reliability.json`.
 - Skill `reliability-assessment` (change `add-reliability-metrics`, #289): a reusable script that reports change failure rate, fix-to-feat ratio, churn, bug lifetime, MTTF, MTTR and flaky rate per spec domain. One config file (`reliability.json`) holds the domain map, the run format and all limits. The first report is in `docs/reliability/2026-10-18.md`. New process rules `process/reliability-assessment`; a `feat` proposal has a `Reliability risk` section; the release steps start with an assessment.

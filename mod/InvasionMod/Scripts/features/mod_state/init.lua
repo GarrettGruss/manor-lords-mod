@@ -118,8 +118,8 @@ local function command_add_foreign_tag(args)
 end
 
 
--- Spike 283 (tags limits): write or read many spike entries on a pawn, an AI lord or a building. Names start with "spike:".
-local function spike_target(args)
+-- Tags limits (#283): write or read many test entries on a pawn, an AI lord or a building. Names start with "tlimit:".
+local function tags_limit_target(args)
     if args.target == "pawn" then return state:owner_object() end
     local class = args.target == "lord" and "PawnCPP_AI" or "SMBuildingMaster"
     local list = FindAllOf(class) or {}
@@ -128,28 +128,28 @@ local function spike_target(args)
     return nil
 end
 
-local function command_spike_write(args)
-    local object = spike_target(args)
+local function command_tags_limit_write(args)
+    local object = tags_limit_target(args)
     if object == nil then return nil, "no target " .. args.target end
     local started = os.clock()
     local tags = object.Tags
     local padding = string.rep("x", math.max(0, args.size - 12))
     local first = #tags + 1
     for i = 1, args.count do
-        tags[#tags + 1] = FName(string.format("spike:%s%05d=%s", args.label, i, padding))
+        tags[#tags + 1] = FName(string.format("tlimit:%s%05d=%s", args.label, i, padding))
     end
     return { target = object:GetFullName(), total_tags = #object.Tags, added = #object.Tags - first + 1, seconds = os.clock() - started }
 end
 
-local function command_spike_read(args)
-    local object = spike_target(args)
+local function command_tags_limit_read(args)
+    local object = tags_limit_target(args)
     if object == nil then return nil, "no target " .. args.target end
     local started = os.clock()
     local tags = object.Tags
     local count, chars, longest, sample = 0, 0, 0, nil
     for i = 1, #tags do
         local text = tags[i]:ToString()
-        if text:sub(1, 6 + #args.label) == "spike:" .. args.label then
+        if text:sub(1, 7 + #args.label) == "tlimit:" .. args.label then
             count = count + 1
             chars = chars + #text
             if #text > longest then longest = #text end
@@ -157,7 +157,7 @@ local function command_spike_read(args)
         end
     end
     local last = #tags > 0 and tags[#tags]:ToString() or ""
-    return { last_len = #last, last_head = last:sub(1, 30), target = object:GetFullName(), total_tags = #tags, spike_count = count, spike_chars = chars, longest = longest, sample = sample, seconds = os.clock() - started }
+    return { last_len = #last, last_head = last:sub(1, 30), target = object:GetFullName(), total_tags = #tags, entry_count = count, entry_chars = chars, longest = longest, sample = sample, seconds = os.clock() - started }
 end
 
 if has_commands then
@@ -165,11 +165,11 @@ if has_commands then
     commands.register("InvasionMod.mod_state_get", command_get, { key = key_argument() })
     commands.register("InvasionMod.mod_state_set", command_set, { key = key_argument(), value = { type = "string", required = true, maxLength = 60 } })
     commands.register("InvasionMod.mod_state_add_foreign_tag", command_add_foreign_tag, { tag = { type = "string", required = true, maxLength = 40 } })
-    local spike_args = { target = { type = "string", required = true, maxLength = 8 }, label = { type = "string", required = true, maxLength = 20 }, index = { type = "number", min = 1, max = 500 } }
+    local tags_limit_args = { target = { type = "string", required = true, maxLength = 8 }, label = { type = "string", required = true, maxLength = 20 }, index = { type = "number", min = 1, max = 500 } }
     local write_args = { count = { type = "number", required = true, min = 1, max = 5000 }, size = { type = "number", required = true, min = 12, max = 20000 } }
-    for k, v in pairs(spike_args) do write_args[k] = v end
-    commands.register("InvasionMod.spike_tags_write", command_spike_write, write_args)
-    commands.register("InvasionMod.spike_tags_read", command_spike_read, spike_args)
+    for k, v in pairs(tags_limit_args) do write_args[k] = v end
+    commands.register("InvasionMod.tags_limit_write", command_tags_limit_write, write_args)
+    commands.register("InvasionMod.tags_limit_read", command_tags_limit_read, tags_limit_args)
 end
 
 core.log.info(TAG, "feature mod_state loaded")
