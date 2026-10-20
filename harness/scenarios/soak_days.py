@@ -35,6 +35,7 @@ FEED_AMOUNT = 100
 # poll so that a 730 day soak can finish. It tests the game process and the clock, not the economy.
 KEEP_APPROVAL = os.environ.get("HARNESS_SOAK_KEEP_APPROVAL") == "1"
 KEEP_APPROVAL_VALUE = 100
+EXTRA_SAMPLE_EVERY_S = 120.0  # units and buildings, to find why the clock rate falls (spike two-year-soak, task 1.2)
 MAX_MEMORY_MB = 8192
 MAX_MEMORY_GROWTH_MB = 2048
 
@@ -54,9 +55,22 @@ def run(ctx) -> dict:
 
     feeder = soak.Feeder(FEED_EVERY_DAYS, feed, first.days_total)
 
+    extras: list[dict] = []
+    last_extra = [time.monotonic() - EXTRA_SAMPLE_EVERY_S]
+
+    def sample_extras(sample) -> None:
+        if time.monotonic() - last_extra[0] < EXTRA_SAMPLE_EVERY_S:
+            return
+        last_extra[0] = time.monotonic()
+        row = {"wall_s": sample.wall_s, "days": sample.days_total, "rss_mb": sample.rss_mb,
+               "units": bridge.count_objects("SMUnit"), "buildings": bridge.count_objects("SMBuildingMaster")}
+        extras.append(row)
+        ctx.log.info(f"soak extra {row}")
+
     def on_poll() -> None:
         ctx.popups()
         sample = sampler()
+        sample_extras(sample)
         soak.check_game_over(bridge.read_property(game_instance, "currentGameVictoryStatus"), sample.days_total)
         if KEEP_APPROVAL:
             ctx.actions.set_region_value("Approval", KEEP_APPROVAL_VALUE)
@@ -78,6 +92,7 @@ def run(ctx) -> dict:
     rate = soak.running_rate(sampler.samples)
     expect.in_range("game clock rate while running (game s per wall s)", rate if rate is not None else -1, *RUNNING_RATE_RANGE)
     record_numbers(ctx, sampler.samples, first, last, days, feeder)
+    ctx.notes.append(f"soak extras {extras}")
     check_memory(expect, first, last)
     return ctx.result()
 
