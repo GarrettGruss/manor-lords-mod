@@ -46,6 +46,10 @@ def import_with_scale(scale: float, z_shift: float = 0.0):
     return mesh, box.max - box.min, box
 
 
+# A second import into a folder that already holds the assets keeps the old textures and the old import translation.
+# Start from an empty folder, so a changed source texture or BASE_TO_GROUND always takes effect.
+if unreal.EditorAssetLibrary.does_directory_exist(DEST):
+    unreal.EditorAssetLibrary.delete_directory(DEST)
 mesh, size, box = import_with_scale(1.0)
 unreal.log("IMPORT first size_cm %.1f %.1f %.1f" % (size.x, size.y, size.z))
 scale = TARGET_CM / max(size.x, size.y)

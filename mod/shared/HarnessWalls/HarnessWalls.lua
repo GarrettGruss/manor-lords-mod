@@ -329,6 +329,7 @@ end
 
 -- Spike (spec 32), read only: where the actors are whose static mesh component uses a mesh (field "mesh", a name part).
 -- Why: to compare unit paths with the wall pieces of a built manor. At most MAX_ACTORS rows.
+-- With "materials":"1" each row also has the component name and the materials (with their parents) that it draws with.
 M.MAX_ACTORS = 400
 
 function M.mesh_actors(_, raw)
@@ -343,8 +344,19 @@ function M.mesh_actors(_, raw)
             if at then
                 total = total + 1
                 if #rows < M.MAX_ACTORS then
-                    rows[#rows + 1] = { owner = read(function() return owner:GetClass():GetFName():ToString() end), x = math.floor(at.X), y = math.floor(at.Y), z = math.floor(at.Z),
-                                        yaw = math.floor(read(function() return owner:K2_GetActorRotation().Yaw end) or 0) }
+                    local row = { owner = read(function() return owner:GetClass():GetFName():ToString() end), x = math.floor(at.X), y = math.floor(at.Y), z = math.floor(at.Z),
+                                  yaw = math.floor(read(function() return owner:K2_GetActorRotation().Yaw end) or 0) }
+                    if textField(raw, "materials") then
+                        -- Spike: names of the materials that the component draws with (override or mesh slot) and their parents.
+                        row.component = read(function() return component:GetFullName() end)
+                        row.materials = {}
+                        for i = 0, (read(function() return component:GetNumMaterials() end) or 0) - 1 do
+                            local material = read(function() return component:GetMaterial(i) end)
+                            row.materials[#row.materials + 1] = (material and read(function() return material:GetFullName() end) or "nil")
+                                .. " <- " .. (material and read(function() return material.Parent:GetFullName() end) or "-")
+                        end
+                    end
+                    rows[#rows + 1] = row
                 end
             end
         end

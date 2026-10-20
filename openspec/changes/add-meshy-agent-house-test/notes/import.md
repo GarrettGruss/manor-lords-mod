@@ -16,3 +16,12 @@
 - Replaced meshes (paths verified in the game paks with `pakmod.py find`): `.../Buildings/Merged/SM_MERGED_C_SG_Cottage_Lv1_C_UBeam`, `..._Lv1_A_v4_UBeamFoudnations`, `..._Lv1_B_Ubeam_00`. All three are now replaced, so the variant does not matter.
 - Gotcha: in one run the last copy (B) was not on disk after exit. The script now saves every copy again at the end. Check that all 3 cooked files exist.
 - Pak rebuilt: 19 files, 3,338,836 bytes.
+
+## White house (2026-10-20)
+- Not the cause: the pak holds `MI_Meshy` with the textures `d`, `n`, `spec` and `AO` (checked in the cooked file, and live in the game: `TextureParameterValues` of the instance list all four). The new house component draws with `MI_Meshy`, parent `tudorWall01`. The FBX import found the base colour (`model.fbm/texture_0.png`: brown, cream and black).
+- Cause of the first "white" pictures: they showed the OLD replaced houses (a row that exists at the start). The new house was not visible yet. The component `bVisible` of a new burgage house is false while it is a construction site. The plot counts as built after 1 day, the mesh shows after about 8 more days. The old scenario did not wait, and the camera did not follow the pawn while the game was paused.
+- Look in the game: with the master `tudorWall01` the Meshy colours come out pale. Black beams and cream walls show. Brown wood and thatch come out white or grey. These did NOT change it: live material instance (`br` 0 to 2, `R`, `spec`, `TINT`, `proceduralPaint`, `contrast dirt`, `stretchAmt`, `isConstructing`); `spec` = black texture; alpha channel in the colour map; vertex colour override on import (the FBX import ignored it). The master `scanLuv_owidz_thatch` gave a dark, mossy house without the cream plaster. So the master stays `tudorWall01`.
+- Open: a faithful colour needs a game master whose colour comes straight from the albedo map. Not found.
+- Import fix: `import_replace_mesh.py` deletes the destination folder before it imports. Before, a second import kept the old textures and the old import translation.
+- Pak rebuilt: 19 files, 3,338,836 bytes (3 replaced paths kept, `BASE_TO_GROUND`). No AES key in the pak or in the diff.
+- Scenario: waits for `bVisible`, keeps the game at speed 1 so the camera follows the pawn, centres on the component location, turns the camera with the pawn yaw. The mod command `mesh_actors` has a new option `materials` (component name, materials with parents).
