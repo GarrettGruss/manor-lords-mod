@@ -1,12 +1,12 @@
 ## 1. Spike
 
-- [ ] 1.1 Find the hook that fires once per player pawn after a load, after its autosave timer exists. Verified by a real `--keep-open` run, a load by the owner and `notes/load-hook.md`. No save function is called.
+- [x] 1.1 Find the hook that fires once per player pawn after a load, after its autosave timer exists. Verified by a real `--keep-open` run, a load by the owner and `notes/load-hook.md`. No save function is called.
 
 ## 2. Build
 
-- [ ] 2.1 Push the timer away after each load after `READY`, with retries and a log line. Verified by a new fake game test in `harness/tests/test_fakegame_harnessautosave.py`.
-- [ ] 2.2 Log an error when the push fails after a load. Verified by a fake game test.
-- [ ] 2.3 Update the "Checked by" lines in the delta spec.
+- [x] 2.1 Push the timer away after each load after `READY`, with retries and a log line. Verified by a new fake game test in `harness/tests/test_fakegame_harnessautosave.py`.
+- [x] 2.2 Log an error when the push fails after a load. Verified by a fake game test.
+- [x] 2.3 Update the "Checked by" lines in the delta spec.
 
 ## 3. Close
 
