@@ -12,7 +12,7 @@ DESCRIPTION = "Soak: 8x speed for 600 wall seconds (about 120 game days). Pop-up
 COVERS = ["Q1"]
 SPEED = 3  # 8 game seconds for each wall second, 5 wall seconds a day
 SOAK_WALL_S = float(os.environ.get("HARNESS_SOAK_WALL_S", "600"))  # a longer soak is chosen by this variable
-MAX_SOAK_WALL_S = 13000.0
+MAX_SOAK_WALL_S = 13200.0
 if not 60 <= SOAK_WALL_S <= MAX_SOAK_WALL_S:
     raise ValueError(f"HARNESS_SOAK_WALL_S={SOAK_WALL_S:g} must be between 60 and {MAX_SOAK_WALL_S:g} seconds")
 # Room for the speed change (about 10 s), the final pause (about 5 s), and slow bridge calls.

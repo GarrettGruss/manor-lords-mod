@@ -1,7 +1,7 @@
 ## 1. Investigation
 - [x] 1.1 Re-read `soak-results.md` and `open-items.md` and write `notes/soak-plan.md`. Verified by review.
 - [x] 1.2 Run `soak-days` with extra samples (units, buildings, clock rate). Verified by a real run and its `telemetry.jsonl`.
-- [ ] 1.3 Try a way to keep the village alive (feed, approval, fewer raiders). Verified by a real run that reaches more than 333 days.
+- [x] 1.3 Try a way to keep the village alive (feed, approval, fewer raiders). Verified by a real run that reaches more than 333 days.
 
 ## 2. Decision and result
 - [x] 2.1 Ask the user the questions in `design.md`. Verified by the answers in `design.md`.

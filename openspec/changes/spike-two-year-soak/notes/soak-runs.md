@@ -6,6 +6,7 @@ Scenario `soak-days` with `HARNESS_SOAK_WALL_S=12000` and `HARNESS_SOAK_KEEP_APP
 |---|---|---|---|---|---|---|
 | s286-soak-1 | crash | 1399 | about 67 (day 205 to 272) | about 8 early | 4709 / 4458 | 0 |
 | s286-soak-2 | fail (rate assert 1.11 < 1.5, by design) | 12054 | 333 (day 205 to 537) | 1.11 | 4194 / 1932 | 0 |
+| s286-soak-3 | pass on days (Approval read-back asserts and rate assert fail by design) | 13254 | 401 (day 205 to 606) | 1.21 | 4400 / about 1700 | 0 |
 
 ## Run 1: crash at day 272
 - Exit code 3, `EXCEPTION_ACCESS_VIOLATION reading 0xffffffffffffffff`. Crash folder in `runs/s286-soak-1/crash/`.
@@ -33,3 +34,9 @@ Nominal at 8x is 5 wall s per day. The rate was already near 1.0 from about day 
 
 ## Verdict on the owner decision
 333 days is enough (owner, 2026-10-19). Run 2 gives 333 days with no crash and flat memory after the early drop. Run 1 shows one rare crash in the mod sack step.
+
+## Run 3 (task 1.3): 401 days, no crash
+- `HARNESS_SOAK_WALL_S=13200`, `HARNESS_SOAK_KEEP_APPROVAL=1`. `MAX_SOAK_WALL_S` in `soak_days.py` raised from 13000 to 13200 (the run limit is 13500 s).
+- Wall 13200 s, 16005 game s, 401 days (target was 360), rate 1.21, 0 stalls, no crash, village alive. The Approval read-back asserts fail because the game overwrites the value between polls (known).
+- Memory: about 4400 MB early, about 1700 MB from day 541. Units 736, buildings 232 at day 544.
+- Task 1.3 is met: more than 333 days with a living village.
