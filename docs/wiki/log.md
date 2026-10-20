@@ -1,5 +1,10 @@
 # Wiki update log
 
+## 2026-10-19
+* **Update**: [Mod commands and state](concepts/mod-commands-and-state.md) has the ModState Tag limits: 1000 entries survive save and load, an entry over 1023 chars becomes `ERROR_NAME_SIZE_EXCEEDED`, quick save and autosave keep the Tags, and Tags on lords and buildings survive (change `spike-mod-state-limits`, #283).
+* **Update**: Added [Engine limits found by spikes](concepts/engine-limits.md): buildings inside the manor bailey are not possible (change `spike-bailey-buildings`, #68).
+* **Update**: A new backyard extension type needs native code; only an existing slot can be reused (change `spike-weaver-extension-shipping`, #230). Updated [Pak mods](workflows/pak-mods.md).
+
 ## 2026-10-18
 * **Update**: The game design moved to `design/mod/` (philosophy, decision log, trailer brief; `design/harness/` is reserved; change `split-design-brief`, #292). The original M00 and its feasibility reviews are archived. Updated [Source map](architecture/source-map.md) and the links of all pages.
 * **Update**: The legacy specs moved into `openspec/changes/archive/<date>-legacy-*/` (change `archive-legacy-specs`, #288) and the coverage data into `openspec/specs/harness/coverage/` (#279). Rewrote the links of all pages; updated [Specs, docs and project process](operations/docs-and-specs.md), [Quickstart](quickstart.md), [Invasion Mod structure](architecture/invasion-mod.md) and [Python tests and coverage](testing/python-tests.md).

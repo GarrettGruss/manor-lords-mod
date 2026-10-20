@@ -41,6 +41,10 @@ package.path = MOD_DIR .. "\\scripts\\?.lua;" .. package.path
 local json = require("json")
 local UEHelpers = require("UEHelpers")
 
+-- PATCH P9 (harness): one live HarnessLog line per request. The log is optional: no module, no lines.
+local okLog, HarnessLog = pcall(require, "HarnessLog")
+if not okLog then HarnessLog = nil end
+
 local function log(fmt, ...)
     print("[" .. MOD_NAME .. "] " .. string.format(fmt, ...) .. "\n")
 end
@@ -1290,9 +1294,53 @@ local busy, busySince = false, 0
 local BUSY_RECOVER_SECONDS = 120
 local handled = 0
 
+-- PATCH P9 (harness): describe a request for the log. Only op names and target names go in:
+-- never an argument value, a property value or Lua source.
+local currentRequest = nil
+local function logText(v)
+    return (tostring(v):gsub("%c+", " "):sub(1, 200))
+end
+local function describeRequest(req)
+    if req.op == "batch" and type(req.calls) == "table" then
+        local verbs, targets = {}, {}
+        for _, c in ipairs(req.calls) do
+            if type(c) == "table" then
+                verbs[#verbs + 1] = logText(c.op)
+                local t = c.ref or c.class or c.path or c.label or c.pattern
+                if t ~= nil then targets[#targets + 1] = logText(t) end
+            end
+        end
+        return table.concat(verbs, ","), #targets > 0 and table.concat(targets, ",") or "-"
+    end
+    return logText(req.op), "-"
+end
+local function failureText(ok, result, err)
+    if err ~= nil then return tostring(err) end
+    if ok == false then return "failed" end
+    local errors = {}
+    if currentRequest and currentRequest.batch and type(result) == "table" then
+        for _, r in ipairs(result) do
+            if type(r) == "table" and r.ok == false then
+                errors[#errors + 1] = tostring(r.op) .. ": " .. tostring(r.error)
+            end
+        end
+    end
+    if #errors > 0 then return table.concat(errors, "; ") end
+    return nil
+end
+local function logRequest(id, ok, result, err, ms)
+    if not HarnessLog then return end
+    local cur = currentRequest or { verb = "?", target = "-" }
+    local failure = failureText(ok, result, err)
+    local line = string.format("request id=%s verb=%s target=%s ms=%d %s", logText(id), cur.verb, cur.target, ms,
+        failure and ("FAILED error=" .. logText(failure)) or "ok")
+    pcall(HarnessLog.write, failure and "WARN" or "INFO", MOD_NAME, line)
+end
+
 -- ms is os.clock() CPU time, an approximation; Lua has no wall clock finer than a second.
 local function respond(id, ok, result, output, err, started)
     local ms = math.floor((os.clock() - started) * 1000)
+    logRequest(id, ok, result, err, ms) -- PATCH P9 (harness)
     local body = json.encode({
         id = id, ok = ok, result = result, output = output, error = err,
         ms = ms, protocol = PROTOCOL,
@@ -1322,6 +1370,8 @@ end
 
 local function handle(req)
     local started = os.clock()
+    local verb, target = describeRequest(req) -- PATCH P9 (harness)
+    currentRequest = { verb = verb, target = target, batch = req.op == "batch" }
     handled = handled + 1
     if req.op == "ping" then
         respond(req.id, true, { pong = true, handled = handled, poll_ms = POLL_MS }, {}, nil, started)
@@ -1398,6 +1448,7 @@ LoopAsync(POLL_MS, function()
     os.remove(REQUEST)
     local ok, req = pcall(json.decode, raw)
     if not ok or type(req) ~= "table" then
+        currentRequest = nil -- PATCH P9 (harness)
         respond("?", false, nil, {}, "bad request json: " .. tostring(req), os.clock())
         return false
     end

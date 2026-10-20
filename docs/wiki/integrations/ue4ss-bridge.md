@@ -101,6 +101,7 @@ Each patch is marked `PATCH P<n> (harness)` in the code. Search for it.
 | P6 | `dump` needs `allow_writes`. |
 | P7 | `mcp==1.30.0` pinned in `pyproject.toml`. Stdio only. |
 | P8 | `get`, `set` and `call` refuse a name that is not a non-empty string. A nil name crashed the game. |
+| P9 | One `HarnessLog` line per request in `mod.log`: id, verb, target, duration, and the error text of a failure. Never a property value or Lua source. |
 
 Known limit: a request can still run after the client timed out. After a timeout, read the state again.
 
@@ -113,11 +114,12 @@ Known limit: a request can still run after the client timed out. After a timeout
 - Bridge failures are results (`BridgeError` text), not harness crashes.
 - A game crash gives a crash report text, taken from the crash folder after the request start time.
 - The mod logs `[UEBridge] ... ready` to `UE4SS.log` at start. Check it if requests are never picked up.
+- Each request writes one live line to `mod.log` (tag `UEBridge`): `request id=<id> verb=<op> target=<ref> ms=<n> ok`, or `WARN ... FAILED error=<text>`. A batch lists the ops of its calls. Read it after a failed run to see which bridge calls ran.
 - Hot reload of the bridge: the `reload_mod` tool.
 
 ## Tests
 
-`Bridge` takes `one` and `sleep` as parameters, so tests can pass fakes. The Lua side has no unit test: it is checked in the game. Smoke results: `openspec/changes/archive/2026-10-15-legacy-01-ue4ss-bridge/implementation-notes/smoke-test-log.md`.
+`Bridge` takes `one` and `sleep` as parameters, so tests can pass fakes. The request log of the Lua side is checked by `harness/tests/test_fakegame_uebridge.py` (the mod runs in the fake game). The rest of the Lua side is checked in the game. Smoke results: `openspec/changes/archive/2026-10-15-legacy-01-ue4ss-bridge/implementation-notes/smoke-test-log.md`.
 
 ## Extend
 
