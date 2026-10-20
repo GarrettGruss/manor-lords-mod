@@ -2,6 +2,7 @@
 
 ## 2026-10-19
 * **Update**: Added [Engine limits found by spikes](concepts/engine-limits.md): buildings inside the manor bailey are not possible (change `spike-bailey-buildings`, #68).
+* **Update**: A new backyard extension type needs native code; only an existing slot can be reused (change `spike-weaver-extension-shipping`, #230). Updated [Pak mods](workflows/pak-mods.md).
 
 ## 2026-10-18
 * **Update**: The game design moved to `design/mod/` (philosophy, decision log, trailer brief; `design/harness/` is reserved; change `split-design-brief`, #292). The original M00 and its feasibility reviews are archived. Updated [Source map](architecture/source-map.md) and the links of all pages.
