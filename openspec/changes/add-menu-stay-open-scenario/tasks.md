@@ -1,7 +1,7 @@
 ## 1. Scenario
 
-- [x] 1.1 Write the test scenario: open the tech tree menu, wait 300 s, read the state twice a second, assert state alive, then do 10 real single clicks and assert exactly 10 counted. Verified by 3 of 3 real runs.
-- [ ] 1.2 Decide where the scenario runs (regular suite or a long suite). Verified by review.
+- [x] 1.1 Write the test scenario: open the tech tree menu, wait 300 s, read the state twice a second, assert state alive, then do 10 real single clicks and assert exactly 10 counted. Verified by real runs (4 of 6 passed, the last 4 in a row; one crash is issue #323, see `notes/real-runs.md`).
+- [x] 1.2 Decide where the scenario runs (regular suite or a long suite). Verified by review. Decision: not in `core.json`; run it on demand (about 6 min, real mouse, exclusive, needs a pak). See `notes/suite-choice.md`.
 - [x] 1.3 Change the "Not checked yet" line of the scenario "A menu stays open" in `mod/core` to name the new scenario (after #267 is merged). Verified by `openspec validate --all --strict`.
 
 ## 2. Clean source widget
