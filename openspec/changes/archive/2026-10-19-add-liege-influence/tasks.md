@@ -26,4 +26,4 @@
 ## 5. Docs and results
 
 - [x] 5.1 Update the wiki, `CHANGELOG.md` and the living spec `mod/liege_influence`; verify with `wiki.py check` and `openspec validate --strict` (living spec is merged by the archive step)
-- [ ] 5.2 Fill the test results table and the evidence links of the implementation pull request; verify by review
+- [x] 5.2 Fill the test results table and the evidence links of the implementation pull request; verify by review
