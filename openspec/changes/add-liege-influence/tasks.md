@@ -7,8 +7,8 @@
 
 ## 2. Code
 
-- [ ] 2.1 Add the feature folder `liege_influence` (config with `influence_per_unit` = 0.1, rules, commands `liege_state` and `liege_send_tribute` that take silver from the lord's treasury) that requires `mod_state` and `tribute`; verify with fake game tests in `harness/tests/test_fakegame_liege_influence.py` (paid tribute, refused tribute, ratio, no decay, no cap)
-- [ ] 2.2 Check that no code calls a save function; verify with `harness/tests/test_save_call_sites.py`
+- [x] 2.1 Add the feature folder `liege_influence` (config with `influence_per_unit` = 0.1, rules, commands `liege_state` and `liege_send_tribute` that take silver from the lord's treasury) that requires `mod_state` and `tribute`; verify with fake game tests in `harness/tests/test_fakegame_liege_influence.py` (paid tribute, refused tribute, ratio, no decay, no cap)
+- [x] 2.2 Check that no code calls a save function; verify with `harness/tests/test_save_call_sites.py`
 
 ## 3. Tribute menu (pak widget)
 
