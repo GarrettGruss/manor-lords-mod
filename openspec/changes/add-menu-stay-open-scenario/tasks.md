@@ -1,8 +1,8 @@
 ## 1. Scenario
 
-- [ ] 1.1 Write the test scenario: open the tech tree menu, wait 300 s, read the state twice a second, assert state alive, then do 10 real single clicks and assert exactly 10 counted. Verified by 3 of 3 real runs.
+- [x] 1.1 Write the test scenario: open the tech tree menu, wait 300 s, read the state twice a second, assert state alive, then do 10 real single clicks and assert exactly 10 counted. Verified by 3 of 3 real runs.
 - [ ] 1.2 Decide where the scenario runs (regular suite or a long suite). Verified by review.
-- [ ] 1.3 Change the "Not checked yet" line of the scenario "A menu stays open" in `mod/core` to name the new scenario (after #267 is merged). Verified by `openspec validate --all --strict`.
+- [x] 1.3 Change the "Not checked yet" line of the scenario "A menu stays open" in `mod/core` to name the new scenario (after #267 is merged). Verified by `openspec validate --all --strict`.
 
 ## 2. Clean source widget
 

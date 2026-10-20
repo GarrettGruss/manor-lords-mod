@@ -67,7 +67,7 @@ The mod SHALL run periodic feature work through `scheduler.every(name, every_ms,
 #### Scenario: A menu stays open
 - **WHEN** the tech tree menu stays open for 300 s while the mod state is read twice a second
 - **THEN** the Lua state stays alive and the game keeps answering
-- Not checked yet. Spec 34 recorded one passing run (`20261018-173614-d910`), but no committed test scenario repeats it.
+- Checked by the test scenario `tech-tree-menu-stay-open` (see `openspec/changes/add-menu-stay-open-scenario/notes/real-runs.md`).
 
 ### Requirement: Tunables live in config.lua
 The mod SHALL keep every balance value and every on or off switch in `Scripts/config.lua`, in one table per feature that has the feature name as key and an `enabled` field. The test scenarios SHALL change tunables through named commands, not by editing feature logic.
