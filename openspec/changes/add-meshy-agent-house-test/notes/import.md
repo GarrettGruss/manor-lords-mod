@@ -7,3 +7,12 @@
 - WARNING: the import log shows `min_z -314.2`. The mesh pivot is at the centre, not on the ground. The house may sink half into the ground. Check in the screenshots. Fix with a z offset on import if needed.
 - Cook: `-run=cook ...` with `+DirectoriesToAlwaysCook=(Path="/Game/ManorLords/Buildings/Merged")`. The cooked files exist.
 - Pak: `meshyhouse_P.pak`, 13 files, 2,550,027 bytes. Build folder `modtools/work/meshyhouse/` (not in git). Copies: `mod/HarnessActions/paks/meshyhouse_P.pak` and `modtools/work/out/meshyhouse_P.pak`. `pakmod.py build` verified that the pak lists the same 13 files as the folder.
+
+## Rework (2026-10-19): ground pivot and all three variants
+- Vanilla `SM_MERGED_C_SG_Cottage_Lv1_C_UBeam` bounds (pak, ExtendedBounds): origin (-79, -16, 166), extent (262, 535, 392). So it spans x 523 cm, y 1069 cm (long side along Y), z -226 to 558 (pivot at the ground, foundations below it).
+- `import_replace_mesh.py` has new options (defaults unchanged): `BASE_TO_GROUND=1` re-imports with an import translation of `-min_z`; `EXTRA_REPLACE_PATHS` (comma list) copies the mesh to more vanilla paths.
+- Result with `BASE_TO_GROUND=1`: min_z 0.0, max_z 628.1, x -352..348, y -277.5..270.4 (700 x 548 cm, long side along X). Before: min_z -314.2.
+- The footprint fits inside the vanilla one. The long side is along X, vanilla long side is along Y: the house may be turned 90 degrees against the road. Check in the screenshots.
+- Replaced meshes (paths verified in the game paks with `pakmod.py find`): `.../Buildings/Merged/SM_MERGED_C_SG_Cottage_Lv1_C_UBeam`, `..._Lv1_A_v4_UBeamFoudnations`, `..._Lv1_B_Ubeam_00`. All three are now replaced, so the variant does not matter.
+- Gotcha: in one run the last copy (B) was not on disk after exit. The script now saves every copy again at the end. Check that all 3 cooked files exist.
+- Pak rebuilt: 19 files, 3,338,836 bytes.
