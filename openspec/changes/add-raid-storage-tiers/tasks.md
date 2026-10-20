@@ -2,8 +2,8 @@
 
 ## 1. Decisions and spikes
 
-- [ ] 1.1 Run the spike on how to read the battle marker position and the unit distance, and on removing goods from a store without a crash; verify with a real game run, and write `notes/baron-steal-spike.md`
-- [ ] 1.2 Run the spike on whether a game raid reaches the manor store; verify with a real game run, and write `notes/game-raid-manor-spike.md`
+- [x] 1.1 Run the spike on how to read the battle marker position and the unit distance, and on removing goods from a store without a crash; verify with a real game run, and write `notes/baron-steal-spike.md`
+- [x] 1.2 Run the spike on whether a game raid reaches the manor store; verify with a real game run, and write `notes/game-raid-manor-spike.md`
 - [ ] 1.3 (Stretch) Find the third, common tech branch and the way to add the Manor tech; verify with a real game run, and write `notes/manor-tech-spike.md`
 - [ ] 1.4 Get the owner's answers to the open questions in `design.md`; verify by review of `design.md`
 
