@@ -1,0 +1,70 @@
+"""Build one burgage house and take close screenshots of it (change add-meshy-agent-house-test).
+
+Run it on the default fixture (base). With `--pak meshyhouse` the three level 1 cottage meshes are replaced by a model made
+with the Meshy agent CLI; without the pak the vanilla house shows. It saves nothing.
+The replaced mesh keeps the vanilla asset path, so the path cannot tell the two runs apart: read the screenshots.
+"""
+
+from runlib import plotgeom
+
+NAME = "meshy-agent-house"
+DESCRIPTION = "Builds one cottage level 1 burgage house and photographs it from close (vanilla or with the meshyhouse pak)."
+LIMIT_S = 600
+SPEED = 2
+LONG_REASON = "A burgage house takes about 12 game days to build at speed 2."
+TIMBER = 16
+TIMBER_AMOUNT = 60
+BUILD_DAYS_LIMIT = 24
+COTTAGE_MESH = "SM_MERGED_C_SG_Cottage_Lv1"
+ZOOMS = (3000, 1500, 600)
+
+
+def cottage_actors(ctx) -> dict:
+    return ctx.commands.send("mesh_actors", mesh=COTTAGE_MESH)
+
+
+def look(ctx, label: str, x: float, y: float) -> None:
+    ground = ctx.bridge.centre_camera_on(x, y)
+    ctx.log.info(f"camera {label} wanted ({x:.0f}, {y:.0f}) ground under centre {ground}")
+    ctx.screenshot(label)
+
+
+def run(ctx) -> dict:
+    actions = ctx.actions
+    before = cottage_actors(ctx)
+    built_before = actions.burgage_count(True)
+    spots = actions.tent_find_spot()
+    spot, centre = spots["spots"][0], spots["centre"]
+    plots = plotgeom.make_plots(spot["x"], spot["y"], spot["z"], spot["x"] - centre["x"], spot["y"] - centre["y"], 1)
+    house = plots[0]["primary"]
+    ctx.log.info(f"house position {house[:3]}")
+    actions.give_item(TIMBER, TIMBER_AMOUNT)
+    actions.open_burgage_tool()
+    actions.plot_field_place(plots)
+    actions.commit_plots()
+    days = 0
+    while actions.burgage_count(True) <= built_before and days < BUILD_DAYS_LIMIT:
+        ctx.popups()
+        ctx.time.run_game_days(1, speed=SPEED)
+        days += 1
+    ctx.metric("build_days", days)
+    ctx.check("the burgage house is built", actions.burgage_count(True) > built_before, [built_before, days])
+    after = cottage_actors(ctx)
+    ctx.log.info(f"cottage actors before {before['total']} after {after['total']}: {after['actors']}")
+    ctx.check("a level 1 cottage mesh user appeared", after["total"] > before["total"], [before["total"], after["total"]])
+    ctx.time.run_game_days(3, speed=SPEED)
+    ctx.popups()
+    ctx.time.pause()
+    ctx.bridge.write_property(ctx.bridge.player_path(), "placeFieldMode", False)
+    old = {(a["x"], a["y"]) for a in before["actors"]}
+    new = [a for a in after["actors"] if (a["x"], a["y"]) not in old]
+    ctx.check("exactly one new cottage actor", len(new) == 1, new)
+    target = new[0] if new else {"x": house[0], "y": house[1], "z": house[2], "yaw": 0}
+    ctx.log.info(f"new house actor {target}; plot house point {house[:3]}")
+    ctx.metric("house_z_below_plot_cm", house[2] - target["z"])
+    saved_zoom = ctx.bridge.read_property(ctx.bridge.player_path(), "zoomLevel")
+    for zoom in ZOOMS:
+        ctx.bridge.write_property(ctx.bridge.player_path(), "zoomLevel", zoom)
+        look(ctx, f"house_z{zoom}", target["x"], target["y"])
+    ctx.bridge.write_property(ctx.bridge.player_path(), "zoomLevel", saved_zoom)
+    return ctx.result()
