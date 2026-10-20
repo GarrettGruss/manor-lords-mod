@@ -11,4 +11,4 @@
 ## 3. Close
 
 - [ ] 3.1 Real check: `--keep-open` run, owner loads a save, `autosave_status` shows the timer far away. Verified by the run id in the pull request.
-- [ ] 3.2 Update the wiki page on autosave, the skill `harness-run-scenario` (keep-open note) and `CHANGELOG.md`. Verified by `wiki.py check`.
+- [x] 3.2 Update the wiki page on autosave, the skill `harness-run-scenario` (keep-open note) and `CHANGELOG.md`. Verified by `wiki.py check`.
