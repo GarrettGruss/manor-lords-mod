@@ -32,6 +32,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The standalone test mods `mod/RefugeeWaves` and `mod/PolicyMenu` (change `remove-standalone-test-mods`, #261). The Invasion Mod absorbed them: the feature `refugees`, the laws of `tech_tree` and `tech_tree_widget`, and the vassal policies of `vassals`. Also removed: the scenarios `refugee-wave`, `policy-menu` and `policy-menu-clicks`, the test `test_fakegame_refugeewaves.py` and the tool `harness/tools/make_policy_art.py`. To remove the installed copies from the game folder, run `harness\deploy.ps1 -Clean`. The GitHub pre-release `refugeewaves-v0.1.0` stays.
 
 ### Fixed
+- `harness/tools/s29_command.py` works in a `--keep-open` run before the first command; it no longer needs a `commands` folder (#312).
+- The `--keep-open` teardown note gives a `game-close.ps1` command that runs under the default script policy (#313).
 - Tech tree and raid menus: a click on a menu button is a hook event and is no longer missed (10 of 10 real clicks counted). The scheduler tick is back at 100 ms: a 50 ms tick broke the Lua state after about 3 minutes with a menu open.
 - Living specs `mod/core`, `mod/tech_tree_widget` and `mod/raid_widget` now match spec 34: a 100 ms scheduler tick (never faster) and hook-based clicks without a cooldown (change `sync-specs-with-click-hooks`, #266).
 - A `--keep-open` run keeps its paks in `~mods`: removing them under the running game hung it on the first open of a pak widget (F9 tech menu). Remove them later with `pakmod.py remove --all`.
