@@ -28,3 +28,9 @@
 
 ## Master swap to MegascansStandard (2026-10-20)
 Tried the master of `MI_SS_Shrine5`. The colours stay pale. Details and run ids: `swap-shrines.md`. The pak was not replaced. `meshy_material.py` keeps the option `MASTER_MATERIAL=megascans` (default unchanged).
+
+## Texture settings check (2026-10-20)
+- Source colour map `texture_0.png` (2048x2048 RGB): mean RGB 100/83/63. Brown wood, cream plaster, black beams. Not pale.
+- Cooked `texture_0` (pak) and game `J_Shrine5_baseTexBaked`: same asset properties via `pakmod.py tojson`. Both PF_DXT1, no SRGB or CompressionSettings override (so defaults: sRGB on, TC_Default). Only ImportedSize and LightingGuid differ.
+- So the texture import settings are NOT the cause. `fix_texture_settings` already sets sRGB true for the colour map.
+- Next ideas (not tried): the mesh has no vertex colours, and the masters may use vertex colour for paint or tint (white or black default); compare with a game mesh that has vertex colours.
