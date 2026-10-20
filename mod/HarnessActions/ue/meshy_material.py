@@ -16,9 +16,9 @@ MASTER_PATH = "/Game/NotStronghold/Buildings/TudorWall/tudorWall01"
 TEXTURE_PARAMS = ["AO", "d", "n", "spec"]
 SCALAR_PARAMS = {"aoFromGroundFade": 512.0, "br": 0.5, "dirt tiling": 2.0, "n str": 0.0, "R": 1.0, "spec": 0.2}
 SWITCH_PARAMS = {"Dirt?": False, "spec map?": True}
-# MASTER_MATERIAL=megascans: parent is the master of the game's own MI_SS_Shrine5, because tudorWall01 renders
-# brown wood and thatch pale. Names and values were read from MI_SS_Shrine5 (notes/swap-shrines.md).
-MEGASCANS = os.environ.get("MASTER_MATERIAL") == "megascans"
+# MASTER_MATERIAL=megascans (default): parent is the master of the game's own MI_SS_Shrine5. Names and values were read from MI_SS_Shrine5 (notes/swap-shrines.md).
+MASTER_NAME = os.environ.get("MASTER_MATERIAL", "megascans")  # default: megascans. Other: tudorwall, basicshape, rgb
+MEGASCANS = MASTER_NAME == "megascans"
 if MEGASCANS:
     MASTER_PATH = "/Game/Megascans/MegascansStandard"
     TEXTURE_PARAMS = ["Base", "Normal", "AO"]
@@ -27,7 +27,7 @@ if MEGASCANS:
                     "applyWetnessAndSnowFx": False, "useVertexForSnow": False}
 # MASTER_MATERIAL=basicshape: parent is the engine material BasicShapeMaterial (in the game paks). It has no
 # texture parameter, only the vector parameter `Color`. A colour test: it shows if a plain material draws at all.
-BASIC_SHAPE = os.environ.get("MASTER_MATERIAL") == "basicshape"
+BASIC_SHAPE = MASTER_NAME == "basicshape"
 VECTOR_PARAMS = {}
 if BASIC_SHAPE:
     MASTER_PATH = "/Engine/BasicShapes/BasicShapeMaterial"
@@ -35,7 +35,7 @@ if BASIC_SHAPE:
     VECTOR_PARAMS = {"Color": unreal.LinearColor(1.0, 0.0, 0.0, 1.0)}
 # MASTER_MATERIAL=rgb: parent is M_RGB, the master of the furniture pack instances (MI_Table_02). It has plain colour (BC),
 # mask (M) and normal (N) textures, and no palette or paint logic. The instance sets no static switch (notes/import.md).
-RGB = os.environ.get("MASTER_MATERIAL") == "rgb"
+RGB = MASTER_NAME == "rgb"
 if RGB:
     MASTER_PATH = "/Game/Assets/Medieval_Furniture_Pack2/Materials/M_RGB"
     TEXTURE_PARAMS = ["BC", "M", "N"]
@@ -46,6 +46,9 @@ if RGB:
 BC_GAME_TEXTURE = os.environ.get("BC_GAME_TEXTURE")
 WHITE_TEXTURE = "/Engine/EngineResources/WhiteSquareTexture"
 EDIT = unreal.MaterialEditingLibrary
+# NO_STATIC_SWITCHES (default 1; set 0 to override the switches): the instance sets NO static switch, so it has no static permutation and uses the shader map of
+# its game parent. A static override makes the cooked instance need its own shader map, which a mod pak cannot ship (notes/import.md).
+NO_STATIC_SWITCHES = os.environ.get("NO_STATIC_SWITCHES", "1") == "1"
 # TEXTURE_NEVER_STREAM=1: cook every mesh texture without streaming (all mips in the package). A texture test.
 NEVER_STREAM = os.environ.get("TEXTURE_NEVER_STREAM") == "1"
 
@@ -135,7 +138,7 @@ def make_game_material(mesh, folder: str, spec_name: str = "texture_0_roughness"
         EDIT.set_material_instance_texture_parameter_value(instance, "spec", load_texture(folder, spec_name))
     for name, value in SCALAR_PARAMS.items():
         EDIT.set_material_instance_scalar_parameter_value(instance, name, value)
-    for name, value in SWITCH_PARAMS.items():
+    for name, value in ({} if NO_STATIC_SWITCHES else SWITCH_PARAMS).items():
         EDIT.set_material_instance_static_switch_parameter_value(instance, name, value)
     if RGB:  # the game instances of M_RGB set this base property
         overrides = instance.get_editor_property("base_property_overrides")

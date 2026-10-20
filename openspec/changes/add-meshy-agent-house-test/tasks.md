@@ -9,8 +9,8 @@
 
 ## 3. Test scenario
 
-- [ ] 3.1 Add the test scenario that builds the house and takes screenshots. Verified by a real run with the pak and one without.
-- [ ] 3.2 Commit compressed screenshots to `evidence/` with `evidence/README.md`. Verified by review of the pictures.
+- [x] 3.1 Add the test scenario that builds the house and takes screenshots. Verified by a real run with the pak and one without.
+- [x] 3.2 Commit compressed screenshots to `evidence/` with `evidence/README.md`. Verified by review of the pictures.
 
 ## 4. Close
 
