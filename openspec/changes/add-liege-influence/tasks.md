@@ -21,9 +21,9 @@
 
 - [x] 4.1 Add `influence_roundtrip.py`, `send_tribute.py` and `tribute_menu.py` (real mouse clicks, as `tech-tree-widget-clicks`) in `mod/InvasionMod/scenarios/liege_influence/`; verify with a real game run of each
 - [x] 4.2 Take menu screenshots with `ctx.screenshot(name)` (menu open, after a tribute), commit compressed copies (at most 1280x720) to `openspec/changes/add-liege-influence/evidence/` and list them in `evidence/README.md` with test scenario and run id; verify by review of the pictures
-- [ ] 4.3 Run the `tribute`, `mod_state` and widget test scenarios again; verify that they pass
+- [x] 4.3 Run the `tribute`, `mod_state` and widget test scenarios again; verify that they pass (runs in `notes/regression-runs.md`; one flake of `tribute-payout` T4, repeat passed)
 
 ## 5. Docs and results
 
-- [ ] 5.1 Update the wiki, `CHANGELOG.md` and the living spec `mod/liege_influence`; verify with `wiki.py check` and `openspec validate --strict`
+- [x] 5.1 Update the wiki, `CHANGELOG.md` and the living spec `mod/liege_influence`; verify with `wiki.py check` and `openspec validate --strict` (living spec is merged by the archive step)
 - [ ] 5.2 Fill the test results table and the evidence links of the implementation pull request; verify by review
