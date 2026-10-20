@@ -26,3 +26,6 @@ None now. A finding that changes behavior adds a requirement to `harness/run-lau
 
 ## Impact
 Needs a second screen or a changed DPI scale. The task cannot start until the user has the hardware (the legacy start condition).
+
+## Closed
+Abandoned by owner decision, 2026-10-20 (#285). The game runs on one monitor only, and only this monitor is tested. The other checks (minimized window, window sizes, banner over a screenshot) were not wanted.
