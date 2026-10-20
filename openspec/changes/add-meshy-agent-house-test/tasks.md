@@ -14,5 +14,5 @@
 
 ## 4. Close
 
-- [ ] 4.1 Update the skills `harness-meshy-agent` and `harness-meshy`, the wiki and `CHANGELOG.md`. Verified by `wiki.py check`.
+- [x] 4.1 Update the skills `harness-meshy-agent` and `harness-meshy`, the wiki and `CHANGELOG.md`. Verified by `wiki.py check`.
 - [ ] 4.2 Fill the test results table and evidence links of the implementation pull request.

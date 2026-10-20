@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Test scenario `meshy-agent-house` and pak `meshyhouse_P.pak` (change `add-meshy-agent-house-test`, #320): a house made with the Meshy CLI replaces a vanilla house mesh and shows its colour map. Spike commands `mesh_material_params` and `mesh_material_swap`.
 - Test scenario `mod-state-tags-limits` and mod commands `tags_limit_write` and `tags_limit_read` (change `spike-mod-state-limits`, #283): Tags limits are measured. One Tag name must be under 1024 chars; 1000 entries, lord and building Tags, quick save and autosave all survive. A load restarts the autosave timer (#311).
 - `harness/tools/aes_env.py` writes the pak AES key into a gitignored `.env`; `pakmod.py` reads it when `MANORLORDS_AES_KEY` is not set.
 - Bridge request log (change `add-bridge-request-log`, #270): the UEBridge Lua mod writes one live `mod.log` line for each request (id, verb, target, duration, error text of a failure). No property value and no Lua source. Patch P9; fake game test `test_fakegame_uebridge.py`.
@@ -34,6 +35,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The standalone test mods `mod/RefugeeWaves` and `mod/PolicyMenu` (change `remove-standalone-test-mods`, #261). The Invasion Mod absorbed them: the feature `refugees`, the laws of `tech_tree` and `tech_tree_widget`, and the vassal policies of `vassals`. Also removed: the scenarios `refugee-wave`, `policy-menu` and `policy-menu-clicks`, the test `test_fakegame_refugeewaves.py` and the tool `harness/tools/make_policy_art.py`. To remove the installed copies from the game folder, run `harness\deploy.ps1 -Clean`. The GitHub pre-release `refugeewaves-v0.1.0` stays.
 
 ### Fixed
+- Meshy meshes drew a pale fallback material: `meshy_material.py` now sets no static switch overrides and uses the game master `MegascansStandard` (#320).
 - `harness/tools/s29_command.py` works in a `--keep-open` run before the first command; it no longer needs a `commands` folder (#312).
 - The `--keep-open` teardown note gives a `game-close.ps1` command that runs under the default script policy (#313).
 - Tech tree and raid menus: a click on a menu button is a hook event and is no longer missed (10 of 10 real clicks counted). The scheduler tick is back at 100 ms: a 50 ms tick broke the Lua state after about 3 minutes with a menu open.
