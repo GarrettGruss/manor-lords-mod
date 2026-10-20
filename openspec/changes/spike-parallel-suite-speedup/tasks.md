@@ -1,7 +1,7 @@
 ## 1. Speedup
-- [ ] 1.1 Pick a suite with long runs and N runs per variant. Verified by the suite file in `harness/suites/`.
-- [ ] 1.2 Run it with `--slots 1` and with `--slots 3`. Verified by two `report.json` files.
-- [ ] 1.3 Compare wall time and the result ranges. Write `notes/speedup.md`. Verified by review of the note.
+- [x] 1.1 Pick a suite with long runs and N runs per variant. Verified by the suite file in `harness/suites/`.
+- [x] 1.2 Run it with `--slots 1` and with `--slots 3`. Verified by two `report.json` files.
+- [x] 1.3 Compare wall time and the result ranges. Write `notes/speedup.md`. Verified by review of the note.
 
 ## 2. Exclusive scenario and conflicts
 - [ ] 2.1 Run a parallel suite with one `EXCLUSIVE` scenario. Verified by the run start and end times in `report.json`: no other run overlaps it.
