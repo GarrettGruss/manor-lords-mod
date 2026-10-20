@@ -7,6 +7,12 @@ description: Use the Meshy 3D agent CLI (meshy-cli and the meshy-3d-generation s
 
 Review of the source: `install-review.md`. Read it first.
 
+## IMPORTANT: Meshy Pro account and private ownership (owner, 2026-10-19)
+We use a Meshy **Pro** account. Its license for the models we generate:
+- Ownership: full private ownership. Commercial use: allowed, with full commercial rights. Attribution: not required.
+- Condition: we keep private ownership only if we do NOT publish the models to the Meshy Community page, and our input assets (prompts, reference images) do not violate third-party copyrights.
+- So: never publish, share or make public a model on the Meshy Community page. Keep task visibility private. Use only our own or licensed input images.
+
 ## When to use it
 - Default: use `harness-meshy` (`genmesh.py`). It has credit caps, a log and `resume`.
 - Use this skill only for a Meshy mode that `genmesh.py` lacks (text-to-3d variants, retexture, remesh, rig), or when the owner asks.

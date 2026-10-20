@@ -27,5 +27,5 @@ Repo facts (`gh api`): license MIT, about 100 stars, last push 2026-10-15. Folde
 
 ## Open questions for the owner
 1. Install it at all, given `genmesh.py` works? Value is extra Meshy modes.
-2. Is MIT enough, and is the Meshy output license (Pro plan) the same for CLI tasks?
+2. Answered (owner, 2026-10-19): we use the Pro account; generated models are in full private ownership while they are not published to the Meshy Community page.
 3. Where does the CLI keep its session, and does device login use the same Pro plan account?
