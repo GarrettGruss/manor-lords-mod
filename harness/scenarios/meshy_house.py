@@ -114,6 +114,42 @@ def run(ctx) -> dict:
     for zoom in ZOOMS:
         ctx.bridge.write_property(player, "zoomLevel", zoom)
         look(ctx, f"house_z{zoom}", target["x"], target["y"])
+    console = ctx.variant_option("MESHY_CONSOLE", "")  # texture streaming test: console commands split by ";"
+    if console:
+        ctx.bridge.write_property(player, "zoomLevel", 600)
+        for command in console.split(";"):
+            ctx.log.info(f"console {command}: {ctx.bridge._result('console', command=command.strip())}")
+        time.sleep(4)
+        look(ctx, "house_z600_console", target["x"], target["y"])
+        for prop in ("NeverStream", "LODBias", "CachedCombinedLODBias", "MipGenSettings", "LODGroup"):
+            try:
+                ctx.log.info(f"texture_0 {prop} = {ctx.bridge.read_property('/Game/HarnessMod/MeshyHouse/texture_0.texture_0', prop)}")
+            except RuntimeError as error:
+                ctx.log.info(f"texture_0 {prop} unreadable: {error}")
+    # Live material experiments: MESHY_EXP, MESHY_EXP2.. = "s=a=1,b=2;v=c=1:0:0" (s scalars, v vectors, t textures). They add up. One picture each.
+    for number, group in enumerate(filter(None, (ctx.variant_option(name, "") for name in ("MESHY_EXP", "MESHY_EXP2", "MESHY_EXP3", "MESHY_EXP4")))):
+        fields = {"s": "scalars", "v": "vectors", "t": "textures"}
+        args = {fields[part[0]]: part[2:] for part in group.split(";")}
+        ctx.bridge.write_property(player, "zoomLevel", 600)
+        answer = ctx.commands.send("mesh_material_params", mesh=COTTAGE_MESH, near_x=int(target["x"]), near_y=int(target["y"]), **args)
+        ctx.log.info(f"experiment {number} {group}: {answer}")
+        time.sleep(2)
+        look(ctx, f"house_exp{number}", target["x"], target["y"])
+    # Test: MESHY_SWAP=lend puts our material on a game building and photographs it; MESHY_SWAP=borrow draws our house with its material.
+    swap = ctx.variant_option("MESHY_SWAP", "")
+    for mode in filter(None, swap.split("+")):
+        ctx.bridge.write_property(player, "zoomLevel", 600)
+        try:
+            answer = ctx.commands.send("mesh_material_swap", mesh=COTTAGE_MESH, near_x=int(target["x"]), near_y=int(target["y"]), mode=mode)
+        except Exception as error:  # a failed swap must not end the run: the other pictures are still needed
+            ctx.log.info(f"swap {mode} failed: {error}")
+            continue
+        ctx.log.info(f"swap {mode}: {answer}")
+        time.sleep(2)
+        if mode == "lend":
+            look(ctx, "other_lend", answer["x"], answer["y"])
+        else:
+            look(ctx, "house_borrow", target["x"], target["y"])
     ctx.bridge.write_property(player, "zoomLevel", SIDE_ZOOM)
     for name, turn in (("side_a", 90), ("side_b", 180)):
         look(ctx, f"house_{name}", target["x"], target["y"], target["yaw"] + turn)

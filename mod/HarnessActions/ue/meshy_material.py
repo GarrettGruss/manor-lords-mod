@@ -33,8 +33,21 @@ if BASIC_SHAPE:
     MASTER_PATH = "/Engine/BasicShapes/BasicShapeMaterial"
     TEXTURE_PARAMS, SCALAR_PARAMS, SWITCH_PARAMS = [], {}, {}
     VECTOR_PARAMS = {"Color": unreal.LinearColor(1.0, 0.0, 0.0, 1.0)}
+# MASTER_MATERIAL=rgb: parent is M_RGB, the master of the furniture pack instances (MI_Table_02). It has plain colour (BC),
+# mask (M) and normal (N) textures, and no palette or paint logic. The instance sets no static switch (notes/import.md).
+RGB = os.environ.get("MASTER_MATERIAL") == "rgb"
+if RGB:
+    MASTER_PATH = "/Game/Assets/Medieval_Furniture_Pack2/Materials/M_RGB"
+    TEXTURE_PARAMS = ["BC", "M", "N"]
+    SCALAR_PARAMS = {"R Power": 0.6000000238418579, "spec": 0.5}
+    SWITCH_PARAMS = {}
+# BC_GAME_TEXTURE=<game texture path>: bind the colour map to a texture of the game (a test: does a game texture draw?).
+# An empty stub texture is made at that path in the editor project. It is never shipped.
+BC_GAME_TEXTURE = os.environ.get("BC_GAME_TEXTURE")
 WHITE_TEXTURE = "/Engine/EngineResources/WhiteSquareTexture"
 EDIT = unreal.MaterialEditingLibrary
+# TEXTURE_NEVER_STREAM=1: cook every mesh texture without streaming (all mips in the package). A texture test.
+NEVER_STREAM = os.environ.get("TEXTURE_NEVER_STREAM") == "1"
 
 
 def ensure_stub_master():
@@ -79,6 +92,8 @@ def fix_texture_settings(folder: str) -> None:
             texture.set_editor_property("srgb", True)
         else:
             texture.set_editor_property("srgb", False)
+        if NEVER_STREAM:
+            texture.set_editor_property("never_stream", True)
         unreal.EditorAssetLibrary.save_loaded_asset(texture)
         unreal.log("MATERIAL texture %s srgb=%s comp=%s" % (name, texture.get_editor_property("srgb"), texture.get_editor_property("compression_settings")))
 
@@ -104,16 +119,29 @@ def make_game_material(mesh, folder: str, spec_name: str = "texture_0_roughness"
         unreal.EditorAssetLibrary.save_loaded_asset(mesh)
         return instance
     white = unreal.load_asset(WHITE_TEXTURE)
-    color_name, normal_name = ("Base", "Normal") if MEGASCANS else ("d", "n")
-    EDIT.set_material_instance_texture_parameter_value(instance, color_name, load_texture(folder, "texture_0"))
+    color_name, normal_name = ("Base", "Normal") if MEGASCANS else (("BC", "N") if RGB else ("d", "n"))
+    color_texture = load_texture(folder, "texture_0")
+    if BC_GAME_TEXTURE:
+        if not unreal.EditorAssetLibrary.does_asset_exist(BC_GAME_TEXTURE):
+            unreal.EditorAssetLibrary.duplicate_asset(WHITE_TEXTURE, BC_GAME_TEXTURE)
+        color_texture = unreal.load_asset(BC_GAME_TEXTURE)
+    EDIT.set_material_instance_texture_parameter_value(instance, color_name, color_texture)
     EDIT.set_material_instance_texture_parameter_value(instance, normal_name, load_texture(folder, "texture_0_normal"))
-    EDIT.set_material_instance_texture_parameter_value(instance, "AO", white)
-    if not MEGASCANS:
+    if RGB:
+        EDIT.set_material_instance_texture_parameter_value(instance, "M", load_texture(folder, spec_name))
+    else:
+        EDIT.set_material_instance_texture_parameter_value(instance, "AO", white)
+    if not MEGASCANS and not RGB:
         EDIT.set_material_instance_texture_parameter_value(instance, "spec", load_texture(folder, spec_name))
     for name, value in SCALAR_PARAMS.items():
         EDIT.set_material_instance_scalar_parameter_value(instance, name, value)
     for name, value in SWITCH_PARAMS.items():
         EDIT.set_material_instance_static_switch_parameter_value(instance, name, value)
+    if RGB:  # the game instances of M_RGB set this base property
+        overrides = instance.get_editor_property("base_property_overrides")
+        overrides.set_editor_property("override_dithered_lod_transition", True)
+        overrides.set_editor_property("dithered_lod_transition", True)
+        instance.set_editor_property("base_property_overrides", overrides)
     EDIT.update_material_instance(instance)
     unreal.EditorAssetLibrary.save_asset(instance_path)
     slots = mesh.static_materials
