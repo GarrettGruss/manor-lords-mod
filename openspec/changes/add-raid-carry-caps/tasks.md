@@ -19,4 +19,4 @@
 ## 4. Docs and results
 
 - [x] 4.1 Update the wiki page for raids and `CHANGELOG.md`; verify with `wiki.py check`
-- [ ] 4.2 Fill the test results table of the implementation pull request; verify by review
+- [x] 4.2 Fill the test results table of the implementation pull request; verify by review
