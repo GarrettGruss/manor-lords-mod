@@ -8,8 +8,10 @@ The design (M00) gives a carry cap per raider that depends on the raid type: Hus
 
 ## What Changes
 
-- The cap depends on the raid type (Hussite plunder, bandit plunder).
-- The cap may depend on the good, if the spike shows that the loot value has a good (open question in `design.md`).
+- Owner decision (2026-10-20, after spike 1.1): the mod manages plundered quantities only for Hussite raids. The Hussite AI has raiding disabled, so the game does not manage the raid natively.
+- The plundered goods of a Hussite raid stop at `carry_cap` (default 10) for each raider at the start.
+- The mod no longer writes `ItemsLooted` of native raids. The game caps them at about 5 per raider by itself (`notes/loot-cap-spike.md`).
+- No cap by good: the loot has no good type (spike finding 3).
 
 ## Non-goals
 
