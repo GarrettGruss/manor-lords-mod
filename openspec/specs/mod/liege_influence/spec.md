@@ -1,7 +1,7 @@
 # mod/liege_influence Specification
 
 ## Purpose
-TBD - created by archiving change add-liege-influence. Update Purpose after archive.
+The player is sworn to an off-screen liege. This feature lets the player pay silver from the lord treasury as tribute to the liege and earn influence. It keeps the influence value in ModState across saves and gives a custom tribute menu, because the game has no liege of its own.
 
 ## Requirements
 

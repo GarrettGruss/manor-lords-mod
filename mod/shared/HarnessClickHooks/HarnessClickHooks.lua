@@ -19,9 +19,11 @@ local function valid(object)
     return object ~= nil and object:IsValid()
 end
 
+-- No pcall around a UObject call: a Lua error raised inside a UObject metamethod crashes UE4SS while it builds the
+-- traceback (#323, #327). So check IsValid first and never call into a dead object.
 local function full_name_of(object)
-    local ok, name = pcall(function() return object:GetFullName() end)
-    return ok and name or nil
+    if not valid(object) then return nil end
+    return object:GetFullName()
 end
 
 -- LoadAsset does not load an asset of a mod pak. The asset registry call does (spec 16 pak-widget-spike.md).
@@ -44,7 +46,10 @@ end
 local function install_hook()
     if hooked then return true end
     local ok, err = pcall(RegisterHook, EVENT_PATH, function(self)
-        queue[#queue + 1] = { name = full_name_of(self:get()), at = os.clock() }
+        local widget = self ~= nil and self:get() or nil
+        local name = full_name_of(widget)
+        if name == nil then return end -- the widget is gone: no click to record
+        queue[#queue + 1] = { name = name, at = os.clock() }
     end)
     if not ok then return false, "RegisterHook: " .. tostring(err) end
     hooked = true
