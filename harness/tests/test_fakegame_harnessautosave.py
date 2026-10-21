@@ -65,5 +65,54 @@ class AutosaveCommandTests(unittest.TestCase):
             self.assertIn("MLGameInstance", answer["error"])
 
 
+BEGIN_PLAY = "/Game/CPP_BP/MyPawnCPP_BP3.MyPawnCPP_BP3_C:ReceiveBeginPlay"
+BOOT_ENV = {"HARNESS_AUTOBOOT": "1", "HARNESS_TEST_SAVE": "saveGame_0"}
+
+
+def boot_to_ready(game):
+    state = build_manor_lords_state(game)
+    game.load_mod("HarnessBoot")
+    game.run_until_idle()
+    return state
+
+
+def load_a_world(game, state, works=True):
+    """A world load makes a new pawn with a new 600 s timer; the game then runs the BeginPlay event."""
+    state.autosave.ends_at = game.now() + 600
+    state.autosave.works = works
+    game.fire_hook(BEGIN_PLAY)
+    game.advance(15)
+
+
+class AutosaveAfterLoadTests(unittest.TestCase):
+    def test_the_timer_is_pushed_away_again_after_a_load(self):
+        with FakeGame(env=BOOT_ENV) as game:
+            state = boot_to_ready(game)
+            calls_at_ready = len(state.autosave.calls)
+            load_a_world(game, state)
+            self.assertGreater(state.autosave.remaining(), 31000000)
+            self.assertEqual(len(state.autosave.calls), calls_at_ready + 1)
+            self.assertEqual(game.read_text("mod.log").count("autosave pushed away after a load"), 1)
+
+    def test_a_second_load_is_pushed_away_too(self):
+        with FakeGame(env=BOOT_ENV) as game:
+            state = boot_to_ready(game)
+            load_a_world(game, state)
+            load_a_world(game, state)
+            self.assertGreater(state.autosave.remaining(), 31000000)
+            self.assertEqual(game.read_text("mod.log").count("autosave pushed away after a load"), 2)
+
+    def test_a_failed_push_after_a_load_logs_an_error_after_the_retries(self):
+        with FakeGame(env=BOOT_ENV) as game:
+            state = boot_to_ready(game)
+            calls_at_ready = len(state.autosave.calls)
+            load_a_world(game, state, works=False)
+            self.assertLess(state.autosave.remaining(), 601)
+            self.assertEqual(len(state.autosave.calls), calls_at_ready + 5)
+            log = game.read_text("mod.log")
+            self.assertIn("autosave timer was not pushed away after a load", log)
+            self.assertNotIn("autosave pushed away after a load", log)
+
+
 if __name__ == "__main__":
     unittest.main()

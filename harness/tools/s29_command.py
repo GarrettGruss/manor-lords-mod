@@ -23,9 +23,11 @@ def main(argv: list[str]) -> int:
     if len(argv) != 2:
         print(__doc__)
         return 2
-    folder = ROOT / "runs" / argv[0] / "commands"
-    if not folder.is_dir():
-        raise SystemExit(f"commands folder not found: {folder}")
+    run_dir = ROOT / "runs" / argv[0]
+    if not run_dir.is_dir():
+        raise SystemExit(f"run folder not found: {run_dir}")
+    # The channel makes the commands folder on the first send: a run with no command yet has none (#312).
+    folder = run_dir / "commands"
     channel = CommandChannel(folder, timeout_s=30.0)
     channel._number = next_number(folder)
     for item in json.loads(argv[1]):

@@ -17,7 +17,7 @@ First check if Lua can do it. A Lua mod can read and write number fields of the 
 - repak 0.2.3 (`C:\Program Files\repak_cli\bin\repak.exe`) and UAssetGUI 1.1.0 (`modtools\UAssetGUI.exe`), both pinned by SHA-256 (`pakmod.py check`).
 - The `.usmap` mapping comes from the running game (bridge `dump`, kind `usmap`). UAssetGUI 1.1.0 ignores a mapping path: the mapping must be a file in `%LOCALAPPDATA%\UAssetGUI\Mappings\<name>.usmap` (config key `usmap_name`). Make it again after a game update.
 - Engine version string is `VER_UE5_5`. JSON paths for the converter must be absolute.
-- The AES key is in `modtools\work\aes_key.txt`. In a worktree the file does not exist: use the main checkout path `C:\Users\garre\development\manor-lords-mod\modtools\work\aes_key.txt`. Give it to tools ONLY through the environment variable `MANORLORDS_AES_KEY`, set from that file inside the command. Never print it, write it into a note, a commit, a changelog, a PR or chat. Before every commit: grep the diff for it.
+- The AES key is in `modtools/work/aes_key.txt` of the main checkout. Run `uv run python harness/tools/aes_env.py` once: it writes `MANORLORDS_AES_KEY` into the gitignored `.env` of the main checkout, and `pakmod.py` reads it from there when the variable is not set (also in a worktree). Never print the key, or write it into a note, a commit, a changelog, a PR or chat. Before every commit: grep the diff for it.
 
 ## Commands (`uv run python harness\tools\pakmod.py ...`)
 `check [--pin]`, `find <text>`, `extract <asset>`, `tojson`, `fromjson <abs json> --to <name>`, `roundtrip <asset>`, `build <name>`, `install`, `remove [--all]`, `list`, `buildmod <ModName>` (see below). Exit codes: 0 ok, 1 error, 3 hash mismatch, 4 pak list mismatch.

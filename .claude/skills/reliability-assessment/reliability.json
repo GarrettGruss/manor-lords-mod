@@ -22,6 +22,8 @@
     {"glob": "mod/HarnessBoot/**", "domain": "harness/game-boot"},
     {"glob": "mod/HarnessLoadProbe/**", "domain": "harness/game-boot"},
     {"glob": "harness/tests/boot_state_machine.py", "domain": "harness/game-boot"},
+    {"glob": "harness/scenarios/boot_timing.py", "domain": "harness/game-boot"},
+    {"glob": "harness/tests/test_boot_timing_scenario.py", "domain": "harness/game-boot"},
     {"glob": "mod/HarnessReload/**", "domain": "harness/hot-reload"},
     {"glob": "harness/tools/reload_mods.py", "domain": "harness/hot-reload"},
     {"glob": "harness/tests/test_reload_mods.py", "domain": "harness/hot-reload"},

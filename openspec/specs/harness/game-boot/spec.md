@@ -21,10 +21,20 @@ HarnessBoot SHALL write `boot.json` atomically with its state and the history of
 - **THEN** the state reaches `READY` and the file `ready.marker` is written once
 - Checked by `harness/tests/boot_state_machine.py`.
 
+#### Scenario: The slot appears late
+- **WHEN** the save list fills slowly and the wanted slot appears after other slots
+- **THEN** the state still reaches `READY`
+- Checked by `harness/tests/boot_state_machine.py` (mode `slotlate`).
+
 #### Scenario: The slot is missing
 - **WHEN** the wanted slot is not in the save list, or its file does not exist
 - **THEN** the state is `FAILED` and the reason says the slot did not appear or does not exist
 - Checked by `harness/tests/boot_state_machine.py`.
+
+#### Scenario: A real boot walks the states in order
+- **WHEN** a real run boots from a save
+- **THEN** the `boot.json` history holds the six states in the fixed order, each once, and ends in `READY`
+- Checked by `harness/scenarios/boot_timing.py`.
 
 ### Requirement: READY means the clock stands still
 HarnessBoot SHALL reach `READY` only after the game clock moved less than 0.001 game seconds for 8 seconds in a row. It SHALL not call `pauseGame` while the intro cinematic plays, and SHALL pause anyway after 25 seconds.
@@ -43,6 +53,16 @@ HarnessBoot SHALL reach `READY` only after the game clock moved less than 0.001 
 - **WHEN** the game restarts the clock once after the first pause
 - **THEN** HarnessBoot pauses again and still ends in `READY`
 - Checked by `harness/tests/boot_state_machine.py`.
+
+#### Scenario: The intro cinematic plays
+- **WHEN** the intro cinematic ends after the clock started
+- **THEN** `pauseGame` is called once, after the cinematic, and the state reaches `READY`
+- Checked by `harness/tests/boot_state_machine.py` (mode `cinematic`).
+
+#### Scenario: The intro cinematic never ends
+- **WHEN** the cinematic is still playing after the wait limit
+- **THEN** `pauseGame` is called anyway and the state reaches `READY`
+- Checked by `harness/tests/boot_state_machine.py` (mode `cinematicstuck`).
 
 ### Requirement: The loaded slot is checked
 HarnessBoot SHALL load the slot named in `HARNESS_TEST_SAVE` through the menu and SHALL fail if the loaded slot is another one.
@@ -66,7 +86,7 @@ When `HARNESS_NEW_GAME` is `1`, HarnessBoot SHALL open the map named by `HARNESS
 - Checked by `harness/tests/boot_state_machine.py`.
 
 ### Requirement: The autosave timer is pushed away before READY
-HarnessBoot SHALL restart the pawn autosave timer with a period of one year through `MLGameInstance:SetAutosavePeriodOnPawn` before it reaches `READY`. It SHALL fail the boot if the timer is not pushed away. The module `HarnessAutosave` SHALL NOT call a save function or the native `SetAutosavePeriod`.
+HarnessBoot SHALL restart the pawn autosave timer with a period of one year through `MLGameInstance:SetAutosavePeriodOnPawn` before it reaches `READY`. It SHALL fail the boot if the timer is not pushed away. After `READY`, the harness SHALL push the timer away again after every world load in the same game session, and SHALL log an error if that push fails. The module `HarnessAutosave` SHALL NOT call a save function or the native `SetAutosavePeriod`.
 
 #### Scenario: The timer is pushed away
 - **WHEN** boot reaches the state `DISABLING_AUTOSAVE`
@@ -82,3 +102,31 @@ HarnessBoot SHALL restart the pawn autosave timer with a period of one year thro
 - **WHEN** a real run stays at `READY` for 60 game seconds
 - **THEN** the autosave timer is still far away and the user save folder is unchanged
 - Checked by `harness/scenarios/autosave_protection.py`.
+
+#### Scenario: The timer is pushed away after a load
+- **WHEN** a world is loaded after `READY` in the same game session
+- **THEN** the autosave timer of the new player pawn is far away again, and the log has one push line for that load
+- Checked by `harness/tests/test_fakegame_harnessautosave.py` and `harness/scenarios/autosave_after_load.py`.
+
+#### Scenario: The push after a load fails
+- **WHEN** the timer still shows the setting period after the push and its retries
+- **THEN** the harness log has an error that says the autosave timer was not pushed away after a load
+- Checked by `harness/tests/test_fakegame_harnessautosave.py`.
+
+### Requirement: Boot timing is checked in the real game
+The harness SHALL have a real-game test scenario that checks boot timing after `READY`. It SHALL check that the clock stays still, that the boot took a time in range, and that the number of pause calls is in range. A suite SHALL run it several times in a row.
+
+#### Scenario: The clock stays still after READY
+- **WHEN** a real run reaches `READY` and the test scenario waits between 20 and 40 real seconds
+- **THEN** the game clock moved between 0 and 0.001 game seconds
+- Checked by `harness/scenarios/boot_timing.py`.
+
+#### Scenario: Boot time and pause calls are in range
+- **WHEN** a real run reaches `READY` from a save
+- **THEN** the boot took between 20 and 120 seconds, and `pauseGame` was called between 1 and 3 times
+- Checked by `harness/scenarios/boot_timing.py`.
+
+#### Scenario: A series of boots
+- **WHEN** the suite `boot-timing` runs the test scenario 5 times
+- **THEN** at least 4 of the 5 runs pass, and each failure has a boot reason or a failed check in its summary
+- Checked by `harness/suites/boot-timing.json`.
