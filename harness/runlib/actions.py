@@ -1258,6 +1258,10 @@ class Actions:
         """Spec 26: goal (EGameGoals number), victory status, difficulty and start fields of the game instance (read only)."""
         return self._command("game_setup_state")
 
+    def game_setup_set_byte(self, field: str, value: int) -> dict:
+        """Spike 358: write one byte field of gameSetup.currentGameSetup (raidingFrequency and others). Reads it back."""
+        return self._command("game_setup_set_byte", field=field, value=value)
+
     def game_setup_set_goal(self, goal: int) -> dict:
         """Spec 26: write gameSetup.currentGameSetup.goals (0 Conquest, 1 Dominance, 2 Endless, 3 Growth). Reads it back."""
         return self._command("game_setup_set_goal", goal=goal)
