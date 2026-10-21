@@ -28,7 +28,7 @@ Large ids may work in the menu and break systems that are not visible at once (s
 None.
 
 ### Modified Capabilities
-None now. A failed range changes the id rule in `harness/pak-mods`.
+`harness/pak-mods`: new rule "Upgrades use only vanilla ids".
 
 ## Impact
 Needs the real game, the real mouse for placement (exclusive), a fresh save backup, and the user informed before the first `save_game` call.
