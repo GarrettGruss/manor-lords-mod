@@ -13,7 +13,7 @@
 
 ## 3. Test scenarios
 
-- [ ] 3.1 Add `mod/InvasionMod/scenarios/raid_behavior/carry_caps.py`; verify with a real game run
+- [x] 3.1 Add `mod/InvasionMod/scenarios/raid_behavior/carry_caps.py`; verify with a real game run
 - [ ] 3.2 Run `native_plunder.py` and `loot_return.py` again; verify that they pass
 
 ## 4. Docs and results
