@@ -8,7 +8,7 @@ A mod can add a clickable button to the game screen from Lua. One click reaches 
 - A `WBP_ClickButton` (pak widget of `HarnessClickHooks`) was created with `WidgetBlueprintLibrary:Create`, labeled "Mods", and put in the viewport with `AddToViewport` and `SetPositionInViewport` (100, 100). It shows at the top left of the HUD.
 - A real mouse click (`ctx.click_with_mouse`, position found by hover) was counted once by the click hook, and the raid menu opened.
 - Screenshots: `runs/20261020-024642-6426/screenshots/entry-button-before.png` and `entry-button-after-click.png`.
-- Spike code: `HarnessClickHooks.create_standalone` (new), commands `InvasionMod.spike_entry_open` and `spike_entry_state` in `raid_widget/init.lua`, scenario `harness/scenarios/spike_ui_entry_button.py`.
+- Spike code: `HarnessClickHooks.create_standalone` (new), commands `InvasionMod.spike_entry_open` and `spike_entry_state` in `raid_widget/init.lua`, scenario `spike_ui_entry_button.py` (removed from the harness: it named the mod; see git history of commit 8320540^).
 
 ## Options
 | Option | Works | Risk | Effort |
