@@ -16,3 +16,7 @@ Fixture `base`, difficulty 1, single player, no save call. Saves backed up befor
 - The raid is native (`roles = false`, not a lord raid). In both runs the raiders died or left (deaths 14 to 18 of 18, `capped` 0, `looted_total` 17 to 18), the tracker kept 3 or 4 raiders as living while the census showed 0, and the raid ended as `destroyed` with no native leave line.
 - `git diff main` shows this change touches only `rules.plunder_amount`, `rules.leave_reason` and `loot_goal`, which act on lord and role raids. The native tracking path (`world.lua`, tracker living count) is unchanged. So the failure is probably not caused by this change, but it was not compared with a run on `main`.
 - Task 3.2 stays open until a run of `native_plunder` on `main` shows whether it failed before.
+
+## Check on main (native-plunder)
+
+Run `20261021-032110-3177` on `origin/main` (1e6f9fc, deployed from the `main-check` worktree): fail, the same two asserts (A1 native leave line missing; A5 tracker living 4 vs census 0 on days 7 to 12). So the native-plunder failure is pre-existing and not caused by this change. Task 3.2 stays open because `native_plunder.py` does not pass on main either; `loot_return.py` passes.
