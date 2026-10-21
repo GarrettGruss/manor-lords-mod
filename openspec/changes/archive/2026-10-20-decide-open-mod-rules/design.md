@@ -25,3 +25,20 @@ The change `split-design-brief` moved the M00 open questions to the archive (`op
 | 12 | A second invader faction | 12 | Is a mercenary free company (linked to the bandits) needed for the first release? |
 
 The other M00 questions are answered by decisions (`design/mod/decisions.md`), built (living specs), or are open changes (`add-plundered-start`, `add-liege-influence`).
+
+## Owner answers (chat, 2026-10-20)
+
+| # | Answer | Next step |
+|---|---|---|
+| 1 | One raid per year. No raids in the first year. A random chance per season decides when it comes. | New change for the raid clock (`mod/invasion`). |
+| 2 | Yes: buttons for the terms and the raid start in the raid menu. | New change on the base menu of `add-mod-menu-access-rule` (#308). |
+| 3 | Do nothing when the player loses the final battle of the great raid. | Closed. |
+| 4 | Capital moves are not part of the game. No terms after a sack of the player. A Hussite sack of a vassal is complete when 80 percent of its buildings are ruins: all its villagers are deleted, and a homeless wave of 50 percent of its population starts. Test what happens to an AI village when all its villagers are killed. | Spike, then a change (`mod/vassals`, `mod/sack_and_terms`, `mod/refugees`). Drop the capital move rule. |
+| 5 | See 4. Loss by `take_by_lord` is dropped (it crashes the game). | Covered by the change of 4. |
+| 6 | Built in `add-liege-influence` (#322). | Closed. |
+| 7 | An iron mine or a salt mine is enough. Test: can a resource's finite limit be set high, and can a region's unlimited flag be switched? The player region gets large finite limits of salt and iron, never infinite. Test a finite mine switched to infinite: does it still work after its finite deposit is used up? | Spike (`mod/finite_resources`). |
+| 8 | Yes: a button for the bandit buy-back in a mod menu. Also test whether the game's bandit negotiation messages can be turned off, because they may conflict with the mod. | Spike for the messages; the button goes with the change of 2. |
+| 9 | Covered by `add-raid-storage-tiers` (#276). | Closed. |
+| 10 | For now the mod controls only the sacking of houses in an AI village. Any other effect on a region the player does not control goes through the review cycle (its own change). Tribute does not matter for AI regions. Vassal loyalty is not a mechanic: a vassal survives or dies. Whether a resource is really infinite in a vassal region does not matter, because Lua simulates the vassal tribute. | Closed. Note: existing loyalty effects (for example the law `trade_pacts`, `vassal_loyalty`) conflict with this answer; to be removed in a later change. |
+| 11 | See 4. The land of a lost vassal stays a village of rubble. The player can spend gold to raise its villager count to 5; then the AI rebuilds the village and its tribute starts again. | Part of the change of 4. |
+| 12 | No second invader faction. | Closed. |

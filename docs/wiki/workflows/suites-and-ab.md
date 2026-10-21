@@ -73,7 +73,7 @@ flowchart TD
 
 ### Parallel slots
 
-`--slots N|all` uses the game slots installed by `harness/install.ps1` (see [Install and environment](../operations/install-and-environment.md)). `run_suite_parallel` (`suitelib/pool.py`) builds one job per repeat and variant in the sequential order, and gives jobs to free slots. A scenario with `EXCLUSIVE = True` waits until no other game runs. A slot whose run fails to start is marked bad. If every slot is bad, the suite stops with `no_slots`. `--slots all` needs the real `run.py`.
+`--slots N|all` uses the game slots installed by `harness/install.ps1` (see [Install and environment](../operations/install-and-environment.md)). `run_suite_parallel` (`suitelib/pool.py`) builds one job per repeat and variant in the sequential order, and gives jobs to free slots. A scenario with `EXCLUSIVE = True` waits until no other game runs. A slot whose run fails to start is marked bad. If every slot is bad, the suite stops with `no_slots`. `--slots all` needs the real `run.py`. Measured speedup (suite `core`, 5 runs, 2026-10-20): 296.7 s with 1 slot, 186.8 s with 3 slots, 1.6x. Each run is slower with 3 games (smoke 46 s with 1 slot, 55 to 105 s with 3), and the longest run sets the floor. Run results and drift lines are the same with 1 and 3 slots. No bridge timeout in 15 parallel runs, so the 15 s timeout stays. `SLOTS_DIR` is the `slots` folder of the main checkout, so `--slots N` works from a worktree. An exclusive scenario ran alone (no overlap in the run start and end times). `report.json` has no per-run start time.
 
 ## Baselines
 
