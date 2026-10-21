@@ -35,6 +35,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The standalone test mods `mod/RefugeeWaves` and `mod/PolicyMenu` (change `remove-standalone-test-mods`, #261). The Invasion Mod absorbed them: the feature `refugees`, the laws of `tech_tree` and `tech_tree_widget`, and the vassal policies of `vassals`. Also removed: the scenarios `refugee-wave`, `policy-menu` and `policy-menu-clicks`, the test `test_fakegame_refugeewaves.py` and the tool `harness/tools/make_policy_art.py`. To remove the installed copies from the game folder, run `harness\deploy.ps1 -Clean`. The GitHub pre-release `refugeewaves-v0.1.0` stays.
 
 ### Fixed
+- `HarnessClickHooks` no longer calls `GetFullName` under `pcall` in the click hook. It checks `IsValid` first, so a dead widget cannot raise an error inside a UObject metamethod (UE4SS `getgeneric` access violation, #323).
 - Meshy meshes drew a pale fallback material: `meshy_material.py` now sets no static switch overrides and uses the game master `MegascansStandard` (#320).
 - The harness pushes the autosave timer away again after every world load in a kept-open game, so a load no longer brings back a real autosave after 10 minutes (change `fix-autosave-after-load`, #315).
 - `harness/tools/s29_command.py` works in a `--keep-open` run before the first command; it no longer needs a `commands` folder (#312).
