@@ -55,7 +55,7 @@ class StanceTests(unittest.TestCase):
                 state["stance"] = value
 
             game.method(component, "SetBehaviourStance", set_stance)
-            answer = leads(game, 'm.lead_stance({ squad = 5, stance = "aggressive" })')
+            answer = leads(game, "(function() m.READ_SQUAD_STRUCT = true; return m.lead_stance({ squad = 5, stance = \"aggressive\" }) end)()")
             self.assertEqual((answer["before"], answer["after"]), (0, 1))
 
     def test_unknown_stance_is_refused(self):

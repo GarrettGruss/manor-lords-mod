@@ -20,6 +20,7 @@ M.MAX_UNITS = 40
 M.MAX_COMPONENTS = 60
 M.MAX_SPAWN = 6
 M.MAX_OFFSET = 60000
+M.READ_SQUAD_STRUCT = false   -- never true: see stanceOf
 M.STANCES = { neutral = 0, aggressive = 1, defensive = 2 }
 
 local swapped = {}   -- component full name -> { mesh } of the mesh before the swap
@@ -111,6 +112,8 @@ local function squadOf(component, id)
 end
 
 local function stanceOf(component, id)
+    -- GetSquad returns a Squad struct by value. Reading it ended the game (run 20261021-041541-74de, same as getSquadByID).
+    if not M.READ_SQUAD_STRUCT then return nil end
     local squad = squadOf(component, id)
     if squad == nil then return nil end
     return plain(read(function() return squad.behaviourStance end))
@@ -187,8 +190,10 @@ function M.lead_squad_camp(request)
     local count = handles and read(function() return handles:GetArrayNum() end) or 0
     for i = 1, math.min(count, M.MAX_UNITS) do
         local id = read(function() return unwrap(handles[i]).Value end)
-        local squad = id and squadOf(component, id)
-        if squad then
+        local squad = id and M.READ_SQUAD_STRUCT and squadOf(component, id)
+        if id and not M.READ_SQUAD_STRUCT then
+            rows[#rows + 1] = { squad = id }   -- the Squad struct is not read (see stanceOf)
+        elseif squad then
             rows[#rows + 1] = { squad = id, camp = plain(read(function() return squad.camp end)),
                                 camp_location = plain(read(function() return squad.campLocation end)),
                                 rallying_status = plain(read(function() return squad.rallyingStatus end)),
@@ -217,13 +222,35 @@ local function buildingComponents()
     return out
 end
 
+-- Object path of the mesh ("/Game/.../Name.Name"): GetFullName is "StaticMesh <path>".
+local function meshPath(component)
+    local full = read(function() return component.StaticMesh:GetFullName() end)
+    return full and (full:match("^%S+ (.+)$") or full) or nil
+end
+
+-- Half size of the bounds. Each axis is read on its own, the Bounds struct is never passed on.
+local function extentOf(component)
+    local x = read(function() return component.Bounds.BoxExtent.X end)
+    if type(x) ~= "number" then return nil end
+    return { x = math.floor(x), y = math.floor(read(function() return component.Bounds.BoxExtent.Y end) or 0), z = math.floor(read(function() return component.Bounds.BoxExtent.Z end) or 0) }
+end
+
+-- Number of simple collision shapes of the mesh body setup (array sizes only, no element is read).
+local function shapesOf(component)
+    local geom = read(function() return component.StaticMesh.BodySetup.AggGeom end)
+    if geom == nil then return nil end
+    local function count(name) return read(function() return geom[name]:GetArrayNum() end) end
+    return { box = count("BoxElems"), sphere = count("SphereElems"), sphyl = count("SphylElems"), convex = count("ConvexElems") }
+end
+
 local function meshRow(entry)
     local component = entry.component
     local sockets = read(function() return component:GetAllSocketNames() end)
     return { full = entry.full, class = entry.class,
-             mesh = read(function() return component.StaticMesh:GetPathName() end),
+             mesh = meshPath(component),
              at = plain(read(function() return entry.owner:K2_GetActorLocation() end)),
-             extent = plain(read(function() return component.Bounds.BoxExtent end)),
+             extent = extentOf(component),
+             shapes = shapesOf(component),
              collision = plain(read(function() return component:GetCollisionEnabled() end)),
              sockets = sockets and read(function() return sockets:GetArrayNum() end) or nil,
              swapped = swapped[entry.full] ~= nil }

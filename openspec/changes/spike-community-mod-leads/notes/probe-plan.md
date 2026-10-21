@@ -1,6 +1,6 @@
 # Probe plan: community mod leads
 
-Issue #280. Status: probes are written and pass the fake game tests. None has run in the real game yet.
+Issue #280. Status: all five probes ran in the real game (slot 0, 2026-10-20 and 2026-10-21). Results are in `lead-1-*.md`. Changes after the first run: lords_state replaces steer_state for lord squads, the Squad struct is never read, the stance probe uses 3 squads, the mesh probe reads collision shapes, and `HarnessActions` parses the fields stance, component, mesh and restore.
 
 All probes are hidden test scenarios (`HIDDEN = True`). They use named commands only (`HarnessLeads`, through `HarnessActions`). They never call a save function and never use raw Lua eval. Each probe writes `probe.jsonl` and metrics in `runs/<id>/`. Read `runs/<id>/summary.json` and `metrics.json` first.
 

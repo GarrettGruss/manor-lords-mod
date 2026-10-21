@@ -16,8 +16,9 @@ HIDDEN = True
 
 def pick_pair(components: list):
     """A component and the mesh path of a component with another mesh. (None, None) when all meshes are equal."""
-    for target in components:
-        for other in components:
+    usable = [c for c in components if c.get("class") == "SMBuilding" and c.get("full", "").endswith(".StaticMeshComponent0")]
+    for target in usable:
+        for other in usable:
             if other["mesh"] and target["mesh"] and other["mesh"] != target["mesh"]:
                 return target, other["mesh"]
     return None, None
@@ -32,6 +33,10 @@ def run(ctx) -> dict:
     if not target:
         probe.note("no pair", reason="need two building components with different meshes")
         return ctx.result()
+    at = target.get("at") or {}
+    if "x" in at:
+        probe.attempt("camera", lambda: ctx.bridge.centre_camera_on(at["x"], at["y"]))
+        ctx.time.run_game_seconds(1, speed=1)
     ctx.screenshot("mesh-before")
     swapped = probe.attempt("swap", lambda: ctx.actions.lead_mesh_swap(target["full"], new_mesh))
     ctx.time.run_game_seconds(2, speed=1)
@@ -39,10 +44,14 @@ def run(ctx) -> dict:
     if swapped and swapped.get("ok"):
         before, after = swapped["before"], swapped["after"]
         probe.metric("swap_ok", 1)
-        probe.metric("mesh_changed", before["mesh"] != after["mesh"])
+        probe.metric("mesh_changed", before.get("mesh") != after.get("mesh"))
         probe.metric("collision_same", before["collision"] == after["collision"])
-        probe.metric("sockets_before", before["sockets"])
-        probe.metric("sockets_after", after["sockets"])
+        probe.metric("sockets_before", before.get("sockets"))
+        probe.metric("sockets_after", after.get("sockets"))
+        probe.note("shapes", before=before.get("shapes"), after=after.get("shapes"), at=before.get("at"))
+        for key in (before.get("shapes") or {}):
+            probe.metric(f"shape_{key}_before", before["shapes"][key])
+            probe.metric(f"shape_{key}_after", (after.get("shapes") or {}).get(key))
         extent_before, extent_after = before.get("extent"), after.get("extent")
         if isinstance(extent_before, dict) and isinstance(extent_after, dict):
             probe.metric("extent_x_before", extent_before["x"])

@@ -77,3 +77,12 @@ def units_of(probe: Probe, squads: list) -> int:
         state = probe.attempt(f"units of {squad}", lambda squad=squad: probe.ctx.actions.steer_state(squad))
         total += (state or {}).get("units") or 0
     return total
+
+
+def lord_squad_row(probe: Probe, lord: int, squad: int) -> dict | None:
+    """The row of one squad of an AI lord from lords_state (alive units, position x and y, target). steer_state gave 0 units for lord squads."""
+    state = probe.attempt(f"lords_state for {squad}", lambda: probe.ctx.actions.lords_state(log=0))
+    rows = (state or {}).get("lords", [])
+    if len(rows) < lord:
+        return None
+    return next((row for row in rows[lord - 1].get("squads", []) if row.get("id") == squad), None)

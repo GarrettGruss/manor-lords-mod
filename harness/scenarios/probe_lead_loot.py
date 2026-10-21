@@ -51,6 +51,14 @@ def move_goods(probe: Probe) -> None:
         probe.metric("manor_stock_gain", after - before)
 
 
+def fight(probe: Probe, squad: int) -> None:
+    """Player squads next to the bandits. Units that die in combat may stay as dead actors: read their gear."""
+    probe.attempt("player squads", lambda: probe.ctx.actions.spawn_units("player", battle.SPEAR, 3, 400, 0))
+    for turn in range(1, 5):
+        probe.wait(6)
+        read_gear(probe, squad, f"fight{turn}")
+
+
 def run(ctx) -> dict:
     probe = Probe(ctx)
     spawned = probe.attempt("spawn bandits", lambda: ctx.actions.spawn_units("bandit", battle.SPEAR))
@@ -59,6 +67,7 @@ def run(ctx) -> dict:
     squad = spawned["answer"]["squads"][0]["id"]
     ctx.time.run_game_seconds(2, speed=1)
     read_gear(probe, squad, "alive")
+    fight(probe, squad)
     probe.attempt("kill", lambda: ctx.actions.bandit_kill_squads(squad))
     ctx.time.run_game_seconds(2, speed=1)
     read_gear(probe, squad, "dead")

@@ -7,7 +7,7 @@ rallyingStatus of every squad of the lord three times while the army waits, then
 It never calls a save function.
 """
 
-from runlib.leadprobe import Probe, start_war
+from runlib.leadprobe import Probe, start_war, lord_squad_row
 
 NAME = "probe-lead-camp"
 LIMIT_S = 400
@@ -24,6 +24,13 @@ def read_camp(probe: Probe, lord: int, label: str) -> None:
     probe.metric(f"rows_{label}", len(rows))
     probe.metric(f"camp_set_{label}", sum(1 for row in rows if row.get("camp") not in (None, False, 0)))
     probe.metric(f"camp_location_set_{label}", sum(1 for row in rows if isinstance(row.get("camp_location"), dict)))
+    centers = [center_of(probe, lord, row["squad"]) for row in rows if row.get("squad")]
+    probe.note(f"centers {label}", centers=centers)
+
+
+def center_of(probe: Probe, lord: int, squad: int):
+    row = lord_squad_row(probe, lord, squad)
+    return {"x": row["x"], "y": row["y"], "alive": row["alive"], "target": [row["target_x"], row["target_y"]]} if row else None
 
 
 def run(ctx) -> dict:

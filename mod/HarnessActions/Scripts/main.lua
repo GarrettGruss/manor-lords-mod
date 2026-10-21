@@ -311,6 +311,11 @@ local function parseRequest(raw)
         signed = ({ ["true"] = true, ["false"] = false })[raw:match('"signed"%s*:%s*(%a+)') or ""],
         mode = raw:match('"mode"%s*:%s*"(%a+)"'),
         source = raw:match('"source"%s*:%s*"(%a+)"'),
+        -- spike #280: these four fields were missing, so runs 1 to 5 of probe-lead-stance never set a stance
+        stance = raw:match('"stance"%s*:%s*"(%a+)"'),
+        component = raw:match('"component"%s*:%s*"([^"]*)"'),
+        mesh = raw:match('"mesh"%s*:%s*"([^"]*)"'),
+        restore = ({ ["true"] = true, ["false"] = false })[raw:match('"restore"%s*:%s*(%a+)') or ""],
         families_per_squad = tonumber(raw:match('"families_per_squad"%s*:%s*(%d+)')),
         min_dist = tonumber(raw:match('"min_dist"%s*:%s*(%d+)')),
         max_dist = tonumber(raw:match('"max_dist"%s*:%s*(%d+)')),
