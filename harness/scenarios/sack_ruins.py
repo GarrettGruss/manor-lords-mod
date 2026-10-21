@@ -3,7 +3,7 @@
 from runlib import sack
 
 NAME = "sack-ruins"
-DESCRIPTION = "sack_buildings with fire: the buildings burn, then they are rubble, stay in the list, and their goods are gone."
+DESCRIPTION = "sack_buildings with fire: the buildings burn, then they are rubble and stay in the list; the goods lost in the fire are recorded (accepted)."
 COVERS = []  # R8 is NOT tagged: this scenario proves only the ruin state. The coverage tool counts a tagged, passing scenario as verified, and the rebuild cost cannot be read (criteria.json spike_note)
 LIMIT_S = 150
 
@@ -25,16 +25,19 @@ def run(ctx) -> dict:
     expect.equals("start: nothing burns", sack.burning(start), 0)
     expect.equals("start: no fire flag", bridge.read_property(region, "bAnyBuildingOnFire"), False)
 
+    # Villagers put a fire out unless enemy soldiers are near (spike fire-during-raid.md), so the fire runs with raiders in the village.
+    ctx.actions.spawn_units("bandit", "Brigands", 2, 0, 0)
+    ctx.time.run_game_seconds(5, speed=SPEED)
     record = ctx.actions.sack_buildings(count=BURN_COUNT, method="fire")
     expect.equals("action read-back", record["ok"], True)
     lit = ctx.actions.sack_census()
     expect.equals("buildings on fire right after", sack.burning(lit), BURN_COUNT)
     expect.equals("the region reports a fire", bridge.read_property(region, "bAnyBuildingOnFire"), True)
 
-    ctx.time.set_speed(SPEED)
-    ctx.run_until(lambda: sack.burning(ctx.actions.sack_census()) == 0, BURN_TIMEOUT_GAME_S, clock="game",
-                  what="the fires to burn out", poll_s=2.0, stall_s=30.0, on_stall=ctx.popups)
-    ctx.time.pause()
+    for _ in range(BURN_TIMEOUT_GAME_S // 5):   # run_game_seconds sets its own speed (set_speed after it failed with raiders)
+        ctx.time.run_game_seconds(5, speed=SPEED)
+        if sack.burning(ctx.actions.sack_census()) == 0:
+            break
 
     ruined = ctx.actions.sack_census()
     expect.equals("no fire left", sack.burning(ruined), 0)
@@ -44,7 +47,8 @@ def run(ctx) -> dict:
     expect.equals("game count of rubble buildings (type 75)", bridge.call_function(region, "getBuildingCount", [RUBBLE_BUILDING_TYPE, False]),
                   BURN_COUNT)
     burned_store_goods = sum(entry["goods"] for entry in ruined["stores"] if entry["type"] == RUBBLE_BUILDING_TYPE)
-    expect.equals("a fire destroys the goods inside: ruins hold no goods", burned_store_goods, 0)
-    emptied = [entry["id"] for entry in start["stores"] if entry["id"] not in {item["id"] for item in ruined["stores"]}]
-    ctx.notes.append(f"stores that held goods and burned: {emptied}; stock {sack.stock_total(start)} -> {sack.stock_total(ruined)}")
+    # Owner decision 2026-10-21: a fire may destroy part of the goods (spike: 11 to 60 percent). Record the loss, do not fail on it.
+    start_store_goods = sum(entry["goods"] for entry in start["stores"])
+    ctx.notes.append(f"goods in the ruins {burned_store_goods}; goods in all stores {start_store_goods} -> {sum(e['goods'] for e in ruined['stores'])}; stock {sack.stock_total(start)} -> {sack.stock_total(ruined)}")
+    ctx.screenshot("sack-ruins-after")
     return ctx.result()

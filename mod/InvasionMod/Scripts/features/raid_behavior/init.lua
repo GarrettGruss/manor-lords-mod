@@ -131,7 +131,7 @@ end
 -- The plunder tick: while the lord army stands at the manor, goods leave the village stores (once a day).
 local function check_plunder(entry, seen, today)
     local raid = entry.raid
-    local want = rules.plunder_amount(raid, seen, plunder, leave, today)
+    local want = rules.plunder_amount(raid, seen, plunder, leave, today, config.carry_cap)
     if want <= 0 then return end
     local taken = world.plunder(want)
     rules.record_plunder(raid, taken)
@@ -162,7 +162,7 @@ local function check_leave(entry, seen, today)
     local raid = entry.raid
     if not leave.enabled then return end
     if raid.leave_reason == nil then
-        local reason = rules.leave_reason(raid, today, leave)
+        local reason = rules.leave_reason(raid, today, leave, config.carry_cap)
         if reason == nil then return end
         start_leave(raid, reason, today)
     end

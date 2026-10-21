@@ -37,7 +37,7 @@ Each cycle feeds the next. The aftermath of one raid is the start position for t
 4. **Absorb losses:** a lost vassal sends refugees to the home region. House and feed them, or they become bandits.
 5. **Prepare:** invest in palisades, militia, retinue and stockpiles. You cannot afford all of them. Spend influence with the liege if needed.
 6. **Defend:** protect the vassals and the main town with what you built.
-7. **Aftermath:** losses, burned buildings and stolen goods set the next cycle. Vassals you failed to protect lose loyalty.
+7. **Aftermath:** losses, burned buildings and stolen goods set the next cycle.
 
 ## Start state
 - The player starts with 1 region under direct control.
@@ -61,13 +61,11 @@ The game has only foot soldiers (technical limit). All factions fight on foot.
 Vassals replace the "outposts" of brief A. A vassal is an AI-run region that the player rules only indirectly.
 - **Two ways to gain one:** vassalize a nearby neighbor, or send settlers to found one. A settled region is also a vassal, but it starts under the player's full control.
 - **Indirect control:** policies and orders only. The player does not place buildings there. Policies and orders are mod-owned settings that Lua applies (feasibility decision 2).
-- **Loyalty** is a mod-owned value (feasibility decision 8).
 - **Victory risk:** a region claim once triggered the game's victory cinematic. Harness spike 26 checks how the game sets the start and victory conditions and whether Lua can change them (feasibility decision 6).
 - **Tribute:** vassals send supplies. They are the permanent source of iron, salt and other finite goods.
 - **Protection duty:** vassals expect protection from the empire and from bandits.
 - **First targets:** the empire raids vassals first, to subjugate or destroy them. More vassals give more tribute but split the player's forces.
 - **Loss:** a lost vassal cuts tribute and sends a wave of refugees to the home region (see Refugees).
-- **Neglect:** an unprotected vassal may submit and pay tribute to the invader.
 - **No intel in version 1:** vassals do not scout and do not leak information. See Out of scope.
 - **Fallback:** a fortified vassal can become the fallback capital (see Non-terminal defeat).
 
@@ -95,7 +93,7 @@ Raiders pick their own targets (the game's AI). The mod does not steer them (fea
 | --- | --- | --- | --- | --- | --- | --- |
 | Plunder | Minor | Hussite | Sword men, light spearmen, crossbows | Loot stores, kill villagers, burn buildings | About 10 grain or 5 iron | Native: the base AI leaves when it has looted enough; units rout on their own |
 | Plunder | Minor | Bandits | Poorly armed peasants | Food stores, lone workers | About 5 grain | Native |
-| Subjugation | Major | Hussite | Mid-size army | A vassal region | None | Vassal submits, or native rout |
+| Subjugation | Major | Hussite | Mid-size army | A vassal region | None | Vassal is lost, or native rout |
 | Subjugation (great raid) | Major | Hussite field army | Full army | Destroy the main town | None | Native rout |
 
 Raid behaviors:
@@ -149,7 +147,7 @@ First ideas. They are examples, not decisions. Some nodes reuse ideas from the t
 | --- | --- | --- |
 | Approval | Higher tolerance for low approval. Unrest is crushed by force. | Approval grows faster. Fewer villagers become bandits. |
 | Bandits | Cheaper to fight. Captured bandits become forced labor. | Cheaper to bring back with coin. Returned bandits work at once. |
-| Vassals | Demand more tribute. Loyalty held by fear. | Trade and shared defense. Loyalty held by benefit. |
+| Vassals | Demand more tribute. | Trade and shared defense. |
 | Liege | Influence from military success. | Influence from tribute and wealth. |
 | Laws | Conscription, forced labor on walls, scorched earth. | Militia rights, trade pacts, paying off warbands. |
 | Defense style | Bulwark and Warband: walls, garrison, veterans. | Pact: buy off, hire against, redirect raids. |
