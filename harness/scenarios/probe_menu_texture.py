@@ -25,7 +25,20 @@ def send(ctx, **fields) -> dict:
     return answer
 
 
+def raise_game_window(ctx) -> None:
+    """Put the game window on top without the focus, so other windows are not in the screenshots."""
+    import ctypes
+    from runlib.game import find_game_processes
+    from runlib.windows import list_windows, pick_game_window
+    try:
+        window = pick_game_window(list_windows(), {process.pid for process in find_game_processes()})
+        ctypes.windll.user32.SetWindowPos(window["hwnd"], -1, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010)  # TOPMOST, no move, no size, no activate
+    except Exception as error:  # noqa: BLE001 - a spike helper
+        ctx.log.info(f"raise_game_window failed: {error}")
+
+
 def run(ctx) -> dict:
+    raise_game_window(ctx)
     path = Path(ctx.variant_option("PNG_PATH", str(DEFAULT_PNG))).as_posix()
     loaded = send(ctx, action="load_png", path=path)
     ctx.expect.record("PNG loaded as a texture", bool(loaded.get("ok")), loaded.get("error", "ok"), "ok")
@@ -33,7 +46,9 @@ def run(ctx) -> dict:
         return ctx.result()
     try:
         shown = send(ctx, action="show", width=1280, height=720)
-        ctx.expect.record("image shown in the viewport", bool(shown.get("in_viewport")), shown.get("error", shown.get("in_viewport")), True)
+        ctx.expect.record("image shown in the viewport", bool(shown.get("in_viewport")), shown.get("error", shown.get("in_viewport")), "in viewport")
+        import time
+        time.sleep(1.0)  # one layout pass before the picture
         ctx.screenshot("png-fullscreen")
         for label, width, height in (("small", 200, 200), ("wide", 600, 300)):
             answer = send(ctx, action="box", width=width, height=height, margin=0.0625)

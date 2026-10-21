@@ -109,7 +109,18 @@ local function box(request)
     return { ok = true, width = width, height = height, steps = S.steps }
 end
 
-function M.texture_probe(request)
+-- HarnessActions parses only known keys, so read this command's own fields from the raw text.
+local function parseOwn(request, raw)
+    raw = raw or ""
+    request.action = raw:match('"action"%s*:%s*"([%w_]+)"')
+    request.path = raw:match('"path"%s*:%s*"([^"]+)"')
+    request.width = tonumber(raw:match('"width"%s*:%s*(-?[%d%.]+)'))
+    request.height = tonumber(raw:match('"height"%s*:%s*(-?[%d%.]+)'))
+    request.margin = tonumber(raw:match('"margin"%s*:%s*(-?[%d%.]+)'))
+end
+
+function M.texture_probe(request, raw)
+    parseOwn(request, raw)
     local action = request.action
     if action == "load_png" then return load_png(request) end
     if action == "show" then return show(request) end
