@@ -67,7 +67,7 @@ When a raider dies in the village, the mod SHALL add its loot to the store that 
 - Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
 ### Requirement: A role raid leaves for loot, losses or time
-The mod SHALL make an active role raid (a plunder raid with `roles = true`) leave when the goods it took reach its loot goal per raider at the start, or the share of dead raiders reaches `leave.loss_share` (default 0.5), or `leave.max_days` (default 25) game days passed since the spawn. The loot goal of a Hussite raid SHALL be `carry_cap` (default 10). The loot goal of any other role raid SHALL be `leave.loot_per_raider` (default 4). The leave reason SHALL be `loot`, `losses` or `time`. A lord raid SHALL leave by peace with its lord, and the game removes the army. No raider SHALL stay on the map after the raid has left.
+An active role raid (`roles = true`) SHALL leave when its goods taken reach its loot goal per starting raider (`carry_cap`, default 10, for a Hussite raid; `leave.loot_per_raider`, default 4, otherwise), when dead raiders reach `leave.loss_share` (default 0.5), or after `leave.max_days` (default 25) game days. The reason SHALL be `loot`, `losses` or `time`. A lord raid SHALL leave by peace with its lord. No raider SHALL stay on the map after the raid left.
 
 #### Scenario: A forced role raid at difficulty 1
 - **WHEN** a role raid runs until it leaves
