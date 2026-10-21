@@ -8,4 +8,4 @@ Use candidate 2: PNG files loaded at run time (`KismetRenderingLibrary:ImportFil
 - Font: a custom blackletter font needs an editor cook (not tried). Until then, use the game's fonts.
 - Pak textures (candidate 1) stay a fallback if run-time import is ever missing.
 
-Owner question: accept candidate 2 for the base menu and the Book of Charters menu?
+Owner decision (2026-10-21): approved.
