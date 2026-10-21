@@ -40,3 +40,18 @@ No id range failed. Task 2.1 is not needed for the ids. Open: the completion of 
 
 ## Tool changes
 - `HarnessBuild.MAX_TYPE` and `actions.MAX_BUILDING_TYPE` raised to 70000 (both capped at 600 and 300).
+
+## 1.2 control runs (same fixture, slot 2, no save)
+Test scenario phase `ROWID_PHASE=control` (`probe_row_id_persistence.py`); tool `harness/tools/s284_make_upgrade_clone.py` makes pak `rowid2` (upgrade row 119 = clone of vanilla row 14, `upgradesInto` 126, offered by building 486).
+| Run id | Building | Upgrade row | Result |
+|---|---|---|---|
+| `rowid-control-a` | vanilla hitching post 30 | vanilla 14 (4 planks, into stable 97) | Works at once: the post disappears and a stable site appears within 1 game day (goods taken from stock). |
+| `rowid-control-b` | new id 486 | new row 119 (same fields as 14, new id) | Does NOT work: after 40 game days the building stays 486, `needs` 4 planks never delivered. |
+| `rowid-control-c` | vanilla 30 | new row 119 | Not run: `harness_error` (game window lost the foreground, no input sent). The 3-run cap is used. |
+Meaning: the test setup is fine (the vanilla upgrade finishes in 1 day). The new row 119 has the same fields as vanilla row 14, so row 117 failing is not caused by its cloned fields (row 2 settings). The cause is the new upgrade id or the new building id 486 as source. Run c (new upgrade on a vanilla building) would separate them. Not proven yet, so task 1.2 stays unchecked.
+
+### Control c result (runs `rowid-control-d`, `rowid-control-e`)
+- `rowid-control-d`: `crash`, the game process ended during boot (before the scenario, no input). `rowid-control-e`: new row 119 on the VANILLA hitching post 30: does NOT work. After 40 game days the post is still type 30 and `needs` 4 planks never change. No focus problem this time.
+- So the new building id 486 as the source is not the cause: a new upgrade row fails on a vanilla source too, while vanilla row 14 works on the same building (`rowid-control-a`).
+- Row 119 and row 14 differ only in the row id (119, new) and in `upgradesInto` (126, a new building id, instead of 97). So the cause is the new upgrade id OR the new target building id (126). The pending cost is read from the new row, but the request is not carried out.
+- Not separated: a control with a new upgrade id into a vanilla target (row 120 = row 14, `upgradesInto` 97), or vanilla row 14 retargeted to 126. The run cap is used. Task 1.2 is NOT checked. Rule for now: do not rely on a new DT_Upgrades row for an upgrade that finishes. Task 2.1 (change the id rule for upgrades) needs the owner.

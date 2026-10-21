@@ -122,6 +122,35 @@ def read_phase(ctx) -> dict:
 
 def run(ctx) -> dict:
     phase = ctx.variant_option("ROWID_PHASE", "write")
-    if phase not in ("write", "read"):
+    if phase not in ("write", "read", "control"):
         return ctx.fail("phase", f"ROWID_PHASE must be write or read, got {phase}")
+    if phase == "control":
+        return control_phase(ctx)
     return write_phase(ctx) if phase == "write" else read_phase(ctx)
+
+
+def control_phase(ctx) -> dict:
+    """Task 1.2 control: a VANILLA upgrade (14: hitching post 30 -> small stable 97) or, with ROWID_UPGRADE/ROWID_SOURCE, another row."""
+    upgrade = int(ctx.variant_option("ROWID_UPGRADE", "14"))
+    source = int(ctx.variant_option("ROWID_SOURCE", "30"))
+    target = int(ctx.variant_option("ROWID_TARGET", "97"))
+    place_one(ctx, source, list(SPOTS))
+    ctx.check("control source built", wait_built(ctx, source), counts(ctx, source))
+    for good in ("planks", "timber"):
+        ctx.actions.give_item(good, 100)
+    base = counts(ctx, target)
+    note(ctx, "control row", row=ctx.actions._command("upgrade_stat", type=upgrade))
+    note(ctx, "control request", result=ctx.actions.plot_upgrade(upgrade, type_id=source))
+    done = False
+    for day in range(MAX_DAYS + 20):
+        ctx.popups()
+        ctx.time.run_game_days(1, speed=SPEED)
+        rows = ctx.actions.building_sites(source)["buildings"]
+        into = counts(ctx, target)
+        note(ctx, "control day", day=day + 1, source=rows, into=into)
+        if into["built"] > base["built"] and into["sites"] == 0:
+            done = True
+            break
+    ctx.check("control: the upgrade finished (target built)", done, counts(ctx, target))
+    ctx.screenshot("control_end")
+    return ctx.result()
