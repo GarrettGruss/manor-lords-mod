@@ -96,8 +96,11 @@ def run_clone(ctx, widget, panel) -> dict:
     ctx.screenshot("clone-after-click")
     if ctx.variant_option("BLOCK", "0") == "1":
         # World point that selected a burgage plot in run 20261021-035925-a56f. Overlay first, then the same click without it.
-        world_xy = (found[0] - 0.291, found[1])
-        send(ctx, action="add_overlay")
+        focused = send(ctx, action="focus", name=ctx.variant_option("TARGET", ""))
+        world_xy = (0.5, 0.5) if focused.get("ok") else (found[0] - 0.291, found[1])
+        time.sleep(1.5)
+        ctx.screenshot("focus-before-click")
+        send(ctx, action="add_overlay", mode=ctx.variant_option("MODE", "border"), input=ctx.variant_option("INPUT", "none"))
         time.sleep(1.0)
         ctx.screenshot("overlay-on")
         ctx.hover_with_mouse(*world_xy)
