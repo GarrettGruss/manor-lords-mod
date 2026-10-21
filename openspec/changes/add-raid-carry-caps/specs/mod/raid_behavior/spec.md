@@ -9,7 +9,7 @@ The mod SHALL manage plundered quantities only for Hussite raids. The Hussite AI
 - **THEN** its plundered goods stop at 120 or less
 - Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
-#### Scenario: A native raider carries 25
+#### Scenario: A raider carries 25
 - **WHEN** a raider of a native raid carries 25
 - **THEN** the mod does not write its loot and `capped` stays 0
 - Checked by `harness/tests/test_fakegame_raid_behavior.py`.
