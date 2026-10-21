@@ -110,7 +110,7 @@ Keeps a registry of vassal slots in ModState: region, lord name, loyalty and sta
 Commands: `vassals_state`, `vassals_claim`, `vassals_set_loyalty`, `vassals_set_keep_peace`, `vassals_set_policy`, `vassals_order_gift`, `vassals_loyalty_tick_now`, `vassals_lose`, `vassals_set_loss_region`, `vassals_submission_tick_now`, `vassals_set_goal`.
 
 ### sack_and_terms (M06)
-Files: `init.lua` (sack), `terms.lua` (terms), `fallback.lua` (fallback capital), each with a `*_rules.lua`. When a role raid begins to leave because it won, the town loses a share of buildings, stock and families. The share grows with difficulty. Terms and the fallback capital are first forms (marked TBD in the source): the player pays to make a fortified vassal the fallback capital, the mod takes the region back from its lord, moves grain and sends settlers. Moving units and removing families are not done (spikes S11 and S8).
+Files: `init.lua` (sack), `terms.lua` (terms), `fallback.lua` (fallback capital), each with a `*_rules.lua`. When a role raid begins to leave because it won, the town loses a share of buildings and families. The mod takes no goods; a fire may destroy part of the goods of a burned store (11 to 60 percent measured). Villagers put out a sack fire unless enemy soldiers are near, so the default method is `collapse` (rubble at once). The share grows with difficulty. Terms and the fallback capital are first forms (marked TBD in the source): the player pays to make a fortified vassal the fallback capital, the mod takes the region back from its lord, moves grain and sends settlers. Moving units and removing families are not done (spikes S11 and S8).
 Commands: `sack_state`, `sack_now`, `sack_set_fatal`.
 
 ### tribute (M08)
