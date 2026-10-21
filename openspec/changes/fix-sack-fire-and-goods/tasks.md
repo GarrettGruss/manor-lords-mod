@@ -1,5 +1,5 @@
 ## 1. Spike
-- [ ] 1.1 Run a sack with `method` fire while raiders are in the village; record flee, fire, rubble and burn time (design questions 1, 2 and 4); verify with a real game run. Write `notes/fire-during-raid.md`.
+- [x] 1.1 Run a sack with `method` fire while raiders are in the village; record flee, fire, rubble and burn time (design questions 1, 2 and 4); verify with a real game run. Write `notes/fire-during-raid.md`.
 - [x] 1.2 Measure the stock before and after a store burns to rubble (design question 3); verify with a real game run. Ask the owner if goods are lost.
 
 ## 2. Code

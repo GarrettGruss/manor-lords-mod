@@ -33,3 +33,10 @@ Run `20261021-035001-6d97` and `20261021-035125-0db3` were property searches (no
 - Question 4 in the game.
 - Names of the task types 49, 50, 62.
 - The sample is 2 runs with raiders, 2 without, 1 far. The simulation is not deterministic.
+
+## Follow-up: question 4 and the alarm bell (2026-10-20)
+Test scenario `probe-sack-leave` (hidden, `harness/scenarios/probe_sack_leave.py`): the `raid_sack` steps (small forced role raid, difficulty 1), polled every 5 to 10 game seconds. Runs `20261021-041101-df07` and `20261021-041413-49fc` (the second has verdict `harness_error` only because a parallel slot deleted its fixture slot `saveGame_57`; the data is valid).
+- Sack timing: the raid left with reason `loot` (loot 0) within 30 to 35 game seconds after the forced raid start (game day 211). The sack ran at once: 5 buildings hit, 24 standing to 19, rubble 5 (method `collapse`). The rubble stayed (5 of 5 for 60 game seconds after). Stock 301 to 246 (the old stock share).
+- Raiders at the moment of the sack: the raid squad (id 32, 32 units, side `ai`) was 39213 units from the village at t+5 s and 10958 units away, in the village region (Riesenbuckel), at t+35 s. So in this forced raid the sack ran while the raiders were still walking in, about 11000 units from the village, not inside it. Later (after+20) the raid squad was no longer listed.
+- The forced raid leaves early because the leave rule fired at once. For a natural raid (leave after plunder at the manor) the raiders may stand in the village at the leave; that case was not measured. The sack reaches the village while raiders are in the region, but a villager flee needs them near the village (see answer 3), so the fire method may still be fought at the moment of the sack.
+- Alarm bell: not found. Property and function names that contain "Bell", "Alarm", "Warn" on the player pawn, the player region and the engine: none (searched with the bridge `props` and `funcs`).
