@@ -1,6 +1,6 @@
 ## 1. Spike
 - [ ] 1.1 Run a sack with `method` fire while raiders are in the village; record flee, fire, rubble and burn time (design questions 1, 2 and 4); verify with a real game run. Write `notes/fire-during-raid.md`.
-- [ ] 1.2 Measure the stock before and after a store burns to rubble (design question 3); verify with a real game run. Ask the owner if goods are lost.
+- [x] 1.2 Measure the stock before and after a store burns to rubble (design question 3); verify with a real game run. Ask the owner if goods are lost.
 
 ## 2. Code
 - [ ] 2.1 Remove the stock share from the sack; verify with fake game tests in `harness/tests/test_fakegame_sack_and_terms.py`.
