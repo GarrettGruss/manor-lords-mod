@@ -33,7 +33,7 @@ Safety review points before you run anything:
 2. Generate with `meshy` (CLI) or the agent skill. Stay within the caps of `harness-meshy`: 60 credits per call, 200 per day. The CLI does not enforce them, so check the balance before and after.
 3. Download the model to git-ignored `runs/genmesh/<name>/`. Keep the same file names as `genmesh.py` output so the import scripts work.
 4. Record the task id and credits by hand in `openspec/changes/<change-name>/notes/meshy-assets.md` (`genmesh.py` does not log CLI tasks).
-5. Import, cook, pak and test: `harness-meshy` steps 3 to 6 (grey material rule applies).
+5. Import, cook, pak and test: `harness-meshy` steps 3 to 6 (grey material rule and no static switch overrides apply). Example: test scenario `meshy-agent-house` (#320).
 
 ## Commands for a house (CLI 0.4.3, reviewed in `install-review.md`)
 The CLI has no visibility or publish flag. Tasks stay private in the account. Never publish in the web UI.

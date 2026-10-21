@@ -53,9 +53,9 @@ function M.apply(plan, method, region)
     core.log.info(TAG, "SACK step goods")
     local goods_removed = take_goods(plan.goods, region)
     core.log.info(TAG, "SACK step people")
-    local people = checked("sack_people", sack.sack_people({ count = plan.families, region = region }))
+    local people = checked("sack_people", sack.sack_people({ count = plan.families, region = region, light = true }))
     core.log.info(TAG, "SACK step buildings")
-    local buildings = checked("sack_buildings", sack.sack_buildings({ count = plan.buildings, method = method, region = region }))
+    local buildings = checked("sack_buildings", sack.sack_buildings({ count = plan.buildings, method = method, region = region, light = true }))
     return { goods_removed = goods_removed, families_removed = people.families, people_removed = people.people, buildings_hit = buildings.hit }
 end
 
