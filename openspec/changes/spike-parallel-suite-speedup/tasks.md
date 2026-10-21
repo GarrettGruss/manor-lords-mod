@@ -13,6 +13,6 @@
 - [x] 3.2 If the user chooses a change, write a delta spec and a fake game test. Not needed: the owner kept the 15 s timeout.
 
 ## 4. Close
-- [ ] 4.1 Update `CHANGELOG.md` and the skill `harness-run-scenario` if the advice on slots changes. Verified by review.
+- [x] 4.1 Update `CHANGELOG.md` and the skill `harness-run-scenario` if the advice on slots changes. Verified by review.
 - [ ] 4.2 Close issue #151 with a comment. Verified by the issue state.
-- [ ] 4.3 Fill the test results table of the implementation pull request.
+- [x] 4.3 Fill the test results table of the implementation pull request.
