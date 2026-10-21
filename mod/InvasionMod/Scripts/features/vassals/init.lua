@@ -5,6 +5,7 @@ local ModState = require("ModState")
 local rules = require("features.vassals.rules")
 local world = require("features.vassals.world")
 local config = require("config").vassals
+pcall(require, "features.vassals.probe") -- spike commands (add-vassal-sack-wipe); remove after the spike
 
 local TAG = "InvasionMod.vassals"
 local STATE_VERSION = 1

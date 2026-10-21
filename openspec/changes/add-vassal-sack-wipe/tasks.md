@@ -1,6 +1,6 @@
 ## 1. Spike
-- [ ] 1.1 Delete all villagers of a vassal region in the real game. Record what the AI does and how the mod can sack houses there (design questions 1 and 6). Verify with a real game run. Write `notes/empty-ai-village.md`.
-- [ ] 1.2 Raise the villager count of an emptied region to 5. Record whether the AI rebuilds and how long it takes (design question 2). Verify with a real game run. Write `notes/restore-to-five.md`.
+- [x] 1.1 Delete all villagers of a vassal region in the real game. Record what the AI does and how the mod can sack houses there (design questions 1 and 6). Verify with a real game run. Write `notes/empty-ai-village.md`.
+- [x] 1.2 Raise the villager count of an emptied region to 5. Record whether the AI rebuilds and how long it takes (design question 2). Verify with a real game run. Write `notes/restore-to-five.md`.
 - [ ] 1.3 Ask the owner for the gold cost and the answers to design questions 3, 4 and 5. Verify by review.
 
 ## 2. Code
