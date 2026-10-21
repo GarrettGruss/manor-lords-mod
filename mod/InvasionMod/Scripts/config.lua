@@ -227,6 +227,16 @@ return {
         -- M10.02: the permanent supply of the goods that run out at home. Paid next to `goods`, with the same share. Values are TBD.
         finite_goods = { { id = 14, name = "iron", units_per_family = 10 }, { id = 145, name = "salt", units_per_family = 6 } },
     },
+    -- liege_influence (change add-liege-influence). Values are owner decisions of 2026-10-19 and 2026-10-20.
+    liege_influence = {
+        enabled = true,
+        influence_per_unit = 0.1,        -- influence for 1 silver of tribute (10 silver give 1 influence)
+        tribute_button_amount = 200,     -- silver sent by one click of the menu button
+        poll_ms = 100,                   -- real time between two looks at the click queue of the menu (never faster)
+        refresh_ms = 500,                -- real time between two refreshes of the menu labels
+        z_order = 500,
+        position = { X = 300, Y = 150 },
+    },
     -- M13 manor_stronghold. Values are TBD for playtests.
     manor_stronghold = {
         enabled = true,
