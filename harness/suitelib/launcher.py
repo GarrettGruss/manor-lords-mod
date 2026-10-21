@@ -26,7 +26,7 @@ GAME_CLOSE_GRACE_S = 10
 def close_game() -> None:
     """Stop the game after a run timeout. run.py was killed, so its own teardown did not run."""
     subprocess.run(
-        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(GAME_CLOSE_SCRIPT), "-GraceSeconds", str(GAME_CLOSE_GRACE_S)],
+        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(GAME_CLOSE_SCRIPT), "-Slot", "0", "-GraceSeconds", str(GAME_CLOSE_GRACE_S)],
         capture_output=True,
         text=True,
     )
