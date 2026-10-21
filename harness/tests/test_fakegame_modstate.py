@@ -282,5 +282,25 @@ class FeatureTests(unittest.TestCase):
         self.assertEqual(self.command(3, "mod_state_dump")["result"]["tags"], ["strength_Salt", "mstest_a"])
 
 
+    def test_the_tags_limit_commands_write_and_read_entries_on_the_pawn(self):
+        self.load_mod()
+        wrote = self.command(1, "tags_limit_write", target="pawn", label="ten", count=10, size=40)
+        self.assertTrue(wrote["ok"], wrote)
+        self.assertEqual(wrote["result"]["added"], 10)
+        read = self.command(2, "tags_limit_read", target="pawn", label="ten")["result"]
+        self.assertEqual(read["entry_count"], 10)
+        self.assertEqual(read["longest"], 44)
+        self.assertEqual(self.command(3, "tags_limit_read", target="pawn", label="other")["result"]["entry_count"], 0)
+
+    def test_the_tags_limit_commands_use_a_lord_and_fail_without_a_target(self):
+        self.load_mod()
+        self.game.obj("PawnCPP_AI", Tags=self.game.array([]))
+        self.assertTrue(self.command(1, "tags_limit_write", target="lord", label="mrk", count=1, size=40)["ok"])
+        self.assertEqual(self.command(2, "tags_limit_read", target="lord", label="mrk")["result"]["entry_count"], 1)
+        missing = self.command(3, "tags_limit_read", target="building", label="mrk")
+        self.assertFalse(missing["ok"])
+        self.assertIn("no target", missing["error"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -480,9 +480,11 @@ class Actions:
         fields["method"] = sack.check_method(method)
         answer = self._command("sack_buildings", **fields)
         before, after = answer["before"], answer["after"]
-        ok = answer["hit"] == answer["wanted"] and sack.rubble(after) - sack.rubble(before) == answer["hit"]
-        return self._record("sack_buildings", fields, ok, sack.rubble(before), sack.rubble(after),
-                            note=f"rubble buildings, wanted {answer['wanted']}, hit {answer['hit']}, method {method}")
+        # A fire needs game time before the building is rubble, so a burning building counts as hit (bug #325).
+        ruined = (lambda census: sack.rubble(census) + sack.burning(census)) if method == "fire" else sack.rubble
+        ok = answer["hit"] == answer["wanted"] and ruined(after) - ruined(before) == answer["hit"]
+        return self._record("sack_buildings", fields, ok, ruined(before), ruined(after),
+                            note=f"rubble (and burning for fire) buildings, wanted {answer['wanted']}, hit {answer['hit']}, method {method}")
 
     def sack_goods(self, percent: int | None = None, good: int | None = None, amount: int | None = None, store: int | None = None) -> dict:
         """Remove goods. `percent`: that share of every good (of one store when `store` is given). `good` and `amount`: units of one good.

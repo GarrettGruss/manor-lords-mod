@@ -25,7 +25,8 @@
     { "name": "finite_resources", "requires": ["mod_state"], "ids": {} },
     { "name": "tech_tree", "requires": ["bandits", "unit_balance", "mod_state", "manor_stronghold", "vassals", "tribute"], "ids": {} },
     { "name": "refugees", "requires": ["vassals", "bandits"], "ids": {} },
-    { "name": "tech_tree_widget", "requires": ["tech_tree"], "ids": {} }
+    { "name": "tech_tree_widget", "requires": ["tech_tree"], "ids": {} },
+    { "name": "liege_influence", "requires": ["mod_state", "tribute"], "ids": {} }
   ],
   "gate_scenarios": []
 }
