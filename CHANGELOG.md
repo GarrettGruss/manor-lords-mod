@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Raid carry cap for Hussite raids (change `add-raid-carry-caps`, #275): the plundered goods of a Hussite raid never exceed `raid_behavior.carry_cap` (10) times its raiders at the start, and `carry_cap` is its loot goal. The mod no longer cuts the loot of native raids or bandit role raids. `raid_behavior_state` shows `carry_cap` and `raid_type` of each raid.
 - Spike `spike-parallel-suite-speedup` (#151): suite `core` takes 296.7 s with `--slots 1` and 186.8 s with `--slots 3` (1.6x, not 3x, because a run is slower with 3 games). No bridge timeout in 15 parallel runs; the 15 s timeout stays. A run with `EXCLUSIVE = True` never overlaps another run. Notes in `openspec/changes/spike-parallel-suite-speedup/notes/`.
 - Feature `liege_influence` (change `add-liege-influence`, #271): the player pays silver from the lord treasury as tribute and gets influence (10 silver for 1 influence, no decay, no cap). Commands `liege_state` and `liege_send_tribute`, a tribute menu pak widget `WBP_LiegeTribute`, test scenarios `liege-influence-roundtrip`, `liege-send-tribute` and `liege-tribute-menu`.
 - Test scenario `meshy-agent-house` and pak `meshyhouse_P.pak` (change `add-meshy-agent-house-test`, #320): a house made with the Meshy CLI replaces a vanilla house mesh and shows its colour map. Spike commands `mesh_material_params` and `mesh_material_swap`.
