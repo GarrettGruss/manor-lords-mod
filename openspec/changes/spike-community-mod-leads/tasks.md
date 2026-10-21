@@ -8,4 +8,4 @@
 ## 2. Close
 - [x] 2.1 Write one note for each lead in `notes/`. Verified by review.
 - [x] 2.2 Move engine facts that stay true into the wiki. Verified by `wiki.py check`.
-- [ ] 2.3 Fill the test results table of the implementation pull request.
+- [x] 2.3 Fill the test results table of the implementation pull request.
