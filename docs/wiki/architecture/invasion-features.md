@@ -66,7 +66,9 @@ An arrow means "is required by". `example`, `unit_balance` and `manor_stronghold
 | tech_tree_widget | [M12](../../../openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/README.md) (iteration 02) | tech_tree | `scenarios/tech_tree/widget.py`, `widget_laws.py`, `widget_key.py` |
 | manor_stronghold | [M13](../../../openspec/changes/archive/2026-10-16-legacy-m13-manor-stronghold/README.md) | none | `scenarios/manor_stronghold/` |
 
-Specs without code: [M11 liege_influence](../../../openspec/changes/archive/2026-10-16-legacy-m11-liege-influence/README.md) is backlog (TBD). [M14 plundered_start](../../../openspec/changes/archive/2026-10-16-legacy-m14-plundered-start/README.md) is out of scope for the first release. Neither has a feature folder.
+The feature `liege_influence` (change `add-liege-influence`, #271, replaces the old M11 spec) needs `mod_state` and `tribute`. The player pays silver from the lord treasury as tribute (commands `liege_state`, `liege_send_tribute`, or the pak widget `WBP_LiegeTribute`) and gets influence: 10 silver for 1 influence, no decay, no cap. Test scenarios: `scenarios/liege_influence/`.
+
+Specs without code: [M14 plundered_start](../../../openspec/changes/archive/2026-10-16-legacy-m14-plundered-start/README.md) is out of scope for the first release. M14 has no feature folder.
 
 ## Features
 

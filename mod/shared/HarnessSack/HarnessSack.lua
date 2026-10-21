@@ -126,13 +126,13 @@ end
 -- Census (read only)
 ---------------------------------------------------------------------------------------------
 
-local function censusBuildings(buildings)
+local function censusBuildings(buildings, light)
     local counts = { total = #buildings, standing = 0, rubble = 0, burning = 0 }
     local stores = {}
     for _, building in ipairs(buildings) do
         if isRubble(building) then counts.rubble = counts.rubble + 1 else counts.standing = counts.standing + 1 end
         if read(function() return building.onFire end) == true then counts.burning = counts.burning + 1 end
-        local goods = goodsOf(building)
+        local goods = light and {} or goodsOf(building)
         if next(goods) ~= nil then
             stores[#stores + 1] = { id = buildingId(building), type = buildingType(building), goods = sumOf(goods), by_good = goods }
         end
@@ -159,12 +159,13 @@ local function censusPeople(region)
 end
 
 -- The state of the village: buildings by state, stock, stores (buildings that hold goods), people.
-function M.census(regionName)
+-- `light`: no goods are read (no inventory walk), only building states and people. Why: a struct read error crashes UE4SS (#327).
+function M.census(regionName, light)
     local region, problem = M.playerRegion(regionName)
     if not region then return nil, problem end
     local buildings = buildingsOf(region)
-    local counts, stores = censusBuildings(buildings)
-    return { buildings = counts, stock = censusStock(region), stores = stores, people = censusPeople(region),
+    local counts, stores = censusBuildings(buildings, light)
+    return { buildings = counts, stock = light and { total = 0, by_good = {} } or censusStock(region), stores = stores, people = censusPeople(region),
              region = read(function() return region.regionName:ToString() end) }
 end
 
@@ -313,11 +314,11 @@ end
 function M.sack_buildings(request)
     local region, problem = M.playerRegion(request.region)
     if not region then return { ok = false, error = problem } end
-    local before = M.census(request.region)
+    local before = M.census(request.region, request.light)
     local count = request.count or M.share(before.buildings.standing, request.percent or 0)
     local hit, err = M.destroy_buildings(region, count, request.method or "collapse")
     if not hit then return { ok = false, error = err } end
-    return { ok = true, wanted = count, hit = hit, method = request.method or "collapse", before = before, after = M.census(request.region) }
+    return { ok = true, wanted = count, hit = hit, method = request.method or "collapse", before = before, after = M.census(request.region, request.light) }
 end
 
 -- Remove goods: `amount` of `good` (from one building when `store` is given), or `percent` of every good (of one building when `store` is given).
@@ -341,10 +342,10 @@ end
 function M.sack_people(request)
     local region, problem = M.playerRegion(request.region)
     if not region then return { ok = false, error = problem } end
-    local before = M.census(request.region)
+    local before = M.census(request.region, request.light)
     local count = request.count or M.share(before.people.families or 0, request.percent or 0)
     local families, people = M.remove_families(region, count)
-    return { ok = true, wanted = count, families = families, people = people, before = before, after = M.census(request.region) }
+    return { ok = true, wanted = count, families = families, people = people, before = before, after = M.census(request.region, request.light) }
 end
 
 -- All three at once. Goods first: a fire takes the goods of a burning building by itself.
