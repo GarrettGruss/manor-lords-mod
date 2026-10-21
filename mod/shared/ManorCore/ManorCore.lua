@@ -380,16 +380,20 @@ end
 ---------------------------------------------------------------------------------------------
 
 -- Kill every member of `count` families (the first ones in the list). Returns families and people removed.
+-- Why two passes: a death changes the family array, so a family struct read after the first death can be stale.
+-- That crashed the game (#357). Collect all members first, then kill.
 function M.remove_families(region, count)
-    local removedFamilies, removedPeople = 0, 0
+    local members, removedFamilies = {}, 0
     for _, family in ipairs(listOf(region.workerFamilies)) do
         if removedFamilies >= count then break end
-        for _, member in ipairs(listOf(family.familyMembers)) do
-            if isValid(member) and read(function() return member.dead end) ~= true then
-                if pcall(function() member:just_die() end) then removedPeople = removedPeople + 1 end
-            end
-        end
+        for _, member in ipairs(listOf(family.familyMembers)) do members[#members + 1] = member end
         removedFamilies = removedFamilies + 1
+    end
+    local removedPeople = 0
+    for _, member in ipairs(members) do
+        if isValid(member) and read(function() return member.dead end) ~= true then
+            if pcall(function() member:just_die() end) then removedPeople = removedPeople + 1 end
+        end
     end
     return removedFamilies, removedPeople
 end
