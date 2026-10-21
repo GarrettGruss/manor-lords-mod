@@ -34,12 +34,23 @@ The mod SHALL NOT steer or rout a raid that runs under the native plunder AI, an
 - Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
 ### Requirement: Loot is capped per raider
-The mod SHALL cut the loot (`ItemsLooted`) of a raider to `carry_cap` (default 10) and write the cut value back to the game.
+The mod SHALL manage plundered quantities only for Hussite raids. The Hussite AI has raiding disabled, so the game does not manage the raid natively. The plundered goods of a Hussite raid SHALL NOT exceed `carry_cap` (default 10) for each raider at the start of the raid. The mod SHALL NOT change the loot (`ItemsLooted`) of a native raid; the game manages it.
+
+#### Scenario: A Hussite raid reaches its carry cap
+- **WHEN** a Hussite raid of 12 raiders plunders and the cap is 10
+- **THEN** its plundered goods stop at 120 or less
+- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
 #### Scenario: A raider carries 25
-- **WHEN** a raider carries more than the cap
-- **THEN** the loot is cut to the cap and the cut is counted in `capped`
+- **WHEN** a raider of a native raid carries 25
+- **THEN** the mod does not write its loot and `capped` stays 0
 - Checked by `harness/tests/test_fakegame_raid_behavior.py`.
+
+#### Scenario: A real Hussite raid under the cap
+- **WHEN** a Hussite raid runs until it leaves
+- **THEN** its plundered goods are at most `carry_cap` times its raiders at the start
+- **AND** the tracker state shows the cap that was used
+- Checked by `mod/InvasionMod/scenarios/raid_behavior/carry_caps.py`.
 
 ### Requirement: The loot of a dead raider goes to the nearest store
 When a raider dies in the village, the mod SHALL add its loot to the store that is nearest to the place of death, in the good that the store holds most of (`fallback_good` if the store is empty). If there is no store, the loot SHALL be counted as lost. A raider that walks off the map at or below `exit_y` (default -85000) SHALL keep its loot and count as a departure.
@@ -56,7 +67,7 @@ When a raider dies in the village, the mod SHALL add its loot to the store that 
 - Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
 ### Requirement: A role raid leaves for loot, losses or time
-The mod SHALL make an active role raid (a plunder raid with `roles = true`) leave when the goods it took reach `leave.loot_per_raider` (default 4) per raider at the start, or the share of dead raiders reaches `leave.loss_share` (default 0.5), or `leave.max_days` (default 25) game days passed since the spawn. The leave reason SHALL be `loot`, `losses` or `time`. A lord raid SHALL leave by peace with its lord, and the game removes the army. No raider SHALL stay on the map after the raid has left.
+An active role raid (`roles = true`) SHALL leave when its goods taken reach its loot goal per starting raider (`carry_cap`, default 10, for a Hussite raid; `leave.loot_per_raider`, default 4, otherwise), when dead raiders reach `leave.loss_share` (default 0.5), or after `leave.max_days` (default 25) game days. The reason SHALL be `loot`, `losses` or `time`. A lord raid SHALL leave by peace with its lord. No raider SHALL stay on the map after the raid left.
 
 #### Scenario: A forced role raid at difficulty 1
 - **WHEN** a role raid runs until it leaves
@@ -69,6 +80,12 @@ The mod SHALL make an active role raid (a plunder raid with `roles = true`) leav
 - **WHEN** the loss share is reached, or `max_days` is reached with the loot rule off
 - **THEN** the leave reason is `losses` or `time` and the rule fires once
 - Checked by `mod/InvasionMod/scenarios/raid_behavior/lord_leave_reason.py`.
+
+#### Scenario: A Hussite raid leaves when it is full
+- **WHEN** a Hussite raid of 12 raiders has plundered 120 goods and the cap is 10
+- **THEN** the leave reason is `loot`
+- **AND** it does not leave by loot at 48 goods (4 per raider)
+- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
 ### Requirement: A lord raid plunders the stores while it stands at the manor
 Once each game day, the mod SHALL take `plunder.per_unit_day` (default 1) goods from the village stores for each raider of a lord raid that stands within `plunder.battle_radius` (default 4000 units) of the manor. The tick SHALL stop at the loot goal of the leave rule. A native raid SHALL have no plunder tick.

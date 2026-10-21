@@ -1,13 +1,15 @@
 ---
 type: Concept
 title: Engine limits found by spikes
-description: Things the game does not allow from Lua or data, found by spikes and closed as not possible, with the evidence and the reason. Now holds buildings inside the manor bailey.
+description: Things the game does not allow from Lua or data, found by spikes, with the evidence and the reason. Holds buildings inside the manor bailey, and the results of the community mod lead spikes (Squad struct reads, dead units, unit growth, stances, mesh swap).
 tags: [engine, limits, bailey, manor, spike]
 generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-19T00:00:00Z }
 sources:
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/README.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/implementation-notes/bailey-buildings.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/
+  - resource: repo://openspec/changes/spike-community-mod-leads/notes/lead-1-2-stances.md
+  - resource: repo://openspec/changes/spike-community-mod-leads/notes/lead-1-5-building-mesh-swap.md
 ---
 # Engine limits found by spikes
 
@@ -23,3 +25,14 @@ Facts that stay true:
 - Not separated: a bailey rule, or no reachable road path because the palisade blocks roads (ring with one gate). A gate-free ring test was never run.
 
 Do not plan a feature that needs buildings inside the bailey.
+
+## Results of the community mod lead spikes (change `spike-community-mod-leads`, #280)
+
+Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the notes of the change.
+
+- **A `Squad` struct cannot be read.** `SquadComponent:GetSquad` and `getSquadByID` return the struct by value. Reading it ended the game (exit code 0xC0000409). So `Squad.behaviourStance`, `camp`, `campLocation` and `rallyingStatus` cannot be read from Lua. `HarnessLeads.READ_SQUAD_STRUCT` stays `false`. For lord armies read position, target and alive units from `lords_state`. `steer_state` gives 0 units for an AI lord squad.
+- **`SetBehaviourStance` can be called** (`SquadComponent:SetBehaviourStance({ Value = id }, 0 neutral | 1 aggressive | 2 defensive, false)`) without a crash. It returns nothing and cannot be read back. Its effect on a fight was not shown.
+- **Equipped ids** (`SMUnit:GetEquippedID(slot)`, slots 0 to 3) are plain numbers on a living unit. A unit that dies leaves the unit list at once, so the gear must be read before the death. The map from id to item was not found.
+- **`spawnCompleteUnit` adds a full squad** to an AI lord (3 calls: 1 squad of 32 became 4 squads of 128 units, and `lords_state` lists them). Its return value is a `Squad` struct: do not read it.
+- **`SetStaticMesh` swaps the mesh of a finished building** at once (component `StaticMeshComponent0` of an `SMBuilding`). A mesh that is already loaded is found with `StaticFindObject`. The collision shapes come from the new mesh (22 convex shapes became 0 with a sign post, and returned after the restore), while `GetCollisionEnabled` stays the same. Use `GetFullName` for a mesh path, not `GetPathName`.
+- **A command field must be in `parseRequest`** of `HarnessActions`. A field that is not listed arrives as `nil` and the command may read only, with no error.

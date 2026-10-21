@@ -1,13 +1,7 @@
 -- Pure rules of the vassals feature (M07). No game access, so a fake-game test can run them.
 local M = {}
 
-M.LOYALTY_MIN = 0
-M.LOYALTY_MAX = 100
 M.NO_REGION = "none"
-
-function M.clamp_loyalty(value)
-    return math.max(M.LOYALTY_MIN, math.min(M.LOYALTY_MAX, math.floor(value + 0.5)))
-end
 
 -- The goal is written only when it differs, because a write is a game call.
 function M.goal_needs_write(current, wanted)
@@ -46,24 +40,6 @@ end
 -- A lord that added fewer than min_new buildings stalled.
 function M.is_stalled(before, now, min_new)
     return now - before < min_new
-end
-
--- A season tick runs when the season differs from the saved one. A saved -1 means "not known yet": no tick.
-function M.season_changed(current, last)
-    return last >= 0 and current ~= last
-end
-
--- Why a gift is refused, or nil.
-function M.gift_refusal(silver, gift)
-    if silver < gift.cost then return string.format("not enough silver (%d, need %d)", silver, gift.cost) end
-    return nil
-end
-
--- What a vassal does at a season change: "submit" at or under submit_at, "return" at or over return_at when submitted, else nil.
-function M.submission_action(loyalty, submitted, config)
-    if not submitted and loyalty <= config.submit_at then return "submit" end
-    if submitted and loyalty >= config.return_at then return "return" end
-    return nil
 end
 
 -- A relation tag that means war.
