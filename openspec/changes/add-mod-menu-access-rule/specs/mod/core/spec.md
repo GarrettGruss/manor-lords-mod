@@ -27,3 +27,17 @@ Each mod root menu SHALL have its own button in the game's bottom bar, after the
 - **WHEN** a picture of the bottom bar is taken
 - **THEN** the mod buttons have the same size and frame as the game's buttons next to them
 - Not checked yet (planned: picture evidence, reviewed by the owner).
+
+### Requirement: Mod menus are fullscreen and block clicks to the game
+Each mod menu SHALL cover the full screen, like the game's developments menu. While a mod menu is open, a mouse click SHALL NOT reach the game world or the game HUD behind the menu. A click on the menu SHALL act only on the menu.
+
+#### Scenario: A click on the menu does not reach the world
+- **WHEN** a mod menu is open over a burgage plot, and the player clicks a menu button at the place of the plot
+- **THEN** the menu button acts
+- **AND** the plot is not selected and no game panel opens
+- Not checked yet (planned: a test scenario per menu, with picture evidence).
+
+#### Scenario: A menu covers the full screen
+- **WHEN** a mod menu is open
+- **THEN** it covers the full screen, like the developments menu
+- Not checked yet (planned: picture evidence).

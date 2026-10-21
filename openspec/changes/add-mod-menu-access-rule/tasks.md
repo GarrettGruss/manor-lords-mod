@@ -6,6 +6,7 @@
 ## 2. Build
 - [ ] 2.1 Add the raid menu button to the bottom bar and open the raid menu from it.
 - [ ] 2.2 Add the tech tree menu button to the bottom bar and open the tech tree menu from it.
+- [ ] 2.3a Make each mod menu fullscreen like the developments menu, and block clicks from reaching the game behind it (no burgage plot or HUD reacts to a menu click); verify with a real game run and a picture.
 - [ ] 2.3 Test scenarios: each root menu opens in at most 2 clicks with no key press. Update the "Checked by" lines.
 - [ ] 2.4 Picture evidence of the entry point and both menus in `evidence/`.
 

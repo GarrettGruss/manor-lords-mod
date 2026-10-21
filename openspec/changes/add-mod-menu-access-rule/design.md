@@ -4,6 +4,7 @@
 - The rule counts clicks from the normal game view with no mod menu open, to the root menu shown on screen.
 - Owner decision (2026-10-20): one button per root menu, not one shared "Mods" button. Each button opens its menu in 1 click.
 - Owner decision (2026-10-20): the buttons sit in the game's bottom bar, after the game's own buttons, and look like the game's own buttons (size, icon frame, font, hover and pressed states). The player cannot hide them. This is option (a) of `notes/ui-entry-point.md`: a button added into an existing game HUD widget at run time. It was not tried in spike 1.1, so spike 1.3 must prove it.
+- Owner decision (2026-10-20): every mod menu is fullscreen, like the developments menu, and blocks clicks so they never reach the game behind it (for example a burgage plot).
 - Keys stay as shortcuts. The rule only forbids a menu that needs a key.
 
 ## Open questions
