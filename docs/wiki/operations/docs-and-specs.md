@@ -91,7 +91,7 @@ The legacy mod layout was `M<NN>-<feature>/` with `README.md`, `iterations/<NN>-
 - Status labels: `status: in progress`, `status: blocked`, `status: awaiting user` (with `status: blocked` when the user is the blocker). Comment when the status changes, a spike ends, or a branch merges. Close the issue when the change is merged.
 - Commits are atomic and use Conventional Commits: `<type>(<scope>): <summary>`, imperative, under 72 characters. Reference the issue (`Refs #<n>` in commits and the spec PR, `Closes #<n>` in the implementation PR).
 - Commits are approved by the user (2026-10-18): commit each logical change on its branch when it is done. Never skip hooks. Never force push.
-- Gate pull requests (spec and implementation) are merged by the user after approval on GitHub. A pull request without a gate (no change folder, no spec change, no test acceptance) may be merged by an agent after the full tests pass. Merge stacked PRs in order, and retarget the next PR to `main` before its merge. Do not push or merge in other cases unless the user asks.
+- Every pull request needs 1 approval from the owner on GitHub (ruleset on `main`). Agents open pull requests as the bot account `garrettgruss-bot` and turn on auto-merge, so the approval merges the pull request. Agents never approve or merge by hand. Merge stacked PRs in order, and retarget the next PR to `main` before its merge. Do not push in other cases unless the user asks.
 - `gh pr edit` fails on this repo (a GraphQL error about classic projects). Change a body with `gh api -X PATCH repos/GarrettGruss/manor-lords-mod/pulls/<n> -F "body=@<file>"`.
 - Details, conflict hints and the test set to run before a push: `.claude/skills/harness-git-workflow/SKILL.md`.
 

@@ -5,7 +5,7 @@ description: Branch, commit, push, open and merge pull requests for this repo, a
 
 # Git workflow for this repo
 
-Rules are in CONTRIBUTING.md (the agent permissions in CLAUDE.md): atomic Conventional commits, two review gates per OpenSpec change, CHANGELOG kept current. Gate 1 is a spec pull request, gate 2 an implementation pull request; the user approves and merges both on GitHub. Do not merge a gate pull request yourself. A pull request without a gate (no change folder, no spec change, no test acceptance) may be merged by you after the full tests pass (CLAUDE.md, Permissions from the user).
+Rules are in CONTRIBUTING.md (the agent permissions in CLAUDE.md): atomic Conventional commits, two review gates per OpenSpec change, CHANGELOG kept current. Gate 1 is a spec pull request, gate 2 an implementation pull request; the owner approves both on GitHub and auto-merge merges them. Every pull request, with or without a gate, needs that approval. Never approve or merge a pull request yourself (CLAUDE.md, Permissions from the user).
 
 ## Branch and commit
 - Gate 1: branch `spec/<change-name>` from an up-to-date `main`. Commit only the change folder (proposal, delta specs, design, tasks). No code, no archive.
@@ -26,11 +26,14 @@ Rules are in CONTRIBUTING.md (the agent permissions in CLAUDE.md): atomic Conven
 ## Pull request
 `gh` is not on the PATH of the shells. Use `C:\Program Files\GitHub CLI\gh.exe`.
 - Write the body to a file and use `--body-file` (quoting inline bodies breaks). Follow `.github/pull_request_template.md`: Summary, Spec changes, Test results (a table: check, run id or test file, verdict, key number or range), Evidence, Not verified. No raw logs; "None" for an empty section. End with the line the session gives (`🤖 Generated with [Claude Code](https://claude.com/claude-code)`).
-- Gate 1: `gh pr create --base main --head spec/<change-name> ...` with `Refs #<n>`. Then mark the issue `status: awaiting user` and stop. Do not start gate 2 before the user merges.
+- `gh` runs as the bot account `garrettgruss-bot` (check: `gh api user --jq .login`). The owner cannot approve a pull request from their own account, so never open one as the owner.
+- After `gh pr create`, turn on auto-merge: `gh pr merge <n> --auto --merge`. GitHub merges when the owner approves (ruleset on `main`: 1 approval, stale approvals dismissed on push). Never approve, review or merge by hand.
+- Gate 1: `gh pr create --base main --head spec/<change-name> ...` with `Refs #<n>`. Then mark the issue `status: awaiting user` and stop. Do not start gate 2 before the pull request is merged.
 - Gate 2: before you open the pull request, finish it: run the full tests, put picture evidence in `evidence/` when the result is visual, move lasting engine facts from `notes/` into the wiki, run `openspec archive <change-name> --yes`, check the merged living spec, commit `docs(openspec): archive <change-name>` and push. Then `gh pr create ... --body-file <file>` with `Closes #<n>`, and mark the issue `status: awaiting user`.
 - Link pictures with the commit SHA: `https://github.com/GarrettGruss/manor-lords-mod/raw/<sha>/openspec/changes/archive/<date>-<change-name>/evidence/<file>.png`.
 - `gh pr edit` fails on this repo (a GraphQL error about classic projects). Change a body with `gh api -X PATCH repos/GarrettGruss/manor-lords-mod/pulls/<n> -F "body=@<file>"`.
-- Merge only a pull request without a gate: `gh pr merge <branch-or-number> --merge`. If GitHub says "not mergeable" right after you pushed a merge, wait a few seconds and check `gh pr view <n> --json mergeable,mergeStateStatus`.
+- A pushed fix after an approval dismisses it. The owner must approve again. Check the state with `gh pr view <n> --json reviewDecision,mergeStateStatus,autoMergeRequest`.
+- When `main` moves and the pull request conflicts, merge `origin/main` into the branch, run the tests and push. Auto-merge stays on.
 - After a merge: `git checkout main && git pull`. If a gate 2 pull request was merged without its archive commit, archive on a new branch as its own commit.
 
 ## Merge conflicts

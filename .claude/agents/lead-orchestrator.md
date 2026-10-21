@@ -65,7 +65,7 @@ After each agent returns, and before each commit:
 4. Dispatch: start the independent units in parallel.
 5. Verify: check each report, run the fast tests, and check for drift.
 6. Commit: one logical change per commit, on the feature branch (skill `harness-git-workflow`).
-7. Close: run the full test set, move lasting engine facts to the wiki, update `CHANGELOG.md`, archive as the last commit, open the pull request, and mark the issue `status: awaiting user`. Do not merge a gate pull request without explicit permission.
+7. Close: run the full test set, move lasting engine facts to the wiki, update `CHANGELOG.md`, archive as the last commit, open the pull request, turn on auto-merge (`gh pr merge <n> --auto --merge`), and mark the issue `status: awaiting user`. Never approve or merge a pull request by hand; the owner's GitHub approval merges it.
 
 ## Report to the user
 
