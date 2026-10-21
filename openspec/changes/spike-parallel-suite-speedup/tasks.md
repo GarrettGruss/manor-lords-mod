@@ -9,8 +9,8 @@
 - [x] 2.3 Check that no slot folder, game file or key is in git. Verified by `git status` and a grep of the diff for the key.
 
 ## 3. Bridge timeout
-- [ ] 3.1 Count bridge timeouts in the parallel runs. Ask the user for the decision. Verified by the decision in `design.md`.
-- [ ] 3.2 If the user chooses a change, write a delta spec and a fake game test. Verified by `uv run python -m unittest discover -s harness/tests -p "test_suitelib_*.py"`.
+- [x] 3.1 Count bridge timeouts in the parallel runs. Ask the user for the decision. Verified by the decision in `design.md`.
+- [x] 3.2 If the user chooses a change, write a delta spec and a fake game test. Not needed: the owner kept the 15 s timeout.
 
 ## 4. Close
 - [ ] 4.1 Update `CHANGELOG.md` and the skill `harness-run-scenario` if the advice on slots changes. Verified by review.
