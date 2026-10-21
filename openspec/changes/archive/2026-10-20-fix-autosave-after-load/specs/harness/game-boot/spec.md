@@ -22,9 +22,9 @@ HarnessBoot SHALL restart the pawn autosave timer with a period of one year thro
 #### Scenario: The timer is pushed away after a load
 - **WHEN** a world is loaded after `READY` in the same game session
 - **THEN** the autosave timer of the new player pawn is far away again, and the log has one push line for that load
-- Not checked yet.
+- Checked by `harness/tests/test_fakegame_harnessautosave.py` and `harness/scenarios/autosave_after_load.py`.
 
 #### Scenario: The push after a load fails
 - **WHEN** the timer still shows the setting period after the push and its retries
 - **THEN** the harness log has an error that says the autosave timer was not pushed away after a load
-- Not checked yet.
+- Checked by `harness/tests/test_fakegame_harnessautosave.py`.

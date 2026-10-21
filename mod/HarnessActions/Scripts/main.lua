@@ -150,6 +150,8 @@
 --   {"command":"manor_blueprint_add","type":58,"x":0,"y":0,"z":0,"yaw":0,"commit":true}   spike (#63): add a manor planner blueprint (mesh actor tagged bType_<type>) without the mouse, then convertBlueprintsToBuildings
 --   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
 --   {"command":"wagen_state"} / {"command":"wagen_apply","manor":123,"wall_mesh":"/Game/HarnessMod/..","keep_mesh":".."} / {"command":"wagen_revert"}   spike (spec 32 part 2): set the wall and keep meshes of ONE manor; revert restores them
+--   {"command":"mesh_material_swap","mesh":"<name part>","near_x":0,"near_y":0,"mode":"borrow"}   spike: our model draws with a game material ("lend": a game building draws with ours)
+--   {"command":"mesh_material_params","mesh":"<name part>","near_x":0,"near_y":0,"scalars":"a=1,b=0"}   spike: live material parameters of one mesh component
 --   {"command":"mesh_actors","mesh":"PalisadeWallNarrow"}   spike (spec 32), read only: owner class and position of the actors whose mesh matches
 --   {"command":"steer_state","squad":41}                    spike #59, read only: owner side, living units, centre and mean unit target of a squad
 --   {"command":"steer_move","squad":41,"x":0,"y":0,"half_width":300}   spike #59: PawnCPP:formALineArmy of the owner pawn, one squad, a line across the way to the point
@@ -613,6 +615,8 @@ local COMMANDS = {
     manor_planner = walls.manor_planner,
     mesh_users = walls.mesh_users,
     mesh_actors = walls.mesh_actors,
+    mesh_material_params = walls.mesh_material_params,
+    mesh_material_swap = walls.mesh_material_swap,
     construction_complete = walls.construction_complete,
     path_obstacles_clear = walls.path_obstacles_clear,
     building_stat_write = walls.building_stat_write,

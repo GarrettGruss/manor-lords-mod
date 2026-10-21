@@ -38,9 +38,12 @@ Plain note: generated models (Customer Output) may be shipped in the mod. Do not
 - Never create an account. Never buy credits or change the plan. If the key is missing or credits are out, stop and ask the user.
 
 ## Grey material rule
-Always use a material INSTANCE of a game master material (spec 33). `meshy_material.py` does it: instance `MI_Meshy` of `/Game/NotStronghold/Buildings/TudorWall/tudorWall01`, with `d` = base colour, `n` = normal, `spec` = roughness, `AO` = white.
+Always use a material INSTANCE of a game master material (spec 33). `meshy_material.py` does it: instance `MI_Meshy` of `/Game/Megascans/MegascansStandard` (older: tudorWall01), with `Base` = base colour, `Normal` = normal, `AO` = white.
 
 Why: the UE import makes a plain material. The cook puts its shader code in a shader library file, and a mod pak ships none. The game has no code for it and draws a fallback grey. A material instance of a game master needs no new shader code. Specs 21, 30, 31 and 32 meshes were grey for this reason. Details: `openspec/changes/archive/2026-10-18-legacy-33-meshy-materials/implementation-notes/cause-and-fix.md`. `retarget_material.py` fixes a mesh that was imported earlier.
+
+## No static switch overrides (issue #320)
+The material instance must set NO static switch or static component mask. Only texture, scalar and vector values. A static override makes the cooked instance need its own shader map, which a pak cannot ship, and the game draws a pale fallback. `meshy_material.py` does it by default (`NO_STATIC_SWITCHES=1`) with the master `MegascansStandard` (`Base`, `Normal`, `AO`). Check with `pakmod.py tojson` of `MI_Meshy`: no `bHasStaticPermutationResource`. Details: `openspec/changes/add-meshy-agent-house-test/notes/import.md`.
 
 ## Known limits
 - Scale: Meshy size is arbitrary. Set the size on import to the real size (for example a wagon 240 cm long, a ring about 14.6 m). Base on the ground (z 0). Check the size in UE after import.

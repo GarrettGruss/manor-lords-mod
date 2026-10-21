@@ -38,6 +38,9 @@ def swap_files(target: Path, mesh_folder: str) -> None:
             (folder / (stem + extension)).unlink(missing_ok=True)
     cooked = COOKED / mesh_folder
     for stem in KEEP_STEMS:
+        for extension in EXTENSIONS:  # a stale bulk file must not stay when the new cook has none (NeverStream)
+            if not (cooked / (stem + extension)).is_file():
+                (folder / (stem + extension)).unlink(missing_ok=True)
         found = [cooked / (stem + extension) for extension in EXTENSIONS if (cooked / (stem + extension)).is_file()]
         if not found:
             fail("cooked file missing: " + str(cooked / stem))
