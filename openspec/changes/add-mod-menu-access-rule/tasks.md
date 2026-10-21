@@ -1,7 +1,7 @@
 ## 1. Spike
 - [x] 1.1 Find how a pak or Lua adds a clickable entry point to the game UI (HUD button or a button in an existing game menu). Write `notes/ui-entry-point.md`.
 - [x] 1.2 Owner picks the entry point and answers design question 2 (2026-10-20: one button per menu, in the bottom bar after the game's buttons, in the game's format, not hideable).
-- [ ] 1.3 Spike: find the bottom bar widget and its panel, add a button after the game's buttons at run time, and copy the game's button style. Write `notes/bottom-bar-spike.md`; verify with a real game run and a picture.
+- [x] 1.3 Spike: find the bottom bar widget and its panel, add a button after the game's buttons at run time, and copy the game's button style. Write `notes/bottom-bar-spike.md`; verify with a real game run and a picture. (done for the button; click blocking of a Border is NOT proven, see notes)
 
 ## 2. Build
 - [ ] 2.0 Build the extensible base menu `mod/InvasionMod/Scripts/core/menu.lua` (create, open, close, fullscreen, click blocking, bottom bar button, one menu at a time, `register`); verify with fake game tests.
