@@ -7,7 +7,7 @@ For the menu of #308 (the player sees only the mod button): use way 4, "detach t
 - Residual risk: the reply letter stays in InBox (unopened, `wasOpened` false), so the game may still show a mailbox marker. Not checked.
 - Alternative (not tried): replace the `DT_Para` reply rows with a pak. It changes data that the game uses everywhere, so it is worse for a player mod.
 
-Questions for the owner:
+Owner decision (2026-10-21): hiding the banner is enough, and the letter may stay in InBox. Questions asked:
 1. Is hiding the banner enough, or must the letter also leave InBox?
 2. Is it fine that a banner of another quest message that appears in the same seconds may be hidden?
 

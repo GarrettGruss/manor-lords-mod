@@ -23,3 +23,10 @@ Facts that stay true:
 - Not separated: a bailey rule, or no reachable road path because the palisade blocks roads (ring with one gate). A gate-free ring test was never run.
 
 Do not plan a feature that needs buildings inside the bailey.
+
+## Bandit letter banner: hide it, do not stop it (spike #343)
+- The reply letter and its banner come from native code. No hook sees them (`addToInbox`, `playEventMessage`, `playMessage` and others stay silent). A UE4SS pre-hook cannot cancel a UFunction.
+- The banner is the widget class `questMessageElaborate_C`. It appears about 6 game seconds after `PawnCPP:sendLetter`.
+- Setting `read` or `wasOpened`, or emptying `InBox`, does not stop the banner.
+- What works: `RemoveFromParent` on live `questMessageElaborate_C` widgets that were not in the list taken before the send (run `s343-b1`). The letter stays in InBox, unopened. The game does not crash. The mod must hide the banner for each letter.
+- Owner decision 2026-10-21: hiding the banner is enough; the letter may stay in the inbox. Notes: `openspec/changes/archive/2026-10-21-spike-bandit-message-toggle/notes/`.
