@@ -55,3 +55,10 @@ Meaning: the test setup is fine (the vanilla upgrade finishes in 1 day). The new
 - So the new building id 486 as the source is not the cause: a new upgrade row fails on a vanilla source too, while vanilla row 14 works on the same building (`rowid-control-a`).
 - Row 119 and row 14 differ only in the row id (119, new) and in `upgradesInto` (126, a new building id, instead of 97). So the cause is the new upgrade id OR the new target building id (126). The pending cost is read from the new row, but the request is not carried out.
 - Not separated: a control with a new upgrade id into a vanilla target (row 120 = row 14, `upgradesInto` 97), or vanilla row 14 retargeted to 126. The run cap is used. Task 1.2 is NOT checked. Rule for now: do not rely on a new DT_Upgrades row for an upgrade that finishes. Task 2.1 (change the id rule for upgrades) needs the owner.
+
+### Separating control (run `rowid-control-f`, pak `rowid3`)
+Vanilla row 14 (id kept) with `upgradesInto` retargeted to the new building 126, on vanilla post 30. Result: the request is carried out like a vanilla one (the post is replaced within a game day, no stuck `needs`). But after 40 game days there is no building of type 126 (`getBuildingCount` 126 = 0, no site). A new master of type 30 stands there from day 5.
+Conclusion (two separate effects):
+1. A NEW upgrade id (119, 117) is not carried out: the request only copies the cost into `needs`, and the building stays (runs b and e, on 486 and on vanilla 30). The id is not found by whatever executes the upgrade. A vanilla id with the same fields works.
+2. A new building id as `upgradesInto` target does not give a building of the new type: the result reads as type 30 (the clone's blueprint type?), not 126. Not examined further (the type read after an upgrade may come from the old data row; open).
+So: do not use new `DT_Upgrades` ids, and do not rely on `upgradesInto` to a new building id. Placement and save/load of new building ids still work (1.1). Task 1.2 is NOT checked: the result is negative and needs the owner (task 2.1: id rule for `DT_Upgrades`, `harness/pak-mods`).
