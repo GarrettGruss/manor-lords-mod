@@ -2,11 +2,11 @@
 
 Write findings to `notes/<topic>.md`, one file per topic.
 
-- [ ] 1.1 Find the corpse pit: class, building id in `DT_Buildings`, how villagers carry bodies to it (the job, the corpse or body actor), and the events or UFunctions for body delivery or burial. Can Lua hook the moment a body arrives? (`notes/corpse-pit.md`)
-- [ ] 1.2 Can the mod tell which raider a body belongs to (raider unit or squad of a mod raid), so it can spawn the loot of that raider? (`notes/body-owner.md`)
-- [ ] 1.3 Can goods be spawned on the ground or in a pile at the pit (a dropped goods or resource pile actor)? Do villagers haul them to storage by themselves? Compare with the direct store add (`world.deposit`). (`notes/goods-pile.md`)
-- [ ] 1.4 What happens when no corpse pit exists, or bodies are not collected? Define the fallback to today's direct store add. (`notes/fallback.md`)
-- [ ] 1.5 Picture evidence of goods at the pit (`ctx.screenshot`), in `evidence/` with `evidence/README.md`.
+- [x] 1.1 Find the corpse pit: class, building id in `DT_Buildings`, how villagers carry bodies to it (the job, the corpse or body actor), and the events or UFunctions for body delivery or burial. Can Lua hook the moment a body arrives? (`notes/corpse-pit.md`)
+- [x] 1.2 Can the mod tell which raider a body belongs to (raider unit or squad of a mod raid), so it can spawn the loot of that raider? (`notes/body-owner.md`)
+- [x] 1.3 Can goods be spawned on the ground or in a pile at the pit (a dropped goods or resource pile actor)? Do villagers haul them to storage by themselves? Compare with the direct store add (`world.deposit`). (`notes/goods-pile.md`)
+- [x] 1.4 What happens when no corpse pit exists, or bodies are not collected? Define the fallback to today's direct store add. (`notes/fallback.md`)
+- [x] 1.5 Picture evidence of goods at the pit (`ctx.screenshot`), in `evidence/` with `evidence/README.md`.
 
 ## 2. Owner decisions
 
