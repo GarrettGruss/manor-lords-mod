@@ -180,7 +180,7 @@ return {
             deposit_tries = 10,              -- buildings tried when the grain is put into the new capital
         },
     },
-    -- M07 vassals. Values are TBD for playtests (M00 gives no loyalty numbers).
+    -- M07 vassals. Values are TBD for playtests .
     vassals = {
         enabled = true,
         poll_ms = 2000,          -- real time between two checks of the goal
@@ -192,16 +192,13 @@ return {
         keep_peace = true,       -- declare peace again when a vassal lord is at war with the player (TBD: the lords started the war by themselves)
         growth_check_days = 10,  -- game days after the handover until the mod checks that the lord built
         growth_min_buildings = 3, -- fewer new buildings than this means the lord stalled (real runs: +10 or +0)
-        -- Iteration 03. Policies and the gift order are mod-owned. Values are TBD for playtests.
+        -- Iteration 03. Policies are mod-owned. Values are TBD for playtests.
         policies = {
-            light = { tribute = 0.5, loyalty = 3 },   -- tribute factor on the M08 share, loyalty change at each season change
-            fair = { tribute = 1.0, loyalty = 0 },
-            heavy = { tribute = 1.5, loyalty = -5 },
+            light = { tribute = 0.5 },   -- tribute factor on the M08 share
+            fair = { tribute = 1.0 },
+            heavy = { tribute = 1.5 },
         },
-        gift = { cost = 50, loyalty = 10 },            -- order "send a gift": silver cost and loyalty gain
-        submission = { submit_at = 10, return_at = 40 }, -- iteration 04: loyalty at or under submit_at: the vassal serves the invader; at or over return_at it returns (TBD)
         loss_region = "forget",   -- test loss: "forget" (the lord keeps the land, the slot is freed) or "take_by_lord" (another lord is given the land; crashed the game in the first run)
-        loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
     },
     -- M10 finite_resources. Home deposits are a mod-owned stock. Values are TBD for playtests (M00: last 2 to 4 game years at normal use).
     finite_resources = {
@@ -219,10 +216,8 @@ return {
         enabled = true,
         poll_ms = 2000,           -- real time between two looks at the season
         units_per_family = 20,    -- production units of one family in one season (TBD)
-        share_min = 0.10,         -- share of the production at loyalty 0
-        share_max = 0.30,         -- share of the production at loyalty 100
+        share = 0.20,             -- share of the production that a vassal sends (fixed; decision of 2026-10-20: no vassal loyalty)
         siege = { days = 8, min_living = 0.5, poll_ms = 2000 }, -- M02.07: a subjugation raid on a vassal takes it after days with min_living share of units (TBD)
-        protection = { defended = 5, undefended = -15 }, -- iteration 02: loyalty change of a vassal after a raid on its region (TBD)
         goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally
         -- M10.02: the permanent supply of the goods that run out at home. Paid next to `goods`, with the same share. Values are TBD.
         finite_goods = { { id = 14, name = "iron", units_per_family = 10 }, { id = 145, name = "salt", units_per_family = 6 } },

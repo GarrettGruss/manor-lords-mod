@@ -38,9 +38,9 @@ local function enacted_ids() return rules.parse_ids(state:get("tech_laws")) end
 local function totals() return rules.totals(tree, unlocked_ids(), last_garrison, enacted_ids()) end
 
 local function totals_text(values)
-    return string.format("%s|%s|%s|%s|%s|%s|%s|%s|%s", values.order_bonus, values.approval_bonus, values.buy_back_multiplier,
+    return string.format("%s|%s|%s|%s|%s|%s|%s|%s", values.order_bonus, values.approval_bonus, values.buy_back_multiplier,
         values.militia_attack_multiplier, values.militia_defence_multiplier, values.manor_storage_bonus, values.retinue_bonus,
-        values.tribute_share_multiplier, values.vassal_loyalty_bonus)
+        values.tribute_share_multiplier)
 end
 
 -- Push the effects to the features that own the game values. Only a change is pushed.
@@ -53,7 +53,6 @@ local function apply_effects()
     unit_balance.set_militia(values.militia_attack_multiplier, values.militia_defence_multiplier)
     manor_stronghold.set_modifiers({ storage_bonus = values.manor_storage_bonus, retinue_bonus = values.retinue_bonus })
     tribute.set_share_factor(values.tribute_share_multiplier)
-    vassals.set_loyalty_bonus(values.vassal_loyalty_bonus)
     core.log.info(TAG, "TECH_TREE effects applied " .. text)
 end
 
