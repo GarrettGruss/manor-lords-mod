@@ -105,8 +105,8 @@ Changes unit values: armor, weapon, reach and veterancy. A new unit with low def
 Commands: `unit_balance_state`, `unit_balance_set`, `unit_balance_apply`.
 
 ### vassals (M07)
-Keeps a registry of vassal slots in ModState: region, lord name, loyalty and start day. The game goal is Endless, so a claim never ends the game (spec 26). Loyalty, keep peace, policy, gifts, loss of a vassal and a submission tick are implemented.
-Commands: `vassals_state`, `vassals_claim`, `vassals_set_loyalty`, `vassals_set_keep_peace`, `vassals_set_policy`, `vassals_order_gift`, `vassals_loyalty_tick_now`, `vassals_lose`, `vassals_set_loss_region`, `vassals_submission_tick_now`, `vassals_set_goal`.
+Keeps a registry of vassal slots in ModState: region, lord name and start day. The game goal is Endless, so a claim never ends the game (spec 26). Keep peace, policy (it scales the tribute) and loss of a vassal are implemented. A vassal has no loyalty: it survives or dies. Old saves hold `loyalty` and `submitted` entries in the registry; ModState keeps them as unknown entries and the feature ignores them.
+Commands: `vassals_state`, `vassals_claim`, `vassals_set_keep_peace`, `vassals_set_policy`, `vassals_lose`, `vassals_set_loss_region`, `vassals_set_goal`.
 
 ### sack_and_terms (M06)
 Files: `init.lua` (sack), `terms.lua` (terms), `fallback.lua` (fallback capital), each with a `*_rules.lua`. When a role raid begins to leave because it won, the town loses a share of buildings, stock and families. The share grows with difficulty. Terms and the fallback capital are first forms (marked TBD in the source): the player pays to make a fortified vassal the fallback capital, the mod takes the region back from its lord, moves grain and sends settlers. Moving units and removing families are not done (spikes S11 and S8).
