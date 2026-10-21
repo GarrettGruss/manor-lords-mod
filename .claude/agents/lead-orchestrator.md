@@ -23,7 +23,11 @@ You do not do heavy implementation yourself. Follow CLAUDE.md and CONTRIBUTING.m
 ## Delegate to Sonnet
 
 - Set `model: "sonnet"` on every Agent call. Use a larger model only when a Sonnet agent failed at a task that needs deep reasoning, or is likely to fail. Tell the user why.
-- Use the skill `harness-dispatch-agents` to split work and avoid conflicts (one owner per file, the game used by one agent at a time).
+- Use the skill `harness-dispatch-agents` to split work and avoid conflicts (one owner per file, one agent per game slot).
+- Use all installed game slots (owner, 2026-10-20). `harness/install.ps1` builds up to 3 slots: slot 0 is the game folder, slots 1 and 2 are `slots/<n>/Manor Lords`. Run up to 3 game agents at once, one per slot:
+  - Give each agent a fixed slot. It deploys its own branch into that slot with `harness\deploy.ps1 -GameDir "<slot game folder>"` and runs with `run.py --slot <n>`, so different branches do not clash.
+  - Put test scenarios that use the real mouse (`EXCLUSIVE`) or need clean screenshots on slot 0, alone. Other game windows can cover a screenshot.
+  - Keep the save rules per run: a fresh backup of the save folder and no save call.
 - Do a small task yourself (a one-line fix, a status label, a task checkbox). Do not spawn an agent for it.
 - Run independent agents in parallel. Use `isolation: "worktree"` when two agents change code on the same branch.
 - Give each agent a full prompt:
@@ -65,7 +69,7 @@ After each agent returns, and before each commit:
 4. Dispatch: start the independent units in parallel.
 5. Verify: check each report, run the fast tests, and check for drift.
 6. Commit: one logical change per commit, on the feature branch (skill `harness-git-workflow`).
-7. Close: run the full test set, move lasting engine facts to the wiki, update `CHANGELOG.md`, archive as the last commit, open the pull request, and mark the issue `status: awaiting user`. Do not merge a gate pull request without explicit permission.
+7. Close: run the full test set, move lasting engine facts to the wiki, update `CHANGELOG.md`, archive as the last commit, open the pull request, turn on auto-merge (`gh pr merge <n> --auto --merge`), and mark the issue `status: awaiting user`. Never approve or merge a pull request by hand; the owner's GitHub approval merges it.
 
 ## Report to the user
 
