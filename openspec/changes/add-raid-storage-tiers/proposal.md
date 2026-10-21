@@ -14,6 +14,11 @@ The design (M00) says that a guarded store loses less than an open store, and th
 - Baron AI raid: baron units cannot pillage or steal. The mod steals in Lua. A baron unit that is farther from the battle marker than a threshold is "stealing" and takes a set amount of goods per game day from tier 1 stores, until the raid reaches its steal goal.
 - Stretch goal: a tech "Manor" in a third, common branch of the tech tree. It unlocks storage under the manor with the capacity and job slots of a level 1 storehouse.
 
+## Owner decisions after the spikes (2026-10-20)
+
+- A game raid robs the manor store (spike: 31 and 39 of 100 stone). Accepted: the game manages game raids, and the mod does not protect or restore the manor store in them. The tier 2 rule applies to the mod steal of baron AI raids only.
+- The steal distance threshold is 200 m (owner choice: about 150 to 200 m). The army fights about 140 m from the battle marker, so units outside the fight steal.
+
 ## Non-goals
 
 - The ruin rebuild discount. Dropped on 2026-10-19: the game manages ruin rebuild.

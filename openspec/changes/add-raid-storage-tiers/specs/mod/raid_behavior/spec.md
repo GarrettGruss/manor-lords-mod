@@ -2,10 +2,10 @@
 <!-- Issue: #276 -->
 
 ### Requirement: Stores have a tier
-The mod SHALL give each store type a tier from the feature config. Tier 1 SHALL be the storehouse and the granary. Tier 2 SHALL be the manor storage. Raiders SHALL be able to steal from tier 1. Raiders SHALL NOT steal from tier 2.
+The mod SHALL give each store type a tier from the feature config. Tier 1 SHALL be the storehouse and the granary. Tier 2 SHALL be the manor storage. The mod SHALL steal only from tier 1 stores. The mod SHALL NOT steal from tier 2. In a game raid the game may rob any store, also the manor store; the mod SHALL NOT protect or restore it.
 
-#### Scenario: The manor store is never robbed
-- **WHEN** a raid runs while the manor store and a tier 1 store both hold goods
+#### Scenario: A baron AI raid never robs the manor store
+- **WHEN** a baron AI raid runs while the manor store and a tier 1 store both hold goods
 - **THEN** the goods in the manor store are unchanged at the end of the raid
 - Not checked yet (planned: `mod/InvasionMod/scenarios/raid_behavior/storage_tiers.py`).
 
@@ -18,7 +18,7 @@ In a game raid, where the game steers the raiders to pillage and steal, the mod 
 - Not checked yet (planned: `mod/InvasionMod/scenarios/raid_behavior/storage_tiers.py`).
 
 ### Requirement: Stealing units in a baron AI raid take goods from tier 1 stores
-In a baron AI raid, where baron units cannot pillage or steal, the mod SHALL measure the distance of each baron unit to the battle marker. A unit farther than the steal distance threshold (feature config, 300 m for now) SHALL be a stealing unit. Each stealing unit SHALL take the steal rate (feature config, 10 goods per in-game day for now) from tier 1 stores only.
+In a baron AI raid, where baron units cannot pillage or steal, the mod SHALL measure the distance of each baron unit to the battle marker. A unit farther than the steal distance threshold (feature config, 200 m for now; the army fights about 140 m from the marker) SHALL be a stealing unit. Each stealing unit SHALL take the steal rate (feature config, 10 goods per in-game day for now) from tier 1 stores only.
 
 #### Scenario: A far unit steals
 - **WHEN** a baron unit is farther than the threshold from the battle marker for one in-game day
