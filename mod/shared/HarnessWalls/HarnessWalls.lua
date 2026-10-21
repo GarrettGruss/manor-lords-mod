@@ -329,6 +329,7 @@ end
 
 -- Spike (spec 32), read only: where the actors are whose static mesh component uses a mesh (field "mesh", a name part).
 -- Why: to compare unit paths with the wall pieces of a built manor. At most MAX_ACTORS rows.
+-- With "materials":"1" each row also has the component name and the materials (with their parents) that it draws with.
 M.MAX_ACTORS = 400
 
 function M.mesh_actors(_, raw)
@@ -343,13 +344,114 @@ function M.mesh_actors(_, raw)
             if at then
                 total = total + 1
                 if #rows < M.MAX_ACTORS then
-                    rows[#rows + 1] = { owner = read(function() return owner:GetClass():GetFName():ToString() end), x = math.floor(at.X), y = math.floor(at.Y), z = math.floor(at.Z),
-                                        yaw = math.floor(read(function() return owner:K2_GetActorRotation().Yaw end) or 0) }
+                    local row = { owner = read(function() return owner:GetClass():GetFName():ToString() end), x = math.floor(at.X), y = math.floor(at.Y), z = math.floor(at.Z),
+                                  yaw = math.floor(read(function() return owner:K2_GetActorRotation().Yaw end) or 0) }
+                    if textField(raw, "materials") then
+                        -- Spike: names of the materials that the component draws with (override or mesh slot) and their parents.
+                        row.component = read(function() return component:GetFullName() end)
+                        row.materials = {}
+                        for i = 0, (read(function() return component:GetNumMaterials() end) or 0) - 1 do
+                            local material = read(function() return component:GetMaterial(i) end)
+                            row.materials[#row.materials + 1] = (material and read(function() return material:GetFullName() end) or "nil")
+                                .. " <- " .. (material and read(function() return material.Parent:GetFullName() end) or "-")
+                        end
+                    end
+                    rows[#rows + 1] = row
                 end
             end
         end
     end
     return { ok = true, mesh = wanted, total = total, actors = rows }
+end
+
+local function signedField(raw, name)
+    return tonumber((raw or ""):match('"' .. name .. '"%s*:%s*(-?[%d%.]+)'))
+end
+
+-- Spike (change add-meshy-agent-house-test): change material parameters of ONE mesh component live, to find out which parameter makes a
+-- model draw white. Fields: "mesh" (name part), "near_x", "near_y" (the component nearest to this point is used), and the lists
+-- "scalars" ("name=value,name=value"), "vectors" ("name=r:g:b,...") and "textures" ("name=/Game/Path.Name,..."). It makes a dynamic
+-- material instance of the first material slot (once per component) and sets the values on it. Single player, not saved.
+function M.mesh_material_params(_, raw)
+    local wanted = textField(raw, "mesh")
+    local nx, ny = signedField(raw, "near_x"), signedField(raw, "near_y")
+    if not wanted or not nx or not ny then return { ok = false, error = "mesh, near_x and near_y are required" } end
+    local best, bestDistance
+    for _, component in ipairs(FindAllOf("StaticMeshComponent") or {}) do
+        local mesh = read(function() return component.StaticMesh:GetFullName() end)
+        if mesh and mesh:find(wanted, 1, true) and not component:GetFullName():find("Default__", 1, true) then
+            local at = read(function() return component:K2_GetComponentLocation() end)
+            local distance = at and math.abs(at.X - nx) + math.abs(at.Y - ny)
+            if distance and (not bestDistance or distance < bestDistance) then best, bestDistance = component, distance end
+        end
+    end
+    if not best then return { ok = false, error = "no component with mesh " .. wanted } end
+    local current = read(function() return best:GetMaterial(0) end)
+    local made = read(function() return current:GetFullName():find("MaterialInstanceDynamic", 1, true) end)
+    local mid = current
+    local wantsChange = textField(raw, "scalars") or textField(raw, "vectors") or textField(raw, "textures")
+    if not made and wantsChange then mid = best:CreateDynamicMaterialInstance(0, current, FName("MeshyProbe")) end
+    local applied = {}
+    for name, value in (textField(raw, "scalars") or ""):gmatch("([^=,]+)=([^,]+)") do
+        mid:SetScalarParameterValue(FName(name), tonumber(value)); applied[#applied + 1] = name .. "=" .. value
+    end
+    for name, r, g, b in (textField(raw, "vectors") or ""):gmatch("([^=,]+)=([%-%d%.]+):([%-%d%.]+):([%-%d%.]+)") do
+        mid:SetVectorParameterValue(FName(name), { R = tonumber(r), G = tonumber(g), B = tonumber(b), A = 1.0 })
+        applied[#applied + 1] = name .. "=" .. r .. ":" .. g .. ":" .. b
+    end
+    for name, path in (textField(raw, "textures") or ""):gmatch("([^=,]+)=([^,]+)") do
+        local texture = StaticFindObject(path)
+        if texture and texture:IsValid() then
+            mid:SetTextureParameterValue(FName(name), texture); applied[#applied + 1] = name .. "=" .. path
+        else
+            applied[#applied + 1] = name .. " texture not found"
+        end
+    end
+    return { ok = true, component = read(function() return best:GetFullName() end), material = read(function() return mid:GetFullName() end), applied = applied }
+end
+
+-- Spike (change add-meshy-agent-house-test): swap materials between our model and a game building, to find out if the model or the
+-- material is the problem. Fields: "mesh", "near_x", "near_y" as in mesh_material_params, "mode": "borrow" puts the material of the
+-- nearest other game building (an SMBuilding whose slot 0 is a material instance, not ours; "prefer" = name part of its parent, optional)
+-- on our component; "lend" puts our material on that game building. The answer has the position of the game building.
+function M.mesh_material_swap(_, raw)
+    local wanted, mode, prefer = textField(raw, "mesh"), textField(raw, "mode"), textField(raw, "prefer")
+    local nx, ny = signedField(raw, "near_x"), signedField(raw, "near_y")
+    if not wanted or not nx or not ny or (mode ~= "borrow" and mode ~= "lend") then
+        return { ok = false, error = "mesh, near_x, near_y and mode (borrow or lend) are required" }
+    end
+    local ours, ourDistance, other, otherDistance, otherMaterial, seen = nil, nil, nil, nil, nil, {}
+    for _, component in ipairs(FindAllOf("StaticMeshComponent") or {}) do
+        local name = component:GetFullName()
+        local mesh = read(function() return component.StaticMesh:GetFullName() end)
+        local at = read(function() return component:K2_GetComponentLocation() end)
+        if mesh and at and not name:find("Default__", 1, true) then
+            local distance = math.abs(at.X - nx) + math.abs(at.Y - ny)
+            if mesh:find(wanted, 1, true) then
+                if not ourDistance or distance < ourDistance then ours, ourDistance = component, distance end
+            elseif name:find("SMBuilding", 1, true) then
+                local material = read(function() return component:GetMaterial(0) end)
+                local materialName = material and read(function() return material:GetFullName() end) or ""
+                local parentName = material and read(function() return material.Parent:GetFullName() end) or ""
+                seen[#seen + 1] = materialName
+                local fits = materialName:find("MaterialInstanceConstant", 1, true) == 1 and not materialName:find("MI_Meshy", 1, true)
+                if fits and (not prefer or parentName:find(prefer, 1, true)) and (not otherDistance or distance < otherDistance) then
+                    other, otherDistance, otherMaterial = component, distance, material
+                end
+            end
+        end
+    end
+    if not ours or not other then
+        return { ok = false, error = "no pair found", seen = { table.unpack(seen, 1, math.min(#seen, 12)) } }
+    end
+    local at = other:K2_GetComponentLocation()
+    if mode == "borrow" then
+        ours:SetMaterial(0, otherMaterial)
+    else
+        other:SetMaterial(0, ours:GetMaterial(0))
+    end
+    return { ok = true, mode = mode, material = read(function() return otherMaterial:GetFullName() end), other = other:GetFullName(),
+             other_mesh = read(function() return other.StaticMesh:GetFullName() end), x = at.X, y = at.Y, z = at.Z }
 end
 
 local function buildingById(id)
@@ -383,9 +485,6 @@ end
 -- the tag "bType_<type>" to the manor's `blueprints` list; the commit is SMBuildingMaster:convertBlueprintsToBuildings(bool) on the manor.
 -- This command makes the same actor: it copies the mesh of an existing blueprint of the same type (or takes `mesh_from`, an actor id),
 -- spawns it at x, y, z with `yaw` (degrees), adds it to the list and, with "commit":true, calls the commit.
-local function signedField(raw, name)
-    return tonumber((raw or ""):match('"' .. name .. '"%s*:%s*(-?[%d%.]+)'))
-end
 
 local function playerManor()
     for _, building in ipairs(FindAllOf("SMBuildingMaster") or {}) do
