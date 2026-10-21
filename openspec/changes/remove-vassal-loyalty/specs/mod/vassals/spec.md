@@ -29,7 +29,7 @@ The mod SHALL keep up to `max_vassals` slots (default 3). A slot SHALL hold regi
 #### Scenario: An old registry
 - **WHEN** the mod loads a registry that holds `loyalty` and `submitted` fields
 - **THEN** it loads without error and the vassal is a normal vassal
-- Not checked yet (planned: `harness/tests/test_fakegame_vassals.py`).
+- Checked by `harness/tests/test_fakegame_vassals.py` (`OldSaveTests`).
 
 ### Requirement: Policies change the tribute
 Each slot SHALL have a policy: `light`, `fair` (default) or `heavy`. The tribute factor SHALL be 0.5, 1.0 or 1.5. An unknown policy SHALL be refused. The policy SHALL be kept in ModState. A policy SHALL change nothing else.

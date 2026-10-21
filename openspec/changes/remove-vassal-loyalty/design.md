@@ -9,12 +9,14 @@
 - The policies `light`, `fair` and `heavy` stay and only scale the tribute (0.5, 1.0, 1.5). They are gated by the tech tree as before.
 - The submission feature is removed completely. A submitted vassal no longer exists as a state.
 - Trade Pacts keeps its effect `tribute_share` +0.25, so no law is left empty. The effect kind `vassal_loyalty` is removed from the tree loader. A tree file with an unknown effect kind fails to load, as before.
-- The text in `design/mod/` is the owner's. This change does not edit it.
+- The owner chose to remove the loyalty text from `design/mod/invasion-mod.md` and `design/mod/decisions.md` in this change (chat, 2026-10-21). Only loyalty sentences are deleted or rewritten.
 
 ## Open questions
-| # | Question | Who decides | How it is answered |
-|---|---|---|---|
-| 1 | The gift order has loyalty as its only effect. Drop it, or replace it by another effect (for example a one-time tribute bonus)? This design drops it. | Owner | Task 1.2, on the spec pull request |
-| 2 | Trade Pacts now has one effect (+25 percent tribute). Is that enough, or should the law get a new effect or be dropped? | Owner | Task 1.2 |
-| 3 | `design/mod/invasion-mod.md` and `design/mod/decisions.md` mention loyalty. Does the owner update them? | Owner | Task 1.2 |
-| 4 | Old saves hold `loyalty` and `submitted` in the registry. Does the mod ignore them without a crash, and does a vassal that was submitted come back as a normal vassal? | A spike | Task 1.1 |
+All answered by the owner in chat on 2026-10-21.
+
+| # | Question | Answer |
+|---|---|---|
+| 1 | The gift order has loyalty as its only effect. Drop it, or replace it? | Drop it. |
+| 2 | Trade Pacts now has one effect (+25 percent tribute). Enough? | Yes. Trade Pacts keeps only `tribute_share` +0.25. |
+| 3 | `design/mod/invasion-mod.md` and `design/mod/decisions.md` mention loyalty. Update them? | Yes, remove the loyalty text, with minimal edits. |
+| 4 | Old saves hold `loyalty` and `submitted` in the registry. Ignore without a crash? | Yes. ModState keeps entries with no registered key as unknown entries and does not read them. A fake-game test (`OldSaveTests`) proves it; no real game spike is needed. See `notes/old-save-registry.md`. |
