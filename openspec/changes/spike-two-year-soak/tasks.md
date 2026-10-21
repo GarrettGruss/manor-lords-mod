@@ -11,4 +11,4 @@
 
 ## 3. Close
 - [x] 3.1 Update `CHANGELOG.md` if a scenario changes. Verified by review.
-- [ ] 3.2 Fill the test results table of the implementation pull request.
+- [x] 3.2 Fill the test results table of the implementation pull request.
