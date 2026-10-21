@@ -22,12 +22,13 @@ function M.raid_type(raid)
     return nil
 end
 
--- The carry cap of a raid: the cap of its type, or `carry_cap` when the type is unknown.
-function M.cap_for(raid, config)
-    return (config.carry_caps or {})[M.raid_type(raid)] or config.carry_cap
+-- The loot goal for each raider at the start: `carry_cap` for a Hussite raid, `leave.loot_per_raider` for any other role raid.
+function M.loot_goal(raid, leave, carry_cap)
+    if raid.lord ~= nil and carry_cap ~= nil then return carry_cap end
+    return leave.loot_per_raider
 end
 
--- Loot above the carry cap is cut to the cap. Returns the new value and whether it was cut.
+-- Loot above the carry cap is cut to the cap (Hussite raids only). Returns the new value and whether it was cut.
 function M.clamp_carry(loot, cap)
     if loot > cap then return cap, true end
     return loot, false
@@ -50,14 +51,18 @@ end
 -- `config` has carry_cap and exit_y. `seen[key].new_loot` is the loot cut to the cap (the caller writes it back).
 function M.update(raid, seen, config, day)
     local deaths = {}
-    local cap = M.cap_for(raid, config)
+    local cap = raid.lord ~= nil and config.carry_cap or nil -- the game manages the loot of every other raid
     raid.carry_cap = cap
     for key, unit in pairs(raid.units) do
         local now = seen[key]
         if now ~= nil and not now.dead then
-            local loot, cut = M.clamp_carry(now.loot or 0, cap)
-            if cut then raid.capped = raid.capped + 1 end
-            now.new_loot = loot
+            local loot = now.loot or 0
+            if cap ~= nil then
+                local cut
+                loot, cut = M.clamp_carry(loot, cap)
+                if cut then raid.capped = raid.capped + 1 end
+                now.new_loot = loot
+            end
             unit.loot, unit.x, unit.y = loot, now.x or unit.x, now.y or unit.y
         else
             if now ~= nil then unit.x, unit.y = now.x or unit.x, now.y or unit.y end
@@ -94,10 +99,10 @@ function M.is_subjugation(raid)
     return raid.lord ~= nil and (raid.lord.kind == "subjugation" or raid.lord.kind == "great") -- both stay until beaten
 end
 
-function M.leave_reason(raid, day, leave)
+function M.leave_reason(raid, day, leave, carry_cap)
     if not raid.roles or raid.state ~= "active" or raid.leave_reason ~= nil or raid.leaving or raid.initial < 1 then return nil end
     if M.is_subjugation(raid) then return nil end -- a subjugation raid stays until it is beaten or wins (M02.03)
-    if M.looted_total(raid) >= leave.loot_per_raider * raid.initial then return "loot" end
+    if M.looted_total(raid) >= M.loot_goal(raid, leave, carry_cap) * raid.initial then return "loot" end
     if raid.deaths / raid.initial >= leave.loss_share then return "losses" end
     if day ~= nil and day - raid.start_day >= leave.max_days then return "time" end
     return nil
@@ -116,7 +121,7 @@ end
 
 -- Goods the plunder tick takes today: `per_unit_day` for each living raider that stands within `battle_radius` of the anchor
 -- (the player manor). Once a day. At most what is missing to the loot goal of the leave rule. A lord raid only.
-function M.plunder_amount(raid, seen, plunder, leave, day)
+function M.plunder_amount(raid, seen, plunder, leave, day, carry_cap)
     if raid.lord == nil or M.is_subjugation(raid) or raid.state ~= "active" or raid.leave_reason ~= nil or day == nil or raid.last_plunder_day == day then return 0 end
     raid.last_plunder_day = day
     local inside = 0
@@ -127,7 +132,7 @@ function M.plunder_amount(raid, seen, plunder, leave, day)
             inside = inside + 1
         end
     end
-    local missing = math.ceil(leave.loot_per_raider * raid.initial) - M.looted_total(raid)
+    local missing = math.ceil(M.loot_goal(raid, leave, carry_cap) * raid.initial) - M.looted_total(raid)
     return math.max(0, math.min(math.floor(inside * plunder.per_unit_day), missing))
 end
 
