@@ -22,3 +22,6 @@
 - Single-player only. No save function. Back up the save folder before runs.
 - Do not pass Lua strings to `FName` parameters of widgets that may lack them (CLAUDE.md, Safety).
 - Do not edit game files or game paks.
+
+## Decision
+Owner (2026-10-21): candidate 2 is approved. Menus may use PNG images loaded at run time (ImportFileAsTexture2D, SetBrushFromTexture, 9-slice with Brush.DrawAs = 1). Candidate 1 (pak texture) and the custom font stay untried; they need an editor cook. Engine facts are in docs/wiki/concepts/engine-limits.md.
