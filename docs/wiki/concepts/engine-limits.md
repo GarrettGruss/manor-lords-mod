@@ -52,6 +52,14 @@ Do not plan a feature that needs buildings inside the bailey.
 - The class `DepositDecal` (with `bRichDeposit`) still exists, but the game creates no object of it (2026-10-22); an older Nexus Lua mod that wrote it no longer has an effect.
 - Owner decision 2026-10-22: the mod does not manage resource state. Notes: `openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/`.
 
+## Game Setup values: readable, not saved (spike #358)
+
+- The new game setup values live in `MLGameInstance.gameSetup.currentGameSetup` (`raidingFrequency`, `yearsUntilFirstRaid`, `maxBanditCamps`, `initialBanditCamps`). Lua can read them (`HarnessGameSetup`). The game does not store them in the save.
+- A mod cannot add a working option to the stock Game Setup screen: a cloned option widget shows only "label".
+- Opening the Game Setup screen writes the real `menu.sav`, even in a run with a private appdata. Back up first.
+- The first `disable_autosave` after a new game started from the menu is undone by the game; send it again after the intro.
+- Owner decision 2026-10-21: the mod opens its own scenario settings menu instead (change `add-scenario-settings-menu`, #375). Notes: `ARCHIVE/notes/`.
+
 ## Results of the community mod lead spikes (change `spike-community-mod-leads`, #280)
 
 Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the notes of the change.
