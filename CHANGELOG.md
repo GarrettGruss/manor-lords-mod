@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spike `spike-finite-resource-limits` (#342): resource deposits (surface amount, rich flag, endless reserves) live in native code and cannot be read or written from Lua; only the region production limit (`setProductionLimit`) can be set. Owner accepted that the mod does not manage resource state (2026-10-22).
 - Spike `spike-bandit-message-toggle` (#343): the bandit reply banner (`questMessageElaborate_C`) cannot be stopped by a hook, but `RemoveFromParent` hides it. Owner accepted this (2026-10-21); the letter may stay in the inbox. Probe command `message_probe`.
 - Spike `spike-menu-custom-textures` (#333): a mod menu can show a PNG loaded at run time (`ImportFileAsTexture2D`, `SetBrushFromTexture`) and draw a frame as 9-slice (Box). Owner approved it (2026-10-21). Test scenario `probe-menu-texture` and probe module `HarnessTexProbe`.
 - Rule for pak mods (spike `spike-new-row-id-persistence`, #284): new building ids (126 to 65536) survive save, load and AI lords. A pak must not add new `DT_Upgrades` ids or set `upgradesInto` to a new building id: the upgrade is never carried out. Owner accepted the limit (2026-10-21).
