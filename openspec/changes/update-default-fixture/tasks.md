@@ -6,4 +6,4 @@
 
 ## 2. Close
 
-- [ ] 2.1 Smoke run on the default fixture, full test set, `CHANGELOG.md`, archive.
+- [x] 2.1 Smoke run on the default fixture, full test set, `CHANGELOG.md`, archive.
