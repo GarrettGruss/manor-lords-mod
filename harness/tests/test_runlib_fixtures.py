@@ -96,6 +96,12 @@ class NamesAndManifestTest(UserSavesCase):
         manifest = fixtures.load_manifest()
         self.assertIn(fixtures.DEFAULT_FIXTURE, manifest["fixtures"])
 
+    def test_default_fixture_is_the_only_one_tagged_default(self):
+        manifest = fixtures.load_manifest()
+        tagged = [name for name, entry in manifest["fixtures"].items() if "default" in entry.get("tags", [])]
+        self.assertEqual(tagged, [fixtures.DEFAULT_FIXTURE])
+        self.assertEqual(fixtures.DEFAULT_FIXTURE, "base-corpse-pit")
+
 
 class PrepareAppdataTest(UserSavesCase):
     def test_config_is_copied_and_the_fixture_is_checked_but_not_copied(self):
@@ -305,7 +311,7 @@ class RunPhasesTest(UserSavesCase):
     def test_build_phases_default_and_bad_fixture(self):
         with mock.patch.object(phases, "_preflight") as preflight:
             phases.build_real_phases("noop")
-            self.assertEqual(preflight.call_args.args[2], "base")
+            self.assertEqual(preflight.call_args.args[2], fixtures.DEFAULT_FIXTURE)
             phases.build_real_phases("noop", fixture="other")
             self.assertEqual(preflight.call_args.args[2], "other")
         with self.assertRaises(fixtures.FixtureError):

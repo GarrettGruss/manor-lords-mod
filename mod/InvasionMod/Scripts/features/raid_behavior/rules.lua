@@ -11,7 +11,7 @@ function M.new_raid(id, start_day, squads, unit_keys, roles, lord)
     return {
         id = id, start_day = start_day, squads = squads, units = units, initial = living, living = living,
         deaths = 0, departures = 0, carried_out = 0, returned = 0, lost = 0, capped = 0, peak_loot = 0,
-        burned = 0, leaving = false, roles = roles == true, lord = lord, plundered = 0, last_plunder_day = nil, leave_reason = nil, state = living > 0 and "active" or "empty", end_day = nil,
+        burned = 0, leaving = false, roles = roles == true, lord = lord, plundered = 0, last_plunder_day = nil, stolen = 0, last_steal_day = nil, leave_reason = nil, state = living > 0 and "active" or "empty", end_day = nil,
     }
 end
 
@@ -138,6 +138,37 @@ end
 
 function M.record_plunder(raid, amount) raid.plundered = raid.plundered + amount end
 
+-- The tier of a store type (1 or 2), or nil for a type that has no tier. `tiers` maps an EBuildingType to a tier.
+function M.tier_of(tiers, building_type)
+    if building_type == nil then return nil end
+    return tiers[building_type]
+end
+
+-- The most goods a raid may steal in all (the steal goal), or nil when the raid does not steal. Only a baron (lord) raid of a kind in `steal.goals`.
+function M.steal_goal(raid, steal)
+    if raid.lord == nil then return nil end
+    return steal.goals[raid.lord.kind or "plunder"]
+end
+
+-- Goods the baron steal takes today: `steal.rate` for each living raider that stands farther than `steal.threshold` from the
+-- battle marker (the lord anchor). Once a day, at most what is missing to the steal goal. The game steers a game raid, so it has no steal.
+function M.steal_amount(raid, seen, steal, day)
+    local goal = M.steal_goal(raid, steal)
+    if goal == nil or raid.state ~= "active" or day == nil or raid.last_steal_day == day then return 0 end
+    raid.last_steal_day = day
+    local far = 0
+    for key in pairs(raid.units) do
+        local now = seen[key]
+        if now ~= nil and not now.dead and now.x ~= nil and now.y ~= nil
+            and (now.x - raid.lord.anchor.x) ^ 2 + (now.y - raid.lord.anchor.y) ^ 2 > steal.threshold ^ 2 then
+            far = far + 1
+        end
+    end
+    return math.max(0, math.min(math.floor(far * steal.rate), goal - raid.stolen))
+end
+
+function M.record_steal(raid, amount) raid.stolen = raid.stolen + amount end
+
 -- The native AI wrote its leave line: the raid is over for the village, also while the raiders still walk to the map edge.
 function M.mark_leaving(raid, day)
     raid.leaving = true
@@ -150,7 +181,7 @@ function M.summary(raid)
         id = raid.id, start_day = raid.start_day, end_day = raid.end_day, squads = raid.squads, state = raid.state,
         initial = raid.initial, living = raid.living, deaths = raid.deaths, departures = raid.departures,
         loot = M.total_loot(raid), looted_total = M.looted_total(raid), carried_out = raid.carried_out, peak_loot = raid.peak_loot, returned = raid.returned, lost = raid.lost,
-        capped = raid.capped, carry_cap = raid.carry_cap, raid_type = M.raid_type(raid), burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
+        capped = raid.capped, carry_cap = raid.carry_cap, raid_type = M.raid_type(raid), burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, stolen = raid.stolen, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
     }
 end
 

@@ -10,6 +10,8 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/
   - resource: repo://openspec/changes/archive/2026-10-20-spike-community-mod-leads/notes/lead-1-2-stances.md
   - resource: repo://openspec/changes/archive/2026-10-20-spike-community-mod-leads/notes/lead-1-5-building-mesh-swap.md
+  - resource: repo://openspec/changes/archive/2026-10-21-spike-playtest-telemetry/notes/recommendation.md
+  - resource: repo://openspec/changes/archive/2026-10-21-spike-new-game-difficulty-setting/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/salt-mine-deposit.md
 ---
 # Engine limits found by spikes
@@ -59,6 +61,23 @@ Do not plan a feature that needs buildings inside the bailey.
 - The class `DepositDecal` (with `bRichDeposit`) still exists, but the game creates no object of it (2026-10-22); an older Nexus Lua mod that wrote it no longer has an effect.
 - Owner decision 2026-10-22: the mod does not manage resource state. Notes: `openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/`.
 
+## Player logs, files and quit (spike #384)
+
+- A Lua log that writes and flushes each line keeps every line when the game process is killed (63603 of 63603 lines; a log without flush lost 86 lines and ended mid-line). A flush costs about 10 us per line.
+- No quit hook fires when the game closes (6 hooks and a `__gc` finalizer tried, after `WM_CLOSE`). A "session running" marker is therefore still there after a normal quit; tell a crash from a quit with a newer folder in `Saved\Crashes`.
+- UE4SS Lua `io` reads a 2.6 MB save copy byte for byte and writes files and folders. `io.popen("dir /b /ad /o-d")` finds the newest crash folder; `os.execute` and `io.popen` flash a console window.
+- A pure Lua stored zip (no compression) of 4.5 MB takes about 0.2 s; in steps of 256 KB to 1 MB per tick the game does not stall.
+- A mod menu can hold a text box, a check box and a button without a pak widget; typing needs `SetKeyboardFocus` first.
+- One soak run crashed inside UE4SS Lua (`ltable.c`, `mainpositionTV`, exit code 3); the cause is not known.
+- Notes: `openspec/changes/archive/2026-10-21-spike-playtest-telemetry/notes/`.
+## Game Setup values: readable, not saved (spike #358)
+
+- The new game setup values live in `MLGameInstance.gameSetup.currentGameSetup` (`raidingFrequency`, `yearsUntilFirstRaid`, `maxBanditCamps`, `initialBanditCamps`). Lua can read them (`HarnessGameSetup`). The game does not store them in the save.
+- A mod cannot add a working option to the stock Game Setup screen: a cloned option widget shows only "label".
+- Opening the Game Setup screen writes the real `menu.sav`, even in a run with a private appdata. Back up first.
+- The first `disable_autosave` after a new game started from the menu is undone by the game; send it again after the intro.
+- Owner decision 2026-10-21: the mod opens its own scenario settings menu instead (change `add-scenario-settings-menu`, #375). Notes: `openspec/changes/archive/2026-10-21-spike-new-game-difficulty-setting/notes/`.
+
 ## Results of the community mod lead spikes (change `spike-community-mod-leads`, #280)
 
 Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the notes of the change.
@@ -69,3 +88,12 @@ Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the note
 - **`spawnCompleteUnit` adds a full squad** to an AI lord (3 calls: 1 squad of 32 became 4 squads of 128 units, and `lords_state` lists them). Its return value is a `Squad` struct: do not read it.
 - **`SetStaticMesh` swaps the mesh of a finished building** at once (component `StaticMeshComponent0` of an `SMBuilding`). A mesh that is already loaded is found with `StaticFindObject`. The collision shapes come from the new mesh (22 convex shapes became 0 with a sign post, and returned after the restore), while `GetCollisionEnabled` stays the same. Use `GetFullName` for a mesh path, not `GetPathName`.
 - **A command field must be in `parseRequest`** of `HarnessActions`. A field that is not listed arrives as `nil` and the command may read only, with no error.
+
+## Corpse pit and loot (spike #360)
+
+- The corpse pit is `DT_Buildings` id 113 (`BM_CorpsePit_C`), job 65, 4 workers. The game does not assign workers to it by itself; a test uses `building_assign_worker type=113`. Without workers, bodies stay on the ground.
+- Workers carry bodies (task `collecting_body`). On delivery the pit inventory entry `Type 233` (corpse) `amt` rises by 1. No hook fires, so a mod must poll the pit.
+- `pit:addToInventory({Type=<good>, amt=<n>})` counts in the region stock at once. Villagers haul the goods to a store in 3 to 5 game days. No goods pile actor exists and nothing shows on the ground.
+- A dead raider keeps `ItemsLooted`, and the same object stays in `Region.corpses` until a worker picks it up.
+- Reading `unit.currAnim`, `unit.dropsTo:GetFName()` or `unit.Speed` (one of them) crashed the game (access violation 0x18).
+- Owner decision 2026-10-22: the pit replaces the direct store add; loot give-back is for Hussite raids only (change `add-corpse-pit-loot`). Notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.
