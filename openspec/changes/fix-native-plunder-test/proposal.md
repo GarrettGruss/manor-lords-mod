@@ -20,7 +20,7 @@ Owner decisions (2026-10-21):
 - **BREAKING** Bandit squad raids (no lord) are no longer sent home by the mod: no peace, no removal in a quiet spot.
 - **BREAKING** The loot of a dead raider is no longer added to the nearest store. It stays with the body (the game's own behavior). The corpse pit change (`spike-corpse-pit-loot`, #360) will give it back through the corpse pit.
 - **Purpose:** the Purpose of `mod/raid_behavior` gets this text (a delta spec cannot change a Purpose, so task 4.1 writes it into the living spec before the archive):
-  > The raid_behavior feature steers the larger Hussite raids into the player's region, because the game has no native way to raid a player region with units other than Brigands. It also tracks each raid that the invasion feature spawns, keeps the loot of Hussite raids under a cap, lets role raids leave, and guards the player's region.
+  > The raid_behavior feature steers the larger Hussite raids into the player's region, because the game has no native way to raid a player region with units other than Brigands. A Hussite raid runs under the baron AI, not the native plunder AI, so that a raid can bring a mix of units (archers, spearmen, retinue) that a native raid cannot. It also tracks each raid that the invasion feature spawns, keeps the loot of Hussite raids under a cap, lets role raids leave, and guards the player's region.
 
 ## Capabilities
 
