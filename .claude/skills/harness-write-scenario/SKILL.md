@@ -41,6 +41,7 @@ Add the name to the scenario list in `harness/tests/test_runlib_scenario.py` (a 
 - A failing assert is a `fail`. A bug in your code is a `harness_error`. Do not catch errors to hide them.
 - Never call a save function. To save, use `ctx.actions.save_game(label, keep=False)` (spec 24): it backs up the save folder, uses a new free slot, deletes the files at the run end unless `keep=True`, and raises if an existing file changes. Scenarios that need the real mouse (`place_building`) are `HIDDEN` and run alone.
 - Long scenarios need `LONG_REASON` and the pop-up guard (`ctx.popups`). A pop-up pauses the game. `ctx.time.run_*` closes pop-ups itself every 2 s.
+- A test scenario of the Invasion Mod that starts a new game (`--new-game`) must call `scenario_settings_skip` or `scenario_settings_set` first (the settings menu pauses the game until "Begin the game"). A scenario on a fixture needs no call; it may set a value with `scenario_settings_set` (see `harness-mod-state`).
 - Use `COVERS` only for a criterion whose method the scenario really proves. The coverage tool counts a passing tagged scenario.
 
 ## Test it without the game

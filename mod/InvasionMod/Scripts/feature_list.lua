@@ -11,6 +11,7 @@ return {
     { name = "vassals", requires = { "mod_state" } },
     { name = "tribute", requires = { "vassals", "raid_behavior" } },
     { name = "raid_widget", requires = { "invasion" } },
+    { name = "scenario_settings", requires = { "invasion" } },
     { name = "manor_stronghold", requires = {} },
     { name = "finite_resources", requires = { "mod_state" } },
     { name = "tech_tree", requires = { "bandits", "unit_balance", "mod_state", "manor_stronghold", "vassals", "tribute" } },

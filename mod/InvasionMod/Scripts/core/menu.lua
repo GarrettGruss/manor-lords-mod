@@ -43,6 +43,7 @@ local function library() return StaticFindObject("/Script/UMG.Default__WidgetBlu
 ---------------------------------------------------------------------------------------------
 
 -- spec = { id, label, class_path, package_path, asset_name, position, z_order,
+--          bar = false (optional: no bottom bar button; the mod opens the menu itself),
 --          on_open(widget) -> true | nil, problem   (attach the buttons, show the first values; clean up on a failure),
 --          on_close() }
 function M.register(spec)
@@ -51,7 +52,7 @@ function M.register(spec)
     end
     if menus[spec.id] then error("menu.register: duplicate menu id " .. spec.id, 0) end
     menus[spec.id] = spec
-    order[#order + 1] = spec.id
+    if spec.bar ~= false then order[#order + 1] = spec.id end -- bar = false: no bottom bar button (a menu the mod opens itself)
 end
 
 ---------------------------------------------------------------------------------------------

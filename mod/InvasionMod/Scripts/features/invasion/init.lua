@@ -45,6 +45,11 @@ state:register("plunder_spawned", 0, "integer")   -- 1 after the current plunder
 state:register("yearly_season_no", -1, "integer") -- season changes since the mod started (-1: no season seen yet)
 state:register("yearly_last_season", -1, "integer")
 state:register("yearly_done_year", 0, "integer")  -- the last game year in which a raid was planned
+-- add-scenario-settings-menu: the player settings. The registered values keep the old behaviour; the settings menu (or an old save) writes the config defaults.
+state:register("first_raid_years", 1, "integer")  -- years before the season roll may bring the first raid (the roll starts in year N+1)
+state:register("size_class_fixed", 0, "integer")  -- 0: random size class, 1 to 3: fixed
+state:register("great_raids", 1, "integer")       -- 0: the great raid clock does not run
+state:register("settings_applied", 0, "integer")  -- 1 after the settings menu closed (or an old save got the defaults)
 
 if config.seed then math.randomseed(config.seed) else math.randomseed(os.time()) end
 
@@ -53,6 +58,7 @@ local raid_squads = {} -- { id, template } of the squads of the last raid made b
 local use_roles = roles.enabled -- the command invasion_set_roles changes it for one session
 local vassal_provider = function() return {} end -- returns the target regions of the vassals (M08 registers it)
 local spawn_watchers = {} -- { before, after } pairs from other features (M03 tracks the raid)
+local hold_gate = function() return false end -- the scenario settings feature sets it (a new game waits for the settings menu)
 
 ---------------------------------------------------------------------------------------------
 -- Game reads
@@ -130,8 +136,15 @@ local function planned_units(kind)
     return plan_rules.expected_units(composition_list(kind), roles.template_units)
 end
 
+-- The player may fix the size class of the plunder raid (scenario settings). 0: random, as before.
+local function size_class_for_plan()
+    local fixed = state:get("size_class_fixed")
+    if fixed >= 1 then return fixed end
+    return plan_rules.pick(math.random, 1, #plan_rules.SIZE_NAMES)
+end
+
 local function make_plan(today)
-    local plan = plan_rules.yearly_raid(today, plan_rules.pick(math.random, 1, #plan_rules.SIZE_NAMES), state:get("difficulty"), config, math.random)
+    local plan = plan_rules.yearly_raid(today, size_class_for_plan(), state:get("difficulty"), config, math.random)
     for key, value in pairs(plan) do state:set(key, value) end
     state:set("plunder_spawned", 0)
     state:set("composition_seed", 0) -- a new plan gets a new composition
@@ -290,6 +303,12 @@ local function clock_days_left(today)
     return great_raid.days_left(state:get("great_raid_day"), today)
 end
 
+-- The subtitle of a raid banner: the great raid clock, or nothing when the great raid is off.
+local function clock_subtitle(today)
+    if state:get("great_raids") == 0 then return "" end
+    return great_raid.text(clock_days_left(today))
+end
+
 local function start_clock(today)
     local length = great_raid.length(clock_config, math.random)
     state:set("great_raid_day", today + length)
@@ -305,7 +324,7 @@ end
 
 local function show_countdown(today, days_left)
     local text = plan_rules.banner_text(days_left, planned_units())
-    local ok, problem = core.show_banner(text, great_raid.text(clock_days_left(today)))
+    local ok, problem = core.show_banner(text, clock_subtitle(today))
     state:set("last_clock_banner_day", today)
     state:set("last_banner_day", today)
     core.log.info(TAG, string.format("INVASION banner day=%d days_left=%d raiders=%d shown=%s%s", today, days_left,
@@ -321,7 +340,7 @@ end
 
 local function show_subjugation_countdown(today, days_left)
     local text = "Subjugation " .. plan_rules.banner_text(days_left, planned_units("subjugation")):lower()
-    local ok = core.show_banner(text, great_raid.text(clock_days_left(today)))
+    local ok = core.show_banner(text, clock_subtitle(today))
     state:set("last_clock_banner_day", today)
     state:set("last_banner_day", today)
     core.log.info(TAG, string.format("INVASION subjugation banner day=%d days_left=%d raiders=%d shown=%s", today, days_left, planned_units("subjugation"), tostring(ok)))
@@ -336,6 +355,7 @@ local function subjugation_step(today)
 end
 
 local function clock_step(today)
+    if state:get("great_raids") == 0 then return end -- Great raids Off: no clock, no banner, no waves
     if state:get("great_raid_day") == 0 then start_clock(today) end
     local due = state:get("last_clock_banner_day") + clock_config.banner_every_days <= today
     if due and not great_raid.is_due(state:get("great_raid_day"), today) then show_clock_banner(today) end
@@ -343,7 +363,7 @@ local function clock_step(today)
 end
 
 local function prompt_step(today)
-    if state:get("difficulty_chosen") == 1 then return end
+    if state:get("difficulty_chosen") == 1 or state:get("settings_applied") == 1 then return end
     if state:get("last_prompt_day") ~= 0 and today - state:get("last_prompt_day") < clock_config.prompt_every_days then return end
     state:set("last_prompt_day", today)
     local ok = core.show_banner("Pick the difficulty: 1, 2 or 3", string.format("Now %d. Use the command invasion_pick_difficulty", state:get("difficulty")))
@@ -354,7 +374,7 @@ end
 local function roll_season(today, roll)
     local year, position = plan_rules.season_year(state:get("yearly_season_no"))
     local chances = config.yearly.chance_by_season
-    local raid = plan_rules.should_raid(year, position, state:get("yearly_done_year"), chances, roll)
+    local raid = plan_rules.should_raid(year, position, state:get("yearly_done_year"), chances, roll, state:get("first_raid_years") + 1)
     local kind = raid and next_kind() or "none"
     core.log.info(TAG, string.format("INVASION yearly roll day=%d year=%d season=%d chance=%s roll=%.2f raid=%s kind=%s", today, year, position,
         tostring(chances[math.min(position, #chances)]), roll, tostring(raid), kind))
@@ -393,6 +413,7 @@ local function tick()
     local today = current_day()
     if today == nil then return end
     keep_base_timer_high()
+    if hold_gate() then return end -- the settings menu of a new game is open or about to open: no banner, no plan yet
     if today == last_handled_day then return end
     last_handled_day = today
     daily_step(today)
@@ -563,15 +584,28 @@ local function raid_info()
         raid_days_left = (today and raid_day > 0) and (raid_day - today) or nil,
         raiders = state:get("squads") > 0 and planned_units() or nil, squads = state:get("squads"),
         great_days_left = (today and great_day > 0) and clock_days_left(today) or nil,
+        great_raids = state:get("great_raids") == 1,
         great_phase = state:get("gr_phase"), great_wave = state:get("gr_wave"), great_waves = difficulty_rules.wave_count(state:get("difficulty")),
         picks_allowed = state:get("difficulty_chosen") ~= 1 and state:get("raids_spawned") == 0,
     }
 end
 
-local function command_set_difficulty(args)
-    state:set("difficulty", args.value)
+-- Shared by the named command and the scenario settings. Marks the difficulty as chosen (no pick banner, no later pick).
+local function set_difficulty(value)
+    state:set("difficulty", value)
+    state:set("difficulty_chosen", 1)
     replan_size()
+end
+
+local function command_set_difficulty(args)
+    set_difficulty(args.value)
     return command_state()
+end
+
+-- Called after the scenario settings changed the great raids switch. Off: a clock that runs but has not started the waves stops.
+local function settings_changed()
+    if state:get("great_raids") == 0 and state:get("gr_phase") == great_raid.PHASE.clock then state:set("great_raid_day", 0) end
+    last_handled_day = nil
 end
 
 local function command_set_size(args)
@@ -655,4 +689,6 @@ local function set_vassal_provider(fn)
     vassal_provider = fn
 end
 
-return { state = state, set_vassal_provider = set_vassal_provider, watch_spawn = watch_spawn, raid_info = raid_info, pick_difficulty = pick_difficulty }
+return { state = state, set_vassal_provider = set_vassal_provider, watch_spawn = watch_spawn, raid_info = raid_info, pick_difficulty = pick_difficulty,
+         set_difficulty = set_difficulty, settings_changed = settings_changed, command_state = command_state,
+         set_hold_gate = function(gate) hold_gate = gate end }

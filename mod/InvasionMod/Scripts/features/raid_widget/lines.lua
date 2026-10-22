@@ -20,6 +20,7 @@ function M.size_estimate(info)
 end
 
 function M.great_raid(info)
+    if info.great_raids == false then return "Great raid: off" end
     local phase = info.great_phase or 0
     if phase == 1 then return string.format("Great raid: wave %d of %d", info.great_wave, info.great_waves) end
     if phase > 1 then return "Great raid: " .. PHASE_TEXT[phase] end
