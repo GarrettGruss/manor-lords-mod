@@ -34,7 +34,7 @@ def run_day(ctx) -> None:
 def run(ctx) -> dict:
     difficulty = int(ctx.variant_option("INVASION_DIFFICULTY", "1"))
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=difficulty)
-    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     ctx.mod.command("InvasionMod.invasion_set_size", size="small")
     bandits_before = side_count(ctx.actions.units_census(), "bandit")
     ctx.mod.command("InvasionMod.invasion_force_next")
