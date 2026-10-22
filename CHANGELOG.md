@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spike `spike-new-game-difficulty-setting` (#358): the game's Game Setup values (`MLGameInstance.gameSetup.currentGameSetup`) are readable from Lua but not saved; visiting the setup screen changes `menu.sav`. Read module `HarnessGameSetup` and probe test scenario `probe-difficulty-setting`. Replaced by the mod's own scenario settings menu (#375).
 - Spike `spike-finite-resource-limits` (#342): resource deposits (surface amount, rich flag, endless reserves) live in native code and cannot be read or written from Lua; only the region production limit (`setProductionLimit`) can be set. Owner accepted that the mod does not manage resource state (2026-10-22).
 - Spike `spike-bandit-message-toggle` (#343): the bandit reply banner (`questMessageElaborate_C`) cannot be stopped by a hook, but `RemoveFromParent` hides it. Owner accepted this (2026-10-21); the letter may stay in the inbox. Probe command `message_probe`.
 - Spike `spike-menu-custom-textures` (#333): a mod menu can show a PNG loaded at run time (`ImportFileAsTexture2D`, `SetBrushFromTexture`) and draw a frame as 9-slice (Box). Owner approved it (2026-10-21). Test scenario `probe-menu-texture` and probe module `HarnessTexProbe`.
