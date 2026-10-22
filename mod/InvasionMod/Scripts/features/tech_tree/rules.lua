@@ -7,7 +7,7 @@ M.NO_PATH = "none"
 local TOTAL_KEY = {
     public_order = "order_bonus", approval = "approval_bonus", buy_back_price = "buy_back_multiplier",
     militia_attack = "militia_attack_multiplier", militia_defence = "militia_defence_multiplier", manor_storage = "manor_storage_bonus", retinue_capacity = "retinue_bonus",
-    tribute_share = "tribute_share_multiplier", vassal_loyalty = "vassal_loyalty_bonus",
+    tribute_share = "tribute_share_multiplier",
 }
 
 -- Decision 24: one node slot for each settlement level.
@@ -55,7 +55,7 @@ end
 -- An effect with min_garrison_squads counts only when garrison_squads reaches it.
 function M.totals(tree, unlocked, garrison_squads, enacted)
     local totals = { order_bonus = 0, approval_bonus = 0, buy_back_multiplier = 1, militia_attack_multiplier = 1, militia_defence_multiplier = 1, manor_storage_bonus = 0, retinue_bonus = 0,
-        tribute_share_multiplier = 1, vassal_loyalty_bonus = 0 }
+        tribute_share_multiplier = 1 }
     local sources = {}
     for _, id in ipairs(unlocked) do sources[#sources + 1] = tree.by_id[id] end
     for _, id in ipairs(enacted or {}) do sources[#sources + 1] = tree.laws_by_id[id] end
@@ -81,7 +81,6 @@ function M.describe_totals(totals)
     if totals.approval_bonus ~= 0 then parts[#parts + 1] = string.format("Approval %+d", totals.approval_bonus) end
     if (totals.manor_storage_bonus or 0) ~= 0 then parts[#parts + 1] = string.format("Manor storage %+d", totals.manor_storage_bonus) end
     if (totals.retinue_bonus or 0) ~= 0 then parts[#parts + 1] = string.format("Retinue %+d", totals.retinue_bonus) end
-    if (totals.vassal_loyalty_bonus or 0) ~= 0 then parts[#parts + 1] = string.format("Vassal loyalty %+d", totals.vassal_loyalty_bonus) end
     local factors = {
         { "Buy-back price", totals.buy_back_multiplier }, { "Militia attack", totals.militia_attack_multiplier },
         { "Militia defence", totals.militia_defence_multiplier }, { "Tribute", totals.tribute_share_multiplier or 1 },

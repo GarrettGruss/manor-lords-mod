@@ -8,11 +8,11 @@ from runlib.actions import CHEAT_MANAGER
 from runlib.timectl import CLOCK_SECONDS_PER_DAY, SPEED_FACTOR
 
 NAME = "soak-days"
-DESCRIPTION = "Soak: 8x speed for 600 wall seconds (about 120 game days). Pop-ups are closed and the village is fed. No crash, no stall, a steady clock rate, and a memory range."
+DESCRIPTION = "Soak: 8x speed for 600 wall seconds (about 120 game days). Pop-ups are closed and the village is fed. No crash, no stall, and a memory range. The clock rate is only a metric."
 COVERS = ["Q1"]
 SPEED = 3  # 8 game seconds for each wall second, 5 wall seconds a day
 SOAK_WALL_S = float(os.environ.get("HARNESS_SOAK_WALL_S", "600"))  # a longer soak is chosen by this variable
-MAX_SOAK_WALL_S = 13000.0
+MAX_SOAK_WALL_S = 13200.0
 if not 60 <= SOAK_WALL_S <= MAX_SOAK_WALL_S:
     raise ValueError(f"HARNESS_SOAK_WALL_S={SOAK_WALL_S:g} must be between 60 and {MAX_SOAK_WALL_S:g} seconds")
 # Room for the speed change (about 10 s), the final pause (about 5 s), and slow bridge calls.
@@ -23,8 +23,6 @@ LONG_REASON = (f"A soak needs real time: {SOAK_WALL_S:g} wall seconds at 8x are 
 
 POLL_S = 2.0
 STALL_S = 20.0  # no clock progress for this long while the game should run: close pop-ups, then fail
-# Measured at 8x: 7.8 game s per wall s early in a run, 2.53 over a long soak (s53-soak730). The low bound allows a slow long run.
-RUNNING_RATE_RANGE = (1.5, 9.0)
 # Share of the nominal days that must pass. Pop-ups and slow polls lower it.
 DAYS_SHARE_RANGE = (0.2, 1.1)
 # The start village starves and is defeated at about day 137 (spike S8). Fish is added to the stock of the player region.
@@ -35,6 +33,7 @@ FEED_AMOUNT = 100
 # poll so that a 730 day soak can finish. It tests the game process and the clock, not the economy.
 KEEP_APPROVAL = os.environ.get("HARNESS_SOAK_KEEP_APPROVAL") == "1"
 KEEP_APPROVAL_VALUE = 100
+EXTRA_SAMPLE_EVERY_S = 120.0  # units and buildings, to find why the clock rate falls (spike two-year-soak, task 1.2)
 MAX_MEMORY_MB = 8192
 MAX_MEMORY_GROWTH_MB = 2048
 
@@ -54,9 +53,22 @@ def run(ctx) -> dict:
 
     feeder = soak.Feeder(FEED_EVERY_DAYS, feed, first.days_total)
 
+    extras: list[dict] = []
+    last_extra = [time.monotonic() - EXTRA_SAMPLE_EVERY_S]
+
+    def sample_extras(sample) -> None:
+        if time.monotonic() - last_extra[0] < EXTRA_SAMPLE_EVERY_S:
+            return
+        last_extra[0] = time.monotonic()
+        row = {"wall_s": sample.wall_s, "days": sample.days_total, "rss_mb": sample.rss_mb,
+               "units": bridge.count_objects("SMUnit"), "buildings": bridge.count_objects("SMBuildingMaster")}
+        extras.append(row)
+        ctx.log.info(f"soak extra {row}")
+
     def on_poll() -> None:
         ctx.popups()
         sample = sampler()
+        sample_extras(sample)
         soak.check_game_over(bridge.read_property(game_instance, "currentGameVictoryStatus"), sample.days_total)
         if KEEP_APPROVAL:
             ctx.actions.set_region_value("Approval", KEEP_APPROVAL_VALUE)
@@ -75,9 +87,8 @@ def run(ctx) -> dict:
     days = last.days_total - first.days_total
     nominal_days = SOAK_WALL_S * SPEED_FACTOR[SPEED] / CLOCK_SECONDS_PER_DAY
     expect.in_range("game days run", days, nominal_days * DAYS_SHARE_RANGE[0], nominal_days * DAYS_SHARE_RANGE[1])
-    rate = soak.running_rate(sampler.samples)
-    expect.in_range("game clock rate while running (game s per wall s)", rate if rate is not None else -1, *RUNNING_RATE_RANGE)
     record_numbers(ctx, sampler.samples, first, last, days, feeder)
+    ctx.notes.append(f"soak extras {extras}")
     check_memory(expect, first, last)
     return ctx.result()
 

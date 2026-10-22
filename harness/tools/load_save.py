@@ -7,7 +7,7 @@
 It runs `run.py --scenario noop --keep-open` with `--fixture`, `--save` or `--new-game`. A save run installs the save into the
 user's save folder under a free slot name (`saveGame_<max+1>`), the game loads it, and HarnessBoot checks that the loaded slot is the
 wanted one. A fresh start installs nothing: HarnessBoot opens the map with no slot, pushes the autosave timer away and pauses.
-The game stays open and paused. Close it with the `stop_game` MCP tool or `harness/game-close.ps1`. The next run removes an
+The game stays open and paused. Close it with the `stop_game` MCP tool or `harness/game-close.ps1 -Slot <n>`. The next run removes an
 installed slot, or run `harness/tools/fixtures.py uninstall`. Extra arguments go to run.py (for example `--run-id NAME`).
 Exit code: the exit code of run.py.
 """

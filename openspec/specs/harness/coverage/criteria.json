@@ -732,7 +732,7 @@
       "openspec/changes/archive/2026-10-15-legacy-10-invasion-testability/implementation-notes/spike-S8.md"
     ],
     "reason_human": "",
-    "spike_note": "method verified by 3 of 3 soak-days runs (about 120 game days each at 8x); a full 2-year run is extrapolated, see implementation-notes/soak-results.md"
+    "spike_note": "method verified by 3 of 3 soak-days runs (about 120 game days each at 8x). Verified at 401 game days (owner decision 2026-10-20): run s286-soak-3 reached 401 game days (205 to 606) in 13254 s, no crash, memory flat (1738 MB at the end); s286-soak-2 reached 333 days clean; s286-soak-1 crashed at day 272 in the raid sack step (#327, fixed in #328). A full 730 days does not fit in one run (MAX_LIMIT_S 13500 s, clock about 1.1 to 1.2), so a 2-year run is still extrapolated. See change spike-two-year-soak."
   },
   {
     "id": "Q2",
