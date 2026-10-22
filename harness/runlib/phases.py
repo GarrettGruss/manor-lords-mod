@@ -543,7 +543,7 @@ def _teardown(install: GameInstall, keep_open: bool):
                     ctx.state["notes"].append(f"installed slot {ctx.state['installed_slot']} is still in the user's save folder; "
                                               "the next run removes it, or run: harness/tools/fixtures.py uninstall")
                 ctx.state["notes"].append("the user's save files were not compared (--keep-open). "
-                                          "Stop the game with powershell -ExecutionPolicy Bypass -File harness/game-close.ps1 (or the MCP tool stop_game), then delete the appdata with "
+                                          "Stop the game with powershell -ExecutionPolicy Bypass -File harness/game-close.ps1 -Slot <n> (or the MCP tool stop_game), then delete the appdata with "
                                           "harness/tools/fixtures.py remove --appdata <that folder>")
             return "teardown: game left running (--keep-open)"
         running = find_game_processes(install.root)
