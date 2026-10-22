@@ -46,8 +46,8 @@ class RaidBehaviorTestCase(unittest.TestCase):
 
     # -- the fake village and the fake units ---------------------------------------------
 
-    def add_store(self, name, x, y, goods):
-        building = self.game.obj("SMBuildingMaster", Inventory=self.game.array([self.game.struct(Type=t, amt=a) for t, a in goods]))
+    def add_store(self, name, x, y, goods, btype=6):
+        building = self.game.obj("SMBuildingMaster", Data=self.game.struct(bType=btype), Inventory=self.game.array([self.game.struct(Type=t, amt=a) for t, a in goods]))
         store = {"object": building, "goods": list(goods)}
         self.stores.append(store)
         self.game.method(building, "IsRubble", lambda _self: False)
@@ -59,6 +59,15 @@ class RaidBehaviorTestCase(unittest.TestCase):
             building.Inventory = self.game.array([self.game.struct(Type=t, amt=a) for t, a in store["goods"]])
 
         self.game.method(building, "addToInventory", add)
+
+        def consume(_self, good):
+            for index, (kind, amount) in enumerate(store["goods"]):
+                if kind == good and amount > 0:
+                    store["goods"][index] = (kind, amount - 1)
+                    break
+            building.Inventory = self.game.array([self.game.struct(Type=t, amt=a) for t, a in store["goods"]])
+
+        self.game.method(building, "consumeGoodNoCheck", consume)
         return store
 
     def make_unit(self, x=100.0, y=100.0, loot=0):
@@ -305,6 +314,93 @@ class GreatRaidWinTests(RaidBehaviorTestCase):
         self.game.advance(2)
         self.next_day()
         self.assertEqual(self.great()["phase"], 3)
+
+
+class StoreTierTests(RaidBehaviorTestCase):
+    def run_lua(self, code):
+        return self.game.lua.eval(f"(function() local rules = require('features.raid_behavior.rules'); {code} end)")()
+
+    STEAL = "{ threshold = 20000, rate = 10, goals = { plunder = 100, great = 300 } }"
+
+    def test_the_config_has_the_tiers_the_threshold_the_rate_and_the_goals(self):
+        answer = self.ask("raid_behavior_state")["result"]
+        self.assertEqual(answer["store_tiers"]["6"], 1)
+        self.assertEqual(answer["store_tiers"]["72"], 1)
+        self.assertEqual(answer["store_tiers"]["98"], 2)
+        self.assertEqual((answer["steal"]["threshold"], answer["steal"]["rate"]), (20000, 10))
+        self.assertEqual((answer["steal"]["goals"]["plunder"], answer["steal"]["goals"]["great"]), (100, 300))
+
+    def test_only_a_unit_beyond_the_threshold_steals(self):
+        result = self.run_lua("""
+            local raid = rules.new_raid(1, 10, 1, { 1, 2, 3 }, true, { anchor = { x = 0, y = 0 }, kind = 'plunder' })
+            local seen = { [1] = { x = 19999, y = 0 }, [2] = { x = 0, y = 20001 }, [3] = { x = 30000, y = 0 } }
+            return rules.steal_amount(raid, seen, %s, 11)""" % self.STEAL)
+        self.assertEqual(result, 20)
+
+    def test_a_dead_unit_and_a_unit_without_a_place_do_not_steal(self):
+        result = self.run_lua("""
+            local raid = rules.new_raid(1, 10, 1, { 1, 2 }, true, { anchor = { x = 0, y = 0 }, kind = 'plunder' })
+            return rules.steal_amount(raid, { [1] = { dead = true, x = 90000, y = 0 }, [2] = {} }, %s, 11)""" % self.STEAL)
+        self.assertEqual(result, 0)
+
+    def test_the_steal_runs_once_a_day(self):
+        result = self.run_lua("""
+            local raid = rules.new_raid(1, 10, 1, { 1 }, true, { anchor = { x = 0, y = 0 }, kind = 'plunder' })
+            local seen = { [1] = { x = 90000, y = 0 } }
+            local steal = %s
+            return rules.steal_amount(raid, seen, steal, 11) .. ',' .. rules.steal_amount(raid, seen, steal, 11) .. ',' .. rules.steal_amount(raid, seen, steal, 12)""" % self.STEAL)
+        self.assertEqual(result, "10,0,10")
+
+    def test_the_steal_stops_at_the_goal(self):
+        result = self.run_lua("""
+            local units = {}
+            for i = 1, 4 do units[i] = i end
+            local raid = rules.new_raid(1, 10, 1, units, true, { anchor = { x = 0, y = 0 }, kind = 'plunder' })
+            local seen = {}
+            for i = 1, 4 do seen[i] = { x = 90000, y = 0 } end
+            local steal = %s
+            local parts = {}
+            for day = 11, 16 do
+                local amount = rules.steal_amount(raid, seen, steal, day)
+                rules.record_steal(raid, amount)
+                parts[#parts + 1] = amount
+            end
+            return table.concat(parts, ',') .. ';' .. raid.stolen""" % self.STEAL)
+        self.assertEqual(result, "40,40,20,0,0,0;100")
+
+    def test_a_great_raid_has_the_large_goal_and_other_raids_do_not_steal(self):
+        result = self.run_lua("""
+            local steal = %s
+            local great = rules.new_raid(1, 10, 1, { 1 }, true, { anchor = { x = 0, y = 0 }, kind = 'great' })
+            local native = rules.new_raid(2, 10, 1, { 1 }, false, nil)
+            local sub = rules.new_raid(3, 10, 1, { 1 }, true, { anchor = { x = 0, y = 0 }, kind = 'subjugation' })
+            return tostring(rules.steal_goal(great, steal)) .. ',' .. tostring(rules.steal_goal(native, steal)) .. ',' .. tostring(rules.steal_goal(sub, steal))""" % self.STEAL)
+        self.assertEqual(result, "300,nil,nil")
+
+    def test_the_tier_of_a_store_type(self):
+        result = self.run_lua("""
+            local tiers = { [6] = 1, [98] = 2 }
+            return tostring(rules.tier_of(tiers, 6)) .. ',' .. tostring(rules.tier_of(tiers, 98)) .. ',' .. tostring(rules.tier_of(tiers, 12)) .. ',' .. tostring(rules.tier_of(tiers, nil))""")
+        self.assertEqual(result, "1,2,nil,nil")
+
+    def test_a_native_raid_has_no_steal(self):
+        self.start_raid("small")
+        self.game.advance(5)
+        raid = self.raid()
+        self.assertEqual(raid["stolen"], 0)
+
+
+class StoreTierWorldTests(RaidBehaviorTestCase):
+    def test_the_plunder_takes_goods_from_tier_1_stores_only(self):
+        manor = self.add_store("Keep_3", x=0.0, y=0.0, goods=[(27, 100)], btype=98)
+        granary = self.add_store("Granary_4", x=0.0, y=0.0, goods=[(3, 50)], btype=72)
+        other = self.add_store("Market_6", x=0.0, y=0.0, goods=[(5, 40)], btype=12)
+        taken = self.game.lua.eval("(function() return require('features.raid_behavior.world').plunder(500, require('config').raid_behavior.store_tiers) end)")()
+        self.assertEqual(self.stock(manor), 100)
+        self.assertEqual(self.stock(other), 40)
+        self.assertEqual(self.stock(granary), 0)
+        self.assertEqual(self.stock(self.stores[0]) + self.stock(self.stores[1]), 0)
+        self.assertEqual(taken, 14 + 2 + 50)
 
 
 class LordRaidRulesTests(RaidBehaviorTestCase):

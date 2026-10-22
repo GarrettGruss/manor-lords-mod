@@ -2,6 +2,7 @@
 
 ## 2026-10-22
 * **Update**: Added the corpse pit facts of spike #360 (polling `Type 233`, no hook, workers not auto-assigned, `addToInventory` hauled in 3 to 5 days) to [Engine limits](concepts/engine-limits.md).
+* **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds player logs, files and quit (change `spike-playtest-telemetry`, #384).
 * **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds the Game Setup values: readable, not saved (change `spike-new-game-difficulty-setting`, #358).
 * **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds resource deposits: not reachable from Lua (change `spike-finite-resource-limits`, #342).
 * **Update**: [Unit templates of the game](concepts/unit-templates.md) has the measured stats and equipped item ids of all 18 spawnable types and a picture of each brigand variant (test scenario `probe-unit-gallery`, run 20261022-025232-2052).
