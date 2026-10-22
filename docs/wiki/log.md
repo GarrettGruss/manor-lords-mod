@@ -1,6 +1,10 @@
 # Wiki update log
 
+## 2026-10-22
+* **Create**: Added [Unit templates of the game](concepts/unit-templates.md): the unit types of DT_UnitTemplates with row names and squad sizes.
+
 ## 2026-10-19
+* **Update**: Added the results of the community mod lead spikes (Squad struct reads, dead units, unit growth, stances, mesh swap) to [Engine limits found by spikes](concepts/engine-limits.md) (change `spike-community-mod-leads`, #280).
 * **Update**: [Invasion features](architecture/invasion-features.md) describes the new feature `liege_influence` (change `add-liege-influence`, #271); M11 is no longer backlog.
 * **Update**: [Safety rules](concepts/safety-rules.md) guard 3: the autosave timer is pushed away again after every world load (change `fix-autosave-after-load`, #315).
 * **Update**: [Mod commands and state](concepts/mod-commands-and-state.md) has the ModState Tag limits: 1000 entries survive save and load, an entry over 1023 chars becomes `ERROR_NAME_SIZE_EXCEEDED`, quick save and autosave keep the Tags, and Tags on lords and buildings survive (change `spike-mod-state-limits`, #283).

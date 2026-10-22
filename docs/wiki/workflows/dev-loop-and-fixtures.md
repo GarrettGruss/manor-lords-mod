@@ -94,7 +94,7 @@ Steps in the launcher (`harness/runlib/phases.py`, `harness/runlib/fixtures.py`,
 | `... load_save.py D:/saves/saveGame_5.sav` | same, for a save file |
 | `... load_save.py --new-game [--map M]` | fresh game, left open |
 
-`load_save.py` runs `run.py --scenario noop --keep-open` with `--fixture`, `--save` or `--new-game`. Extra arguments pass through (for example `--run-id NAME`). Close the game with the `stop_game` MCP tool or `harness/game-close.ps1`. The next run removes the installed slot, or run `fixtures.py uninstall`. Exit codes of `fixtures.py`: 0 done, 1 fixture or slot error, 3 a file in the user's folder changed during a read.
+`load_save.py` runs `run.py --scenario noop --keep-open` with `--fixture`, `--save` or `--new-game`. Extra arguments pass through (for example `--run-id NAME`). Close the game with the `stop_game` MCP tool or `harness/game-close.ps1 -Slot <n>`. The next run removes the installed slot, or run `fixtures.py uninstall`. Exit codes of `fixtures.py`: 0 done, 1 fixture or slot error, 3 a file in the user's folder changed during a read.
 
 ### Make a new fixture
 

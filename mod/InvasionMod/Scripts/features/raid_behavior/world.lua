@@ -22,16 +22,31 @@ local function unit_key(unit)
     return read(function() return unit:GetAddress() end)
 end
 
+-- Squad ids that the game unit census (HarnessUnits) knows. A unit whose squad is not in it is not counted by the census.
+-- nil when the census module is missing: then no unit is filtered.
+local function census_squads()
+    local ok, units = pcall(require, "HarnessUnits")
+    if not ok then return nil end
+    return units.squadMap()
+end
+
 -- The units now: key -> { loot, x, y, dead, object }. With `tracked` (a set of keys) only those units are read.
 -- Few reads on purpose: a read of every property of every unit once a second crashed the game in raids of 2 squads
 -- (spike notes of M03.01). A dead unit is read for `dead` only. The place is read only for a unit that carries loot.
+-- A tracked unit that the census does not count (no squad in the census) is read as dead: it is gone, also while the
+-- game still lists the object (its death animation).
 function M.read_units(tracked, all_places)
     local out = {}
+    local squads = tracked ~= nil and census_squads() or nil
     for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
         if isValid(unit) then
             local key = unit_key(unit)
             if key ~= nil and (tracked == nil or tracked[key]) then
                 local row = { dead = read(function() return unit.dead end) == true, loot = 0, object = unit }
+                if not row.dead and squads ~= nil then
+                    local squad_id = read(function() return unit.assignedSquadID.Value end)
+                    if squad_id == nil or squads[squad_id] == nil then row.dead = true end
+                end
                 if not row.dead then
                     local looted = read(function() return unit.ItemsLooted end)
                     row.loot = type(looted) == "number" and looted or 0 -- a unit of another class can return an actor here
@@ -61,35 +76,6 @@ function M.write_loot(unit_object, amount)
     local ok, problem = pcall(function() unit_object.ItemsLooted = amount end)
     if not ok then return false, tostring(problem) end
     return true
-end
-
--- Peace with the bandit lord makes a role raid walk away from the village (run 20261018-020315-51c8). War is declared again
--- when the raid is gone, so the next raid still attacks. Returns false and the reason on a problem.
-local function bandit_and_player()
-    local player = engine() and read(function() return engine().playerRef end)
-    for _, pawn in ipairs(FindAllOf("PawnCPP_AI") or {}) do
-        if isValid(pawn) and read(function() return pawn.isBandit end) == true then return pawn, player end
-    end
-    return nil, player
-end
-
-local function relation_call(name)
-    local bandit, player = bandit_and_player()
-    if bandit == nil or not isValid(player) then return false, "no bandit lord or player pawn" end
-    local ok, problem = pcall(function() bandit[name](bandit, player) end)
-    if not ok then return false, tostring(problem) end
-    return true
-end
-
-function M.make_peace() return relation_call("declarePeace") end
-function M.restore_war() return relation_call("declareWar") end
-
--- The place of the player pawn, the village reference for the quiet spot.
-function M.home()
-    local pawn = engine() and read(function() return engine().playerRef end)
-    local at = pawn and read(function() return pawn:K2_GetActorLocation() end)
-    if at == nil then return nil end
-    return { x = read(function() return at.X end), y = read(function() return at.Y end) }
 end
 
 -- Give a region back to the player pawn (a won challenge writes the lord as owner, run 20261018-015009-371a).
@@ -198,22 +184,6 @@ function M.stores(region_name)
         end
     end
     return stores
-end
-
-local function total_of(by_good)
-    local total = 0
-    for _, held in pairs(by_good) do total = total + held end
-    return total
-end
-
--- Put goods into one store. The deposit is read back from the building inventory.
-function M.deposit(store, good, amount)
-    local before = total_of(goods_of(store.building))
-    local ok, problem = pcall(function() store.building:addToInventory({ Type = good, amt = amount }) end)
-    if not ok then return false, "addToInventory: " .. tostring(problem) end
-    local rise = total_of(goods_of(store.building)) - before
-    if rise ~= amount then return false, string.format("store rose by %d, wanted %d", rise, amount) end
-    return true
 end
 
 -- Burned buildings: ruins and buildings on fire, now.

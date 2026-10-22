@@ -79,20 +79,28 @@ def _prepare_appdata(install: GameInstall, ctx: PhaseContext, fixture: str | Non
     except fixtures.FixtureError as error:
         raise PhaseFailed(f"fixture {fixture}: {error}") from error
     ctx.state["user_saves_snapshot"] = user_files(install)
+    ctx.state["ledger_names_at_start"] = _ledger_names(install)
     ctx.state["user_save_dir"] = str(install.saved_dir / "SaveGames")  # the real folder, for the guarded save_game (spec 24)
     ctx.config.setdefault("environment", {})["fixture"] = result.as_dict()
     return result
 
 
-def user_files(install: GameInstall) -> dict[str, str]:
+def user_files(install: GameInstall, also_ignore: frozenset[str] = frozenset()) -> dict[str, str]:
     """The user's save files: the save folder without the files of harness saves, which parallel runs add and remove (spec 11),
     and without the settings file that install.ps1 backs up and restores.
+
+    `also_ignore` holds names that the ledger listed earlier in this run (fixture saves of other slots, #353). A file is
+    ignored only if a ledger entry named it: a file of the user is never in the ledger.
 
     Call it while holding saveslots.saves_lock(), so no other run changes the folder or the ledger in between.
     """
     save_dir = install.saved_dir / "SaveGames"
-    harness_files = saveslots.harness_file_names(save_dir) | gameslots.install_managed_save_files()
+    harness_files = saveslots.harness_file_names(save_dir) | gameslots.install_managed_save_files() | also_ignore
     return {name: digest for name, digest in fixtures.snapshot_user_files(save_dir).items() if name not in harness_files}
+
+
+def _ledger_names(install: GameInstall) -> frozenset[str]:
+    return frozenset(saveslots.harness_file_names(install.saved_dir / "SaveGames"))
 
 
 def _remove_stale_slots(install: GameInstall, ctx: PhaseContext) -> None:
@@ -499,7 +507,10 @@ def _finish_appdata(install: GameInstall, ctx: PhaseContext) -> str | None:
     with saveslots.saves_lock():
         _remove_installed_slot(ctx)
         _remove_harness_saves(install, ctx)
-        problems = fixtures.describe_difference(_expected_user_files(ctx), user_files(install))
+        # A fixture save of another slot can be listed at the start only, or at the end only (#353): ignore both.
+        ignore = ctx.state.get("ledger_names_at_start", frozenset()) | _ledger_names(install)
+        expected = {name: digest for name, digest in _expected_user_files(ctx).items() if name not in ignore}
+        problems = fixtures.describe_difference(expected, user_files(install, ignore))
     removed = fixtures.remove_appdata(appdata)
     if problems:
         raise PhaseFailed(f"the user's save files changed during the run: {'; '.join(problems[:10])}")
@@ -532,7 +543,7 @@ def _teardown(install: GameInstall, keep_open: bool):
                     ctx.state["notes"].append(f"installed slot {ctx.state['installed_slot']} is still in the user's save folder; "
                                               "the next run removes it, or run: harness/tools/fixtures.py uninstall")
                 ctx.state["notes"].append("the user's save files were not compared (--keep-open). "
-                                          "Stop the game with powershell -ExecutionPolicy Bypass -File harness/game-close.ps1 (or the MCP tool stop_game), then delete the appdata with "
+                                          "Stop the game with powershell -ExecutionPolicy Bypass -File harness/game-close.ps1 -Slot <n> (or the MCP tool stop_game), then delete the appdata with "
                                           "harness/tools/fixtures.py remove --appdata <that folder>")
             return "teardown: game left running (--keep-open)"
         running = find_game_processes(install.root)

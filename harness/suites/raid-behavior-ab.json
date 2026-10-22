@@ -2,7 +2,7 @@
   "name": "raid-behavior-ab",
   "scenarios": [
     {
-      "scenario": "raid-behavior-native-plunder",
+      "scenario": "raid-behavior-carry-caps",
       "repeat": 3,
       "variants": [
         {"name": "small-d1-1squad", "env": {"INVASION_DIFFICULTY": "1", "INVASION_SIZE": "small"}},
