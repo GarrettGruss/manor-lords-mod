@@ -47,7 +47,7 @@ Read [System overview](overview.md) first for how the parts work together.
 | `release.py` | Mod release CLI. See [Mod releases](../workflows/releases.md). |
 | `deploy.ps1` | Copies `mod/` into the UE4SS `Mods` folder with hash checks. |
 | `install.ps1`, `uninstall.ps1`, `installstate.ps1` | Back up game settings, write harness values, build game slots, restore. See [Install and environment](../operations/install-and-environment.md). |
-| `game-launch.ps1`, `game-close.ps1` | Start and stop the game by hand. |
+| `game-launch.ps1`, `game-close.ps1` | Start and stop the game by hand (`game-close.ps1` needs `-Slot`, `-GameRoot` or `-All`). |
 | `runlib/` | The library behind `run.py` and scenarios: phases, runner, summary, bridge client, `ctx` helpers, fixtures, saves. |
 | `suitelib/` | Suite runner, A/B statistics, baselines, reports. |
 | `releaselib/` | Release build, manifest, changelog, gate, scan. |

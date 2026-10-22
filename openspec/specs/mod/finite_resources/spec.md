@@ -56,10 +56,10 @@ The mod SHALL keep the mined units and the last production total of each deposit
 - Checked by `harness/tests/test_fakegame_finite_resources.py`.
 
 ### Requirement: Vassals pay iron and salt as the permanent supply
-The tribute of a vassal SHALL include iron and salt next to the main goods (config `tribute.finite_goods`: iron 10 and salt 6 units for each family at full share). The share follows loyalty, vassal policy and laws like the main goods. Tribute goods are not production, so they do not reduce a home deposit.
+The tribute of a vassal SHALL include iron and salt next to the main goods (config `tribute.finite_goods`: iron 10 and salt 6 units for each family at the fixed share). The share follows the vassal policy and laws like the main goods. Tribute goods are not production, so they do not reduce a home deposit.
 
 #### Scenario: One vassal pays at a season change
-- **WHEN** one vassal with 5 families and loyalty 50 pays at a season change
+- **WHEN** one vassal with 5 families pays at a season change
 - **THEN** the tribute paid is 10 iron and 6 salt
 - **AND** the home stores rise by at least 10 iron and 6 salt
 - **AND** the `mined` count of iron and salt stays 0
