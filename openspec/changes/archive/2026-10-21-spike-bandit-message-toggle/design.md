@@ -23,3 +23,6 @@
 - Single-player only. No save function. Back up the save folder before runs.
 - Do not pass Lua strings to `FName` parameters of objects that may lack them (CLAUDE.md, Safety).
 - Do not edit game files or game paks.
+
+## Decision
+Owner (2026-10-21): hiding the banner (RemoveFromParent on questMessageElaborate_C, way 4) is enough. The reply letter may stay in the inbox. Engine facts are in docs/wiki/concepts/engine-limits.md. The mod step and test scenario belong to the change for #308.

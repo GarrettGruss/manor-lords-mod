@@ -578,6 +578,7 @@ local COMMANDS = {
     bandit_tag = bandits.bandit_tag,
     bandit_letter = bandits.bandit_letter,
     settle_raiders = bandits.settle_raiders,
+    message_probe = bandits.message_probe,
     bandit_mark = bandits.bandit_mark,
     bandit_track = bandits.bandit_track,
     bandit_spawn_at = bandits.bandit_spawn_at,
