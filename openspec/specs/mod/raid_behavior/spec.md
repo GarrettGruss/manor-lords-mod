@@ -5,34 +5,6 @@ The raid_behavior feature steers the larger Hussite raids into the player's regi
 
 ## Requirements
 
-### Requirement: Every spawned raid is tracked
-The mod SHALL start a raid record when the invasion feature spawns a raid. The record SHALL hold the units that are new since the spawn. The count of living raiders SHALL equal the unit count read from the game. A raid SHALL end as `left` when raiders walked off the map or the native leave line was seen, or as `destroyed` when all raiders died.
-
-#### Scenario: A one-squad native raid
-- **WHEN** a raid of 1 squad (18 raiders) runs under the native plunder AI
-- **THEN** the tracker count of living raiders equals the game unit count at every sample
-- **AND** the raid ends within 20 game days (30 for larger raids) with the native leave line in the log
-- Checked by `mod/InvasionMod/scenarios/raid_behavior/native_plunder.py`.
-
-#### Scenario: Units that existed before the spawn
-- **WHEN** a raid spawns and other bandit units already exist
-- **THEN** only the new units are raiders
-- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
-
-### Requirement: A native raid is left alone
-The mod SHALL NOT steer or rout a raid that runs under the native plunder AI, and SHALL NOT remove its units. The raid SHALL loot goods, burn buildings and leave under the game's own rules.
-
-#### Scenario: Native plunder
-- **WHEN** a native raid ends
-- **THEN** the looted goods are more than 0 and the burned buildings are between 0 and 10
-- **AND** the village population is more than 0
-- Checked by `mod/InvasionMod/scenarios/raid_behavior/native_plunder.py`.
-
-#### Scenario: No removal of native raiders
-- **WHEN** a native raid runs
-- **THEN** the mod removes no raider
-- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
-
 ### Requirement: Loot is capped per raider
 The mod SHALL manage plundered quantities only for Hussite raids. The Hussite AI has raiding disabled, so the game does not manage the raid natively. The plundered goods of a Hussite raid SHALL NOT exceed `carry_cap` (default 10) for each raider at the start of the raid. The mod SHALL NOT change the loot (`ItemsLooted`) of a native raid; the game manages it.
 
@@ -51,20 +23,6 @@ The mod SHALL manage plundered quantities only for Hussite raids. The Hussite AI
 - **THEN** its plundered goods are at most `carry_cap` times its raiders at the start
 - **AND** the tracker state shows the cap that was used
 - Checked by `mod/InvasionMod/scenarios/raid_behavior/carry_caps.py`.
-
-### Requirement: The loot of a dead raider goes to the nearest store
-When a raider dies in the village, the mod SHALL add its loot to the store that is nearest to the place of death, in the good that the store holds most of (`fallback_good` if the store is empty). If there is no store, the loot SHALL be counted as lost. A raider that walks off the map at or below `exit_y` (default -85000) SHALL keep its loot and count as a departure.
-
-#### Scenario: Eighteen raiders die with loot
-- **WHEN** 18 raiders that carry loot are killed
-- **THEN** the tracker counts 18 deaths and the returned goods equal the carried loot
-- **AND** the village stock rises by the same amount and nothing is lost
-- Checked by `mod/InvasionMod/scenarios/raid_behavior/loot_return.py`.
-
-#### Scenario: A death near a far store
-- **WHEN** a raider dies nearer to a far store than to a near store
-- **THEN** the loot goes to the far store
-- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
 ### Requirement: A role raid leaves for loot, losses or time
 An active role raid (`roles = true`) SHALL leave when its goods taken reach its loot goal per starting raider (`carry_cap`, default 10, for a Hussite raid; `leave.loot_per_raider`, default 4, otherwise), when dead raiders reach `leave.loss_share` (default 0.5), or after `leave.max_days` (default 25) game days. The reason SHALL be `loot`, `losses` or `time`. A lord raid SHALL leave by peace with its lord. No raider SHALL stay on the map after the raid left.
@@ -117,18 +75,39 @@ The mod SHALL give a home region back to the player when the raid lord becomes i
 - **AND** the village still has people
 - Checked by `mod/InvasionMod/scenarios/raid_behavior/region_guard.py`.
 
-### Requirement: Bandit squads leave only in a quiet spot
-When a bandit-squad raid (no lord) must leave, the mod SHALL declare peace and SHALL remove a raider only at least `leave.quiet_distance` (default 40000 units) from the player pawn or at the map edge, never in view. The loot SHALL leave with the unit. The mod SHALL restore the war when the raid has ended.
-
-#### Scenario: A leaving raid with raiders near the village
-- **WHEN** a raid is leaving and raiders stand near the village
-- **THEN** only raiders in a quiet spot are removed
-- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
-
 ### Requirement: The raid state is kept and shown by command
 The mod SHALL keep `raid_count`, `raid_start_day`, `raid_state`, `raid_returned`, `raid_lost` and `raid_burned` in ModState, writing a key only when its value changes. `InvasionMod.raid_behavior_state` SHALL return the summary of each raid: living, deaths, loot, looted total, returned, burned, state, leave reason and kind (`plunder`, `subjugation` or `great`).
 
 #### Scenario: The numbers in the Tags
 - **WHEN** a raid has run and the tracker saved its summary
 - **THEN** the raid state keys are entries in the pawn Tags
+- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
+
+### Requirement: The mod never steers or removes a native raid
+<!-- Issue: #373 -->
+The mod SHALL NOT steer or rout a raid that runs under the native plunder AI, and SHALL NOT remove its units.
+
+#### Scenario: No removal of native raiders
+- **WHEN** a native raid runs
+- **THEN** the mod removes no raider
+- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
+
+### Requirement: Every spawned raid is tracked by the game census
+<!-- Issue: #373 -->
+The mod SHALL start a raid record when the invasion feature spawns a raid. The record SHALL hold the units that are new since the spawn. The count of living raiders SHALL equal the unit count read from the game census; a unit that the census no longer counts SHALL NOT count as living. A raid SHALL end as `left` when raiders walked off the map or the native leave line was seen, or as `destroyed` when all raiders died.
+
+#### Scenario: A Hussite raid
+- **WHEN** a Hussite raid runs under the baron AI
+- **THEN** the tracker count of living raiders equals the game census count at every sample
+- **AND** the raid ends as `left` or `destroyed`, with no limit on game days
+- Checked by `mod/InvasionMod/scenarios/raid_behavior/carry_caps.py`.
+
+#### Scenario: A raider that left the census
+- **WHEN** a raider is still in the `SMUnit` list but the census no longer counts it
+- **THEN** the tracker does not count it as living
+- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
+
+#### Scenario: Units that existed before the spawn
+- **WHEN** a raid spawns and other bandit units already exist
+- **THEN** only the new units are raiders
 - Checked by `harness/tests/test_fakegame_raid_behavior.py`.
