@@ -1,6 +1,7 @@
 # Wiki update log
 
 ## 2026-10-22
+* **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds the Game Setup values: readable, not saved (change `spike-new-game-difficulty-setting`, #358).
 * **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds resource deposits: not reachable from Lua (change `spike-finite-resource-limits`, #342).
 * **Update**: [Unit templates of the game](concepts/unit-templates.md) has the measured stats and equipped item ids of all 18 spawnable types and a picture of each brigand variant (test scenario `probe-unit-gallery`, run 20261022-025232-2052).
 * **Create**: Added [Unit templates of the game](concepts/unit-templates.md): the unit types of DT_UnitTemplates with row names and squad sizes.

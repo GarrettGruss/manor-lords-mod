@@ -31,7 +31,7 @@ def run(ctx) -> dict:
     difficulty = int(ctx.variant_option("INVASION_DIFFICULTY", "1"))
     kind = ctx.variant_option("TERMS_KIND", "payment")
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=difficulty)
-    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     ctx.mod.command("InvasionMod.invasion_set_size", size="small")
     ctx.actions.set_silver(START_SILVER)
     ctx.mod.command("InvasionMod.invasion_force_next")

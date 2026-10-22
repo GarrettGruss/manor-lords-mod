@@ -17,12 +17,25 @@ function M.squads(size_class, difficulty, multipliers)
     return multiplier * difficulty
 end
 
--- Plan the first raid. `today` is the game day when the plan is made.
+-- The game year and the season of the year, from the number of season changes since the mod started.
+-- Year 1 is the quiet year. Position 1 to 4 is the first to the fourth season of the year.
+function M.season_year(season_no)
+    return math.floor(season_no / 4) + 1, season_no % 4 + 1
+end
+
+-- The season roll. No raid in year 1, and at most one raid in a year (`done_year` is the last year with a raid).
+-- `roll` is a number in [0, 1). The last season of the year always raids.
+function M.should_raid(year, position, done_year, chances, roll)
+    if year < 2 or done_year >= year then return false end
+    if position >= #chances then return true end
+    return roll * 100 < chances[position]
+end
+
+-- Plan a raid for the season that starts today. `today` is the game day when the roll succeeded.
 -- The warning cannot start before the plan exists, so a short wait gives a shorter warning.
-function M.first_raid(today, difficulty, config, random)
-    local wait = M.pick(random, config.first_raid_days_min, config.first_raid_days_max)
+function M.yearly_raid(today, size_class, difficulty, config, random)
+    local wait = M.pick(random, 1, config.yearly.season_days)
     local warning = math.min(M.pick(random, config.warning_days_min, config.warning_days_max), wait)
-    local size_class = M.pick(random, 1, #M.SIZE_NAMES)
     return {
         plan_day = today,
         raid_day = today + wait,

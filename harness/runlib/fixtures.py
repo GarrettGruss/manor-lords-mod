@@ -31,7 +31,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 MANIFEST_PATH = REPO_ROOT / "harness" / "fixtures" / "fixtures.json"
 STORE_DIR = REPO_ROOT / "harness" / "fixtures" / "saves"  # one folder per fixture; ignored by git
 STORE_STEM = "slot"
-DEFAULT_FIXTURE = "base"
+DEFAULT_FIXTURE = "base-corpse-pit"
 APPDATA_NAME = "appdata"
 FIXTURE_NAME = re.compile(r"^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$")
 # The parts of a slot: the world, the descriptor, the thumbnail and the coat of arms images.

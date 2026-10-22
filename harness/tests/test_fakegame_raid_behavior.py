@@ -95,7 +95,7 @@ class RaidBehaviorTestCase(unittest.TestCase):
         return raids[0] if raids else None
 
     def start_raid(self, size="small"):
-        self.ask("invasion_state")
+        self.ask("invasion_plan_now")  # no raid is planned in game year 1
         self.ask("invasion_set_size", size=size)
         self.assertTrue(self.ask("invasion_force_next")["ok"])
         self.game.advance(3)

@@ -1,6 +1,6 @@
 """M01 iteration 01, A4, A5 and A6: a save from before the mod gives default values and no error. Other Tags stay as they are.
 
-Runs on the default fixture `base` (a save made without the mod). It saves nothing.
+Run it with `--fixture base` (a save made without the mod; the default fixture `base-corpse-pit` was saved with the mod loaded). It saves nothing.
 """
 
 NAME = "mod-state-default-load"

@@ -10,7 +10,7 @@ RELIEF = {1: 15, 2: 8, 3: 0}
 
 def run(ctx) -> dict:
     pick = int(ctx.variant_option("INVASION_DIFFICULTY", "2"))
-    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     before = ctx.mod.command("InvasionMod.invasion_difficulty_state")
     ctx.check("D1 before a pick the difficulty is not chosen", before["chosen"] is False, before)
     after = ctx.mod.command("InvasionMod.invasion_pick_difficulty", value=pick)

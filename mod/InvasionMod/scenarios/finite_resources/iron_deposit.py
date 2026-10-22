@@ -3,7 +3,7 @@
 A real iron mine cannot be placed without the real mouse, so the scenario lends the deposit "iron" to a good that the buildings of the
 saved game already produce (the test command picks it): the same counter and the same limit lever apply to any good.
 Steps: find a growing good, give the deposit a small size on that good, watch the count fall, see the production limit 0 at the end,
-and see that the production of the good stops. It saves nothing. Run it on the default fixture (base).
+and see that the production of the good stops. It saves nothing. Run it on the default fixture.
 """
 
 NAME = "finite-resources-iron"
