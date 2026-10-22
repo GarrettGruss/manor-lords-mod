@@ -5,8 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Raid clock (change `update-raid-clock-yearly`, #339): the Invasion Mod plans no raid in the first game year. From the second year one raid comes each year, decided by a roll at each season change (25, 33, 50 and 100 percent, setting `invasion.yearly.chance_by_season`; the fourth season always raids). The settings `first_raid_days_min`, `first_raid_days_max` and `subjugation.wait_days_min`, `wait_days_max` are removed. New test commands `invasion_yearly_state`, `invasion_yearly_advance_season` and `invasion_plan_now`; new test scenario `invasion-yearly-raid`.
+
 ### Added
 - Spike `spike-corpse-pit-loot` (#360): the corpse pit can carry raid loot. Delivery shows only as the pit inventory `Type 233` rising (poll, no hook); `pit:addToInventory` is hauled to a store in 3 to 5 game days. Owner decided that the pit replaces the direct store add, for Hussite raids only (follow-up change `add-corpse-pit-loot`).
+- Spike `spike-new-game-difficulty-setting` (#358): the game's Game Setup values (`MLGameInstance.gameSetup.currentGameSetup`) are readable from Lua but not saved; visiting the setup screen changes `menu.sav`. Read module `HarnessGameSetup` and probe test scenario `probe-difficulty-setting`. Replaced by the mod's own scenario settings menu (#375).
 - Spike `spike-finite-resource-limits` (#342): resource deposits (surface amount, rich flag, endless reserves) live in native code and cannot be read or written from Lua; only the region production limit (`setProductionLimit`) can be set. Owner accepted that the mod does not manage resource state (2026-10-22).
 - Spike `spike-bandit-message-toggle` (#343): the bandit reply banner (`questMessageElaborate_C`) cannot be stopped by a hook, but `RemoveFromParent` hides it. Owner accepted this (2026-10-21); the letter may stay in the inbox. Probe command `message_probe`.
 - Spike `spike-menu-custom-textures` (#333): a mod menu can show a PNG loaded at run time (`ImportFileAsTexture2D`, `SetBrushFromTexture`) and draw a frame as 9-slice (Box). Owner approved it (2026-10-21). Test scenario `probe-menu-texture` and probe module `HarnessTexProbe`.
@@ -32,6 +36,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Living specs for the built behavior of all legacy specs (change `backfill-living-specs`, #253): 28 harness capabilities, `process/testing-strategy`, 15 Invasion Mod capabilities (`mod/core` and the features). The standalone test mods RefugeeWaves and PolicyMenu get no spec: the Invasion Mod absorbed them. Each spec scenario names its check or says "Not checked yet". Legacy specs stay.
 
 ### Changed
+- The default fixture is now `base-corpse-pit`, the `base` village with a built corpse pit (change `update-default-fixture`, #379). `base` stays available with `--fixture base`; test scenarios that need a save without the mod say so.
 - Sack (change `fix-sack-fire-and-goods`, #325): the sack no longer takes a share of the stock. The mod removes no goods; a fire may destroy part of the goods of a burned store (accepted). Test scenario `sack-ruins` runs the fire with raiders in the village and records the goods lost.
 - Slot lookup (`gameslots.SLOTS_DIR`) uses the `slots` folder of the main checkout, so `--slots N` works from a git worktree (#151).
 - The game design moved from `docs/mod/M00-invasion-mod/` to `design/mod/`, split by job (change `split-design-brief`, #292; `design/harness/` is reserved): `invasion-mod.md` (the guiding philosophy, word for word), `decisions.md` (the decision log, numbers kept) and `trailer.md`. The original M00 (with the old feature map, build plan, balance targets and open questions) and the feasibility reviews are archived in `openspec/changes/archive/2026-10-15-legacy-m00-invasion-mod/`. `openspec/config.yaml` now carries the vision and the pillars, and a mod proposal must name the design section it serves. `docs/mod/` is gone.

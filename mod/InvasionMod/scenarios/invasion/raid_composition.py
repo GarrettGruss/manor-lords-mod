@@ -49,7 +49,7 @@ def run(ctx) -> dict:
     difficulty = int(ctx.variant_option("INVASION_DIFFICULTY", "1"))
     ctx.mod.command("InvasionMod.unit_balance_set", enabled=False)
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=difficulty)
-    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     plan = ctx.mod.command("InvasionMod.invasion_set_size", size="large")
     planned = plan["composition"].split("-")
     ctx.log.info(f"COMPOSITION plan difficulty={difficulty} {plan['composition']} raiders={plan['raiders']}")

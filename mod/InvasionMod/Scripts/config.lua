@@ -16,7 +16,10 @@ return {
     invasion = {
         enabled = true,
         difficulty = 1,                                      -- start value, 1 to 3. The player picks it (start UI comes later).
-        first_raid_days_min = 30, first_raid_days_max = 90,  -- game days from the day the plan is made
+        yearly = {                                           -- update-raid-clock-yearly: no raid in game year 1, then one raid a year
+            chance_by_season = { 25, 33, 50, 100 },          -- percent at the season change, first to fourth season of the year (owner decision 2026-10-21)
+            season_days = 90,                                -- the raid comes 1 to this many game days after the successful roll
+        },
         warning_days_min = 14, warning_days_max = 56,        -- 2 to 8 game weeks
         size_multipliers = { small = 1, medium = 2, large = 3 }, -- squads = multiplier x difficulty
         squad_units = 18,                                    -- units in one squad of spawnRaiders
@@ -36,10 +39,9 @@ return {
             relief_offset = { x = 0, y = 2500 },             -- the relief army appears this far from the player pawn
             prompt_every_days = 7,                           -- iteration 04: the pick prompt repeats until the player picks                          -- a banner for the clock when no minor raid banner shows
         },
-        -- M02 iteration 03: the subjugation raid (major). One is planned after the first raid. Values are TBD for playtests.
+        -- M02 iteration 03: the subjugation raid (major). The yearly roll plans it as the second raid. Values are TBD for playtests.
         subjugation = {
             enabled = true,
-            wait_days_min = 60, wait_days_max = 120,         -- game days from the first raid spawn to the subjugation raid
             size_class = 3,                                  -- large: squads = 3 x difficulty (TBD, "major" has no size rule in M00)
         },
         poll_ms = 300,                                       -- real time between two checks of the game day
