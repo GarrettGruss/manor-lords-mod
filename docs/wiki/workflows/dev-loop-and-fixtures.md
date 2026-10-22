@@ -49,7 +49,7 @@ Tests: `harness/tests/test_fakegame_harnessreload.py` (Lua side), `test_reload_m
 
 ## Fixtures
 
-A fixture is one saved game. The manifest `harness/fixtures/fixtures.json` lists it: description, origin, SHA-256 of each file, `stored`, tags. The save files are in `harness/fixtures/saves/<name>/` under the stem `slot`. Git ignores that folder. Only the manifest is in git. The default fixture is `base` (`DEFAULT_FIXTURE`, a copy of the user's `saveGame_0` on Jagged_Cliffs). An old entry with `source_slot` and no stored files loads that slot of the user's folder by name, read only.
+A fixture is one saved game. The manifest `harness/fixtures/fixtures.json` lists it: description, origin, SHA-256 of each file, `stored`, tags. The save files are in `harness/fixtures/saves/<name>/` under the stem `slot`. Git ignores that folder. Only the manifest is in git. The default fixture is `base-corpse-pit` (`DEFAULT_FIXTURE`, tag `default`): the village of `base` (a copy of the user's `saveGame_0` on Jagged_Cliffs) plus a built corpse pit. It was saved with the mod loaded, so a test that needs a save without the mod names `--fixture base`. An old entry with `source_slot` and no stored files loads that slot of the user's folder by name, read only.
 
 Why an install step exists: the game lists and loads saves only from the user's REAL save folder, and only names `saveGame_<n>` up to the highest number there. The slot name comes from the `saveSlot` value inside `<slot>_descr.sav`, not from the file name. A copy in the private `LOCALAPPDATA` is never read. Notes: `fixture-load-bug.md`.
 
@@ -75,7 +75,7 @@ Steps in the launcher (`harness/runlib/phases.py`, `harness/runlib/fixtures.py`,
 ### Choosing the start
 
 `harness/run.py` options:
-- `--fixture NAME` (default `base`): a fixture from the manifest.
+- `--fixture NAME` (default `base-corpse-pit`): a fixture from the manifest.
 - `--save PATH.sav`: any save file (its `_descr.sav` must be next to it). Installed like a stored fixture and removed at the end.
 - `--new-game [--map Name]`: a fresh game with no save (spec 06 part E, default map `Jagged_Cliffs`). Nothing is installed. `HarnessBoot` gets `HARNESS_NEW_GAME=1`, opens the map, pushes the autosave away and pauses. Not allowed with `--save` or `--fixture`.
 - `--keep-open`: leave the game running after the scenario.
