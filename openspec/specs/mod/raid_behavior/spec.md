@@ -1,7 +1,7 @@
 # mod/raid_behavior Specification
 
 ## Purpose
-The raid_behavior feature tracks each raid that the invasion feature spawns. It keeps loot under a cap, returns the loot of dead raiders, lets role raids leave, and guards the player's region.
+The raid_behavior feature steers the larger Hussite raids into the player's region, because the game has no native way to raid a player region with units other than Brigands. A Hussite raid runs under the baron AI, not the native plunder AI, so that a raid can bring a mix of units (archers, spearmen, retinue) that a native raid cannot. It also tracks each raid that the invasion feature spawns, keeps the loot of Hussite raids under a cap, lets role raids leave, and guards the player's region.
 
 ## Requirements
 

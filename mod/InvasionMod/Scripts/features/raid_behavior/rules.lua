@@ -47,7 +47,7 @@ function M.departure_kind(unit, exit_y)
 end
 
 -- Apply one look at the world. `seen` maps a unit key to { loot, x, y, dead } for the units the game still lists.
--- A tracked unit that is not seen, or is dead, is gone. Returns the death events: { key, loot, x, y }.
+-- A tracked unit that is not seen, or is dead (the reader also marks a unit that the census no longer counts), is gone. Returns the death events: { key, loot, x, y }.
 -- `config` has carry_cap and exit_y. `seen[key].new_loot` is the loot cut to the cap (the caller writes it back).
 function M.update(raid, seen, config, day)
     local deaths = {}
@@ -108,7 +108,7 @@ function M.leave_reason(raid, day, leave, carry_cap)
     return nil
 end
 
--- The raid must leave. The units are not removed yet: they go away first (see exit_quiet).
+-- The raid must leave. A lord army is removed by the game after peace.
 function M.begin_leave(raid, reason, day)
     raid.leaving, raid.leave_reason, raid.leave_day = true, reason, day
     if raid.lord == nil then return end
@@ -138,54 +138,10 @@ end
 
 function M.record_plunder(raid, amount) raid.plundered = raid.plundered + amount end
 
-local function is_quiet(x, y, home, quiet)
-    if y ~= nil and y <= quiet.exit_y then return true end
-    return home ~= nil and x ~= nil and y ~= nil and (x - home.x) ^ 2 + (y - home.y) ^ 2 >= quiet.distance ^ 2
-end
-
--- Mark the units that stand in a quiet spot (far from the village, or at the map edge). Their loot leaves with them.
--- Returns the keys to remove. A marked unit that disappears counts as a departure, not as a death.
--- `quiet` has distance and exit_y. `seen` holds the places of the units now.
-function M.exit_quiet(raid, seen, home, quiet)
-    local keys = {}
-    for key, unit in pairs(raid.units) do
-        local now = seen[key]
-        if not unit.exiting and now ~= nil and not now.dead and is_quiet(now.x, now.y, home, quiet) then
-            raid.carried_out = raid.carried_out + unit.loot
-            unit.loot, unit.exiting = 0, true
-            keys[#keys + 1] = key
-        end
-    end
-    table.sort(keys)
-    return keys
-end
-
 -- The native AI wrote its leave line: the raid is over for the village, also while the raiders still walk to the map edge.
 function M.mark_leaving(raid, day)
     raid.leaving = true
     if raid.state == "active" then raid.state, raid.end_day = "left", day end
-end
-
-function M.record_return(raid, amount) raid.returned = raid.returned + amount end
-function M.record_loss(raid, amount) raid.lost = raid.lost + amount end
-
--- The store that is nearest to a place. `stores` is a list of { x, y, ... }. Returns nil for an empty list.
-function M.nearest_store(stores, x, y)
-    local best, best_distance
-    for _, store in ipairs(stores) do
-        local distance = (store.x - x) ^ 2 + (store.y - y) ^ 2
-        if best_distance == nil or distance < best_distance then best, best_distance = store, distance end
-    end
-    return best
-end
-
--- The good that the store holds most of. A store with no goods gets the fallback good.
-function M.pick_good(by_good, fallback)
-    local best, best_amount = nil, 0
-    for good, amount in pairs(by_good) do
-        if amount > best_amount or (amount == best_amount and best ~= nil and good < best) then best, best_amount = good, amount end
-    end
-    return best or fallback
 end
 
 -- The numbers that the command and the log show.
