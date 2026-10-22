@@ -17,4 +17,4 @@
 ## 4. Close
 
 - [x] 4.1 Write the new Purpose (proposal) into `openspec/specs/mod/raid_behavior/spec.md`.
-- [ ] 4.2 Full test set, `CHANGELOG.md` (Removed group), archive.
+- [x] 4.2 Full test set, `CHANGELOG.md` (Removed group), archive.
