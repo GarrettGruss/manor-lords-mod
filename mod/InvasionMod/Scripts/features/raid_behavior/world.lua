@@ -118,11 +118,15 @@ function M.region_is_players(region_name)
     return read(function() return owner:GetAddress() end) == read(function() return player:GetAddress() end)
 end
 
--- Take `amount` goods out of the stores of the village, from the store that holds most first. Returns the amount taken.
+-- Take `amount` goods out of the tier 1 stores of the village (`tiers` maps a building type to a tier; a store of another
+-- tier or of no tier is never touched), from the store that holds most first. Returns the amount taken.
 -- consumeGoodNoCheck removes one unit (HarnessSack, spike S6).
-function M.plunder(amount)
-    local stores = M.stores()
-    if stores == nil then return 0 end
+function M.plunder(amount, tiers)
+    local all, stores = M.stores(), {}
+    if all == nil then return 0 end
+    for _, store in ipairs(all) do
+        if store.type ~= nil and tiers[store.type] == 1 then stores[#stores + 1] = store end
+    end
     table.sort(stores, function(a, b) return total_of_goods(a.by_good) > total_of_goods(b.by_good) end)
     local taken = 0
     for _, store in ipairs(stores) do
@@ -179,7 +183,8 @@ function M.stores(region_name)
             local x, y = building_place(building)
             if next(by_good) ~= nil and x ~= nil then
                 local name = read(function() return building:GetFullName() end) or ""
-                stores[#stores + 1] = { building = building, x = x, y = y, by_good = by_good, id = tonumber(name:match("_(%d+)$")) }
+                local kind = read(function() return building.Data.bType end)
+                stores[#stores + 1] = { building = building, x = x, y = y, by_good = by_good, id = tonumber(name:match("_(%d+)$")), type = type(kind) == "number" and kind or nil }
             end
         end
     end

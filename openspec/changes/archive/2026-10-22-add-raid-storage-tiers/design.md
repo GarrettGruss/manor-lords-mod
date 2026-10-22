@@ -19,7 +19,7 @@ Manor storage finding: `openspec/changes/archive/2026-10-15-legacy-12-manor-expl
 - Game raid (the game steers raiders to pillage and steal): the mod does not compute stolen goods. The game manages it.
 - Baron AI raid (baron units cannot pillage or steal): the mod steals in Lua.
   - For each baron unit, measure its distance to the battle marker.
-  - If the distance is above a configurable threshold (300 m for now), the unit is "stealing".
+  - If the distance is above a configurable threshold (200 m, owner 2026-10-20; the army fights about 140 m from the marker), the unit is "stealing".
   - A stealing unit takes a configurable amount (10 goods per in-game day for now) from tier 1 stores only.
   - The raid has a configurable total steal goal, scaled by game difficulty (for now 100 for a small raid and 300 for a large raid). Stealing stops at the goal.
 - Stretch goal (separate requirement): a tech "Manor" in a third, common branch of the tech tree. One tech for now. It unlocks storage under the manor with the capacity and job slots of a level 1 storehouse (generic limit 250, 3 worker slots, see the worker-slots finding).
