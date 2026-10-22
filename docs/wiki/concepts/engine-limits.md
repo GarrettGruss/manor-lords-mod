@@ -32,6 +32,7 @@ Do not plan a feature that needs buildings inside the bailey.
 - Setting `read` or `wasOpened`, or emptying `InBox`, does not stop the banner.
 - What works: `RemoveFromParent` on live `questMessageElaborate_C` widgets that were not in the list taken before the send (run `s343-b1`). The letter stays in InBox, unopened. The game does not crash. The mod must hide the banner for each letter.
 - Owner decision 2026-10-21: hiding the banner is enough; the letter may stay in the inbox. Notes: `openspec/changes/archive/2026-10-21-spike-bandit-message-toggle/notes/`.
+
 ## Menu pictures: PNG at run time (spike #333)
 - A mod menu can show a picture the game does not have, without a pak. `KismetRenderingLibrary:ImportFileAsTexture2D(world, path)` loads a PNG from an absolute path with forward slashes. The texture is not compressed.
 - Build the widget in Lua: `WidgetBlueprintLibrary:Create`, then `StaticConstructObject` of `WidgetTree` and `Image`. Use `Image:SetBrushFromTexture(texture, false)`, `AddToViewport` and `SetPositionInViewport`.
@@ -39,7 +40,7 @@ Do not plan a feature that needs buildings inside the bailey.
 - `SetDesiredSizeOverride` alone did not size a new full screen image (it drew about 24 px). Put the image in a canvas panel with full-screen anchors, or set the override after the brush change.
 - Not known: a cooked pak texture and a custom (blackletter) font. Both need an editor cook and were not tried. A shipped mod must deploy its PNG next to its Lua (not tested).
 - Owner decision 2026-10-21: menus may use PNG images loaded at run time. Notes: `openspec/changes/archive/2026-10-21-spike-menu-custom-textures/notes/`.
-35i
+
 ## Results of the community mod lead spikes (change `spike-community-mod-leads`, #280)
 
 Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the notes of the change.
