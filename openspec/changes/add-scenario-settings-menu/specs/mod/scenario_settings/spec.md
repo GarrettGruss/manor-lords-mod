@@ -65,14 +65,14 @@ The mod SHALL treat a game as new only when no save file was loaded and the mod 
 - **AND** with a save file name, or with the entry, the game is loaded
 - Not checked yet (planned: `harness/tests/test_fakegame_scenario_settings.py`).
 
-### Requirement: The First Hussite raid setting sets the first raid day
-The setting "First Hussite raid" (1, 2 or 3 years) SHALL set the first raid day to that many game years after the plan day, plus or minus a spread set in config (default 10 percent of the delay). This option is new. It replaces the fixed range `first_raid_days_min` and `first_raid_days_max` of `mod/invasion`. The warning time SHALL stay between `warning_days_min` and `warning_days_max` and never be longer than the wait.
+### Requirement: The First Hussite raid setting sets the first raid year
+The setting "First Hussite raid" (after 1, 2 or 3 years) SHALL set the first game year in which the yearly season roll of `mod/invasion` (change `update-raid-clock-yearly`) may bring a Hussite raid: after 1 year means year 2, after 2 years means year 3, after 3 years means year 4. No Hussite raid SHALL come before that year. Inside that year the season roll of that change SHALL decide the day.
 
 #### Scenario: A delay of 2 years
-- **WHEN** the setting is 2 years and the first daily step runs
-- **THEN** the raid day is between 650 and 810 game days after the plan day
-- **AND** the warning time is between 14 and 56 game days
-- Not checked yet (planned: `mod/InvasionMod/scenarios/scenario_settings/first_raid_delay.py`; the game year length and the range are confirmed in the implementation change).
+- **WHEN** the setting is 2 years
+- **THEN** no Hussite raid comes in game years 1 and 2
+- **AND** in year 3 the season roll runs with the chances 25, 33, 50 and 100 percent, so the raid has come by the end of spring, summer and fall with a chance of 25, 50 and 75 percent, and always in year 3
+- Not checked yet (planned: `harness/tests/test_fakegame_scenario_settings.py` for the year rule, `mod/InvasionMod/scenarios/scenario_settings/first_raid_delay.py` in the real game).
 
 ### Requirement: The raid size setting fixes the size class
 The setting "Raid size" SHALL fix the size class of the first minor raid to Small, Medium or Large (multipliers 1, 2, 3 as today). The mod SHALL NOT pick the class at random after the player chose it.

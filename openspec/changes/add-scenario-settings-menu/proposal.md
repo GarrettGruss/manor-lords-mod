@@ -15,7 +15,7 @@ Design served: `design/mod/invasion-mod.md` (the raid schedule and the difficult
 
 - A new menu, the scenario settings menu, opens when a new game starts. It shows a short background text of the scenario and these settings:
   - Difficulty: Easy, Normal, Hard (mod difficulty 1, 2, 3; default Normal). Exists today.
-  - First Hussite raid: after 1, 2 or 3 years (default 2). Does NOT exist yet as a mod option. Today the first raid day is random, 30 to 90 game days after the plan day (`first_raid_days_min` and `first_raid_days_max`).
+  - First Hussite raid: after 1, 2 or 3 years (default 2). Does NOT exist yet as a mod option. It sets the first year in which the yearly season roll of the approved change `update-raid-clock-yearly` (#339; chances 25, 33, 50, 100 percent per season) may bring the raid. This change depends on that change: it is implemented after it.
   - Raid size: Small, Medium, Large (default Medium). The sizes exist. Today the size class is picked at random. The menu fixes the class.
   - Great raids: On or Off (default On). Does NOT exist yet. Today the great raid clock always runs.
   - Buttons "Use defaults" and "Begin the game". The game stays paused until Begin.

@@ -27,11 +27,11 @@ The owner chose a mod-owned menu over the game's Game Setup screen (2026-10-21).
 | Setting | Mod state key | Existing mod option |
 |---|---|---|
 | Difficulty | `difficulty`, `difficulty_chosen` | exists (`invasion.difficulty`) |
-| First Hussite raid | `first_raid_years` (new, 1 to 3, default 2) | NEW: replaces `first_raid_days_min/max` as the source of the raid day |
+| First Hussite raid | `first_raid_years` (new, 1 to 3, default 2) | NEW: the first year of the season roll (`update-raid-clock-yearly`) |
 | Raid size | `size_class_fixed` (new, 0 random, 1 to 3) | the size class exists (`size_class`, `size_multipliers`); a fixed class is new |
 | Great raids | `great_raids` (new, 0 or 1, default 1) | NEW: the clock always runs today |
 
-- First raid delay: `plan_rules.first_raid` takes the delay in days (years times the game year length, confirmed in task 1.2) and a spread from config (default 10 percent). The old range stays as config of the spread for tests.
+- First raid year: the season roll of `update-raid-clock-yearly` starts in year `first_raid_years + 1` instead of year 2. The roll, its chances and the raid day inside the season are unchanged. No spread of its own.
 - Great raids Off: the daily step does not start the clock when `great_raids` is 0. If the value changes to Off later by command, a running clock stops and the phase stays `none`.
 - All new keys are registered in the mod state with a type (`mod/mod_state`).
 - Defaults live in `config.lua`: difficulty 2, 2 years, Medium (class 2), On.

@@ -1,12 +1,12 @@
 ## 1. Facts first
 
 - [ ] 1.1 Start one real new game from the main menu. Record how the mod sees a new game (`savefileToLoad`, the pawn, the intro) and how to pause and un-pause. Note in `notes/new-game-detection.md`. Verified by one real game run on one slot.
-- [ ] 1.2 Read the game year length in game days. Note in `notes/year-length.md`. Verified by a bridge read in a game run.
+- [ ] 1.2 Check that `update-raid-clock-yearly` is implemented (season roll, year number in ModState); this change builds on it. Note in `notes/season-roll.md`.
 
 ## 2. Settings and rules
 
 - [ ] 2.1 Register the new mod state keys (`first_raid_years`, `size_class_fixed`, `great_raids`, `settings_applied`) and the defaults in `config.lua`. Verified by `harness/tests/test_fakegame_scenario_settings.py`.
-- [ ] 2.2 First raid delay from years: change `plan_rules.first_raid`. Verified by a fake game test and `scenarios/scenario_settings/first_raid_delay.py`.
+- [ ] 2.2 First raid year: start the season roll in year `first_raid_years + 1`. Verified by a fake game test and `scenarios/scenario_settings/first_raid_delay.py`.
 - [ ] 2.3 Fixed size class. Verified by a fake game test.
 - [ ] 2.4 Great raids switch. Verified by a fake game test and `scenarios/scenario_settings/great_raids_off.py`.
 - [ ] 2.5 `invasion_set_difficulty` marks the difficulty as chosen; no pick banner after the settings applied. Verified by a fake game test; `difficulty_pick.py` still passes.
