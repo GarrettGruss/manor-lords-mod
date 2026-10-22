@@ -2,61 +2,22 @@
 -- The layout is a cooked Widget Blueprint in the pak raidmenu_P.pak (mod/InvasionMod/ue/make_raid_widget.py): a title, LINE_COUNT text
 -- lines and three Borders. Lua puts a click button (WBP_ClickButton, shared module HarnessClickHooks) into each Border.
 -- A click is a hook event, not a poll (spec 34).
--- F8 opens and closes the menu. A click on a difficulty button picks the difficulty (until the first raid or the first pick).
+-- The menu is built on the base menu (core/menu.lua): it gets a bottom bar button, opens fullscreen and blocks clicks to the game.
+-- F8 stays as a shortcut. A click on a difficulty button picks the difficulty (until the first raid or the first pick).
 -- Rules: game objects are touched on the game thread only (the scheduler runs jobs there). No LoopAsync of its own.
 local core = require("ManorCore")
+local menu = require("core.menu")
 local lines = require("features.raid_widget.lines")
 local invasion = require("features.invasion.init")
 local config = require("config").raid_widget
 local clickhooks = require("HarnessClickHooks")
 
 local TAG = "InvasionMod.raid_widget"
-local CLASS_PATH = "/Game/HarnessMod/WBP_RaidMenu.WBP_RaidMenu_C"
-local PACKAGE_PATH, ASSET_NAME = "/Game/HarnessMod", "WBP_RaidMenu"
+local MENU_ID = "raid"
 local LINE_COUNT, BUTTON_COUNT = 5, 3
 
 local S = { widget = nil, lines = {}, buttons = {}, picks = 0, last_error = nil, shown_lines = {}, last_refresh = 0 }
 local isValid, read = core.isValid, core.read
-
--- LoadAsset does not load an asset of a mod pak. The asset registry call does (spec 16 pak-widget-spike.md).
-local function find_class()
-    local found = StaticFindObject(CLASS_PATH)
-    if isValid(found) then return found end
-    local registry = StaticFindObject("/Script/AssetRegistry.Default__AssetRegistryHelpers")
-    if not isValid(registry) then return nil, "AssetRegistryHelpers not found" end
-    local data = {
-        PackageName = FName(PACKAGE_PATH .. "/" .. ASSET_NAME), PackagePath = FName(PACKAGE_PATH), AssetName = FName(ASSET_NAME),
-        AssetClassPath = { PackageName = FName("/Script/UMGEditor"), AssetName = FName("WidgetBlueprint") },
-    }
-    local ok, err = pcall(function() return registry:GetAsset(data) end)
-    if not ok then return nil, "GetAsset: " .. tostring(err) end
-    found = StaticFindObject(CLASS_PATH)
-    if not isValid(found) then return nil, "class not found; is the pak raidmenu_P.pak in Paks/~mods?" end
-    return found
-end
-
-local function make_widget()
-    local class, problem = find_class()
-    if not class then return nil, problem end
-    local library = StaticFindObject("/Script/UMG.Default__WidgetBlueprintLibrary")
-    local controller = FindFirstOf("PlayerController")
-    if not (isValid(library) and isValid(controller)) then return nil, "widget library or player controller not found" end
-    local made = library:Create(controller, class, controller)
-    if not isValid(made) then return nil, "WidgetBlueprintLibrary:Create returned no widget" end
-    return made
-end
-
--- The children of the widget tree have names like RaidLine0 and DifficultyButton2. Python cannot mark them as variables.
-local function find_named(widget, class_name, prefix, count)
-    local widget_name = read(function() return widget:GetFName():ToString() end)
-    local found = {}
-    for _, object in ipairs(FindAllOf(class_name) or {}) do
-        local full = read(function() return object:GetFullName() end) or ""
-        local index = full:match(prefix .. "(%d+)$") or full:match(prefix .. "(%d+) ")
-        if index and widget_name and full:find(widget_name, 1, true) and tonumber(index) < count then found[tonumber(index) + 1] = object end
-    end
-    return found
-end
 
 local function terms_summary()
     local loaded = package.loaded["features.sack_and_terms.terms"]
@@ -96,15 +57,10 @@ local function pick(value)
     refresh()
 end
 
-local toggle_requested = false
-local toggle -- defined below
+local function is_open() return menu.is_open(MENU_ID) end
 
 local function tick()
-    if toggle_requested then
-        toggle_requested = false
-        core.log.try(TAG, toggle)
-    end
-    if not isValid(S.widget) then
+    if not is_open() then
         S.widget = nil
         return
     end
@@ -118,32 +74,33 @@ local function tick()
     end
 end
 
-local function is_open()
-    return isValid(S.widget)
-end
-
 local function release_buttons()
     local handles = {}
     for _, slot in pairs(S.buttons) do handles[#handles + 1] = slot.handle end
     clickhooks.release(handles)
 end
 
-local function open()
-    if is_open() then return { ok = true, already_open = true } end
-    local made, problem = make_widget()
-    if not made then return { ok = false, error = problem } end
+local function reset()
+    release_buttons()
+    S.widget, S.lines, S.buttons, S.shown_lines = nil, {}, {}, {}
+end
+
+-- The base menu calls this with the made widget. On a failure this function cleans up and returns nil and a message.
+local function on_open(made)
     S.widget = made
-    S.lines = find_named(made, "TextBlock", "RaidLine", LINE_COUNT)
-    local borders = find_named(made, "Border", "DifficultyButton", BUTTON_COUNT)
+    local texts = menu.find_named(made, "TextBlock", menu.pool_names("RaidLine", LINE_COUNT))
+    local borders = menu.find_named(made, "Border", menu.pool_names("DifficultyButton", BUTTON_COUNT))
+    S.lines = {}
+    for i = 1, LINE_COUNT do S.lines[i] = texts["RaidLine" .. (i - 1)] end
     local controller = FindFirstOf("PlayerController")
     S.buttons = {}
     for i = 1, BUTTON_COUNT do
-        if borders[i] then
-            local handle, problem = clickhooks.attach(borders[i], controller, { owner = S, value = i })
+        local border = borders["DifficultyButton" .. (i - 1)]
+        if border then
+            local handle, problem = clickhooks.attach(border, controller, { owner = S, value = i })
             if not handle then
-                made:RemoveFromParent()
-                S.widget = nil
-                return { ok = false, error = problem }
+                reset()
+                return nil, problem
             end
             S.buttons[i] = { handle = handle }
         end
@@ -152,34 +109,24 @@ local function open()
     for _, slot in pairs(S.buttons) do handles[#handles + 1] = slot.handle end
     local bound, bind_problem = clickhooks.bind_texts(handles)
     if not bound then
-        release_buttons()
-        made:RemoveFromParent()
-        S.widget, S.buttons = nil, {}
-        return { ok = false, error = bind_problem }
+        reset()
+        return nil, bind_problem
     end
     for i, slot in pairs(S.buttons) do clickhooks.set_text(slot.handle, "Pick difficulty " .. i) end
     if S.lines[1] == nil then
-        made:RemoveFromParent()
-        S.widget = nil
-        return { ok = false, error = "the text lines were not found in the widget" }
+        reset()
+        return nil, "the text lines were not found in the widget"
     end
-    made:AddToViewport(config.z_order)
-    made:SetPositionInViewport(config.position, false)
     refresh()
-    return { ok = true }
+    return true
 end
 
-local function close()
-    if is_open() then S.widget:RemoveFromParent() end
-    release_buttons()
-    S.widget, S.lines, S.buttons, S.shown_lines = nil, {}, {}, {}
-    return { ok = true }
-end
-
-function toggle()
-    if is_open() then return close() end
-    return open()
-end
+menu.register({
+    id = MENU_ID, label = "Raid",
+    class_path = "/Game/HarnessMod/WBP_RaidMenu.WBP_RaidMenu_C", package_path = "/Game/HarnessMod", asset_name = "WBP_RaidMenu",
+    z_order = config.z_order, position = config.position,
+    on_open = on_open, on_close = reset,
+})
 
 ---------------------------------------------------------------------------------------------
 -- Named commands for the harness (no eval)
@@ -201,15 +148,18 @@ end
 
 local has_commands, commands = pcall(require, "HarnessCommands")
 if has_commands then
-    commands.register("InvasionMod.raid_widget_open", open, {})
-    commands.register("InvasionMod.raid_widget_close", close, {})
+    commands.register("InvasionMod.raid_widget_open", function() return menu.open(MENU_ID) end, {})
+    commands.register("InvasionMod.raid_widget_close", function()
+        if is_open() then return menu.close() end
+        return { ok = true }
+    end, {})
     commands.register("InvasionMod.raid_widget_state", describe, {})
 end
 
 require("scheduler").every(TAG, config.poll_ms, tick)
 -- The key callback runs on the input thread. It must not touch the Lua state beyond one flag:
--- Lua calls from it raced with the game thread and crashed the game (UE4SS luaH_getint). The tick does the work.
-RegisterKeyBind(config.toggle_key, function() toggle_requested = true end)
+-- Lua calls from it raced with the game thread and crashed the game (UE4SS luaH_getint). The base menu tick does the work.
+RegisterKeyBind(config.toggle_key, function() menu.request_toggle(MENU_ID) end)
 
-core.log.info(TAG, "feature raid_widget loaded (F8 opens and closes the menu)")
-return { open = open, close = close }
+core.log.info(TAG, "feature raid_widget loaded (the Raid button in the bottom bar, or F8, opens and closes the menu)")
+return { open = function() return menu.open(MENU_ID) end, close = menu.close }

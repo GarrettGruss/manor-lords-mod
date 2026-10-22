@@ -35,6 +35,7 @@ Harness code must not name the mod or its features. The harness finds the mod th
 | `Scripts/feature_list.lua` | The features and their `requires`. Must equal `features` in `mod.json`. |
 | `Scripts/config.lua` | One table per feature: `enabled` and all balance values. |
 | `Scripts/scheduler.lua` | One shared timer for all feature jobs. |
+| `Scripts/core/menu.lua` | The base menu. Every mod menu registers here (`menu.register`) and gets a bottom bar button, open and close, a full-screen backdrop that blocks clicks, a Close button and one-menu-at-a-time. Only this file creates menu widgets (`test_menu_widget_sites.py`). |
 | `Scripts/features/<feature>/init.lua` | The feature. Larger features split into `rules.lua` (pure logic) and `world.lua` (game access). |
 | `data/<feature>/patches/*.json` | Row patches for game tables (today only the `example` feature). `data/tech_tree/tree.json` is a data file read by Lua. |
 | `scenarios/<feature>/*.py` | Real-game scenarios of the feature. |
