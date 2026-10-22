@@ -15,7 +15,7 @@ Owner decisions (2026-10-21):
 
 ## What Changes
 
-- **Tracking:** the spec scenario "A one-squad native raid" has no day limit. The raid may end `left` or `destroyed`. The native leave line is required only when the raid ends `left`. The tracker counts a raider as living only while the game unit census counts it.
+- **Tracking:** the requirement "Every spawned raid is tracked" is replaced by "Every spawned raid is tracked by the game census" (the tool cannot drop a scenario in a MODIFIED block). Its spec scenario "A one-squad native raid" becomes "A Hussite raid": a Hussite raid runs under the baron AI, not the native plunder AI (owner, 2026-10-21). It has no day limit and may end `left` or `destroyed`. The native leave line is no longer checked. The test scenario `carry_caps.py` checks it; `native_plunder.py` is removed. The tracker counts a raider as living only while the game unit census counts it.
 - **Native raids:** the mod still does not steer, rout or remove a native raid. The spec scenario "Native plunder" is removed, because it measures the game's AI, not the mod.
 - **BREAKING** Bandit squad raids (no lord) are no longer sent home by the mod: no peace, no removal in a quiet spot.
 - **BREAKING** The loot of a dead raider is no longer added to the nearest store. It stays with the body (the game's own behavior). The corpse pit change (`spike-corpse-pit-loot`, #360) will give it back through the corpse pit.
@@ -26,11 +26,11 @@ Owner decisions (2026-10-21):
 
 ### Modified Capabilities
 
-- `mod/raid_behavior`: the Purpose; MODIFIED "Every spawned raid is tracked"; REMOVED "A native raid is left alone" (its rule is ADDED again as "The mod never steers or removes a native raid", without the spec scenario "Native plunder"), "Bandit squads leave only in a quiet spot" and "The loot of a dead raider goes to the nearest store".
+- `mod/raid_behavior`: the Purpose; REMOVED "Every spawned raid is tracked" (ADDED again as "Every spawned raid is tracked by the game census"), "A native raid is left alone" (its rule is ADDED again as "The mod never steers or removes a native raid", without the spec scenario "Native plunder"), "Bandit squads leave only in a quiet spot" and "The loot of a dead raider goes to the nearest store".
 
 ## Impact
 
 - `mod/InvasionMod/Scripts/features/raid_behavior/`: tracker (`world.lua`, `rules.lua`), the bandit leave code and the loot return code (`return_loot`) are removed.
-- Test scenarios: `native_plunder.py` changes; `loot_return.py` is removed.
+- Test scenarios: `carry_caps.py` gets the tracking checks; `native_plunder.py` and `loot_return.py` are removed.
 - `harness/tests/test_fakegame_raid_behavior.py`.
 - Follow-up: the delta spec of `spike-corpse-pit-loot` modifies "The loot of a dead raider goes to the nearest store". It must become an ADDED corpse pit requirement before that change is archived.

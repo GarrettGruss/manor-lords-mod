@@ -11,8 +11,8 @@
 
 ## 3. Test scenario
 
-- [ ] 3.1 `native_plunder.py`: accept `left` or `destroyed`; require the leave line only for `left`; drop the loot, burn and population checks; keep a safety cap on game days so the run ends.
-- [ ] 3.2 Real game runs: 3 runs of `raid-behavior-native-plunder` pass.
+- [ ] 3.1 `carry_caps.py`: assert at every sample that the tracker count of living raiders equals the census count, and that the raid ends `left` or `destroyed`. Remove the test scenario `native_plunder.py` and its coverage entries.
+- [ ] 3.2 Real game runs: 3 runs of the carry cap test scenario pass.
 
 ## 4. Close
 
