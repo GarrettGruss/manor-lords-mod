@@ -42,7 +42,7 @@ def run_chunk(ctx) -> None:
 
 def run(ctx) -> dict:
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=1)
-    ctx.run_until(lambda: state(ctx)["raid_day"] > 0, 30, what="the raid plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     plan = ctx.mod.command("InvasionMod.invasion_set_size", size="small")
     bandits_before = side_count(ctx.actions.units_census(), "bandit")
     calendar = ctx.bridge.calendar_path()

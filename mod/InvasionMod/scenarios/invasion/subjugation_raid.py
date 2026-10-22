@@ -1,4 +1,4 @@
-"""M02 iteration 03, S1 to S4: the subjugation raid (major) follows the first raid, is large, targets the stand-in region, and does not plunder or leave.
+"""M02 iteration 03, S1 to S4: the subjugation raid (major) is planned after the first raid (the yearly roll; the test plans it at once), is large, targets the stand-in region, and does not plunder or leave.
 
 Options (run.py --env): INVASION_DIFFICULTY (1 to 3, default 1). It saves nothing.
 """
@@ -37,14 +37,14 @@ def run_day(ctx) -> None:
 def run(ctx) -> dict:
     difficulty = int(ctx.variant_option("INVASION_DIFFICULTY", "1"))
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=difficulty)
-    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     ctx.mod.command("InvasionMod.invasion_set_size", size="small")
     ctx.mod.command("InvasionMod.invasion_force_next")
     ctx.run_until(lambda: len(raids(ctx)) >= 1, 30, what="the first raid record")
-    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_subjugation_state")["sub_day"] > 0, 30, what="the subjugation plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now", kind="subjugation")["day"] is not None and ctx.mod.command("InvasionMod.invasion_subjugation_state")["sub_day"] > 0, 30, what="the subjugation plan")
     state = ctx.mod.command("InvasionMod.invasion_subjugation_state")
     wait = state["sub_day"] - ctx.mod.command("InvasionMod.invasion_state")["day"]
-    ctx.check("S1 the subjugation raid is planned 60 to 120 days ahead", 55 <= wait <= 120, wait)
+    ctx.check("S1 the subjugation raid is planned 1 to 90 days ahead (the season rule)", 1 <= wait <= 90, wait)
     ctx.check("S2 it is large: 3 squads x difficulty", state["squads"] == 3 * difficulty, state["squads"])
 
     days = 0

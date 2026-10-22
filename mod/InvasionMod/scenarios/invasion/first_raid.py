@@ -1,13 +1,11 @@
 """M02 iteration 01, A1 to A5: one scheduled raid with a daily banner, spawned on the planned day.
 
 Options (run.py --env): INVASION_DIFFICULTY (1 to 3, default 1), INVASION_SIZE (small, medium or large, default medium).
-The size is forced so the unit count can be checked (A3). The scenario runs the real countdown (30 to 90 game days at 8x).
+The size is forced so the unit count can be checked (A3). The scenario runs the real countdown (1 to 90 game days).
 It saves nothing.
 """
 
 import re
-
-from runlib.units import side_count
 
 NAME = "invasion-first-raid"
 LIMIT_S = 900
@@ -33,7 +31,7 @@ def run(ctx) -> dict:
     difficulty = int(ctx.variant_option("INVASION_DIFFICULTY", "1"))
     size = ctx.variant_option("INVASION_SIZE", "medium")
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=difficulty)
-    ctx.run_until(lambda: state(ctx)["raid_day"] > 0, 30, what="the raid plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     plan = ctx.mod.command("InvasionMod.invasion_set_size", size=size)
     expected_squads = MULTIPLIERS[size] * difficulty
     ctx.log.info(f"INVASION plan {plan}")
@@ -41,13 +39,12 @@ def run(ctx) -> dict:
     plan_day = plan["day"]
     wait = plan["raid_day"] - plan["plan_day"]
     warning = plan["raid_day"] - plan["warning_day"]
-    ctx.check("A1 the planned day is 30 to 90 days after the plan", 30 <= wait <= 90, wait)
-    ctx.check("A1 the warning time is 14 to 56 days", 14 <= warning <= 56, warning)
+    ctx.check("A1 the planned day is 1 to 90 days after the plan (the season rule)", 1 <= wait <= 90, wait)
+    ctx.check("A1 the warning time is 14 to 56 days and at most the wait", 1 <= warning <= min(56, wait) and (warning >= 14 or warning == wait), warning)
     ctx.check("A3 planned squads = multiplier x difficulty", plan["squads"] == expected_squads, plan["squads"])
     ctx.check("A3 the composition has one template for each squad", len(plan["composition"].split("-")) == expected_squads, plan["composition"])
     planned_units = plan["raiders"]  # the sum of the squad sizes of the composition (M05 iteration 02)
 
-    bandits_before = side_count(ctx.actions.units_census(), "bandit")
     while plan["raids_spawned"] == 0 and plan["day"] <= plan["raid_day"] + MAX_DAYS_PAST_PLAN:
         ctx.time.run_game_days(CHUNK_DAYS, speed=SPEED)
         plan = {**plan, **state(ctx)}
@@ -67,7 +64,8 @@ def run(ctx) -> dict:
     ctx.check("A2 no banner before the warning", all(day >= plan["warning_day"] for day in shown), sorted(shown)[:1])
     ctx.check("A2 no day has two banners", len(banners) == len(shown), len(banners))
 
-    spawned_units = side_count(ctx.actions.units_census(), "bandit") - bandits_before
+    # The raid is a lord army (not the bandit side), so the census of bandits does not see it. The raid tracker counts its units at the start.
+    spawned_units = ctx.mod.command("InvasionMod.raid_behavior_state")["raids"][0]["initial"]
     ctx.check("A3 spawned unit count = planned units (a few raiders may die at once)", 0.9 * planned_units <= spawned_units <= planned_units,
               [spawned_units, planned_units])
     # The forced size comes after the first check. A banner of the plan day can show the random size from before.

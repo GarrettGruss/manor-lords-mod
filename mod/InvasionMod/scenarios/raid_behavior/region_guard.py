@@ -25,7 +25,7 @@ def lord_raid_record(ctx) -> dict:
 
 def run(ctx) -> dict:
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=1)
-    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     ctx.mod.command("InvasionMod.invasion_set_size", size="small")
     ctx.mod.command("InvasionMod.invasion_force_next")
     ctx.run_until(lambda: bool(lord_raid_record(ctx)), 30, what="the raid record")

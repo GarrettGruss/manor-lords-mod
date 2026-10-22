@@ -7,7 +7,7 @@ The project rules for people and agents are in CONTRIBUTING.md. Follow all of th
 
 @CONTRIBUTING.md
 
-This file adds only what is specific to agents: replies, subagents, permissions from the user, skills and the full safety list. When a rule here and a rule in CONTRIBUTING.md seem to differ, ask the user.
+This file adds only what is specific to agents: replies, subagents, permissions from the user and skills. It imports the full safety list from DANGEROUS_ACTIONS.md. When a rule here and a rule in CONTRIBUTING.md seem to differ, ask the user.
 
 ## Replies
 
@@ -52,15 +52,6 @@ This file adds only what is specific to agents: replies, subagents, permissions 
 
 ## Safety
 
-- Game save functions write into the user's REAL save folder, even when a run has a private `LOCALAPPDATA`: `PawnCPP:requestSaveFile`, `SaveToDiskWithThumbnail`, `IoHandler:SaveGameToSlot`, `RequestMenuSave`, `Request Autosave`. A probe overwrote the user's `saveGame_9` this way (restored from the user's backup).
-  - The user approved that the harness makes saves (2026-10-15), but ONLY through the guarded harness action `save_game` (spec 24). It backs up the save folder, saves to the next free `saveGame_<N>` slot (above the highest one, as fixtures do), and fails and restores if any existing save file changes. `mod/shared/HarnessSave/HarnessSave.lua` is the only code that calls a save function. A test enforces it (`test_save_call_sites.py`).
-  - `save_game` exists with fake tests, but it has not run in the real game yet. The first real call needs a fresh backup and the user informed. Never call a save function from a probe, a scenario or `eval_lua`. Never call `Request Autosave`.
-  - Player mods (the Invasion Mod) never call a save function. They react to the player's saves through hooks.
-  - The launcher hashes the user's save folder before and after each run. That guard only reports a change after it happened.
-- The game's autosave timer runs in real time, also while the game is paused (about 10 min after a load). `HarnessBoot` pushes it one year away before READY (`MLGameInstance:SetAutosavePeriodOnPawn`, checked 2026-10-10). Do not call `Request Autosave` or the native `SetAutosavePeriod`.
-- A game crash writes its UE crash report into the REAL `%LOCALAPPDATA%\ManorLords\Saved\Crashes`, not the private one. The launcher copies it. Do not read struct values with soft object fields (`getItem`, `RowStruct`) through the bridge: it crashes the game.
-- Never write a `Tags` array (names) through the bridge `set`. It crashes the game. Append in Lua instead: `object.Tags[#object.Tags + 1] = FName("x")` (spec 24). Never write `region.regionName` with a made-up name and save: the load of that save crashes.
-- Do not pass a Lua string to a UFunction that takes an `FName` argument on a component or mesh that may lack it. UE4SS crashes in `push_nameproperty` (access violation at `0x70`). Known cases: `pivot_attach`, and `GetSocketLocation` or `DoesSocketExist` on the ox shed meshes (spec 18 `hitch-socket-world-positions.md`). Read the socket list first (`GetAllSocketNames`), or skip the call.
-- Back up saves before tests: `%LOCALAPPDATA%\ManorLords\Saved\SaveGames`. Never write to the original test save.
-- Do not edit `UE4SS-settings.ini` or other game files unless the task needs it. Say what you changed.
-- The AES key must never be committed. It may exist only in the gitignored files `modtools/work/aes_key.txt` and `.env` (written by `harness/tools/aes_env.py`, owner decision 2026-10-19). Never print it or write it into any other file. Before every commit that adds a pak or a pak tool change, grep the diff for the key. Do not commit the original game paks from the game folder.
+The full list of dangerous actions (real saves, calls that crash the game, game files, secrets) is in DANGEROUS_ACTIONS.md. Follow all of it:
+
+@DANGEROUS_ACTIONS.md
