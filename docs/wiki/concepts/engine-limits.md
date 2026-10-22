@@ -10,6 +10,7 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/
   - resource: repo://openspec/changes/archive/2026-10-20-spike-community-mod-leads/notes/lead-1-2-stances.md
   - resource: repo://openspec/changes/archive/2026-10-20-spike-community-mod-leads/notes/lead-1-5-building-mesh-swap.md
+  - resource: repo://openspec/changes/archive/2026-10-21-spike-new-game-difficulty-setting/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/salt-mine-deposit.md
 ---
 # Engine limits found by spikes
@@ -58,7 +59,7 @@ Do not plan a feature that needs buildings inside the bailey.
 - A mod cannot add a working option to the stock Game Setup screen: a cloned option widget shows only "label".
 - Opening the Game Setup screen writes the real `menu.sav`, even in a run with a private appdata. Back up first.
 - The first `disable_autosave` after a new game started from the menu is undone by the game; send it again after the intro.
-- Owner decision 2026-10-21: the mod opens its own scenario settings menu instead (change `add-scenario-settings-menu`, #375). Notes: `ARCHIVE/notes/`.
+- Owner decision 2026-10-21: the mod opens its own scenario settings menu instead (change `add-scenario-settings-menu`, #375). Notes: `openspec/changes/archive/2026-10-21-spike-new-game-difficulty-setting/notes/`.
 
 ## Results of the community mod lead spikes (change `spike-community-mod-leads`, #280)
 
