@@ -94,4 +94,42 @@ function M.disable(period_s)
     return { before = before, after = M.status(), call_result = answer, period_s = period_s }
 end
 
+-- The game starts a new player pawn, with a new 600 s timer, after every world load.
+M.PAWN_BEGIN_PLAY = "/Game/CPP_BP/MyPawnCPP_BP3.MyPawnCPP_BP3_C:ReceiveBeginPlay"
+M.RETRY_DELAY_MS = 2000
+M.RETRY_COUNT = 5
+
+-- After READY, push the timer away again on each world load (the boot step only covers the first world).
+-- `log` is HarnessLog (info and error). A failure is logged and does not stop the game.
+-- Returns true if the hook was registered.
+function M.guard_loads(log, tag, hook_path)
+    local busy = false
+    local function finish() busy = false end
+    local function attemptPush(number)
+        ExecuteWithDelay(M.RETRY_DELAY_MS, function()
+            ExecuteInGameThread(function()
+                local ok, changes, problem = pcall(M.disable)
+                if ok and changes and M.is_disabled(changes.after) then
+                    log.info(tag, string.format("autosave pushed away after a load: timer remaining %s s -> %s s (try %d)",
+                        tostring(changes.before.remaining_s), tostring(changes.after.remaining_s), number))
+                    finish()
+                elseif number < M.RETRY_COUNT then
+                    attemptPush(number + 1)
+                else
+                    log.error(tag, "autosave timer was not pushed away after a load (" .. M.RETRY_COUNT .. " tries): "
+                        .. tostring(ok and (problem or (changes and changes.after and changes.after.remaining_s)) or changes))
+                    finish()
+                end
+            end)
+        end)
+    end
+    local registered, err = pcall(RegisterHook, hook_path or M.PAWN_BEGIN_PLAY, function()
+        if busy then return end
+        busy = true
+        attemptPush(1)
+    end)
+    if not registered then log.error(tag, "cannot watch world loads for the autosave timer: " .. tostring(err)) end
+    return registered
+end
+
 return M

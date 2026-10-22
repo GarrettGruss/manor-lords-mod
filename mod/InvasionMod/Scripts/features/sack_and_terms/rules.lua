@@ -33,12 +33,7 @@ function M.plan(census, difficulty, cfg, fatal)
     else
         take_families = math.max(0, math.min(take_families, families - cfg.min_families_left))
     end
-    local goods = {}
-    for good, held in pairs(census.stock.by_good) do
-        local amount = M.ceil_share(held, percent)
-        if amount > 0 then goods[good] = amount end
-    end
-    return { percent = percent, buildings = M.ceil_share(census.buildings.standing, percent), families = take_families, goods = goods }
+    return { percent = percent, buildings = M.ceil_share(census.buildings.standing, percent), families = take_families }
 end
 
 -- The window counter. Returns the new window start and count, and whether this sack is fatal.

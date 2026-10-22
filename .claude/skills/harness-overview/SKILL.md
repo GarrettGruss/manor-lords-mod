@@ -35,6 +35,7 @@ The loop: edit a mod, deploy it, run the real game, observe, repeat. Details are
 | Release a mod to play testers | `harness-release` |
 | Measure regression risk per spec domain | `reliability-assessment` |
 | Make a 3D model (Gemini, Meshy, UE import) | `harness-meshy` |
+| Make a 3D model with the Meshy 3D agent CLI (owner installs by hand) | `harness-meshy-agent` |
 
 ## Facts that save time
 - UE 5.5.4 shipping game. Game folder `C:\Program Files (x86)\Steam\steamapps\common\Manor Lords`. The game runs without Steam.

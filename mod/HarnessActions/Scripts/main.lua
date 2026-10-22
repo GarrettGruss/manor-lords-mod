@@ -150,10 +150,14 @@
 --   {"command":"manor_blueprint_add","type":58,"x":0,"y":0,"z":0,"yaw":0,"commit":true}   spike (#63): add a manor planner blueprint (mesh actor tagged bType_<type>) without the mouse, then convertBlueprintsToBuildings
 --   {"command":"mesh_users","mesh":"PalisadeWall"}          spike, read only: mesh components that use a mesh, grouped by owner class
 --   {"command":"wagen_state"} / {"command":"wagen_apply","manor":123,"wall_mesh":"/Game/HarnessMod/..","keep_mesh":".."} / {"command":"wagen_revert"}   spike (spec 32 part 2): set the wall and keep meshes of ONE manor; revert restores them
+--   {"command":"mesh_material_swap","mesh":"<name part>","near_x":0,"near_y":0,"mode":"borrow"}   spike: our model draws with a game material ("lend": a game building draws with ours)
+--   {"command":"mesh_material_params","mesh":"<name part>","near_x":0,"near_y":0,"scalars":"a=1,b=0"}   spike: live material parameters of one mesh component
 --   {"command":"mesh_actors","mesh":"PalisadeWallNarrow"}   spike (spec 32), read only: owner class and position of the actors whose mesh matches
 --   {"command":"steer_state","squad":41}                    spike #59, read only: owner side, living units, centre and mean unit target of a squad
 --   {"command":"steer_move","squad":41,"x":0,"y":0,"half_width":300}   spike #59: PawnCPP:formALineArmy of the owner pawn, one squad, a line across the way to the point
 --   {"command":"steer_hook","functions":"/Script/ManorLords.PawnCPP:formALineArmy,/Script/ManorLords.PawnCPP:selectSquad"}   spike #59: record the calls of these functions; steer_hook_log reads (and clears) them
+--   {"command":"lead_unit_gear","squad":41} / {"command":"lead_stance","squad":41,"stance":"aggressive"} / {"command":"lead_spawn_unit","lord":1,"template":"spearMilitia","count":2} / {"command":"lead_squad_camp","lord":1}   spike (#280): GetEquippedID of a squad, SetBehaviourStance, spawnCompleteUnit, Squad.camp fields
+--   {"command":"lead_mesh_list"} / {"command":"lead_mesh_swap","component":"<full name>","mesh":"<object path>"} / {"command":"lead_mesh_swap","component":"<full name>","restore":true}   spike (#280): building mesh swap with SetStaticMesh
 --   Unsafe spike commands: refused unless the game runs with HARNESS_ALLOW_UNSAFE=1 (test games only)
 --   {"command":"construction_complete","building":123}      PawnCPP:constructionComplete on one building
 --   {"command":"path_obstacles_clear"}                      empty the global obstacle list (the next squad spawn crashed the game)
@@ -171,6 +175,7 @@ local sack = require("HarnessSack")
 local loot = require("HarnessLoot")
 local battle = require("HarnessBattle")
 local ui = require("HarnessUi")
+local texprobe = require("HarnessTexProbe")
 local build = require("HarnessBuild")
 local manor = require("HarnessManor")
 local lordsCmd = require("HarnessLords")
@@ -187,6 +192,7 @@ local gameSetup = require("HarnessGameSetup")
 local harnessSave = require("HarnessSave")
 local encampment = require("HarnessEncampment")
 local wagenburg = require("HarnessWagenburg")
+local leads = require("HarnessLeads")
 
 local VERSION = "59"
 local TAG = "HarnessActions"
@@ -306,6 +312,11 @@ local function parseRequest(raw)
         signed = ({ ["true"] = true, ["false"] = false })[raw:match('"signed"%s*:%s*(%a+)') or ""],
         mode = raw:match('"mode"%s*:%s*"(%a+)"'),
         source = raw:match('"source"%s*:%s*"(%a+)"'),
+        -- spike #280: these four fields were missing, so runs 1 to 5 of probe-lead-stance never set a stance
+        stance = raw:match('"stance"%s*:%s*"(%a+)"'),
+        component = raw:match('"component"%s*:%s*"([^"]*)"'),
+        mesh = raw:match('"mesh"%s*:%s*"([^"]*)"'),
+        restore = ({ ["true"] = true, ["false"] = false })[raw:match('"restore"%s*:%s*(%a+)') or ""],
         families_per_squad = tonumber(raw:match('"families_per_squad"%s*:%s*(%d+)')),
         min_dist = tonumber(raw:match('"min_dist"%s*:%s*(%d+)')),
         max_dist = tonumber(raw:match('"max_dist"%s*:%s*(%d+)')),
@@ -529,6 +540,7 @@ local COMMANDS = {
     show_message = ui.show_message,
     read_message = ui.read_message,
     list_messages = ui.list_messages,
+    texture_probe = texprobe.texture_probe,
     lords_state = lordsCmd.lords_state,
     lord_declare_war = lordsCmd.lord_declare_war,
     lord_declare_peace = lordsCmd.lord_declare_peace,
@@ -566,6 +578,7 @@ local COMMANDS = {
     bandit_tag = bandits.bandit_tag,
     bandit_letter = bandits.bandit_letter,
     settle_raiders = bandits.settle_raiders,
+    message_probe = bandits.message_probe,
     bandit_mark = bandits.bandit_mark,
     bandit_track = bandits.bandit_track,
     bandit_spawn_at = bandits.bandit_spawn_at,
@@ -613,6 +626,8 @@ local COMMANDS = {
     manor_planner = walls.manor_planner,
     mesh_users = walls.mesh_users,
     mesh_actors = walls.mesh_actors,
+    mesh_material_params = walls.mesh_material_params,
+    mesh_material_swap = walls.mesh_material_swap,
     construction_complete = walls.construction_complete,
     path_obstacles_clear = walls.path_obstacles_clear,
     building_stat_write = walls.building_stat_write,
@@ -624,6 +639,12 @@ local COMMANDS = {
     steer_rmb = steer.steer_rmb,
     steer_hook = steer.steer_hook,
     steer_hook_log = steer.steer_hook_log,
+    lead_unit_gear = leads.lead_unit_gear,
+    lead_stance = leads.lead_stance,
+    lead_spawn_unit = leads.lead_spawn_unit,
+    lead_squad_camp = leads.lead_squad_camp,
+    lead_mesh_list = leads.lead_mesh_list,
+    lead_mesh_swap = leads.lead_mesh_swap,
 }
 
 local function runCommand(number, raw)

@@ -47,7 +47,7 @@ sources:
 | Module | Role |
 |---|---|
 | `HarnessSave` | The only code that calls a game save function (`PawnCPP:requestSaveFile`). It accepts only a slot name that matches `^saveGame_%d+$` and refuses a slot that exists. The Python side (`harness/runlib/harness_save.py`) makes the backup and chooses the slot. |
-| `HarnessAutosave` | Reads the autosave timer and pushes it one year away with `SetAutosavePeriodOnPawn`. It never calls `SetAutosavePeriod` or a save function. `HarnessBoot` uses it. |
+| `HarnessAutosave` | Reads the autosave timer and pushes it one year away with `SetAutosavePeriodOnPawn`. It never calls `SetAutosavePeriod` or a save function. `HarnessBoot` uses it, before READY and (through `guard_loads`) after every later world load. |
 | `ModState` | Keeps mod values in a save. Values are Names `<mod>:<key>=<value>` in the `Tags` array of the player pawn. It only touches entries with its own prefix and changes an entry in place. See [Mod commands and state](../concepts/mod-commands-and-state.md). |
 | `HarnessDataTable` | Reads and writes single number fields of rows in `DT_Items` or `DT_UnitTemplates`. Only listed fields are read, because a whole-struct read crashes the game. A write changes memory only. |
 | `HarnessGameSetup` | Reads and writes the game goal (`EGameGoals`: 0 Conquest, 1 Dominance, 2 Endless, 3 Growth). |

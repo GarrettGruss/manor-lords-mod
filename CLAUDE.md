@@ -29,13 +29,15 @@ This file adds only what is specific to agents: replies, subagents, permissions 
 ## Permissions from the user
 
 - Commits are approved (2026-10-18). Commit each logical change on its branch when it is done. Do not commit to `main`, except the small project-rule changes that CONTRIBUTING.md allows there.
-- Merges (2026-10-18; this narrows the advance approval of 2026-10-17):
-  - Do not merge a gate pull request (spec or implementation) yourself without explicit permission. By default the user approves and merges it on GitHub. Mark the issue `status: awaiting user`.
-  - Explicit permission (2026-10-18): an approved user may tell you in chat to merge a named pull request. A chat message is enough. Then merge it after the full tests pass, and say in the pull request which user approved it in chat. The permission covers only the pull requests that the message names.
+- Pull requests and merges (2026-10-20; this replaces the merge rules of 2026-10-17 and 2026-10-18):
+  - Agents use the GitHub account `garrettgruss-bot`. It is the active `gh` account. Every pull request an agent opens is opened by the bot, so the owner can approve it.
+  - A ruleset on `main` requires 1 approval. The owner's approval on GitHub is the only merge permission. A chat message is not a merge permission.
+  - After you open a pull request, turn on auto-merge: `gh pr merge <n> --auto --merge`. GitHub merges it when the owner approves. Mark the issue `status: awaiting user`.
+  - This applies to every pull request, with or without a gate.
+  - Never approve or review a pull request. Never merge by hand. Never use an admin bypass. Never switch `gh` to the owner's account to act on a pull request.
   - Approved users: garrett.g.gruss@gmail.com.
   - Do not start the implementation of a change before its spec pull request is merged.
-  - A pull request without a gate (no change folder, no spec change, no acceptance from test results) may be merged by you after the full tests pass.
-  - Do not push or merge in any other case unless the user asks.
+  - Do not push in any other case unless the user asks.
 - Raw Lua eval (`mcp__ue4ss-bridge__eval_lua`) is approved (2026-10-10). The tool is allowed in `.claude/settings.json`.
   - Use it only for single-player experiments and spikes. Do not use it to call save functions (see Safety).
   - The bridge setting `allow_eval` in the game folder still decides if the bridge accepts it. Do not change that file unless the task needs it. Say what you changed.
@@ -61,4 +63,4 @@ This file adds only what is specific to agents: replies, subagents, permissions 
 - Do not pass a Lua string to a UFunction that takes an `FName` argument on a component or mesh that may lack it. UE4SS crashes in `push_nameproperty` (access violation at `0x70`). Known cases: `pivot_attach`, and `GetSocketLocation` or `DoesSocketExist` on the ox shed meshes (spec 18 `hitch-socket-world-positions.md`). Read the socket list first (`GetAllSocketNames`), or skip the call.
 - Back up saves before tests: `%LOCALAPPDATA%\ManorLords\Saved\SaveGames`. Never write to the original test save.
 - Do not edit `UE4SS-settings.ini` or other game files unless the task needs it. Say what you changed.
-- The AES key must never be committed or written anywhere in the repo. Before every commit that adds a pak or a pak tool change, grep the diff for the key. Do not commit the original game paks from the game folder.
+- The AES key must never be committed. It may exist only in the gitignored files `modtools/work/aes_key.txt` and `.env` (written by `harness/tools/aes_env.py`, owner decision 2026-10-19). Never print it or write it into any other file. Before every commit that adds a pak or a pak tool change, grep the diff for the key. Do not commit the original game paks from the game folder.

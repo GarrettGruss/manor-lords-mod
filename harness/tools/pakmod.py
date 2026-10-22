@@ -34,6 +34,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import modpak  # noqa: E402
+from tools import aes_env  # noqa: E402
 from runlib.paks import (  # noqa: E402,F401 - the install code is shared with run.py --pak
     EXIT_ERROR, MANIFEST_NAME, NAME_PATTERN, PAK_SUFFIX, PakError, built_pak_path, check_name, install_pak, is_inside,
     list_paks, mods_dir_of, pak_file_name, paks_dir_of, read_manifest, remove, require_inside, sha256_of, write_manifest,
@@ -239,14 +240,25 @@ def aes_key_args(config: dict) -> list[str]:
     env_name = config["aes_key_env"]
     if not env_name:
         return []
-    key = os.environ.get(env_name)
+    key = read_key(env_name)
     if not key:
-        raise PakModError(f"environment variable {env_name} is not set (it must hold the AES key)")
+        raise PakModError(f"environment variable {env_name} is not set and {aes_env.env_file()} has no key "
+                          "(run harness/tools/aes_env.py)")
     return ["--aes-key", key]
 
 
+def read_key(env_name: str) -> str | None:
+    """The environment wins. The gitignored `.env` of the main checkout is the fallback."""
+    key = os.environ.get(env_name)
+    if key:
+        return key
+    if env_name == aes_env.ENV_NAME:
+        return aes_env.read_env_key(aes_env.env_file())
+    return None
+
+
 def secret_values(config: dict) -> list[str]:
-    key = os.environ.get(config["aes_key_env"] or "", "")
+    key = read_key(config["aes_key_env"] or "")
     return [key] if key else []
 
 

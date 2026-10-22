@@ -4,7 +4,7 @@
 .DESCRIPTION
   NOTE: harness\run.py is the normal way to run the game for a test. This script is for manual use only.
   It starts the game through Steam, so it cannot pass per-run settings to the game.
-  1. Refuses to start if the game is already running. Run game-close.ps1 first.
+  1. Refuses to start if the game is already running. Run game-close.ps1 -Slot <n> first.
   2. Deletes the old boot.json and ready.marker, so an old result is never read as a new one.
   3. Starts the game with the Steam URL steam://rungameid/<AppId>.
   4. Waits for the game process to appear.

@@ -28,7 +28,7 @@ function(fg, options)
         local b = fg.object("SMBuildingMaster", { Data = { bType = kind }, onFire = false, rubble = false,
                                                   Inventory = fg.array(items, { wrap = false }), items = items })
         fg.set_method(b, "IsRubble", function(self) return self.rubble end)
-        fg.set_method(b, "StartFire", function(self) self.onFire = true; self.rubble = true; village.calls[#village.calls + 1] = "fire" end)
+        fg.set_method(b, "StartFire", function(self) self.onFire = true; village.calls[#village.calls + 1] = "fire" end)
         fg.set_method(b, "collapseBuilding", function(self) self.rubble = true; self.Data.bType = 75; village.calls[#village.calls + 1] = "collapse" end)
         fg.set_method(b, "consumeGoodNoCheck", function(self, kind2)
             if options.refuse_consume then return end
@@ -103,6 +103,7 @@ function(village)
     for _, b in ipairs(village.buildings) do
         if b.onFire then
             b.onFire = false
+            b.rubble = true
             b.Data.bType = 75
             for _, g in ipairs(b.items) do g.amt = 0 end
         end
@@ -175,6 +176,18 @@ class BuildingTests(unittest.TestCase):
             self.assertEqual((answer.ok, answer.hit), (True, 2))
             self.assertEqual(dict(answer.after.buildings), {"total": 4, "standing": 2, "rubble": 2, "burning": 0})
             self.assertEqual(answer.after.stock.total, answer.before.stock.total)
+
+    def test_light_census_reads_no_goods_but_does_the_sack(self):
+        # The Invasion Mod passes light=true: no inventory struct is read around the people and building steps (#327).
+        with FakeGame() as game:
+            build(game)
+            answer = game.lua.eval('function(m) return m.sack_people({ count = 2, light = true }) end')(sack(game))
+            self.assertEqual((answer.ok, answer.families, answer.people), (True, 2, 4))
+            self.assertEqual((answer.before.people.families, answer.after.people.families), (5, 3))
+            self.assertEqual((answer.after.stock.total, len(answer.after.stores)), (0, 0))
+            answer = game.lua.eval('function(m) return m.sack_buildings({ count = 1, method = "collapse", light = true }) end')(sack(game))
+            self.assertEqual((answer.hit, answer.after.buildings.rubble), (1, 1))
+            self.assertEqual(answer.after.stock.total, 0)
 
     def test_percent_rounds_half_up(self):
         with FakeGame() as game:
@@ -278,6 +291,23 @@ class PeopleTests(unittest.TestCase):
             build(game)
             answer = game.lua.eval('function(m) return m.sack_people({ percent = 40 }) end')(sack(game))
             self.assertEqual(answer.after.people.families, 3)
+
+    def test_members_are_collected_before_the_first_death(self):
+        # #357: a death changes the family array. Here the first death makes every family struct stale (members nil).
+        with FakeGame() as game:
+            village = build(game)
+            game.lua.eval("""function(fg, village)
+                for _, family in ipairs(village.families) do
+                    for _, unit in ipairs(family.list) do
+                        fg.set_method(unit, "just_die", function(self)
+                            self.dead = true
+                            for _, f in ipairs(village.families) do f.familyMembers = nil end
+                        end)
+                    end
+                end
+            end""")(game.fg, village)
+            answer = game.lua.eval('function(m) return m.sack_people({ count = 3 }) end')(sack(game))
+            self.assertEqual((answer.families, answer.people), (3, 6))
 
     def test_dead_members_are_not_killed_twice(self):
         with FakeGame() as game:

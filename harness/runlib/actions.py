@@ -42,7 +42,7 @@ DATATABLES = ("items", "units")
 BANNER_TEXT_PATTERN = re.compile(r"^[A-Za-z0-9 ,.!:\-]+$")
 MAX_BANNER_TEXT = 60
 MAX_BANNER_SUBTEXT = 80
-MAX_BUILDING_TYPE = 300  # same limits as mod/shared/HarnessBuild
+MAX_BUILDING_TYPE = 70000  # same limits as mod/shared/HarnessBuild (new ids go up to 65536, spike #284)
 MAX_GOOD_ID = 200
 MAX_REBEL_FAMILIES = 6  # same limit as the Lua module HarnessBandits
 MAX_REBEL_SQUADS = 6
@@ -480,9 +480,11 @@ class Actions:
         fields["method"] = sack.check_method(method)
         answer = self._command("sack_buildings", **fields)
         before, after = answer["before"], answer["after"]
-        ok = answer["hit"] == answer["wanted"] and sack.rubble(after) - sack.rubble(before) == answer["hit"]
-        return self._record("sack_buildings", fields, ok, sack.rubble(before), sack.rubble(after),
-                            note=f"rubble buildings, wanted {answer['wanted']}, hit {answer['hit']}, method {method}")
+        # A fire needs game time before the building is rubble, so a burning building counts as hit (bug #325).
+        ruined = (lambda census: sack.rubble(census) + sack.burning(census)) if method == "fire" else sack.rubble
+        ok = answer["hit"] == answer["wanted"] and ruined(after) - ruined(before) == answer["hit"]
+        return self._record("sack_buildings", fields, ok, ruined(before), ruined(after),
+                            note=f"rubble (and burning for fire) buildings, wanted {answer['wanted']}, hit {answer['hit']}, method {method}")
 
     def sack_goods(self, percent: int | None = None, good: int | None = None, amount: int | None = None, store: int | None = None) -> dict:
         """Remove goods. `percent`: that share of every good (of one store when `store` is given). `good` and `amount`: units of one good.
@@ -971,6 +973,47 @@ class Actions:
         if not functions or not all(isinstance(name, str) for name in functions):
             raise ActionError("steer_hook: functions must be a list of function paths")
         return self._command("steer_hook", functions=",".join(functions))
+
+    def lead_unit_gear(self, squad: int) -> dict:
+        """Spike #280, read only: ItemsLooted and the answer of SMUnit:GetEquippedID for slots 0..3 of every unit of one squad."""
+        self._check_squad_id("lead_unit_gear", squad)
+        return self._command("lead_unit_gear", squad=squad)
+
+    def lead_stance(self, squad: int, stance: str | None = None) -> dict:
+        """Spike #280: read Squad.behaviourStance. With `stance` (neutral, aggressive, defensive) call SquadComponent:SetBehaviourStance first."""
+        self._check_squad_id("lead_stance", squad)
+        if stance is None:
+            return self._command("lead_stance", squad=squad)
+        if stance not in ("neutral", "aggressive", "defensive"):
+            raise ActionError("lead_stance: stance must be neutral, aggressive or defensive")
+        return self._command("lead_stance", squad=squad, stance=stance)
+
+    def lead_spawn_unit(self, lord: int, template: str, count: int = 1, dx: float = 0, dy: float = 0, company: int = 0) -> dict:
+        """Spike #280: RTSMultiEngineCPP:spawnCompleteUnit, `count` calls (1 to 6), one squad each, for the AI lord with this number."""
+        if not isinstance(lord, int) or isinstance(lord, bool) or lord < 1:
+            raise ActionError("lead_spawn_unit: lord must be a lord number from 1")
+        if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 6:
+            raise ActionError("lead_spawn_unit: count must be a whole number from 1 to 6")
+        return self._command("lead_spawn_unit", lord=lord, template=template, count=count, dx=dx, dy=dy, company=company)
+
+    def lead_squad_camp(self, lord: int) -> dict:
+        """Spike #280, read only: camp, campLocation, rallyingStatus and WeightedCenter of every squad of an AI lord."""
+        if not isinstance(lord, int) or isinstance(lord, bool) or lord < 1:
+            raise ActionError("lead_squad_camp: lord must be a lord number from 1")
+        return self._command("lead_squad_camp", lord=lord)
+
+    def lead_mesh_list(self) -> dict:
+        """Spike #280, read only: mesh, position, bounds, collision flag and socket count of building mesh components."""
+        return self._command("lead_mesh_list")
+
+    def lead_mesh_swap(self, component: str, mesh: str | None = None, restore: bool = False) -> dict:
+        """Spike #280: SetStaticMesh on one building component (full name from lead_mesh_list) with the mesh at this object path.
+        With restore=True the mesh from before the swap goes back."""
+        if restore:
+            return self._command("lead_mesh_swap", component=component, restore=True)
+        if not mesh:
+            raise ActionError("lead_mesh_swap: mesh must be an object path")
+        return self._command("lead_mesh_swap", component=component, mesh=mesh)
 
     def steer_hook_log(self, clear: bool = False) -> dict:
         """The recorded calls (path, count, arguments) and the call count of each hooked function."""

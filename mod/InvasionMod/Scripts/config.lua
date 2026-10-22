@@ -74,14 +74,13 @@ return {
             raid_spawn_y = -88900,           -- map edge where spawnRaiders put raiders (spec 15 runs). x is the x of the player pawn.
         },
     },
-    -- M03 raid_behavior, iteration 01. The native plunder AI is left alone.
+    -- M03 raid_behavior. Steers the Hussite raids. A native raid is only tracked.
     raid_behavior = {
         enabled = true,
         poll_ms = 1000,         -- real time between two looks at the raiders
         slow_every = 5,         -- the building scan and the AI log scan run every Nth look (they read many objects)
-        carry_cap = 10,         -- most loot (ItemsLooted) one raider keeps. Hussite grain 10 (M00). The native AI reaches 4 or 5.
-        exit_y = -85000,        -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
-        fallback_good = 16,     -- good type for loot when the nearest store has no goods
+        carry_cap = 10,         -- most goods a Hussite raid plunders for each raider at its start (M00: Hussite grain 10). It is also the loot goal of a Hussite raid. Other raids are not capped.
+        exit_y = -85000,       -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
         -- M03 iteration 02: a role raid (spawnArmy squads) leaves like a native raid. All values are TBD for playtests.
         plunder = {                 -- the plunder tick of a lord raid: goods leave the stores while the army stands at the manor
             battle_radius = 4000,   -- a raider counts as inside this far from the manor (the army stood within 1300 in run 20261018-035856-248b)
@@ -91,7 +90,6 @@ return {
             enabled = true,
             loot_per_raider = 4,    -- leaves when the loot taken is this much for each raider of the start (native raiders carry 4 to 5)
             loss_share = 0.5,       -- leaves when this share of the raiders died
-            quiet_distance = 40000, -- a leaving raider is removed only this far from the player pawn (or at exit_y). User decision: no deletion in view.
             max_days = 25,          -- leaves this many game days after the spawn (native raids ended on day 12 to 19)
         },
     },
@@ -152,9 +150,9 @@ return {
     sack_and_terms = {
         enabled = true,
         sack = {
-            share_min = 20,                  -- percent of buildings, stock and families at difficulty 1 (M00)
+            share_min = 20,                  -- percent of buildings and families at difficulty 1 (M00)
             share_max = 50,                  -- percent at difficulty 3. Linear in between (decision 15), rounded up (decision 28).
-            method = "collapse",             -- how buildings fall: "collapse" (ruin at once) or "fire" (burns, goods inside are lost)
+            method = "collapse",             -- how buildings fall: "collapse" (ruin at once) or "fire" (burns; a fire may destroy part of the goods inside, accepted; villagers put the fire out unless enemy soldiers are near)
             min_families_left = 1,           -- a normal sack keeps this many families (spike S8: no people ends the game)
             lost_reasons = { "loot", "time" }, -- a role raid that leaves for one of these reasons won the battle (TBD rule)
             window_days = 360,               -- game days of the repeated-sack window, counted from its first sack
@@ -180,7 +178,7 @@ return {
             deposit_tries = 10,              -- buildings tried when the grain is put into the new capital
         },
     },
-    -- M07 vassals. Values are TBD for playtests (M00 gives no loyalty numbers).
+    -- M07 vassals. Values are TBD for playtests .
     vassals = {
         enabled = true,
         poll_ms = 2000,          -- real time between two checks of the goal
@@ -192,16 +190,13 @@ return {
         keep_peace = true,       -- declare peace again when a vassal lord is at war with the player (TBD: the lords started the war by themselves)
         growth_check_days = 10,  -- game days after the handover until the mod checks that the lord built
         growth_min_buildings = 3, -- fewer new buildings than this means the lord stalled (real runs: +10 or +0)
-        -- Iteration 03. Policies and the gift order are mod-owned. Values are TBD for playtests.
+        -- Iteration 03. Policies are mod-owned. Values are TBD for playtests.
         policies = {
-            light = { tribute = 0.5, loyalty = 3 },   -- tribute factor on the M08 share, loyalty change at each season change
-            fair = { tribute = 1.0, loyalty = 0 },
-            heavy = { tribute = 1.5, loyalty = -5 },
+            light = { tribute = 0.5 },   -- tribute factor on the M08 share
+            fair = { tribute = 1.0 },
+            heavy = { tribute = 1.5 },
         },
-        gift = { cost = 50, loyalty = 10 },            -- order "send a gift": silver cost and loyalty gain
-        submission = { submit_at = 10, return_at = 40 }, -- iteration 04: loyalty at or under submit_at: the vassal serves the invader; at or over return_at it returns (TBD)
         loss_region = "forget",   -- test loss: "forget" (the lord keeps the land, the slot is freed) or "take_by_lord" (another lord is given the land; crashed the game in the first run)
-        loyalty_start = 50,      -- loyalty of a new vassal, 0 to 100
     },
     -- M10 finite_resources. Home deposits are a mod-owned stock. Values are TBD for playtests (M00: last 2 to 4 game years at normal use).
     finite_resources = {
@@ -219,13 +214,21 @@ return {
         enabled = true,
         poll_ms = 2000,           -- real time between two looks at the season
         units_per_family = 20,    -- production units of one family in one season (TBD)
-        share_min = 0.10,         -- share of the production at loyalty 0
-        share_max = 0.30,         -- share of the production at loyalty 100
+        share = 0.20,             -- share of the production that a vassal sends (fixed; decision of 2026-10-20: no vassal loyalty)
         siege = { days = 8, min_living = 0.5, poll_ms = 2000 }, -- M02.07: a subjugation raid on a vassal takes it after days with min_living share of units (TBD)
-        protection = { defended = 5, undefended = -15 }, -- iteration 02: loyalty change of a vassal after a raid on its region (TBD)
         goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally
         -- M10.02: the permanent supply of the goods that run out at home. Paid next to `goods`, with the same share. Values are TBD.
         finite_goods = { { id = 14, name = "iron", units_per_family = 10 }, { id = 145, name = "salt", units_per_family = 6 } },
+    },
+    -- liege_influence (change add-liege-influence). Values are owner decisions of 2026-10-19 and 2026-10-20.
+    liege_influence = {
+        enabled = true,
+        influence_per_unit = 0.1,        -- influence for 1 silver of tribute (10 silver give 1 influence)
+        tribute_button_amount = 200,     -- silver sent by one click of the menu button
+        poll_ms = 100,                   -- real time between two looks at the click queue of the menu (never faster)
+        refresh_ms = 500,                -- real time between two refreshes of the menu labels
+        z_order = 500,
+        position = { X = 300, Y = 150 },
     },
     -- M13 manor_stronghold. Values are TBD for playtests.
     manor_stronghold = {

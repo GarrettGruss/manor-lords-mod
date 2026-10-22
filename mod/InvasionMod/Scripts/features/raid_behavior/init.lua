@@ -1,6 +1,5 @@
--- Feature raid_behavior (M03, iteration 01): track a raid that runs under the native plunder AI.
--- The mod adds no steering and no rout. It counts living raiders and carried loot, and it gives the loot of a dead raider
--- back to the nearest store. The numbers live in ModState (M01) and in the log line "RAID_BEHAVIOR".
+-- Feature raid_behavior (M03): steer the Hussite raids and track every raid that the invasion feature spawns.
+-- A native raid is only counted, never steered. The numbers live in ModState (M01) and in the log line "RAID_BEHAVIOR".
 local core = require("ManorCore")
 local ModState = require("ModState")
 local invasion = require("features.invasion.init")
@@ -58,28 +57,6 @@ end
 invasion.watch_spawn(before_spawn, after_spawn)
 
 ---------------------------------------------------------------------------------------------
--- Loot of a dead raider goes back to the nearest store
----------------------------------------------------------------------------------------------
-
-local function return_loot(entry, death)
-    if death.loot <= 0 then return end
-    local stores, problem = world.stores()
-    local store = stores and death.x and rules.nearest_store(stores, death.x, death.y)
-    if store == nil then
-        rules.record_loss(entry.raid, death.loot)
-        return core.log.warn(TAG, string.format("RAID_BEHAVIOR loot %d lost: no store (%s)", death.loot, tostring(problem)))
-    end
-    local good = rules.pick_good(store.by_good, config.fallback_good)
-    local ok, why = world.deposit(store, good, death.loot)
-    if not ok then
-        rules.record_loss(entry.raid, death.loot)
-        return core.log.error(TAG, string.format("RAID_BEHAVIOR loot %d lost: %s", death.loot, tostring(why)))
-    end
-    rules.record_return(entry.raid, death.loot)
-    core.log.info(TAG, string.format("RAID_BEHAVIOR loot returned amount=%d good=%d store=%s", death.loot, good, tostring(store.id)))
-end
-
----------------------------------------------------------------------------------------------
 -- Poll
 ---------------------------------------------------------------------------------------------
 
@@ -131,7 +108,7 @@ end
 -- The plunder tick: while the lord army stands at the manor, goods leave the village stores (once a day).
 local function check_plunder(entry, seen, today)
     local raid = entry.raid
-    local want = rules.plunder_amount(raid, seen, plunder, leave, today)
+    local want = rules.plunder_amount(raid, seen, plunder, leave, today, config.carry_cap)
     if want <= 0 then return end
     local taken = world.plunder(want)
     rules.record_plunder(raid, taken)
@@ -147,43 +124,33 @@ local function check_region(entry, slow_look)
     core.log.warn(TAG, string.format("RAID_BEHAVIOR region %s was taken by the lord, given back=%s%s", lord.home_region, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
 end
 
--- A role raid that has taken enough, lost enough or stayed long enough must leave (user decision 2026-10-18): it first goes away
--- (peace with the bandit lord), and the mod removes a unit only in a quiet spot, far from the village (config leave.quiet_distance).
+-- A role raid that has taken enough, lost enough or stayed long enough must leave (user decision 2026-10-18). A lord raid
+-- leaves by peace with its lord. A bandit squad raid is only marked (watchers and the terms feature hear of it): the mod
+-- does not make peace, send it home or remove its units (owner decision 2026-10-21).
 local function start_leave(raid, reason, today)
     rules.begin_leave(raid, reason, today)
-    local ok, problem
-    if raid.lord ~= nil then ok, problem = lord_raid.peace() else ok, problem = world.make_peace() end
+    local ok, problem = true, nil
+    if raid.lord ~= nil then ok, problem = lord_raid.peace() end
     core.log.info(TAG, string.format("RAID_BEHAVIOR role raid must leave id=%d day=%s reason=%s peace=%s%s", raid.id, tostring(today),
-        reason, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
+        reason, tostring(raid.lord ~= nil and ok), ok and "" or (" problem=" .. tostring(problem))))
     for _, watcher in ipairs(leave_watchers) do core.log.try(TAG, watcher, rules.summary(raid)) end
 end
 
-local function check_leave(entry, seen, today)
+local function check_leave(entry, today)
     local raid = entry.raid
-    if not leave.enabled then return end
-    if raid.leave_reason == nil then
-        local reason = rules.leave_reason(raid, today, leave)
-        if reason == nil then return end
-        start_leave(raid, reason, today)
-    end
-    local keys = rules.exit_quiet(raid, seen, world.home(), { distance = leave.quiet_distance, exit_y = config.exit_y })
-    if #keys == 0 then return end
-    local removed = 0
-    for _, key in ipairs(keys) do
-        if seen[key].object ~= nil and world.remove_unit(seen[key].object) then removed = removed + 1 end
-    end
-    core.log.info(TAG, string.format("RAID_BEHAVIOR role raid units removed in a quiet spot id=%d day=%s units=%d removed=%d living=%d carried_out=%d",
-        raid.id, tostring(today), #keys, removed, raid.living - #keys, raid.carried_out))
+    if not leave.enabled or raid.leave_reason ~= nil then return end
+    local reason = rules.leave_reason(raid, today, leave, config.carry_cap)
+    if reason ~= nil then start_leave(raid, reason, today) end
 end
 
 local function step_raid(entry, seen, today, slow_look)
     local raid = entry.raid
     local was_active = raid.state == "active"
-    for _, death in ipairs(rules.update(raid, seen, config, today)) do return_loot(entry, death) end
+    rules.update(raid, seen, config, today)
     write_caps(seen)
     check_plunder(entry, seen, today)
     check_region(entry, slow_look)
-    check_leave(entry, seen, today)
+    check_leave(entry, today)
     if slow_look then
         refresh_burned(entry)
         check_leave_line(entry, today)
@@ -192,10 +159,6 @@ local function step_raid(entry, seen, today, slow_look)
     if was_active and raid.state ~= "active" then
         core.log.info(TAG, string.format("RAID_BEHAVIOR end id=%d day=%s state=%s", raid.id, tostring(today), raid.state))
         for _, watcher in ipairs(end_watchers) do core.log.try(TAG, watcher, rules.summary(raid)) end
-        if raid.leave_reason ~= nil and raid.lord == nil then
-            local ok, problem = world.restore_war()
-            core.log.info(TAG, string.format("RAID_BEHAVIOR war restored=%s%s", tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
-        end
     end
 end
 
