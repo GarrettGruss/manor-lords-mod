@@ -41,6 +41,10 @@ state:register("difficulty_chosen", 0, "integer") -- 1 after the player picked t
 state:register("last_prompt_day", 0, "integer")
 state:register("great_raid_day", 0, "integer") -- absolute game day when the great raid starts (0: the clock has not started)
 state:register("last_clock_banner_day", 0, "integer")
+state:register("plunder_spawned", 0, "integer")   -- 1 after the current plunder plan spawned
+state:register("yearly_season_no", -1, "integer") -- season changes since the mod started (-1: no season seen yet)
+state:register("yearly_last_season", -1, "integer")
+state:register("yearly_done_year", 0, "integer")  -- the last game year in which a raid was planned
 
 if config.seed then math.randomseed(config.seed) else math.randomseed(os.time()) end
 
@@ -60,6 +64,14 @@ local function calendar()
     local ok, value = pcall(function() return engine.TemporalComponent end)
     if ok and value ~= nil and value:IsValid() then return value end
     return nil
+end
+
+local function current_season()
+    local time = calendar()
+    if time == nil then return nil end
+    local ok, value = pcall(function() return time.Season end)
+    if not ok or type(value) ~= "number" then return nil end
+    return math.floor(value)
 end
 
 local function current_day()
@@ -119,11 +131,29 @@ local function planned_units(kind)
 end
 
 local function make_plan(today)
-    local plan = plan_rules.first_raid(today, state:get("difficulty"), config, math.random)
+    local plan = plan_rules.yearly_raid(today, plan_rules.pick(math.random, 1, #plan_rules.SIZE_NAMES), state:get("difficulty"), config, math.random)
     for key, value in pairs(plan) do state:set(key, value) end
+    state:set("plunder_spawned", 0)
+    state:set("composition_seed", 0) -- a new plan gets a new composition
     ensure_seed()
     core.log.info(TAG, string.format("INVASION plan day=%d raid_day=%d warning_day=%d size_class=%d squads=%d difficulty=%d composition=%s",
         today, plan.raid_day, plan.warning_day, plan.size_class, plan.squads, state:get("difficulty"), plan_rules.join(composition_list())))
+end
+
+local function make_subjugation_plan(today)
+    local plan = plan_rules.yearly_raid(today, config.subjugation.size_class, state:get("difficulty"), config, math.random)
+    state:set("sub_day", plan.raid_day)
+    state:set("sub_warning_day", plan.warning_day)
+    state:set("sub_squads", plan.squads)
+    ensure_seed("subjugation")
+    core.log.info(TAG, string.format("INVASION subjugation plan day=%d sub_day=%d warning_day=%d squads=%d composition=%s", today,
+        plan.raid_day, plan.warning_day, plan.squads, plan_rules.join(composition_list("subjugation"))))
+end
+
+-- The kind rules: the first raid is a plunder raid, the second a subjugation raid (once), later raids are plunder raids.
+local function next_kind()
+    if config.subjugation.enabled and state:get("plunder_spawned") == 1 and state:get("sub_spawned") == 0 then return "subjugation" end
+    return "plunder"
 end
 
 local function spawn_raid(today, kind)
@@ -164,7 +194,7 @@ local function spawn_raid(today, kind)
     end
     if not ok then return core.log.error(TAG, "raid spawn failed: " .. tostring(problem)) end
     state:set("raids_spawned", state:get("raids_spawned") + 1)
-    if kind == "subjugation" then state:set("sub_spawned", 1) end
+    if kind == "subjugation" then state:set("sub_spawned", 1) else state:set("plunder_spawned", 1) end
     local home = core.player_region()
     local target = target_rules.pick(kind, home and core.region_row(home).region or "home", vassal_provider(), math.random)
     for index, watcher in ipairs(spawn_watchers) do
@@ -283,23 +313,10 @@ local function show_countdown(today, days_left)
 end
 
 local function minor_raid_step(today)
-    if state:get("raids_spawned") > 0 then return end
-    if state:get("raid_day") == 0 then make_plan(today) end
+    if state:get("raid_day") == 0 or state:get("plunder_spawned") == 1 then return end
     local days_left = state:get("raid_day") - today
     if days_left <= 0 then return spawn_raid(today) end
     if today >= state:get("warning_day") and state:get("last_banner_day") ~= today then show_countdown(today, days_left) end
-end
-
-local function make_subjugation_plan(today)
-    local sub = config.subjugation
-    local wait = plan_rules.pick(math.random, sub.wait_days_min, sub.wait_days_max)
-    local warning = math.min(plan_rules.pick(math.random, config.warning_days_min, config.warning_days_max), wait)
-    state:set("sub_day", today + wait)
-    state:set("sub_warning_day", today + wait - warning)
-    state:set("sub_squads", plan_rules.squads(sub.size_class, state:get("difficulty"), config.size_multipliers))
-    ensure_seed("subjugation")
-    core.log.info(TAG, string.format("INVASION subjugation plan day=%d sub_day=%d warning_day=%d squads=%d composition=%s", today,
-        today + wait, today + wait - warning, state:get("sub_squads"), plan_rules.join(composition_list("subjugation"))))
 end
 
 local function show_subjugation_countdown(today, days_left)
@@ -310,10 +327,9 @@ local function show_subjugation_countdown(today, days_left)
     core.log.info(TAG, string.format("INVASION subjugation banner day=%d days_left=%d raiders=%d shown=%s", today, days_left, planned_units("subjugation"), tostring(ok)))
 end
 
--- The subjugation raid comes after the first (plunder) raid. It is a major raid on a vassal region (stand-in: the home region).
+-- The yearly roll plans the subjugation raid after the first (plunder) raid. It is a major raid on a vassal region (stand-in: the home region).
 local function subjugation_step(today)
-    if not config.subjugation.enabled or state:get("raids_spawned") < 1 or state:get("sub_spawned") == 1 then return end
-    if state:get("sub_day") == 0 then make_subjugation_plan(today) end
+    if not config.subjugation.enabled or state:get("sub_day") == 0 or state:get("sub_spawned") == 1 then return end
     local days_left = state:get("sub_day") - today
     if days_left <= 0 then return spawn_raid(today, "subjugation") end
     if today >= state:get("sub_warning_day") and state:get("last_banner_day") ~= today then show_subjugation_countdown(today, days_left) end
@@ -334,8 +350,39 @@ local function prompt_step(today)
     core.log.info(TAG, string.format("INVASION difficulty prompt day=%d current=%d shown=%s", today, state:get("difficulty"), tostring(ok)))
 end
 
+-- One roll for the season that just began. Returns true when a raid was planned.
+local function roll_season(today, roll)
+    local year, position = plan_rules.season_year(state:get("yearly_season_no"))
+    local chances = config.yearly.chance_by_season
+    local raid = plan_rules.should_raid(year, position, state:get("yearly_done_year"), chances, roll)
+    local kind = raid and next_kind() or "none"
+    core.log.info(TAG, string.format("INVASION yearly roll day=%d year=%d season=%d chance=%s roll=%.2f raid=%s kind=%s", today, year, position,
+        tostring(chances[math.min(position, #chances)]), roll, tostring(raid), kind))
+    if not raid then return false end
+    state:set("yearly_done_year", year)
+    if kind == "subjugation" then make_subjugation_plan(today) else make_plan(today) end
+    return true
+end
+
+-- The saved season is set before the roll, so an error in the roll cannot make it run twice (like mod/bandits).
+local function yearly_step(today)
+    local season = current_season()
+    if season == nil then return end
+    local last = state:get("yearly_last_season")
+    if last < 0 then
+        state:set("yearly_last_season", season)
+        state:set("yearly_season_no", 0)
+        return
+    end
+    if season == last then return end
+    state:set("yearly_last_season", season)
+    state:set("yearly_season_no", state:get("yearly_season_no") + 1)
+    roll_season(today, math.random())
+end
+
 local function daily_step(today)
     prompt_step(today)
+    yearly_step(today)
     minor_raid_step(today)
     subjugation_step(today)
     clock_step(today)
@@ -360,7 +407,7 @@ require("scheduler").every(TAG, config.poll_ms, tick)
 local has_commands, commands = pcall(require, "HarnessCommands")
 
 local function replan_size()
-    if state:get("raid_day") == 0 or state:get("raids_spawned") > 0 then return end
+    if state:get("raid_day") == 0 or state:get("plunder_spawned") == 1 then return end
     state:set("squads", plan_rules.squads(state:get("size_class"), state:get("difficulty"), config.size_multipliers))
 end
 
@@ -376,11 +423,48 @@ local function command_state()
     }
 end
 
+-- For tests: plan a raid now, whatever the year and the season are. Without kind, the kind rules pick it.
+local function command_plan_now(args)
+    local today = current_day()
+    if today == nil then return nil, "the game day is not available" end
+    local kind = args.kind or next_kind()
+    if kind == "subjugation" then
+        if state:get("sub_spawned") == 1 then return nil, "the subjugation raid was spawned already" end
+        if state:get("sub_day") == 0 then make_subjugation_plan(today) end
+    elseif state:get("raid_day") == 0 or state:get("plunder_spawned") == 1 then
+        make_plan(today)
+    end
+    last_handled_day = nil
+    return command_state()
+end
+
+local function command_yearly_state()
+    local no = state:get("yearly_season_no")
+    local year, position = plan_rules.season_year(math.max(no, 0))
+    return { day = current_day(), season = current_season(), last_season = state:get("yearly_last_season"), season_no = no,
+        year = year, position = position, done_year = state:get("yearly_done_year"), raid_day = state:get("raid_day"),
+        plunder_spawned = state:get("plunder_spawned") == 1, sub_day = state:get("sub_day"), sub_spawned = state:get("sub_spawned") == 1,
+        raids_spawned = state:get("raids_spawned") }
+end
+
+-- For tests: count one season change now and roll (without a real calendar change). `roll` fixes the random number.
+local function command_yearly_advance_season(args)
+    local today = current_day()
+    if today == nil then return nil, "the game day is not available" end
+    if state:get("yearly_season_no") < 0 then return nil, "no season was seen yet" end
+    state:set("yearly_season_no", state:get("yearly_season_no") + 1)
+    local planned = roll_season(today, args.roll or math.random())
+    last_handled_day = nil
+    local answer = command_yearly_state()
+    answer.planned = planned
+    return answer
+end
+
 local function command_force_next()
     local today = current_day()
     if today == nil then return nil, "the game day is not available" end
-    if state:get("raids_spawned") > 0 then return nil, "the raid was spawned already" end
-    if state:get("raid_day") == 0 then make_plan(today) end
+    if state:get("plunder_spawned") == 1 then return nil, "the raid was spawned already" end
+    if state:get("raid_day") == 0 then make_plan(today) end -- a test may force a raid in year 1
     state:set("raid_day", today)
     last_handled_day = nil
     return command_state()
@@ -493,7 +577,7 @@ end
 local function command_set_size(args)
     local class = plan_rules.SIZE_CLASSES[args.size]
     if state:get("raid_day") == 0 then return nil, "no raid is planned yet" end
-    if state:get("raids_spawned") > 0 then return nil, "the raid was spawned already" end
+    if state:get("plunder_spawned") == 1 then return nil, "the raid was spawned already" end
     state:set("size_class", class)
     replan_size()
     return command_state()
@@ -552,6 +636,9 @@ if has_commands then
     commands.register("InvasionMod.invasion_clock_state", command_clock_state, {})
     commands.register("InvasionMod.invasion_clock_set_days_left", command_clock_set_days_left, { days = { type = "integer", required = true, min = 1, max = 2000 } })
     commands.register("InvasionMod.invasion_force_next", command_force_next, {})
+    commands.register("InvasionMod.invasion_plan_now", command_plan_now, { kind = { type = "string", oneOf = { "plunder", "subjugation" } } })
+    commands.register("InvasionMod.invasion_yearly_state", command_yearly_state, {})
+    commands.register("InvasionMod.invasion_yearly_advance_season", command_yearly_advance_season, { roll = { type = "number", min = 0, max = 0.999 } })
     commands.register("InvasionMod.invasion_set_difficulty", command_set_difficulty, { value = { type = "integer", required = true, min = 1, max = 3 } })
     commands.register("InvasionMod.invasion_set_size", command_set_size, { size = { type = "string", required = true, oneOf = { "small", "medium", "large" } } })
 end

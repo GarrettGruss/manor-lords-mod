@@ -11,11 +11,13 @@ import fakegame_path  # noqa: F401
 from fakegame import FakeGame
 from test_fakegame_modstate import FNAME, HELPERS, find_pack_mod
 
-PLAN_DAYS = (30, 90)
+PLAN_DAYS = (1, 90)
 WARNING_DAYS = (14, 56)
 
 
 class InvasionTestCase(unittest.TestCase):
+    PLAN_AT_START = True  # no raid is planned in game year 1: most tests plan one with the test command
+
     def setUp(self):
         self.game = FakeGame()
         self.game.start()
@@ -28,7 +30,7 @@ class InvasionTestCase(unittest.TestCase):
         self.pawn = self.game.obj("PawnCPP", Tags=self.game.array([]))
         self.game.method(self.pawn, "playEventMessage", lambda _self, _kind, text, sub: self.banners.append(text))
         self.game.method(self.pawn, "K2_GetActorLocation", lambda _self: self.game.struct(X=10.0, Y=20.0, Z=30.0))
-        self.calendar = self.game.obj("TemporalComponent", daysTotal=61, daysUntilNextRaid=730)
+        self.calendar = self.game.obj("TemporalComponent", daysTotal=61, daysUntilNextRaid=730, Season=0)
         self.engine = self.game.obj("RTSMultiEngineCPP", playerRef=self.pawn, TemporalComponent=self.calendar)
         self.bandit = self.game.obj("PawnCPP", isBandit=True)
         self.game.method(self.engine, "spawnArmy", lambda _self, point, names, owner, company, days: self.armies.append(
@@ -36,6 +38,8 @@ class InvasionTestCase(unittest.TestCase):
         self.game.method(self.engine, "spawnRaiders", lambda _self, squads, centre: self.raids.append((squads, centre.X, centre.Y)))
         self.game.load_mod(self.mod_name)
         self.game.advance(2)
+        if self.PLAN_AT_START:
+            self.assertTrue(self.ask("invasion_plan_now")["ok"])
 
     def command(self, number, name, **args):
         folder = self.game.run_dir / "modcmd" / self.mod_name
@@ -67,7 +71,9 @@ class PlanTests(InvasionTestCase):
         state = self.state()
         self.assertEqual(state["plan_day"], 61)
         self.assertTrue(PLAN_DAYS[0] <= state["raid_day"] - 61 <= PLAN_DAYS[1], state)
-        self.assertTrue(WARNING_DAYS[0] <= state["raid_day"] - state["warning_day"] <= WARNING_DAYS[1], state)
+        wait = state["raid_day"] - 61
+        warning = state["raid_day"] - state["warning_day"]
+        self.assertTrue(min(WARNING_DAYS[0], wait) <= warning <= min(WARNING_DAYS[1], wait), state)
         self.assertIn(state["squads"], (1, 2, 3))
         self.assertEqual(len(state["composition"].split("-")), state["squads"])
 
@@ -321,17 +327,26 @@ class SubjugationTests(InvasionTestCase):
 
     def test_no_plan_before_the_first_raid(self):
         self.assertEqual(self.sub()["sub_day"], 0)
+        self.ask("invasion_plan_now")  # the kind rules give a plunder raid before the first raid spawned
+        self.assertEqual(self.sub()["sub_day"], 0)
+
+    def test_no_plan_without_the_yearly_roll(self):
+        self.after_first_raid()
+        self.set_day(200)
+        self.assertEqual(self.sub()["sub_day"], 0)
 
     def test_the_plan_follows_the_first_raid_and_is_large(self):
         self.ask("invasion_set_difficulty", value=2)
         self.after_first_raid()
+        self.assertTrue(self.ask("invasion_plan_now")["ok"])  # the second raid is the subjugation raid by the kind rules
         sub = self.sub()
-        self.assertTrue(60 <= sub["sub_day"] - 61 <= 120, sub)
+        self.assertTrue(1 <= sub["sub_day"] - 62 <= 90, sub)
         self.assertEqual(sub["squads"], 6)
         self.assertEqual(len(sub["composition"].split("-")), 6)
 
     def test_the_subjugation_raid_spawns_once_on_its_day(self):
         self.after_first_raid()
+        self.ask("invasion_plan_now")
         armies_before = len(self.armies)
         sub = self.sub()
         self.set_day(sub["sub_day"] + 1)
@@ -345,6 +360,7 @@ class SubjugationTests(InvasionTestCase):
     def test_force_next_needs_a_plan(self):
         self.assertFalse(self.ask("invasion_subjugation_force_next")["ok"])
         self.after_first_raid()
+        self.ask("invasion_plan_now")
         self.assertTrue(self.ask("invasion_subjugation_force_next")["ok"])
         self.game.advance(2)
         self.assertTrue(self.sub()["spawned"])
@@ -465,10 +481,130 @@ class VassalProviderTests(InvasionTestCase):
         self.game.exec('require("features.invasion.init").set_vassal_provider(function() return { "Eichenhau" } end)')
         self.ask("invasion_force_next")
         self.set_day(62)
+        self.ask("invasion_plan_now")
         self.assertTrue(self.ask("invasion_subjugation_force_next")["ok"])
         self.game.advance(3)
         log = (self.game.run_dir / "mod.log").read_text(encoding="utf-8", errors="replace") if (self.game.run_dir / "mod.log").exists() else ""
         self.assertIn("kind=subjugation target=Eichenhau stand_in=false", log)
+
+
+
+class YearlyTests(InvasionTestCase):
+    """The season roll (update-raid-clock-yearly). No raid is planned at the start."""
+
+    PLAN_AT_START = False
+
+    def yearly(self):
+        answer = self.ask("invasion_yearly_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def advance(self, roll):
+        answer = self.ask("invasion_yearly_advance_season", roll=roll)
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def change_season(self, day):
+        """A real season change: the calendar gets the next season on `day`."""
+        self.calendar.Season = (self.calendar.Season + 1) % 4
+        self.set_day(day)
+
+    def test_the_first_year_is_quiet(self):
+        self.assertEqual(self.state()["raid_day"], 0)
+        self.assertEqual(self.yearly()["year"], 1)
+        day = 61
+        for _ in range(3):  # the 3 season changes of year 1 (the start season is the first)
+            day += 90
+            self.change_season(day)
+            self.assertEqual(self.yearly()["year"], 1)
+            self.assertEqual(self.state()["raid_day"], 0)
+            self.assertEqual(self.armies, [])
+
+    def test_chances_by_season(self):
+        for _ in range(3):
+            self.assertFalse(self.advance(0.0)["planned"])  # year 1 never raids
+        first = self.advance(0.2)
+        self.assertEqual((first["year"], first["position"]), (2, 1))
+        self.assertTrue(first["planned"])
+        self.assertGreater(first["raid_day"], 0)
+
+    def test_a_roll_over_the_chance_goes_to_the_next_season(self):
+        for _ in range(3):
+            self.advance(0.0)
+        # chances 25, 33, 50 percent for the first three seasons of year 2
+        self.assertFalse(self.advance(0.30)["planned"])
+        self.assertFalse(self.advance(0.34)["planned"])
+        answer = self.advance(0.49)
+        self.assertEqual((answer["year"], answer["position"]), (2, 3))
+        self.assertTrue(answer["planned"])
+
+    def test_the_last_season_always_raids(self):
+        for _ in range(3):
+            self.advance(0.0)
+        for _ in range(3):
+            self.assertFalse(self.advance(0.999)["planned"])
+        last = self.advance(0.999)
+        self.assertEqual((last["year"], last["position"]), (2, 4))
+        self.assertTrue(last["planned"])
+
+    def test_one_raid_a_year(self):
+        for _ in range(3):
+            self.advance(0.0)
+        self.assertTrue(self.advance(0.0)["planned"])
+        for _ in range(3):
+            self.assertFalse(self.advance(0.0)["planned"])
+        self.assertEqual(self.yearly()["done_year"], 2)
+        self.assertTrue(self.advance(0.0)["planned"])  # year 3 position 1
+        self.assertEqual(self.yearly()["done_year"], 3)
+
+    def test_the_second_raid_is_a_subjugation_raid(self):
+        for _ in range(3):
+            self.advance(0.0)
+        self.advance(0.0)  # year 2: plunder plan
+        self.assertTrue(self.ask("invasion_force_next")["ok"])
+        self.game.advance(2)
+        self.assertTrue(self.yearly()["plunder_spawned"])
+        for _ in range(3):
+            self.advance(0.0)
+        answer = self.advance(0.0)  # year 3 position 1
+        self.assertTrue(answer["planned"])
+        self.assertGreater(answer["sub_day"], 0)
+
+    def test_three_years_give_two_raids(self):
+        day = 61
+        for _ in range(11):
+            day += 90
+            self.change_season(day)
+            state = self.yearly()
+            if not state["plunder_spawned"] and state["raid_day"] > 0:
+                self.set_day(state["raid_day"])
+            elif state["sub_day"] > 0 and not state["sub_spawned"]:
+                self.set_day(state["sub_day"])
+            day = max(day, self.calendar.daysTotal)
+        self.set_day(day + 100)
+        self.assertEqual(self.yearly()["raids_spawned"], 2)  # the plunder raid and the subjugation raid, one in each year
+        self.assertEqual(self.yearly()["done_year"], 3)
+
+    def test_a_real_season_change_rolls_once(self):
+        self.change_season(150)
+        self.assertEqual(self.yearly()["season_no"], 1)
+        self.set_day(160)  # same season: no new roll
+        self.assertEqual(self.yearly()["season_no"], 1)
+
+    def test_a_load_does_not_repeat_a_roll(self):
+        self.change_season(150)
+        before = self.yearly()
+        self.game.exec('local s = require("ModState").open("invasion", "pawn"); s.values.yearly_season_no = 0; '
+                       's.values.yearly_last_season = -1; s:load()')  # the values come back from the pawn Tags, as after a load
+        self.set_day(151)
+        after = self.yearly()
+        self.assertEqual((after["season_no"], after["last_season"]), (before["season_no"], before["last_season"]))
+
+    def test_the_season_state_is_in_the_pawn_tags(self):
+        self.change_season(150)
+        tags = list(self.game.lua.eval("tag_names")(self.pawn).values())
+        self.assertIn("invasion:yearly_season_no=1", tags)
+        self.assertIn(f"invasion:yearly_last_season={self.calendar.Season}", tags)
 
 
 if __name__ == "__main__":
