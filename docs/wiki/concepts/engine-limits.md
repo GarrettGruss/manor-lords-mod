@@ -10,6 +10,7 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/
   - resource: repo://openspec/changes/archive/2026-10-20-spike-community-mod-leads/notes/lead-1-2-stances.md
   - resource: repo://openspec/changes/archive/2026-10-20-spike-community-mod-leads/notes/lead-1-5-building-mesh-swap.md
+  - resource: repo://openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/salt-mine-deposit.md
 ---
 # Engine limits found by spikes
 
@@ -48,7 +49,7 @@ Do not plan a feature that needs buildings inside the bailey.
 - `ResourceNode` actors hold only map decals. `RTSGameManager.deposits` is empty. `getNearestResource(good, pos)` finds only construction piles, not salt.
 - The only lever is the region production limit: `setProductionLimit(good, n)` holds a high value, and `setProductionUnlimited(good)` resets it. It caps output; it does not change a deposit. No region "unlimited" flag exists.
 - The Nexus mod "Rich Deposit" (mod 357) changes deposits with a native DLL patch, not through reflection.
-- Owner decision 2026-10-22: the mod does not manage resource state. Notes: `openspec/changes/archive/2026-10-22-spike-finite-resource-limits/notes/`.
+- Owner decision 2026-10-22: the mod does not manage resource state. Notes: `openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/`.
 
 ## Results of the community mod lead spikes (change `spike-community-mod-leads`, #280)
 
