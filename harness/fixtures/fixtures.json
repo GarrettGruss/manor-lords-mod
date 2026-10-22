@@ -19,6 +19,25 @@
         "jagged-cliffs"
       ]
     },
+    "base-corpse-pit": {
+      "description": "The base village (Jagged_Cliffs) plus a built corpse pit (DT_Buildings 113, BM_CorpsePit_C) north-west of the church in Nusslohe, no workers. Placed with the real mouse in run pit-1; the game ran 4 days for the build. Saved by the user as village-fixture-v2 (saveGame_33), 2026-10-21.",
+      "origin": "user slot saveGame_33",
+      "sha256": {
+        ".png": "3bc84e98b9848f32971ac8c981b79542784d18c73d0fa63088702418c196c173",
+        ".sav": "2fa8be286dab8726367dee2f965d63d51bb38585e59d5839dc8f1e0347fb64f6",
+        "_coat_0.png": "1a3ce180ff5bed321cf3c0eccc1fef9b2613885b6bfa2e87f5393b7a5dc739d8",
+        "_coat_1.png": "506f3ad4fc423c7f85223d6458f9952db6d7c2edc92ff2ceaa190fb0a99fdf0e",
+        "_coat_2.png": "4d0684f2c35fb98123c1247e9d4be43a81cad2b269db66ed92c3e089ef43d353",
+        "_coat_3.png": "c12b1e708b6ba6847a35d698a36e77bf076bf9b4584447c93695deab5f1d4d13",
+        "_coat_4.png": "f72c7440013564af6c2c46f32290c6146d59107632fbe233e21637eb45070a5d",
+        "_descr.sav": "6cf8f983d5345c0dbc033d6b049720f2a2c347307852eacb605ae9cabdcc30d2"
+      },
+      "stored": true,
+      "tags": [
+        "jagged-cliffs",
+        "corpse-pit"
+      ]
+    },
     "burgage-start": {
       "description": "New game on Jagged Cliffs made live with the user on 2026-10-12: burgage plots placed by hand and without the mouse (spec 15 part 5). Saved by the user as saveGame_30.",
       "origin": "user slot saveGame_30",

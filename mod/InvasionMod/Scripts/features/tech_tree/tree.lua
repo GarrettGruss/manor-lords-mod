@@ -10,7 +10,6 @@ M.EFFECT_KINDS = {
     militia_defence = "percent",
     retinue_capacity = "add",      -- value is added to the retinue limit of the manor (men)
     tribute_share = "percent",     -- value is a change of the tribute share of all vassals (0.25 is +25%)
-    vassal_loyalty = "add",        -- value is added to the loyalty change of each vassal at every season change
     manor_storage = "add",         -- value is added to the capacity of a manor module (units of goods)
 }
 
