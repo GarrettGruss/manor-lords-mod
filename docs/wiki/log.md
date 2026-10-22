@@ -1,5 +1,8 @@
 # Wiki update log
 
+## 2026-10-22
+* **Create**: Added [Unit templates of the game](concepts/unit-templates.md): the unit types of DT_UnitTemplates with row names and squad sizes.
+
 ## 2026-10-19
 * **Update**: Added the results of the community mod lead spikes (Squad struct reads, dead units, unit growth, stances, mesh swap) to [Engine limits found by spikes](concepts/engine-limits.md) (change `spike-community-mod-leads`, #280).
 * **Update**: [Invasion features](architecture/invasion-features.md) describes the new feature `liege_influence` (change `add-liege-influence`, #271); M11 is no longer backlog.
