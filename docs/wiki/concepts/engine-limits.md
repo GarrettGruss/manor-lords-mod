@@ -10,6 +10,7 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/
   - resource: repo://openspec/changes/archive/2026-10-20-spike-community-mod-leads/notes/lead-1-2-stances.md
   - resource: repo://openspec/changes/archive/2026-10-20-spike-community-mod-leads/notes/lead-1-5-building-mesh-swap.md
+  - resource: repo://openspec/changes/archive/2026-10-21-spike-playtest-telemetry/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/salt-mine-deposit.md
 ---
 # Engine limits found by spikes
@@ -60,7 +61,7 @@ Do not plan a feature that needs buildings inside the bailey.
 - A pure Lua stored zip (no compression) of 4.5 MB takes about 0.2 s; in steps of 256 KB to 1 MB per tick the game does not stall.
 - A mod menu can hold a text box, a check box and a button without a pak widget; typing needs `SetKeyboardFocus` first.
 - One soak run crashed inside UE4SS Lua (`ltable.c`, `mainpositionTV`, exit code 3); the cause is not known.
-- Notes: `ARCHIVE/notes/`.
+- Notes: `openspec/changes/archive/2026-10-21-spike-playtest-telemetry/notes/`.
 
 ## Results of the community mod lead spikes (change `spike-community-mod-leads`, #280)
 
