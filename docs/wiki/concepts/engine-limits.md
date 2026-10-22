@@ -8,8 +8,8 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/README.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/implementation-notes/bailey-buildings.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/
-  - resource: repo://openspec/changes/spike-community-mod-leads/notes/lead-1-2-stances.md
-  - resource: repo://openspec/changes/spike-community-mod-leads/notes/lead-1-5-building-mesh-swap.md
+  - resource: repo://openspec/changes/archive/2026-10-20-spike-community-mod-leads/notes/lead-1-2-stances.md
+  - resource: repo://openspec/changes/archive/2026-10-20-spike-community-mod-leads/notes/lead-1-5-building-mesh-swap.md
 ---
 # Engine limits found by spikes
 
