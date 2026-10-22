@@ -9,7 +9,7 @@ okf_version: "0.2"
 # Folders
 
 * [architecture](architecture/) - Pages: Invasion Mod features, Invasion Mod structure, Harness and player mods, System overview, Shared Lua modules, Source map.
-* [concepts](concepts/) - Pages: Engine limits found by spikes, Mod commands and state, Run folder and verdicts, Safety rules.
+* [concepts](concepts/) - Pages: Engine limits found by spikes, Mod commands and state, Run folder and verdicts, Safety rules, Unit templates of the game.
 * [integrations](integrations/) - Pages: Harness MCP tools, UE4SS bridge.
 * [operations](operations/) - Pages: Debugging runs, Specs, docs and project process, Install and environment, Reliability assessment.
 * [testing](testing/) - Pages: Fake game kit, Python tests and coverage.
