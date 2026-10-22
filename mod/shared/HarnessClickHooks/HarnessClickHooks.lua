@@ -71,6 +71,20 @@ function M.attach(border, controller, tag)
     return handle
 end
 
+-- Spike 308: a click button with no Border around it (the caller adds it to the viewport). Returns a handle or nil and a message.
+function M.create_standalone(controller, tag)
+    local class, problem = find_class()
+    if not class then return nil, problem end
+    local installed, hook_problem = install_hook()
+    if not installed then return nil, hook_problem end
+    local library = StaticFindObject("/Script/UMG.Default__WidgetBlueprintLibrary")
+    local widget = library:Create(controller, class, controller)
+    if not valid(widget) then return nil, "WidgetBlueprintLibrary:Create returned no click button" end
+    local handle = { widget = widget, tag = tag, name = full_name_of(widget), widget_name = widget:GetFName():ToString() }
+    handles[handle.name] = handle
+    return handle
+end
+
 -- Finds the label of each handle. Button01 is a variable of the click button (its OnClicked event needs it). The label is
 -- Button01 > HorizontalContentBox > child 1 (TextBorder) > ValueText. This avoids a scan of all text blocks (FindAllOf), which
 -- was slow and crashed the game. Call it once after the attach calls of a menu. Returns true, or false and a message.

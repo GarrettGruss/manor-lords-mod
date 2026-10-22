@@ -35,6 +35,13 @@ Do not plan a feature that needs buildings inside the bailey.
 - What works: `RemoveFromParent` on live `questMessageElaborate_C` widgets that were not in the list taken before the send (run `s343-b1`). The letter stays in InBox, unopened. The game does not crash. The mod must hide the banner for each letter.
 - Owner decision 2026-10-21: hiding the banner is enough; the letter may stay in the inbox. Notes: `openspec/changes/archive/2026-10-21-spike-bandit-message-toggle/notes/`.
 
+## Mod menus: bottom bar button and click blocking (#308)
+- A mod can add a button to the game's bottom bar from Lua: `WidgetBlueprintLibrary:Create` of `/Game/UI/HUD/mainTabButton.mainTabButton_C`, then `AddChildToHorizontalBox` on `main_tabs_HB` of the HUD widget `MainUICPP_C`. The clone has the game's frame, size and hover glow. Its click and hover are seen with `RegisterHook` on `HandleClicked` and `HandleHovered` of that class (match the widget by name). The default icon is a map, the tooltip shows `mainTab_0`.
+- A clone can also go into the viewport (`AddToViewport`, `SetPositionInViewport`): the base menu uses one as its Close button.
+- `Button.OnClicked:Add(fn)` on a Button made with `StaticConstructObject` crashes the game (access violation at `0x70` in `XMulticastDelegateProperty::setup_member_functions`). Never bind a delegate on a widget made at run time.
+- Click blocking: a full-screen `Button` in the viewport blocks a click to the game, a full-screen `Border` does not. A `Border` of the menu content (Visible) also lets a click through; set it to `SelfHitTestInvisible` (4). `SetInputMode_UIOnlyEx(controller, widget, 0, true)` (4 parameters) also blocks, but changes the input of the whole game.
+- Notes: `openspec/changes/add-mod-menu-access-rule/notes/` (open) or its archive.
+
 ## Menu pictures: PNG at run time (spike #333)
 - A mod menu can show a picture the game does not have, without a pak. `KismetRenderingLibrary:ImportFileAsTexture2D(world, path)` loads a PNG from an absolute path with forward slashes. The texture is not compressed.
 - Build the widget in Lua: `WidgetBlueprintLibrary:Create`, then `StaticConstructObject` of `WidgetTree` and `Image`. Use `Image:SetBrushFromTexture(texture, false)`, `AddToViewport` and `SetPositionInViewport`.

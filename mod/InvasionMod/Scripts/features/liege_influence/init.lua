@@ -61,57 +61,16 @@ end
 
 ---------------------------------------------------------------------------------------------
 -- The tribute menu: a cooked Widget Blueprint in the pak raidmenu_P.pak (mod/InvasionMod/ue/make_liege_widget.py).
+-- It is built on the base menu (core/menu.lua): a Tribute button in the bottom bar, fullscreen, clicks blocked to the game.
 -- Lua puts a click button into each Border (shared module HarnessClickHooks). A click is a hook event, not a poll (spec 34).
--- The 2-click HUD entry point is a later change (add-mod-menu-access-rule). Now the commands liege_menu_open and liege_menu_close open it.
 ---------------------------------------------------------------------------------------------
+local menu = require("core.menu")
 local clickhooks = require("HarnessClickHooks")
 local isValid, read = core.isValid, core.read
-local CLASS_PATH = "/Game/HarnessMod/WBP_LiegeTribute.WBP_LiegeTribute_C"
-local PACKAGE_PATH, ASSET_NAME = "/Game/HarnessMod", "WBP_LiegeTribute"
+local MENU_ID = "tribute"
 local BUTTON_NAMES = { "TributeButton", "CloseButton" } -- the tag value of a button is its name
 
 local S = { widget = nil, texts = {}, buttons = {}, shown = {}, last_refresh = 0, tributes = 0, last_error = nil }
-
--- LoadAsset does not load an asset of a mod pak. The asset registry call does (spec 16 pak-widget-spike.md).
-local function find_class()
-    local found = StaticFindObject(CLASS_PATH)
-    if isValid(found) then return found end
-    local registry = StaticFindObject("/Script/AssetRegistry.Default__AssetRegistryHelpers")
-    if not isValid(registry) then return nil, "AssetRegistryHelpers not found" end
-    local data = {
-        PackageName = FName(PACKAGE_PATH .. "/" .. ASSET_NAME), PackagePath = FName(PACKAGE_PATH), AssetName = FName(ASSET_NAME),
-        AssetClassPath = { PackageName = FName("/Script/UMGEditor"), AssetName = FName("WidgetBlueprint") },
-    }
-    local ok, err = pcall(function() return registry:GetAsset(data) end)
-    if not ok then return nil, "GetAsset: " .. tostring(err) end
-    found = StaticFindObject(CLASS_PATH)
-    if not isValid(found) then return nil, "class not found; is the pak raidmenu_P.pak in Paks/~mods?" end
-    return found
-end
-
-local function make_widget()
-    local class, problem = find_class()
-    if not class then return nil, problem end
-    local library = StaticFindObject("/Script/UMG.Default__WidgetBlueprintLibrary")
-    local controller = FindFirstOf("PlayerController")
-    if not (isValid(library) and isValid(controller)) then return nil, "widget library or player controller not found" end
-    local made = library:Create(controller, class, controller)
-    if not isValid(made) then return nil, "WidgetBlueprintLibrary:Create returned no widget" end
-    return made
-end
-
--- Finds the children of the widget tree by name (Python cannot mark them as variables).
-local function find_named(widget, class_name, names)
-    local widget_name = read(function() return widget:GetFName():ToString() end)
-    local wanted, found = {}, {}
-    for _, name in ipairs(names) do wanted[name] = true end
-    for _, object in ipairs(FindAllOf(class_name) or {}) do
-        local full = read(function() return object:GetFullName() end) or ""
-        local name = full:match("%.([%w_]+)$") or full:match("%.([%w_]+) ")
-        if name and wanted[name] and widget_name and full:find(widget_name, 1, true) then found[name] = object end
-    end
-    return found
-end
 
 local function wanted_texts()
     return {
@@ -120,11 +79,11 @@ local function wanted_texts()
     }
 end
 
-local function is_open() return isValid(S.widget) end
+local function is_open() return menu.is_open(MENU_ID) end
 
 -- The labels change only when the value changes (no SetText each tick).
 local function refresh()
-    if not is_open() then return false end
+    if not isValid(S.widget) then return false end
     for name, text in pairs(wanted_texts()) do
         if S.texts[name] and S.shown[name] ~= text then
             S.shown[name] = text
@@ -142,51 +101,57 @@ local function release_buttons()
     clickhooks.release(handles)
 end
 
-local function close_menu()
-    if is_open() then S.widget:RemoveFromParent() end
+local function reset()
     release_buttons()
     S.widget, S.texts, S.buttons, S.shown = nil, {}, {}, {}
-    return { ok = true }
 end
 
-local function abort_open(made, problem)
-    release_buttons()
-    if made then made:RemoveFromParent() end
-    S.widget, S.texts, S.buttons, S.shown = nil, {}, {}, {}
-    return { ok = false, error = problem }
-end
-
-local function open_menu()
-    if is_open() then return { ok = true, already_open = true } end
-    local made, problem = make_widget()
-    if not made then return { ok = false, error = problem } end
+-- The base menu calls this with the made widget. On a failure this function cleans up and returns nil and a message.
+local function on_open(made)
     S.widget = made
-    S.texts = find_named(made, "TextBlock", { "InfluenceText", "TributeInfoText" })
-    local borders = find_named(made, "Border", BUTTON_NAMES)
-    if S.texts.InfluenceText == nil then return abort_open(made, "the text lines were not found in the widget") end
+    S.texts = menu.find_named(made, "TextBlock", { "InfluenceText", "TributeInfoText" })
+    local borders = menu.find_named(made, "Border", BUTTON_NAMES)
+    if S.texts.InfluenceText == nil then
+        reset()
+        return nil, "the text lines were not found in the widget"
+    end
     local controller = FindFirstOf("PlayerController")
     S.buttons = {}
     for _, name in ipairs(BUTTON_NAMES) do
-        if borders[name] == nil then return abort_open(made, "button not found in the widget: " .. name) end
+        if borders[name] == nil then
+            reset()
+            return nil, "button not found in the widget: " .. name
+        end
         local handle, attach_problem = clickhooks.attach(borders[name], controller, { owner = S, value = name })
-        if not handle then return abort_open(made, attach_problem) end
+        if not handle then
+            reset()
+            return nil, attach_problem
+        end
         S.buttons[name] = { handle = handle }
     end
     local handles = {}
     for _, slot in pairs(S.buttons) do handles[#handles + 1] = slot.handle end
     local bound, bind_problem = clickhooks.bind_texts(handles)
-    if not bound then return abort_open(made, bind_problem) end
+    if not bound then
+        reset()
+        return nil, bind_problem
+    end
     clickhooks.set_text(S.buttons.TributeButton.handle, "Send tribute")
     clickhooks.set_text(S.buttons.CloseButton.handle, "Close")
-    made:AddToViewport(config.z_order)
-    made:SetPositionInViewport(config.position, false)
     refresh()
-    return { ok = true }
+    return true
 end
+
+menu.register({
+    id = MENU_ID, label = "Liege",
+    class_path = "/Game/HarnessMod/WBP_LiegeTribute.WBP_LiegeTribute_C", package_path = "/Game/HarnessMod", asset_name = "WBP_LiegeTribute",
+    z_order = config.z_order, position = config.position,
+    on_open = on_open, on_close = reset,
+})
 
 local function press(name)
     if name == "CloseButton" then
-        close_menu()
+        menu.close()
         return
     end
     local result, reason = send_tribute(config.tribute_button_amount)
@@ -230,8 +195,11 @@ end
 
 local has_commands, commands = pcall(require, "HarnessCommands")
 if has_commands then
-    commands.register("InvasionMod.liege_menu_open", open_menu, {})
-    commands.register("InvasionMod.liege_menu_close", close_menu, {})
+    commands.register("InvasionMod.liege_menu_open", function() return menu.open(MENU_ID) end, {})
+    commands.register("InvasionMod.liege_menu_close", function()
+        if is_open() then return menu.close() end
+        return { ok = true }
+    end, {})
     commands.register("InvasionMod.liege_menu_state", menu_state, {})
     commands.register("InvasionMod.liege_state", command_state, {})
     commands.register("InvasionMod.liege_send_tribute", function(args)
@@ -245,4 +213,4 @@ end
 require("scheduler").every(TAG, math.max(100, config.poll_ms), tick)
 
 core.log.info(TAG, "feature liege_influence loaded")
-return { state = state, send_tribute = send_tribute, command_state = command_state, open = open_menu, close = close_menu }
+return { state = state, send_tribute = send_tribute, command_state = command_state, open = function() return menu.open(MENU_ID) end, close = menu.close }
