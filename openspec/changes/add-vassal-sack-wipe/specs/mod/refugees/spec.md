@@ -8,7 +8,7 @@ The mod SHALL send a wave of refugee families to the home region when a vassal i
 - **WHEN** a handed-over vassal of 10 families is wiped
 - **THEN** the home region gains 5 families and the wave is active
 - **AND** the home region has at least 1 homeless family when it has fewer than 5 free home slots
-- Not checked yet (planned: `mod/InvasionMod/scenarios/refugees/refugee_wave.py`, updated).
+- Checked by `mod/InvasionMod/scenarios/refugees/refugee_wave.py`.
 
 #### Scenario: The loss starts the wave by itself
 - **WHEN** the vassals feature reports a lost vassal in the fake game

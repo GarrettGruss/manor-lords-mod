@@ -8,7 +8,7 @@ The mod SHALL start the sack of the houses of a vassal (see `mod/vassals`) when 
 - **WHEN** a subjugation raid targets a vassal region and stays active for 8 game days
 - **THEN** the sack of the vassal houses starts
 - **AND** when 80 percent of the buildings are ruins the vassal is lost with the reason `wiped`
-- Not checked yet (planned: `mod/InvasionMod/scenarios/invasion/vassal_targets.py`, updated).
+- Checked by `mod/InvasionMod/scenarios/invasion/vassal_targets.py`.
 
 #### Scenario: Siege rules in the fake game
 - **WHEN** the raid is younger than 8 days, beaten, a plunder raid, or targets home

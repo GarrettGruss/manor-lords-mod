@@ -17,7 +17,7 @@ The mod SHALL sack the raid target when the player owns it. Else it SHALL sack t
 #### Scenario: A manual sack names the home region
 - **WHEN** `sack_now` runs with no raid target
 - **THEN** the sack result names the home region
-- Not checked yet (planned: `mod/InvasionMod/scenarios/sack_and_terms/sack_region.py`, updated).
+- Checked by `mod/InvasionMod/scenarios/sack_and_terms/sack_region.py`.
 
 #### Scenario: Region choice rule
 - **WHEN** the raid targets a player region, a foreign region, or no known region
@@ -31,7 +31,7 @@ After a sack of a player region the mod SHALL close an open offer and SHALL NOT 
 - **WHEN** an offer is open and the raid sacks a player region
 - **THEN** the offer is closed
 - **AND** `terms_offer` for the same raid is refused
-- Not checked yet (planned: `harness/tests/test_fakegame_sack_and_terms.py`).
+- Checked by `harness/tests/test_fakegame_sack_and_terms.py`.
 
 ## REMOVED Requirements
 
