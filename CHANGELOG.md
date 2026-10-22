@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Raid clock (change `update-raid-clock-yearly`, #339): the Invasion Mod plans no raid in the first game year. From the second year one raid comes each year, decided by a roll at each season change (25, 33, 50 and 100 percent, setting `invasion.yearly.chance_by_season`; the fourth season always raids). The settings `first_raid_days_min`, `first_raid_days_max` and `subjugation.wait_days_min`, `wait_days_max` are removed. New test commands `invasion_yearly_state`, `invasion_yearly_advance_season` and `invasion_plan_now`; new test scenario `invasion-yearly-raid`.
+
 ### Added
 - Spike `spike-new-game-difficulty-setting` (#358): the game's Game Setup values (`MLGameInstance.gameSetup.currentGameSetup`) are readable from Lua but not saved; visiting the setup screen changes `menu.sav`. Read module `HarnessGameSetup` and probe test scenario `probe-difficulty-setting`. Replaced by the mod's own scenario settings menu (#375).
 - Spike `spike-finite-resource-limits` (#342): resource deposits (surface amount, rich flag, endless reserves) live in native code and cannot be read or written from Lua; only the region production limit (`setProductionLimit`) can be set. Owner accepted that the mod does not manage resource state (2026-10-22).
