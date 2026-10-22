@@ -3,60 +3,22 @@
 -- Lua puts a click button (WBP_ClickButton, shared module HarnessClickHooks) into each Border. A click is a hook event, not a poll (spec 34).
 -- The tree is data driven: Lua labels, shows, hides, colours and moves the buttons from the nodes of the tech_tree feature
 -- (data/tech_tree/tree.json, with the layout data). A click on a path button or a node button calls the tech_tree feature.
+-- The menu is built on the base menu (core/menu.lua): it gets a bottom bar button, opens fullscreen and blocks clicks to the game.
+-- F9 stays as a shortcut.
 -- Rules: game objects are touched on the game thread only (the scheduler runs jobs there). No LoopAsync of its own.
 local core = require("ManorCore")
+local menu = require("core.menu")
 local lines = require("features.tech_tree_widget.lines")
 local tech_tree = require("features.tech_tree.init")
 local config = require("config").tech_tree_widget
 local clickhooks = require("HarnessClickHooks")
 
 local TAG = "InvasionMod.tech_tree_widget"
-local CLASS_PATH = "/Game/HarnessMod/WBP_TechTreeMenu.WBP_TechTreeMenu_C"
-local PACKAGE_PATH, ASSET_NAME = "/Game/HarnessMod", "WBP_TechTreeMenu"
+local MENU_ID = "tech"
 local LINE_COUNT, PATH_BUTTON_COUNT, NODE_COUNT, LAW_COUNT = 3, 2, 16, 3
 
 local S = { widget = nil, lines = {}, laws_line = nil, paths = {}, nodes = {}, laws = {}, clicks = 0, last_error = nil, last_view = nil, shown_lines = {}, shown_laws_line = nil, last_refresh = 0 }
 local isValid, read = core.isValid, core.read
-
--- LoadAsset does not load an asset of a mod pak. The asset registry call does (spec 16 pak-widget-spike.md).
-local function find_class()
-    local found = StaticFindObject(CLASS_PATH)
-    if isValid(found) then return found end
-    local registry = StaticFindObject("/Script/AssetRegistry.Default__AssetRegistryHelpers")
-    if not isValid(registry) then return nil, "AssetRegistryHelpers not found" end
-    local data = {
-        PackageName = FName(PACKAGE_PATH .. "/" .. ASSET_NAME), PackagePath = FName(PACKAGE_PATH), AssetName = FName(ASSET_NAME),
-        AssetClassPath = { PackageName = FName("/Script/UMGEditor"), AssetName = FName("WidgetBlueprint") },
-    }
-    local ok, err = pcall(function() return registry:GetAsset(data) end)
-    if not ok then return nil, "GetAsset: " .. tostring(err) end
-    found = StaticFindObject(CLASS_PATH)
-    if not isValid(found) then return nil, "class not found; is the pak techmenu_P.pak in Paks/~mods?" end
-    return found
-end
-
-local function make_widget()
-    local class, problem = find_class()
-    if not class then return nil, problem end
-    local library = StaticFindObject("/Script/UMG.Default__WidgetBlueprintLibrary")
-    local controller = FindFirstOf("PlayerController")
-    if not (isValid(library) and isValid(controller)) then return nil, "widget library or player controller not found" end
-    local made = library:Create(controller, class, controller)
-    if not isValid(made) then return nil, "WidgetBlueprintLibrary:Create returned no widget" end
-    return made
-end
-
--- Children have names like NodeButton3. Python cannot mark them as variables, so they are found by name.
-local function find_named(widget, class_name, prefix, count)
-    local widget_name = read(function() return widget:GetFName():ToString() end)
-    local found = {}
-    for _, object in ipairs(FindAllOf(class_name) or {}) do
-        local full = read(function() return object:GetFullName() end) or ""
-        local index = full:match(prefix .. "(%d+)$") or full:match(prefix .. "(%d+) ")
-        if index and widget_name and full:find(widget_name, 1, true) and tonumber(index) < count then found[tonumber(index) + 1] = object end
-    end
-    return found
-end
 
 local function set_visible(slot, shown)
     pcall(clickhooks.set_visible, slot.handle, shown)
@@ -168,15 +130,10 @@ local function press_law(index)
     return result, problem
 end
 
-local toggle_requested = false
-local toggle -- defined below
+local function is_open() return menu.is_open(MENU_ID) end
 
 local function tick()
-    if toggle_requested then
-        toggle_requested = false
-        core.log.try(TAG, toggle)
-    end
-    if not isValid(S.widget) then
+    if not is_open() then
         S.widget = nil
         return
     end
@@ -193,11 +150,9 @@ local function tick()
     end
 end
 
-local function is_open() return isValid(S.widget) end
-
 -- Puts a click button into each Border of the pool. Returns the slots, or nil and a message.
 local function make_slots(widget, prefix, kind, count)
-    local borders = find_named(widget, "Border", prefix, count)
+    local borders = menu.find_pool(widget, "Border", prefix, count)
     local controller = FindFirstOf("PlayerController")
     local slots = {}
     for i = 1, count do
@@ -218,15 +173,19 @@ local function release_slots()
     clickhooks.release(handles)
 end
 
-local function open()
-    if is_open() then return { ok = true, already_open = true } end
-    local made, problem = make_widget()
-    if not made then return { ok = false, error = problem } end
+local function reset()
+    release_slots()
+    S.widget, S.lines, S.laws_line, S.paths, S.nodes, S.laws = nil, {}, nil, {}, {}, {}
+    S.shown_lines, S.shown_laws_line = {}, nil
+end
+
+-- The base menu calls this with the made widget. On a failure this function cleans up and returns nil and a message.
+local function on_open(made)
     if #tech_tree.tree.nodes > NODE_COUNT then
-        return { ok = false, error = string.format("the tree has %d nodes, the widget has %d buttons", #tech_tree.tree.nodes, NODE_COUNT) }
+        return nil, string.format("the tree has %d nodes, the widget has %d buttons", #tech_tree.tree.nodes, NODE_COUNT)
     end
     S.widget = made
-    S.lines = find_named(made, "TextBlock", "TechLine", LINE_COUNT)
+    S.lines = menu.find_pool(made, "TextBlock", "TechLine", LINE_COUNT)
     local slot_problem
     S.paths, slot_problem = make_slots(made, "PathButton", "path", PATH_BUTTON_COUNT)
     if S.paths then S.nodes, slot_problem = make_slots(made, "NodeButton", "node", NODE_COUNT) end
@@ -240,35 +199,24 @@ local function open()
         if not bound then S.laws, slot_problem = nil, bind_problem end
     end
     if not (S.paths and S.nodes and S.laws) then
-        release_slots()
-        made:RemoveFromParent()
-        S.widget, S.paths, S.nodes, S.laws = nil, {}, {}, {}
-        return { ok = false, error = slot_problem }
+        reset()
+        return nil, slot_problem
     end
-    S.laws_line = find_named(made, "TextBlock", "LawsLine", 1)[1]
+    S.laws_line = menu.find_pool(made, "TextBlock", "LawsLine", 1)[1]
     if S.lines[1] == nil or S.nodes[1] == nil or S.laws[1] == nil or S.laws_line == nil then
-        made:RemoveFromParent()
-        S.widget = nil
-        return { ok = false, error = "the text lines or node buttons were not found in the widget" }
+        reset()
+        return nil, "the text lines or node buttons were not found in the widget"
     end
-    made:AddToViewport(config.z_order)
-    made:SetPositionInViewport(config.position, false)
     refresh()
-    return { ok = true }
+    return true
 end
 
-local function close()
-    if is_open() then S.widget:RemoveFromParent() end
-    release_slots()
-    S.widget, S.lines, S.laws_line, S.paths, S.nodes, S.laws = nil, {}, nil, {}, {}, {}
-    S.shown_lines, S.shown_laws_line = {}, nil
-    return { ok = true }
-end
-
-function toggle()
-    if is_open() then return close() end
-    return open()
-end
+menu.register({
+    id = MENU_ID, label = "Tech",
+    class_path = "/Game/HarnessMod/WBP_TechTreeMenu.WBP_TechTreeMenu_C", package_path = "/Game/HarnessMod", asset_name = "WBP_TechTreeMenu",
+    z_order = config.z_order, position = config.position,
+    on_open = on_open, on_close = reset,
+})
 
 ---------------------------------------------------------------------------------------------
 -- Named commands for the harness (no eval)
@@ -304,8 +252,11 @@ end
 
 local has_commands, commands = pcall(require, "HarnessCommands")
 if has_commands then
-    commands.register("InvasionMod.tech_tree_widget_open", open, {})
-    commands.register("InvasionMod.tech_tree_widget_close", close, {})
+    commands.register("InvasionMod.tech_tree_widget_open", function() return menu.open(MENU_ID) end, {})
+    commands.register("InvasionMod.tech_tree_widget_close", function()
+        if is_open() then return menu.close() end
+        return { ok = true }
+    end, {})
     commands.register("InvasionMod.tech_tree_widget_state", describe, {})
     -- Calls the click handler without the mouse. The widget must be open.
     commands.register("InvasionMod.tech_tree_widget_press", function(args)
@@ -322,8 +273,8 @@ end
 
 require("scheduler").every(TAG, config.poll_ms, tick)
 -- The key callback runs on the input thread. It must not touch the Lua state beyond one flag:
--- Lua calls from it raced with the game thread and crashed the game (UE4SS luaH_getint). The tick does the work.
-RegisterKeyBind(config.toggle_key, function() toggle_requested = true end)
+-- Lua calls from it raced with the game thread and crashed the game (UE4SS luaH_getint). The base menu tick does the work.
+RegisterKeyBind(config.toggle_key, function() menu.request_toggle(MENU_ID) end)
 
-core.log.info(TAG, "feature tech_tree_widget loaded (F9 opens and closes the menu)")
-return { open = open, close = close }
+core.log.info(TAG, "feature tech_tree_widget loaded (the Tech button in the bottom bar, or F9, opens and closes the menu)")
+return { open = function() return menu.open(MENU_ID) end, close = menu.close }
