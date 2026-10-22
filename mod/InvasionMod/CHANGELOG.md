@@ -4,6 +4,9 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Removed
+- Feature `vassals` and `tribute`, tech tree (change `remove-vassal-loyalty`, #344): no vassal loyalty. A vassal survives or dies. No gift order, no submission, no loyalty change after a raid, no law effect `vassal_loyalty`. The tribute share is fixed at 0.20 (`tribute.share`). Old saves are read without error.
+
 ### Fixed
 - Spec 34 (#254): the tech tree and raid menu buttons report a click through a hook (shared module HarnessClickHooks, pak widget WBP_ClickButton) instead of polling. Labels refresh every 500 ms and only when they change. Scheduler tick 100 ms. Paks `techmenu_P.pak` and `raidmenu_P.pak` rebuilt (the buttons are Borders that hold a click button). Scenario `tech-tree-widget-clicks`.
 - Mod M12 (#245): the real F9 key no longer crashes the game. The key callback of the tech tree menu and the raid widget only sets a flag; the scheduler tick opens or closes the menu on the game thread. Scenario `tech-tree-widget-key`.

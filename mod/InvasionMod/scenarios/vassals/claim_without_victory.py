@@ -46,23 +46,15 @@ def check_claim(ctx) -> str:
     ctx.check("V3 the claim did not end the game (victory status 0)", setup["victory_status"] == 0, setup)
     ctx.check("V3 the player owns the region", bool(row.get("owner")), row)
     vassal = after["vassals"][0] if after["vassals"] else {}
-    ctx.check("V4 the claim is slot 1 with the start loyalty", after["count"] == 1 and vassal.get("region") == region
-              and vassal.get("loyalty") == 50 and answer["claimed_slot"] == 1, after)
+    ctx.check("V4 the claim is slot 1 without loyalty", after["count"] == 1 and vassal.get("region") == region
+              and "loyalty" not in vassal and answer["claimed_slot"] == 1, after)
     return region
-
-
-def check_loyalty_clamp(ctx) -> None:
-    high = ctx.mod.command("InvasionMod.vassals_set_loyalty", slot=1, value=150)["vassals"][0]["loyalty"]
-    low = ctx.mod.command("InvasionMod.vassals_set_loyalty", slot=1, value=-5)["vassals"][0]["loyalty"]
-    ctx.mod.command("InvasionMod.vassals_set_loyalty", slot=1, value=50)
-    ctx.check("V5 loyalty is clamped to 0..100", (high, low) == (100, 0), [high, low])
 
 
 def run(ctx) -> dict:
     ctx.run_until(lambda: state(ctx).get("day") is not None, 30, what="the mod state")
     check_goal_is_held(ctx)
     check_claim(ctx)
-    check_loyalty_clamp(ctx)
     before = state(ctx)["day"]
     ctx.time.run_game_days(10, speed=SPEED)
     final = state(ctx)

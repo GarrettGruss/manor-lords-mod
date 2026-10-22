@@ -177,13 +177,28 @@ class LootTests(RaidBehaviorTestCase):
         raid = self.raid()
         self.assertEqual((raid["deaths"], raid["departures"], raid["returned"]), (1, 0, 2))
 
-    def test_loot_above_the_carry_cap_is_cut(self):
+    def test_a_native_raid_loot_is_not_written_by_the_mod(self):
+        self.ask("invasion_set_roles", enabled=False)
         self.start_raid()
         unit = self.raiders()[0]
-        unit.ItemsLooted = 15
+        unit.ItemsLooted = 25
         self.game.advance(2)
-        self.assertEqual(unit.ItemsLooted, 10)
-        self.assertEqual(self.raid()["capped"], 1)
+        self.assertEqual(unit.ItemsLooted, 25)
+        raid = self.raid()
+        self.assertEqual((raid["capped"], raid.get("raid_type")), (0, None))
+
+    def test_a_bandit_raid_loot_is_not_written_by_the_mod(self):
+        self.start_raid()
+        unit = self.raiders()[0]
+        unit.ItemsLooted = 8
+        self.game.advance(2)
+        self.assertEqual(unit.ItemsLooted, 8)
+        raid = self.raid()
+        self.assertEqual((raid["capped"], raid["raid_type"]), (0, "bandit"))
+
+    def test_the_state_shows_the_carry_cap(self):
+        answer = self.ask("raid_behavior_state")
+        self.assertEqual(answer["result"]["carry_cap"], 10)
 
     def test_no_store_means_the_loot_is_lost(self):
         self.stores.clear()
@@ -364,8 +379,8 @@ class LordRaidRulesTests(RaidBehaviorTestCase):
             local raid = rules.new_raid(1, 10, 1, { 1, 2, 3, 4 }, true, { anchor = { x = 0, y = 0 } })
             local seen = { [1] = { x = 100, y = 0 }, [2] = { x = 3000, y = 0 }, [3] = { x = 9000, y = 0 }, [4] = { dead = true, x = 0, y = 0 } }
             local plunder, leave = { battle_radius = 4000, per_unit_day = 2 }, { loot_per_raider = 4 }
-            local first = rules.plunder_amount(raid, seen, plunder, leave, 11)
-            local again = rules.plunder_amount(raid, seen, plunder, leave, 11)
+            local first = rules.plunder_amount(raid, seen, plunder, leave, 11, 4)
+            local again = rules.plunder_amount(raid, seen, plunder, leave, 11, 4)
             rules.record_plunder(raid, first)
             return first .. ',' .. again .. ',' .. rules.looted_total(raid)""")
         self.assertEqual(result, "4,0,4")
@@ -375,9 +390,9 @@ class LordRaidRulesTests(RaidBehaviorTestCase):
             local raid = rules.new_raid(1, 10, 1, { 1, 2 }, true, { anchor = { x = 0, y = 0 } })
             local seen = { [1] = { x = 0, y = 0 }, [2] = { x = 0, y = 0 } }
             local plunder, leave = { battle_radius = 4000, per_unit_day = 100 }, { loot_per_raider = 4, loss_share = 0.5, max_days = 25 }
-            local amount = rules.plunder_amount(raid, seen, plunder, leave, 11)
+            local amount = rules.plunder_amount(raid, seen, plunder, leave, 11, 4)
             rules.record_plunder(raid, amount)
-            local reason = rules.leave_reason(raid, 11, leave)
+            local reason = rules.leave_reason(raid, 11, leave, 4)
             rules.begin_leave(raid, reason, 11)
             return amount .. ',' .. tostring(reason) .. ',' .. tostring(raid.units[1].exiting)""")
         self.assertEqual(result, "8,loot,true")
@@ -385,7 +400,7 @@ class LordRaidRulesTests(RaidBehaviorTestCase):
     def test_a_native_raid_has_no_plunder(self):
         result = self.run_lua("""
             local raid = rules.new_raid(1, 10, 1, { 1 }, true, nil)
-            return rules.plunder_amount(raid, { [1] = { x = 0, y = 0 } }, { battle_radius = 4000, per_unit_day = 5 }, { loot_per_raider = 4 }, 11)""")
+            return rules.plunder_amount(raid, { [1] = { x = 0, y = 0 } }, { battle_radius = 4000, per_unit_day = 5 }, { loot_per_raider = 4 }, 11, 4)""")
         self.assertEqual(result, 0)
 
     def test_a_subjugation_raid_has_no_plunder_and_never_leaves(self):
@@ -393,11 +408,46 @@ class LordRaidRulesTests(RaidBehaviorTestCase):
             local raid = rules.new_raid(1, 10, 1, { 1, 2 }, true, { anchor = { x = 0, y = 0 }, kind = 'subjugation' })
             local seen = { [1] = { x = 0, y = 0 }, [2] = { x = 0, y = 0 } }
             local plunder, leave = { battle_radius = 4000, per_unit_day = 100 }, { loot_per_raider = 4, loss_share = 0.5, max_days = 25 }
-            local amount = rules.plunder_amount(raid, seen, plunder, leave, 11)
+            local amount = rules.plunder_amount(raid, seen, plunder, leave, 11, 4)
             raid.deaths = 2
-            return amount .. ',' .. tostring(rules.leave_reason(raid, 500, leave))""")
+            return amount .. ',' .. tostring(rules.leave_reason(raid, 500, leave, 4))""")
         self.assertEqual(result, "0,nil")
 
+
+    def test_a_hussite_raid_reaches_its_carry_cap(self):
+        result = self.run_lua("""
+            local units = {}
+            for i = 1, 12 do units[i] = i end
+            local raid = rules.new_raid(1, 10, 1, units, true, { anchor = { x = 0, y = 0 } })
+            local seen = {}
+            for i = 1, 12 do seen[i] = { x = 0, y = 0 } end
+            local plunder, leave = { battle_radius = 4000, per_unit_day = 7 }, { loot_per_raider = 4, loss_share = 0.5, max_days = 25 }
+            for day = 11, 40 do rules.record_plunder(raid, rules.plunder_amount(raid, seen, plunder, leave, day, 10)) end
+            return raid.plundered""")
+        self.assertEqual(result, 120)
+
+    def test_a_hussite_raid_leaves_by_loot_when_it_is_full(self):
+        result = self.run_lua("""
+            local units = {}
+            for i = 1, 12 do units[i] = i end
+            local raid = rules.new_raid(1, 10, 1, units, true, { anchor = { x = 0, y = 0 } })
+            local leave = { loot_per_raider = 4, loss_share = 0.5, max_days = 25 }
+            raid.plundered = 48
+            local at_48 = rules.leave_reason(raid, 11, leave, 10)
+            raid.plundered = 120
+            return tostring(at_48) .. ',' .. tostring(rules.leave_reason(raid, 11, leave, 10))""")
+        self.assertEqual(result, "nil,loot")
+
+    def test_the_mod_cuts_the_loot_of_a_hussite_raider_only(self):
+        result = self.run_lua("""
+            local hussite = rules.new_raid(1, 10, 1, { 1 }, true, { anchor = { x = 0, y = 0 } })
+            local native = rules.new_raid(2, 10, 1, { 1 }, false, nil)
+            local config = { carry_cap = 10, exit_y = -85000 }
+            local seen_h, seen_n = { [1] = { loot = 25, x = 0, y = 0 } }, { [1] = { loot = 25, x = 0, y = 0 } }
+            rules.update(hussite, seen_h, config, 11)
+            rules.update(native, seen_n, config, 11)
+            return tostring(seen_h[1].new_loot) .. ',' .. tostring(seen_n[1].new_loot) .. ',' .. hussite.capped .. ',' .. native.capped""")
+        self.assertEqual(result, "10,nil,1,0")
 
 if __name__ == "__main__":
     unittest.main()

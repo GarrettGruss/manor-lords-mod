@@ -33,7 +33,7 @@
     { "id": "militia_charter", "path": "prosperity", "name": "Militia Charter", "requires": ["fair_courts"],
       "effect": [{ "kind": "militia_attack", "value": 0.05 }, { "kind": "approval", "value": 2 }] },
     { "id": "trade_pacts", "path": "prosperity", "name": "Trade Pacts", "requires": ["amnesty"],
-      "effect": [{ "kind": "tribute_share", "value": 0.25 }, { "kind": "vassal_loyalty", "value": 2 }] },
+      "effect": [{ "kind": "tribute_share", "value": 0.25 }] },
     { "id": "pay_off_warbands", "path": "prosperity", "name": "Pay Off Warbands", "requires": ["militia_rights"],
       "effect": [{ "kind": "buy_back_price", "value": -0.25 }] }
   ],
