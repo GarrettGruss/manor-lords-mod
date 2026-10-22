@@ -230,7 +230,7 @@ They never touch save files. `powershell -ExecutionPolicy Bypass -File harness\<
 | Script | What it does |
 |---|---|
 | `game-launch.ps1` | Starts the game through Steam. Deletes the old `boot.json` and `ready.marker` first. With `-WaitForBoot` it waits for `READY` or `FAILED`. |
-| `game-close.ps1` | Asks the game window to close, waits `-GraceSeconds` (default 20), then kills the game. `-NoForce` never kills. |
+| `game-close.ps1` | Closes the game of ONE slot: `-Slot <n>` (0 is the Steam install) or `-GameRoot <folder>`; it finds the process by its game folder. Asks the game window to close, waits `-GraceSeconds` (default 20), then kills it. `-NoForce` never kills. `-DryRun` only lists the processes. `-All` closes every slot (old behavior; use it only when no other agent runs a game). No target is an error. |
 
 Exit codes of `game-launch.ps1`: 0 started (and `READY` with `-WaitForBoot`), 1 already running or HarnessBoot is off,
 2 the process did not start, 3 HarnessBoot `FAILED` or the game ended, 4 timeout, 5 other error.

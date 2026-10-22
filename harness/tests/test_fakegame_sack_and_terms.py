@@ -85,12 +85,13 @@ class SackSizeTests(SackTestCase):
             self.set_village()
             self.sync_stand_in_stock()
             held = self.held_by_good()
-            want = sum(-(-amount * percent // 100) for amount in held.values())
+            want = 0  # the mod takes no goods (owner decision 2026-10-21)
             result = self.sack_now(difficulty)
             self.assertEqual(result["percent"], percent)
             self.assertEqual((result["taken"]["buildings_hit"], result["taken"]["families_removed"]), (buildings, families), difficulty)
             # The fake method wrapper may run one call twice, so the count of the mod is compared, not the fake stores.
             self.assertEqual(result["taken"]["goods_removed"], want, (difficulty, held))
+            self.assertEqual(self.held_by_good(), held)  # no goods leave the stores
             self.calendar.daysTotal = self.calendar.daysTotal + 400  # a new window for the next difficulty
 
     def test_a_normal_sack_keeps_one_family(self):

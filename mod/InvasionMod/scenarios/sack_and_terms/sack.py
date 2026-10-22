@@ -1,4 +1,4 @@
-"""M06 iteration 01, A1 to A3 and A5: a forced sack takes a share of the town and the game goes on.
+"""M06 iteration 01, A1 to A3 and A5: a forced sack takes a share of buildings and families, no goods, and the game goes on.
 
 Options (run.py --env): INVASION_DIFFICULTY (1 to 3, default 1). The scenario sacks the start village twice with the fatal switch off.
 It saves nothing.
@@ -7,7 +7,7 @@ It saves nothing.
 import math
 
 NAME = "sack-and-terms-sack"
-DESCRIPTION = "A forced sack takes 20 to 50 percent of buildings, stock and families by difficulty; the village keeps people."
+DESCRIPTION = "A forced sack takes 20 to 50 percent of buildings and families by difficulty and no goods; the village keeps people."
 LIMIT_S = 240
 SHARE = {1: 20.0, 2: 35.0, 3: 50.0}
 
@@ -46,13 +46,11 @@ def run(ctx) -> dict:
     families_lost = before["people"]["families"] - after["people"]["families"]
     expected_families = min(ceil_share(before["people"]["families"], percent), before["people"]["families"] - 1)
     ctx.check("A2 families fall by the rounded-up share", families_lost == expected_families, [families_lost, expected_families])
-    goods_before, goods_after, stock_before = store_by_good(before), store_by_good(after), stock_by_good(before)
+    ctx.check("A2 the mod takes no goods", result["taken"]["goods_removed"] == 0, result["taken"])
+    goods_before, goods_after = store_by_good(before), store_by_good(after)
     for good, held in goods_before.items():
-        want = min(held, ceil_share(stock_before.get(good, held), percent))  # the share is of the stock, the sack reaches the stores
-        took = held - goods_after.get(good, 0)
-        ctx.check(f"A2 good {good} in the stores falls by at most the rounded-up share", 0 <= took <= want, [took, want])
-    stock_lost = 100.0 * (before["stock"]["total"] - after["stock"]["total"]) / before["stock"]["total"]
-    ctx.check("A2 the stock falls by about the share", percent * 0.6 <= stock_lost <= percent + 5, [stock_lost, percent])
+        ctx.check(f"A2 good {good} in the stores does not fall (method collapse, no fire)", goods_after.get(good, 0) >= held - 1, [held, goods_after.get(good, 0)])
+    ctx.check("A2 the sack made rubble", after["buildings"]["rubble"] - before["buildings"]["rubble"] >= lost_buildings - 1, [before["buildings"], after["buildings"]])
     ctx.check("A3 the village still has people", after["people"]["population"] > 0, after["people"])
 
     ctx.mod.command("InvasionMod.sack_now", difficulty=difficulty)
