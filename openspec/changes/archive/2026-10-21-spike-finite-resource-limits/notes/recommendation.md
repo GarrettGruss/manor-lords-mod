@@ -17,3 +17,7 @@ Live session with the owner (run 20261022-013541-4c3a, slot 0, `notes/salt-mine-
 - The Nexus mod "Rich Deposit" (mod 357) sets deposits to rich with a native C++ DLL that patches game code; no source is published. This confirms that the deposit state lives in native code.
 
 Owner decision (2026-10-22): accept that the mod cannot manage resource state (deposit amount, rich flag, endless reserves). The only lever that stays is the region production limit (`setProductionLimit` / `setProductionUnlimited`), which caps output and does not change a deposit.
+
+## Update 2026-10-22: the IronClay lead
+
+The Nexus Lua mod "IronClay" (May 2024) sets `bRichDeposit = true` on every `DepositDecal`. In today's game the class `DepositDecal` still exists (fields `bRichDeposit`, `depositedGood`, `Limit`, `depositType`), but no object of it exists, also after a game day (runs 20261022-024931-f585, 20261022-025607-3ef9). The 278 `Resource` actors are stone, fish, berries, mushrooms, eel, fallen trees and handcarts; none is a salt or iron deposit and none has a rich flag. So the IronClay route no longer works, and the owner decision stands. Details: `notes/deposit-decal.md`.

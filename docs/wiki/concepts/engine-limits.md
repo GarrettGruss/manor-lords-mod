@@ -49,6 +49,7 @@ Do not plan a feature that needs buildings inside the bailey.
 - `ResourceNode` actors hold only map decals. `RTSGameManager.deposits` is empty. `getNearestResource(good, pos)` finds only construction piles, not salt.
 - The only lever is the region production limit: `setProductionLimit(good, n)` holds a high value, and `setProductionUnlimited(good)` resets it. It caps output; it does not change a deposit. No region "unlimited" flag exists.
 - The Nexus mod "Rich Deposit" (mod 357) changes deposits with a native DLL patch, not through reflection.
+- The class `DepositDecal` (with `bRichDeposit`) still exists, but the game creates no object of it (2026-10-22); an older Nexus Lua mod that wrote it no longer has an effect.
 - Owner decision 2026-10-22: the mod does not manage resource state. Notes: `openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/`.
 
 ## Results of the community mod lead spikes (change `spike-community-mod-leads`, #280)
