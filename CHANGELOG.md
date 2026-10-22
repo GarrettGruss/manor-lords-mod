@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Store tiers and baron raid steal (change `add-raid-storage-tiers`, #276): the mod takes goods only from tier 1 stores (storehouse, granary), never from the manor store. Each raider of a lord raid that stands farther than 200 m from the battle marker takes 10 goods a game day, up to 100 (plunder raid) or 300 (great raid). A game raid has no mod steal and may rob the manor store. `raid_behavior_state` shows `stolen`, `steal` and `store_tiers`. Test scenarios `raid-behavior-baron-steal` and `raid-behavior-storage-tiers`.
 - Spike `spike-finite-resource-limits` (#342): resource deposits (surface amount, rich flag, endless reserves) live in native code and cannot be read or written from Lua; only the region production limit (`setProductionLimit`) can be set. Owner accepted that the mod does not manage resource state (2026-10-22).
 - Spike `spike-bandit-message-toggle` (#343): the bandit reply banner (`questMessageElaborate_C`) cannot be stopped by a hook, but `RemoveFromParent` hides it. Owner accepted this (2026-10-21); the letter may stay in the inbox. Probe command `message_probe`.
 - Spike `spike-menu-custom-textures` (#333): a mod menu can show a PNG loaded at run time (`ImportFileAsTexture2D`, `SetBrushFromTexture`) and draw a frame as 9-slice (Box). Owner approved it (2026-10-21). Test scenario `probe-menu-texture` and probe module `HarnessTexProbe`.
