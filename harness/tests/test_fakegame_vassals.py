@@ -46,6 +46,8 @@ core.regions_state = function() return { ok = true, regions = REGIONS } end
 
 
 class VassalsTestCase(unittest.TestCase):
+    SAVED_TAGS = ()  # tags that the pawn holds when the mod loads (an old save)
+
     def setUp(self):
         self.game = FakeGame()
         self.game.start()
@@ -58,6 +60,9 @@ class VassalsTestCase(unittest.TestCase):
         self.calendar = self.game.obj("TemporalComponent", daysTotal=61, daysUntilNextRaid=730, Season=1)
         self.engine = self.game.obj("RTSMultiEngineCPP", playerRef=self.pawn, TemporalComponent=self.calendar,
                                     regions=self.game.array([]), debugLog_AI_general=self.game.array([]))
+        add_tag = self.game.lua.eval("function(pawn, text) pawn.Tags[#pawn.Tags + 1] = FName(text) end")
+        for text in self.SAVED_TAGS:
+            add_tag(self.pawn, text)
         self.game.load_mod(self.mod_name)
         self.game.advance(3)
         self.counter = 0
@@ -107,13 +112,14 @@ class RegistryTests(VassalsTestCase):
     def claim(self, region):
         return self.ask("vassals_claim", region=region)
 
-    def test_a_claim_registers_slot_one_with_the_start_loyalty(self):
+    def test_a_claim_registers_slot_one(self):
         answer = self.claim("Eichenhau")
         self.assertTrue(answer["ok"], answer)
         result = answer["result"]
         self.assertEqual((result["count"], result["claimed_slot"]), (1, 1))
         row = result["vassals"][0]
-        self.assertEqual((row["region"], row["loyalty"], row["since_day"]), ("Eichenhau", 50, 61))
+        self.assertEqual((row["region"], row["since_day"]), ("Eichenhau", 61))
+        self.assertNotIn("loyalty", row)
         self.assertEqual(self.game.exec("return CLAIMS[1]"), "Eichenhau")
 
     def test_the_registry_is_kept_in_the_pawn_tags(self):
@@ -121,8 +127,7 @@ class RegistryTests(VassalsTestCase):
         tags = self.tags()
         self.assertIn("invasion:vassal1_region=Eichenhau", tags)
         self.assertIn("invasion:vassal1_since_day=61", tags)
-        self.ask("vassals_set_loyalty", slot=1, value=70)
-        self.assertIn("invasion:vassal1_loyalty=70", self.tags())
+        self.assertFalse(any("loyalty" in tag or "submitted" in tag for tag in tags))
 
     def test_a_region_with_an_owner_cannot_be_claimed(self):
         answer = self.claim("Taken")
@@ -146,13 +151,20 @@ class RegistryTests(VassalsTestCase):
         self.assertFalse(answer["ok"])
         self.assertIn("slots", answer["error"])
 
-    def test_loyalty_stays_between_0_and_100(self):
-        self.claim("Eichenhau")
-        self.assertEqual(self.ask("vassals_set_loyalty", slot=1, value=150)["result"]["vassals"][0]["loyalty"], 100)
-        self.assertEqual(self.ask("vassals_set_loyalty", slot=1, value=-5)["result"]["vassals"][0]["loyalty"], 0)
 
-    def test_loyalty_of_an_empty_slot_is_refused(self):
-        self.assertFalse(self.ask("vassals_set_loyalty", slot=2, value=10)["ok"])
+class OldSaveTests(VassalsTestCase):
+    """Saves from before the removal of loyalty hold vassal1_loyalty and vassal1_submitted (change remove-vassal-loyalty)."""
+    SAVED_TAGS = ("invasion:vassal1_region=Eichenhau", "invasion:vassal1_lord=Aldric", "invasion:vassal1_loyalty=7",
+                  "invasion:vassal1_submitted=true", "invasion:vassals_submissions=1", "invasion:vassals_last_season=2")
+
+    def test_the_old_fields_are_ignored_and_a_submitted_vassal_is_a_normal_vassal(self):
+        state = self.state()
+        self.assertEqual(state["count"], 1)
+        row = state["vassals"][0]
+        self.assertEqual((row["region"], row["lord"]), ("Eichenhau", "Aldric"))
+        self.assertNotIn("loyalty", row)
+        self.assertNotIn("submitted", row)
+        self.assertIn(row["region"], self.game.exec("return table.concat(require('features.vassals.init').slot_regions(), ',')"))
 
 
 LORD_STUB = """
@@ -290,22 +302,11 @@ class PolicyTests(HandoverBase):
     def test_the_default_policy_is_fair(self):
         self.assertEqual(self.row()["policy"], "fair")
 
-    def test_heavy_lowers_and_light_raises_loyalty_at_a_season_change(self):
-        for policy, want in (("heavy", 45), ("light", 48)):
-            self.assertTrue(self.ask("vassals_set_policy", slot=1, policy=policy)["ok"])
-            self.ask("vassals_loyalty_tick_now")
-            self.assertEqual(self.row()["loyalty"], want, policy)
-
-    def test_fair_keeps_the_loyalty(self):
-        self.ask("vassals_loyalty_tick_now")
-        self.assertEqual(self.row()["loyalty"], 50)
-
-    def test_a_real_season_change_ticks_once(self):
-        self.ask("vassals_set_policy", slot=1, policy="heavy")
-        self.game.advance(5)
-        self.calendar.Season = (self.calendar.Season + 1) % 4
-        self.game.advance(10)
-        self.assertEqual(self.row()["loyalty"], 45)
+    def test_a_policy_change_does_not_change_the_row_apart_from_the_policy(self):
+        before = dict(self.row())
+        self.assertTrue(self.ask("vassals_set_policy", slot=1, policy="heavy")["ok"])
+        before["policy"] = "heavy"
+        self.assertEqual(self.row(), before)
 
     def test_unknown_policy_and_empty_slot_are_refused(self):
         self.assertFalse(self.ask("vassals_set_policy", slot=1, policy="harsh")["ok"])
@@ -314,19 +315,6 @@ class PolicyTests(HandoverBase):
     def test_the_policy_is_kept_in_the_pawn_tags(self):
         self.ask("vassals_set_policy", slot=1, policy="light")
         self.assertIn("invasion:vassal1_policy=light", self.tags())
-
-    def test_a_gift_costs_silver_and_raises_loyalty(self):
-        answer = self.ask("vassals_order_gift", slot=1)
-        self.assertTrue(answer["ok"], answer)
-        self.assertEqual((answer["result"]["loyalty"], self.pawn.silver), (60, 150))
-
-    def test_a_gift_is_refused_without_silver_and_loyalty_stays_at_100(self):
-        self.pawn.silver = 10
-        self.assertFalse(self.ask("vassals_order_gift", slot=1)["ok"])
-        self.pawn.silver = 500
-        self.ask("vassals_set_loyalty", slot=1, value=95)
-        self.assertEqual(self.ask("vassals_order_gift", slot=1)["result"]["loyalty"], 100)
-
 
 class LossTests(HandoverBase):
     def setUp(self):
@@ -379,45 +367,6 @@ class LossTests(HandoverBase):
         state = self.state()
         self.assertEqual(state["lost"], 1)
         self.assertEqual(state["lost_events"][0]["reason"], "taken")
-
-
-class SubmissionTests(HandoverBase):
-    def setUp(self):
-        super().setUp()
-        self.hand_over_and_wait()
-
-    def row(self):
-        return self.state()["vassals"][0]
-
-    def wars(self):
-        return self.game.exec("return table.concat(WARS, ',')")
-
-    def test_a_vassal_at_low_loyalty_submits_and_the_lord_declares_war(self):
-        self.ask("vassals_set_loyalty", slot=1, value=12)
-        self.ask("vassals_set_policy", slot=1, policy="heavy")
-        self.ask("vassals_loyalty_tick_now")  # 12 - 5 = 7
-        self.assertTrue(self.row()["submitted"])
-        self.assertEqual(self.state()["submissions"], 1)
-
-    def test_a_submitted_vassal_returns_at_the_return_loyalty(self):
-        self.ask("vassals_set_loyalty", slot=1, value=5)
-        self.ask("vassals_submission_tick_now")
-        self.assertTrue(self.row()["submitted"])
-        self.ask("vassals_set_loyalty", slot=1, value=39)
-        self.ask("vassals_submission_tick_now")
-        self.assertTrue(self.row()["submitted"])
-        self.ask("vassals_set_loyalty", slot=1, value=40)
-        self.ask("vassals_submission_tick_now")
-        self.assertFalse(self.row()["submitted"])
-
-    def test_a_healthy_vassal_does_not_submit(self):
-        self.ask("vassals_submission_tick_now")
-        self.assertFalse(self.row()["submitted"])
-
-    def test_the_flag_is_kept_in_the_pawn_tags(self):
-        self.ask("vassals_set_loyalty", slot=1, value=5)
-        self.ask("vassals_submission_tick_now")
-        self.assertIn("invasion:vassal1_submitted=true", self.tags())
 
 
 if __name__ == "__main__":

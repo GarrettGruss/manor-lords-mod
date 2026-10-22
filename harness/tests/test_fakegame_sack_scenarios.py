@@ -95,6 +95,11 @@ class FakeSackTime:
         if self.burns_out:
             self.game.lua.eval(BURN_OUT)(self.village)
 
+    def run_game_seconds(self, seconds, speed=1):
+        self.calls.append(("run_game_seconds", seconds, speed))
+        if self.burns_out and self.village.raiders_spawned:
+            self.game.lua.eval(BURN_OUT)(self.village)
+
     def pause(self):
         self.calls.append(("pause",))
 
@@ -110,8 +115,14 @@ class SackContext:
         self.bridge = VillageBridge(village)
         self.commands = CommandChannel(game.run_dir / "commands", sleep=sleep, monotonic=game.now)
         self.actions = Actions(self.bridge, self.expect, self.notes, commands=self.commands)
+        village.raiders_spawned = False
+        self.actions.spawn_units = lambda *args, **kwargs: setattr(village, "raiders_spawned", True)  # the fake game has no units
+        self.screenshots = []
         self.time = FakeSackTime(game, village, burns_out)
         self.popups = lambda: None
+
+    def screenshot(self, name):
+        self.screenshots.append(name)
 
     def run_until(self, predicate, timeout_s, **options):
         if not predicate():
@@ -150,7 +161,7 @@ class SackScenarioTests(unittest.TestCase):
     def test_sack_ruins_passes(self):
         result, failed, ctx = self.run_scenario(sack_ruins)
         self.assertEqual(failed, [])
-        self.assertIn(("set_speed", sack_ruins.SPEED), ctx.time.calls)
+        self.assertIn(("run_game_seconds", 5, sack_ruins.SPEED), ctx.time.calls)
 
     def test_sack_store_trip_passes(self):
         result, failed, ctx = self.run_scenario(sack_store_trip)
@@ -168,11 +179,12 @@ class SackScenarioTests(unittest.TestCase):
             self.assertTrue(failed, module.NAME)
             self.assertFalse(result["passed"], module.NAME)
 
-    def test_fires_that_never_go_out_time_out_the_ruins_scenario(self):
+    def test_fires_that_never_go_out_fail_the_ruins_scenario(self):
         game, village = running_village()
         self.addCleanup(game.close)
-        with self.assertRaisesRegex(WaitTimeout, "fires to burn out"):
-            sack_ruins.run(SackContext(game, village, burns_out=False))
+        result = sack_ruins.run(SackContext(game, village, burns_out=False))
+        self.assertFalse(result["passed"])
+        self.assertIn("no fire left", [a["name"] for a in result["asserts"] if not a["ok"]])
 
     def test_scenarios_carry_the_metadata_the_coverage_tool_reads(self):
         for module, covers in ((sack_village, ["S1"]), (sack_ruins, []), (sack_store_trip, ["R7"]), (loot_drop_recovery, ["R3"])):
