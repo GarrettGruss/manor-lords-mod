@@ -1,6 +1,7 @@
 # Wiki update log
 
 ## 2026-10-22
+* **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds resource deposits: not reachable from Lua (change `spike-finite-resource-limits`, #342).
 * **Create**: Added [Unit templates of the game](concepts/unit-templates.md): the unit types of DT_UnitTemplates with row names and squad sizes.
 
 ## 2026-10-19

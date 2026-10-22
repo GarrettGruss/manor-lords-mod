@@ -1,7 +1,7 @@
 ---
 type: Concept
 title: Engine limits found by spikes
-description: Things the game does not allow from Lua or data, found by spikes, with the evidence and the reason. Holds buildings inside the manor bailey, and the results of the community mod lead spikes (Squad struct reads, dead units, unit growth, stances, mesh swap).
+description: Things the game does not allow from Lua or data, found by spikes, with the evidence and the reason. Holds buildings inside the manor bailey, resource deposits, and the results of the community mod lead spikes (Squad struct reads, dead units, unit growth, stances, mesh swap).
 tags: [engine, limits, bailey, manor, spike]
 generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-19T00:00:00Z }
 sources:
@@ -40,6 +40,15 @@ Do not plan a feature that needs buildings inside the bailey.
 - `SetDesiredSizeOverride` alone did not size a new full screen image (it drew about 24 px). Put the image in a canvas panel with full-screen anchors, or set the override after the brush change.
 - Not known: a cooked pak texture and a custom (blackletter) font. Both need an editor cook and were not tried. A shipped mod must deploy its PNG next to its Lua (not tested).
 - Owner decision 2026-10-21: menus may use PNG images loaded at run time. Notes: `openspec/changes/archive/2026-10-21-spike-menu-custom-textures/notes/`.
+
+## Resource deposits: not reachable from Lua (spike #342)
+
+- A deposit's surface amount, its "Rich" flag and "Endless Underground Reserves" live in native code. No reflected field holds them (checked on a salt mine, run 20261022-013541-4c3a). The amount shows only in the tooltip text (`MainUICPP_C.WidgetTree.WhiteTooltipRT`) while the mouse is over the deposit.
+- The surface amount falls as the mine works: 1 per game day with 3 families on a salt mine.
+- `ResourceNode` actors hold only map decals. `RTSGameManager.deposits` is empty. `getNearestResource(good, pos)` finds only construction piles, not salt.
+- The only lever is the region production limit: `setProductionLimit(good, n)` holds a high value, and `setProductionUnlimited(good)` resets it. It caps output; it does not change a deposit. No region "unlimited" flag exists.
+- The Nexus mod "Rich Deposit" (mod 357) changes deposits with a native DLL patch, not through reflection.
+- Owner decision 2026-10-22: the mod does not manage resource state. Notes: `openspec/changes/archive/2026-10-22-spike-finite-resource-limits/notes/`.
 
 ## Results of the community mod lead spikes (change `spike-community-mod-leads`, #280)
 

@@ -7,3 +7,13 @@ Proposal for the later feature: set `setProductionLimit` of iron ore (14) and sa
 Open points for the owner:
 1. Provide a save with a built iron or salt mine (or approve a mouse-driven run to build one on a deposit), so that questions 1.1, 1.4 and the mine flag can be answered.
 2. Decide if the production cap alone is acceptable as "large finite".
+
+## Update 2026-10-22: salt mine session and owner decision
+
+Live session with the owner (run 20261022-013541-4c3a, slot 0, `notes/salt-mine-deposit.md`):
+- The owner built a salt mine (building type 7) in Nusslohe and assigned 3 families. The UI shows "Salt (Surface Deposit: 1194) / Rich Resource / Endless Underground Reserves".
+- The surface deposit fell by 1 per game day with 3 families (1194 to 1190 over 4 days).
+- The number exists only in the tooltip text (`MainUICPP_C.WidgetTree.WhiteTooltipRT`). No reflected field of the mine, its parts, the nearest `ResourceNode`, the region, the game manager or the pawn holds it. `RTSGameManager.deposits` is empty. So Lua cannot read the deposit from data or write it.
+- The Nexus mod "Rich Deposit" (mod 357) sets deposits to rich with a native C++ DLL that patches game code; no source is published. This confirms that the deposit state lives in native code.
+
+Owner decision (2026-10-22): accept that the mod cannot manage resource state (deposit amount, rich flag, endless reserves). The only lever that stays is the region production limit (`setProductionLimit` / `setProductionUnlimited`), which caps output and does not change a deposit.
