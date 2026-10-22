@@ -75,7 +75,7 @@ class EnactTests(LawTestCase):
         self.assertTrue(answer["ok"], answer)
         self.assertEqual(answer["result"]["laws"], ["trade_pacts"])
         self.assertAlmostEqual(answer["result"]["totals"]["tribute_share_multiplier"], 1.25)
-        self.assertEqual(answer["result"]["totals"]["vassal_loyalty_bonus"], 2)
+        self.assertNotIn("vassal_loyalty_bonus", answer["result"]["totals"])
         self.assertTrue(any("tribute_share" in line or "effects applied" in line for line in self.lines()))
         repealed = self.ask("tech_tree_repeal_law", law="trade_pacts")
         self.assertEqual(repealed["result"]["laws"], [])

@@ -102,7 +102,7 @@ The mod SHALL scale the attack and the defence of the militia units of the playe
 - Checked by `harness/tests/test_fakegame_tech_tree.py`.
 
 ### Requirement: Laws can be enacted and repealed
-The mod SHALL let the player enact a law of the chosen path when the node it requires is unlocked. A law is free and can be repealed. At most `max_active_laws` laws (default 2) are in force. The six laws are: Conscription, Forced Labor on Walls, Scorched Earth (Oppression), and Militia Charter, Trade Pacts, Pay Off Warbands (Prosperity). The laws are kept in mod state (key `tech_laws`).
+The mod SHALL let the player enact a law of the chosen path when the node it requires is unlocked. A law is free and can be repealed. At most `max_active_laws` laws (default 2) are in force. The six laws are: Conscription, Forced Labor on Walls, Scorched Earth (Oppression), and Militia Charter, Trade Pacts, Pay Off Warbands (Prosperity). Trade Pacts raises the tribute only; no law changes vassal loyalty. The laws are kept in mod state (key `tech_laws`).
 
 #### Scenario: Law places and refusals
 - **WHEN** the player enacts a third law, a law of the other path, or a law whose node is locked
@@ -110,10 +110,9 @@ The mod SHALL let the player enact a law of the chosen path when the node it req
 - Checked by `harness/tests/test_fakegame_laws.py`.
 
 #### Scenario: Trade Pacts raise the tribute
-- **WHEN** the player enacts Trade Pacts and a vassal with 5 families pays at loyalty 50
+- **WHEN** the player enacts Trade Pacts and a vassal with 5 families and the policy light pays
 - **THEN** the tribute is between 12 and 14 units, and after the repeal it is 10 again
-- **AND** the vassal loyalty rises by at least 3 at the season change
-- Checked by `mod/InvasionMod/scenarios/tech_tree/laws.py`.
+- Not checked yet (planned: `mod/InvasionMod/scenarios/tech_tree/laws.py`, updated).
 
 ### Requirement: Nodes open vassal policies
 The mod SHALL gate the vassal tribute policies: `heavy` needs the Oppression path and Martial Law, `light` needs the Prosperity path and Fair Courts, and `fair` is always open. The command `InvasionMod.tech_tree_set_vassal_policy` SHALL check the gate before it sets the policy.
