@@ -81,7 +81,7 @@ local function run_tick()
     local day = current_day()
     local result = { day = day, payments = {} }
     for _, row in ipairs(vassals.slot_rows()) do
-        if row and row.lord ~= "none" then result.payments[#result.payments + 1] = pay_vassal(row) end
+        if row and row.lord ~= "none" and not row.rebuilding then result.payments[#result.payments + 1] = pay_vassal(row) end
     end
     local total = 0
     for _, payment in ipairs(result.payments) do total = total + payment.paid end
@@ -113,7 +113,10 @@ local function resolve_siege(summary)
     if result == nil then return end
     siege_resolved[tostring(summary.id)] = result
     core.log.info(TAG, string.format("TRIBUTE siege raid=%d region=%s slot=%d result=%s", summary.id, summary.target, slot, result))
-    if result == "taken" then vassals.lose_vassal(slot, "taken") end
+    if result == "taken" then
+        local started, why = vassals.start_sack(slot, "siege")
+        if started == nil then core.log.error(TAG, "TRIBUTE sack did not start: " .. tostring(why)) end
+    end
 end
 
 local function siege_poll()

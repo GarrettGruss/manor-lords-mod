@@ -1,7 +1,7 @@
 # mod/vassals Specification
 
 ## Purpose
-The player rules vassal regions that a friendly AI lord runs in the player name. The player controls them only through policies and orders. A vassal can be lost or can submit to the invader.
+The player rules vassal regions that a friendly AI lord runs in the player name. The player controls them only through policies and orders. A Hussite sack can wipe a vassal (80 percent ruins, all villagers deleted). The player can pay silver to restore a wiped village.
 
 ## Requirements
 

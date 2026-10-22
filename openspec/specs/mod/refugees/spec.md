@@ -1,7 +1,7 @@
 # mod/refugees Specification
 
 ## Purpose
-A lost vassal sends refugee families to the home region. The player must house them, or the unhoused families turn into bandits.
+A lost vassal (a vassal that a Hussite sack wiped) sends refugee families to the home region (50 percent of its families). The player must house them, or the unhoused families turn into bandits.
 
 ## Requirements
 

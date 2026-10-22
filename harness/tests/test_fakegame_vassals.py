@@ -196,6 +196,10 @@ class HandoverBase(VassalsTestCase):
     def setUp(self):
         super().setUp()
         self.counts = {}
+        self.ruins = {}        # region name -> set of building indexes that are rubble
+        self.deposits = []     # (region, building index, good id, amount)
+        self.families = {}     # region name -> list of families (each a list of member objects)
+        self.region_by_name = {}
         self.game.exec(LORD_STUB)
         self.game.method(self.pawn, "GetAddress", lambda _self: 1)
         self.home = self.make_region("Home", True, 12)
@@ -203,12 +207,47 @@ class HandoverBase(VassalsTestCase):
         self.engine.regions = self.game.array(self.regions)
         self.game.advance(8)
 
+    def make_building(self, name, index):
+        building = self.game.obj("Building")
+        self.game.method(building, "IsRubble", lambda _self: index in self.ruins[name])
+        self.game.method(building, "collapseBuilding", lambda _self: self.ruins[name].add(index))
+        self.game.method(building, "addToInventory", lambda _self, item: self.deposits.append((name, index, item.Type, item.amt)))
+        return building
+
     def make_region(self, name, settled, buildings):
         region = self.game.obj("Region", ownerPawn=self.pawn, isSettled=settled)
         self.game.method(region, "GetFName", lambda _self, name=name: self.game.text(name))
         self.counts[name] = buildings
-        self.game.method(region, "GetBuildings", lambda _self, name=name: self.game.array([self.game.struct()] * self.counts[name]))
+        self.ruins[name] = set()
+        self.families[name] = []
+        self.region_by_name[name] = region
+        self.game.method(region, "GetBuildings", lambda _self, name=name: self.game.array([self.make_building(name, i) for i in range(self.counts[name])]))
+        self.game.method(region, "getTotalNumFamilies", lambda _self, name=name: sum(1 for family in self.families[name] if any(not member.dead for member in family)))
         return region
+
+    def add_families(self, name, count, members=2):
+        """Give a region `count` families of `members` living people. just_die marks a member dead."""
+        for _ in range(count):
+            people = []
+            for _ in range(members):
+                person = self.game.obj("SMUnit", dead=False)
+                self.game.method(person, "just_die", lambda unit: setattr(unit, "dead", True))
+                people.append(person)
+            self.families[name].append(people)
+        family_objects = [self.game.obj("Family", familyMembers=self.game.array(people, wrap=False)) for people in self.families[name]]
+        self.region_by_name[name].workerFamilies = self.game.array(family_objects, wrap=False)
+
+    def lord_owns(self, name):
+        """The real handover gives the region to the lord pawn. The fake handover does not, so the test does it."""
+        lord = self.game.obj("PawnCPP_AI", lordsName="Aldric", enemies=self.game.array([]))
+        self.game.method(lord, "GetFName", lambda _self: self.game.text("LordObj"))
+        self.game.method(lord, "GetAddress", lambda _self: 2)
+        self.region_by_name[name].ownerPawn = lord
+        self.game.exec("package.loaded['features.vassals.world'].lord_status = function() return { number = 1, object = 'LordObj', enemy_of_player = false, tags = {} } end")
+        return lord
+
+    def living(self, name):
+        return sum(1 for family in self.families[name] for member in family if not member.dead)
 
     def add_region(self, name, settled, buildings=0):
         region = self.make_region(name, settled, buildings)
@@ -327,28 +366,24 @@ class LossTests(HandoverBase):
     def row(self):
         return self.state()["vassals"][0]
 
-    def test_the_default_loss_frees_the_slot_and_leaves_the_land_to_its_lord(self):
-        answer = self.ask("vassals_lose", slot=1)
-        self.assertTrue(answer["ok"], answer)
-        self.assertEqual(answer["result"]["count"], 0)
-        self.assertEqual(self.game.exec("return TAKEN and #TAKEN or 0"), 0)
-
-    def test_the_lose_command_frees_the_slot_gives_the_region_to_another_lord_and_keeps_the_event(self):
-        self.ask("vassals_set_loss_region", mode="take_by_lord")
+    def test_the_lose_command_frees_the_slot_and_leaves_the_land_to_its_lord(self):
         answer = self.ask("vassals_lose", slot=1)
         self.assertTrue(answer["ok"], answer)
         result = answer["result"]
         self.assertEqual((result["count"], result["lost"]), (0, 1))
-        self.assertEqual(self.game.exec("return TAKEN[1]"), "1:Eichenhau")
-        event = result["event"]
-        self.assertEqual((event["reason"], event["slot"], event["region"]), ("command", 1, "Eichenhau"))
+        self.assertEqual((result["event"]["reason"], result["event"]["slot"], result["event"]["region"]), ("command", 1, "Eichenhau"))
+        self.assertEqual(self.game.exec("return TAKEN and #TAKEN or 0"), 0)  # no other lord is given the land
+
+    def test_the_removed_loss_commands_are_gone(self):
+        self.assertFalse(self.ask("vassals_set_loss_region", mode="forget")["ok"])
+        self.assertFalse(self.ask("fallback_state")["ok"])
+        self.assertFalse(self.ask("fallback_move", slot=1)["ok"])
 
     def test_an_empty_slot_cannot_be_lost(self):
         self.assertFalse(self.ask("vassals_lose", slot=2)["ok"])
 
     def test_the_freed_slot_is_used_again(self):
-        self.ask("vassals_set_loss_region", mode="take_by_lord")
-        self.regions[1].ownerPawn = None  # the real command gives the region to another lord in the same tick
+        self.regions[1].ownerPawn = None
         self.ask("vassals_lose", slot=1)
         self.add_region("Goldhof", True, 4)
         self.game.advance(10)
@@ -367,6 +402,198 @@ class LossTests(HandoverBase):
         state = self.state()
         self.assertEqual(state["lost"], 1)
         self.assertEqual(state["lost_events"][0]["reason"], "taken")
+
+
+NO_COLLAPSE = "package.loaded['features.vassals.world'].collapse_buildings = function() return 0 end"
+
+
+class SackWipeTests(HandoverBase):
+    """The sack of a vassal region (change add-vassal-sack-wipe): 80 percent ruins, then the wipe."""
+    BUILDINGS = 20
+
+    def setUp(self):
+        super().setUp()
+        self.hand_over_and_wait("Eichenhau", self.BUILDINGS)
+        self.lord_owns("Eichenhau")
+        self.add_families("Eichenhau", 5)
+        self.game.exec("package.loaded['HarnessLords'].lord_declare_peace = function() return { ok = true } end")
+
+    def sack(self):
+        answer = self.ask("vassals_sack", slot=1)
+        if answer["ok"]:
+            self.game.advance(10)  # the wipe waits for the next poll after the collapses
+            answer["result"] = self.state()
+        return answer
+
+    def test_a_sack_of_20_buildings_collapses_16_and_wipes_the_region(self):
+        answer = self.sack()
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(len(self.ruins["Eichenhau"]), 16)
+        result = answer["result"]
+        self.assertEqual((result["count"], result["lost"]), (0, 1))
+        self.assertEqual(result["lost_events"][0]["reason"], "wiped")
+        self.assertEqual(result["lost_events"][0]["families"], 5)
+        self.assertEqual(self.living("Eichenhau"), 0)
+        self.assertEqual([row["region"] for row in result["wiped"]], ["Eichenhau"])
+        self.assertEqual(result["wiped"][0]["buildings"], 20)
+
+    def test_the_slot_is_free_and_the_wiped_record_is_not_a_slot(self):
+        self.sack()
+        tags = self.tags()
+        self.assertFalse(any(tag.startswith("invasion:vassal1_region=Eichenhau") for tag in tags))
+        self.assertIn("invasion:wiped1_region=Eichenhau", tags)
+
+    def test_the_sack_is_not_complete_at_15_ruins(self):
+        self.game.exec(NO_COLLAPSE)
+        for index in range(15):
+            self.ruins["Eichenhau"].add(index)
+        answer = self.sack()
+        self.assertTrue(answer["ok"], answer)
+        result = answer["result"]
+        self.assertEqual(result["lost"], 0)
+        self.assertEqual(self.living("Eichenhau"), 10)
+        self.assertEqual(result["wiped"], [])
+        self.assertIn("1", result["sacks"])
+
+    def test_the_sack_goes_on_each_poll_until_the_ruins_are_enough(self):
+        self.game.exec(NO_COLLAPSE)
+        for index in range(15):
+            self.ruins["Eichenhau"].add(index)
+        self.sack()
+        self.ruins["Eichenhau"].add(15)
+        self.game.advance(10)
+        self.assertEqual(self.state()["lost_events"][0]["reason"], "wiped")
+
+    def test_a_sack_that_makes_no_progress_gives_up_and_reports(self):
+        self.game.exec(NO_COLLAPSE)
+        self.sack()
+        self.game.advance(80)
+        state = self.state()
+        self.assertEqual(state["lost"], 0)
+        self.assertFalse(state["sacks"])
+        self.assertIn("gave up", state["sack_errors"]["1"])
+
+    def test_the_sack_changes_no_owner_and_gives_no_other_order(self):
+
+        self.sack()
+        self.assertEqual(self.regions[1].ownerPawn.lordsName, "Aldric")
+        self.assertEqual(self.game.exec("return TAKEN and #TAKEN or 0"), 0)
+
+    def test_the_sack_of_an_empty_slot_or_twice_is_refused(self):
+        self.assertFalse(self.ask("vassals_sack", slot=2)["ok"])
+        self.game.exec(NO_COLLAPSE)
+        self.assertTrue(self.sack()["ok"])
+        self.assertFalse(self.sack()["ok"])
+
+    def test_only_the_standing_buildings_are_collapsed(self):
+        for index in range(4):
+            self.ruins["Eichenhau"].add(index)
+        self.sack()
+        self.assertEqual(len(self.ruins["Eichenhau"]), 16)
+
+    def test_a_region_without_buildings_is_wiped_at_once(self):
+        self.game.exec("package.loaded['features.vassals.world'].census = function() return { total = 0, standing = 0, rubble = 0 } end")
+        answer = self.sack()
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["lost_events"][0]["reason"], "wiped")
+
+    def test_the_ruin_rules(self):
+        values = self.game.exec(
+            "local r = require('features.vassals.rules'); return r.ruins_needed(20, 0.8), r.ruins_needed(5, 0.8), r.ruins_needed(0, 0.8), "
+            "r.sack_complete(20, 16, 0.8) and 1 or 0, r.sack_complete(20, 15, 0.8) and 1 or 0, r.houses_to_collapse(16, 4), r.houses_to_collapse(16, 20), r.rebuilt_target(20, 0.5), r.rebuilt_target(0, 0.5)")
+        self.assertEqual(tuple(values.values()) if hasattr(values, "values") else tuple(values), (16, 4, 0, 1, 0, 12, 0, 10, 1))
+
+
+RESTORE_STUB = """
+SETTLES = {}
+local core = require("ManorCore")
+core.settle_region = function(request, pawn)
+    SETTLES[#SETTLES + 1] = request.region .. ":" .. tostring(pawn ~= nil)
+    if SETTLE_FAILS then return { ok = false, error = "settle failed" } end
+    return { ok = true, after = { families = 5 } }
+end
+"""
+
+
+class RestoreTests(HandoverBase):
+    def setUp(self):
+        super().setUp()
+        self.game.exec(RESTORE_STUB)
+        self.hand_over_and_wait("Eichenhau", 10)
+        self.lord_owns("Eichenhau")
+        self.add_families("Eichenhau", 4)
+        self.game.exec("package.loaded['HarnessLords'].lord_declare_peace = function() return { ok = true } end")
+        self.ask("vassals_sack", slot=1)
+        self.game.advance(10)
+        self.pawn.silver = 500
+        self.game.exec("SETTLES = {}")  # the refugee wave of the wipe settled the home region
+
+    def restore(self, **args):
+        return self.ask("vassals_restore", **args)
+
+    def test_a_restore_takes_100_silver_raises_the_villagers_and_spawns_the_goods(self):
+        answer = self.restore(region="Eichenhau")
+        self.assertTrue(answer["ok"], answer)
+        result = answer["result"]
+        self.assertEqual(self.pawn.silver, 400)
+        self.assertEqual(self.game.exec("return SETTLES[1]"), "Eichenhau:true")
+        self.assertEqual(result["restored"]["goods"], {"logs": 100, "planks": 200, "rubble_stone": 100})
+        goods = {(good, amount) for _, _, good, amount in self.deposits}
+        self.assertEqual(goods, {(16, 100), (17, 200), (15, 100)})
+        self.assertEqual(result["wiped"], [])
+
+    def test_the_restored_vassal_gets_a_slot_again_and_the_tribute_waits_for_the_rebuild(self):
+        result = self.restore()["result"]
+        row = result["vassals"][0]
+        self.assertEqual((result["count"], row["region"], row["lord"], row["rebuilding"]), (1, "Eichenhau", "Aldric", True))
+        self.assertIn("invasion:vassal1_rebuilding=true", self.tags())
+
+    def test_the_rebuilding_flag_ends_when_enough_buildings_stand(self):
+        self.restore()
+        self.assertTrue(self.state()["vassals"][0]["rebuilding"])
+        for index in range(10):
+            self.ruins["Eichenhau"].add(index)
+        self.game.advance(10)
+        self.assertTrue(self.state()["vassals"][0]["rebuilding"])
+        self.ruins["Eichenhau"].clear()
+        self.game.advance(10)
+        self.assertFalse(self.state()["vassals"][0]["rebuilding"])
+
+    def test_a_restore_with_too_little_silver_is_refused_and_takes_nothing(self):
+        self.pawn.silver = 99
+        answer = self.restore()
+        self.assertFalse(answer["ok"])
+        self.assertIn("silver", answer["error"])
+        self.assertEqual(self.pawn.silver, 99)
+        self.assertEqual(len(self.state()["wiped"]), 1)
+        self.assertEqual(self.game.exec("return #SETTLES"), 0)
+        self.assertEqual(self.deposits, [])
+
+    def test_a_region_that_is_not_wiped_is_refused(self):
+        answer = self.restore(region="Goldhof")
+        self.assertFalse(answer["ok"])
+        self.assertIn("no wiped region", answer["error"])
+        self.assertEqual(self.pawn.silver, 500)
+
+    def test_a_second_restore_finds_no_wiped_region(self):
+        self.restore()
+        answer = self.restore()
+        self.assertFalse(answer["ok"])
+        self.assertEqual(self.pawn.silver, 400)
+
+    def test_a_failed_raise_of_the_villagers_takes_no_silver(self):
+        self.game.exec("SETTLE_FAILS = true")
+        answer = self.restore()
+        self.assertFalse(answer["ok"])
+        self.assertEqual(self.pawn.silver, 500)
+        self.assertEqual(self.deposits, [])
+        self.assertEqual(len(self.state()["wiped"]), 1)
+
+    def test_the_restore_rules(self):
+        values = self.game.exec(
+            "local r = require('features.vassals.rules'); return r.restore_refusal(nil, 1, 500, 100), r.restore_refusal(1, nil, 500, 100), r.restore_refusal(1, 1, 99, 100), r.restore_refusal(1, 1, 100, 100) or 'ok', "
+            "r.find_wiped({ 'none', 'B' }, 2, nil), r.find_wiped({ 'A', 'B' }, 2, 'B'), r.find_wiped({ 'A' }, 2, 'C') or 0")
+        self.assertEqual(tuple(values.values()) if hasattr(values, "values") else tuple(values), ("no wiped region to restore", "all vassal slots are used", "silver 99 is below the restore cost 100", "ok", 2, 2, 0))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 """M07 iteration 04, L6 to L8: a lost vassal frees its slot and sends refugees.
 
-The scenario makes one vassal (M07.02). Option (run.py --env): LOSS_REGION (forget or take_by_lord, default forget). With forget the lord keeps the land; with take_by_lord another AI lord is given the region (crashed the game). Run it on the default fixture (base). It saves nothing.
+The scenario makes one vassal (M07.02). The lord keeps the land: the mod never writes the region owner. Run it on the default fixture (base). It saves nothing.
 """
 
 NAME = "vassals-loss-and-submission"
@@ -44,8 +44,6 @@ def make_vassal(ctx) -> str:
 def run(ctx) -> dict:
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     region = make_vassal(ctx)
-    mode = ctx.variant_option("LOSS_REGION", "forget")
-    ctx.mod.command("InvasionMod.vassals_set_loss_region", mode=mode)
 
     last_owner = str(next(r for r in ctx.actions.regions_state()["regions"] if r["region"] == region).get("owner"))
     families_before = refugees(ctx)["numbers"]["families"]
@@ -55,10 +53,7 @@ def run(ctx) -> dict:
     ctx.check("L7 the lost vassal sent a refugee wave", wave["active"] and wave["waves"] == 1 and wave["numbers"]["families"] - families_before == 5, [families_before, wave])
     rows = {r["region"]: r for r in ctx.actions.regions_state()["regions"]}
     owner = str(rows[region].get("owner"))
-    if mode == "forget":
-        ctx.check("L6 the land stays with its lord (the vassal went independent)", owner == last_owner, [owner, last_owner])
-    else:
-        ctx.check("L6 another lord owns the land now", owner.startswith("PawnCPP_AI") and owner != last_owner, [owner, last_owner])
+    ctx.check("L6 the land stays with its lord (the mod never writes the owner)", owner == last_owner, [owner, last_owner])
     ctx.time.run_game_days(4, speed=SPEED)
     ctx.check("L8 the game runs 4 days after the loss", vassals(ctx)["day"] is not None and vassals(ctx)["count"] == 0, vassals(ctx))
     return ctx.result()

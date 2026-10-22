@@ -1,7 +1,7 @@
 # mod/tribute Specification
 
 ## Purpose
-Handed-over vassals send goods to the player each season. A raid on a vassal region changes the loyalty of that vassal, and a long siege can take the vassal.
+Handed-over vassals send goods to the player each season. A long siege of a vassal region starts the sack of its houses.
 
 ## Requirements
 

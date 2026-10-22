@@ -1,7 +1,7 @@
 # mod/sack_and_terms Specification
 
 ## Purpose
-A lost battle sacks the town and the game goes on. The invader offers terms while a raid is on the map. A fortified vassal can become the fallback capital.
+A lost battle sacks the town and the game goes on. The invader offers terms while a raid is on the map, but not after a sack of the player region.
 
 ## Requirements
 

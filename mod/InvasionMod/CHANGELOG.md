@@ -4,7 +4,14 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+- Feature `vassals` (change `add-vassal-sack-wipe`, #341): sack of vassal houses (80 percent ruins), wipe of all villagers (reason `wiped`), refugee wave of 50 percent, and `vassals_restore` (100 silver, 5 families, goods for the rebuild). Feature `sack_and_terms`: no terms after a sack of the player region.
+
+### Changed
+- Refugee wave of a lost vassal is 50 percent of its families. A long siege of a vassal starts the sack of its houses.
+
 ### Removed
+- Fallback capital, loss mode `take_by_lord` and command `vassals_set_loss_region` (#341).
 - Feature `vassals` and `tribute`, tech tree (change `remove-vassal-loyalty`, #344): no vassal loyalty. A vassal survives or dies. No gift order, no submission, no loyalty change after a raid, no law effect `vassal_loyalty`. The tribute share is fixed at 0.20 (`tribute.share`). Old saves are read without error.
 
 ### Fixed

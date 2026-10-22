@@ -167,16 +167,6 @@ return {
             tribute_days = 360,              -- game days between two tributes
             poll_ms = 2000,                  -- real time between two looks at the tribute day
         },
-        -- M06 iteration 03. Fallback capital, simplest form. All values TBD (playtests).
-        fallback = {
-            cost_base = 150,                 -- silver = cost_base x difficulty
-            min_buildings = 8,               -- "fortified" for now: the vassal region has at least this many buildings (TBD)
-            grain_goods = { 172, 1, 30 },    -- goods that move with the capital, first one the home stores hold: Bread, Grain, Fish
-            grain_amount = 20,               -- units moved from the home stores
-            take_back = "write",             -- how the region returns to the player: "clear" (clear owner, player claim) or "write" (owner write only)
-            family_calls = 1,                -- settleRegion calls on the new capital, 5 families each
-            deposit_tries = 10,              -- buildings tried when the grain is put into the new capital
-        },
     },
     -- M07 vassals. Values are TBD for playtests .
     vassals = {
@@ -190,13 +180,26 @@ return {
         keep_peace = true,       -- declare peace again when a vassal lord is at war with the player (TBD: the lords started the war by themselves)
         growth_check_days = 10,  -- game days after the handover until the mod checks that the lord built
         growth_min_buildings = 3, -- fewer new buildings than this means the lord stalled (real runs: +10 or +0)
+        -- Change add-vassal-sack-wipe. A Hussite sack collapses buildings until ruin_share of them are ruins, then all villagers are deleted.
+        sack_wipe = {
+            ruin_share = 0.80,       -- owner, 2026-10-20: the sack is complete at 80 percent ruins
+            max_steps = 6,           -- sack steps (one for each vassal poll) before the mod gives up and logs an error
+            max_wiped = 6,           -- wiped regions that the mod remembers for a restore
+        },
+        -- Restore of a wiped village (owner, 2026-10-21): flat silver, 5 families, and goods so that the AI starts to rebuild.
+        restore = {
+            silver = 100,
+            goods = { { id = 16, amount = 100, name = "logs" }, { id = 17, amount = 200, name = "planks" }, { id = 15, amount = 100, name = "rubble_stone" } },
+            deposit_tries = 10,      -- buildings tried for each good
+            rebuilt_share = 0.50,    -- the village is rebuilt when this share of its buildings before the wipe stands again; then the tribute starts (TBD)
+            min_new_buildings = 3,   -- and at least this many buildings above the count right after the restore (the restore adds 3 to 4 itself)
+        },
         -- Iteration 03. Policies are mod-owned. Values are TBD for playtests.
         policies = {
             light = { tribute = 0.5 },   -- tribute factor on the M08 share
             fair = { tribute = 1.0 },
             heavy = { tribute = 1.5 },
         },
-        loss_region = "forget",   -- test loss: "forget" (the lord keeps the land, the slot is freed) or "take_by_lord" (another lord is given the land; crashed the game in the first run)
     },
     -- M10 finite_resources. Home deposits are a mod-owned stock. Values are TBD for playtests (M00: last 2 to 4 game years at normal use).
     finite_resources = {
@@ -257,11 +260,11 @@ return {
         position = { X = 300, Y = 150 },
         step_x = 180, step_y = 60,           -- pixels for one layout unit of a node
     },
-    -- M09 refugees. Values are TBD for playtests (M00: 30 to 60 percent of the vassal population).
+    -- M09 refugees. Values are TBD for playtests (owner, 2026-10-20: 50 percent of the vassal population).
     refugees = {
         enabled = true,
-        share_min = 0.30,         -- share of the vassal families that flee
-        share_max = 0.60,
+        share_min = 0.50,         -- share of the vassal families that flee (owner, 2026-10-20: 50 percent)
+        share_max = 0.50,
         families_per_call = 5,    -- one settleRegion call adds 5 families (spec 15)
         max_calls = 3,            -- most calls in one wave
         timeout_days = 45,        -- game days until unhoused refugees turn to bandits (M00: 1 to 2 game months; TBD)

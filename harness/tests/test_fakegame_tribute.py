@@ -30,6 +30,7 @@ class TributeTests(HandoverBase):
         region = self.add_region("Eichenhau", True, 4)
         self.game.method(region, "getTotalNumFamilies", lambda _self: 5)
         self.game.advance(10)
+        self.lord_owns("Eichenhau")
 
     def tribute(self):
         answer = self.ask("tribute_state")
@@ -63,6 +64,15 @@ class TributeTests(HandoverBase):
         self.ask("vassals_set_policy", slot=1, policy="light")
         self.change_season()
         self.assertEqual((self.held(14), self.held(145)), (5, 3))
+
+    def test_a_restored_vassal_pays_no_tribute_until_the_village_is_rebuilt(self):
+        self.game.exec("local v = require('features.vassals.init'); v.state:set('vassal1_rebuilding', true)")
+        self.change_season()
+        self.assertEqual(self.tribute()["paid_total"], 0)
+        self.assertEqual(self.game.exec("return #DEPOSITS"), 0)
+        self.game.exec("local v = require('features.vassals.init'); v.state:set('vassal1_rebuilding', false)")
+        self.change_season()
+        self.assertEqual(self.tribute()["paid_total"], 20)
 
     def test_no_vassal_no_tribute(self):
         self.game.exec("local v = require('features.vassals.init'); v.state:set('vassal1_lord', 'none')")
@@ -119,11 +129,13 @@ class TributeTests(HandoverBase):
     def test_the_target_regions_are_the_handed_over_vassals(self):
         self.assertEqual(self.game.exec("local r = require('features.vassals.init').target_regions(); return table.concat(r, ',')"), "Eichenhau")
 
-    def test_a_subjugation_raid_that_held_8_days_takes_the_vassal(self):
+    def test_a_subjugation_raid_that_held_8_days_sacks_and_wipes_the_vassal(self):
         self.stub_raid(living=18, age=9)
         state = self.state()
-        self.assertEqual(state["lost"], 1)  # the fake region keeps its player owner, so the scan registers it again; the real region stays with its lord
-        self.assertEqual(state["lost_events"][0]["reason"], "taken")
+        self.assertEqual(state["lost"], 1)
+        self.assertEqual(state["lost_events"][0]["reason"], "wiped")
+        self.assertEqual(state["count"], 0)
+        self.assertEqual(len(self.ruins["Eichenhau"]), 4)
         self.assertEqual(self.tribute()["siege"], {"7": "taken"})
 
     def test_the_vassal_is_lost_only_once(self):

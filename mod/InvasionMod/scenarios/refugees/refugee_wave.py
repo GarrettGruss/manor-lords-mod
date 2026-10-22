@@ -4,7 +4,7 @@ The scenario makes one vassal like M07.02, then calls refugees_vassal_lost. Run 
 """
 
 NAME = "refugees-wave"
-DESCRIPTION = "A lost vassal sends 30 percent of its families as refugees; homeless families lower approval."
+DESCRIPTION = "A lost vassal sends 50 percent of its families as refugees; homeless families lower approval."
 LIMIT_S = 500
 SPEED = 2
 LONG_REASON = "Claim, settle and handover (about 100 s), then 4 game days at speed 2."
@@ -44,7 +44,7 @@ def run(ctx) -> dict:
     answer = refugees(ctx)
     ctx.check("no wave before the vassal is lost", not answer["active"] and answer["waves"] == 0, answer)
 
-    wave = ctx.mod.command("InvasionMod.refugees_vassal_lost", slot=1, share=30)
+    wave = ctx.mod.command("InvasionMod.refugees_vassal_lost", slot=1)
     after = wave["numbers"]
     ctx.check("R1 the wave added 5 families to the home region", after["families"] - before["families"] == 5 and wave["last_wave"]["calls"] == 1, [before, after, wave["last_wave"]])
     ctx.check("R2 the wave is active and remembers the homeless base", wave["active"] and wave["base_homeless"] == before["homeless"], wave)
@@ -54,7 +54,7 @@ def run(ctx) -> dict:
 
     again = ctx.mod
     try:
-        again.command("InvasionMod.refugees_vassal_lost", slot=1, share=30)
+        again.command("InvasionMod.refugees_vassal_lost", slot=1)
         refused = False
     except Exception as error:  # ModCommandError: the mod refuses a second wave
         refused = "active" in str(error)
