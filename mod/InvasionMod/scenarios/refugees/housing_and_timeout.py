@@ -2,7 +2,7 @@
 
 Phase 1: a wave, 5 burgage plots without the mouse, the wave ends housed.
 Phase 2: a second wave with a 3 game day timeout; the unhoused families leave as bandits.
-Run it on the default fixture (base). It saves nothing.
+Run it with `--fixture base` (it relies on the exact families and homes of that save). It saves nothing.
 """
 
 from runlib import plotgeom

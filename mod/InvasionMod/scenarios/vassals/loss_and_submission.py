@@ -1,6 +1,6 @@
 """M07 iteration 04, L6 to L8: a lost vassal frees its slot and sends refugees.
 
-The scenario makes one vassal (M07.02). Option (run.py --env): LOSS_REGION (forget or take_by_lord, default forget). With forget the lord keeps the land; with take_by_lord another AI lord is given the region (crashed the game). Run it on the default fixture (base). It saves nothing.
+The scenario makes one vassal (M07.02). Option (run.py --env): LOSS_REGION (forget or take_by_lord, default forget). With forget the lord keeps the land; with take_by_lord another AI lord is given the region (crashed the game). Run it on the default fixture. It saves nothing.
 """
 
 NAME = "vassals-loss-and-submission"
