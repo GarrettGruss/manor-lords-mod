@@ -62,3 +62,12 @@ Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the note
 - **`spawnCompleteUnit` adds a full squad** to an AI lord (3 calls: 1 squad of 32 became 4 squads of 128 units, and `lords_state` lists them). Its return value is a `Squad` struct: do not read it.
 - **`SetStaticMesh` swaps the mesh of a finished building** at once (component `StaticMeshComponent0` of an `SMBuilding`). A mesh that is already loaded is found with `StaticFindObject`. The collision shapes come from the new mesh (22 convex shapes became 0 with a sign post, and returned after the restore), while `GetCollisionEnabled` stays the same. Use `GetFullName` for a mesh path, not `GetPathName`.
 - **A command field must be in `parseRequest`** of `HarnessActions`. A field that is not listed arrives as `nil` and the command may read only, with no error.
+
+## Corpse pit and loot (spike #360)
+
+- The corpse pit is `DT_Buildings` id 113 (`BM_CorpsePit_C`), job 65, 4 workers. The game does not assign workers to it by itself; a test uses `building_assign_worker type=113`. Without workers, bodies stay on the ground.
+- Workers carry bodies (task `collecting_body`). On delivery the pit inventory entry `Type 233` (corpse) `amt` rises by 1. No hook fires, so a mod must poll the pit.
+- `pit:addToInventory({Type=<good>, amt=<n>})` counts in the region stock at once. Villagers haul the goods to a store in 3 to 5 game days. No goods pile actor exists and nothing shows on the ground.
+- A dead raider keeps `ItemsLooted`, and the same object stays in `Region.corpses` until a worker picks it up.
+- Reading `unit.currAnim`, `unit.dropsTo:GetFName()` or `unit.Speed` (one of them) crashed the game (access violation 0x18).
+- Owner decision 2026-10-22: the pit replaces the direct store add; loot give-back is for Hussite raids only (change `add-corpse-pit-loot`). Notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.

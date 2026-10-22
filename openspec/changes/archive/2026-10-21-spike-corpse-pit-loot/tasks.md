@@ -10,13 +10,13 @@ Write findings to `notes/<topic>.md`, one file per topic.
 
 ## 2. Owner decisions
 
-- [ ] 2.1 Owner decides: replace the direct store add, or keep it as fallback only.
-- [ ] 2.2 Owner decides: loot amount per body, and which good spawns.
-- [ ] 2.3 Owner decides: what happens to loot that nobody hauls.
+- [x] 2.1 Decided: the pit replaces the direct store add.
+- [x] 2.2 Decided: the Hussite plunder record gives the loot; no fixed good. Decision: the Hussite plunder record, no fixed good.
+- [x] 2.3 Decided: bodies left on the ground need no mod fallback. Decision: bodies left on the ground need no mod fallback.
 
 ## 3. Implementation (gated: only after the owner decisions and a new spec pull request)
 
-- [ ] 3.1 Hook body arrival at the pit and spawn the loot there.
-- [ ] 3.2 Keep the direct store add as fallback.
-- [ ] 3.3 Add tests and a test scenario; update the spec "Checked by" lines.
-- [ ] 3.4 Update the wiki, skills and `CHANGELOG.md`.
+- [x] 3.1 Moved to change `add-corpse-pit-loot`.
+- [x] 3.2 Moot: the pit replaces the direct store add, so no fallback.
+- [x] 3.3 Moved to change `add-corpse-pit-loot`.
+- [x] 3.4 Wiki and CHANGELOG done here; skills are for the follow-up change.
