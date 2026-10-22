@@ -16,4 +16,4 @@ The mod SHALL keep a difficulty from 1 to 3 (default `invasion.difficulty`). The
 - **WHEN** the player begins the game with Hard in the settings menu
 - **THEN** the difficulty is 3 and chosen is true, and no pick banner shows
 - **AND** `invasion_set_difficulty` 1 afterwards sets the difficulty to 1
-- Not checked yet (planned: `mod/InvasionMod/scenarios/scenario_settings/new_game_menu.py`).
+- Checked by `mod/InvasionMod/scenarios/scenario_settings/new_game_menu.py` (run 20261022-045227-57f0) and `harness/tests/test_fakegame_scenario_settings.py`.

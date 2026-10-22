@@ -5,6 +5,7 @@
 	"Description": "Build workspace for the Invasion Mod pak widgets. Not the real game project.",
 	"Plugins": [
 		{ "Name": "PythonScriptPlugin", "Enabled": true },
-		{ "Name": "EditorScriptingUtilities", "Enabled": true }
+		{ "Name": "EditorScriptingUtilities", "Enabled": true },
+		{ "Name": "MoverExamples", "Enabled": true }
 	]
 }

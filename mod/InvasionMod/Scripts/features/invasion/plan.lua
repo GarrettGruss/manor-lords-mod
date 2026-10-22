@@ -23,10 +23,10 @@ function M.season_year(season_no)
     return math.floor(season_no / 4) + 1, season_no % 4 + 1
 end
 
--- The season roll. No raid in year 1, and at most one raid in a year (`done_year` is the last year with a raid).
+-- The season roll. No raid before `first_year` (default 2: year 1 is quiet; the settings menu sets it), and at most one raid in a year (`done_year` is the last year with a raid).
 -- `roll` is a number in [0, 1). The last season of the year always raids.
-function M.should_raid(year, position, done_year, chances, roll)
-    if year < 2 or done_year >= year then return false end
+function M.should_raid(year, position, done_year, chances, roll, first_year)
+    if year < (first_year or 2) or done_year >= year then return false end
     if position >= #chances then return true end
     return roll * 100 < chances[position]
 end

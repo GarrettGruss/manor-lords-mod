@@ -51,6 +51,8 @@ def run_day(ctx) -> None:
 
 
 def run(ctx) -> dict:
+    # A fixture is an old save: it got the defaults (first raid after 2 years). This test counts year 2 as the first raid year.
+    ctx.mod.command("InvasionMod.scenario_settings_set", first_raid_years=1)
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=1)
     ctx.run_until(lambda: yearly(ctx)["season_no"] == 0, 30, what="the first season read")
     first = yearly(ctx)

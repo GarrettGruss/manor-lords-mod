@@ -155,6 +155,27 @@ return {
         z_order = 500,
         position = { X = 300, Y = 150 },
     },
+    -- add-scenario-settings-menu (#375): the menu that opens when a new game starts. The owner writes the background text.
+    scenario_settings = {
+        enabled = true,
+        defaults = { difficulty = 2, first_raid_years = 2, size_class = 2, great_raids = 1 }, -- Normal, 2 years, Medium, On
+        title = "The Hussites Are Coming",
+        background_text = "Placeholder text. The owner writes the background of the scenario here: who the Hussites are, and why they ride against your village.",
+        labels = { difficulty = "Difficulty", first_raid_years = "First Hussite raid", size_class = "Raid size", great_raids = "Great raids" },
+        choice_names = {
+            difficulty = { "Easy", "Normal", "Hard" },
+            first_raid_years = { "After 1 year", "After 2 years", "After 3 years" },
+            size_class = { "Small", "Medium", "Large" },
+            great_raids = { "On", "Off" },
+        },
+        begin_label = "Begin the game", defaults_label = "Use defaults",
+        new_game_max_day = 10,               -- a game with no save file name is new only when its day is at most this (a fixture that lost savefileToLoad is not)
+        intro_wait_s = 60,                   -- real seconds to wait for the intro cinematic to end before the menu opens anyway
+        begin_speed = 1,                     -- the game speed after "Begin the game" (a new game starts at speed 0)
+        disable_autosave = true,             -- send disable_autosave after the intro and after Begin (spike #358: the first call after a new game is undone)
+        poll_ms = 100,
+        z_order = 500, position = { X = 300, Y = 120 },
+    },
     -- M06 sack_and_terms, iteration 01. All values are TBD for playtests (M00 gives only the range 20 to 50 percent).
     sack_and_terms = {
         enabled = true,

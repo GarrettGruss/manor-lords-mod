@@ -60,3 +60,16 @@ The feature re-sends `disable_autosave` after the intro and after "Begin the gam
 - Owner: the background text.
 - Spike (task 1.1): how a new game is detected after the main menu, and the pause method.
 - Task 1.2: the length of a game year in game days.
+
+## Findings from the implementation (2026-10-22)
+
+Details in `notes/new-game-detection.md`, `notes/season-roll.md` and `notes/art.md`. These change or add to the decisions above:
+- New game or loaded save: `savefileToLoad` is empty on a harness new game and the slot name after a harness load, so the rule works. The game day (`new_game_max_day`, 10) is an extra guard for a lost file name.
+- Hold gate: the invasion feature asks `scenario_settings` before each daily step. While a new game waits for the menu, the invasion feature shows no "Pick the difficulty" banner and starts no clock.
+- Un-pause: `unPauseGame` alone does not run a new game (game speed stays 0). "Begin the game" calls `unPauseGame` and then `changeGameSpeed(begin_speed, false)` (`begin_speed` 1).
+- Registered mod state defaults keep the old behaviour (`first_raid_years` 1 = year 2, `size_class_fixed` 0 = random, `great_raids` 1). The config defaults (Normal, 2 years, Medium, On) are written by the menu, by `scenario_settings_skip` and for an old save. An old save does not count as a difficulty pick, so `invasion_pick_difficulty` still works once on it (test scenario `invasion-difficulty-pick` passes).
+- The base menu has a new optional field `bar = false`: the settings menu has no bottom bar button.
+- The Close button of the base menu closes the settings menu like "Begin the game" (the choices apply, the game runs).
+- Extra test command `scenario_settings_click` (action `choose`, `defaults`, `begin`): the same code as a click button. A real mouse click is not tested in this change.
+- The three difficulty buttons are removed in Lua only (no click button is attached). The pak widget `WBP_RaidMenu` keeps three empty, transparent Borders, so `raidmenu_P.pak` needs no rebuild for this part.
+- Pak: `WBP_ScenarioSettings` is in `raidmenu_P.pak` (editor script `ue/make_scenario_settings_widget.py`). The PNG art of the mockup is not in it yet (`notes/art.md`).
