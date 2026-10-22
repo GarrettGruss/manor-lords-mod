@@ -37,7 +37,7 @@ The registry is `harness/runlib/scenario.py`. It imports every module of `harnes
 | module docstring | The first line becomes the summary in the scenario list. |
 
 Rules enforced by `check_limit`:
-- `LIMIT_S` must be above 0 and at most `MAX_LIMIT_S` (13500 s, enough for a 2-game-year soak).
+- `LIMIT_S` must be above 0 and at most `MAX_LIMIT_S` (13500 s). A soak at 8x does not reach 730 game days in one run: the clock slows from about 8 to about 1.1 to 1.2 game s per wall s as the village grows (units 350 to 730), so 13200 wall s give about 400 days. Memory stays flat (about 1.7 to 1.9 GB after an early drop). Test scenario `soak-days` keeps the rate as a metric only.
 - Above `LONG_LIMIT_S` (300 s) a non-empty `LONG_REASON` is required. Without it the import fails.
 - A name defined twice in two different files fails at import. The same file twice is ignored.
 - A mod keeps its scenarios in `mod/<Name>/scenarios/**/*.py`. A file name that starts with `_` is a helper and is not loaded.

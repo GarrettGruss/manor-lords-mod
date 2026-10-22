@@ -95,6 +95,7 @@ Commands: `raid_widget_open`, `raid_widget_close`, `raid_widget_state`.
 ### raid_behavior (M03)
 Tracks a raid that runs under the native plunder AI. The mod adds no steering and no rout. It counts living raiders and carried loot, and gives the loot of a dead raider back to the nearest store. Numbers live in ModState and in the log line `RAID_BEHAVIOR`. Other features listen to it (for example `sack_and_terms`, `tribute`).
 Commands: `raid_behavior_state`, `raid_behavior_claim_back`, and test helpers `raid_behavior_test_set_leave`, `raid_behavior_test_take_region`, `raid_behavior_test_kill_raiders`.
+Carry cap (change `add-raid-carry-caps`, #275): the cap acts on Hussite raids only. The plundered goods of a Hussite raid never exceed `carry_cap` (10) times its raiders at the start, and `carry_cap` is also its loot goal (the leave rule and the plunder tick use it). Native raids keep the game's own loot: the native AI resets `ItemsLooted` of a raider on a raid job to about 5 within a few game seconds, so the mod does not write it. Bandit role raids have no cap. Facts from the spike: `ItemsLooted` is a plain item count with no good; role raids (`spawnArmy`) do not use it and grow `plundered` instead. `raid_behavior_state` shows `carry_cap` and `raid_type` of each raid.
 
 ### bandits (M04)
 Low approval lowers Public Order. Low Public Order turns families into bandits. The mod writes `Region.publicOrder = natural - debuff`, and takes the value the game writes back as the new natural value. The conversion uses the `homeless_rebel` route. The tick runs once per season change, and the last season is saved in ModState so a load does not repeat a season. The player can buy a converted family back.
@@ -105,11 +106,11 @@ Changes unit values: armor, weapon, reach and veterancy. A new unit with low def
 Commands: `unit_balance_state`, `unit_balance_set`, `unit_balance_apply`.
 
 ### vassals (M07)
-Keeps a registry of vassal slots in ModState: region, lord name, loyalty and start day. The game goal is Endless, so a claim never ends the game (spec 26). Loyalty, keep peace, policy, gifts, loss of a vassal and a submission tick are implemented.
-Commands: `vassals_state`, `vassals_claim`, `vassals_set_loyalty`, `vassals_set_keep_peace`, `vassals_set_policy`, `vassals_order_gift`, `vassals_loyalty_tick_now`, `vassals_lose`, `vassals_set_loss_region`, `vassals_submission_tick_now`, `vassals_set_goal`.
+Keeps a registry of vassal slots in ModState: region, lord name and start day. The game goal is Endless, so a claim never ends the game (spec 26). Keep peace, policy (it scales the tribute) and loss of a vassal are implemented. A vassal has no loyalty: it survives or dies. Old saves hold `loyalty` and `submitted` entries in the registry; ModState keeps them as unknown entries and the feature ignores them.
+Commands: `vassals_state`, `vassals_claim`, `vassals_set_keep_peace`, `vassals_set_policy`, `vassals_lose`, `vassals_set_loss_region`, `vassals_set_goal`.
 
 ### sack_and_terms (M06)
-Files: `init.lua` (sack), `terms.lua` (terms), `fallback.lua` (fallback capital), each with a `*_rules.lua`. When a role raid begins to leave because it won, the town loses a share of buildings, stock and families. The share grows with difficulty. Terms and the fallback capital are first forms (marked TBD in the source): the player pays to make a fortified vassal the fallback capital, the mod takes the region back from its lord, moves grain and sends settlers. Moving units and removing families are not done (spikes S11 and S8).
+Files: `init.lua` (sack), `terms.lua` (terms), `fallback.lua` (fallback capital), each with a `*_rules.lua`. When a role raid begins to leave because it won, the town loses a share of buildings and families. The mod takes no goods; a fire may destroy part of the goods of a burned store (11 to 60 percent measured). Villagers put out a sack fire unless enemy soldiers are near, so the default method is `collapse` (rubble at once). The share grows with difficulty. Terms and the fallback capital are first forms (marked TBD in the source): the player pays to make a fortified vassal the fallback capital, the mod takes the region back from its lord, moves grain and sends settlers. Moving units and removing families are not done (spikes S11 and S8).
 Commands: `sack_state`, `sack_now`, `sack_set_fatal`.
 
 ### tribute (M08)

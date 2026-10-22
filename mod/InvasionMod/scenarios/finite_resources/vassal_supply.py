@@ -1,7 +1,7 @@
 """M10 iteration 02: a vassal pays iron and salt at each season change (the permanent supply), and the home deposits do not count it.
 
 Run it with --new-game (like tribute-payout). It makes one vassal (claim, settle, handover), jumps a season and reads the home stores.
-Families of the vassal region: 5. Loyalty 50 gives a share of 20 percent: iron 5 x 10 x 0.2 = 10, salt 5 x 6 x 0.2 = 6. It saves nothing.
+Families of the vassal region: 5. The share is 20 percent: iron 5 x 10 x 0.2 = 10, salt 5 x 6 x 0.2 = 6. It saves nothing.
 """
 
 NAME = "finite-resources-vassal-supply"
@@ -54,7 +54,6 @@ def run(ctx) -> dict:
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     ctx.check("V0 the three home deposits exist (clay, iron, salt)", sorted(deposits(ctx)) == ["clay", "iron", "salt"], deposits(ctx))
     make_vassal(ctx)
-    ctx.mod.command("InvasionMod.vassals_set_loyalty", slot=1, value=50)
     before = tribute(ctx)
     jump_season(ctx)
     after = tribute(ctx)

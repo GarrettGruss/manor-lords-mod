@@ -5,12 +5,6 @@ function M.production(families, units_per_family)
     return families * units_per_family
 end
 
--- Share of the production that the vassal sends. Grows with loyalty from share_min (loyalty 0) to share_max (loyalty 100).
-function M.share(loyalty, share_min, share_max)
-    local clamped = math.max(0, math.min(100, loyalty))
-    return share_min + (share_max - share_min) * clamped / 100
-end
-
 function M.amount(production, share)
     return math.floor(production * share + 0.5)
 end
@@ -26,19 +20,6 @@ end
 -- A tick runs when the season differs from the saved one. A saved -1 means "not known yet": no tick.
 function M.season_changed(current, last)
     return last >= 0 and current ~= last
-end
-
--- How a raid ended for the protection of a vassal: "defended" when the player killed the raid or made it leave by losses,
--- "undefended" for any other end. A raid that does not target a vassal region gives nil.
-function M.protection_outcome(summary, is_vassal_region)
-    if summary.target == nil or not is_vassal_region then return nil end
-    if summary.state == "destroyed" or summary.leave_reason == "losses" then return "defended" end
-    return "undefended"
-end
-
-function M.loyalty_change(outcome, protection)
-    if outcome == "defended" then return protection.defended end
-    return protection.undefended
 end
 
 -- A subjugation raid on a vassal region takes the vassal when it has been active for `siege_days` game days
