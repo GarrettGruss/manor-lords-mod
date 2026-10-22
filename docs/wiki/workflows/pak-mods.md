@@ -139,3 +139,10 @@ uv run python -m unittest discover -s harness/tests -p "test_pakmod.py"
 uv run python -m unittest discover -s harness/tests -p "test_modpak.py"
 ```
 They use fake tool scripts, so they need no game, no UAssetGUI and no key. Install and remove logic is covered by the pakmod tests.
+
+## Rule: new row ids (spike #284)
+- New `buildingStats` ids (126 to 65536) load, are placed, built, saved and loaded. An AI lord village does not crash on them (it ignores them).
+- Do not add `DT_Upgrades` rows with new ids. The game copies the cost into `needs` but never carries out the upgrade (runs `rowid-control-b`, `-e`).
+- Do not set `upgradesInto` to a new building id. The replaced building does not become the new type (run `rowid-control-f`).
+- A vanilla upgrade id with the same fields works.
+- Owner decision 2026-10-21: accept this limit. Evidence: `openspec/changes/archive/2026-10-21-spike-new-row-id-persistence/notes/id-persistence.md`.

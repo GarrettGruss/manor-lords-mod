@@ -199,6 +199,88 @@ function M.settle_raiders()
     return { ok = true, before = before, after = snapshot(who) }
 end
 
+---------------------------------------------------------------------------------------------
+-- Spike probe (change spike-bandit-message-toggle): the game message for a bandit reply letter
+---------------------------------------------------------------------------------------------
+-- The banner "A New Message" comes from the Blueprint timer function displayNewDiplomaticMessages (once a second).
+-- Modes: inspect (read the letters), count (hook only counts), markread (the hook marks bandit letters as read before the game looks),
+-- emptybox (the hook empties InBox when it holds only bandit letters), off (the hook does nothing),
+-- hidebanners (RemoveFromParent on the quest message banners, no hook).
+-- A UE4SS pre-hook cannot cancel the function, so the way to suppress is to change the data that the function reads.
+M.MESSAGE_HOOK = "/Game/CPP_BP/MyPawnCPP_BP3.MyPawnCPP_BP3_C:displayNewDiplomaticMessages"
+M.MESSAGE_MODES = { inspect = true, count = true, markread = true, emptybox = true, off = true, hidebanners = true }
+M.BANNER_CLASS = "questMessageElaborate_C"
+local probeState = { mode = "off", hooked = false, pre = 0, post = 0, marked = 0, emptied = 0, errors = {} }
+
+local function letterRow(letter)
+    local sender = read(function() return letter.sender end)
+    return {
+        paras = arrayTexts(read(function() return letter.paras end)), day = read(function() return letter.daySent end),
+        sender = shortName(sender), bandit = isValid(sender) and read(function() return sender.isBandit end) == true,
+        read = read(function() return letter.read end), opened = read(function() return letter.wasOpened end),
+    }
+end
+
+local function inboxRows(player)
+    local rows = {}
+    local count = read(function() return player.InBox:GetArrayNum() end) or 0
+    for i = 1, count do rows[#rows + 1] = letterRow(player.InBox[i]) end
+    return rows
+end
+
+local function onPre()
+    probeState.pre = probeState.pre + 1
+    if probeState.mode ~= "markread" and probeState.mode ~= "emptybox" then return end
+    local engineObject = engine()
+    local player = engineObject and playerPawn(engineObject)
+    if not player then return end
+    local rows = inboxRows(player)
+    if probeState.mode == "markread" then
+        for i, row in ipairs(rows) do
+            if row.bandit and (row.read ~= true or row.opened ~= true) then
+                local ok, err = pcall(function() player.InBox[i].read = true; player.InBox[i].wasOpened = true end)
+                if ok then probeState.marked = probeState.marked + 1 else probeState.errors[#probeState.errors + 1] = tostring(err) end
+            end
+        end
+    elseif #rows > 0 then
+        local onlyBandit = true
+        for _, row in ipairs(rows) do onlyBandit = onlyBandit and row.bandit end
+        if onlyBandit then
+            local ok, err = pcall(function() player.InBox:Empty() end)
+            if ok then probeState.emptied = probeState.emptied + #rows else probeState.errors[#probeState.errors + 1] = tostring(err) end
+        end
+    end
+end
+
+function M.message_probe(request)
+    local mode = request.mode or "inspect"
+    if not M.MESSAGE_MODES[mode] then return { ok = false, error = "mode must be one of: inspect, count, markread, emptybox, off" } end
+    local engineObject = engine()
+    local player = engineObject and playerPawn(engineObject)
+    if not player then return { ok = false, error = "the player pawn is not loaded" } end
+    if mode == "hidebanners" then
+        -- Detach the quest message banners from the screen (RemoveFromParent). Reports how many were live.
+        local hidden, live = 0, 0
+        for _, widget in ipairs(FindAllOf(M.BANNER_CLASS) or {}) do
+            if isValid(widget) and not widget:GetFullName():find("Default__", 1, true) then
+                live = live + 1
+                if pcall(function() widget:RemoveFromParent() end) then hidden = hidden + 1 end
+            end
+        end
+        return { ok = true, mode = mode, live = live, hidden = hidden, inbox = inboxRows(player) }
+    end
+    if mode ~= "inspect" and mode ~= "hidebanners" then
+        probeState.mode = mode
+        if not probeState.hooked then
+            local ok, err = pcall(RegisterHook, M.MESSAGE_HOOK, onPre, function() probeState.post = probeState.post + 1 end)
+            if not ok then return { ok = false, error = "RegisterHook: " .. tostring(err) } end
+            probeState.hooked = true
+        end
+    end
+    return { ok = true, mode = probeState.mode, hooked = probeState.hooked, pre = probeState.pre, post = probeState.post,
+             marked = probeState.marked, emptied = probeState.emptied, errors = probeState.errors, inbox = inboxRows(player) }
+end
+
 -- Follow the units of the bandit side: bandit_mark remembers them, bandit_track tells what each one is now.
 -- Why: after a settle call the bandit units leave the bandit side. This shows where they go (spec 15, Q2).
 local ROLE_NAMES = { [0] = "Husband", "Wife", "Son", "Daughter", "Retainer", "Soldier", "FreeMerchant", "FreeLivestockMerchant",

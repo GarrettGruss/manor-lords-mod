@@ -12,7 +12,7 @@ Taken after the review in `openspec/changes/archive/2026-10-15-legacy-m00-invasi
 5. **Armor spike:** find levers that make unarmored combat more lethal and armored units much stronger (harness spike 25 (#129)).
 6. **Victory cinematic:** probably solved by the game start conditions. Spike on how the game sets scenario settings and whether Lua can change them (harness spike 26 (#130)).
 7. **Villagers to bandits** through `homeless_rebel`.
-8. **Loyalty, the liege, influence spending and finite deposits** are owned by Lua.
+8. **The liege, influence spending and finite deposits** are owned by Lua.
 9. **Mod state across saves:** spike (harness spike 24 (#128)). Either write into the save, or keep a mod save system next to the save file. The user approved that the harness makes saves (2026-10-15), so save and load can be tested automatically (rules in CLAUDE.md Safety and spec 24).
 
 ## Merge decisions

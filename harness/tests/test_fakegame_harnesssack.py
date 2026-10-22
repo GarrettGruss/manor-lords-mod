@@ -292,6 +292,23 @@ class PeopleTests(unittest.TestCase):
             answer = game.lua.eval('function(m) return m.sack_people({ percent = 40 }) end')(sack(game))
             self.assertEqual(answer.after.people.families, 3)
 
+    def test_members_are_collected_before_the_first_death(self):
+        # #357: a death changes the family array. Here the first death makes every family struct stale (members nil).
+        with FakeGame() as game:
+            village = build(game)
+            game.lua.eval("""function(fg, village)
+                for _, family in ipairs(village.families) do
+                    for _, unit in ipairs(family.list) do
+                        fg.set_method(unit, "just_die", function(self)
+                            self.dead = true
+                            for _, f in ipairs(village.families) do f.familyMembers = nil end
+                        end)
+                    end
+                end
+            end""")(game.fg, village)
+            answer = game.lua.eval('function(m) return m.sack_people({ count = 3 }) end')(sack(game))
+            self.assertEqual((answer.families, answer.people), (3, 6))
+
     def test_dead_members_are_not_killed_twice(self):
         with FakeGame() as game:
             build(game)

@@ -265,6 +265,22 @@ class LedgerOwnerTest(TempCase):
             files = phases.user_files(install)
         self.assertEqual(set(files), {"saveGame_0.sav"})
 
+    def test_also_ignore_leaves_out_names_that_the_ledger_listed_earlier(self):
+        # #353: another slot's fixture save was in the ledger at the start and is gone at the end.
+        (self.saves / "saveGame_0.sav").write_bytes(b"user")
+        (self.saves / "saveGame_53.sav").write_bytes(b"other slot")
+        install = GameInstall(root=self.temp, saved_dir=self.temp)
+        with mock.patch.object(saveslots, "LEDGER_PATH", self.ledger):
+            self.assertEqual(set(phases.user_files(install)), {"saveGame_0.sav", "saveGame_53.sav"})
+            self.assertEqual(set(phases.user_files(install, frozenset({"saveGame_53.sav"}))), {"saveGame_0.sav"})
+
+    def test_a_user_file_is_never_ignored_unless_the_ledger_named_it(self):
+        (self.saves / "saveGame_0.sav").write_bytes(b"user")
+        install = GameInstall(root=self.temp, saved_dir=self.temp)
+        with mock.patch.object(saveslots, "LEDGER_PATH", self.ledger):
+            self.assertEqual(phases._ledger_names(install), frozenset())
+            self.assertEqual(set(phases.user_files(install, phases._ledger_names(install))), {"saveGame_0.sav"})
+
     def test_the_settings_file_counts_only_without_the_install(self):
         (self.saves / "saveGame_0.sav").write_bytes(b"user")
         (self.saves / "rtsSettings.sav").write_bytes(b"settings")

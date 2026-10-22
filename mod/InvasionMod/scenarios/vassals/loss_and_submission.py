@@ -1,23 +1,18 @@
-"""M07 iteration 04, L1 to L8: a vassal with low loyalty submits (tribute stops, the lord goes to war) and returns; a lost vassal sends refugees.
+"""M07 iteration 04, L6 to L8: a lost vassal frees its slot and sends refugees.
 
 The scenario makes one vassal (M07.02). Option (run.py --env): LOSS_REGION (forget or take_by_lord, default forget). With forget the lord keeps the land; with take_by_lord another AI lord is given the region (crashed the game). Run it on the default fixture (base). It saves nothing.
 """
 
 NAME = "vassals-loss-and-submission"
-DESCRIPTION = "Submission at loyalty 10 or less, return at 40 or more; the lose command frees the slot and sends a refugee wave."
+DESCRIPTION = "The lose command frees the slot and sends a refugee wave."
 LIMIT_S = 600
 SPEED = 2
-LONG_REASON = "Claim, settle and handover (about 100 s), two season jumps, 4 game days at speed 2."
+LONG_REASON = "Claim, settle and handover (about 100 s), 4 game days at speed 2."
 INFLUENCE = 1000
-SEASONS = ["winter", "spring", "summer", "autumn"]
 
 
 def vassals(ctx) -> dict:
     return ctx.mod.command("InvasionMod.vassals_state")
-
-
-def tribute(ctx) -> dict:
-    return ctx.mod.command("InvasionMod.tribute_state")
 
 
 def refugees(ctx) -> dict:
@@ -46,35 +41,11 @@ def make_vassal(ctx) -> str:
     return region
 
 
-def jump_season(ctx) -> dict:
-    before = tribute(ctx)
-    ctx.actions.set_season(SEASONS[(before["last_season"] + 1) % 4])
-    ctx.run_until(lambda: tribute(ctx)["ticks"] > before["ticks"], 30, what="the tribute tick")
-    return tribute(ctx)
-
-
 def run(ctx) -> dict:
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     region = make_vassal(ctx)
     mode = ctx.variant_option("LOSS_REGION", "forget")
     ctx.mod.command("InvasionMod.vassals_set_loss_region", mode=mode)
-
-    ctx.mod.command("InvasionMod.vassals_set_loyalty", slot=1, value=5)
-    ctx.mod.command("InvasionMod.vassals_submission_tick_now")
-    ctx.run_until(lambda: any(w and w.get("enemy_of_player") for w in (vassals(ctx).get("wars") or {}).values()), 20, what="the war of the submitted lord")
-    state = vassals(ctx)
-    ctx.check("L1 a vassal at loyalty 5 submits", row(ctx)["submitted"] and state["submissions"] == 1, state)
-    ctx.check("L2 the lord of a submitted vassal is at war with the player (the mod does not make peace)", state["wars"]["1"]["enemy_of_player"], state["wars"])
-
-    before = tribute(ctx)
-    after = jump_season(ctx)
-    ctx.check("L3 a submitted vassal pays no tribute", after["paid_total"] == before["paid_total"], [before["paid_total"], after["paid_total"]])
-
-    ctx.mod.command("InvasionMod.vassals_set_loyalty", slot=1, value=45)
-    ctx.mod.command("InvasionMod.vassals_submission_tick_now")
-    ctx.check("L4 at loyalty 45 the vassal returns", not row(ctx)["submitted"], row(ctx))
-    ctx.run_until(lambda: not any(w and w.get("enemy_of_player") for w in (vassals(ctx).get("wars") or {}).values()), 30, what="peace with the returned lord")
-    ctx.check("L5 the lord is at peace again", True)
 
     last_owner = str(next(r for r in ctx.actions.regions_state()["regions"] if r["region"] == region).get("owner"))
     families_before = refugees(ctx)["numbers"]["families"]
