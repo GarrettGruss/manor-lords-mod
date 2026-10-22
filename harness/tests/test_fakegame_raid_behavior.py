@@ -35,7 +35,8 @@ class RaidBehaviorTestCase(unittest.TestCase):
         self.engine = self.game.obj("RTSMultiEngineCPP", playerRef=self.pawn, TemporalComponent=self.calendar,
                                     regions=self.game.array([self.region]), debugLog_AI_general=self.game.array([]))
         self.game.method(self.engine, "spawnRaiders", lambda _self, squads, _centre: self.make_raiders(squads))
-        self.bandit = self.game.obj("PawnCPP", isBandit=True)
+        self.bandit = self.game.obj("PawnCPP", isMainPlayer=False, isBandit=True, isAI=True,
+                                    commandedSquads=self.game.array([self.game.struct(Value=7)]))  # the squad of the raiders (census)
         self.game.method(self.engine, "spawnArmy", lambda _self, _point, names, _owner, _company, _days: self.make_raiders(len(names)))
         self.add_store("Supplies_5", x=0.0, y=0.0, goods=[(16, 10), (3, 4)])
         self.add_store("Supplies_9", x=5000.0, y=5000.0, goods=[(7, 2)])
@@ -115,34 +116,26 @@ class RaidStartTests(RaidBehaviorTestCase):
         self.assertEqual(self.raid()["initial"], SQUAD_UNITS)
 
 
+class CensusTests(RaidBehaviorTestCase):
+    def test_a_raider_that_left_the_census_is_not_living(self):
+        self.start_raid()
+        victim = self.units[-1]
+        self.assertEqual(self.raid()["living"], SQUAD_UNITS)
+        victim.assignedSquadID = self.game.struct(Value=99)  # still in the SMUnit list, not dead, but no squad of the census
+        self.game.advance(2)
+        raid = self.raid()
+        self.assertEqual((raid["living"], raid["deaths"]), (SQUAD_UNITS - 1, 1))
+        self.assertFalse(victim.dead)
+
+    def test_a_raider_in_the_census_stays_living(self):
+        self.start_raid()
+        self.game.advance(4)
+        self.assertEqual(self.raid()["living"], SQUAD_UNITS)
+
+
 class LootTests(RaidBehaviorTestCase):
     def raiders(self):
         return self.units[-SQUAD_UNITS:]
-
-    def test_loot_of_a_dead_raider_goes_to_the_nearest_store(self):
-        self.start_raid()
-        victim = self.raiders()[0]
-        victim.ItemsLooted = 4
-        victim.realPos = self.game.struct(X=10.0, Y=10.0, Z=0.0)
-        self.game.advance(2)
-        victim.dead = True
-        victim.ItemsLooted = 0
-        self.game.advance(2)
-        raid = self.raid()
-        self.assertEqual((raid["living"], raid["deaths"], raid["returned"], raid["lost"]), (SQUAD_UNITS - 1, 1, 4, 0))
-        self.assertEqual(self.stock(self.stores[0]), 14 + 4)
-        self.assertEqual(self.stock(self.stores[1]), 2)
-        self.assertIn((16, 4), self.stores[0]["goods"])  # the good that the store holds most of
-
-    def test_a_far_death_uses_the_far_store(self):
-        self.start_raid()
-        victim = self.raiders()[0]
-        victim.ItemsLooted = 3
-        victim.realPos = self.game.struct(X=4900.0, Y=5100.0, Z=0.0)
-        self.game.advance(2)
-        victim.dead = True
-        self.game.advance(2)
-        self.assertEqual(self.stock(self.stores[1]), 2 + 3)
 
     def test_a_unit_that_vanishes_inland_counts_as_dead(self):
         self.start_raid()
@@ -151,7 +144,7 @@ class LootTests(RaidBehaviorTestCase):
         self.game.advance(2)
         self.game.invalidate(victim)
         self.game.advance(2)
-        self.assertEqual((self.raid()["deaths"], self.raid()["returned"]), (1, 2))
+        self.assertEqual(self.raid()["deaths"], 1)
 
     def test_a_unit_that_walks_off_the_map_keeps_its_loot(self):
         self.start_raid()
@@ -162,8 +155,7 @@ class LootTests(RaidBehaviorTestCase):
         self.game.invalidate(leaver)
         self.game.advance(2)
         raid = self.raid()
-        self.assertEqual((raid["departures"], raid["deaths"], raid["returned"]), (1, 0, 0))
-        self.assertEqual(self.stock(self.stores[0]), 14)
+        self.assertEqual((raid["departures"], raid["deaths"]), (1, 0))
         self.assertGreaterEqual(raid["looted_total"], 5)
 
     def test_a_unit_that_dies_in_view_at_the_edge_is_dead_not_left(self):
@@ -175,7 +167,7 @@ class LootTests(RaidBehaviorTestCase):
         victim.dead = True
         self.game.advance(2)
         raid = self.raid()
-        self.assertEqual((raid["deaths"], raid["departures"], raid["returned"]), (1, 0, 2))
+        self.assertEqual((raid["deaths"], raid["departures"]), (1, 0))
 
     def test_a_native_raid_loot_is_not_written_by_the_mod(self):
         self.ask("invasion_set_roles", enabled=False)
@@ -199,17 +191,6 @@ class LootTests(RaidBehaviorTestCase):
     def test_the_state_shows_the_carry_cap(self):
         answer = self.ask("raid_behavior_state")
         self.assertEqual(answer["result"]["carry_cap"], 10)
-
-    def test_no_store_means_the_loot_is_lost(self):
-        self.stores.clear()
-        self.start_raid()
-        victim = self.raiders()[0]
-        victim.ItemsLooted = 3
-        self.game.advance(2)
-        victim.dead = True
-        self.game.advance(2)
-        raid = self.raid()
-        self.assertEqual((raid["returned"], raid["lost"]), (0, 3))
 
 
 class EndTests(RaidBehaviorTestCase):
@@ -257,65 +238,21 @@ class EndTests(RaidBehaviorTestCase):
         self.assertIn("invasion:raid_state=1", tags)
 
 
-class RoleRaidLeaveTests(RaidBehaviorTestCase):
+class BanditRaidTests(RaidBehaviorTestCase):
+    """The mod does not send a bandit squad raid home (owner decision 2026-10-21)."""
     def raiders(self):
         return self.units[-SQUAD_UNITS:]
 
-    def go_far(self):
-        for unit in self.raiders():
-            unit.realPos = self.game.struct(X=60000.0, Y=0.0, Z=0.0)
-
-    def stores_total(self):
-        return sum(self.stock(store) for store in self.stores)
-
-    def test_a_role_raid_leaves_after_enough_loot_and_the_loot_leaves_with_it(self):
+    def test_a_leaving_bandit_raid_is_not_removed_or_sent_home(self):
         self.start_raid()
-        stock = self.stores_total()
         for unit in self.raiders():
             unit.ItemsLooted = 4
-        self.game.advance(3)
-        self.assertEqual((self.raid()["leave_reason"], self.raid()["living"]), ("loot", SQUAD_UNITS))  # near the village: kept
+            unit.realPos = self.game.struct(X=60000.0, Y=-90000.0, Z=0.0)  # far from the village and at the map edge
+        self.calendar.daysTotal = self.calendar.daysTotal + 30
+        self.game.advance(4)
+        raid = self.raid()
+        self.assertEqual((raid["state"], raid["living"]), ("active", SQUAD_UNITS))
         self.assertFalse(any(unit.dead for unit in self.raiders()))
-        self.go_far()
-        self.game.advance(3)
-        raid = self.raid()
-        self.assertEqual((raid["state"], raid["leave_reason"], raid["living"]), ("left", "loot", 0))
-        self.assertEqual((raid["departures"], raid["deaths"], raid["carried_out"], raid["returned"]), (SQUAD_UNITS, 0, 4 * SQUAD_UNITS, 0))
-        self.assertEqual(self.stores_total(), stock)
-        self.assertTrue(all(unit.dead for unit in self.raiders()))
-
-    def test_a_role_raid_leaves_after_enough_losses(self):
-        self.start_raid()
-        for unit in self.raiders()[: SQUAD_UNITS // 2]:
-            unit.dead = True
-        self.game.advance(3)
-        self.go_far()
-        self.game.advance(3)
-        raid = self.raid()
-        self.assertEqual((raid["state"], raid["leave_reason"]), ("left", "losses"))
-        self.assertEqual((raid["deaths"], raid["departures"]), (SQUAD_UNITS // 2, SQUAD_UNITS // 2))
-
-    def test_a_role_raid_leaves_at_the_time_limit(self):
-        self.start_raid()
-        self.calendar.daysTotal = self.calendar.daysTotal + 30
-        self.game.advance(3)
-        self.go_far()
-        self.game.advance(3)
-        raid = self.raid()
-        self.assertEqual((raid["state"], raid["leave_reason"]), ("left", "time"))
-
-    def test_a_leaving_raid_is_removed_only_in_a_quiet_spot(self):
-        self.start_raid()
-        self.calendar.daysTotal = self.calendar.daysTotal + 30
-        self.game.advance(3)
-        near, far = self.raiders()[:3], self.raiders()[3:]
-        for unit in far:
-            unit.realPos = self.game.struct(X=60000.0, Y=0.0, Z=0.0)
-        self.game.advance(3)
-        self.assertTrue(all(unit.dead for unit in far))
-        self.assertFalse(any(unit.dead for unit in near))
-        self.assertEqual(self.raid()["state"], "active")
-        self.assertEqual(self.raid()["living"], 3)
 
     def test_a_role_raid_below_every_limit_stays(self):
         self.start_raid()
