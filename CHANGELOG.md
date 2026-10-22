@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Rule for pak mods (spike `spike-new-row-id-persistence`, #284): new building ids (126 to 65536) survive save, load and AI lords. A pak must not add new `DT_Upgrades` ids or set `upgradesInto` to a new building id: the upgrade is never carried out. Owner accepted the limit (2026-10-21).
 - Test scenario `soak-days` samples units, buildings, game days and memory every 120 wall seconds (change `spike-two-year-soak`, #286).
 - Test scenario `soak-days` no longer fails on the game clock rate. The rate is a performance number and stays a metric (`running_rate`, `overall_rate`). Criterion Q1 is verified at 401 game days (change `spike-two-year-soak`, #286).
 - Spike `spike-community-mod-leads` (#280): shared module `HarnessLeads` and probe commands `lead_unit_gear`, `lead_stance`, `lead_spawn_unit`, `lead_squad_camp`, `lead_mesh_list`, `lead_mesh_swap`; `parseRequest` of `HarnessActions` now reads the fields `stance`, `component`, `mesh` and `restore`. Engine finding: reading a `Squad` struct (`SquadComponent:GetSquad`) ends the game; `SetStaticMesh` on a finished building works and the collision follows the new mesh. Notes in `openspec/changes/spike-community-mod-leads/notes/`.
