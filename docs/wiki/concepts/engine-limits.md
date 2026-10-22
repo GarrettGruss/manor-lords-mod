@@ -52,6 +52,16 @@ Do not plan a feature that needs buildings inside the bailey.
 - The class `DepositDecal` (with `bRichDeposit`) still exists, but the game creates no object of it (2026-10-22); an older Nexus Lua mod that wrote it no longer has an effect.
 - Owner decision 2026-10-22: the mod does not manage resource state. Notes: `openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/`.
 
+## Player logs, files and quit (spike #384)
+
+- A Lua log that writes and flushes each line keeps every line when the game process is killed (63603 of 63603 lines; a log without flush lost 86 lines and ended mid-line). A flush costs about 10 us per line.
+- No quit hook fires when the game closes (6 hooks and a `__gc` finalizer tried, after `WM_CLOSE`). A "session running" marker is therefore still there after a normal quit; tell a crash from a quit with a newer folder in `Saved\Crashes`.
+- UE4SS Lua `io` reads a 2.6 MB save copy byte for byte and writes files and folders. `io.popen("dir /b /ad /o-d")` finds the newest crash folder; `os.execute` and `io.popen` flash a console window.
+- A pure Lua stored zip (no compression) of 4.5 MB takes about 0.2 s; in steps of 256 KB to 1 MB per tick the game does not stall.
+- A mod menu can hold a text box, a check box and a button without a pak widget; typing needs `SetKeyboardFocus` first.
+- One soak run crashed inside UE4SS Lua (`ltable.c`, `mainpositionTV`, exit code 3); the cause is not known.
+- Notes: `ARCHIVE/notes/`.
+
 ## Results of the community mod lead spikes (change `spike-community-mod-leads`, #280)
 
 Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the notes of the change.
