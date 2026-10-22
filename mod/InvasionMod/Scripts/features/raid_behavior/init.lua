@@ -8,6 +8,7 @@ local world = require("features.raid_behavior.world")
 local config = require("config").raid_behavior
 local leave = config.leave
 local plunder = config.plunder
+local steal = config.steal
 local lord_raid = require("features.invasion.lord_raid")
 
 local TAG = "InvasionMod.raid_behavior"
@@ -110,9 +111,19 @@ local function check_plunder(entry, seen, today)
     local raid = entry.raid
     local want = rules.plunder_amount(raid, seen, plunder, leave, today, config.carry_cap)
     if want <= 0 then return end
-    local taken = world.plunder(want)
+    local taken = world.plunder(want, config.store_tiers)
     rules.record_plunder(raid, taken)
     core.log.info(TAG, string.format("RAID_BEHAVIOR plunder id=%d day=%s wanted=%d taken=%d plundered=%d", raid.id, tostring(today), want, taken, raid.plundered))
+end
+
+-- The baron steal: a raider far from the battle marker takes goods from tier 1 stores (once a day, up to the steal goal).
+local function check_steal(entry, seen, today)
+    local raid = entry.raid
+    local want = rules.steal_amount(raid, seen, steal, today)
+    if want <= 0 then return end
+    local taken = world.plunder(want, config.store_tiers)
+    rules.record_steal(raid, taken)
+    core.log.info(TAG, string.format("RAID_BEHAVIOR steal id=%d day=%s wanted=%d taken=%d stolen=%d goal=%s", raid.id, tostring(today), want, taken, raid.stolen, tostring(rules.steal_goal(raid, steal))))
 end
 
 -- A won challenge writes the lord as region owner (run 20261018-015009-371a). The region goes back to the player at once.
@@ -149,6 +160,7 @@ local function step_raid(entry, seen, today, slow_look)
     rules.update(raid, seen, config, today)
     write_caps(seen)
     check_plunder(entry, seen, today)
+    check_steal(entry, seen, today)
     check_region(entry, slow_look)
     check_leave(entry, today)
     if slow_look then
@@ -221,7 +233,7 @@ local function command_state()
         summaries[#summaries + 1] = rules.summary(raids[id].raid)
     end
     return { day = world.current_day(), raids = summaries, active = has_active_raid(), population = world.population(),
-             carry_cap = config.carry_cap }
+             carry_cap = config.carry_cap, steal = steal, store_tiers = config.store_tiers }
 end
 
 if has_commands then

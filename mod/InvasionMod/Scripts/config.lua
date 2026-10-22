@@ -88,9 +88,16 @@ return {
             battle_radius = 4000,   -- a raider counts as inside this far from the manor (the army stood within 1300 in run 20261018-035856-248b)
             per_unit_day = 1,       -- goods taken for each raider inside, each game day. The goal is leave.loot_per_raider for each raider.
         },
+        -- Change add-raid-storage-tiers. Store tiers by EBuildingType: tier 1 (storehouse 6, granary 72) can be robbed by the mod, tier 2 (the manor modules) never.
+        store_tiers = { [6] = 1, [72] = 1, [50] = 2, [57] = 2, [58] = 2, [81] = 2, [82] = 2, [83] = 2, [95] = 2, [98] = 2 },
+        steal = {                   -- baron (lord) raid steal: a raider farther than threshold from the battle marker takes goods from tier 1 stores
+            threshold = 20000,      -- game units (1 unit = 1 cm, so 200 m; owner 2026-10-20). The army fights about 14000 from the marker.
+            rate = 10,              -- goods for each stealing raider, each game day
+            goals = { plunder = 100, great = 300 }, -- most goods one raid steals, by raid kind (small and large raid; no scaling by difficulty yet)
+        },
         leave = {
             enabled = true,
-            loot_per_raider = 4,    -- leaves when the loot taken is this much for each raider of the start (native raiders carry 4 to 5)
+            loot_per_raider = 4,   -- leaves when the loot taken is this much for each raider of the start (native raiders carry 4 to 5)
             loss_share = 0.5,       -- leaves when this share of the raiders died
             max_days = 25,          -- leaves this many game days after the spawn (native raids ended on day 12 to 19)
         },
