@@ -50,7 +50,7 @@ The feature re-sends `disable_autosave` after the intro and after "Begin the gam
 `mod/InvasionMod/scenarios/scenario_settings/new_game_menu.py` takes `ctx.screenshot` of: the menu at the defaults, the menu after changes, and the game after Begin (menu gone). Pictures go to `evidence/` (at most 1280x720) with `evidence/README.md`. They are compared with the mockup by the owner.
 
 ### Not in this change
-- The F8 raid menu keeps its difficulty buttons. Open question for the owner: remove them (as the spike plan said) or keep them as a second way. The delta of `mod/invasion` keeps `invasion_pick_difficulty` until then.
+- The F8 raid menu loses its difficulty buttons (owner, 2026-10-21). `invasion_pick_difficulty` stays as a command for tests.
 
 ## Risks
 - A new game started from the main menu needs a real run through the main menu. The harness fixture normally loads a save. Task 1.1 finds a way to run a real new game once.
@@ -58,6 +58,5 @@ The feature re-sends `disable_autosave` after the intro and after "Begin the gam
 
 ## Open questions
 - Owner: the background text.
-- Owner: remove the F8 difficulty buttons?
 - Spike (task 1.1): how a new game is detected after the main menu, and the pause method.
 - Task 1.2: the length of a game year in game days.

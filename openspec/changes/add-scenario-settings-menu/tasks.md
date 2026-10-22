@@ -18,6 +18,7 @@
 - [ ] 3.3 Missing asset: log, defaults, no pause. Verified by a fake game test.
 - [ ] 3.4 Named commands `scenario_settings_skip`, `_set`, `_open`, `_state`. Verified by a fake game test.
 - [ ] 3.5 Re-send `disable_autosave` after the intro and after Begin. Verified by a real game run (autosave period read back).
+- [ ] 3.6 Remove the three difficulty buttons from the raid menu (F8) and their fake game tests and test scenarios. Verified by the fake game tests.
 
 ## 4. Real game runs (one save slot)
 

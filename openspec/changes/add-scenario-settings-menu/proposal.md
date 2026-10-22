@@ -28,13 +28,14 @@ Design served: `design/mod/invasion-mod.md` (the raid schedule and the difficult
 
 - New: `mod/scenario_settings` (the menu, the settings, the new game detection, the commands).
 - Modified: `mod/invasion` (the difficulty is no longer picked once with a prompt; it comes from the settings).
+- Modified: `mod/raid_widget` (the difficulty buttons are removed).
 - Reused, not changed: `mod/mod_state` (storage), the menu framework of #308 (`core/menu.lua`).
 
 ## Non-goals
 
 - No change to the game's own menus, and no read of Raider Frequency.
 - No new difficulty levels, no new raid sizes, no new raid types.
-- No change to the raid menu (F8) in this change. Its three difficulty buttons stay until the owner decides (open question in `design.md`).
+- The raid menu (F8) loses its three difficulty buttons (owner, 2026-10-21): REMOVED requirement "A click on a difficulty button picks the difficulty" of `mod/raid_widget`.
 - No save call. The mod never saves. Only the harness action `save_game` may save.
 
 ## Impact
