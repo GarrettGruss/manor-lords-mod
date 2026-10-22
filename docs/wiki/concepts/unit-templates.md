@@ -10,6 +10,7 @@ sources:
   - resource: repo://openspec/specs/mod/raid_behavior/spec.md
   - resource: repo://openspec/changes/archive/2026-10-16-legacy-m05-unit-balance/iterations/02-hussite-roles.md
   - resource: repo://mod/InvasionMod/scenarios/invasion/raid_composition.py
+  - resource: repo://mod/InvasionMod/scenarios/unit_balance/probe_unit_gallery.py
 ---
 # Unit templates of the game
 
@@ -79,22 +80,54 @@ Equipment of the lord, mercenary and bandit types, from the project owner (2026-
 
 ## Spawned in the real game
 
-The Hussite raid spawns these types with `spawnArmy` (`mod/InvasionMod/Scripts/config.lua`, roles; checked in M05 iteration 02, test scenario `invasion-raid-composition`). The units in one spawned squad and the mean stats of a vanilla squad (run 20261017-221800-9e31):
+The probe scenario `probe-unit-gallery` spawned one squad of every type above with `spawnArmy` (the squads belong to the player side, so they stand still). The rule `unit_balance` was off, so the stats are vanilla. All 18 types spawned. Run 20261022-025232-2052. The table has the units in the squad, the mean attack, defense and armor pierce of its units, and the answer of `SMUnit:GetEquippedID` for slots 0 to 3 for the first four units (one unit is `slot0/slot1/slot2/slot3`, the numbers are item ids). The ids are not decoded yet.
 
-| Row | Units in a squad | Attack | Defense | Armor pierce |
-|---|---|---|---|---|
-| `brigands` | 18 | 2.389 | 2.778 | 0 |
-| `spearMilitia` | 32 | 4.031 | 6.688 | 0 |
-| `militiaFoot` | 32 | 5.0 | 4.875 | 0 |
-| `bowMilitia` | 32 | 3.063 | 2.0 | 0 |
-| `crossbowMilitia` | 32 | 3.063 | 2.0 | 0 |
-| `mercenary_infantry` | 36 | 5.0 | 5.944 | 0 |
-| `mercenary_crossbowmen` | 36 | 3.056 | 2.611 | 0 |
-| `retinue_tier3` | 36 | 6.917 | 63.5 | 0.944 |
-| `brigandPolearms` | 36 | 5.0 | 4.0 | 2.0 |
-| `brigandArchers` | 36 | 3.0 | 4.0 | 0 |
+| Row | Units in a squad | Attack | Defense | Armor pierce | Equipped ids (4 units) | Run |
+|---|---|---|---|---|---|---|
+| `spearMilitia` | 32 | 4.031 | 6.813 | 0 | 52/312/157/273; 163/133/271/273; 163/133/271/273; 52/133/271/273 | 20261022-025232-2052 |
+| `militiaPole` | 32 | 5 | 2.875 | 1.938 | 52/312/157/273; 163/178/0/273; 163/178/0/273; 52/178/0/273 | 20261022-025232-2052 |
+| `militiaFoot` | 32 | 5 | 4.75 | 0 | 52/312/157/273; 163/177/270/273; 52/177/270/273; 163/177/270/273 | 20261022-025232-2052 |
+| `bowMilitia` | 32 | 3.063 | 2 | 0 | 52/312/157/285; 52/0/205/285; 52/0/205/285; 52/0/205/285 | 20261022-025232-2052 |
+| `crossbowMilitia` | 32 | 3.063 | 2 | 0 | 52/312/157/285; 52/0/206/285; 52/0/206/285; 52/0/206/285 | 20261022-025232-2052 |
+| `militia` | 32 | 2.625 | 0 | 0 | 52/312/157/199; 238/158/0/246; 52/223/0/241; 239/158/0/239 | 20261022-025232-2052 |
+| `retinue_tier1` | 36 | 6.806 | 13.667 | 0.833 | 164/312/157/276; 164/278/290/276; 164/278/290/276; 164/250/0/276 | 20261022-025232-2052 |
+| `retinue_tier3` | 36 | 6.583 | 64 | 0.611 | 293/312/157/294; 293/250/0/294; 293/278/290/294; 293/278/290/294 | 20261022-025232-2052 |
+| `mercenary_spearmen` | 36 | 4.028 | 7.889 | 0 | 163/312/157/289; 163/133/271/289; 163/133/271/289; 163/133/271/289 | 20261022-025232-2052 |
+| `mercenary_infantry` | 36 | 5 | 5.944 | 0 | 163/312/157/289; 163/177/270/289; 163/177/270/289; 163/177/270/289 | 20261022-025232-2052 |
+| `mercenary_archers` | 36 | 3.056 | 3.222 | 0 | 163/312/157/289; 163/0/205/289; 163/0/205/289; 163/0/205/289 | 20261022-025232-2052 |
+| `mercenary_heavy_archers` | 36 | 3.056 | 7.556 | 0 | 164/312/157/289; 163/0/205/289; 163/0/205/289; 163/0/205/289 | 20261022-025232-2052 |
+| `mercenary_crossbowmen` | 36 | 3.056 | 2.889 | 0 | 163/312/157/289; 163/0/206/289; 311/0/206/289; 311/0/206/289 | 20261022-025232-2052 |
+| `brigands` | 18 | 2.778 | 3.556 | 0 | 163/177/270/288; 163/177/270/207; 163/177/270/288; 163/177/270/288 | 20261022-025232-2052 |
+| `brigandArchers` | 36 | 3 | 4 | 0 | 163/0/205/207; 163/0/205/288; 163/0/205/207; 163/0/205/288 | 20261022-025232-2052 |
+| `brigandPolearms` | 36 | 5 | 4 | 2 | 163/178/0/288; 163/178/0/207; 163/178/0/207; 163/178/0/288 | 20261022-025232-2052 |
+| `basket` | 36 | 3.056 | 2 | 0 | 154/312/157/154; 154/34/0/154; 154/34/0/154; 154/34/0/154 | 20261022-025232-2052 |
+| `sherwoodBow` | 36 | 3.056 | 2 | 0 | 129/312/157/130; 129/0/126/61; 52/0/126/61; 129/0/126/61 | 20261022-025232-2052 |
 
-A spawned squad is smaller than `maxSize`. Not in the Hussite raid templates and with no measured squad: `sherwoodBow`, `basket`, `retinue_tier1`, `militiaPole`, `mercenary_spearmen`, `mercenary_archers`, `mercenary_heavy_archers`. `sherwoodBow` and `basket` were never spawned by the harness.
+Militia squads have 32 units, the same as `maxSize`. The other types give 36 units (`brigands`: 18), less than their `maxSize` of 60. The mean stats change a little from spawn to spawn, because the gear is random per unit. For example `retinue_tier3` had a mean defense of 63.5 in run 20261017-221800-9e31 and 64 here. The Hussite raid spawns many of these types with `spawnArmy` (`mod/InvasionMod/Scripts/config.lua`, roles; test scenario `invasion-raid-composition`).
+
+## Brigand variants
+
+The five bandit types, in the game, one squad each. Runs 20261022-023444-42a5 (brigands, brigandArchers) and 20261022-025232-2052 (the others). The squads belong to the player side. The "A New Message" banner is a game message, not part of the units.
+
+![Brigands](images/unit-templates/brigands.jpg)
+
+`brigands`, run 20261022-023444-42a5.
+
+![Brigand archers](images/unit-templates/brigandArchers.jpg)
+
+`brigandArchers`, run 20261022-023444-42a5.
+
+![Brigand polearms](images/unit-templates/brigandPolearms.jpg)
+
+`brigandPolearms`, run 20261022-025232-2052.
+
+![Basketmen](images/unit-templates/basket.jpg)
+
+`basket`, run 20261022-025232-2052.
+
+![Sherwood Bowmen](images/unit-templates/sherwoodBow.jpg)
+
+`sherwoodBow`, run 20261022-025232-2052.
 
 ## What this means for mods
 

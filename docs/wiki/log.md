@@ -1,6 +1,7 @@
 # Wiki update log
 
 ## 2026-10-22
+* **Update**: [Unit templates of the game](concepts/unit-templates.md) has the measured stats and equipped item ids of all 18 spawnable types and a picture of each brigand variant (test scenario `probe-unit-gallery`, run 20261022-025232-2052).
 * **Create**: Added [Unit templates of the game](concepts/unit-templates.md): the unit types of DT_UnitTemplates with row names and squad sizes.
 
 ## 2026-10-19
