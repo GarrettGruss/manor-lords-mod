@@ -25,7 +25,7 @@ The mod SHALL keep three levels from 0 to 3, one for each raid type: yearly, gre
 #### Scenario: A pick at difficulty 2
 - **WHEN** no pick was made and a test picks the level 2 for all three types, and later sets yearly 1, great 3 and vassal 0
 - **THEN** the yearly raid has the squads of level 1, the great raid has 3 waves, and no vassal raid is planned
-- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`); real game run of `mod/InvasionMod/scenarios/invasion/difficulty_pick.py` still open.
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`); real game run `levels-invasion-difficulty-pick-1` passed.
 
 #### Scenario: A bad level
 - **WHEN** a test sets a level to 4
@@ -36,7 +36,7 @@ The mod SHALL keep three levels from 0 to 3, one for each raid type: yearly, gre
 - **WHEN** the player begins the game with yearly 3, great 0 and vassal 1 in the settings menu
 - **THEN** the three levels are 3, 0 and 1 and chosen is true, and no pick banner shows
 - **AND** `invasion_set_difficulty` 1 afterwards sets all three levels to 1
-- Checked by `harness/tests/test_fakegame_scenario_settings.py`; real game run of `mod/InvasionMod/scenarios/scenario_settings/new_game_menu.py` still open.
+- Checked by `harness/tests/test_fakegame_scenario_settings.py`; real game run `levels-newgame-1` passed.
 
 ### Requirement: A subjugation raid is large and does not plunder
 A subjugation (major) raid SHALL be large: 3 x the Vassal raids level in squads. It SHALL be a lord raid that does not plunder and does not leave. The yearly roll SHALL pick the kind of the raid by the kind rules: the first yearly raid is a plunder raid, the second is the subjugation raid (once), and every later yearly raid is a plunder raid. At the Vassal raids level 0 the mod SHALL plan no subjugation raid and show no banner for it, and the kind rules give a plunder raid instead. It SHALL spawn once for each plan.
@@ -45,7 +45,7 @@ A subjugation (major) raid SHALL be large: 3 x the Vassal raids level in squads.
 - **WHEN** the vassal level is 1 and the subjugation raid spawns
 - **THEN** it has 3 squads
 - **AND** the tracker shows `kind = subjugation`, no plunder and no leave reason within 12 game days
-- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`); real game run of `mod/InvasionMod/scenarios/invasion/subjugation_raid.py` still open.
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`); real game run `levels-invasion-subjugation-raid-3` passed.
 
 #### Scenario: Vassal level 0
 - **WHEN** the vassal level is 0 and the first raid has ended

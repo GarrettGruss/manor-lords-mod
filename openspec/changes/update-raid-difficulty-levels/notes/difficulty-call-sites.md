@@ -17,7 +17,7 @@ State key `difficulty` (ModState `invasion`) is removed. It is replaced by `leve
 `invasion.difficulty()` is the one number for the features that are not tied to one raid type: the highest of the three levels, at least 1. This is an assumption (the proposal does not say). Owner: say if bandits, sack and terms should read one level (for example the great raid level) instead.
 
 ## Old saves
-A save made before this change has no level keys: the registered start value applies until `scenario_settings` sees `settings_applied`. An old save without settings gets the defaults (2, 2, 2) and the pick stays open. A save with settings from `add-scenario-settings-menu` has `settings_applied = 1` and no level keys, so it reads the start value 1 (the old `difficulty` it saved is not read any more). This save format existed for a few days only (unmerged to a release); no migration is written.
+A save made before this change has no level keys: the registered start value applies until `scenario_settings` sees `settings_applied`. An old save without settings gets the defaults (2, 2, 2) and the pick stays open. A save with settings from `add-scenario-settings-menu` has `settings_applied = 1` and no level keys, so it reads the start value 2 (the old `difficulty` it saved is not read any more). This save format existed for a few days only (unmerged to a release); no migration is written.
 
 ## Overlap with update-raid-banners (#400)
 - Both change `invasion/init.lua` (banners, `clock_subtitle`, `great_step`). Expected conflicts: the `great_raids` checks in `clock_subtitle` and `clock_step` (here `level("great") == 0`), and the `show_*` banner functions. Resolution: keep `level("great") == 0` as the "Great raids Off" test.

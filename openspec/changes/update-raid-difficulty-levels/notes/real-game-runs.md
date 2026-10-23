@@ -12,3 +12,12 @@ Commands (`uv run python harness\run.py ...`):
 5. Great raid waves and relief army: `--scenario invasion-great-raid-waves --env INVASION_DIFFICULTY=1 --max-runs 1000` (long run, one slot)
 6. Raid widget lines: `--scenario invasion-raid-widget --max-runs 1000`
 7. Save and load keeps the five values: `--scenario scenario-settings-load-keeps-settings --new-game --pak raidmenu --env SETTINGS_PART=save` then `--save <slot>` (first real `save_game` use for this scenario: fresh save backup, owner informed).
+
+## Results (2026-10-23, slot 1, pak rebuilt)
+- `levels-newgame-1` new game menu: pass (pictures in `evidence/`).
+- `levels-invasion-difficulty-pick-1` (default 2): pass. Variants `=1` and `=3`: not run (see below).
+- `levels-scenario-settings-great-raids-off-1`: pass.
+- `levels-invasion-subjugation-raid-1` and `-2`: harness_error, `invasion_set_raid_days refused: no subjugation raid is planned`. The season rule plans the raid 12 to 20 days ahead and the first raid lasted longer, so the subjugation raid spawned first (scenario timing, also possible on main). Fix: the scenario moves the raid day to 45 days after the plan. `-3`: pass.
+- `levels-great-raid-waves-1`, `levels-great-raid-clock-1`: started, then the batch was stopped by Claude Code because the system was low on memory. No verdict.
+- Not run: `invasion-first-raid`, `invasion-raid-widget --pak raidmenu`, difficulty-pick with `INVASION_DIFFICULTY=1` and `=3`, `scenario-settings-load-keeps-settings`.
+- The save folder gained `saveGame_52*` during the session (not made by these runs, which save nothing); no existing file changed.

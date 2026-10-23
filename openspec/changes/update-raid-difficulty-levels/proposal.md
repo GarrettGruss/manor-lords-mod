@@ -37,5 +37,5 @@ Today the start menu has one global Difficulty (Easy, Normal, Hard) and a Great 
 The owner approved gate 1 with the answers proposed above:
 1. The global Difficulty setting is removed.
 2. "First Hussite raid" and "Raid size" are kept.
-3. The default is level 2 (medium) for each of the three levels (the menu "Use defaults" and an old save). The start value of the mod state before the menu applies anything is level 1, as the old difficulty was 1 (`config.invasion.levels`); this keeps the fake game tests and the fixtures that skip the menu on the old numbers.
+3. The default is level 2 (medium) for each of the three levels (the menu "Use defaults", an old save, and the start value of the mod state before the menu applies anything, `config.invasion.levels`). Changed on 2026-10-23 by the owner: the start value was level 1 before. Fake game tests that need the numbers of level 1 set the level in their set-up.
 4. The small yearly plunder raid follows the yearly player raid level. It has no own switch.
