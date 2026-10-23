@@ -83,7 +83,7 @@ def run(ctx) -> dict:
 
     # The sack and the wipe.
     ctx.mod.command("InvasionMod.vassals_sack", slot=1)
-    for _ in range(8):  # the wipe takes three polls after the collapses
+    for _ in range(20):  # the wipe takes several polls after the collapses (a stable family count, twice)
         ctx.time.run_game_days(1, speed=SPEED)
         if vassals(ctx)["lost"] == 1:
             break

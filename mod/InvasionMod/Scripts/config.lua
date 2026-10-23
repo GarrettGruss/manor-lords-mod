@@ -214,7 +214,7 @@ return {
         sack_wipe = {
             ruin_share = 0.80,       -- owner, 2026-10-20: the sack is complete at 80 percent ruins
             max_steps = 6,           -- sack steps (one for each vassal poll) before the mod gives up and logs an error
-            free_stable_polls = 10,  -- polls with a stable family count of 0 before the slot is freed and the refugee wave starts
+            free_stable_polls = 4,   -- polls with a stable family count of 0 before the slot is freed and the refugee wave starts
             retry_margin = 3,        -- buildings collapsed above the need in a retry step: the AI rebuilds ruins while the sack runs
             max_wiped = 6,           -- wiped regions that the mod remembers for a restore
             -- Owner, 2026-10-22: a sack removes all logs and planks of the region. A sack that ends without a wipe gives some back and orders the rebuild at once.

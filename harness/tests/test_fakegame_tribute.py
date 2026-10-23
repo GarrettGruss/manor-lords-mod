@@ -124,7 +124,7 @@ class TributeTests(HandoverBase):
         self.game.exec(f'''require("features.raid_behavior.init").active_raids = function()
             return {{ {{ id = 7, kind = "{kind}", state = "active", target = "{target}", start_day = {today - age}, initial = 18, living = {living} }} }}
         end''')
-        self.game.advance(4)
+        self.game.advance(150)
 
     def test_the_target_regions_are_the_handed_over_vassals(self):
         self.assertEqual(self.game.exec("local r = require('features.vassals.init').target_regions(); return table.concat(r, ',')"), "Eichenhau")
