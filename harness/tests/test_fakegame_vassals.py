@@ -198,6 +198,9 @@ class HandoverBase(VassalsTestCase):
         self.counts = {}
         self.ruins = {}        # region name -> set of building indexes that are rubble
         self.deposits = []     # (region, building index, good id, amount)
+        self.old_types = {}    # (region name, building index) -> typeBeforeChange of a ruin (default 3)
+        self.setups = []       # (region, building index, bType, constructed, hp) at each SetupBuilding call
+        self.game.exec("package.loaded['HarnessSack'] = { MAX_GOODS_REMOVED = 5000, remove_goods = function(region, kind, amount) WOOD_REMOVED = (WOOD_REMOVED or {}); WOOD_REMOVED[#WOOD_REMOVED + 1] = kind; return 7 end }")
         self.families = {}     # region name -> list of families (each a list of member objects)
         self.region_by_name = {}
         self.game.exec(LORD_STUB)
@@ -212,6 +215,14 @@ class HandoverBase(VassalsTestCase):
         self.game.method(building, "IsRubble", lambda _self: index in self.ruins[name])
         self.game.method(building, "collapseBuilding", lambda _self: self.ruins[name].add(index))
         self.game.method(building, "addToInventory", lambda _self, item: self.deposits.append((name, index, item.Type, item.amt)))
+        building.typeBeforeChange = self.old_types.get((name, index), 3) if index in self.ruins[name] else 0
+        building.Data = self.game.obj("BuildingData", bType=75 if index in self.ruins[name] else 3, constructed=True, hp=100, other=5)
+
+        def set_up(own):
+            data = own.Data
+            self.setups.append((name, index, data.bType, data.constructed, data.hp))
+            self.ruins[name].discard(index)
+        self.game.method(building, "SetupBuilding", set_up)
         return building
 
     def make_region(self, name, settled, buildings):
@@ -497,6 +508,44 @@ class SackWipeTests(HandoverBase):
         self.assertTrue(answer["ok"], answer)
         self.assertEqual(answer["result"]["lost_events"][0]["reason"], "wiped")
 
+    def test_the_sack_start_removes_the_logs_and_planks(self):
+        self.game.exec(NO_COLLAPSE)
+        self.sack()
+        self.assertEqual(self.game.exec("return table.concat(WOOD_REMOVED, ',')"), "16,17")
+
+    def test_a_sack_that_gives_up_gives_wood_and_orders_the_rebuild_of_each_ruin(self):
+        self.game.exec(NO_COLLAPSE)
+        for index in (0, 1, 2):
+            self.ruins["Eichenhau"].add(index)
+        self.old_types[("Eichenhau", 1)] = 75   # skipped
+        self.old_types[("Eichenhau", 2)] = 0    # skipped
+        self.sack()
+        self.game.advance(80)
+        goods = {(good, amount) for _, _, good, amount in self.deposits}
+        self.assertEqual(goods, {(16, 50), (17, 100)})
+        self.assertIn(("Eichenhau", 0, 3, False, 0), self.setups)
+        self.assertEqual(len(self.setups), 1)
+        self.assertEqual(self.state()["lost"], 0)
+
+    def test_the_end_sack_command_gives_wood_and_orders_the_rebuild(self):
+        self.game.exec(NO_COLLAPSE)
+        for index in range(3):
+            self.ruins["Eichenhau"].add(index)
+        self.sack()
+        answer = self.ask("vassals_end_sack", slot=1)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["ended"]["rebuild"], {"ordered": 3, "skipped": 0, "failed": 0})
+        self.assertFalse(self.ask("vassals_end_sack", slot=1)["ok"])
+
+    def test_the_rebuild_command_skips_type_0_and_75(self):
+        for index in range(4):
+            self.ruins["Eichenhau"].add(index)
+        self.old_types[("Eichenhau", 0)] = 0
+        self.old_types[("Eichenhau", 3)] = 75
+        answer = self.ask("vassals_rebuild_ruins", region="Eichenhau")
+        self.assertEqual(answer["result"], {"ordered": 2, "skipped": 2, "failed": 0})
+        self.assertEqual({index for _, index, *_ in self.setups}, {1, 2})
+
     def test_the_ruin_rules(self):
         values = self.game.exec(
             "local r = require('features.vassals.rules'); return r.ruins_needed(20, 0.8), r.ruins_needed(5, 0.8), r.ruins_needed(0, 0.8), "
@@ -542,6 +591,16 @@ class RestoreTests(HandoverBase):
         self.assertEqual(goods, {(16, 100), (17, 200), (15, 100)})
         self.assertEqual(result["wiped"], [])
 
+    def test_a_restore_gives_the_region_to_the_lord_and_orders_the_rebuild(self):
+        for index in range(8):
+            self.ruins["Eichenhau"].add(index)
+        self.game.exec("RECEIVED = {}")
+        result = self.restore()["result"]
+        self.assertEqual(self.game.exec("return RECEIVED[1]"), "1:Eichenhau")
+        self.assertEqual(result["restored"]["rebuild"]["ordered"], 8)
+        self.assertEqual(len(self.setups), 8)
+        self.assertEqual(self.game.exec("return SETTLES[1]"), "Eichenhau:true")
+
     def test_the_restored_vassal_gets_a_slot_again_and_the_tribute_waits_for_the_rebuild(self):
         result = self.restore()["result"]
         row = result["vassals"][0]
@@ -558,6 +617,12 @@ class RestoreTests(HandoverBase):
         self.ruins["Eichenhau"].clear()
         self.game.advance(10)
         self.assertFalse(self.state()["vassals"][0]["rebuilding"])
+
+    def test_a_construction_site_does_not_end_the_rebuilding_flag(self):
+        self.restore()
+        self.game.exec("package.loaded['features.vassals.world'].census = function() return { total = 10, standing = 10, built = 1, rubble = 0 } end")
+        self.game.advance(10)
+        self.assertTrue(self.state()["vassals"][0]["rebuilding"])
 
     def test_a_restore_with_too_little_silver_is_refused_and_takes_nothing(self):
         self.pawn.silver = 99

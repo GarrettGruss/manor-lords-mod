@@ -310,6 +310,14 @@ end
 ---------------------------------------------------------------------------------------------
 
 local sack_config = config.sack_wipe
+local end_sack_without_wipe  -- forward declaration, defined below
+
+local function json_text(map)
+    local parts = {}
+    for key, value in pairs(map) do parts[#parts + 1] = key .. "=" .. tostring(value) end
+    table.sort(parts)
+    return "{" .. table.concat(parts, ",") .. "}"
+end
 local sacks = {}   -- slot -> { region, total, needed, steps, reason }: the sacks of this session (a load ends a running sack)
 local sack_errors = {}
 
@@ -369,6 +377,15 @@ local function wipe_if_complete(slot, run, census)
     return true, event, why
 end
 
+-- A sack that ends and does not wipe the village (owner, 2026-10-22): give wood and order the rebuild of every ruin at once.
+-- A pcall keeps an error here from stopping the poll.
+end_sack_without_wipe = function(run)
+    local deposited = world.deposit_goods(run.region, sack_config.give, sack_config.deposit_tries, true) or {}
+    local ordered, why = world.rebuild_ruins(run.region)
+    core.log.info(TAG, string.format("VASSALS sack ends without wipe region=%s gave=%s ordered=%s", run.region, json_text(deposited), ordered and tostring(ordered.ordered) or tostring(why)))
+    return { given = deposited, rebuild = ordered }
+end
+
 -- One step of a sack: wipe when enough buildings are ruins, else collapse the missing ones. The wipe waits for the next poll: a wipe in the same tick as the collapses crashed the game in 1 of 2 real runs (20261022-042514-3045).
 local function advance_sack(slot)
     local run = sacks[slot]
@@ -380,6 +397,7 @@ local function advance_sack(slot)
         sacks[slot] = nil
         sack_errors[tostring(slot)] = string.format("sack gave up after %d steps: %d of %d ruins", run.steps, census.rubble, run.needed)
         core.log.error(TAG, "VASSALS " .. sack_errors[tostring(slot)])
+        end_sack_without_wipe(run)
         return nil, sack_errors[tostring(slot)]
     end
     run.steps = run.steps + 1
@@ -394,6 +412,8 @@ local function start_sack(slot, reason)
     if sacks[slot] then return nil, "slot " .. slot .. " is already sacked" end
     local census = world.census(region)
     if census == nil then return nil, "region " .. region .. " not found" end
+    local wood = world.remove_goods(region, sack_config.wood) or {}
+    core.log.info(TAG, "VASSALS sack removes wood region=" .. region .. " " .. json_text(wood))
     sacks[slot] = { region = region, total = census.total, needed = rules.ruins_needed(census.total, sack_config.ruin_share), steps = 0, reason = reason }
     core.log.info(TAG, string.format("VASSALS sack starts slot=%d region=%s buildings=%d ruins needed=%d reason=%s", slot, region, census.total, sacks[slot].needed, reason))
     local event, why = advance_sack(slot)
@@ -415,7 +435,7 @@ check_rebuilt = function()
     for slot = 1, config.max_vassals do
         if state:get(slot_key(slot, "rebuilding")) then
             local census = world.census(state:get(slot_key(slot, "region")))
-            if census and census.standing >= state:get(slot_key(slot, "rebuilt_target")) then
+            if census and (census.built or census.standing) >= state:get(slot_key(slot, "rebuilt_target")) then
                 state:set(slot_key(slot, "rebuilding"), false)
                 core.log.info(TAG, string.format("VASSALS slot %d rebuilt: %d buildings stand", slot, census.standing))
             end
@@ -431,11 +451,13 @@ local function restore_vassal(region)
     local name = state:get("wiped" .. index .. "_region")
     local lord = state:get("wiped" .. index .. "_lord")
     local buildings_before = state:get("wiped" .. index .. "_buildings")
+    local handed, hand_why = world.hand_over_to_lord(lord, name)
+    if handed == nil then return nil, "the region could not be given to a lord: " .. tostring(hand_why) end
     local settled, why = world.restore_villagers(name)
     if settled == nil then return nil, "the villagers could not be raised: " .. tostring(why) end
     local paid, pay_why = silver_world.add_silver(-config.restore.silver)
     if not paid then error("restore payment failed: " .. tostring(pay_why), 0) end
-    local goods = world.deposit_goods(name, config.restore.goods, config.restore.deposit_tries) or {}
+    local goods = world.deposit_goods(name, config.restore.goods, config.restore.deposit_tries, true) or {}
     for good, amount in pairs(goods) do
         if amount == 0 then core.log.warn(TAG, "VASSALS restore: no building took the goods " .. good) end
     end
@@ -444,12 +466,14 @@ local function restore_vassal(region)
     state:set(slot_key(slot, "handed_day"), (world.current_day() or 0) + 1)
     state:set(slot_key(slot, "handed_buildings"), world.region_buildings(name) or 0)
     state:set(slot_key(slot, "rebuilding"), true)
-    local standing_now = (world.census(name) or { standing = 0 }).standing -- the restore itself adds 3 to 4 buildings (spike restore-to-five.md)
-    state:set(slot_key(slot, "rebuilt_target"), math.max(rules.rebuilt_target(buildings_before, config.restore.rebuilt_share), standing_now + config.restore.min_new_buildings))
+    -- The rebuild is ordered, so the AI builds in the old spots. The tribute waits until rebuilt_share of the old buildings are built.
+    local rebuild, rebuild_why = world.rebuild_ruins(name)
+    if rebuild == nil then core.log.error(TAG, "VASSALS restore rebuild order failed: " .. tostring(rebuild_why)) end
+    state:set(slot_key(slot, "rebuilt_target"), rules.rebuilt_target(buildings_before, config.restore.rebuilt_share))
     state:set("wiped" .. index .. "_region", rules.NO_REGION)
     core.log.info(TAG, string.format("VASSALS restored region=%s slot=%d lord=%s silver paid=%d families=%s", name, slot, lord, config.restore.silver, tostring(settled.families)))
     core.show_banner("A village is restored", string.format("%s has villagers again", name))
-    return { region = name, slot = slot, cost = config.restore.silver, goods = goods, families = settled.families }
+    return { region = name, slot = slot, cost = config.restore.silver, goods = goods, families = settled.families, lord = lord, rebuild = rebuild }
 end
 
 -- Regions that a subjugation raid may attack: handed-over vassals.
@@ -522,6 +546,20 @@ if has_commands then
         result.sack = started
         return result
     end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals } })
+    commands.register("InvasionMod.vassals_end_sack", function(args)
+        local run = sacks[args.slot]
+        if run == nil then return nil, "slot " .. args.slot .. " has no running sack" end
+        sacks[args.slot] = nil
+        local ended = end_sack_without_wipe(run)
+        local result = command_state()
+        result.ended = ended
+        return result
+    end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals } })
+    commands.register("InvasionMod.vassals_rebuild_ruins", function(args)
+        local ordered, why = world.rebuild_ruins(args.region)
+        if ordered == nil then return nil, why end
+        return ordered
+    end, { region = { type = "string", required = true } })
     commands.register("InvasionMod.vassals_restore", function(args)
         local restored, why = restore_vassal(args.region)
         if not restored then return nil, why end
