@@ -85,4 +85,14 @@ function M.kind_of_game(info, config)
     return "new"
 end
 
+-- The start kit is given once, in a new game only (a loaded save never gets it).
+function M.kit_due(is_new_game, given)
+    return is_new_game == true and given ~= 1
+end
+
+-- How many people must go so that the village has `target` people. A village with fewer people loses none.
+function M.people_to_remove(population, target)
+    return math.max(0, population - target)
+end
+
 return M

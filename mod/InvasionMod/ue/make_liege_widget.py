@@ -1,6 +1,6 @@
 # Runs inside UnrealEditor-Cmd (-ExecutePythonScript).
 # Makes /Game/HarnessMod/WBP_LiegeTribute from a stock engine widget (same method as make_raid_widget.py).
-# The menu has a title, an influence text, one tribute button and a close button.
+# The menu has a title, an influence text, a tribute button, an arms shipment button (change add-scenario-start-kit) and a close button.
 # Lua puts a WBP_ClickButton into each Border (HarnessClickHooks) and fills the texts. Lua finds widgets by name.
 import unreal
 
@@ -10,8 +10,8 @@ NAME = "WBP_LiegeTribute"
 FULL = PATH + "/" + NAME
 SEED_WIDGET = "StackBox_51"
 LEFTOVER_FUNCTIONS = ["GatherInputInfo"]
-TEXTS = [("TitleText", "Liege"), ("InfluenceText", "Influence: 0"), ("TributeInfoText", "Tribute: 200 silver")]
-BUTTONS = ["TributeButton", "CloseButton"]
+TEXTS = [("TitleText", "Liege"), ("InfluenceText", "Influence: 0"), ("TributeInfoText", "Tribute: 200 silver"), ("ArmsInfoText", "Arms shipment")]
+BUTTONS = ["TributeButton", "ArmsButton", "CloseButton"]
 
 
 def log(msg):

@@ -10,6 +10,7 @@ local STATE_VERSION = 1
 
 local state = ModState.open("invasion", "pawn", STATE_VERSION)
 state:register("liege_influence", 0, "number")
+state:register("arms_last_day", -1, "integer") -- game day of the last arms shipment (-1: none yet), saved with the game
 
 local function engine()
     local found = FindFirstOf("RTSMultiEngineCPP")
@@ -54,9 +55,84 @@ local function send_tribute(amount)
     return result
 end
 
+local function current_day()
+    local e = engine()
+    if e == nil then return nil end
+    local day = core.read(function() return e.TemporalComponent.daysTotal end)
+    return type(day) == "number" and math.floor(day) or nil
+end
+
+---------------------------------------------------------------------------------------------
+-- The arms shipment (change add-scenario-start-kit, #425): silver for goods in the manor store, with a cooldown.
+---------------------------------------------------------------------------------------------
+local manor = require("HarnessManor")
+
+local function shipment_status()
+    return rules.shipment_status(config.arms_shipment, silver(), current_day(), state:get("arms_last_day"))
+end
+
+-- The first built manor module and its units of goods. Returns the module and the total, or nil and a reason.
+local function manor_module()
+    local listed = manor.manor_state()
+    if not listed.ok then return nil, tostring(listed.error) end
+    for _, module in ipairs(listed.modules) do
+        if module.built then return module end
+    end
+    return nil, "build a manor first"
+end
+
+-- Puts every good of the shipment into the manor. On a failure the goods already put are taken out again.
+-- Returns true, or false and a reason. No silver moves here.
+local function deliver_goods(goods)
+    local module, problem = manor_module()
+    if not module then return false, problem end
+    local total = rules.goods_total(goods)
+    if module.total + total > manor.CAPACITY then
+        return false, string.format("manor store full: %d of %d units held, %d more do not fit", module.total, manor.CAPACITY, total)
+    end
+    local put = {}
+    for _, good in ipairs(goods) do
+        local answer = manor.manor_put({ good = good.id, amount = good.amount, manor = module.id })
+        if not answer.ok then
+            for _, done in ipairs(put) do manor.manor_take({ good = done.id, amount = done.amount, manor = module.id }) end
+            return false, tostring(answer.error)
+        end
+        put[#put + 1] = good
+    end
+    return true
+end
+
+-- The menu button and the command call this function. Returns a result table, or nil and a reason.
+-- The silver and the cooldown day change only after a successful delivery.
+local function request_arms_shipment()
+    local cfg = config.arms_shipment
+    local status = shipment_status()
+    if not status.enabled then
+        core.log.warn(TAG, "LIEGE arms shipment refused: " .. status.reason)
+        return nil, status.reason
+    end
+    local delivered, why = deliver_goods(cfg.goods)
+    if not delivered then
+        core.log.warn(TAG, "LIEGE arms shipment failed, nothing was paid: " .. tostring(why))
+        return nil, why
+    end
+    local before = silver()
+    local ok, problem = pcall(function() engine().playerRef.silver = before - cfg.cost end)
+    if not ok then
+        -- The goods are in the store. Say so, and keep the cooldown so the shipment is not free twice.
+        core.log.error(TAG, "LIEGE arms shipment delivered but the silver write failed: " .. tostring(problem))
+    end
+    state:set("arms_last_day", current_day())
+    refresh_hud()
+    core.log.info(TAG, string.format("LIEGE arms shipment: silver %s -> %s", tostring(before), tostring(silver())))
+    return { cost = cfg.cost, silver_before = before, silver = silver(), day = current_day(), goods = cfg.goods }
+end
+
 local function command_state()
+    local status = shipment_status()
     return { influence = state:get("liege_influence"), silver = silver(), influence_per_unit = config.influence_per_unit,
-        tribute_button_amount = config.tribute_button_amount }
+        tribute_button_amount = config.tribute_button_amount, arms_last_day = state:get("arms_last_day"), day = current_day(),
+        arms_enabled = status.enabled, arms_reason = status.reason, arms_days_left = status.days_left }
 end
 
 ---------------------------------------------------------------------------------------------
@@ -68,14 +144,28 @@ local menu = require("core.menu")
 local clickhooks = require("HarnessClickHooks")
 local isValid, read = core.isValid, core.read
 local MENU_ID = "tribute"
-local BUTTON_NAMES = { "TributeButton", "CloseButton" } -- the tag value of a button is its name
+local BUTTON_NAMES = { "TributeButton", "ArmsButton", "CloseButton" } -- the tag value of a button is its name
 
 local S = { widget = nil, texts = {}, buttons = {}, shown = {}, last_refresh = 0, tributes = 0, last_error = nil }
+
+local function arms_info()
+    local cfg = config.arms_shipment
+    local parts = {}
+    for _, good in ipairs(cfg.goods) do parts[#parts + 1] = good.amount .. " " .. good.name .. "s" end
+    return string.format("Arms shipment: %d silver for %s", cfg.cost, table.concat(parts, " and "))
+end
+
+local function arms_label()
+    local status = shipment_status()
+    if status.enabled then return "Request arms shipment" end
+    return "Request arms shipment (" .. status.reason .. ")"
+end
 
 local function wanted_texts()
     return {
         InfluenceText = string.format("Influence: %g", math.floor((state:get("liege_influence") or 0) * 100 + 0.5) / 100),
         TributeInfoText = string.format("Tribute: %d silver (you have %d)", config.tribute_button_amount, silver() or 0),
+        ArmsInfoText = arms_info(),
     }
 end
 
@@ -92,7 +182,22 @@ local function refresh()
             if name == "TributeInfoText" then refresh_hud() end
         end
     end
+    refresh_arms_button()
     return true
+end
+
+-- The arms button label and look follow the rule (the reason is in the label). A change is written once, not each tick.
+local function refresh_arms_button()
+    local slot = S.buttons.ArmsButton
+    if slot == nil then return end
+    local status = shipment_status()
+    local label = arms_label()
+    if S.arms_label ~= label then
+        S.arms_label = label
+        clickhooks.set_text(slot.handle, label)
+        local widget = slot.handle.widget
+        if isValid(widget) then pcall(function() widget:SetIsEnabled(status.enabled) end) end
+    end
 end
 
 local function release_buttons()
@@ -103,13 +208,13 @@ end
 
 local function reset()
     release_buttons()
-    S.widget, S.texts, S.buttons, S.shown = nil, {}, {}, {}
+    S.widget, S.texts, S.buttons, S.shown, S.arms_label = nil, {}, {}, {}, nil
 end
 
 -- The base menu calls this with the made widget. On a failure this function cleans up and returns nil and a message.
 local function on_open(made)
     S.widget = made
-    S.texts = menu.find_named(made, "TextBlock", { "InfluenceText", "TributeInfoText" })
+    S.texts = menu.find_named(made, "TextBlock", { "InfluenceText", "TributeInfoText", "ArmsInfoText" })
     local borders = menu.find_named(made, "Border", BUTTON_NAMES)
     if S.texts.InfluenceText == nil then
         reset()
@@ -138,6 +243,7 @@ local function on_open(made)
     end
     clickhooks.set_text(S.buttons.TributeButton.handle, "Send tribute")
     clickhooks.set_text(S.buttons.CloseButton.handle, "Close")
+    S.arms_label = nil
     refresh()
     return true
 end
@@ -154,9 +260,15 @@ local function press(name)
         menu.close()
         return
     end
-    local result, reason = send_tribute(config.tribute_button_amount)
+    local result, reason
+    if name == "ArmsButton" then
+        result, reason = request_arms_shipment()
+    else
+        result, reason = send_tribute(config.tribute_button_amount)
+    end
     if result then
-        S.tributes = S.tributes + 1
+        local counter = name == "ArmsButton" and "shipments" or "tributes"
+        S[counter] = (S[counter] or 0) + 1
         S.last_error = nil
     else
         S.last_error = reason
@@ -190,7 +302,7 @@ local function menu_state()
             hovered = read(function() return slot.handle.widget:IsHovered() end) }
     end
     return { open = is_open(), in_viewport = is_open() and read(function() return S.widget:IsInViewport() end) or false,
-        texts = shown, wanted_texts = wanted_texts(), buttons = buttons, tributes = S.tributes, last_error = S.last_error }
+        texts = shown, wanted_texts = wanted_texts(), arms_label = arms_label(), buttons = buttons, tributes = S.tributes, shipments = S.shipments or 0, last_error = S.last_error }
 end
 
 local has_commands, commands = pcall(require, "HarnessCommands")
@@ -202,6 +314,11 @@ if has_commands then
     end, {})
     commands.register("InvasionMod.liege_menu_state", menu_state, {})
     commands.register("InvasionMod.liege_state", command_state, {})
+    commands.register("InvasionMod.liege_request_arms", function()
+        local result, reason = request_arms_shipment()
+        if not result then return nil, reason end
+        return result
+    end, {})
     commands.register("InvasionMod.liege_send_tribute", function(args)
         local result, reason = send_tribute(args.amount)
         if not result then return nil, reason end
@@ -213,4 +330,4 @@ end
 require("scheduler").every(TAG, math.max(100, config.poll_ms), tick)
 
 core.log.info(TAG, "feature liege_influence loaded")
-return { state = state, send_tribute = send_tribute, command_state = command_state, open = function() return menu.open(MENU_ID) end, close = menu.close }
+return { state = state, send_tribute = send_tribute, request_arms_shipment = request_arms_shipment, command_state = command_state, open = function() return menu.open(MENU_ID) end, close = menu.close }

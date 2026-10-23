@@ -174,6 +174,7 @@ return {
         intro_wait_s = 60,                   -- real seconds to wait for the intro cinematic to end before the menu opens anyway
         begin_speed = 1,                     -- the game speed after "Begin the game" (a new game starts at speed 0)
         disable_autosave = true,             -- send disable_autosave after the intro and after Begin (spike #358: the first call after a new game is undone)
+        start_kit = { villagers = 10, silver = 300 }, -- given once at "Begin the game" of a new game (change add-scenario-start-kit, #425)
         poll_ms = 100,
         z_order = 500, position = { X = 300, Y = 120 },
     },
@@ -264,6 +265,12 @@ return {
         enabled = true,
         influence_per_unit = 0.1,        -- influence for 1 silver of tribute (10 silver give 1 influence)
         tribute_button_amount = 200,     -- silver sent by one click of the menu button
+        -- Arms shipment (change add-scenario-start-kit, #425): the button "Request arms shipment" of the liege screen.
+        arms_shipment = {
+            cost = 200,                  -- silver
+            cooldown_days = 180,         -- game days between two shipments
+            goods = { { id = 271, amount = 30, name = "large shield" }, { id = 133, amount = 30, name = "spear" } }, -- item ids from DT_Items (notes/item-ids.md)
+        },
         poll_ms = 100,                   -- real time between two looks at the click queue of the menu (never faster)
         refresh_ms = 500,                -- real time between two refreshes of the menu labels
         z_order = 500,

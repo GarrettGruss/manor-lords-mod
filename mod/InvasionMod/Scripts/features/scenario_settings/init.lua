@@ -26,7 +26,9 @@ local S = {
     session = false, paused = false,       -- the menu is open and we paused the game
     widget = nil, title = nil, background = nil, labels = {}, choices = {}, buttons = {},
     last_error = nil, clicks = 0, unknown_logged = false,
+    new_game = false, kit = nil,           -- the start kit is for a new game only
 }
+state:register("start_kit_given", 0, "integer") -- 1 after the start kit was given (saved with the game)
 
 ---------------------------------------------------------------------------------------------
 -- Game reads
@@ -108,6 +110,71 @@ local function current_settings()
     }
 end
 
+---------------------------------------------------------------------------------------------
+-- The start kit (change add-scenario-start-kit, #425): 10 people and 300 silver, once, in a new game only.
+---------------------------------------------------------------------------------------------
+
+local function player_region()
+    local ok, sack = pcall(require, "HarnessSack")
+    if not ok then return nil, "HarnessSack is not available" end
+    return sack.playerRegion()
+end
+
+local function population(region)
+    local value = read(function() return region:getNumTotalPopulation() end)
+    return type(value) == "number" and value or nil
+end
+
+-- Kills living people, the last family first, until the population is `target`. Returns the population after, or nil and a message.
+-- More people cannot be added by a safe call (notes/villager-call.md): a village with fewer people keeps them.
+local function set_population(target)
+    local region, problem = player_region()
+    if not region then return nil, problem end
+    local before = population(region)
+    if before == nil then return nil, "the population is not known" end
+    local remove = rules.people_to_remove(before, target)
+    if remove == 0 then
+        if before < target then core.log.warn(TAG, string.format("start kit: the village has %d people, fewer than %d; none are added", before, target)) end
+        return before
+    end
+    local families = core.listOf(read(function() return region.workerFamilies end))
+    for family_index = #families, 1, -1 do
+        local members = core.listOf(read(function() return families[family_index].familyMembers end))
+        for member_index = #members, 1, -1 do
+            if remove == 0 then break end
+            local member = members[member_index]
+            if isValid(member) and read(function() return member.dead end) ~= true and pcall(function() member:just_die() end) then
+                remove = remove - 1
+            end
+        end
+        if remove == 0 then break end
+    end
+    return population(region) or target, remove > 0 and (remove .. " people could not be removed") or nil
+end
+
+local function set_silver(amount)
+    local pawn = player()
+    if pawn == nil then return nil, "no player pawn" end
+    local ok, problem = pcall(function() pawn.silver = amount end)
+    if not ok then return nil, tostring(problem) end
+    -- A direct write does not raise the HUD update event (see liege_influence): the lord panel reads the value again here.
+    local panel = FindFirstOf("W_HUD_LordPanel_V2_C")
+    if isValid(panel) then pcall(function() panel:updatePlayerStats() end) end
+    return read(function() return pawn.silver end)
+end
+
+-- Gives the kit once. "start_kit_given" is a saved flag, so a load never repeats it.
+local function give_kit()
+    if not rules.kit_due(S.new_game, state:get("start_kit_given")) then return end
+    local kit = config.start_kit
+    local people, people_problem = set_population(kit.villagers)
+    local silver, silver_problem = set_silver(kit.silver)
+    state:set("start_kit_given", 1)
+    S.kit = { people = people, silver = silver, problems = { people_problem, silver_problem } }
+    core.log.info(TAG, string.format("start kit given: people=%s silver=%s %s%s", tostring(people), tostring(silver),
+        tostring(people_problem or ""), tostring(silver_problem or "")))
+end
+
 -- The player's choice: the difficulty counts as chosen. "settings_applied" says the settings exist.
 local function apply(selection)
     S.holding = false
@@ -119,6 +186,7 @@ local function apply(selection)
     invasion.settings_changed()
     core.log.info(TAG, string.format("settings applied: difficulty=%d first_raid_years=%d size_class=%d great_raids=%d",
         selection.difficulty, selection.first_raid_years, selection.size_class, selection.great_raids))
+    give_kit()
 end
 
 -- A save without settings (made before this feature): the defaults, no menu. A difficulty the player chose stays.
@@ -305,6 +373,7 @@ local function decide()
         return
     end
     S.decided, S.kind = true, kind
+    S.new_game = kind == "new"
     core.log.info(TAG, string.format("game is %s (save_file=%q applied=%d day=%s)", kind, tostring(info.save_file), info.applied, tostring(info.day)))
     S.holding = kind == "new"
     if kind == "old_save" then apply_old_save() end
@@ -354,12 +423,13 @@ local function describe()
         size_random = settings.size_random, great_raids = settings.great_raids,
         settings_applied = state:get("settings_applied") == 1, difficulty_chosen = state:get("difficulty_chosen") == 1,
         kind = S.kind, decided = S.decided, open = is_open(), paused = S.paused, selection = S.selection, clicks = S.clicks,
-        last_error = S.last_error, save_file = save_file_name(), day = current_day(), intro_playing = intro_playing(),
+        last_error = S.last_error, kit_given = state:get("start_kit_given") == 1, kit = S.kit, save_file = save_file_name(), day = current_day(), intro_playing = intro_playing(),
     }
 end
 
 -- Close the menu (if open) and apply the defaults. In a new game that has not opened the menu yet, the menu does not open.
 local function command_skip()
+    decide()
     S.selection = rules.defaults(config)
     if S.session then
         menu.close() -- on_close applies the selection
@@ -373,6 +443,7 @@ end
 
 -- Set any of the four settings by name, apply them and close the menu. A setting that is not named stays as it is now.
 local function command_set(args)
+    decide()
     local selection = rules.defaults(config)
     local now = current_settings()
     selection.difficulty, selection.first_raid_years, selection.great_raids = now.difficulty, now.first_raid_years, now.great_raids
@@ -412,6 +483,12 @@ end
 local has_commands, commands = pcall(require, "HarnessCommands")
 if has_commands then
     commands.register("InvasionMod.scenario_settings_state", describe, {})
+    commands.register("InvasionMod.start_kit_state", function()
+        local region = player_region()
+        local pawn = player()
+        return { given = state:get("start_kit_given") == 1, kit = S.kit, config = config.start_kit,
+            people = region and population(region) or nil, silver = pawn and read(function() return pawn.silver end) or nil }
+    end, {})
     commands.register("InvasionMod.scenario_settings_skip", command_skip, {})
     commands.register("InvasionMod.scenario_settings_open", command_open, {})
     commands.register("InvasionMod.scenario_settings_set", command_set, {
