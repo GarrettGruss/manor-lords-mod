@@ -414,10 +414,10 @@ local function start_sack(slot, reason)
     if census == nil then return nil, "region " .. region .. " not found" end
     local wood = world.remove_goods(region, sack_config.wood) or {}
     core.log.info(TAG, "VASSALS sack removes wood region=" .. region .. " " .. json_text(wood))
-    sacks[slot] = { region = region, total = census.total, needed = rules.ruins_needed(census.total, sack_config.ruin_share), steps = 0, reason = reason }
+    sacks[slot] = { region = region, total = census.total, needed = rules.ruins_needed(census.total, sack_config.ruin_share), steps = 0, reason = reason, wood_removed = wood }
     core.log.info(TAG, string.format("VASSALS sack starts slot=%d region=%s buildings=%d ruins needed=%d reason=%s", slot, region, census.total, sacks[slot].needed, reason))
     local event, why = advance_sack(slot)
-    return event or { slot = slot, region = region, started = true }, why
+    return event or { slot = slot, region = region, started = true, wood_removed = wood }, why
 end
 
 advance_sacks = function()

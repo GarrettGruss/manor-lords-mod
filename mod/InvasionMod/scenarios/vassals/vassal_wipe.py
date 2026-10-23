@@ -4,7 +4,7 @@ The scenario makes one vassal (M07.02) and lets it grow. Then `vassals_sack` run
 the mod collapses buildings until 80 percent are ruins, deletes all villagers and frees the slot (reason `wiped`).
 A refugee wave starts. A restore with too little silver is refused. A restore with enough silver costs 100 silver, gives the village
 5 families and spawns goods, so that the AI can start to rebuild. The scenario watches the rebuild and takes pictures (`ctx.screenshot`).
-It saves nothing. Run it with --new-game or on the default fixture. The region owner is never written.
+It saves nothing. Run it with --new-game or on the default fixture. The restore gives the region to an AI lord and orders the rebuild of every ruin.
 Environment (run.py --env): REBUILD_DAYS (game days to watch after the restore, default 20).
 """
 
@@ -131,8 +131,16 @@ def run(ctx) -> dict:
     goods = answer["restored"]["goods"]
     ctx.metric("goods_deposited", sum(goods.values()))
     ctx.log.info(f"restore goods {goods}")
-    standing_start = census(ctx, region)["standing"]
-    ctx.metric("standing_after_restore", standing_start)
+    after_restore = census(ctx, region)
+    built_start = after_restore["built"]
+    skipped = answer["restored"]["rebuild"]["skipped"]
+    ctx.metric("standing_after_restore", after_restore["standing"])
+    ctx.metric("built_after_restore", built_start)
+    ctx.metric("rubble_after_restore", after_restore["rubble"])
+    ctx.check("W14 the region has an owner lord again", answer["restored"]["lord"] not in (None, "none") and region_row(ctx, region).get("owner") not in (None, "nil", "none"), [answer["restored"], region_row(ctx, region)])
+    ctx.check("W15 every ruin was ordered (rubble left is only the skipped ones)", after_restore["rubble"] <= skipped, [after_restore, answer["restored"]["rebuild"]])
+    ctx.check("W16 the rebuild order failed for no building", answer["restored"]["rebuild"]["failed"] == 0, answer["restored"]["rebuild"])
+    look(ctx, "03-ruins-ordered", spot)
 
     # The AI rebuild (watched, not forced).
     for day in range(STEP_DAYS, rebuild_days + 1, STEP_DAYS):
@@ -142,6 +150,9 @@ def run(ctx) -> dict:
         ctx.metric(f"standing_day{day}", now["standing"])
         ctx.metric(f"rubble_day{day}", now["rubble"])
         ctx.log.info(f"restore day {day}: {now} rebuilding={row['rebuilding']} families={region_row(ctx, region)['families']}")
-    look(ctx, "03-village-after-restore", spot)
+    look(ctx, "04-village-after-restore", spot)
+    final = census(ctx, region)
+    ctx.metric("built_final", final["built"])
+    ctx.check("W17 more buildings are built than right after the restore", final["built"] > built_start, [built_start, final])
     ctx.check("W13 the game runs on after the restore", vassals(ctx)["day"] is not None, vassals(ctx))
     return ctx.result()
