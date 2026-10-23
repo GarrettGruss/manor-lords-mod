@@ -33,6 +33,7 @@ Commands (`uv run python harness\run.py ...`):
 
 ## Results, third session (2026-10-23, slot auto)
 - `levels-raid-widget-3`: pass (scenario fixed to "Raid levels"). `levels-great-raid-waves-4`: pass after 7 tries (slots were busy).
-- `levels-first-raid-4`: crash, "game process ended during scenario". `levels-first-raid-5`: harness_error (bridge request blocked 15 s, game still running). Run 6: see below.
+- `levels-first-raid-4`: crash, "game process ended during scenario". `levels-first-raid-5`: harness_error (bridge request blocked 15 s, game still running). Run 6 (`levels-first-raid-6`): crash too.
 - Save folder compare against `backups/saves-20261023-levels`: no existing `saveGame_*` file changed or disappeared. New `saveGame_*` slots, `autosave*` and `menu.sav` differ; these come from other sessions (these runs save nothing).
 - `scenario-settings-load-keeps-settings`: not verified (needs the first real `save_game`).
+- `invasion-first-raid` crash analysis: runs 4 and 6 both ended with EXCEPTION_ACCESS_VIOLATION (reading 0x18 and 0x25e55dc06e1, different addresses) while the scenario ran the real countdown at speed 3. The log of both runs has NO `INVASION spawn` line, so the crash is not at a raid spawn. Run 6 died right after a bandits season change (day 274). Not compared with `main` (no main run done); the cause is not known. Verdict: not verified. The fake game tests for the first raid pass.
