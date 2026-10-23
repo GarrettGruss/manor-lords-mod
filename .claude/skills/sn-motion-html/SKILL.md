@@ -42,7 +42,7 @@ Read [references/workflow.md](references/workflow.md) for the full production se
 Run:
 
 ```bash
-python scripts/init_project.py /absolute/output/path --title "Story title" --style cinematic --ui folio
+uv run python .claude/skills/sn-motion-html/scripts/init_project.py /absolute/output/path --title "Story title" --style cinematic --ui folio
 ```
 
 The initializer copies `assets/template/` and creates the media directories. Replace the example story and manifests; do not leave placeholder subject matter in the final project.
@@ -54,12 +54,43 @@ All UI presets use the same continuous-shot runtime. Adapt the visual chrome mat
 It also copies the reusable scripts into the new project. From the project root, the common commands are:
 
 ```bash
-python scripts/seedance_pipeline.py . plan
-python scripts/seedance_pipeline.py . all --workers 4
-python scripts/verify_media.py .
-python scripts/contact_sheet.py .
-python scripts/serve_project.py . --port 8080
+uv run python scripts/seedance_pipeline.py . plan
+uv run python scripts/seedance_pipeline.py . all --workers 4 --max-clips N
+uv run python scripts/verify_media.py .
+uv run python scripts/contact_sheet.py .
+uv run python scripts/serve_project.py . --port 8080
 ```
+
+## Changes in this repo (manor-lords-mod)
+
+This is a copy of the upstream skill (see `UPSTREAM.md`). The skill's own spec is `spec/README.md`. These parts differ from upstream:
+
+- **Python:** start every command with `uv run python`. Never call `python` directly.
+- **Key:** the pipeline reads `SEEDANCE_API_KEY` (or `ARK_API_KEY`, `VOLCENGINE_API_KEY`) from the environment, the project `.env`, and then the Windows user variables. Never print the key. `SEEDANCE_BASE_URL` and `SEEDANCE_MODEL` choose the provider region and model.
+- **Spend cap:** `--max-clips` is the most paid task creations of one run, retries included. The default is 0, so a run without it sends no paid request. Set it only to the clip count the owner approved for that batch.
+- **Spend log:** each paid request adds a line to `logs/spend.jsonl` in the project (clip, model, task id, status, usage). It holds no key and no image data.
+- **No retry** on HTTP 401, 402 or 403, or on account, billing or model-activation errors.
+- **Generated media stays out of git.** The project `.gitignore` excludes `assets/video/`, PNG scene masters, `tmp/`, `logs/` and `export/`.
+
+### Export the story as a video
+
+Run this from the repo root. The script stays in the skill folder (it is not copied into projects), so all projects share one Chromium download in `.browsers/` (git-ignored).
+
+```bash
+# Once:
+PLAYWRIGHT_BROWSERS_PATH=.claude/skills/sn-motion-html/.browsers uv run python -m playwright install chromium
+# Each export (add --audio track.wav, or --seconds 5 for a quick check):
+uv run python .claude/skills/sn-motion-html/scripts/export_video.py PROJECT_ROOT --out export/story.mp4
+```
+
+How it works:
+
+1. It makes all-intra VP9 copies of the clips in `tmp/export-clips/`, because headless Chromium has no H.264 decoder. All-intra makes each seek exact.
+2. It serves the project and opens `index.html?export=1`. In export mode the page ignores scroll, hides the header, progress bar and chapter menu, turns off CSS transitions, loads every clip, and exposes `window.__motionStory` (`segments()`, `ready()`, `seek(routeUnits)`).
+3. `content/timing.json` gives the video seconds of each segment: `width`, `height`, `fps`, `default_scene_seconds`, `default_connector_seconds`, `seconds` (by chapter `id`, or `connector-<n>` for the connector after chapter n), `head_seconds`, `tail_seconds`. An unknown id is an error. The scroll page ignores this file.
+4. It captures one screenshot per frame and joins them with FFmpeg (H.264, `yuv420p`, `faststart`). An audio track is padded or cut to the video length. Then it prints the `ffprobe` result.
+
+Speed: about 2 minutes for 10 s of 1080p video in WSL.
 
 ## Production invariants
 

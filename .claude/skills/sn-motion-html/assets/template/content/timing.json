@@ -1,0 +1,14 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "default_scene_seconds": 4,
+  "default_connector_seconds": 1.5,
+  "seconds": {
+    "01-opening": 4,
+    "connector-0": 1.5,
+    "02-destination": 4
+  },
+  "head_seconds": 0,
+  "tail_seconds": 1
+}

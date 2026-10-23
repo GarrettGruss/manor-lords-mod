@@ -1,8 +1,17 @@
+// Changed in manor-lords-mod (see UPSTREAM.md): export mode (?export=1). The page then
+// ignores scroll, loads every clip at once and exposes window.__motionStory, so
+// scripts/export_video.py can step the timeline frame by frame.
 (function expose(global) {
   global.mountMotionHTML = function mountMotionHTML(container, config) {
     const chapters = config.chapters || [];
     const connectorUrls = config.connectors || [];
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const exportMode = new URLSearchParams(location.search).has('export');
+    const reduced = !exportMode && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let virtualY = null;
+    const position = () => (virtualY === null ? scrollY : virtualY);
+    // Headless Chromium has no H.264 decoder, so export mode loads VP9 copies
+    // that export_video.py writes into tmp/export-clips/.
+    const clipUrl = (url) => (exportMode ? `tmp/export-clips/${url.replace(/\.[^./]+$/, '')}.webm` : url);
     const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
     const smooth = (value) => {
       const x = clamp(value);
@@ -19,6 +28,7 @@
     );
 
     container.className = 'mh-root';
+    if (exportMode) document.documentElement.dataset.export = 'true';
     container.replaceChildren();
     document.documentElement.dataset.ui = config.ui || 'folio';
 
@@ -150,9 +160,9 @@
     }
 
     function loadClip(segment) {
-      if (reduced || segment.loading || segment.failed || !segment.clip) return;
+      if (reduced || segment.loading || segment.failed || !segment.clip) return segment.loaded;
       segment.loading = true;
-      fetch(segment.clip)
+      segment.loaded = fetch(clipUrl(segment.clip))
         .then((response) => response.ok ? response.blob() : Promise.reject(new Error(String(response.status))))
         .then((blob) => {
           const video = node('video', 'mh-shot__video');
@@ -160,6 +170,7 @@
           video.playsInline = true;
           video.preload = 'auto';
           video.src = URL.createObjectURL(blob);
+          const metadata = new Promise((resolve) => video.addEventListener('loadedmetadata', resolve, { once: true }));
           video.addEventListener('loadedmetadata', () => {
             segment.ready = true;
             scheduleRead();
@@ -167,12 +178,14 @@
           video.addEventListener('seeked', () => shotReady(segment), { once: true });
           segment.shot.appendChild(video);
           segment.video = video;
+          return metadata;
         })
         .catch(() => {
           segment.failed = true;
           segment.loading = false;
           segment.shot.classList.add('is-missing');
         });
+      return segment.loaded;
     }
 
     function shotReady(segment) {
@@ -190,7 +203,7 @@
     }
 
     function read() {
-      const y = scrollY;
+      const y = position();
       const fadeDistance = Math.max(1, viewportHeight * 0.14);
       let currentSegment = segments[0];
 
@@ -202,7 +215,7 @@
         segment.visible = opacity > 0.01;
         segment.target = remapWithLinger(local, segment.linger);
         if (y >= segment.start) currentSegment = segment;
-        if (distance < viewportHeight * 2.2) loadClip(segment);
+        if (!exportMode && distance < viewportHeight * 2.2) loadClip(segment);
         if (!segment.ready) segment.poster.style.transform = `scale(${(1.02 + local * 0.06).toFixed(3)})`;
       });
 
@@ -244,6 +257,7 @@
     }
 
     function animate() {
+      if (exportMode) return;
       segments.forEach((segment) => {
         if (!segment.visible || !segment.ready || !segment.video || segment.video.seeking) return;
         segment.current += (segment.target - segment.current) * 0.2;
@@ -264,6 +278,46 @@
     function onResize() {
       if (innerWidth === viewportWidth && Math.abs(innerHeight - viewportHeight) < 80) return;
       layout();
+    }
+
+    function seekVideo(video, time) {
+      if (Math.abs(video.currentTime - time) < 0.001 && !video.seeking) return Promise.resolve();
+      return new Promise((resolve) => {
+        const done = () => resolve();
+        if ('requestVideoFrameCallback' in video) video.requestVideoFrameCallback(done);
+        else video.addEventListener('seeked', done, { once: true });
+        setTimeout(done, 2000);
+        video.currentTime = time;
+      });
+    }
+
+    // Export API. Times are in route units (one unit = one viewport height of scroll).
+    if (exportMode) {
+      global.__motionStory = {
+        segments: () => segments.map((segment) => ({
+          kind: segment.kind,
+          chapterIndex: segment.chapterIndex,
+          id: segment.kind === 'scene' ? (chapters[segment.chapterIndex].id || '') : `connector-${segment.chapterIndex}`,
+          units: segment.units,
+          hasClip: Boolean(segment.clip),
+        })),
+        ready: () => Promise.all(segments.map((segment) => loadClip(segment) || Promise.resolve()))
+          .then(() => document.fonts.ready)
+          .then(() => segments.map((segment) => Boolean(segment.video))),
+        seek: async (routeUnits) => {
+          virtualY = routeUnits * viewportHeight;
+          read();
+          const pending = segments
+            .filter((segment) => segment.visible && segment.ready && segment.video)
+            .map((segment) => {
+              segment.current = segment.target;
+              const time = clamp(segment.target, 0, 0.999) * (segment.video.duration || 1);
+              return seekVideo(segment.video, time).then(() => shotReady(segment));
+            });
+          await Promise.all(pending);
+          await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        },
+      };
     }
 
     addEventListener('scroll', scheduleRead, { passive: true });

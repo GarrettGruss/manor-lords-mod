@@ -2,5 +2,9 @@
 .DS_Store
 node_modules/
 tmp/
+logs/
+export/
 
-# Consider Git LFS before committing generated PNG and MP4 assets.
+# Generated media stays out of git. Keep prompts, manifests, story data and code.
+assets/video/
+assets/images/scenes/*.png

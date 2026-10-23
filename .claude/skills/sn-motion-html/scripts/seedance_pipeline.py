@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Generate normalized scene and connector clips from a motion-story manifest."""
+"""Generate normalized scene and connector clips from a motion-story manifest.
+
+Changed in manor-lords-mod (see UPSTREAM.md): key lookup with SEEDANCE_API_KEY and the
+Windows user registry, a paid-request cap (--max-clips, default 0 = no paid request),
+a spend log without secrets, and no retry on account or billing errors.
+"""
 
 from __future__ import annotations
 
@@ -11,6 +16,7 @@ import mimetypes
 import os
 from pathlib import Path
 import shutil
+import threading
 import subprocess
 import sys
 import time
@@ -19,8 +25,79 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
+KEY_NAMES = ("SEEDANCE_API_KEY", "ARK_API_KEY", "VOLCENGINE_API_KEY")
+DEFAULT_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
+FATAL_HTTP_STATUS = {401, 402, 403}
+FATAL_ERROR_CODES = (
+    '"ModelNotOpen"', '"AccessDenied"', '"InvalidAuthentication"', '"InvalidParameter"',
+    '"AuthenticationError"', '"AccountOverdueError"', '"InsufficientBalance"', '"QuotaExceeded"',
+)
+
+
 class NonRetryableArkError(RuntimeError):
     """An account or request error another identical attempt cannot fix."""
+
+
+class SpendCapReached(RuntimeError):
+    """The batch would send more paid requests than --max-clips allows."""
+
+
+class SpendGuard:
+    """Counts paid task creations against a cap and logs each one without secrets."""
+
+    def __init__(self, cap: int, log_path: Path) -> None:
+        self.cap = cap
+        self.used = 0
+        self.log_path = log_path
+        self.lock = threading.Lock()
+
+    def reserve(self, clip_id: str) -> None:
+        with self.lock:
+            if self.used >= self.cap:
+                raise SpendCapReached(f"--max-clips {self.cap} reached before {clip_id}")
+            self.used += 1
+
+    def log(self, record: dict[str, Any]) -> None:
+        line = {"time": time.strftime("%Y-%m-%dT%H:%M:%S"), **record}
+        with self.lock:
+            self.log_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.log_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(line, ensure_ascii=False) + "\n")
+
+
+def windows_user_variable(name: str) -> str:
+    """Read a Windows user-scope variable, also from WSL, because a shell started before
+    the variable was set does not see it."""
+    exe = shutil.which("powershell.exe")
+    if exe is None:
+        return ""
+    command = f"[Environment]::GetEnvironmentVariable('{name}','User')"
+    try:
+        result = subprocess.run(
+            [exe, "-NoProfile", "-NonInteractive", "-Command", command],
+            capture_output=True, text=True, timeout=30, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+    return result.stdout.strip()
+
+
+def find_api_key() -> str:
+    for name in KEY_NAMES:
+        if os.getenv(name, "").strip():
+            return os.environ[name].strip()
+    for name in KEY_NAMES:
+        value = windows_user_variable(name)
+        if value:
+            return value
+    raise SystemExit(
+        "No Seedance key found. Set SEEDANCE_API_KEY in the environment, the project .env, "
+        "or the Windows user variables."
+    )
+
+
+def base_url() -> str:
+    return os.getenv("SEEDANCE_BASE_URL") or os.getenv("ARK_BASE_URL") or DEFAULT_BASE_URL
 
 
 def load_dotenv(root: Path) -> None:
@@ -63,8 +140,8 @@ class ArkClient:
                 return json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
-            fatal = ('"ModelNotOpen"', '"AccessDenied"', '"InvalidAuthentication"', '"InvalidParameter"')
-            error_type = NonRetryableArkError if any(code in detail for code in fatal) else RuntimeError
+            fatal = exc.code in FATAL_HTTP_STATUS or any(code in detail for code in FATAL_ERROR_CODES)
+            error_type = NonRetryableArkError if fatal else RuntimeError
             raise error_type(f"Ark HTTP {exc.code}: {detail[:800]}") from exc
         except URLError as exc:
             raise RuntimeError(f"Ark network error: {exc.reason}") from exc
@@ -160,6 +237,7 @@ def build_payload(
 def generate_clip(
     root: Path,
     client: ArkClient,
+    guard: SpendGuard,
     manifest: dict[str, Any],
     kind: str,
     item: dict[str, Any],
@@ -197,6 +275,8 @@ def generate_clip(
     last_error: Exception | None = None
     for attempt in range(1, args.attempts + 1):
         print(f"{kind} {clip_id} attempt {attempt}/{args.attempts}", flush=True)
+        guard.reserve(clip_id)
+        task_id = None
         try:
             task_id = client.create(build_payload(manifest, prompt, first, last))
             safe.update({"attempt": attempt, "task_id": task_id})
@@ -210,24 +290,30 @@ def generate_clip(
             video_url = result.get("content", {}).get("video_url")
             if not video_url:
                 raise RuntimeError(f"Succeeded task has no content.video_url: {task_id}")
+            guard.log({**safe, "duration": manifest["duration"], "status": "succeeded",
+                       "usage": result.get("usage")})
             download(str(video_url), raw)
             normalize_video(raw, output, manifest)
             print(f"saved {output.relative_to(root)}", flush=True)
             return
         except Exception as exc:
             last_error = exc
+            if task_id is not None or not isinstance(exc, SpendCapReached):
+                guard.log({**safe, "attempt": attempt, "task_id": task_id,
+                           "duration": manifest["duration"], "status": "error",
+                           "error": type(exc).__name__})
             print(f"  failed: {exc}", file=sys.stderr, flush=True)
-            if isinstance(exc, NonRetryableArkError):
+            if isinstance(exc, (NonRetryableArkError, SpendCapReached)):
                 raise
     raise RuntimeError(f"{kind} {clip_id} failed after {args.attempts} attempts") from last_error
 
 
-def run_dives(root: Path, client: ArkClient, manifest: dict[str, Any], args: argparse.Namespace) -> None:
+def run_dives(root: Path, client: ArkClient, guard: SpendGuard, manifest: dict[str, Any], args: argparse.Namespace) -> None:
     items = manifest.get("dives", [])[: args.limit or None]
     frames = root / "assets" / "video" / "frames"
 
     def run_one(item: dict[str, Any]) -> None:
-        generate_clip(root, client, manifest, "dives", item, root / item["still"], None, args)
+        generate_clip(root, client, guard, manifest, "dives", item, root / item["still"], None, args)
         output = root / item["output"]
         extract_frames(output, frames / f"{item['id']}-first.png", frames / f"{item['id']}-last.png")
 
@@ -236,19 +322,33 @@ def run_dives(root: Path, client: ArkClient, manifest: dict[str, Any], args: arg
             list(executor.map(run_one, items))
 
 
-def run_connectors(root: Path, client: ArkClient, manifest: dict[str, Any], args: argparse.Namespace) -> None:
+def run_connectors(root: Path, client: ArkClient, guard: SpendGuard, manifest: dict[str, Any], args: argparse.Namespace) -> None:
     items = manifest.get("connectors", [])[: args.limit or None]
     frames = root / "assets" / "video" / "frames"
 
     def run_one(item: dict[str, Any]) -> None:
         generate_clip(
-            root, client, manifest, "connectors", item,
+            root, client, guard, manifest, "connectors", item,
             frames / f"{item['from']}-last.png", frames / f"{item['to']}-first.png", args,
         )
 
     if items:
         with ThreadPoolExecutor(max_workers=min(args.workers, len(items))) as executor:
             list(executor.map(run_one, items))
+
+
+def pending_clips(root: Path, manifest: dict[str, Any], args: argparse.Namespace) -> int:
+    """Count the clips of the chosen phase that do not exist yet (all of them with --force)."""
+    groups = {"plan": ("dives", "connectors"), "all": ("dives", "connectors")}.get(
+        args.phase, (args.phase,)
+    )
+    count = 0
+    for group in groups:
+        for item in manifest.get(group, [])[: args.limit or None]:
+            output = root / item["output"]
+            if args.force or not (output.exists() and output.stat().st_size > 0):
+                count += 1
+    return count
 
 
 def main() -> int:
@@ -259,6 +359,10 @@ def main() -> int:
     parser.add_argument("--attempts", type=int, default=2)
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument(
+        "--max-clips", type=int, default=0,
+        help="Most paid task creations this run may send, retries included. 0 = none.",
+    )
     parser.add_argument("--poll-seconds", type=int, default=8)
     parser.add_argument("--timeout-seconds", type=int, default=1800)
     args = parser.parse_args()
@@ -277,20 +381,27 @@ def main() -> int:
         "connectors": len(manifest.get("connectors", [])),
         "workers": args.workers,
         "conditioning_mode": manifest.get("conditioning_mode", "reference_images"),
+        "base_url": base_url(),
+        "pending_clips": pending_clips(root, manifest, args),
+        "max_clips": args.max_clips,
     }
     print(json.dumps(plan, ensure_ascii=False, indent=2))
     if args.phase == "plan":
         return 0
     if shutil.which("ffmpeg") is None:
         raise SystemExit("ffmpeg is required")
-    key = os.getenv("ARK_API_KEY") or os.getenv("VOLCENGINE_API_KEY")
-    if not key:
-        raise SystemExit("ARK_API_KEY is not set in the project-local .env file")
-    client = ArkClient(key, os.getenv("ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3"))
+    pending = plan["pending_clips"]
+    if pending > args.max_clips:
+        raise SystemExit(
+            f"{pending} clips are pending but --max-clips is {args.max_clips}. "
+            "Get cost approval, then raise --max-clips."
+        )
+    client = ArkClient(find_api_key(), base_url())
+    guard = SpendGuard(args.max_clips, root / "logs" / "spend.jsonl")
     if args.phase in {"dives", "all"}:
-        run_dives(root, client, manifest, args)
+        run_dives(root, client, guard, manifest, args)
     if args.phase in {"connectors", "all"}:
-        run_connectors(root, client, manifest, args)
+        run_connectors(root, client, guard, manifest, args)
     return 0
 
 

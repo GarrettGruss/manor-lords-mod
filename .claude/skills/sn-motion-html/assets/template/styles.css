@@ -194,3 +194,13 @@ button, a { color: inherit; font: inherit; }
   .mh-hint { display: none; }
   .mh-shot__poster { transform: none !important; }
 }
+
+/* Export mode (?export=1, manor-lords-mod): no page chrome, and no CSS transitions,
+   so every captured frame shows the exact timeline state. */
+:root[data-export] .mh-header,
+:root[data-export] .mh-progress,
+:root[data-export] .mh-route,
+:root[data-export] .mh-hint { display: none; }
+:root[data-export] *,
+:root[data-export] *::before,
+:root[data-export] *::after { transition: none !important; }
