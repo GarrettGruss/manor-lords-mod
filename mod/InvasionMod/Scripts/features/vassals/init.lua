@@ -391,6 +391,8 @@ local function wipe_step(slot, run)
         run.phase, run.families_seen = "free", world.region_families(region) or 0
         return nil
     end
+    run.stable = (run.stable or 0) + 1
+    if run.stable < sack_config.free_stable_polls then return nil end -- the refugee wave crashed the game right after a wipe (runs -010958-4796, -021314-dec3): wait longer
     sacks[slot] = nil
     return finish_wipe(slot, run)
 end

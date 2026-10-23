@@ -431,7 +431,7 @@ class SackWipeTests(HandoverBase):
         self.add_families("Eichenhau", 5)
         self.game.exec("package.loaded['HarnessLords'].lord_declare_peace = function() return { ok = true } end")
 
-    def sack(self, wait=40):
+    def sack(self, wait=150):
         answer = self.ask("vassals_sack", slot=1)
         if answer["ok"]:
             self.game.advance(wait)  # the wipe takes three polls after the collapses
@@ -474,7 +474,7 @@ class SackWipeTests(HandoverBase):
             self.ruins["Eichenhau"].add(index)
         self.sack(10)
         self.ruins["Eichenhau"].add(15)
-        self.game.advance(40)
+        self.game.advance(150)
         self.assertEqual(self.state()["lost_events"][0]["reason"], "wiped")
 
     def test_a_sack_that_makes_no_progress_gives_up_and_reports(self):
@@ -529,7 +529,7 @@ class SackWipeTests(HandoverBase):
         self.assertEqual(self.state()["lost"], 0)
         self.ruins["Eichenhau"].add(15)
         self.counts["Eichenhau"] = 19   # 16 ruins; 16 of 19 is complete
-        self.game.advance(40)
+        self.game.advance(150)
         self.assertEqual(self.state()["lost_events"][0]["reason"], "wiped")
 
     def test_the_sack_start_removes_the_logs_and_planks(self):
@@ -558,7 +558,7 @@ class SackWipeTests(HandoverBase):
         for index in range(16):
             self.ruins["Eichenhau"].add(index)
         self.ask("vassals_sack", slot=1)
-        self.game.advance(60)
+        self.game.advance(150)
         state = self.state()
         self.assertEqual(self.game.exec("return table.concat(DELETES, ',')"), "1:5,nil:1")   # 4 families first, the last one a poll later
         self.assertEqual((self.living("Eichenhau"), state["lost"]), (0, 1))
@@ -584,7 +584,7 @@ class SackWipeTests(HandoverBase):
         self.game.advance(1)
         self.game.exec("require('features.tribute.init').on_raid_end({ id = 1, target = 'Eichenhau' })")
         self.assertEqual(self.deposits, [])
-        self.game.advance(60)
+        self.game.advance(150)
         self.assertEqual(self.state()["lost_events"][0]["reason"], "wiped")
 
     def test_the_end_sack_command_gives_wood_and_orders_the_rebuild(self):
@@ -633,7 +633,7 @@ class RestoreTests(HandoverBase):
         self.add_families("Eichenhau", 4)
         self.game.exec("package.loaded['HarnessLords'].lord_declare_peace = function() return { ok = true } end")
         self.ask("vassals_sack", slot=1)
-        self.game.advance(40)
+        self.game.advance(150)
         self.pawn.silver = 500
         self.game.exec("SETTLES = {}")  # the refugee wave of the wipe settled the home region
 
