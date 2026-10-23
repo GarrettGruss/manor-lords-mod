@@ -50,7 +50,7 @@ A Button in our cooked widget has no hookable click (no graph). Use the click bu
 - Test: scenario `tech-tree-widget-clicks` (real mouse, EXCLUSIVE).
 
 ## UI art (images for a widget pak)
-- Make images with `uv run python harness/tools/genimage.py --prompt "..." --out <file.png>` (Gemini API, key from `GEMINI_API_KEY`; never print it). `--list-models` shows the image models. Every call is logged in `runs/genimage/log.jsonl`; keep a set small and check the spend.
+- Make images with `uv run python harness/tools/genimage.py --prompt "..." --out <file.png>` (Gemini API, key from `GEMINI_API_KEY`; never print it). `--list-models` shows the image models. `--ref <file>` (up to 3) sends reference images with the prompt, to keep one style; use only references you may use. Every call is logged in `runs/genimage/log.jsonl`; keep a set small and check the spend.
 - Keep one shared style prompt per art set (see `harness/tools/make_policy_art.py`). Ask for "no text, no letters": the model still writes words sometimes, so look at every image.
 - Review a set with `harness/tools/contact_sheet.py OUT.png IN...` and read the sheet.
 - Originals stay in `runs/genimage/` (git-ignored). Commit only resized copies in `mod/<Name>/art/`. `art/`, `ue/` and `paks/` are not deployed and not zipped.
