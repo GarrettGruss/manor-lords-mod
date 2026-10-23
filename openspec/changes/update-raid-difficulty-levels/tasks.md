@@ -12,7 +12,7 @@
 - [x] 3.2 Update the test scenarios of `scenario_settings/` and `invasion/` (`difficulty_pick.py`, `great_raids_off.py`).
 - [x] 3.3 Picture evidence of the new menu (`ctx.screenshot`) in `evidence/`.
 - [x] 3.4 Run the full test set and `openspec validate update-raid-difficulty-levels --strict`.
-- [ ] 3.5 Real game runs (open, game not started by the implementing agent): `new_game_menu.py` with the rebuilt pak, `difficulty_pick.py`, `great_raids_off.py`, `subjugation_raid.py`, `great_raid_waves.py`. Commands in `notes/real-game-runs.md`.
+- [x] 3.5 Real game runs, see `notes/real-game-runs.md`: new_game_menu, difficulty_pick (levels 1, 2, 3), great_raids_off, subjugation_raid, raid_widget, great_raid_clock and great_raid_waves passed. invasion-first-raid has no passing run (crash, see notes). load_keeps_settings is not verified (needs the first real `save_game`).
 
 ## 4. Close
 - [x] 4.1 Update the wiki, the affected skills and `CHANGELOG.md`.

@@ -30,3 +30,9 @@ Commands (`uv run python harness\run.py ...`):
 - `invasion-first-raid`: no verdict (`levels-first-raid-1`: harness_error PermissionError on request.json while runs overlapped).
 - Rerun blocked: all 3 slots were held for hours (a stuck run `levels-first-raid-2` of this agent held slot 1; stop_game refuses while it holds the lock, and killing it was denied).
 - `scenario-settings-load-keeps-settings`: not run (needs the first real `save_game`).
+
+## Results, third session (2026-10-23, slot auto)
+- `levels-raid-widget-3`: pass (scenario fixed to "Raid levels"). `levels-great-raid-waves-4`: pass after 7 tries (slots were busy).
+- `levels-first-raid-4`: crash, "game process ended during scenario". `levels-first-raid-5`: harness_error (bridge request blocked 15 s, game still running). Run 6: see below.
+- Save folder compare against `backups/saves-20261023-levels`: no existing `saveGame_*` file changed or disappeared. New `saveGame_*` slots, `autosave*` and `menu.sav` differ; these come from other sessions (these runs save nothing).
+- `scenario-settings-load-keeps-settings`: not verified (needs the first real `save_game`).
