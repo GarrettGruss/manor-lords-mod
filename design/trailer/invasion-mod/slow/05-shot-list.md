@@ -15,7 +15,7 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 | S07 | 0:17 | 2.0 | 4 | M | M | Parallax | Peasants, men and women, beat flails into weapons | Panel |
 | S08 | 0:19 | 2.5 | 4 | M | M | Slow push-in | A captain raises the chalice banner over a ring of war wagons | Panel |
 | S09 | 0:21.5 | 2.5 | 4 | M | W | Parallax; page edge burns | A black army under a red sky | Panel |
-| S10 | 0:24 | 3.0 | 5 | E | W | Static after the page burn | The narrator alone at a table in a burned house; caption "Franconia, 1429." | Open |
+| S10 | 0:24 | 3.0 | 5 | E | W | Static after the page burn | The narrator alone at a table in a burned house; caption "Franconia, 1429." | Panel |
 | S11 | 0:27 | 2.0 | 6 | A | W | Slow pan | Smoke on the horizon over a village | Game |
 | S12 | 0:29 | 2.0 | 6 | A | W | Slow pan | A column of raiders on a road toward a far village; smoke behind | Game |
 | S13 | 0:31 | 2.0 | 6 | A | M | Static, then cut | Coins handed over at a town gate; a village that did not pay, burning | Game (coins: Open) |
@@ -24,9 +24,9 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 | S16a | 0:36 | 1.0 | 6 | A | M | Hand-held | A barn burns | Game |
 | S16b | 0:37 | 1.0 | 6 | A | M | Hand-held | Villagers fall | Game |
 | S16c | 0:38 | 1.0 | 6 | A | C | Hand-held | A raider's torch in the dark | Game |
-| S17 | 0:39 | 2.5 | 7 | E | M | Very slow push-in | The narrator, still; his hand on a sword | Open |
+| S17 | 0:39 | 2.5 | 7 | E | M | Very slow push-in | The narrator, still; his hand on a sword | Panel |
 | S18 | 0:41.5 | 3.0 | 8 | A/D | W | Static split frame | Gallows on one side, a full market on the other | Game (two captures, composited) |
-| S19 | 0:44.5 | 1.0 | 9 | E | M | Static | He stands and takes the sword | Open |
+| S19 | 0:44.5 | 1.0 | 9 | E | M | Static | He stands and takes the sword | Panel |
 | S20 | 0:45.5 | 1.0 | 9 | D | C | Low angle | The lord at the palisade gate, in clean light | Game (retinue unit) |
 | S21 | 0:46.5 | 1.0 | 9 | D | W | Track along the line | Militia with spears and flails form up | Game |
 | S22 | 0:47.5 | 1.0 | 10 | D | M | Low, inside the line | The lines meet | Game |
