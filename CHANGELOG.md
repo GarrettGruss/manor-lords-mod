@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Parallel game slots (change `fix-parallel-slot-saves`, #393, #378): a run no longer removes the fixture slot of a `--keep-open` run on another slot, and the save folder guard always ignores `rtsSettings.sav`. A ledger entry now records `game_slot` and `game_root`.
+
 ### Changed
 - Raid banners (change `update-raid-banners`, #400): a yearly raid has no banner, except a large plunder raid (the player raid). A subjugation raid and a large plunder raid show one banner 30 game days before the raid, with the target (you or your vassal) and the size. The difficulty banner is removed (the settings menu owns it). The great raid starts at the first day of game year 10 (`great_raid.start_year`); one banner a year at the start of years 7, 8 and 9 (`Great raid in N years`). Removed settings: `warning_days_min`, `warning_days_max`, `great_raid.min_days`, `max_days`, `banner_every_days`, `prompt_every_days`. The raid menu lists the upcoming yearly raid and subjugation raid (type, target, size, days left); a switched-off raid type has an empty line. New test command `invasion_set_raid_days`.
 - The raid menu (F8 and the Raid button) has no difficulty buttons any more (change `add-scenario-settings-menu`, #375): the player picks the difficulty in the scenario settings menu of a new game. `invasion_set_difficulty` now also marks the difficulty as chosen (no "Pick the difficulty" banner after it). The first year of the season roll of the raid clock comes from the setting "First Hussite raid" (1, 2 or 3 years; a mod state key `first_raid_years`). Great raids can be turned off (key `great_raids`), the plunder raid size class can be fixed (key `size_class_fixed`).

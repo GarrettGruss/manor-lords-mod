@@ -162,6 +162,35 @@ class GuardTest(UserSavesCase):
                 (self.saves / "saveGame_1.sav").unlink()
 
 
+class ParallelSlotGuardTest(UserSavesCase):
+    """The user-file snapshot with game slots that run at the same time (#393)."""
+
+    def setUp(self):
+        super().setUp()
+        self.install = GameInstall(root=self.root / "game", saved_dir=self.saved)
+
+    def test_the_settings_file_is_always_ignored(self):
+        (self.saves / "rtsSettings.sav").write_bytes(b"a")
+        with mock.patch("runlib.gameslots.settings_installed", return_value=False):
+            before = phases.user_files(self.install)
+            (self.saves / "rtsSettings.sav").write_bytes(b"b")
+            self.assertEqual(phases.user_files(self.install), before)
+        self.assertNotIn("rtsSettings.sav", before)
+
+    def test_files_of_a_ledger_entry_are_ignored(self):
+        saveslots.install(self.saves, fixtures.files_of_save(self.saves / "saveGame_3.sav"), "other", self.ledger,
+                          game_slot=0, game_root=self.root / "g0")
+        self.assertFalse(any(name.startswith("saveGame_4") for name in phases.user_files(self.install)))
+        self.assertIn("saveGame_3.sav", phases.user_files(self.install))
+
+    def test_a_user_save_and_the_menu_save_stay_guarded(self):
+        before = phases.user_files(self.install)
+        (self.saves / "menu.sav").write_bytes(b"x")
+        (self.saves / "saveGame_1.sav").write_bytes(b"y")
+        problems = fixtures.describe_difference(before, phases.user_files(self.install))
+        self.assertEqual(sorted(problems), ["changed: menu.sav", "changed: saveGame_1.sav"])
+
+
 class RemoveAppdataTest(UserSavesCase):
     def test_removes_the_private_folder_only(self):
         fixtures.prepare_appdata(self.saved, self.appdata, self.manifest, "base")

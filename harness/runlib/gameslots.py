@@ -45,13 +45,9 @@ def settings_installed(slots_dir: Path | None = None) -> bool:
     return (_state_dir(slots_dir) / "settings.json").is_file()
 
 
-# The game writes this settings file of the user's save folder when its settings differ. install.ps1 backs it up and
-# uninstall.ps1 restores it, so the save check of a run leaves it out while the harness settings are installed.
-INSTALL_MANAGED_SAVE_FILES = frozenset({"rtsSettings.sav"})
-
-
-def install_managed_save_files(slots_dir: Path | None = None) -> frozenset[str]:
-    return INSTALL_MANAGED_SAVE_FILES if settings_installed(slots_dir) else frozenset()
+# The game rewrites this settings file at any time, in every slot, whether or not install.ps1 settings are installed (#393).
+# It is a settings file, not a save, so the save check always leaves it out.
+GAME_REWRITTEN_SAVE_FILES = frozenset({"rtsSettings.sav"})
 
 
 def installed_slots(slots_dir: Path | None = None, game_root: Path | None = None) -> list[GameSlot]:

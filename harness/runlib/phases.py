@@ -87,7 +87,7 @@ def _prepare_appdata(install: GameInstall, ctx: PhaseContext, fixture: str | Non
 
 def user_files(install: GameInstall, also_ignore: frozenset[str] = frozenset()) -> dict[str, str]:
     """The user's save files: the save folder without the files of harness saves, which parallel runs add and remove (spec 11),
-    and without the settings file that install.ps1 backs up and restores.
+    and without the settings file that the game rewrites at any time (`rtsSettings.sav`, #393).
 
     `also_ignore` holds names that the ledger listed earlier in this run (fixture saves of other slots, #353). A file is
     ignored only if a ledger entry named it: a file of the user is never in the ledger.
@@ -95,7 +95,7 @@ def user_files(install: GameInstall, also_ignore: frozenset[str] = frozenset()) 
     Call it while holding saveslots.saves_lock(), so no other run changes the folder or the ledger in between.
     """
     save_dir = install.saved_dir / "SaveGames"
-    harness_files = saveslots.harness_file_names(save_dir) | gameslots.install_managed_save_files() | also_ignore
+    harness_files = saveslots.harness_file_names(save_dir) | gameslots.GAME_REWRITTEN_SAVE_FILES | also_ignore
     return {name: digest for name, digest in fixtures.snapshot_user_files(save_dir).items() if name not in harness_files}
 
 
@@ -103,9 +103,13 @@ def _ledger_names(install: GameInstall) -> frozenset[str]:
     return frozenset(saveslots.harness_file_names(install.saved_dir / "SaveGames"))
 
 
+def _game_slot(ctx: PhaseContext) -> int:
+    return ctx.config.get("slot") or 0  # a fake run and the Steam folder use slot 0
+
+
 def _remove_stale_slots(install: GameInstall, ctx: PhaseContext) -> None:
     """Remove slots that an earlier run installed and left (for example a --keep-open run). The game is stopped here."""
-    for result in saveslots.uninstall_all(install.saved_dir / "SaveGames"):
+    for result in saveslots.uninstall_all(install.saved_dir / "SaveGames", game_slot=_game_slot(ctx)):
         ctx.state["notes"].append(f"removed the slot {result['slot']} of an earlier run: {len(result['removed'])} files"
                                   + (f"; kept {result['kept']}" if result["kept"] else ""))
 
@@ -122,7 +126,8 @@ def _choose_slot(install: GameInstall, ctx: PhaseContext, appdata: fixtures.Appd
     else:
         return appdata.source_slot
     try:
-        installed = saveslots.install(install.saved_dir / "SaveGames", sources, label)
+        installed = saveslots.install(install.saved_dir / "SaveGames", sources, label,
+                                       game_slot=_game_slot(ctx), game_root=install.root)
     except saveslots.SlotError as error:
         raise PhaseFailed(f"install of the save failed: {error}") from error
     ctx.state["installed_slot"] = installed.slot
@@ -489,7 +494,7 @@ def _remove_installed_slot(ctx: PhaseContext) -> None:
 
 def _remove_harness_saves(install: GameInstall, ctx: PhaseContext) -> None:
     """Delete the files of harness saves (spec 24) that the ledger lists. Saves that a scenario keeps are not in the ledger."""
-    for result in saveslots.uninstall_all(install.saved_dir / "SaveGames"):
+    for result in saveslots.uninstall_all(install.saved_dir / "SaveGames", game_slot=_game_slot(ctx)):
         ctx.state["notes"].append(f"harness save {result['slot']} removed ({len(result['removed'])} files)"
                                   + (f"; kept {result['kept']}" if result["kept"] else ""))
 
