@@ -16,4 +16,4 @@
 
 - [x] 4.1 Update the usage line in the docstring and in the skill `harness-pak-mod`, the wiki page `docs/wiki/workflows/meshy-models.md`, and `CHANGELOG.md`.
 - [x] 4.2 Run the full test set and `openspec validate add-genimage-reference-images --strict`.
-- [ ] 4.3 Archive the change as the last commit.
+- [x] 4.3 Archive the change as the last commit.
