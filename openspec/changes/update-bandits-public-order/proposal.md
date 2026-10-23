@@ -15,20 +15,20 @@ Owner decisions (2026-10-23):
 3. When public order drops below 25 percent, the mod starts a 90 game day timer. When the timer expires, 18 villagers leave to become bandits.
 4. When villagers leave for banditry, public order rises by 25.
 5. The mod public order starts at 100 in a new game.
+6. The timer resets when public order rises to 25 or more before it expires. After the 18 leave (+25), the timer restarts if public order is still below 25.
+7. The mod shows a banner (`core.show_banner`, as the other features do) when the timer starts, 30 game days before the villagers leave, and when they leave.
 
 This replaces the order debuff and the season-change conversion roll with order bands.
 
 ## Open questions (default in brackets, none blocks the work)
 
 1. Clamp to 0..100 [yes].
-2. Does the timer stop when order rises to 25 or more before it expires [yes, it resets].
-3. Does the timer restart after the 18 leave, if order is still below 25 [yes, after the +25 is applied].
-4. Fewer than 18 villagers, and a minimum left [at most all but 1 family leave].
-5. What "leave to become bandits" spawns when no bandit pawn exists [they leave the map; the mod spawns a bandit band only if the bandit pawn exists; otherwise it logs it].
-6. Are game factors (unemployment and others) ignored [yes, only mod terms count].
-7. Units of the 30 day tick and 90 day timer [game days, 40 game seconds each].
-8. Tech tree modifiers `order_bonus` and `approval_bonus` [keep `order_bonus` as an added term to the manor term; drop `approval_bonus`, which has no use now. The owner may prefer to drop both].
-9. Raid levels (#404): the old debuff used the level as a factor [drop the level from the order rules; #404 may add a term later].
+2. Fewer than 18 villagers, and a minimum left [at most all but 1 family leave].
+3. What "leave to become bandits" spawns when no bandit pawn exists [they leave the map; the mod spawns a bandit band only if the bandit pawn exists; otherwise it logs it].
+4. Are game factors (unemployment and others) ignored [yes, only mod terms count].
+5. Units of the 30 day tick and 90 day timer [game days, 40 game seconds each].
+6. Tech tree modifiers `order_bonus` and `approval_bonus` [keep `order_bonus` as an added term to the manor term; drop `approval_bonus`, which has no use now. The owner may prefer to drop both].
+7. Raid levels (#404): the old debuff used the level as a factor [drop the level from the order rules; #404 may add a term later].
 
 ## Non-goals
 

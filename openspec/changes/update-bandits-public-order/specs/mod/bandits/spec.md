@@ -108,3 +108,21 @@ When villagers leave for banditry, the mod SHALL add `order_gain` (default 25) t
 ### Requirement: The roll runs once per season change
 **Reason**: The season-change roll is replaced by the 30 game day tick and the 90 game day timer.
 **Migration**: Use "Public order ticks every 30 game days".
+
+### Requirement: The player is warned about banditry
+The mod SHALL show a banner (`core.show_banner`) at three moments: when the banditry timer starts, 30 game days before the villagers leave, and when they leave. The banners SHALL NOT repeat for the same timer.
+
+#### Scenario: The timer starts
+- **WHEN** a tick drops the order below 25 and the timer starts
+- **THEN** one banner about growing unrest shows
+- Checked by `mod/InvasionMod/scenarios/bandits/banditry_banners.py`.
+
+#### Scenario: The warning 30 game days before
+- **WHEN** 30 game days (plus or minus 2) remain on the timer
+- **THEN** one warning banner shows, once
+- Checked by `mod/InvasionMod/scenarios/bandits/banditry_banners.py`.
+
+#### Scenario: The leave banner
+- **WHEN** the villagers leave
+- **THEN** one banner `Families have turned to banditry` shows
+- Checked by `mod/InvasionMod/scenarios/bandits/banditry_banners.py`.

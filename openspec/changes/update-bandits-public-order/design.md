@@ -11,4 +11,4 @@ The mod order replaces the natural-plus-debuff model. The game value is unreadab
 
 ## Open questions
 
-The list is in `proposal.md`. Questions 4 and 5 need a spike in the real game (family removal near the minimum, bandit pawn check).
+The list is in `proposal.md`. Questions 2 and 3 need a spike in the real game (family removal near the minimum, bandit pawn check).

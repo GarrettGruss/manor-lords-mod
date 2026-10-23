@@ -8,6 +8,7 @@
 
 - [ ] 2.1 Overwrite `Region.publicOrder` each tick with mod order. Verified by a real game run.
 - [ ] 2.2 Leave for banditry through `ManorCore.remove_families`; spawn a band only when the bandit pawn exists, else log. Verified by a fake game test and a real game run.
+- [ ] 2.4 Show the three banners (timer start, 30 game days before, leave) with `core.show_banner`. Verified by a fake game test and `banditry_banners.py`.
 - [ ] 2.3 Register the telemetry metric and the `HarnessLog` line for each tick. Verified by `harness/tests/test_telemetry_mock.py` and a real game run.
 
 ## 3. Test scenarios
