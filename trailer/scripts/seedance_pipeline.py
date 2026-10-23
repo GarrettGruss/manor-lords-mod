@@ -228,8 +228,9 @@ class ElevenLabsClient:
             raise RuntimeError(f"ElevenLabs network error: {exc.reason}") from exc
 
     def check(self) -> None:
-        """Free key check: reading the account creates nothing and costs nothing."""
-        self.request("GET", "/v1/user")
+        """Free key check: listing the video generations creates nothing and costs nothing. It needs
+        the same video permission as the clips, so a scoped key passes it (unlike GET /v1/user)."""
+        self.request("GET", "/v1/flows/video")
 
     def build_payload(self, manifest: dict[str, Any], prompt: str, first: Path, last: Path | None) -> dict[str, Any]:
         payload: dict[str, Any] = {

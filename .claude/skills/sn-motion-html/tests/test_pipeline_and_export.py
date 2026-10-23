@@ -248,12 +248,14 @@ class ElevenLabsTest(unittest.TestCase):
 
         def fake_urlopen(request, timeout):
             captured["headers"] = dict(request.header_items())
+            captured["url"] = (request.get_method(), request.full_url)
             raise HTTPError("u", 401, "Unauthorized", {}, io.BytesIO(b'{"detail":"invalid key"}'))
 
         with mock.patch.object(pipeline, "urlopen", side_effect=fake_urlopen):
             with self.assertRaises(pipeline.NonRetryableArkError) as caught:
                 self.client.check()
         self.assertEqual(captured["headers"].get("Xi-api-key"), FAKE_KEY)
+        self.assertEqual(captured["url"], ("GET", "https://example.invalid/v1/flows/video"))
         self.assertNotIn(FAKE_KEY, str(caught.exception))
 
     def test_moderated_failure_is_final_and_timeout_is_not(self):
