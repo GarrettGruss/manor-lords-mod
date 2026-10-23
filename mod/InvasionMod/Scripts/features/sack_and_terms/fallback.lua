@@ -104,7 +104,7 @@ local function check(slot)
     for _, candidate in ipairs(vassals.slot_rows(true)) do
         if candidate.slot == slot then row = candidate end
     end
-    local difficulty = invasion.state:get("difficulty")
+    local difficulty = invasion.difficulty()
     local facts = {
         has_vassal = row ~= nil and row.lord ~= "none", is_capital = row ~= nil and row.capital == true,
         buildings = row and row.buildings or 0, silver = silver_world.silver() or 0, already = state:get("fallback_slot") ~= 0,
@@ -157,7 +157,7 @@ end
 local function command_state()
     return { slot = state:get("fallback_slot"), day = state:get("fallback_day"), silver_paid = state:get("fallback_silver_paid"),
         grain_moved = state:get("fallback_grain_moved"), last = last, silver = silver_world.silver(),
-        cost = rules.cost(invasion.state:get("difficulty"), config) }
+        cost = rules.cost(invasion.difficulty(), config) }
 end
 
 local has_commands, commands = pcall(require, "HarnessCommands")

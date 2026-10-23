@@ -97,7 +97,7 @@ class CommandTests(InvasionTestCase):
             self.assertEqual(answer["result"]["squads"], squads)
             self.assertEqual(len(answer["result"]["composition"].split("-")), squads)
 
-    def test_a_difficulty_outside_one_to_three_is_refused(self):
+    def test_a_difficulty_outside_zero_to_three_is_refused(self):
         self.assertFalse(self.ask("invasion_set_difficulty", value=4)["ok"])
         self.assertFalse(self.ask("invasion_set_size", size="huge")["ok"])
 
@@ -285,14 +285,14 @@ class DifficultyTests(InvasionTestCase):
     def test_before_a_pick_the_default_is_used_and_a_prompt_shows(self):
         info = self.difficulty()
         self.assertFalse(info["chosen"])
-        self.assertEqual(info["difficulty"], 1)
+        self.assertEqual((info["yearly"], info["great"], info["vassal"]), (1, 1, 1))
         self.assertTrue(any(text.startswith("Pick the difficulty") for text in self.banners), self.banners)
 
     def test_a_pick_sets_the_difficulty_once(self):
         self.assertTrue(self.ask("invasion_pick_difficulty", value=2)["ok"])
         info = self.difficulty()
         self.assertTrue(info["chosen"])
-        self.assertEqual((info["difficulty"], info["relief_squads"], info["waves"]), (2, 8, 2))
+        self.assertEqual(((info["yearly"], info["great"], info["vassal"]), info["relief_squads"], info["waves"]), ((2, 2, 2), 8, 2))
         self.assertFalse(self.ask("invasion_pick_difficulty", value=3)["ok"])
         self.assertEqual(self.state()["squads"] % 2, 0)
 

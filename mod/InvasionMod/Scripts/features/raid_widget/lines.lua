@@ -10,6 +10,7 @@ local function days_text(days)
 end
 
 function M.next_raid(info)
+    if info.levels and info.levels.yearly == 0 then return "Next raid: off" end
     if info.raid_days_left == nil then return "Next raid: not planned yet" end
     return "Next raid: " .. days_text(info.raid_days_left)
 end
@@ -20,7 +21,7 @@ function M.size_estimate(info)
 end
 
 function M.great_raid(info)
-    if info.great_raids == false then return "Great raid: off" end
+    if info.levels and info.levels.great == 0 then return "Great raid: off" end
     local phase = info.great_phase or 0
     if phase == 1 then return string.format("Great raid: wave %d of %d", info.great_wave, info.great_waves) end
     if phase > 1 then return "Great raid: " .. PHASE_TEXT[phase] end
@@ -29,8 +30,10 @@ function M.great_raid(info)
 end
 
 function M.difficulty(info)
-    if info.difficulty_chosen then return string.format("Difficulty: %d", info.difficulty) end
-    return string.format("Difficulty: %d (not picked yet)", info.difficulty)
+    local levels = info.levels
+    local text = string.format("Raid levels: yearly %d, great %d, vassal %d", levels.yearly, levels.great, levels.vassal)
+    if info.difficulty_chosen then return text end
+    return text .. " (not picked yet)"
 end
 
 -- `terms` is the summary of the terms feature, or nil when that feature is off.

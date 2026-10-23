@@ -26,7 +26,7 @@ local function set_if_changed(key, value)
 end
 
 local function open_offer(reason)
-    local difficulty = invasion.state:get("difficulty")
+    local difficulty = invasion.difficulty()
     offer = { day = raid_world.current_day(), difficulty = difficulty, payment = rules.payment(difficulty, config), tribute = rules.tribute(difficulty, config) }
     set_if_changed("terms_state", rules.OFFERED)
     core.log.info(TAG, string.format("TERMS offer reason=%s payment=%d tribute=%d difficulty=%d", reason, offer.payment, offer.tribute, difficulty))
@@ -73,7 +73,7 @@ local function tribute_tick()
     if today == nil or not rules.tribute_due(state:get("terms_state"), state:get("terms_next_tribute_day"), today) then return end
     local silver = silver_world.silver()
     if silver == nil then return end
-    local amount = rules.tribute_charge(silver, rules.tribute(invasion.state:get("difficulty"), config))
+    local amount = rules.tribute_charge(silver, rules.tribute(invasion.difficulty(), config))
     if amount > 0 then silver_world.add_silver(-amount) end
     state:set("terms_tribute_paid", state:get("terms_tribute_paid") + amount)
     state:set("terms_paid_total", state:get("terms_paid_total") + amount)

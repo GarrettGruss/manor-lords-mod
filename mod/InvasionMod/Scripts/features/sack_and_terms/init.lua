@@ -67,7 +67,7 @@ local function on_raid_leave(summary)
     if not rules.is_lost_battle(summary, sack_config) then
         return core.log.info(TAG, string.format("SACK none: raid %d leaves with reason %s (not a lost battle)", summary.id, tostring(summary.leave_reason)))
     end
-    run_sack(invasion.state:get("difficulty"), summary.leave_reason, summary.target)
+    run_sack(invasion.difficulty(), summary.leave_reason, summary.target)
 end
 
 raid_behavior.watch_leave(on_raid_leave)
@@ -82,14 +82,14 @@ local function command_state()
     return {
         sack_count = state:get("sack_count"), window_start = state:get("sack_window_start"), window_count = state:get("sack_window_count"),
         last_day = state:get("sack_last_day"), fatal_enabled = fatal_enabled, history = history, limit = sack_config.limit, window_days = sack_config.window_days,
-        share_percent = rules.share_percent(invasion.state:get("difficulty"), sack_config),
+        share_percent = rules.share_percent(invasion.difficulty(), sack_config),
     }
 end
 
 if has_commands then
     commands.register("InvasionMod.sack_state", command_state, {})
     commands.register("InvasionMod.sack_now", function(args)
-        return run_sack(args.difficulty or invasion.state:get("difficulty"), "command")
+        return run_sack(args.difficulty or invasion.difficulty(), "command")
     end, { difficulty = { type = "integer", min = 1, max = 3 } })
     commands.register("InvasionMod.sack_set_fatal", function(args)
         fatal_enabled = args.enabled
