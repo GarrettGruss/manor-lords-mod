@@ -36,5 +36,6 @@ energy
 - Cuts get shorter as energy rises: about 1.7 s in the setup, 1.2 s in the raid, 1.0 s in the battle.
 - Each fast section is followed by one long, still shot (S23 after the raid, S53–S54 after the battle).
 - The hero appears in every beat except the raid and the battle; he is the thread.
+- The monologue setting is part of the story: the king speaks from the sacked house of one of his subjects, so every firelight shot also shows the cost of the raids.
 - There are two "false starts" of action (beats 1 and 4) before the real one (beat 9).
 - The victory is shown through the enemy, not the hero. The enemy leader is shown alone, looking around as his army breaks (9b). The hero does not appear again after the charge. The rout is the payoff of the betrayal in beat 4: the raiders who ran into the village now run away.

@@ -22,6 +22,6 @@ The hero gets a clean daylight close-up only once (S35), at the moment he leads 
 
 ## Recurring motifs
 
-- The table with the candle and the cup (S10, S23, S28, S33–S34). The props change little; the light and his posture change.
+- The sacked house: the king sits at a table with a candle and a cup in the ruined home of one of his subjects (S10, S23, S28, S33–S34). The props change little; the light and his posture change. He does not speak from a throne or a hall, but from the place the raid destroyed. The dark around him is the dark of a burnt house.
 - Shields as the face of each side: the enemy's black-and-white rune shields, the hero's red and yellow shields, later blue shields in the battle.
 - Kneeling and bowed people (S09, S11, S13) against the standing, marching army later (S29, S32).

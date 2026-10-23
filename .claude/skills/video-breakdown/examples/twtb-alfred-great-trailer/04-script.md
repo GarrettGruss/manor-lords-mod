@@ -10,12 +10,12 @@ The voice-over is paraphrased from `transcript.txt`, with only a few words quote
 | 9.6 | FIRELIGHT. The king's face in profile, half dark. | VO (calm, tired): he says he has been patient, and he speaks to God ("Lord"). |
 | 12.4 | ASH. A ruined village in fog. Villagers stand in a line. | VO: he says he accepted the heathens near him, so that there could be peace. |
 | 14.1 | ASH. People kneel in the mud. | Low strings, wind. |
-| 15.2 | FIRELIGHT. Wide: the king alone at a table, candle and cup. | VO continues. |
+| 15.2 | FIRELIGHT. Wide: the king sits alone at a table in the sacked, dark house of one of his subjects. A candle and a cup. | VO continues. |
 | 18.0 | ASH. A raider pushes a captive down. A bald man bows his head. | VO: oaths were made — |
 | 23.0 | FIRELIGHT. Close: the king lifts his eyes. | VO: "— and oaths were broken." |
 | 24.0 | RAID. A Dane raises an axe. Raiders run into a burning, snowy settlement. Top-down: burning roofs. Rune shields hit a defender. | Music hits. Fast drums. Clashes, screams. |
 | 31.3 | ASH. Wide: the empty, smoking ruin. | Music drops out. Wind. |
-| 33.7 | FIRELIGHT. The king at the table, very still. | Silence, then a low note. |
+| 33.7 | FIRELIGHT. The king in the sacked house, very still. | Silence, then a low note. |
 | 35.9 | DAYLIGHT. A peaceful village. Riders pass. Tribute carts move along the road. | VO: he says he forgave them, and even paid them. |
 | 40.0 | NIGHT. Raiders loot by firelight. Close: a Dane in a helmet. | VO: the Danes "will not be sated". |
 | 44.1 | FIRELIGHT. Dark close-up: the red cloak, the table. | A held breath. |

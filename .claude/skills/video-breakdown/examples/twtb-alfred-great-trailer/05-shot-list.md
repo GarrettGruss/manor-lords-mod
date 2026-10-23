@@ -15,7 +15,7 @@ Look: F = firelight, A = ash, D = daylight, N = night. Size: W = wide, M = mediu
 | S07 | 12.4 | 1.1 | 3 | A | W | Static, from behind | Villagers in fog, a ruined village |
 | S08 | 13.5 | 0.6 | 3 | A | M | Static | A captive led away |
 | S09 | 14.1 | 1.1 | 3 | A | M | Slow track | People kneel in the mud |
-| S10 | 15.2 | 2.8 | 3 | F | W | Static | King alone at the table |
+| S10 | 15.2 | 2.8 | 3 | F | W | Static | King alone at a table in a subject's sacked house |
 | S11 | 18.0 | 1.2 | 3 | A | C | Low angle | A raider looms over a captive |
 | S12 | 19.2 | 1.9 | 3 | A | M | Hand-held | A man is pushed down |
 | S13 | 21.1 | 1.9 | 3 | A | M | Static | A bald man, head bowed, in a ruin |
@@ -28,12 +28,12 @@ Look: F = firelight, A = ash, D = daylight, N = night. Size: W = wide, M = mediu
 | S20 | 29.9 | 0.6 | 4 | A | C | Hand-held | A defender is struck |
 | S21 | 30.5 | 0.8 | 4 | A | M | Hand-held | Shield clash |
 | S22 | 31.3 | 2.4 | 4 | A | W | Static | The empty, smoking ruin |
-| S23 | 33.7 | 2.2 | 5 | F | W | Static | King at the table, still |
+| S23 | 33.7 | 2.2 | 5 | F | W | Static | King in the sacked house, still |
 | S24 | 35.9 | 1.6 | 6 | D | M | Track | Riders pass a village |
 | S25 | 37.5 | 2.5 | 6 | D | W | High, slow pan | Peaceful village, tribute carts on the road |
 | S26 | 40.0 | 2.2 | 6 | N | M | Hand-held | Raiders loot by firelight |
 | S27 | 42.2 | 1.9 | 6 | A | C | Rack focus | A Dane's helmet, a body behind |
-| S28 | 44.1 | 2.6 | 6 | F | C | Slow push-in | Red cloak, the table in the dark |
+| S28 | 44.1 | 2.6 | 6 | F | C | Slow push-in | Red cloak, the table in the dark of the sacked house |
 | S29 | 46.7 | 1.4 | 7 | D | M | Track back | Soldiers march toward camera |
 | S30 | 48.1 | 2.0 | 7 | D | W | Track | The army passes villagers on the road |
 | S31 | 50.1 | 1.5 | 7 | D | W | Static | Army forms up below a fort wall |

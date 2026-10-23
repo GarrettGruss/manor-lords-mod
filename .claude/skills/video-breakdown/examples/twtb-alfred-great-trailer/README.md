@@ -25,9 +25,9 @@ This is a worked example of the `video-breakdown` skill. Only the written analys
 | Time | What happens | Purpose |
 | --- | --- | --- |
 | 0–8 s | Rating card. Wide shot of two armies meeting, then a shield wall close-up. Logos. | A short promise of the battle to come. |
-| 10–22 s | The king alone at a table in warm firelight. The voice-over says he was patient and kept the peace. Cut with cold, grey shots of a ruined village and beaten, kneeling people. | Setup: his restraint against its cost. |
+| 10–22 s | The king alone at a table in warm firelight, inside the sacked house of one of his subjects. The voice-over says he was patient and kept the peace. Cut with cold, grey shots of a ruined village and beaten, kneeling people. | Setup: his restraint against its cost. |
 | 23–33 s | Fast cuts, about 1 s each: Danes storm a burning, snowy settlement. Oaths were broken. | Inciting incident: betrayal. The cutting speeds up. |
-| 34 s | Back to the king at the table, still. | A pause. The decision. |
+| 34 s | Back to the king in the sacked house, still. | A pause. The decision. |
 | 36–44 s | He forgave them and paid them, and it was not enough. A peaceful village, tribute carts, then a night raid. A dark close-up of a red cloak. | Peace was tried and failed. The turn. |
 | 45–56 s | "Now." The music rises. His army marches, villagers watch, troops form at a fort wall. The crowned hero close-up, the first one in clean light. | Call to action and hero reveal. |
 | 57–76 s | The battle: shield-wall crush, hand-held close-ups, a Viking chieftain in fur. Voice-over about his kingdom and rule. | Payoff, the longest section. |
@@ -39,7 +39,7 @@ This is a worked example of the `video-breakdown` skill. Only the written analys
 1. **Cold open with the payoff.** 3–4 s of the climax, cut to black, then go back in time.
 2. **One voice, one person.** A first-person narrator. Game systems (diplomacy, tribute, raids, battle) appear only as steps in his story, never as explanations.
 3. **Three-step escalation.** Patience, then betrayal, then a failed payment, then "Now." Each short line is followed by images that prove it.
-4. **A recurring anchor shot.** The king at the table returns at 16 s and 34 s. It sets the rhythm between chaotic sections and shows his inner change.
+4. **A recurring anchor shot.** The king sits in the sacked house of one of his subjects, and the shot returns at 16 s and 34 s. It sets the rhythm between chaotic sections and shows his inner change. The place makes the monologue personal: he speaks among the ruins of his own people's home.
 5. **Color as story.** Warm firelight for the hero, cold grey and snow for victims and enemy, neutral daylight for the battle. The hero gets clean light only when he acts.
 6. **Pacing curve.** Slow shots (3–5 s), then fast cuts (about 1 s) in the raid, a pause, a build-up, a long climax, a slow pull-back. The pause before "Now" makes the climax stronger.
 7. **Delay the hero reveal.** His face stays in shadow early. The full close-up comes at about 55 s, just before the battle.
