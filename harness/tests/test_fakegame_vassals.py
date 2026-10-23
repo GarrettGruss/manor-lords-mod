@@ -431,10 +431,10 @@ class SackWipeTests(HandoverBase):
         self.add_families("Eichenhau", 5)
         self.game.exec("package.loaded['HarnessLords'].lord_declare_peace = function() return { ok = true } end")
 
-    def sack(self):
+    def sack(self, wait=40):
         answer = self.ask("vassals_sack", slot=1)
         if answer["ok"]:
-            self.game.advance(10)  # the wipe waits for the next poll after the collapses
+            self.game.advance(wait)  # the wipe takes three polls after the collapses
             answer["result"] = self.state()
         return answer
 
@@ -460,7 +460,7 @@ class SackWipeTests(HandoverBase):
         self.game.exec(NO_COLLAPSE)
         for index in range(15):
             self.ruins["Eichenhau"].add(index)
-        answer = self.sack()
+        answer = self.sack(10)
         self.assertTrue(answer["ok"], answer)
         result = answer["result"]
         self.assertEqual(result["lost"], 0)
@@ -472,9 +472,9 @@ class SackWipeTests(HandoverBase):
         self.game.exec(NO_COLLAPSE)
         for index in range(15):
             self.ruins["Eichenhau"].add(index)
-        self.sack()
+        self.sack(10)
         self.ruins["Eichenhau"].add(15)
-        self.game.advance(10)
+        self.game.advance(40)
         self.assertEqual(self.state()["lost_events"][0]["reason"], "wiped")
 
     def test_a_sack_that_makes_no_progress_gives_up_and_reports(self):
@@ -495,8 +495,8 @@ class SackWipeTests(HandoverBase):
     def test_the_sack_of_an_empty_slot_or_twice_is_refused(self):
         self.assertFalse(self.ask("vassals_sack", slot=2)["ok"])
         self.game.exec(NO_COLLAPSE)
-        self.assertTrue(self.sack()["ok"])
-        self.assertFalse(self.sack()["ok"])
+        self.assertTrue(self.sack(10)["ok"])
+        self.assertFalse(self.sack(10)["ok"])
 
     def test_only_the_standing_buildings_are_collapsed(self):
         for index in range(4):
@@ -525,11 +525,11 @@ class SackWipeTests(HandoverBase):
         for index in range(15):
             self.ruins["Eichenhau"].add(index)
         self.counts["Eichenhau"] = 19   # the AI demolished one ruin: 15 of 19 is 79 percent, so 16 are still needed
-        self.sack()
+        self.sack(10)
         self.assertEqual(self.state()["lost"], 0)
         self.ruins["Eichenhau"].add(15)
         self.counts["Eichenhau"] = 19   # 16 ruins; 16 of 19 is complete
-        self.game.advance(10)
+        self.game.advance(40)
         self.assertEqual(self.state()["lost_events"][0]["reason"], "wiped")
 
     def test_the_sack_start_removes_the_logs_and_planks(self):
@@ -551,11 +551,47 @@ class SackWipeTests(HandoverBase):
         self.assertEqual(len(self.setups), 1)
         self.assertEqual(self.state()["lost"], 0)
 
+    def test_the_wipe_takes_three_polls_and_keeps_one_family_in_the_first(self):
+        self.game.exec(NO_COLLAPSE)
+        self.game.exec("""local w = package.loaded['features.vassals.world']; local old = w.delete_villagers; DELETES = {}
+            w.delete_villagers = function(name, keep) DELETES[#DELETES + 1] = tostring(keep) .. ':' .. tostring(w.region_families(name)); return old(name, keep) end""")
+        for index in range(16):
+            self.ruins["Eichenhau"].add(index)
+        self.ask("vassals_sack", slot=1)
+        self.game.advance(60)
+        state = self.state()
+        self.assertEqual(self.game.exec("return table.concat(DELETES, ',')"), "1:5,nil:1")   # 4 families first, the last one a poll later
+        self.assertEqual((self.living("Eichenhau"), state["lost"]), (0, 1))
+        self.assertEqual(state["lost_events"][0]["people_deleted"], 10)
+
+    def test_the_raid_end_ends_a_sack_that_is_not_in_its_wipe(self):
+        self.game.exec(NO_COLLAPSE)
+        for index in range(3):
+            self.ruins["Eichenhau"].add(index)
+        self.sack(10)
+        self.game.exec("require('features.tribute.init').on_raid_end({ id = 1, target = 'Eichenhau' })")
+        self.assertEqual({(good, amount) for _, _, good, amount in self.deposits}, {(16, 50), (17, 100)})
+        self.assertEqual(len(self.setups), 3)
+        self.assertFalse(self.state()["sacks"])
+        self.game.exec("require('features.tribute.init').on_raid_end({ id = 2, target = 'Eichenhau' })")   # no running sack: no second order
+        self.assertEqual(len(self.setups), 3)
+
+    def test_the_raid_end_does_not_stop_a_wipe_that_has_started(self):
+        for index in range(16):
+            self.ruins["Eichenhau"].add(index)
+        self.game.exec(NO_COLLAPSE)
+        self.ask("vassals_sack", slot=1)
+        self.game.advance(1)
+        self.game.exec("require('features.tribute.init').on_raid_end({ id = 1, target = 'Eichenhau' })")
+        self.assertEqual(self.deposits, [])
+        self.game.advance(60)
+        self.assertEqual(self.state()["lost_events"][0]["reason"], "wiped")
+
     def test_the_end_sack_command_gives_wood_and_orders_the_rebuild(self):
         self.game.exec(NO_COLLAPSE)
         for index in range(3):
             self.ruins["Eichenhau"].add(index)
-        self.sack()
+        self.sack(10)
         answer = self.ask("vassals_end_sack", slot=1)
         self.assertTrue(answer["ok"], answer)
         self.assertEqual(answer["result"]["ended"]["rebuild"], {"ordered": 3, "skipped": 0, "failed": 0})
@@ -597,7 +633,7 @@ class RestoreTests(HandoverBase):
         self.add_families("Eichenhau", 4)
         self.game.exec("package.loaded['HarnessLords'].lord_declare_peace = function() return { ok = true } end")
         self.ask("vassals_sack", slot=1)
-        self.game.advance(10)
+        self.game.advance(40)
         self.pawn.silver = 500
         self.game.exec("SETTLES = {}")  # the refugee wave of the wipe settled the home region
 

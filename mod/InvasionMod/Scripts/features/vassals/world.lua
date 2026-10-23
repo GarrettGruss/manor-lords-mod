@@ -338,10 +338,12 @@ function M.collapse_buildings(name, count)
 end
 
 -- Delete every villager of a region. ManorCore.remove_families collects the members first (the fix of #357), then kills each.
-function M.delete_villagers(name)
+function M.delete_villagers(name, keep)
     local region = region_object(name)
     if region == nil then return nil, "no region " .. tostring(name) end
-    local families, people = core.remove_families(region, 1000)
+    local count = 1000
+    if keep then count = math.max(0, (core.read(function() return region:getTotalNumFamilies() end) or 0) - keep) end
+    local families, people = core.remove_families(region, count)
     return { families = families, people = people }
 end
 

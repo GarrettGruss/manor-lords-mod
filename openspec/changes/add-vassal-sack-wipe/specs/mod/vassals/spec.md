@@ -26,7 +26,7 @@ The mod SHALL register `InvasionMod.vassals_state`, `vassals_claim`, `vassals_se
 ## ADDED Requirements
 
 ### Requirement: A Hussite sack wipes a vassal at 80 percent ruins
-The mod SHALL sack the houses of a vassal region when a subjugation raid takes it. The sack is complete when at least `sack_wipe.ruin_share` (default 0.80) of the buildings of the region at the start of the sack are ruins. At that point the mod SHALL delete all villagers of the region, SHALL lose the vassal with the reason `wiped`, and SHALL start a refugee wave.
+The mod SHALL sack the houses of a vassal region when a subjugation raid takes it. The sack is complete when at least `sack_wipe.ruin_share` (default 0.80) of the buildings of the region at the start of the sack are ruins. At that point the mod SHALL delete all villagers of the region in three polls (all families but one; the last family when the family count was stable for one poll; then, when the count was stable again, lose the vassal with the reason `wiped` and start a refugee wave).
 
 #### Scenario: The sack completes
 - **WHEN** a sack of a vassal region of 20 buildings reaches 16 ruins
@@ -34,6 +34,11 @@ The mod SHALL sack the houses of a vassal region when a subjugation raid takes i
 - **AND** the slot is free with the reason `wiped`
 - **AND** a refugee wave starts
 - Checked by `mod/InvasionMod/scenarios/vassals/vassal_wipe.py` (real game) and `harness/tests/test_fakegame_vassals.py`.
+
+#### Scenario: The wipe takes three polls
+- **WHEN** a sack of a region of 5 families is complete
+- **THEN** the first poll removes 4 families, the second removes the last one, and the slot is freed in a later poll
+- Checked by `harness/tests/test_fakegame_vassals.py`.
 
 #### Scenario: The sack is not complete
 - **WHEN** a sack of the same region reaches 15 ruins
@@ -72,7 +77,7 @@ A restored vassal SHALL get a slot again with the flag `rebuilding`. Its tribute
 - Checked by `harness/tests/test_fakegame_tribute.py` and `harness/tests/test_fakegame_vassals.py`.
 
 ### Requirement: A sack removes the wood and a sack that ends without a wipe orders the rebuild
-When a sack of a vassal region starts, the mod SHALL remove all logs (good 16) and planks (good 17) from the buildings of the region. When a sack ends and the village is not wiped, the mod SHALL give 50 logs and 100 planks to the region and SHALL give the rebuild order to every ruin of the region at once. The command `InvasionMod.vassals_end_sack` SHALL end a running sack this way.
+When a sack of a vassal region starts, the mod SHALL remove all logs (good 16) and planks (good 17) from the buildings of the region. When a sack ends and the village is not wiped, the mod SHALL give 50 logs and 100 planks to the region and SHALL give the rebuild order to every ruin of the region at once. A sack ends this way when the raid that sacks the region has no living raider left (all dead or gone), or when it gives up, unless its wipe has started. The command `InvasionMod.vassals_end_sack` SHALL end a running sack this way for tests.
 
 #### Scenario: The sack starts
 - **WHEN** a sack of a vassal region starts
@@ -86,6 +91,11 @@ When a sack of a vassal region starts, the mod SHALL remove all logs (good 16) a
 
 ### Requirement: The rebuild order of a ruin
 The rebuild order for a ruin SHALL write the building data back with the old building type (`typeBeforeChange`), `constructed` false and `hp` 0, and then call `SetupBuilding`. It SHALL skip a building whose old type is 0 or 75. It SHALL NOT call `convertBlueprintsToBuildings`. Each order SHALL be logged.
+
+#### Scenario: The raid ends
+- **WHEN** the raid that sacks a vassal region has no living raider left and the wipe has not started
+- **THEN** the sack ends without a wipe, with the wood and the rebuild order
+- Checked by `harness/tests/test_fakegame_vassals.py`.
 
 #### Scenario: A ruin without a usable old type
 - **WHEN** the rebuild order meets a ruin with the old type 0 or 75

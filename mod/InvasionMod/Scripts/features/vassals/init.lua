@@ -310,7 +310,7 @@ end
 ---------------------------------------------------------------------------------------------
 
 local sack_config = config.sack_wipe
-local end_sack_without_wipe  -- forward declaration, defined below
+local end_sack_without_wipe, end_sack  -- forward declarations, defined below
 
 local function json_text(map)
     local parts = {}
@@ -353,30 +353,54 @@ local function record_wiped(region, lord, buildings)
     return index
 end
 
-local function wipe_vassal(slot, run)
+-- Free the slot and tell the listeners (the refugee wave). This runs only after the villagers are gone and the count was stable for one poll.
+local function finish_wipe(slot, run)
     local region = state:get(slot_key(slot, "region"))
-    local families_before = world.region_families(region) or 0
-    local deleted, why = world.delete_villagers(region)
-    if deleted == nil then return nil, why end
     record_wiped(region, state:get(slot_key(slot, "lord")), run.total)
-    local event = lose_vassal(slot, "wiped", families_before)
-    event.people_deleted = deleted.people
-    core.log.info(TAG, string.format("VASSALS wiped region=%s ruins needed=%d of %d buildings, villagers deleted families=%d people=%d", region, run.needed, run.total, deleted.families, deleted.people))
+    local event = lose_vassal(slot, "wiped", run.families_start)
+    event.people_deleted = run.people
+    core.log.info(TAG, string.format("VASSALS wiped region=%s ruins needed=%d of %d buildings, villagers deleted families=%d people=%d", region, run.needed, run.total, run.families_start, run.people))
     return event
 end
 
--- Wipe the vassal when enough buildings are ruins. Returns done (true when the sack ended), then the event or the error text.
+local function fail_wipe(slot, why)
+    sacks[slot] = nil
+    sack_errors[tostring(slot)] = why
+    core.log.error(TAG, "VASSALS wipe failed: " .. tostring(why))
+end
+
+-- The wipe runs in three polls (change add-vassal-sack-wipe, crash notes/wipe-crash.md): families are removed down to one,
+-- then the last family goes when the count was stable for one poll, then the slot is freed when the count was stable again.
+-- Why: the game crashed once in the same tick as the removal of all families and the refugee wave (run 20261023-010958-4796).
+local function wipe_step(slot, run)
+    local region = state:get(slot_key(slot, "region"))
+    local now = world.region_families(region) or 0
+    if run.phase == nil then
+        run.families_start, run.people = now, 0
+        local deleted, why = world.delete_villagers(region, 1)
+        if deleted == nil then return fail_wipe(slot, why) end
+        run.people = run.people + deleted.people
+        run.phase, run.families_seen = "last", world.region_families(region) or 0
+        return nil
+    end
+    if now ~= run.families_seen then run.families_seen = now; return nil end -- the count still changes: wait one more poll
+    if run.phase == "last" then
+        local deleted, why = world.delete_villagers(region)
+        if deleted == nil then return fail_wipe(slot, why) end
+        run.people = run.people + deleted.people
+        run.phase, run.families_seen = "free", world.region_families(region) or 0
+        return nil
+    end
+    sacks[slot] = nil
+    return finish_wipe(slot, run)
+end
+
+-- Wipe the vassal when enough buildings are ruins. Returns done (true when the sack is in its wipe or ended), then the event (the last poll only).
 -- The AI demolishes ruins while the sack runs (27 of 28 in run 20261023-005824-8bac): the share counts against the buildings that are still there.
 local function wipe_if_complete(slot, run, census)
-    if not rules.sack_complete(math.min(run.total, census.total), census.rubble, sack_config.ruin_share) then return false end
+    if run.phase == nil and not rules.sack_complete(math.min(run.total, census.total), census.rubble, sack_config.ruin_share) then return false end
     if run.hold then return false end -- test option: the sack waits for vassals_end_sack and never wipes
-    sacks[slot] = nil
-    local event, why = wipe_vassal(slot, run)
-    if event == nil then
-        sack_errors[tostring(slot)] = why
-        core.log.error(TAG, "VASSALS wipe failed: " .. tostring(why))
-    end
-    return true, event, why
+    return true, wipe_step(slot, run)
 end
 
 -- A sack that ends and does not wipe the village (owner, 2026-10-22): give wood and order the rebuild of every ruin at once.
@@ -386,6 +410,15 @@ end_sack_without_wipe = function(run)
     local ordered, why = world.rebuild_ruins(run.region)
     core.log.info(TAG, string.format("VASSALS sack ends without wipe region=%s gave=%s ordered=%s", run.region, json_text(deposited), ordered and tostring(ordered.ordered) or tostring(why)))
     return { given = deposited, rebuild = ordered }
+end
+
+-- End a running sack that has not started its wipe: wood, then the rebuild order. Called by the raid end (tribute feature) and by the command.
+end_sack = function(slot)
+    local run = sacks[slot]
+    if run == nil then return nil, "slot " .. slot .. " has no running sack" end
+    if run.phase ~= nil then return nil, "slot " .. slot .. " is already in its wipe" end
+    sacks[slot] = nil
+    return end_sack_without_wipe(run)
 end
 
 -- One step of a sack: wipe when enough buildings are ruins, else collapse the missing ones. The wipe waits for the next poll: a wipe in the same tick as the collapses crashed the game in 1 of 2 real runs (20261022-042514-3045).
@@ -569,10 +602,8 @@ if has_commands then
         return result
     end, { region = { type = "string", required = true } })
     commands.register("InvasionMod.vassals_end_sack", function(args)
-        local run = sacks[args.slot]
-        if run == nil then return nil, "slot " .. args.slot .. " has no running sack" end
-        sacks[args.slot] = nil
-        local ended = end_sack_without_wipe(run)
+        local ended, why = end_sack(args.slot)
+        if ended == nil then return nil, why end
         local result = command_state()
         result.ended = ended
         return result
@@ -598,4 +629,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature vassals loaded")
-return { state = state, on_lost = on_lost, lose_vassal = lose_vassal, start_sack = start_sack, restore_vassal = restore_vassal, policy_of = policy_of, set_policy = set_policy, region_families = world.region_families, target_regions = target_regions, register_vassal = register_vassal, slot_rows = slot_rows, slot_regions = slot_regions }
+return { state = state, on_lost = on_lost, lose_vassal = lose_vassal, start_sack = start_sack, end_sack = end_sack, sack_slot_of_region = function(region) for slot, run in pairs(sacks) do if run.region == region then return slot end end end, restore_vassal = restore_vassal, policy_of = policy_of, set_policy = set_policy, region_families = world.region_families, target_regions = target_regions, register_vassal = register_vassal, slot_rows = slot_rows, slot_regions = slot_regions }

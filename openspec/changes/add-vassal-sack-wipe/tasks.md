@@ -23,5 +23,8 @@
 - [ ] 5.2 Update `vassal_wipe.py` and add a test scenario for a sack that ends without a wipe; verify with real game runs.
 - [ ] 5.3 Move the engine facts (typeBeforeChange, SetupBuilding, convertBlueprintsToBuildings, AI rebuild) into the wiki; verify with `wiki.py check`.
 
+- [x] 5.4 End a sack without a wipe when its raid ends (`raid_behavior.watch_end`); verify with `test_fakegame_vassals.py`.
+- [ ] 5.5 Wipe in three polls (crash fix); verify with `test_fakegame_vassals.py` and four real runs of `vassals-wipe`, notes in `notes/wipe-crash.md`.
+
 ## 6. Final
 - [ ] 6.1 Run the full tests and write the test results table of the implementation pull request.
