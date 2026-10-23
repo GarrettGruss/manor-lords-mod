@@ -1,5 +1,5 @@
 ## 1. Static search
-- [ ] 1.1 Search extracted data and jmap/usmap for unemployment and manor order factors. Write `notes/factor-definitions.md` (question 1).
+- [x] 1.1 Search extracted data and jmap/usmap for unemployment and manor order factors. Written to `notes/factor-location.md` (question 1).
 
 ## 2. Pak test
 - [ ] 2.1 Build a pak that adds a negative factor row or effect. Run with `--pak`; read order values and the tooltip. Write `notes/pak-factor.md` (questions 2 and 4).
