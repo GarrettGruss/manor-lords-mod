@@ -9,8 +9,7 @@ local raid_world = require("features.raid_behavior.world")
 local rules = require("features.sack_and_terms.rules")
 local world = require("features.sack_and_terms.world")
 local config = require("config").sack_and_terms
-require("features.sack_and_terms.terms")
-require("features.sack_and_terms.fallback")
+local terms = require("features.sack_and_terms.terms")
 local sack_config = config.sack
 
 local TAG = "InvasionMod.sack_and_terms"
@@ -34,7 +33,7 @@ end
 ---------------------------------------------------------------------------------------------
 
 -- Run one sack at `difficulty`. Returns the result table. Raises an error on a game problem (fail loudly).
-local function run_sack(difficulty, reason, target)
+local function run_sack(difficulty, reason, target, raid_id)
     local today = raid_world.current_day()
     if today == nil then error("the game day is not available", 0) end
     local start, count, reached = rules.count_sack(state:get("sack_window_start"), state:get("sack_window_count"), today, sack_config)
@@ -60,6 +59,7 @@ local function run_sack(difficulty, reason, target)
         today, reason, difficulty, tostring(plan.percent), count, tostring(reached), tostring(fatal), before.buildings.standing, after.buildings.standing,
         before.stock.total, after.stock.total, tostring(before.people.families), tostring(after.people.families)))
     core.show_banner("The town is sacked", string.format("%d buildings, %d families lost", taken.buildings_hit, taken.families_removed))
+    terms.close_after_sack(raid_id)
     return result
 end
 
@@ -67,7 +67,7 @@ local function on_raid_leave(summary)
     if not rules.is_lost_battle(summary, sack_config) then
         return core.log.info(TAG, string.format("SACK none: raid %d leaves with reason %s (not a lost battle)", summary.id, tostring(summary.leave_reason)))
     end
-    run_sack(invasion.difficulty(), summary.leave_reason, summary.target)
+    run_sack(invasion.difficulty(), summary.leave_reason, summary.target, summary.id)
 end
 
 raid_behavior.watch_leave(on_raid_leave)

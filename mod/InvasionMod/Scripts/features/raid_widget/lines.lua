@@ -1,4 +1,5 @@
 -- Pure text rules of the raid widget (M02 iteration 05). No game calls, so a test can run them.
+-- update-raid-banners: the menu lists the upcoming raids all the time (type, target, size, days left). A switched-off raid type has an empty line.
 local M = {}
 
 local PHASE_TEXT = { [2] = "final battle", [3] = "won" }
@@ -9,19 +10,30 @@ local function days_text(days)
     return string.format("in %d %s", days, days == 1 and "day" or "days")
 end
 
+-- `raid` is { days_left, target, raiders, squads, size }: one planned raid.
+local function raid_text(raid)
+    local size = raid.size and (raid.size .. " ") or ""
+    return string.format("%s, %sabout %d raiders (%d squads), %s", raid.target, size, raid.raiders, raid.squads, days_text(raid.days_left))
+end
+
 function M.next_raid(info)
-    if info.levels and info.levels.yearly == 0 then return "Next raid: off" end
-    if info.raid_days_left == nil then return "Next raid: not planned yet" end
-    return "Next raid: " .. days_text(info.raid_days_left)
+    if info.levels and info.levels.yearly == 0 then return "" end -- level 0: no entry
+    local plunder = info.upcoming and info.upcoming.plunder
+    if plunder == nil then return "Yearly raid: not planned yet" end
+    return "Yearly raid: " .. raid_text(plunder)
 end
 
-function M.size_estimate(info)
-    if info.raiders == nil then return "Size estimate: not known yet" end
-    return string.format("Size estimate: about %d raiders (%d squads)", info.raiders, info.squads)
+-- Empty at vassal level 0.
+function M.subjugation_raid(info)
+    local sub = info.upcoming and info.upcoming.subjugation
+    if sub == nil then return "" end
+    if not sub.planned then return "Subjugation raid: not planned yet" end
+    return "Subjugation raid: " .. raid_text(sub)
 end
 
+-- Empty at great level 0.
 function M.great_raid(info)
-    if info.levels and info.levels.great == 0 then return "Great raid: off" end
+    if info.levels and info.levels.great == 0 then return "" end
     local phase = info.great_phase or 0
     if phase == 1 then return string.format("Great raid: wave %d of %d", info.great_wave, info.great_waves) end
     if phase > 1 then return "Great raid: " .. PHASE_TEXT[phase] end
@@ -48,7 +60,7 @@ end
 
 -- The lines of the widget, top to bottom.
 function M.all(info, terms)
-    return { M.next_raid(info), M.size_estimate(info), M.great_raid(info), M.difficulty(info), M.terms(terms) }
+    return { M.next_raid(info), M.subjugation_raid(info), M.great_raid(info), M.difficulty(info), M.terms(terms) }
 end
 
 return M

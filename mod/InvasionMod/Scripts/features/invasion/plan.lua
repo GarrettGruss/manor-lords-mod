@@ -32,14 +32,11 @@ function M.should_raid(year, position, done_year, chances, roll, first_year)
 end
 
 -- Plan a raid for the season that starts today. `today` is the game day when the roll succeeded.
--- The warning cannot start before the plan exists, so a short wait gives a shorter warning.
 function M.yearly_raid(today, size_class, difficulty, config, random)
     local wait = M.pick(random, 1, config.yearly.season_days)
-    local warning = math.min(M.pick(random, config.warning_days_min, config.warning_days_max), wait)
     return {
         plan_day = today,
         raid_day = today + wait,
-        warning_day = today + wait - warning,
         size_class = size_class,
         squads = M.squads(size_class, difficulty, config.size_multipliers),
     }
@@ -133,9 +130,10 @@ function M.expected_units(list, template_units)
     return total
 end
 
-function M.banner_text(days_left, raiders)
+-- The 30 day banner of a subjugation or player raid: the days left, the target text and the size estimate.
+function M.banner_text(days_left, target, raiders)
     local unit = days_left == 1 and "day" or "days"
-    return string.format("Raid in %d %s, about %d raiders", days_left, unit, raiders)
+    return string.format("Raid in %d %s: %s, about %d raiders", days_left, unit, target, raiders)
 end
 
 return M

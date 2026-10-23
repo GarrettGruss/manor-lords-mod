@@ -20,6 +20,7 @@ state:register("terms_paid_total", 0, "integer")      -- silver paid as one-time
 state:register("terms_tribute_paid", 0, "integer")
 
 local offer = nil -- { day, difficulty, payment, tribute } while an offer is open (not saved)
+local sacked_raid = nil -- id of the raid whose sack of the player region ended the terms (not saved)
 
 local function set_if_changed(key, value)
     if state:get(key) ~= value then state:set(key, value) end
@@ -36,6 +37,17 @@ end
 local function close_offer(new_state)
     offer = nil
     set_if_changed("terms_state", new_state)
+end
+
+-- After a sack of the player region the terms of that raid are over (owner, 2026-10-20, item 4; option a of question 4).
+-- Open offers close. A raid of the same id gets no new offer. A later raid is a new raid and may offer terms again.
+local function close_after_sack(raid_id)
+    local active = raid_behavior.active_role_raid()
+    sacked_raid = raid_id or (active and active.id) or nil
+    if offer ~= nil then
+        close_offer(rules.NONE)
+        core.log.info(TAG, "TERMS offer closed by a sack, raid " .. tostring(sacked_raid))
+    end
 end
 
 -- An offer opens when a lord raid spawns.
@@ -96,7 +108,9 @@ end
 if has_commands then
     commands.register("InvasionMod.terms_state", command_state, {})
     commands.register("InvasionMod.terms_offer", function()
-        if raid_behavior.active_role_raid() == nil then return nil, "no active role raid" end
+        local active = raid_behavior.active_role_raid()
+        if active == nil then return nil, "no active role raid" end
+        if sacked_raid ~= nil and active.id == sacked_raid then return nil, "raid " .. tostring(active.id) .. " sacked the town: no terms after a sack" end
         open_offer("command")
         return command_state()
     end, {})
@@ -111,4 +125,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "terms loaded")
-return { state = state, summary = command_state }
+return { state = state, summary = command_state, close_after_sack = close_after_sack }

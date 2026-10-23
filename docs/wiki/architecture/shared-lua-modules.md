@@ -123,4 +123,4 @@ Fake-game tests run the Lua code without the game. See [Fake game kit](../testin
 uv run python -m unittest discover -s harness/tests -p "test_fakegame_*.py"
 ```
 
-Files named `test_fakegame_harness<name>.py` exist for Autosave, Bandits, Battle, Battlefield, Build, Commands, DataTable, Encampment, Housing, Log, Lords, Manor, Parts, Policies, Sack, Save, Tune, Units and Walls. `ModState` has `test_fakegame_modstate.py`. `HarnessTelemetry` is covered by `test_telemetry_mock.py`. `ManorCore` is covered through the mod tests (refugees, vassals, fallback). `HarnessGarrison` has no test that names it.
+Files named `test_fakegame_harness<name>.py` exist for Autosave, Bandits, Battle, Battlefield, Build, Commands, DataTable, Encampment, Housing, Log, Lords, Manor, Parts, Policies, Sack, Save, Tune, Units and Walls. `ModState` has `test_fakegame_modstate.py`. `HarnessTelemetry` is covered by `test_telemetry_mock.py`. `ManorCore` is covered through the mod tests (refugees, vassals). `HarnessGarrison` has no test that names it.

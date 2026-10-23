@@ -1,7 +1,7 @@
 # mod/sack_and_terms Specification
 
 ## Purpose
-A lost battle sacks the town and the game goes on. The invader offers terms while a raid is on the map. A fortified vassal can become the fallback capital.
+A lost battle sacks the town and the game goes on. The invader offers terms while a raid is on the map, but not after a sack of the player region.
 
 ## Requirements
 
@@ -47,20 +47,6 @@ The mod SHALL count sacks in a window of `window_days` game days (default 360) t
 - **THEN** the village still has people after the second sack
 - Checked by `mod/InvasionMod/scenarios/sack_and_terms/sack.py`.
 
-### Requirement: The sack hits the right region
-The mod SHALL sack the raid target when the player owns it. Else it SHALL sack the home region (`vassals_home_region`) when the player owns it. Else it SHALL sack the first region of the player. A manual sack SHALL use the home region. The sack result SHALL name the region.
-
-#### Scenario: A sack after a fallback capital move
-- **WHEN** a fallback capital exists and `sack_now` runs with no raid target
-- **THEN** the sack result names the home region
-- **AND** the capital loses no family
-- Checked by `mod/InvasionMod/scenarios/sack_and_terms/sack_region.py`.
-
-#### Scenario: Region choice rule
-- **WHEN** the raid targets a player region, a foreign region, or no known region
-- **THEN** the sack hits that region, the home region, or the first player region
-- Checked by `harness/tests/test_fakegame_sack_and_terms.py`.
-
 ### Requirement: The invader offers terms
 The mod SHALL open an offer and show a banner when a lord raid spawns (`terms.offer_on_spawn`, default true). The one-time payment SHALL be `payment_base x difficulty` silver (default 100, 200, 300). The yearly tribute SHALL be `tribute_base x difficulty` silver (default 30, 60, 90). The command `InvasionMod.terms_offer` SHALL open an offer by hand when a role raid is active.
 
@@ -93,25 +79,8 @@ The mod SHALL charge the yearly tribute once the tribute day is reached after va
 - **AND** the next tribute day is `tribute_days` later
 - Checked by `harness/tests/test_fakegame_sack_and_terms.py`.
 
-### Requirement: A fortified vassal becomes the fallback capital
-The command `InvasionMod.fallback_move` with a vassal slot SHALL take the region back from its lord, mark the slot as the capital with no lord, take `cost_base x difficulty` silver (default 150), move grain from home, and settle 5 families there. It SHALL be refused, at no cost, when it cannot be done.
-
-#### Scenario: A successful move
-- **WHEN** a handed-over vassal with enough buildings becomes the fallback capital
-- **THEN** the region owner is the player pawn
-- **AND** the silver falls by `150 x difficulty`
-- **AND** the grain taken from home (`grain_amount`, default 20, of bread, grain or fish) equals the grain put into the capital
-- **AND** the capital gets 5 families and the slot has no lord
-- **AND** 5 game days later the region is still the player region and the game has not crashed
-- Checked by `mod/InvasionMod/scenarios/sack_and_terms/fallback_capital.py`.
-
-#### Scenario: Refusals
-- **WHEN** the slot is empty, a capital exists, the vassal has fewer than `min_buildings` buildings (default 8), or the silver is too low
-- **THEN** the command is refused and nothing is paid
-- Checked by `harness/tests/test_fakegame_fallback.py`.
-
 ### Requirement: The feature offers named commands
-The mod SHALL register `InvasionMod.sack_state`, `sack_now`, `sack_set_fatal`, `terms_state`, `terms_offer`, `terms_accept`, `terms_decline`, `fallback_state`, `fallback_move`, `fallback_set_take_back` and `fallback_set_min_buildings`. Scenarios SHALL use these commands and not eval.
+The mod SHALL register `InvasionMod.sack_state`, `sack_now`, `sack_set_fatal`, `terms_state`, `terms_offer`, `terms_accept` and `terms_decline`. Scenarios SHALL use these commands and not eval.
 
 #### Scenario: A state command answers
 - **WHEN** a scenario sends `InvasionMod.sack_state`
@@ -138,3 +107,25 @@ Each building the sack hits SHALL be rubble when the sack ends or within a time 
 - **WHEN** a sack runs
 - **THEN** every building the sack hit is rubble and stays in the building list
 - Checked by `mod/InvasionMod/scenarios/sack_and_terms/sack.py`.
+
+### Requirement: The sack picks the region
+The mod SHALL sack the raid target when the player owns it. Else it SHALL sack the home region (`vassals_home_region`) when the player owns it. Else it SHALL sack the first region of the player. A manual sack SHALL use the home region. The sack result SHALL name the region.
+
+#### Scenario: A manual sack names the home region
+- **WHEN** `sack_now` runs with no raid target
+- **THEN** the sack result names the home region
+- Checked by `mod/InvasionMod/scenarios/sack_and_terms/sack_region.py`.
+
+#### Scenario: Region choice rule
+- **WHEN** the raid targets a player region, a foreign region, or no known region
+- **THEN** the sack hits that region, the home region, or the first player region
+- Checked by `harness/tests/test_fakegame_sack_and_terms.py`.
+
+### Requirement: No terms after a sack of the player
+After a sack of a player region the mod SHALL close an open offer and SHALL NOT open a new offer for the same raid. `InvasionMod.terms_offer` SHALL be refused for that raid.
+
+#### Scenario: A sack closes the offer
+- **WHEN** an offer is open and the raid sacks a player region
+- **THEN** the offer is closed
+- **AND** `terms_offer` for the same raid is refused
+- Checked by `harness/tests/test_fakegame_sack_and_terms.py`.

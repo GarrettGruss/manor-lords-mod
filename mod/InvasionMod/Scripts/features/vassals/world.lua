@@ -137,13 +137,6 @@ function M.lord_number(name)
     return nil
 end
 
--- The number of the first AI lord whose name is not in `excluded` (a set of names), or nil.
-function M.other_lord_number(excluded)
-    for number, pawn in ipairs(lords()) do
-        if not excluded[lord_name(pawn)] then return number end
-    end
-    return nil
-end
 
 -- Does the lord count the player as an enemy, and which relation tags exist between them? Read only.
 function M.lord_status(name)
@@ -215,6 +208,178 @@ function M.region_families(name)
         if core.shortName(region) == name then return core.read(function() return region:getTotalNumFamilies() end) end
     end
     return nil
+end
+
+---------------------------------------------------------------------------------------------
+-- Sack, wipe and restore of a vassal region (change add-vassal-sack-wipe)
+-- The mod controls only the sacking of houses in an AI village (owner, 2026-10-20). It never writes the owner or the lord.
+---------------------------------------------------------------------------------------------
+
+local function region_object(name)
+    local e = engine()
+    if e == nil then return nil end
+    for _, region in ipairs(core.listOf(e.regions)) do
+        if core.shortName(region) == name then return region end
+    end
+    return nil
+end
+
+-- Buildings of a region: { total, standing, rubble }. Nil when the region is not found.
+function M.census(name)
+    local region = region_object(name)
+    if region == nil then return nil end
+    local rubble, standing, built, first_location = 0, 0, 0, nil
+    for _, building in ipairs(core.listOf(core.read(function() return region:GetBuildings() end))) do
+        if core.isValid(building) then
+            first_location = first_location or core.read(function() return building:K2_GetActorLocation() end)
+            if core.read(function() return building:IsRubble() end) == true then
+                rubble = rubble + 1
+            else
+                standing = standing + 1
+                -- A construction site made by the rebuild order is not rubble but is not built yet (Data.constructed false).
+                if core.read(function() return building.Data.constructed end) ~= false then built = built + 1 end
+            end
+        end
+    end
+    local at = first_location
+    local centre = at and core.read(function() return { x = math.floor(at.X), y = math.floor(at.Y) } end) or nil
+    return { total = rubble + standing, standing = standing, built = built, rubble = rubble, centre = centre }
+end
+
+-- Remove every unit of the given goods from all buildings of a region (HarnessSack.remove_goods: consumeGoodNoCheck).
+-- `goods` is a list of { id, name }. Returns a map name -> units removed.
+function M.remove_goods(name, goods)
+    local region = region_object(name)
+    if region == nil then return nil, "no region " .. tostring(name) end
+    local sack = require("HarnessSack")
+    local removed = {}
+    for _, good in ipairs(goods) do removed[good.name] = sack.remove_goods(region, good.id, sack.MAX_GOODS_REMOVED) end
+    return removed
+end
+
+-- The lord name of the AI pawn that owns a region, or nil (no owner, or the owner is not an AI lord).
+function M.region_lord_name(name)
+    local region = region_object(name)
+    if region == nil then return nil end
+    local owner = core.read(function() return region.ownerPawn end)
+    if not core.isValid(owner) then return nil end
+    local text = core.textOf(core.read(function() return owner.lordsName end))
+    if text == nil or text == "" then return nil end
+    return text
+end
+
+-- Give a wiped region back to an AI lord (the handover of a new vassal: lord_receive_region). The lord is spawned when it is gone.
+function M.hand_over_to_lord(lord_name, region)
+    local number = M.lord_number(lord_name)
+    if number == nil then
+        local spawned, why = M.spawn_lord(lord_name)
+        if spawned == nil then return nil, why end
+        number = spawned
+    end
+    local answer, why = M.hand_over(number, region)
+    if answer == nil then return nil, why end
+    return number
+end
+
+local RUBBLE_TYPE = 75    -- EBuildingType::Rubble
+local NO_TYPE = 0          -- typeBeforeChange of a building that never collapsed
+
+-- Order the rebuild of one ruin (notes/rebuild-order.md, proven in the real game): write Data back with the old type, not constructed,
+-- hp 0; then SetupBuilding. Never convertBlueprintsToBuildings: it removes the model. Returns "ordered" or "skipped", or nil and an error.
+local function order_rebuild(building)
+    local old = core.read(function() return building.typeBeforeChange end)
+    if type(old) ~= "number" or old == NO_TYPE or old == RUBBLE_TYPE then return "skipped", old end
+    local ok, problem = pcall(function()
+        local data = building.Data
+        data.bType = old
+        data.constructed = false
+        data.hp = 0
+        building.Data = data
+        building:SetupBuilding()
+    end)
+    if not ok then return nil, tostring(problem) end
+    return "ordered", old
+end
+
+-- Give the rebuild order to every ruin of the region. Returns { ordered, skipped, failed }.
+function M.rebuild_ruins(name)
+    local region = region_object(name)
+    if region == nil then return nil, "no region " .. tostring(name) end
+    local result = { ordered = 0, skipped = 0, failed = 0 }
+    for _, building in ipairs(core.listOf(core.read(function() return region:GetBuildings() end))) do
+        if core.isValid(building) and core.read(function() return building:IsRubble() end) == true then
+            local outcome, detail = order_rebuild(building)
+            if outcome == "ordered" then
+                result.ordered = result.ordered + 1
+                core.log.info("InvasionMod.vassals", string.format("VASSALS rebuild order region=%s type=%s", name, tostring(detail)))
+            elseif outcome == "skipped" then
+                result.skipped = result.skipped + 1
+            else
+                result.failed = result.failed + 1
+                core.log.error("InvasionMod.vassals", "VASSALS rebuild order failed: " .. tostring(detail))
+            end
+        end
+    end
+    return result
+end
+
+-- Collapse up to `count` standing buildings (collapseBuilding: ruin at once, spike empty-ai-village.md). Returns how many calls worked.
+function M.collapse_buildings(name, count)
+    local region = region_object(name)
+    if region == nil then return nil, "no region " .. tostring(name) end
+    local hit = 0
+    for _, building in ipairs(core.listOf(core.read(function() return region:GetBuildings() end))) do
+        if hit >= count then break end
+        if core.isValid(building) and core.read(function() return building:IsRubble() end) ~= true then
+            if pcall(function() building:collapseBuilding() end) then hit = hit + 1 end
+        end
+    end
+    return hit
+end
+
+-- Delete every villager of a region. ManorCore.remove_families collects the members first (the fix of #357), then kills each.
+function M.delete_villagers(name, keep)
+    local region = region_object(name)
+    if region == nil then return nil, "no region " .. tostring(name) end
+    local count = 1000
+    if keep then count = math.max(0, (core.read(function() return region:getTotalNumFamilies() end) or 0) - keep) end
+    local families, people = core.remove_families(region, count)
+    return { families = families, people = people }
+end
+
+-- Raise the villager count of a wiped region: settleRegion with the owner (the lord pawn) as the settling pawn (spike restore-to-five.md).
+function M.restore_villagers(name)
+    local region = region_object(name)
+    if region == nil then return nil, "no region " .. tostring(name) end
+    local owner = core.read(function() return region.ownerPawn end)
+    if not core.isValid(owner) then return nil, "the region has no owner" end
+    local row = M.region_row(name)
+    local answer = core.settle_region({ region = name, type = row and row.settlement_type or 1, supply = 0 }, owner)
+    if not answer.ok then return nil, tostring(answer.error) end
+    return { families = answer.after and answer.after.families }
+end
+
+-- Put goods into the first standing building (with include_rubble: any building, a ruin takes goods too) of the region that takes them. `goods` is a list of { id, amount, name }.
+-- Returns a map name -> amount deposited. A refused deposit gives 0 (the caller logs it).
+function M.deposit_goods(name, goods, tries, include_rubble)
+    local region = region_object(name)
+    if region == nil then return nil, "no region " .. tostring(name) end
+    local buildings = {}
+    for _, building in ipairs(core.listOf(core.read(function() return region:GetBuildings() end))) do
+        if core.isValid(building) and (include_rubble or core.read(function() return building:IsRubble() end) ~= true) then buildings[#buildings + 1] = building end
+    end
+    local deposited = {}
+    for _, good in ipairs(goods) do
+        deposited[good.name] = 0
+        for index, building in ipairs(buildings) do
+            if index > tries then break end
+            if pcall(function() building:addToInventory({ Type = good.id, amt = good.amount }) end) then
+                deposited[good.name] = good.amount
+                break
+            end
+        end
+    end
+    return deposited
 end
 
 return M

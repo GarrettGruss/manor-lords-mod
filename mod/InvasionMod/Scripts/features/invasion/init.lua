@@ -25,14 +25,11 @@ state:register("level_great", config.levels.great, "integer")
 state:register("level_vassal", config.levels.vassal, "integer")
 state:register("plan_day", 0, "integer")
 state:register("raid_day", 0, "integer")
-state:register("warning_day", 0, "integer")
 state:register("size_class", 0, "integer")
 state:register("squads", 0, "integer")
 state:register("composition_seed", 0, "integer") -- seed of the template picks; the composition is computed from it (0: none yet)
 state:register("raids_spawned", 0, "integer")
-state:register("last_banner_day", 0, "integer")
 state:register("sub_day", 0, "integer")         -- subjugation raid: planned day (0: not planned)
-state:register("sub_warning_day", 0, "integer")
 state:register("sub_squads", 0, "integer")
 state:register("sub_seed", 0, "integer")
 state:register("sub_spawned", 0, "integer")
@@ -41,9 +38,10 @@ state:register("gr_wave", 0, "integer")
 state:register("gr_last_day", 0, "integer")
 state:register("gr_seed", 0, "integer")
 state:register("difficulty_chosen", 0, "integer") -- 1 after the player picked the difficulty
-state:register("last_prompt_day", 0, "integer")
 state:register("great_raid_day", 0, "integer") -- absolute game day when the great raid starts (0: the clock has not started)
-state:register("last_clock_banner_day", 0, "integer")
+state:register("last_clock_banner_year", 0, "integer") -- the game year of the last great raid clock banner (a load does not repeat it)
+state:register("plunder_banner", 0, "integer")  -- 1 after the 30 day banner of the current plunder plan showed
+state:register("sub_banner", 0, "integer")      -- 1 after the 30 day banner of the subjugation plan showed
 state:register("plunder_spawned", 0, "integer")   -- 1 after the current plunder plan spawned
 state:register("yearly_season_no", -1, "integer") -- season changes since the mod started (-1: no season seen yet)
 state:register("yearly_last_season", -1, "integer")
@@ -167,27 +165,35 @@ local function make_plan(today)
     local plan = plan_rules.yearly_raid(today, size_class_for_plan(), level("yearly"), config, math.random)
     for key, value in pairs(plan) do state:set(key, value) end
     state:set("plunder_spawned", 0)
+    state:set("plunder_banner", 0)
     state:set("composition_seed", 0) -- a new plan gets a new composition
     ensure_seed()
-    core.log.info(TAG, string.format("INVASION plan day=%d raid_day=%d warning_day=%d size_class=%d squads=%d level=%d composition=%s",
-        today, plan.raid_day, plan.warning_day, plan.size_class, plan.squads, level("yearly"), plan_rules.join(composition_list())))
+    core.log.info(TAG, string.format("INVASION plan day=%d raid_day=%d size_class=%d squads=%d level=%d composition=%s",
+        today, plan.raid_day, plan.size_class, plan.squads, level("yearly"), plan_rules.join(composition_list())))
 end
 
 local function make_subjugation_plan(today)
     if level("vassal") == 0 then return core.log.info(TAG, "INVASION vassal level is 0: no subjugation raid planned") end
     local plan = plan_rules.yearly_raid(today, config.subjugation.size_class, level("vassal"), config, math.random)
     state:set("sub_day", plan.raid_day)
-    state:set("sub_warning_day", plan.warning_day)
     state:set("sub_squads", plan.squads)
+    state:set("sub_banner", 0)
     ensure_seed("subjugation")
-    core.log.info(TAG, string.format("INVASION subjugation plan day=%d sub_day=%d warning_day=%d squads=%d composition=%s", today,
-        plan.raid_day, plan.warning_day, plan.squads, plan_rules.join(composition_list("subjugation"))))
+    core.log.info(TAG, string.format("INVASION subjugation plan day=%d sub_day=%d squads=%d composition=%s", today,
+        plan.raid_day, plan.squads, plan_rules.join(composition_list("subjugation"))))
 end
 
 -- The kind rules: the first raid is a plunder raid, the second a subjugation raid (once), later raids are plunder raids.
 local function next_kind()
     if config.subjugation.enabled and level("vassal") > 0 and state:get("plunder_spawned") == 1 and state:get("sub_spawned") == 0 then return "subjugation" end
     return "plunder"
+end
+
+-- The target of a raid. A subjugation raid picks its vassal from the saved seed, so the banner and the spawn name the same one.
+local function raid_target(kind)
+    local home = core.player_region()
+    local random = kind == "subjugation" and plan_rules.lcg(state:get("sub_seed") + 777) or math.random
+    return target_rules.pick(kind, home and core.region_row(home).region or "home", vassal_provider(), random)
 end
 
 local function spawn_raid(today, kind)
@@ -229,8 +235,7 @@ local function spawn_raid(today, kind)
     if not ok then return core.log.error(TAG, "raid spawn failed: " .. tostring(problem)) end
     state:set("raids_spawned", state:get("raids_spawned") + 1)
     if kind == "subjugation" then state:set("sub_spawned", 1) else state:set("plunder_spawned", 1) end
-    local home = core.player_region()
-    local target = target_rules.pick(kind, home and core.region_row(home).region or "home", vassal_provider(), math.random)
+    local target = raid_target(kind)
     for index, watcher in ipairs(spawn_watchers) do
         core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = squads, roles = use_roles, lord_raid = lord_info, kind = kind, target = target })
     end
@@ -324,47 +329,77 @@ local function clock_days_left(today)
     return great_raid.days_left(state:get("great_raid_day"), today)
 end
 
--- The subtitle of a raid banner: the great raid clock, or nothing when the great raid is off.
-local function clock_subtitle(today)
-    if level("great") == 0 then return "" end
-    return great_raid.text(clock_days_left(today))
+-- The game year of the yearly rule: 4 season changes make one year (year 1 is the first year the mod saw).
+local function current_year()
+    return (plan_rules.season_year(math.max(state:get("yearly_season_no"), 0)))
 end
 
+-- The clock ends at the first day of game year `great_raid.start_year`. The day is an estimate until that year begins.
 local function start_clock(today)
-    local length = great_raid.length(clock_config, math.random)
-    state:set("great_raid_day", today + length)
-    core.log.info(TAG, string.format("INVASION clock start day=%d end_day=%d length=%d", today, today + length, length))
+    local seasons_done = math.max(state:get("yearly_season_no"), 0)
+    local end_day = great_raid.estimated_end_day(today, seasons_done, clock_config)
+    state:set("great_raid_day", end_day)
+    core.log.info(TAG, string.format("INVASION clock start day=%d end_day=%d start_year=%d year=%d", today, end_day, clock_config.start_year, current_year()))
 end
 
-local function show_clock_banner(today)
-    local days_left = clock_days_left(today)
-    local ok, problem = core.show_banner(great_raid.text(days_left), "")
-    state:set("last_clock_banner_day", today)
-    core.log.info(TAG, string.format("INVASION clock banner day=%d days_left=%d shown=%s%s", today, days_left, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
+local last_seen_year = nil -- the game year at the last daily step in this Lua state (nil after a load: a missed warning is skipped)
+
+-- One banner at the start of each of the last `warning_years` years before the start year. None in other years.
+local function clock_banner_step(year)
+    local years_left = clock_config.start_year - year
+    if last_seen_year == nil or year == last_seen_year then return end
+    if years_left < 1 or years_left > clock_config.warning_years or state:get("last_clock_banner_year") >= year then return end
+    local ok, problem = core.show_banner(great_raid.years_text(years_left), "")
+    state:set("last_clock_banner_year", year)
+    core.log.info(TAG, string.format("INVASION clock banner year=%d years_left=%d shown=%s%s", year, years_left, tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
 end
 
-local function show_countdown(today, days_left)
-    local text = plan_rules.banner_text(days_left, planned_units())
-    local ok, problem = core.show_banner(text, clock_subtitle(today))
-    state:set("last_clock_banner_day", today)
-    state:set("last_banner_day", today)
-    core.log.info(TAG, string.format("INVASION banner day=%d days_left=%d raiders=%d shown=%s%s", today, days_left,
-        planned_units(), tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
+local function clock_step(today)
+    local year = current_year()
+    local previous_year = last_seen_year
+    if level("great") == 0 then
+        last_seen_year = year
+        return -- Great raid level 0: no clock, no banner, no waves
+    end
+    if state:get("great_raid_day") == 0 then start_clock(today) end
+    if state:get("gr_phase") == great_raid.PHASE.clock then
+        if year >= clock_config.start_year and state:get("great_raid_day") > today then
+            state:set("great_raid_day", today) -- the start year began: the estimate was later than the real day
+            core.log.info(TAG, string.format("INVASION clock end day=%d year=%d", today, year))
+        end
+        clock_banner_step(year)
+    end
+    last_seen_year = year
+    great_step(today)
+end
+
+local function target_text(kind)
+    local target = target_rules.pick(kind, "home", vassal_provider(), plan_rules.lcg(state:get("sub_seed") + 777)) -- the home name does not matter here
+    if kind ~= "subjugation" or target.stand_in then return "you" end
+    return "your vassal " .. tostring(target.region)
+end
+
+-- Only a subjugation raid and a large plunder raid (the player raid) have a banner. A small or medium yearly raid has none.
+local function has_banner(kind)
+    return kind == "subjugation" or state:get("size_class") == plan_rules.SIZE_CLASSES.large
+end
+
+-- One banner, `raid_banner_days` before the raid day (on the plan day when the plan is shorter). The flag keeps it from repeating after a load.
+local function raid_banner_step(kind, today, days_left)
+    local flag = kind == "subjugation" and "sub_banner" or "plunder_banner"
+    if state:get(flag) == 1 or not has_banner(kind) or days_left > config.raid_banner_days then return end
+    state:set(flag, 1)
+    local text = plan_rules.banner_text(days_left, target_text(kind), planned_units(kind))
+    local ok, problem = core.show_banner(text, "")
+    core.log.info(TAG, string.format("INVASION raid banner kind=%s day=%d days_left=%d target=%s raiders=%d shown=%s%s", kind, today, days_left, target_text(kind),
+        planned_units(kind), tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
 end
 
 local function minor_raid_step(today)
     if level("yearly") == 0 or state:get("raid_day") == 0 or state:get("plunder_spawned") == 1 then return end
     local days_left = state:get("raid_day") - today
     if days_left <= 0 then return spawn_raid(today) end
-    if today >= state:get("warning_day") and state:get("last_banner_day") ~= today then show_countdown(today, days_left) end
-end
-
-local function show_subjugation_countdown(today, days_left)
-    local text = "Subjugation " .. plan_rules.banner_text(days_left, planned_units("subjugation")):lower()
-    local ok = core.show_banner(text, clock_subtitle(today))
-    state:set("last_clock_banner_day", today)
-    state:set("last_banner_day", today)
-    core.log.info(TAG, string.format("INVASION subjugation banner day=%d days_left=%d raiders=%d shown=%s", today, days_left, planned_units("subjugation"), tostring(ok)))
+    raid_banner_step("plunder", today, days_left)
 end
 
 -- The yearly roll plans the subjugation raid after the first (plunder) raid. It is a major raid on a vassal region (stand-in: the home region).
@@ -372,23 +407,7 @@ local function subjugation_step(today)
     if not config.subjugation.enabled or level("vassal") == 0 or state:get("sub_day") == 0 or state:get("sub_spawned") == 1 then return end
     local days_left = state:get("sub_day") - today
     if days_left <= 0 then return spawn_raid(today, "subjugation") end
-    if today >= state:get("sub_warning_day") and state:get("last_banner_day") ~= today then show_subjugation_countdown(today, days_left) end
-end
-
-local function clock_step(today)
-    if level("great") == 0 then return end -- Great raid level 0: no clock, no banner, no waves
-    if state:get("great_raid_day") == 0 then start_clock(today) end
-    local due = state:get("last_clock_banner_day") + clock_config.banner_every_days <= today
-    if due and not great_raid.is_due(state:get("great_raid_day"), today) then show_clock_banner(today) end
-    great_step(today)
-end
-
-local function prompt_step(today)
-    if state:get("difficulty_chosen") == 1 or state:get("settings_applied") == 1 then return end
-    if state:get("last_prompt_day") ~= 0 and today - state:get("last_prompt_day") < clock_config.prompt_every_days then return end
-    state:set("last_prompt_day", today)
-    local ok = core.show_banner("Pick the difficulty: 1, 2 or 3", string.format("Now %d. Use the command invasion_pick_difficulty", general_difficulty()))
-    core.log.info(TAG, string.format("INVASION difficulty prompt day=%d current=%d shown=%s", today, general_difficulty(), tostring(ok)))
+    raid_banner_step("subjugation", today, days_left)
 end
 
 -- One roll for the season that just began. Returns true when a raid was planned.
@@ -423,7 +442,6 @@ local function yearly_step(today)
 end
 
 local function daily_step(today)
-    prompt_step(today)
     yearly_step(today)
     minor_raid_step(today)
     subjugation_step(today)
@@ -465,9 +483,9 @@ local function command_state()
     local squads = state:get("squads")
     return {
         day = today, level_yearly = level("yearly"), level_great = level("great"), level_vassal = level("vassal"), plan_day = state:get("plan_day"), raid_day = raid_day,
-        warning_day = state:get("warning_day"), size_class = state:get("size_class"), squads = squads,
+        size_class = state:get("size_class"), squads = squads,
         raiders = planned_units(), composition = (use_roles and state:get("squads") > 0) and plan_rules.join(composition_list()) or "none", roles = use_roles, days_left = (today and raid_day > 0) and (raid_day - today) or nil,
-        raids_spawned = state:get("raids_spawned"), last_banner_day = state:get("last_banner_day"),
+        raids_spawned = state:get("raids_spawned"), plunder_banner = state:get("plunder_banner"), sub_banner = state:get("sub_banner"),
     }
 end
 
@@ -509,6 +527,23 @@ local function command_yearly_advance_season(args)
     return answer
 end
 
+-- For tests: move the raid day of a planned raid so that `days` game days remain. The banner flag is reset.
+local function command_set_raid_days(args)
+    local today = current_day()
+    if today == nil then return nil, "the game day is not available" end
+    if args.kind == "subjugation" then
+        if state:get("sub_day") == 0 or state:get("sub_spawned") == 1 then return nil, "no subjugation raid is planned" end
+        state:set("sub_day", today + args.days)
+        state:set("sub_banner", 0)
+    else
+        if state:get("raid_day") == 0 or state:get("plunder_spawned") == 1 then return nil, "no plunder raid is planned" end
+        state:set("raid_day", today + args.days)
+        state:set("plunder_banner", 0)
+    end
+    last_handled_day = nil
+    return command_state()
+end
+
 local function command_force_next()
     local today = current_day()
     if today == nil then return nil, "the game day is not available" end
@@ -524,7 +559,7 @@ local function command_clock_state()
     local today = current_day()
     local end_day = state:get("great_raid_day")
     return { day = today, great_raid_day = end_day, days_left = (today and end_day > 0) and clock_days_left(today) or nil,
-        last_clock_banner_day = state:get("last_clock_banner_day") }
+        last_clock_banner_year = state:get("last_clock_banner_year"), year = current_year() }
 end
 
 -- For tests: move the end of the clock so that `days` game days remain.
@@ -538,7 +573,7 @@ end
 local function command_subjugation_state()
     local today = current_day()
     local sub_day = state:get("sub_day")
-    return { day = today, sub_day = sub_day, warning_day = state:get("sub_warning_day"), squads = state:get("sub_squads"),
+    return { day = today, sub_day = sub_day, squads = state:get("sub_squads"), banner = state:get("sub_banner"),
         raiders = planned_units("subjugation"), spawned = state:get("sub_spawned") == 1, days_left = (today and sub_day > 0) and (sub_day - today) or nil,
         composition = state:get("sub_squads") > 0 and plan_rules.join(composition_list("subjugation")) or "none" }
 end
@@ -594,12 +629,10 @@ end
 local function settings_changed()
     if level("yearly") == 0 and state:get("plunder_spawned") ~= 1 then
         state:set("raid_day", 0)
-        state:set("warning_day", 0)
         state:set("squads", 0)
     end
     if level("vassal") == 0 and state:get("sub_spawned") ~= 1 then
         state:set("sub_day", 0)
-        state:set("sub_warning_day", 0)
         state:set("sub_squads", 0)
     end
     if level("great") == 0 and state:get("gr_phase") == great_raid.PHASE.clock then state:set("great_raid_day", 0) end
@@ -635,6 +668,23 @@ local function command_pick_difficulty(args)
 end
 
 -- Everything the raid widget shows about raids, in one table (M02 iteration 05). Days are nil when not known.
+-- The upcoming raids for the raid menu. A switched-off raid type is not listed (plunder: nil when not planned; subjugation: nil when it is off).
+local function upcoming_raids(today)
+    local list = {}
+    if level("yearly") > 0 and today and state:get("raid_day") > 0 and state:get("plunder_spawned") == 0 then
+        list.plunder = { days_left = state:get("raid_day") - today, target = "you", raiders = planned_units(), squads = state:get("squads"),
+            size = plan_rules.SIZE_NAMES[state:get("size_class")] }
+    end
+    if config.subjugation.enabled then
+        list.subjugation = { planned = false }
+        if today and state:get("sub_day") > 0 and state:get("sub_spawned") == 0 then
+            list.subjugation = { planned = true, days_left = state:get("sub_day") - today, target = target_text("subjugation"),
+                raiders = planned_units("subjugation"), squads = state:get("sub_squads") }
+        end
+    end
+    return list
+end
+
 local function raid_info()
     local today = current_day()
     local raid_day, great_day = state:get("raid_day"), state:get("great_raid_day")
@@ -646,6 +696,7 @@ local function raid_info()
         great_days_left = (today and great_day > 0) and clock_days_left(today) or nil,
         great_phase = state:get("gr_phase"), great_wave = state:get("gr_wave"), great_waves = difficulty_rules.wave_count(level("great")),
         picks_allowed = state:get("difficulty_chosen") ~= 1 and state:get("raids_spawned") == 0,
+        upcoming = upcoming_raids(today),
     }
 end
 
@@ -725,6 +776,7 @@ if has_commands then
     commands.register("InvasionMod.invasion_clock_state", command_clock_state, {})
     commands.register("InvasionMod.invasion_clock_set_days_left", command_clock_set_days_left, { days = { type = "integer", required = true, min = 1, max = 2000 } })
     commands.register("InvasionMod.invasion_force_next", command_force_next, {})
+    commands.register("InvasionMod.invasion_set_raid_days", command_set_raid_days, { days = { type = "integer", required = true, min = 1, max = 400 }, kind = { type = "string", oneOf = { "plunder", "subjugation" } } })
     commands.register("InvasionMod.invasion_plan_now", command_plan_now, { kind = { type = "string", oneOf = { "plunder", "subjugation" } } })
     commands.register("InvasionMod.invasion_yearly_state", command_yearly_state, {})
     commands.register("InvasionMod.invasion_yearly_advance_season", command_yearly_advance_season, { roll = { type = "number", min = 0, max = 0.999 } })

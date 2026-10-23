@@ -43,6 +43,7 @@ class RaidBehaviorTestCase(unittest.TestCase):
         self.game.load_mod(self.mod_name)
         self.game.advance(2)
         self.counter = 0
+        self.ask("invasion_set_difficulty", value=1)  # these tests use the numbers of level 1; the mod default is level 2
 
     # -- the fake village and the fake units ---------------------------------------------
 
@@ -400,8 +401,86 @@ class StoreTierWorldTests(RaidBehaviorTestCase):
         self.assertEqual(self.stock(other), 40)
         self.assertEqual(self.stock(granary), 0)
         self.assertEqual(self.stock(self.stores[0]) + self.stock(self.stores[1]), 0)
-        self.assertEqual(taken, 14 + 2 + 50)
+        self.assertEqual(taken[0], 14 + 2 + 50)
 
+
+class CorpsePitLootTests(RaidBehaviorTestCase):
+    "Change add-corpse-pit-loot: the plunder record and the share for each body that reaches the pit."
+
+    def run_lua(self, code):
+        return self.game.lua.eval(f"(function() local rules = require('features.raid_behavior.rules'); {code} end)")()
+
+    HUSSITE = "{ anchor = { x = 0, y = 0 }, kind = 'plunder' }"
+
+    def hussite(self, raiders=10):
+        return f"local keys = {{}}; for i = 1, {raiders} do keys[i] = i end; local raid = rules.new_raid(1, 10, 1, keys, true, {self.HUSSITE})"
+
+    def test_the_tick_records_the_goods_it_takes(self):
+        result = self.run_lua(self.hussite() + "; rules.record_plunder(raid, 10, { [3] = 6, [16] = 4 }); rules.record_plunder(raid, 2, { [3] = 2 }); return raid.plunder_goods[3] .. ',' .. raid.plunder_goods[16] .. ',' .. raid.plundered")
+        self.assertEqual(result, "8,4,12")
+
+    def test_a_native_raid_has_no_record(self):
+        result = self.run_lua("local raid = rules.new_raid(1, 10, 1, { 1, 2 }, false, nil); rules.record_plunder(raid, 5, { [3] = 5 }); rules.note_deaths(raid, { { key = 1 } }); return next(raid.plunder_goods) == nil and raid.unpaid == 0")
+        self.assertTrue(result)
+
+    def test_one_body_gives_its_share(self):
+        result = self.run_lua(self.hussite(10) + "; rules.record_plunder(raid, 40, { [3] = 40 }); rules.note_deaths(raid, { { key = 1 } }); local goods, paid = rules.pay_bodies({ raid }, 1); return goods[3] .. ',' .. paid .. ',' .. raid.unpaid")
+        self.assertEqual(result, "4,1,0")
+
+    def test_the_share_rounds_down(self):
+        result = self.run_lua(self.hussite(10) + "; rules.record_plunder(raid, 5, { [4] = 5 }); rules.note_deaths(raid, { { key = 1 } }); local goods, paid = rules.pay_bodies({ raid }, 1); return tostring(goods[4]) .. ',' .. paid")
+        self.assertEqual(result, "nil,1")
+
+    def test_two_bodies_in_one_poll_give_two_shares(self):
+        result = self.run_lua(self.hussite(10) + "; rules.record_plunder(raid, 40, { [3] = 40 }); rules.note_deaths(raid, { { key = 1 }, { key = 2 }, { key = 3 } }); local goods, paid = rules.pay_bodies({ raid }, 2); return goods[3] .. ',' .. paid .. ',' .. raid.unpaid")
+        self.assertEqual(result, "8,2,1")
+
+    def test_a_body_the_mod_does_not_know_is_ignored(self):
+        result = self.run_lua(self.hussite(10) + "; rules.record_plunder(raid, 40, { [3] = 40 }); rules.note_deaths(raid, { { key = 1 } }); local goods, paid = rules.pay_bodies({ raid }, 5); local again, more = rules.pay_bodies({ raid }, 5); return goods[3] .. ',' .. paid .. ',' .. more")
+        self.assertEqual(result, "4,1,0")
+
+    def test_a_departure_is_not_a_body(self):
+        result = self.run_lua(self.hussite(2) + "; local deaths = rules.update(raid, { [1] = { dead = false, x = 0, y = -90000 }, [2] = { dead = false, x = 0, y = -90000 } }, { carry_cap = 10, exit_y = -85000 }, 11); rules.note_deaths(raid, deaths); return raid.unpaid")
+        self.assertEqual(result, 0)
+
+    def test_the_world_reads_a_pit_and_adds_goods(self):
+        pit = self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 3)], btype=113)
+        result = self.game.lua.eval("(function() local world = require('features.raid_behavior.world'); local pits = world.pits(); local ok = world.pit_add(pits[1], { [3] = 4 }); return #pits .. ',' .. pits[1].corpses .. ',' .. tostring(ok) end)")()
+        self.assertEqual(result, "1,3,true")
+        self.assertIn((3, 4), pit["goods"])
+
+    def test_a_pit_add_raises_the_storage_limits_to_the_stored_total(self):
+        pit = self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 3), (3, 10)], btype=113)
+        pit["object"].storageLimitGeneric = 0
+        pit["object"].storageLimitLarge = 0
+        pit["object"].storageLimitPantry = 5
+        result = self.game.lua.eval("(function() local world = require('features.raid_behavior.world'); local pits = world.pits(); world.pit_add(pits[1], { [3] = 400, [15] = 7 }); return world.pit_limit(pits[1]) end)")()
+        self.assertEqual(result, 420)
+        self.assertEqual(sum(a for t, a in pit["goods"] if t == 3), 410)
+
+    def test_no_pit_is_an_empty_list(self):
+        self.assertEqual(self.game.lua.eval("(function() return #require('features.raid_behavior.world').pits() end)")(), 0)
+
+    def test_a_native_raid_body_at_the_pit_gives_nothing_and_no_pit_is_no_error(self):
+        self.start_raid("small")
+        self.game.advance(3)
+        pit = self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 0)], btype=113)
+        self.game.advance(3)
+        before = list(pit["goods"])
+        pit["goods"][0] = (233, 2)
+        pit["object"].Inventory = self.game.array([self.game.struct(Type=t, amt=a) for t, a in pit["goods"]])
+        self.game.advance(3)
+        self.assertEqual(pit["goods"], [(233, 2)], before)
+
+    def test_the_pit_state_command_lists_the_pit(self):
+        self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 2), (3, 5)], btype=113)
+        answer = self.ask("raid_behavior_pit_state")
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["pits"], [{"corpses": 2, "goods": [{"good": 3, "amount": 5}, {"good": 233, "amount": 2}], "limit": 0}])
+
+    def test_the_plunder_returns_the_goods_by_type(self):
+        result = self.game.lua.eval("(function() local taken, by_good = require('features.raid_behavior.world').plunder(20, require('config').raid_behavior.store_tiers); return taken .. ',' .. by_good[16] end)")()
+        self.assertEqual(result, "16,10")
 
 class LordRaidRulesTests(RaidBehaviorTestCase):
     def run_lua(self, code):

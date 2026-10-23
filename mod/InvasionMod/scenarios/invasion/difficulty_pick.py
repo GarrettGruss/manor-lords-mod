@@ -35,5 +35,8 @@ def run(ctx) -> dict:
     ctx.check("D5 the great raid has 3 waves and no relief army", (mixed["waves"], mixed["relief_squads"]) == (3, 0), mixed)
     ctx.check("D5 no subjugation raid at vassal level 0", ctx.mod.refusal("InvasionMod.invasion_plan_now", kind="subjugation") is not None)
     ctx.check("D5 a level of 4 is refused", ctx.mod.refusal("InvasionMod.invasion_set_level", kind="yearly", value=4) is not None)
+    log = ctx.run_dir / "mod.log"
+    text = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
+    ctx.check("D6 no difficulty banner was shown", "INVASION difficulty prompt" not in text, "prompt line found")
     ctx.metric("difficulty", pick)
     return ctx.result()

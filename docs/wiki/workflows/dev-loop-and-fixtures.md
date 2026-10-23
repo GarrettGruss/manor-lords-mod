@@ -106,7 +106,7 @@ Steps in the launcher (`harness/runlib/phases.py`, `harness/runlib/fixtures.py`,
 
 - The code only reads the user's save folder, except for the guarded install, uninstall and `save_game`.
 - The code deletes only a folder named `appdata` that holds `ManorLords/Saved`, and never the user's folder.
-- Parallel runs share the save folder and the ledger (`SHARED_RUNS/.installed-slots.json`). Every change goes through `saveslots.saves_lock()`.
+- Parallel runs share the save folder and the ledger (`SHARED_RUNS/.installed-slots.json`). Every change goes through `saveslots.saves_lock()`. `uninstall_all` keeps the entries of other game slots whose game still runs (#393).
 - Fixture files are checked by hash before use. A mismatch fails loud.
 
 Tests: `test_runlib_fixtures.py`, `test_runlib_saveslots.py`, `saveslot_support.py`. Run all: `uv run python -m unittest discover -s harness/tests`.

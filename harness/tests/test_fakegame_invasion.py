@@ -12,7 +12,6 @@ from fakegame import FakeGame
 from test_fakegame_modstate import FNAME, HELPERS, find_pack_mod
 
 PLAN_DAYS = (1, 90)
-WARNING_DAYS = (14, 56)
 
 
 class InvasionTestCase(unittest.TestCase):
@@ -71,10 +70,7 @@ class PlanTests(InvasionTestCase):
         state = self.state()
         self.assertEqual(state["plan_day"], 61)
         self.assertTrue(PLAN_DAYS[0] <= state["raid_day"] - 61 <= PLAN_DAYS[1], state)
-        wait = state["raid_day"] - 61
-        warning = state["raid_day"] - state["warning_day"]
-        self.assertTrue(min(WARNING_DAYS[0], wait) <= warning <= min(WARNING_DAYS[1], wait), state)
-        self.assertIn(state["squads"], (1, 2, 3))
+        self.assertIn(state["squads"], (2, 4, 6))  # size class 1 to 3 times level 2
         self.assertEqual(len(state["composition"].split("-")), state["squads"])
 
     def test_the_plan_is_kept_in_the_pawn_tags(self):
@@ -107,18 +103,13 @@ class RaidTests(InvasionTestCase):
         for day in range(first, last + 1):
             self.set_day(day)
 
-    def test_daily_banner_then_one_spawn_on_the_planned_day(self):
-        self.ask("invasion_set_difficulty", value=2)
-        plan = self.ask("invasion_set_size", size="medium")["result"]
+    def test_a_minor_raid_has_no_banner_then_one_spawn_on_the_planned_day(self):
+        self.ask("invasion_set_size", size="medium")
+        plan = self.ask("invasion_set_raid_days", days=60)["result"]
         self.run_days(62, plan["raid_day"] + 5)
-        warning_days = plan["raid_day"] - plan["warning_day"]
-        self.banners = [text for text in self.banners if not text.startswith(("Great raid in", "Pick the difficulty", "Subjugation"))]
-        self.assertEqual(len(self.banners), warning_days + 1)  # one for each day left, plus the arrival banner
-        raiders = self.state()["raiders"]
-        self.assertEqual(self.banners[0], f"Raid in {warning_days} days, about {raiders} raiders")
-        self.assertEqual(self.banners[warning_days - 1], f"Raid in 1 day, about {raiders} raiders")
+        self.assertEqual(self.banners, ["Raiders are here"])
         self.assertEqual(len(self.armies), 1)
-        self.assertEqual(len(self.armies[0][0]), 4)
+        self.assertEqual(len(self.armies[0][0]), 4)  # medium class (2) times level 2
         self.assertEqual(self.raids, [])
         self.assertEqual(self.state()["raids_spawned"], 1)
 
@@ -235,9 +226,18 @@ class ClockTests(InvasionTestCase):
         self.assertTrue(answer["ok"], answer)
         return answer["result"]
 
-    def test_the_clock_is_three_to_five_years(self):
+    def advance_season(self):
+        answer = self.ask("invasion_yearly_advance_season", roll=0.999)
+        self.assertTrue(answer["ok"], answer)
+        self.game.advance(2)
+        return answer["result"]
+
+    def clock_banners(self):
+        return [text for text in self.banners if text.startswith("Great raid in")]
+
+    def test_the_clock_ends_at_the_start_of_year_10(self):
         clock = self.clock()
-        self.assertTrue(3 * 365 <= clock["great_raid_day"] - 61 <= 5 * 365, clock)
+        self.assertEqual(clock["great_raid_day"], 61 + 36 * 92)  # 36 season changes to the start of year 10
         self.assertEqual(clock["days_left"], clock["great_raid_day"] - 61)
 
     def test_the_clock_is_kept_in_the_pawn_tags(self):
@@ -252,25 +252,25 @@ class ClockTests(InvasionTestCase):
         self.assertEqual(second["great_raid_day"], first["great_raid_day"])
         self.assertEqual(second["days_left"], first["days_left"] - 5)
 
-    def test_the_clock_banner_shows_once_in_30_days(self):
-        self.ask("invasion_force_next")
-        self.set_day(62)  # the minor raid spawns, so no minor banner is left
-        self.ask("invasion_clock_set_days_left", days=500)
-        self.banners.clear()
-        for day in range(63, 100):
-            self.set_day(day)
-        great = [text for text in self.banners if text.startswith("Great raid in")]
-        subjugation = [text for text in self.banners if text.startswith("Subjugation")]  # these banners carry the clock in their subtitle
-        self.assertGreaterEqual(len(great) + len(subjugation), 1)
-        self.assertLessEqual(len(great), 2)
+    def test_three_clock_banners_in_years_7_8_and_9_and_none_in_year_10(self):
+        shown = {}
+        for _ in range(36):  # the season changes from the start of year 1 to the start of year 10
+            info = self.advance_season()
+            shown[info["year"]] = self.clock_banners()[:]
+        self.assertEqual(self.clock_banners(), ["Great raid in 3 years", "Great raid in 2 years", "Great raid in 1 year"])
+        self.assertEqual({year: len(texts) for year, texts in shown.items() if year <= 6}, {year: 0 for year in range(1, 7)})
+        self.assertEqual([len(shown[year]) for year in (7, 8, 9, 10)], [1, 2, 3, 3])
+        self.assertEqual(self.ask("invasion_great_state")["result"]["phase"], 1)  # the first wave started at the start of year 10
 
-    def test_the_minor_raid_banner_names_the_clock(self):
-        self.ask("invasion_force_next")
-        self.ask("invasion_clock_set_days_left", days=400)
-        subtitles = []
-        self.game.method(self.pawn, "playEventMessage", lambda _self, _kind, text, sub: subtitles.append(sub))
-        self.set_day(62)
-        self.assertTrue(any(sub.startswith("Great raid in") for sub in subtitles) or self.state()["raids_spawned"] == 1, subtitles)
+    def test_no_second_banner_in_the_same_year(self):
+        for _ in range(24):
+            self.advance_season()  # to the start of year 7
+        self.assertEqual(self.clock_banners(), ["Great raid in 3 years"])
+        for day in range(70, 100):
+            self.set_day(day)
+        self.assertEqual(self.clock_banners(), ["Great raid in 3 years"])
+        tags = list(self.game.lua.eval("tag_names")(self.pawn).values())
+        self.assertIn("invasion:last_clock_banner_year=7", tags)
 
     def test_set_days_left_is_refused_outside_range(self):
         self.assertFalse(self.ask("invasion_clock_set_days_left", days=0)["ok"])
@@ -282,11 +282,15 @@ class DifficultyTests(InvasionTestCase):
         self.assertTrue(answer["ok"], answer)
         return answer["result"]
 
-    def test_before_a_pick_the_default_is_used_and_a_prompt_shows(self):
+    def test_before_a_pick_the_default_is_used_and_no_banner_shows(self):
         info = self.difficulty()
         self.assertFalse(info["chosen"])
-        self.assertEqual((info["yearly"], info["great"], info["vassal"]), (1, 1, 1))
-        self.assertTrue(any(text.startswith("Pick the difficulty") for text in self.banners), self.banners)
+        self.assertEqual((info["yearly"], info["great"], info["vassal"]), (2, 2, 2))
+        for day in range(62, 92):
+            self.set_day(day)
+        self.assertFalse(any("difficulty" in text.lower() for text in self.banners), self.banners)
+        log = (self.game.run_dir / "mod.log").read_text(encoding="utf-8", errors="replace") if (self.game.run_dir / "mod.log").exists() else ""
+        self.assertNotIn("INVASION difficulty prompt", log)
 
     def test_a_pick_sets_the_difficulty_once(self):
         self.assertTrue(self.ask("invasion_pick_difficulty", value=2)["ok"])
@@ -303,13 +307,6 @@ class DifficultyTests(InvasionTestCase):
             info = self.difficulty()
             seen.append((info["relief_squads"], info["waves"]))
         self.assertEqual(seen, [(15, 1), (8, 2), (0, 3)])
-
-    def test_the_prompt_stops_after_a_pick(self):
-        self.ask("invasion_pick_difficulty", value=1)
-        self.banners.clear()
-        for day in range(62, 90):
-            self.set_day(day)
-        self.assertFalse(any(text.startswith("Pick the difficulty") for text in self.banners))
 
     def test_pick_outside_range_is_refused(self):
         self.assertFalse(self.ask("invasion_pick_difficulty", value=4)["ok"])
@@ -487,6 +484,94 @@ class VassalProviderTests(InvasionTestCase):
         log = (self.game.run_dir / "mod.log").read_text(encoding="utf-8", errors="replace") if (self.game.run_dir / "mod.log").exists() else ""
         self.assertIn("kind=subjugation target=Eichenhau stand_in=false", log)
 
+
+
+class RaidBannerTests(InvasionTestCase):
+    """update-raid-banners: no banner for a minor raid; one banner 30 days before a subjugation raid or a large plunder raid."""
+
+    def run_days_collecting(self, first, last):
+        """Returns { day: [banners shown on that day] }."""
+        seen = {}
+        for day in range(first, last + 1):
+            before = len(self.banners)
+            self.set_day(day)
+            if len(self.banners) > before:
+                seen[day] = self.banners[before:]
+        return seen
+
+    def after_first_raid(self):
+        self.ask("invasion_force_next")
+        self.set_day(62)
+        self.banners.clear()
+        self.assertEqual(self.state()["raids_spawned"], 1)
+
+    def test_a_small_yearly_raid_has_no_banner_of_any_kind(self):
+        self.ask("invasion_set_size", size="small")
+        self.ask("invasion_set_raid_days", days=60)
+        seen = self.run_days_collecting(62, 125)
+        self.assertEqual([text for texts in seen.values() for text in texts], ["Raiders are here"])
+
+    def test_a_large_player_raid_has_one_banner_30_days_before(self):
+        self.ask("invasion_set_difficulty", value=2)
+        self.ask("invasion_set_size", size="large")
+        plan = self.ask("invasion_set_raid_days", days=60)["result"]
+        raiders = plan["raiders"]
+        seen = self.run_days_collecting(62, plan["raid_day"] + 2)
+        self.assertEqual(seen[plan["raid_day"] - 30], [f"Raid in 30 days: you, about {raiders} raiders"])
+        self.assertEqual(sum(1 for texts in seen.values() for text in texts if text.startswith("Raid in")), 1)
+
+    def test_a_short_plan_shows_the_banner_on_the_plan_day(self):
+        self.ask("invasion_set_size", size="large")
+        plan = self.ask("invasion_set_raid_days", days=10)["result"]
+        self.game.advance(2)  # the daily step of the plan day (day 61)
+        self.assertEqual([text for text in self.banners if text.startswith("Raid in")], [f"Raid in 10 days: you, about {plan['raiders']} raiders"])
+        self.assertEqual(self.run_days_collecting(62, plan["raid_day"] - 1), {})
+
+    def test_a_subjugation_raid_stand_in_names_you(self):
+        self.after_first_raid()
+        self.ask("invasion_plan_now")
+        sub = self.ask("invasion_set_raid_days", days=40, kind="subjugation")["result"]
+        seen = self.run_days_collecting(63, 105)
+        banners = [text for texts in seen.values() for text in texts if text.startswith("Raid in")]
+        self.assertEqual(banners, [f"Raid in 30 days: you, about {self.sub_raiders()} raiders"])
+        self.assertEqual(len(self.armies), 2)
+
+    def sub_raiders(self):
+        return self.ask("invasion_subjugation_state")["result"]["raiders"]
+
+    def test_a_subjugation_raid_names_the_vassal_on_the_30th_day_before(self):
+        self.game.exec('require("features.invasion.init").set_vassal_provider(function() return { "Eichenhau" } end)')
+        self.after_first_raid()
+        self.ask("invasion_plan_now")
+        sub = self.ask("invasion_set_raid_days", days=40, kind="subjugation")["result"]
+        raiders = self.sub_raiders()
+        seen = self.run_days_collecting(63, 62 + 40)
+        self.assertEqual(seen[62 + 10], [f"Raid in 30 days: your vassal Eichenhau, about {raiders} raiders"])
+        self.assertEqual(sub["day"], 62)
+
+    def test_a_load_does_not_repeat_the_banner(self):
+        self.ask("invasion_set_size", size="large")
+        self.ask("invasion_set_raid_days", days=60)
+        self.run_days_collecting(62, 95)  # the banner showed on day 91
+        self.banners.clear()
+        self.game.exec('local s = require("ModState").open("invasion", "pawn"); s:load()')  # the values come back from the pawn Tags
+        self.game.exec('require("features.invasion.init").settings_changed()')  # the daily step runs again
+        self.game.advance(2)
+        self.assertEqual([text for text in self.banners if text.startswith("Raid in")], [])
+        tags = list(self.game.lua.eval("tag_names")(self.pawn).values())
+        self.assertIn("invasion:plunder_banner=1", tags)
+
+    def test_a_new_plan_gets_a_new_banner(self):
+        self.ask("invasion_set_size", size="large")
+        self.ask("invasion_set_raid_days", days=20)
+        self.run_days_collecting(62, 90)
+        self.assertEqual(self.state()["raids_spawned"], 1)
+        self.banners.clear()
+        self.ask("invasion_plan_now", kind="plunder")
+        self.ask("invasion_set_size", size="large")
+        self.ask("invasion_set_raid_days", days=10)
+        self.set_day(92)
+        self.assertEqual(len([text for text in self.banners if text.startswith("Raid in")]), 1)
 
 
 class YearlyTests(InvasionTestCase):

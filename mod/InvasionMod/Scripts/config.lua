@@ -15,19 +15,20 @@ return {
     -- M02 invasion, iterations 01 and 02 (the tick runs at each season change). First guesses from the M00 balance targets.
     invasion = {
         enabled = true,
-        levels = { yearly = 1, great = 1, vassal = 1 },     -- update-raid-difficulty-levels: start value of the level of each raid type, 0 (off) to 3 (hard), before the settings menu applies its defaults (2).
+        levels = { yearly = 2, great = 2, vassal = 2 },     -- update-raid-difficulty-levels: start value of the level of each raid type, 0 (off) to 3 (hard); the owner default is 2 (medium), also before the settings menu applies anything.
         yearly = {                                           -- update-raid-clock-yearly: no raid in game year 1, then one raid a year
             chance_by_season = { 25, 33, 50, 100 },          -- percent at the season change, first to fourth season of the year (owner decision 2026-10-21)
             season_days = 90,                                -- the raid comes 1 to this many game days after the successful roll
         },
-        warning_days_min = 14, warning_days_max = 56,        -- 2 to 8 game weeks
         size_multipliers = { small = 1, medium = 2, large = 3 }, -- squads = multiplier x level of the raid type
         squad_units = 18,                                    -- units in one squad of spawnRaiders
         base_timer_floor = 300,                              -- the mod lifts the base game raid timer when it falls under this
         base_timer_refill = 700,
-        great_raid = {                                       -- M02 iteration 02: the clock to the great raid (365 game days a year)
-            min_days = 3 * 365, max_days = 5 * 365,          -- M00 balance target: 3 to 5 game years
-            banner_every_days = 30,
+        raid_banner_days = 30,                               -- update-raid-banners: the one banner of a subjugation or player raid shows this many game days before the raid
+        great_raid = {                                       -- the great raid starts at the first day of a game year (4 season changes a year)
+            start_year = 10,                                 -- game year of the first wave (owner decision 2026-10-22)
+            warning_years = 3,                               -- one clock banner at the start of each of this many years before the start year
+            season_estimate_days = 92,                       -- estimate of the days left to the start year (a season has about 91 days; the real day replaces it)
             relief_full_squads = 15,                         -- relief army at difficulty 1 (decisions 17, 26)
             wave_squads = 15,                                -- a large army (decision 16)
             -- M02 iteration 06: the waves, the relief army and the final battle. All values are TBD for playtests.
@@ -37,7 +38,6 @@ return {
             final_tier_difficulty = 2,                       -- the tier mix of the final army (roles table of this difficulty)
             relief_templates = { "militiaFoot", "spearMilitia", "bowMilitia", "crossbowMilitia" }, -- the liege squads, cycled
             relief_offset = { x = 0, y = 2500 },             -- the relief army appears this far from the player pawn
-            prompt_every_days = 7,                           -- iteration 04: the pick prompt repeats until the player picks                          -- a banner for the clock when no minor raid banner shows
         },
         -- M02 iteration 03: the subjugation raid (major). The yearly roll plans it as the second raid. Values are TBD for playtests.
         subjugation = {
@@ -80,6 +80,7 @@ return {
     raid_behavior = {
         enabled = true,
         poll_ms = 1000,         -- real time between two looks at the raiders
+        pit_poll_ms = 1000,     -- real time between two looks at the corpse pit (change add-corpse-pit-loot)
         slow_every = 5,         -- the building scan and the AI log scan run every Nth look (they read many objects)
         carry_cap = 10,         -- most goods a Hussite raid plunders for each raider at its start (M00: Hussite grain 10). It is also the loot goal of a Hussite raid. Other raids are not capped.
         exit_y = -85000,       -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
@@ -196,16 +197,6 @@ return {
             tribute_days = 360,              -- game days between two tributes
             poll_ms = 2000,                  -- real time between two looks at the tribute day
         },
-        -- M06 iteration 03. Fallback capital, simplest form. All values TBD (playtests).
-        fallback = {
-            cost_base = 150,                 -- silver = cost_base x difficulty
-            min_buildings = 8,               -- "fortified" for now: the vassal region has at least this many buildings (TBD)
-            grain_goods = { 172, 1, 30 },    -- goods that move with the capital, first one the home stores hold: Bread, Grain, Fish
-            grain_amount = 20,               -- units moved from the home stores
-            take_back = "write",             -- how the region returns to the player: "clear" (clear owner, player claim) or "write" (owner write only)
-            family_calls = 1,                -- settleRegion calls on the new capital, 5 families each
-            deposit_tries = 10,              -- buildings tried when the grain is put into the new capital
-        },
     },
     -- M07 vassals. Values are TBD for playtests .
     vassals = {
@@ -219,13 +210,31 @@ return {
         keep_peace = true,       -- declare peace again when a vassal lord is at war with the player (TBD: the lords started the war by themselves)
         growth_check_days = 10,  -- game days after the handover until the mod checks that the lord built
         growth_min_buildings = 3, -- fewer new buildings than this means the lord stalled (real runs: +10 or +0)
+        -- Change add-vassal-sack-wipe. A Hussite sack collapses buildings until ruin_share of them are ruins, then all villagers are deleted.
+        sack_wipe = {
+            ruin_share = 0.80,       -- owner, 2026-10-20: the sack is complete at 80 percent ruins
+            max_steps = 6,           -- sack steps (one for each vassal poll) before the mod gives up and logs an error
+            free_stable_polls = 4,   -- polls with a stable family count of 0 before the slot is freed and the refugee wave starts
+            retry_margin = 3,        -- buildings collapsed above the need in a retry step: the AI rebuilds ruins while the sack runs
+            max_wiped = 6,           -- wiped regions that the mod remembers for a restore
+            -- Owner, 2026-10-22: a sack removes all logs and planks of the region. A sack that ends without a wipe gives some back and orders the rebuild at once.
+            wood = { { id = 16, name = "logs" }, { id = 17, name = "planks" } },
+            give = { { id = 16, amount = 50, name = "logs" }, { id = 17, amount = 100, name = "planks" } },
+            deposit_tries = 10,      -- buildings tried for each good
+        },
+        -- Restore of a wiped village (owner, 2026-10-21): flat silver, 5 families, and goods so that the AI starts to rebuild.
+        restore = {
+            silver = 100,
+            goods = { { id = 16, amount = 100, name = "logs" }, { id = 17, amount = 200, name = "planks" }, { id = 15, amount = 100, name = "rubble_stone" } },
+            deposit_tries = 10,      -- buildings tried for each good
+            rebuilt_share = 0.50,    -- the village is rebuilt when this share of the ruins that the restore ordered is built (a site does not count); then the tribute starts (TBD)
+        },
         -- Iteration 03. Policies are mod-owned. Values are TBD for playtests.
         policies = {
             light = { tribute = 0.5 },   -- tribute factor on the M08 share
             fair = { tribute = 1.0 },
             heavy = { tribute = 1.5 },
         },
-        loss_region = "forget",   -- test loss: "forget" (the lord keeps the land, the slot is freed) or "take_by_lord" (another lord is given the land; crashed the game in the first run)
     },
     -- M10 finite_resources. Home deposits are a mod-owned stock. Values are TBD for playtests (M00: last 2 to 4 game years at normal use).
     finite_resources = {
@@ -286,11 +295,11 @@ return {
         position = { X = 300, Y = 150 },
         step_x = 180, step_y = 60,           -- pixels for one layout unit of a node
     },
-    -- M09 refugees. Values are TBD for playtests (M00: 30 to 60 percent of the vassal population).
+    -- M09 refugees. Values are TBD for playtests (owner, 2026-10-20: 50 percent of the vassal population).
     refugees = {
         enabled = true,
-        share_min = 0.30,         -- share of the vassal families that flee
-        share_max = 0.60,
+        share_min = 0.50,         -- share of the vassal families that flee (owner, 2026-10-20: 50 percent)
+        share_max = 0.50,
         families_per_call = 5,    -- one settleRegion call adds 5 families (spec 15)
         max_calls = 3,            -- most calls in one wave
         timeout_days = 45,        -- game days until unhoused refugees turn to bandits (M00: 1 to 2 game months; TBD)

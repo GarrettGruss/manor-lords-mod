@@ -86,7 +86,7 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(kinds, "new,old_save,loaded,old_save,unknown")
 
 
-DEFAULTS_BEFORE_MENU = {"yearly": 1, "great": 1, "vassal": 1, "first_raid_years": 1, "size_class": 2}
+DEFAULTS_BEFORE_MENU = {"yearly": 2, "great": 2, "vassal": 2, "first_raid_years": 1, "size_class": 2}
 
 
 class SettingsTestCase(InvasionTestCase):
@@ -241,7 +241,7 @@ class CommandTests(SettingsTestCase):
     def test_set_changes_only_the_named_settings(self):
         self.ask("scenario_settings_set", yearly=3, first_raid_years=1)
         self.ask("scenario_settings_set", great=0)
-        self.assertEqual(self.values(), {"yearly": 3, "great": 0, "vassal": 1, "first_raid_years": 1, "size_class": 2})
+        self.assertEqual(self.values(), {"yearly": 3, "great": 0, "vassal": 2, "first_raid_years": 1, "size_class": 2})
 
     def test_a_value_outside_the_choices_is_refused(self):
         self.assertFalse(self.ask("scenario_settings_set", yearly=4)["ok"])
@@ -426,7 +426,7 @@ class EffectTests(SettingsTestCase):
         self.assertEqual(self.ask("invasion_clock_state")["result"]["great_raid_day"], 0)
         self.assertEqual(self.ask("invasion_great_state")["result"]["phase"], 0)
         self.assertEqual([text for text in self.banners if text.startswith(("Great raid", "The great raid"))], [])
-        self.assertEqual(self.ask("raid_widget_state")["result"]["wanted_lines"][2], "Great raid: off")
+        self.assertEqual(self.ask("raid_widget_state")["result"]["wanted_lines"][2], "")
 
     def test_great_raid_level_1_runs_the_clock_again(self):
         self.ask("scenario_settings_set", great=0)
@@ -473,11 +473,11 @@ class DifficultyTests(SettingsTestCase):
             self.set_day(self.calendar.daysTotal + 1)
         self.assertEqual([text for text in self.banners if text.startswith("Pick the difficulty")], [])
 
-    def test_the_pick_banner_still_shows_before_any_setting(self):
+    def test_no_pick_banner_before_any_setting(self):
         self.banners.clear()
         for _ in range(8):
             self.set_day(self.calendar.daysTotal + 1)
-        self.assertTrue(any(text.startswith("Pick the difficulty") for text in self.banners))
+        self.assertEqual([text for text in self.banners if text.startswith("Pick the difficulty")], [])
 
     def test_an_old_save_gets_no_pick_banner(self):
         self.start_game("saveGame_4", 61)

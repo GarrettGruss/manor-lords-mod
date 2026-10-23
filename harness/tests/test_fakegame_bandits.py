@@ -61,6 +61,7 @@ class BanditsTestCase(unittest.TestCase):
         self.game.load_mod(self.mod_name)
         self.game.advance(3)
         self.counter = 0
+        self.ask("invasion_set_difficulty", value=1)  # these tests use the numbers of level 1; the mod default is level 2
 
     def ask(self, name, **args):
         self.counter += 1
