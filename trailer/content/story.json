@@ -1,0 +1,337 @@
+{
+  "meta": {
+    "title": "The Hussites Are Coming",
+    "kicker": "Invasion Mod for Manor Lords",
+    "subtitle": "Franconia, 1429",
+    "description": "The trailer of the Invasion Mod: Hussite raids into Franconia, 1429.",
+    "note": "Slow cut. Shot ids refer to design/trailer/invasion-mod/slow/05-shot-list.md.",
+    "style": "cinematic",
+    "ui": "folio",
+    "connectorSpan": 1.2
+  },
+  "chapters": [
+    {
+      "id": "00-darkness",
+      "label": "Darkness",
+      "eyebrow": "S01-S02 · Black",
+      "title": "Darkness",
+      "subtitle": "S01-S02",
+      "copyPosition": "center",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [
+        "Christe, fili Dei vivi, miserere mei."
+      ],
+      "tags": [
+        "Black"
+      ],
+      "still": "assets/images/scenes/00-darkness.webp",
+      "clip": "assets/video/dives/00-darkness.mp4"
+    },
+    {
+      "id": "01-flint",
+      "label": "Flint",
+      "eyebrow": "S03 · Manuscript",
+      "title": "Flint",
+      "subtitle": "S03",
+      "copyPosition": "bottom",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [],
+      "tags": [
+        "Manuscript"
+      ],
+      "still": "assets/images/scenes/01-flint.webp",
+      "clip": "assets/video/dives/01-flint.mp4"
+    },
+    {
+      "id": "02-torch",
+      "label": "The torch falls",
+      "eyebrow": "S04 · Manuscript",
+      "title": "The torch falls",
+      "subtitle": "S04",
+      "copyPosition": "bottom",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [],
+      "tags": [
+        "Manuscript"
+      ],
+      "still": "assets/images/scenes/02-torch.webp",
+      "clip": "assets/video/dives/02-torch.mp4"
+    },
+    {
+      "id": "03-stake",
+      "label": "Constance",
+      "eyebrow": "S05a-S05b · Manuscript",
+      "title": "Constance",
+      "subtitle": "S05a-S05b",
+      "copyPosition": "right",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [],
+      "tags": [
+        "Manuscript"
+      ],
+      "still": "assets/images/scenes/03-stake.webp",
+      "clip": "assets/video/dives/03-stake.mp4"
+    },
+    {
+      "id": "04-given-word",
+      "label": "The given word",
+      "eyebrow": "S06-S06b · Black, then Manuscript",
+      "title": "The given word",
+      "subtitle": "S06-S06b",
+      "copyPosition": "left",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [
+        "Constance, in the year of our Lord fourteen fifteen.",
+        "They gave him their word. Then they burned him."
+      ],
+      "tags": [
+        "Black, then Manuscript"
+      ],
+      "still": "assets/images/scenes/04-given-word.webp",
+      "clip": "assets/video/dives/04-given-word.mp4"
+    },
+    {
+      "id": "05-answer",
+      "label": "Bohemia answered",
+      "eyebrow": "S07 · Manuscript",
+      "title": "Bohemia answered",
+      "subtitle": "S07",
+      "copyPosition": "left",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [
+        "Bohemia answered."
+      ],
+      "tags": [
+        "Manuscript"
+      ],
+      "still": "assets/images/scenes/05-answer.webp",
+      "clip": "assets/video/dives/05-answer.mp4"
+    },
+    {
+      "id": "06-banner",
+      "label": "Four crusades",
+      "eyebrow": "S08 · Manuscript",
+      "title": "Four crusades",
+      "subtitle": "S08",
+      "copyPosition": "right",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [
+        "Four crusades marched against them."
+      ],
+      "tags": [
+        "Manuscript"
+      ],
+      "still": "assets/images/scenes/06-banner.webp",
+      "clip": "assets/video/dives/06-banner.mp4"
+    },
+    {
+      "id": "07-red-sky",
+      "label": "Four crusades broke",
+      "eyebrow": "S09 · Manuscript",
+      "title": "Four crusades broke",
+      "subtitle": "S09",
+      "copyPosition": "left",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [
+        "Four crusades broke."
+      ],
+      "tags": [
+        "Manuscript"
+      ],
+      "still": "assets/images/scenes/07-red-sky.webp",
+      "clip": "assets/video/dives/07-red-sky.mp4"
+    },
+    {
+      "id": "08-burned-house",
+      "label": "Franconia, 1429",
+      "eyebrow": "S10 · Ember",
+      "title": "Franconia, 1429",
+      "subtitle": "S10",
+      "copyPosition": "right",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [
+        "Franconia, 1429."
+      ],
+      "tags": [
+        "Ember"
+      ],
+      "still": "assets/images/scenes/08-burned-house.webp",
+      "clip": "assets/video/dives/08-burned-house.mp4"
+    },
+    {
+      "id": "09-raids",
+      "label": "The war comes",
+      "eyebrow": "S11-S16c · Ash (gameplay)",
+      "title": "The war comes",
+      "subtitle": "S11-S16c",
+      "copyPosition": "bottom",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [
+        "I did not choose this war.",
+        "Then they rode west, into Franconia. Towns that paid were spared. Towns that would not, burned.",
+        "And the hungry want bread. We marched on Bohemia. Now Bohemia marches on us."
+      ],
+      "tags": [
+        "Ash (gameplay)"
+      ],
+      "still": "assets/images/scenes/09-raids.webp",
+      "clip": "assets/video/dives/09-raids.mp4"
+    },
+    {
+      "id": "10-still",
+      "label": "He sits still",
+      "eyebrow": "S17 · Ember",
+      "title": "He sits still",
+      "subtitle": "S17",
+      "copyPosition": "right",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [],
+      "tags": [
+        "Ember"
+      ],
+      "still": "assets/images/scenes/10-still.webp",
+      "clip": "assets/video/dives/10-still.mp4"
+    },
+    {
+      "id": "11-choice",
+      "label": "Fear or faith",
+      "eyebrow": "S18 · Ash and Day (gameplay)",
+      "title": "Fear or faith",
+      "subtitle": "S18",
+      "copyPosition": "center",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [
+        "Rule by fear, or by faith."
+      ],
+      "tags": [
+        "Ash and Day (gameplay)"
+      ],
+      "still": "assets/images/scenes/11-choice.webp",
+      "clip": "assets/video/dives/11-choice.mp4"
+    },
+    {
+      "id": "12-turn",
+      "label": "He stands",
+      "eyebrow": "S19 · Ember",
+      "title": "He stands",
+      "subtitle": "S19",
+      "copyPosition": "left",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [],
+      "tags": [
+        "Ember"
+      ],
+      "still": "assets/images/scenes/12-turn.webp",
+      "clip": "assets/video/dives/12-turn.mp4"
+    },
+    {
+      "id": "13-battle",
+      "label": "The line holds",
+      "eyebrow": "S20-S26 · Day (gameplay)",
+      "title": "The line holds",
+      "subtitle": "S20-S26",
+      "copyPosition": "bottom",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [],
+      "tags": [
+        "Day (gameplay)"
+      ],
+      "still": "assets/images/scenes/13-battle.webp",
+      "clip": "assets/video/dives/13-battle.mp4"
+    },
+    {
+      "id": "14-map",
+      "label": "The great raid",
+      "eyebrow": "S27 · Manuscript",
+      "title": "The great raid",
+      "subtitle": "S27",
+      "copyPosition": "right",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [],
+      "tags": [
+        "Manuscript"
+      ],
+      "still": "assets/images/scenes/14-map.webp",
+      "clip": "assets/video/dives/14-map.mp4"
+    },
+    {
+      "id": "15-whisper",
+      "label": "Black",
+      "eyebrow": "S28 · Black",
+      "title": "Black",
+      "subtitle": "S28",
+      "copyPosition": "center",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [
+        "Restore order. Or burn with it."
+      ],
+      "tags": [
+        "Black"
+      ],
+      "still": "assets/images/scenes/15-whisper.webp",
+      "clip": "assets/video/dives/15-whisper.mp4"
+    },
+    {
+      "id": "16-title",
+      "label": "Title",
+      "eyebrow": "S29 · Manuscript",
+      "title": "Title",
+      "subtitle": "S29",
+      "copyPosition": "center",
+      "span": 4.6,
+      "linger": 0.35,
+      "paragraphs": [
+        "The Hussites Are Coming"
+      ],
+      "tags": [
+        "Manuscript"
+      ],
+      "still": "assets/images/scenes/16-title.webp",
+      "clip": "assets/video/dives/16-title.mp4"
+    }
+  ],
+  "connectors": [
+    null,
+    "assets/video/connectors/01-flint-to-02-torch.mp4",
+    "assets/video/connectors/02-torch-to-03-stake.mp4",
+    "assets/video/connectors/03-stake-to-04-given-word.mp4",
+    "assets/video/connectors/04-given-word-to-05-answer.mp4",
+    "assets/video/connectors/05-answer-to-06-banner.mp4",
+    "assets/video/connectors/06-banner-to-07-red-sky.mp4",
+    "assets/video/connectors/07-red-sky-to-08-burned-house.mp4",
+    "assets/video/connectors/08-burned-house-to-09-raids.mp4",
+    "assets/video/connectors/09-raids-to-10-still.mp4",
+    "assets/video/connectors/10-still-to-11-choice.mp4",
+    "assets/video/connectors/11-choice-to-12-turn.mp4",
+    "assets/video/connectors/12-turn-to-13-battle.mp4",
+    "assets/video/connectors/13-battle-to-14-map.mp4",
+    null,
+    null
+  ],
+  "sources": [
+    {
+      "label": "Hussite Wars (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Hussite_Wars"
+    },
+    {
+      "label": "Jena Codex (National Museum, Prague)",
+      "url": "https://muzeum3000.nm.cz/zajimavosti/jensky-kodex"
+    }
+  ]
+}

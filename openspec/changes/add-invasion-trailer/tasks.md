@@ -1,6 +1,6 @@
 ## 1. Plan (no paid calls)
 
-- [ ] 1.1 Make the project `trailer/` with `init_project.py`. Verified by `serve_project.py` showing the template.
+- [x] 1.1 Make the project `trailer/` with `init_project.py`. Verified by `serve_project.py` showing the template.
 - [ ] 1.2 Write the style preamble and identity blocks (Jan Hus, the Bohemian captain, the chalice banner, the narrator). Verified by owner review.
 - [x] 1.4 Make the banner reference image `references/banners.png` (Gemini, small cost) and list it in `references/README.md` with its prompt and model. Verified by owner review.
 - [ ] 1.3 Write the storyboard: chapter, subject, camera move, copy position, connector, time in the video. Verified by owner review (shot plan approval).

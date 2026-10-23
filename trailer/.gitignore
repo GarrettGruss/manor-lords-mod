@@ -1,0 +1,10 @@
+.env
+.DS_Store
+node_modules/
+tmp/
+logs/
+export/
+
+# Generated media stays out of git. Keep prompts, manifests, story data and code.
+assets/video/
+assets/images/scenes/*.png

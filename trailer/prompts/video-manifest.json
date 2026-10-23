@@ -1,0 +1,16 @@
+{
+  "model": "doubao-seedance-2-5-260628",
+  "duration": 4,
+  "resolution": "720p",
+  "ratio": "16:9",
+  "target_width": 1280,
+  "target_height": 720,
+  "fps": 24,
+  "crf": 20,
+  "gop": 8,
+  "generate_audio": false,
+  "watermark": false,
+  "conditioning_mode": "reference_images",
+  "dives": [],
+  "connectors": []
+}
