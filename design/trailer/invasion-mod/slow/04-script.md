@@ -13,8 +13,8 @@ All spoken lines come from `design/mod/trailer.md` and are unchanged. This cut a
 | 0:12 | Black. | Bohemian voice: "Constance, in the year of our Lord fourteen fifteen. They gave him their word. Then they burned him." |
 | 0:16 | MANUSCRIPT. A sealed letter with the king's seal, held over dark water. | Only the water. (Sigismund threatened to drown every Hussite.) |
 | 0:17 | MANUSCRIPT. Peasants, men and women, beat farm flails into weapons. | Bohemian voice: "Bohemia answered." |
-| 0:19 | MANUSCRIPT. A captain raises the chalice banner over a ring of war wagons. | Narrator: "Four crusades marched against them." The Hussite hymn "Ktož jsú boží bojovníci" ("Ye Who Are Warriors of God") begins under him: many voices, low and far away. |
-| 0:21.5 | MANUSCRIPT. A black army under a red sky, singing as it marches. The page edge starts to burn. | Narrator: "Four crusades broke." The hymn swells, then the fire takes the page. |
+| 0:19 | MANUSCRIPT. A captain raises the chalice banner over a ring of war wagons. | Narrator: "Four crusades marched against them." Low drones. |
+| 0:21.5 | MANUSCRIPT. A black army under a red sky. The page edge starts to burn. | Narrator: "Four crusades broke." The fire takes the page. |
 | 0:24 | The page burns away. EMBER. Inside a burned house: charred beams, a broken wall, a hearth. The narrator sits alone at a table. Caption: "Franconia, 1429." | Drums begin, low and slow. Wind through the broken wall. |
 | 0:27 | ASH. Wide: smoke on the horizon over a small village. | Narrator: "I did not choose this war." |
 | 0:29 | ASH. Wide: a long, dark column of raiders on a road toward a far village. Smoke behind them. | Narrator: "Then they rode west, into Franconia." |
@@ -32,7 +32,7 @@ All spoken lines come from `design/mod/trailer.md` and are unchanged. This cut a
 | 0:51.5 | DAY. His men run back past him. One drops a sack of grain. | One drum beat per second. |
 | 0:53 | The camera rises from the field into parchment. MANUSCRIPT. The map of the region. A larger dark army moves across it toward the town. | Drums peak. |
 | 0:55.5 | Black. | Silence. Then a whisper: "Restore order. Or burn with it." |
-| 0:57 | Title card, burned-edge letters. | None. |
+| 0:57 | Title card, burned-edge letters. | Far away, an army of rough voices starts the Hussite hymn "Ktož jsú boží bojovníci" ("Ye Who Are Warriors of God"), in Czech, and grows over the title. Cut on the last frame. |
 
 ## Voice notes
 

@@ -29,7 +29,7 @@ Rule: the narrator gets clean light once, when he stands up to lead (S20). Befor
 - **Fire:** the flint and torch at Constance, the burning village, the ember light of the anchor, the burned edges of pages and of the title. The same fire runs from 1415 to 1429.
 - **The burned house:** the narrator's anchor. The liege gave him a burned village; he lives in what the raid left.
 - **The given word:** Hus was given a safe-conduct and burned. Then the king promised to drown every Hussite (S06b). Promises from above, kept only as threats.
-- **Singing:** one man sings at the stake (Hus); later a whole army sings his cause (the hymn, S08–S09). The song of one becomes the song of many.
+- **Singing:** one man sings at the stake (Hus); at the very end, over the title, a whole army sings his cause (the hymn, S29). The trailer opens with the song of one and closes with the song of many.
 - **The wagon fort:** the Hussite trademark, shown once in a panel (S08), never in gameplay.
 - **Flails into weapons:** the peasants' farm flails (S07) come back in the hands of the militia (S21). The weapon of Bohemia's answer becomes the weapon of the defense.
 - **Gallows and market:** the two paths of rule (S18), split in one frame.

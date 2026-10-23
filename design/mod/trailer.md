@@ -8,7 +8,7 @@ Production plans (2026-10-22): two cuts of this story, in [`design/trailer/invas
 - Story parts: storybook panels in a woodcut or manuscript style. Ink lines, parchment texture.
 - Palette: black, bone white, ember orange, dried-blood red.
 - Motion: slow parallax, embers that drift across panels, page edges that burn as transitions.
-- Sound: low drones, one voice that sings, drums that grow in the third part, and a cut to silence before the title.
+- Sound: low drones, one voice that sings, drums that grow in the third part, a cut to silence before the title, and the Hussite hymn in Czech over the title.
 - Tone: dark and dramatic. The lord hates the Hussites: they kill his people. The trailer does not draw them as evil; it shows what they do, and his hate follows from that.
 
 ## Voices
@@ -24,12 +24,12 @@ Production plans (2026-10-22): two cuts of this story, in [`design/trailer/invas
 | 0:06 to 0:12 | The camera tilts up the stake. Jan Hus is bound. He sings. The flames rise over him. The singing stops. | Hus sings in Latin: *"Christe, fili Dei vivi, miserere mei."* Then only fire. |
 | 0:12 to 0:18 | Black. | Bohemian voice: "Constance, in the year of our Lord fourteen fifteen. They gave him their word. Then they burned him." |
 | 0:18 to 0:22 | Panel: peasants, men and women, beat farm flails into weapons. Before it, one panel: a sealed letter with the king's seal over dark water. | Bohemian voice: "Bohemia answered." |
-| 0:22 to 0:28 | Panels: a captain raises the chalice banner over a ring of war wagons. A black army under a red sky, singing. | Narrator: "Four crusades marched against them. Four crusades broke." Under it, an army sings the hymn "Ktož jsú boží bojovníci" ("Ye Who Are Warriors of God"). |
+| 0:22 to 0:28 | Panels: a captain raises the chalice banner over a ring of war wagons. A black army under a red sky. | Narrator: "Four crusades marched against them. Four crusades broke." |
 | 0:28 to 0:48 | The pages burn away into gameplay. Caption: "Franconia, 1429." Cuts of about 1.5 s: smoke on the horizon, a granary looted, a barn burning, villagers falling, refugees on the road, bandits in the trees. | Drums grow. Narrator: "I did not choose this war. Then they rode west, into Franconia. Towns that paid were spared. Towns that would not, burned. And the hungry want bread. We marched on Bohemia. Now Bohemia marches on us." |
 | 0:48 to 0:51 | Split frame: a gallows on one side, a full market on the other. | Narrator: "Rule by fear, or by faith." |
 | 0:51 to 0:54 | A dark army moves across a parchment map toward the town. | Drums peak. |
 | 0:54 to 0:57 | Black. | Silence. Then a whisper: "Restore order. Or burn with it." |
-| 0:57 to 1:00 | Title card, burned-edge letters. | None. |
+| 0:57 to 1:00 | Title card, burned-edge letters. | Far away, an army of rough voices starts the Hussite hymn "Ktož jsú boží bojovníci" ("Ye Who Are Warriors of God"), in Czech, and grows over the title. Cut on the last frame. |
 
 ## Historical facts used
 - Jan Hus was burned at the Council of Constance on 6 July 1415, although Emperor Sigismund had given him a safe-conduct.

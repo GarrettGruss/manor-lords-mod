@@ -13,7 +13,7 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 | S06b | 0:16 | 1.0 | 3 | M | C | Static | A sealed letter with the king's seal over dark water (the threat to drown the Hussites) | Panel |
 | S07 | 0:17 | 2.0 | 4 | M | M | Parallax | Peasants, men and women, beat flails into weapons | Panel |
 | S08 | 0:19 | 2.5 | 4 | M | M | Slow push-in | A captain raises the chalice banner over a ring of war wagons | Panel |
-| S09 | 0:21.5 | 2.5 | 4 | M | W | Parallax; page edge burns | A black army under a red sky, singing | Panel |
+| S09 | 0:21.5 | 2.5 | 4 | M | W | Parallax; page edge burns | A black army under a red sky | Panel |
 | S10 | 0:24 | 3.0 | 5 | E | W | Static after the page burn | The narrator alone at a table in a burned house; caption "Franconia, 1429." | Open |
 | S11 | 0:27 | 2.0 | 6 | A | W | Slow pan | Smoke on the horizon over a village | Game |
 | S12 | 0:29 | 2.0 | 6 | A | W | Slow pan | A column of raiders on a road toward a far village; smoke behind | Game |
@@ -35,7 +35,7 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 | S26 | 0:51.5 | 1.5 | 11 | D | M | Track back | Raiders flee past him; one drops a grain sack | Game (native rout) |
 | S27 | 0:53 | 2.5 | 12 | D→M | T | Crane up, dissolve to parchment | The field becomes the region map; a larger dark army moves toward the town | Game + Panel |
 | S28 | 0:55.5 | 1.5 | 13 | — | — | — | Black; whisper | Audio |
-| S29 | 0:57 | 3.0 | 14 | — | — | — | Title card, burned-edge letters | Panel |
+| S29 | 0:57 | 3.0 | 14 | — | — | — | Title card, burned-edge letters; the hymn begins | Panel |
 
 ## Counts
 
@@ -53,4 +53,4 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 - **The split frame (S18)** needs the same village in two states: a gallows in the square, and a full market. Two captures from one camera position.
 - No war wagons, no cavalry, no new 3D models (`invasion-mod.md`, Out of scope).
 - **The wagon fort (S08)** appears only in a panel. The game cannot show war wagons, so the trailer never shows them in gameplay.
-- **The hymn (S08–S09)** is a 15th-century Hussite hymn. The melody is old enough to be free to use; the recording must be new. Record a choir of rough, untrained voices, not a church choir.
+- **The hymn (S29)** comes after the drum crescendo, the silence and the whisper. It is a 15th-century Hussite hymn. The melody is old enough to be free to use; the recording must be new. Record a choir of rough, untrained voices, not a church choir.

@@ -12,8 +12,8 @@ Status: draft (2026-10-22). Written by an agent at the user's request, from [`de
 | Length | 60 s: 56 s of story, 4 s of black and title. An optional end card (mod name, link) can follow after 1:00. |
 | Format | 16:9, YouTube. Storybook panels (woodcut or manuscript style) for the history; in-game footage for Franconia. |
 | Voices | The Bohemian voice (an old man, English, with a light Czech accent). The narrator, the player's lieutenant lord (English, quiet, tired). Jan Hus sings one Latin line. |
-| Music | Low drones; one singing voice (Hus), then an army singing the Hussite hymn; drums that grow from 0:24 and peak at 0:51; a cut to silence before the title. |
-| Must show | The burning of Hus; the king's threat; Bohemia's answer (men and women, a wagon fort, the hymn); Franconia, 1429; raids that loot, burn and kill; refugees and bandits; the choice of fear or faith; the militia holding; raiders routing; the great raid still coming on the map. |
+| Music | Low drones; one singing voice (Hus); drums that grow from 0:24 and peak at 0:53; a cut to silence and a whisper; then the Hussite hymn in Czech over the title, sung by an army. |
+| Must show | The burning of Hus; the king's threat; Bohemia's answer (men and women, a wagon fort); Franconia, 1429; raids that loot, burn and kill; refugees and bandits; the choice of fear or faith; the militia holding; raiders routing; the great raid still coming on the map. |
 | Must not show | Hussites drawn as monsters; war wagons; cavalry; new 3D models (out of scope in version 1). |
 | Call to action | Title card with burned-edge letters. Optional end card with the mod name and link. |
 
