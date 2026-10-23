@@ -118,8 +118,13 @@ def fetch_captions(source, out):
     """Download English captions as SRT. Returns the segments, or [] when there are none."""
     if Path(source).is_file():
         return []
-    yt_dlp("--skip-download", "--write-subs", "--write-auto-subs", "--sub-langs", "en.*",
-           "--convert-subs", "srt", "-o", str(out / "captions"), source)
+    try:
+        yt_dlp("--skip-download", "--write-subs", "--write-auto-subs", "--sub-langs", "en.*",
+               "--convert-subs", "srt", "-o", str(out / "captions"), source)
+    except RuntimeError as error:
+        # YouTube often rate-limits caption requests (HTTP 429). Whisper is the fallback.
+        print(f"Captions failed, using Whisper instead: {str(error).splitlines()[0]}")
+        return []
     files = sorted(out.glob("captions*.srt"))
     return parse_srt(files[0].read_text(encoding="utf-8")) if files else []
 

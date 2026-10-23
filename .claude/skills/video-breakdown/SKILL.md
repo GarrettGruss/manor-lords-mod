@@ -55,7 +55,9 @@ The yt-dlp warning about a missing JavaScript runtime is harmless for most video
    ```
 
 4. Find out where the narrator or anchor shots take place, not only who is in them. The setting is often part of the story. In the example, the king speaks from the sacked house of one of his subjects, not from a hall. Dark, low-key shots hide this, so look at the wide versions and at the props.
-5. Check every scene-detection cut by eye. Fast cuts in action can merge or split. Fix the times in the shot list.
+5. Scene detection misses slow dissolves, mostly between dark shots. A shot longer than about 8 s is suspect: read its `frames/` (1 fps) and split it by eye (`S05a`, `S05b`, …).
+6. When the transcript comes from Whisper, check names and key words against the picture and any on-screen text. Whisper often gets proper names wrong. Captions, when they exist, are usually more accurate.
+7. Check every scene-detection cut by eye. Fast cuts in action can merge or split. Fix the times in the shot list.
 
 ## Step 3: write the documents
 
