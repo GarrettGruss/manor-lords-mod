@@ -2,17 +2,18 @@
 
 Status: draft (2026-10-16). The user owns the story. The agent wrote it down from the chat of 2026-10-16.
 Use: a YouTube trailer, 60 seconds or less. The build and review pipeline is spec 27 (`openspec/changes/archive/2026-10-16-legacy-27-trailer-animatic/`).
+Production plans (2026-10-22): two cuts of this story, in [`design/trailer/invasion-mod/`](../trailer/invasion-mod/README.md). The **slow** cut opens with Hus singing in the dark; the **fast** cut opens with a 2.5 s battle cold open. The shot list below is the first draft.
 
 ## Style
 - Story parts: storybook panels in a woodcut or manuscript style. Ink lines, parchment texture.
 - Palette: black, bone white, ember orange, dried-blood red.
 - Motion: slow parallax, embers that drift across panels, page edges that burn as transitions.
 - Sound: low drones, one voice that sings, drums that grow in the third part, and a cut to silence before the title.
-- Tone: dark and dramatic. The Hussites are an army with a reason, not a religion to hate.
+- Tone: dark and dramatic. The lord hates the Hussites: they kill his people. The trailer does not draw them as evil; it shows what they do, and his hate follows from that.
 
 ## Voices
 - **Bohemian voice:** an old man. Speaks Czech, with English subtitles.
-- **Narrator (the player character):** a lieutenant lord in Franconia. English. Quiet, tired, honest. He does not want this war. He never calls the Hussites evil.
+- **Narrator (the player character):** a lieutenant lord in Franconia. English. Quiet, tired, honest. He does not want this war. He hates the Hussites for what they do to his people.
 
 ## Shot list
 
