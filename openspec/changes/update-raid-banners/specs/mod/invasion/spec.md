@@ -57,3 +57,20 @@ The mod SHALL start the great raid clock on the first daily step. The clock SHAL
 - **WHEN** the game is loaded in a year whose clock banner was shown
 - **THEN** no second clock banner shows in that year
 - Checked by `harness/tests/test_fakegame_invasion.py`.
+
+## ADDED Requirements
+<!-- Issue: #400 -->
+
+### Requirement: The event banners show once, 30 days before
+The mod SHALL show the great raid wave banner, the relief army banner and the victory banner once each, 30 game days before the event they announce: the start of a wave, the arrival of the relief army, and the final battle. If the event is planned less than 30 days ahead, the banner SHALL show once on the plan day. The mod SHALL NOT show a daily or repeated banner for these events, and SHALL NOT show them again after a load. The banner at the spawn of a raid is not changed.
+
+#### Scenario: A wave is announced once
+- **WHEN** a great raid wave is planned 60 game days ahead and the game days run to the wave day
+- **THEN** exactly one wave banner shows, 30 days before the wave day
+- **AND** a load after the banner does not show it again
+- Not checked yet (planned: `harness/tests/test_fakegame_invasion.py`).
+
+#### Scenario: A late plan
+- **WHEN** the relief army is planned 10 game days ahead
+- **THEN** its banner shows once on the plan day
+- Not checked yet (planned: `harness/tests/test_fakegame_invasion.py`).
