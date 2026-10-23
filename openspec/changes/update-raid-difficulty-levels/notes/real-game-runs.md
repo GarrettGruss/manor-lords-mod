@@ -21,3 +21,12 @@ Commands (`uv run python harness\run.py ...`):
 - `levels-great-raid-waves-1`, `levels-great-raid-clock-1`: started, then the batch was stopped by Claude Code because the system was low on memory. No verdict.
 - Not run: `invasion-first-raid`, `invasion-raid-widget --pak raidmenu`, difficulty-pick with `INVASION_DIFFICULTY=1` and `=3`, `scenario-settings-load-keeps-settings`.
 - The save folder gained `saveGame_52*` during the session (not made by these runs, which save nothing); no existing file changed.
+
+## Results, second session (2026-10-23)
+- Merged origin/main again (clean).
+- `levels-pick-d1-1` (INVASION_DIFFICULTY=1) pass, `levels-pick-d3-1` (=3) pass, `levels-great-raid-clock-2` pass, `levels-great-raid-waves-1` pass.
+- `levels-raid-widget-1`: fail, the scenario expected the line "Difficulty"; the widget shows "Raid levels". Scenario fixed (`raid_widget.py`). Rerun not done.
+- `levels-great-raid-waves-2`: crash (game ended after wave 1 spawned, 448 raiders, memory). Rerun not done.
+- `invasion-first-raid`: no verdict (`levels-first-raid-1`: harness_error PermissionError on request.json while runs overlapped).
+- Rerun blocked: all 3 slots were held for hours (a stuck run `levels-first-raid-2` of this agent held slot 1; stop_game refuses while it holds the lock, and killing it was denied).
+- `scenario-settings-load-keeps-settings`: not run (needs the first real `save_game`).
