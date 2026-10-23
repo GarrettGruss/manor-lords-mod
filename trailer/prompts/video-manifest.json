@@ -1,5 +1,5 @@
 {
-  "model": "doubao-seedance-2-5-260628",
+  "model": "veo-3.1-fast-generate-001",
   "duration": 4,
   "resolution": "720p",
   "ratio": "16:9",
@@ -9,8 +9,6 @@
   "crf": 20,
   "gop": 8,
   "generate_audio": false,
-  "watermark": false,
-  "conditioning_mode": "reference_images",
   "dives": [
     {
       "id": "01-flint",
@@ -46,5 +44,7 @@
       "prompt": "prompts/video/connectors/02-torch-to-03-stake.txt",
       "output": "assets/video/connectors/02-torch-to-03-stake.mp4"
     }
-  ]
+  ],
+  "provider": "elevenlabs",
+  "negative_prompt": "text, letters, captions, subtitles, logo, watermark, photorealism, 3D render, modern objects, crosses on clothing"
 }

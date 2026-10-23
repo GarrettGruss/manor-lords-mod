@@ -3,7 +3,9 @@
 
 Changed in manor-lords-mod (see UPSTREAM.md): key lookup with SEEDANCE_API_KEY and the
 Windows user registry, a paid-request cap (--max-clips, default 0 = no paid request),
-a spend log without secrets, and no retry on account or billing errors.
+a spend log without secrets, no retry on account or billing errors, a free key check
+before the first upload, and a second provider: ElevenLabs (`"provider": "elevenlabs"`
+in the manifest), which serves Veo 3.1 and Seedance through `/v1/flows/video`.
 """
 
 from __future__ import annotations
@@ -26,7 +28,11 @@ from urllib.request import Request, urlopen
 
 
 KEY_NAMES = ("SEEDANCE_API_KEY", "ARK_API_KEY", "VOLCENGINE_API_KEY")
+ELEVENLABS_KEY_NAMES = ("ELEVENLABS_API_KEY",)
 DEFAULT_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
+ELEVENLABS_BASE_URL = "https://api.elevenlabs.io"
+# ElevenLabs failure reasons that the same request cannot fix.
+ELEVENLABS_FINAL_FAILURES = {"moderated", "invalid_parameters", "charging_failed"}
 FATAL_HTTP_STATUS = {401, 402, 403}
 FATAL_ERROR_CODES = (
     '"ModelNotOpen"', '"AccessDenied"', '"InvalidAuthentication"', '"InvalidParameter"',
@@ -57,6 +63,11 @@ class SpendGuard:
                 raise SpendCapReached(f"--max-clips {self.cap} reached before {clip_id}")
             self.used += 1
 
+    def release(self) -> None:
+        """Give a slot back when the request created no task: the provider charges nothing for it."""
+        with self.lock:
+            self.used = max(0, self.used - 1)
+
     def log(self, record: dict[str, Any]) -> None:
         line = {"time": time.strftime("%Y-%m-%dT%H:%M:%S"), **record}
         with self.lock:
@@ -82,16 +93,16 @@ def windows_user_variable(name: str) -> str:
     return result.stdout.strip()
 
 
-def find_api_key() -> str:
-    for name in KEY_NAMES:
+def find_api_key(names: tuple[str, ...] = KEY_NAMES) -> str:
+    for name in names:
         if os.getenv(name, "").strip():
             return os.environ[name].strip()
-    for name in KEY_NAMES:
+    for name in names:
         value = windows_user_variable(name)
         if value:
             return value
     raise SystemExit(
-        "No Seedance key found. Set SEEDANCE_API_KEY in the environment, the project .env, "
+        f"No API key found. Set {' or '.join(names)} in the environment, the project .env, "
         "or the Windows user variables."
     )
 
@@ -165,6 +176,111 @@ class ArkClient:
             time.sleep(poll_seconds)
         raise TimeoutError(f"Ark task {task_id} timed out after {timeout_seconds}s")
 
+    def check(self) -> None:
+        """Free key check before any large upload. An empty task request creates no task: a valid
+        key gets HTTP 400 (bad parameters), a bad key gets 401. Without this check, a rejected
+        large upload shows only as a TLS error, because the server closes the connection early."""
+        try:
+            self.request("POST", "/contents/generations/tasks", {})
+        except NonRetryableArkError as exc:
+            if "Ark HTTP 400" in str(exc) and "AuthenticationError" not in str(exc):
+                return
+            raise
+
+    def build_payload(self, manifest: dict[str, Any], prompt: str, first: Path, last: Path | None) -> dict[str, Any]:
+        return build_payload(manifest, prompt, first, last)
+
+    @staticmethod
+    def video_url(result: dict[str, Any]) -> str | None:
+        return result.get("content", {}).get("video_url")
+
+
+def inline_image(path: Path) -> dict[str, str]:
+    mime = mimetypes.guess_type(path.name)[0] or "image/png"
+    return {"type": "inline_base64", "content_base64": base64.b64encode(path.read_bytes()).decode("ascii"),
+            "mime_type": mime}
+
+
+class ElevenLabsClient:
+    """ElevenLabs video API: POST /v1/flows/video, GET /v1/flows/video/{id}. Auth: xi-api-key.
+    Failed generations are not charged (ElevenLabs docs)."""
+
+    FATAL_STATUS = {401, 402, 403, 422}
+
+    def __init__(self, key: str, base_url: str = ELEVENLABS_BASE_URL) -> None:
+        self.key = key
+        self.base_url = base_url.rstrip("/")
+
+    def request(self, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        body = None if payload is None else json.dumps(payload).encode("utf-8")
+        request = Request(
+            f"{self.base_url}{path}", data=body, method=method,
+            headers={"xi-api-key": self.key, "Content-Type": "application/json", "User-Agent": "sn-motion-html/1.0"},
+        )
+        try:
+            with urlopen(request, timeout=120) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            error_type = NonRetryableArkError if exc.code in self.FATAL_STATUS else RuntimeError
+            raise error_type(f"ElevenLabs HTTP {exc.code}: {detail[:800]}") from exc
+        except URLError as exc:
+            raise RuntimeError(f"ElevenLabs network error: {exc.reason}") from exc
+
+    def check(self) -> None:
+        """Free key check: reading the account creates nothing and costs nothing."""
+        self.request("GET", "/v1/user")
+
+    def build_payload(self, manifest: dict[str, Any], prompt: str, first: Path, last: Path | None) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "model_id": manifest["model"],
+            "prompt": prompt,
+            "duration_secs": int(manifest["duration"]),
+            "resolution": manifest["resolution"],
+            "aspect_ratio": manifest["ratio"],
+            "generate_audio": bool(manifest.get("generate_audio", False)),
+            "start_frame": inline_image(first),
+        }
+        if last is not None:
+            payload["end_frame"] = inline_image(last)
+        if manifest.get("negative_prompt"):
+            payload["negative_prompt"] = manifest["negative_prompt"]
+        return payload
+
+    def create(self, payload: dict[str, Any]) -> str:
+        result = self.request("POST", "/v1/flows/video", payload)
+        if not result.get("id"):
+            raise RuntimeError(f"ElevenLabs response missing generation id: {result}")
+        return str(result["id"])
+
+    def wait(self, task_id: str, poll_seconds: int, timeout_seconds: int) -> dict[str, Any]:
+        deadline = time.monotonic() + timeout_seconds
+        while time.monotonic() < deadline:
+            result = self.request("GET", f"/v1/flows/video/{task_id}")
+            status = str(result.get("status", ""))
+            print(f"  {task_id}: {status or 'unknown'}", flush=True)
+            if status == "completed":
+                return result
+            if status == "failed":
+                reason = str(result.get("failure_reason", ""))
+                error_type = NonRetryableArkError if reason in ELEVENLABS_FINAL_FAILURES else RuntimeError
+                raise error_type(f"ElevenLabs generation {task_id} failed ({reason}): {result.get('error_message', '')}")
+            time.sleep(poll_seconds)
+        raise TimeoutError(f"ElevenLabs generation {task_id} timed out after {timeout_seconds}s")
+
+    @staticmethod
+    def video_url(result: dict[str, Any]) -> str | None:
+        return result.get("content_url")
+
+
+def make_client(manifest: dict[str, Any]) -> ArkClient | ElevenLabsClient:
+    provider = manifest.get("provider", "ark")
+    if provider == "elevenlabs":
+        return ElevenLabsClient(find_api_key(ELEVENLABS_KEY_NAMES), os.getenv("ELEVENLABS_BASE_URL") or ELEVENLABS_BASE_URL)
+    if provider == "ark":
+        return ArkClient(find_api_key(), base_url())
+    raise SystemExit(f"Unknown provider in the manifest: {provider!r} (use 'ark' or 'elevenlabs')")
+
 
 def download(url: str, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -234,6 +350,13 @@ def build_payload(
     return payload
 
 
+def model_name(manifest: dict[str, Any]) -> str:
+    """SEEDANCE_MODEL overrides only the Ark model; an ElevenLabs manifest names its own model."""
+    if manifest.get("provider", "ark") == "elevenlabs":
+        return manifest["model"]
+    return os.getenv("SEEDANCE_MODEL") or manifest["model"]
+
+
 def generate_clip(
     root: Path,
     client: ArkClient,
@@ -264,7 +387,7 @@ def generate_clip(
     tasks = root / "tmp" / "seedance" / "tasks"
     tasks.mkdir(parents=True, exist_ok=True)
     safe = {
-        "model": os.getenv("SEEDANCE_MODEL") or manifest["model"],
+        "model": model_name(manifest),
         "kind": kind,
         "clip_id": clip_id,
         "prompt_file": item["prompt"],
@@ -278,7 +401,11 @@ def generate_clip(
         guard.reserve(clip_id)
         task_id = None
         try:
-            task_id = client.create(build_payload(manifest, prompt, first, last))
+            if hasattr(client, "build_payload"):
+                payload = client.build_payload(manifest, prompt, first, last)
+            else:
+                payload = build_payload(manifest, prompt, first, last)
+            task_id = client.create(payload)
             safe.update({"attempt": attempt, "task_id": task_id})
             (tasks / f"{kind}-{clip_id}-request.json").write_text(
                 json.dumps(safe, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -287,9 +414,10 @@ def generate_clip(
             (tasks / f"{kind}-{clip_id}-result.json").write_text(
                 json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
             )
-            video_url = result.get("content", {}).get("video_url")
+            read_url = getattr(client, "video_url", None) or ArkClient.video_url
+            video_url = read_url(result)
             if not video_url:
-                raise RuntimeError(f"Succeeded task has no content.video_url: {task_id}")
+                raise RuntimeError(f"Finished task has no video URL: {task_id}")
             guard.log({**safe, "duration": manifest["duration"], "status": "succeeded",
                        "usage": result.get("usage")})
             download(str(video_url), raw)
@@ -298,6 +426,8 @@ def generate_clip(
             return
         except Exception as exc:
             last_error = exc
+            if task_id is None and not isinstance(exc, SpendCapReached):
+                guard.release()
             if task_id is not None or not isinstance(exc, SpendCapReached):
                 guard.log({**safe, "attempt": attempt, "task_id": task_id,
                            "duration": manifest["duration"], "status": "error",
@@ -372,8 +502,10 @@ def main() -> int:
     root = args.project_root.expanduser().resolve()
     load_dotenv(root)
     manifest = json.loads((root / "prompts" / "video-manifest.json").read_text(encoding="utf-8"))
+    provider = manifest.get("provider", "ark")
     plan = {
-        "model": os.getenv("SEEDANCE_MODEL") or manifest["model"],
+        "provider": provider,
+        "model": model_name(manifest),
         "duration": manifest["duration"],
         "resolution": manifest["resolution"],
         "ratio": manifest["ratio"],
@@ -381,7 +513,7 @@ def main() -> int:
         "connectors": len(manifest.get("connectors", [])),
         "workers": args.workers,
         "conditioning_mode": manifest.get("conditioning_mode", "reference_images"),
-        "base_url": base_url(),
+        "base_url": (os.getenv("ELEVENLABS_BASE_URL") or ELEVENLABS_BASE_URL) if provider == "elevenlabs" else base_url(),
         "pending_clips": pending_clips(root, manifest, args),
         "max_clips": args.max_clips,
     }
@@ -396,7 +528,12 @@ def main() -> int:
             f"{pending} clips are pending but --max-clips is {args.max_clips}. "
             "Get cost approval, then raise --max-clips."
         )
-    client = ArkClient(find_api_key(), base_url())
+    client = make_client(manifest)
+    try:
+        client.check()
+    except NonRetryableArkError as exc:
+        raise SystemExit(f"Key check failed, no clip was requested: {exc}") from exc
+    print("key check: ok", flush=True)
     guard = SpendGuard(args.max_clips, root / "logs" / "spend.jsonl")
     if args.phase in {"dives", "all"}:
         run_dives(root, client, guard, manifest, args)

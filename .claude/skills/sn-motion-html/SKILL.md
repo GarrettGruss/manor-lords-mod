@@ -70,6 +70,9 @@ This is a copy of the upstream skill (see `UPSTREAM.md`). The skill's own spec i
 - **Spend cap:** `--max-clips` is the most paid task creations of one run, retries included. The default is 0, so a run without it sends no paid request. Set it only to the clip count the owner approved for that batch.
 - **Spend log:** each paid request adds a line to `logs/spend.jsonl` in the project (clip, model, task id, status, usage). It holds no key and no image data.
 - **No retry** on HTTP 401, 402 or 403, or on account, billing or model-activation errors.
+- **Key check:** before the first clip, one free request checks the key. A bad key stops the run with the provider's own message. Without it, a rejected large upload shows only as a TLS error ("EOF occurred in violation of protocol"), because the server closes the connection early.
+- **ElevenLabs provider:** set `"provider": "elevenlabs"` and a `model` such as `veo-3.1-fast-generate-001` in `prompts/video-manifest.json`. The key comes from `ELEVENLABS_API_KEY` (environment, `.env`, then the Windows user variables). Veo 3.1 takes `duration` 4, 6 or 8 and `ratio` `16:9` or `9:16`; `negative_prompt` is optional. Seedance on ElevenLabs is not available in the United States, and ByteDance models need approval from ElevenLabs.
+- **Refund:** a request that created no task does not count against `--max-clips`.
 - **Generated media stays out of git.** The project `.gitignore` excludes `assets/video/`, PNG scene masters, `tmp/`, `logs/` and `export/`.
 
 ### Export the story as a video
