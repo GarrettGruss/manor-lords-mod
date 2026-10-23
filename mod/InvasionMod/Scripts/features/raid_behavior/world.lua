@@ -120,24 +120,27 @@ end
 
 -- Take `amount` goods out of the tier 1 stores of the village (`tiers` maps a building type to a tier; a store of another
 -- tier or of no tier is never touched), from the store that holds most first. Returns the amount taken.
--- consumeGoodNoCheck removes one unit (HarnessSack, spike S6).
+-- consumeGoodNoCheck removes one unit (HarnessSack, spike S6). The second result maps a good type to the amount taken.
 function M.plunder(amount, tiers)
     local all, stores = M.stores(), {}
-    if all == nil then return 0 end
+    if all == nil then return 0, {} end
     for _, store in ipairs(all) do
         if store.type ~= nil and tiers[store.type] == 1 then stores[#stores + 1] = store end
     end
     table.sort(stores, function(a, b) return total_of_goods(a.by_good) > total_of_goods(b.by_good) end)
-    local taken = 0
+    local taken, by_good = 0, {}
     for _, store in ipairs(stores) do
         for good, held in pairs(store.by_good) do
             for _ = 1, held do
-                if taken >= amount then return taken end
-                if pcall(function() store.building:consumeGoodNoCheck(good) end) then taken = taken + 1 end
+                if taken >= amount then return taken, by_good end
+                if pcall(function() store.building:consumeGoodNoCheck(good) end) then
+                    taken = taken + 1
+                    by_good[good] = (by_good[good] or 0) + 1
+                end
             end
         end
     end
-    return taken
+    return taken, by_good
 end
 
 -- Take a raider off the map: the loot goes first (it leaves with the raider), then the unit dies.
@@ -231,6 +234,41 @@ function M.ai_log_tail_count(text)
         if content and content:find(text, 1, true) then count = count + 1 end
     end
     return count
+end
+
+---------------------------------------------------------------------------------------------
+-- The corpse pit (change add-corpse-pit-loot)
+---------------------------------------------------------------------------------------------
+
+local PIT_BUILDING = 113   -- DT_Buildings id of the Corpse Pit
+local CORPSE_ITEM = 233    -- DT_Items row of a delivered body; its amt rises by 1 for each body (spike corpse-pit-loot)
+
+-- Standing corpse pits of the player region: { building, key, corpses }. Reads only the type and the inventory (never unit fields).
+-- Empty list when there is no pit. nil when the region cannot be read.
+function M.pits()
+    local region = core.player_region()
+    if region == nil then return nil end
+    local pits = {}
+    for _, building in ipairs(listOf(region:GetBuildings())) do
+        if isValid(building) and read(function() return building.Data.bType end) == PIT_BUILDING
+            and read(function() return building:IsRubble() end) ~= true then
+            local corpses = 0
+            for _, good in ipairs(listOf(building.Inventory)) do
+                if read(function() return good.Type end) == CORPSE_ITEM then corpses = corpses + (read(function() return good.amt end) or 0) end
+            end
+            pits[#pits + 1] = { building = building, key = read(function() return building:GetAddress() end) or ("pit" .. (#pits + 1)), corpses = corpses }
+        end
+    end
+    return pits
+end
+
+-- Add goods (good -> amount) to a pit. Returns true, or false and a message. addToInventory counts in the region stock at once.
+function M.pit_add(pit, goods)
+    for good, amount in pairs(goods) do
+        local ok, problem = pcall(function() pit.building:addToInventory({ Type = good, amt = amount }) end)
+        if not ok then return false, tostring(problem) end
+    end
+    return true
 end
 
 function M.current_day()

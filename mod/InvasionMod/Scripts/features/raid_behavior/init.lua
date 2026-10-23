@@ -25,6 +25,7 @@ state:register("raid_state", 0, "integer")
 state:register("raid_returned", 0, "integer")
 state:register("raid_lost", 0, "integer")
 state:register("raid_burned", 0, "integer")
+state:register("raid_plunder_record", "none", "string")
 
 local end_watchers = {}    -- functions called with the raid summary when a raid is no longer active (M08 protection)
 local leave_watchers = {}  -- functions called with the raid summary when a role raid begins to leave (M06 sack)
@@ -106,13 +107,23 @@ local function log_day(today)
     end
 end
 
+-- The goods record of the latest Hussite raid, as text "<good>-<amount>_...", so a load can show it (ModState has no table kind).
+local function save_record(raid)
+    if raid.lord == nil or not state.loaded then return end
+    local parts = {}
+    for good, count in pairs(raid.plunder_goods) do parts[#parts + 1] = string.format("%d-%d", good, count) end
+    table.sort(parts)
+    set_if_changed("raid_plunder_record", #parts > 0 and table.concat(parts, "_") or "none")
+end
+
 -- The plunder tick: while the lord army stands at the manor, goods leave the village stores (once a day).
 local function check_plunder(entry, seen, today)
     local raid = entry.raid
     local want = rules.plunder_amount(raid, seen, plunder, leave, today, config.carry_cap)
     if want <= 0 then return end
-    local taken = world.plunder(want, config.store_tiers)
-    rules.record_plunder(raid, taken)
+    local taken, by_good = world.plunder(want, config.store_tiers)
+    rules.record_plunder(raid, taken, by_good)
+    save_record(raid)
     core.log.info(TAG, string.format("RAID_BEHAVIOR plunder id=%d day=%s wanted=%d taken=%d plundered=%d", raid.id, tostring(today), want, taken, raid.plundered))
 end
 
@@ -217,6 +228,44 @@ local function tick()
         log_day(today)
     end
 end
+
+-- The pit poll (change add-corpse-pit-loot). A delivered body has no hook: it shows only as the pit corpse count rising.
+-- It runs once a game second, only after a Hussite raid exists. A rise pays one share for each unpaid dead Hussite raider;
+-- other bodies (villagers, native raiders) are ignored. No pit means no give-back.
+local pit_baseline = {}   -- pit key -> corpse count at the last look
+
+local function raid_records()
+    local list = {}
+    for _, id in ipairs(order) do list[#list + 1] = raids[id].raid end
+    return list
+end
+
+local function has_hussite_raid()
+    for _, id in ipairs(order) do
+        if raids[id].raid.lord ~= nil then return true end
+    end
+    return false
+end
+
+local function pit_poll()
+    if not has_hussite_raid() then return end
+    local pits = world.pits()
+    if pits == nil then return end
+    for _, pit in ipairs(pits) do
+        local before = pit_baseline[pit.key]
+        pit_baseline[pit.key] = pit.corpses
+        if before ~= nil and pit.corpses > before then
+            local goods, paid = rules.pay_bodies(raid_records(), pit.corpses - before)
+            if paid > 0 then
+                local ok, problem = world.pit_add(pit, goods)
+                if not ok then core.log.error(TAG, "pit give-back failed: " .. tostring(problem)) end
+                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d paid=%d unpaid=%d", pit.corpses - before, paid, rules.unpaid_total(raid_records())))
+            end
+        end
+    end
+end
+
+require("scheduler").every(TAG .. ".pit", config.pit_poll_ms, pit_poll)
 
 require("scheduler").every(TAG, config.poll_ms, tick)
 
