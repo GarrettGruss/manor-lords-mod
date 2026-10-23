@@ -20,7 +20,7 @@ Fixture `playtest-noai`: Initial bandit camps 0, spawn limit 0, Raider frequency
 | `spawn_units side=bandit Brigands` (`HarnessBattle`) after the call | | works: 1 squad, 18 units, owned by the bandit pawn |
 | `bandit_kill_squads` on all bandit squads | | the pawn stays (pawns count unchanged), a new bandit squad can be spawned |
 
-Second fresh game (hold run): the same result (pawns 2 to 3 with the Probe Baron, bandit pawns 0 to 1, camp at region Krumme Leite, picture `evidence/q1-camp-spawned.png`).
+Second fresh game (hold run): the same result (pawns 2 to 3 with the Probe Baron, bandit pawns 0 to 1, camp at region Krumme Leite, picture `evidence/q1-camp-spawned.jpg`).
 
 ## Details that matter
 

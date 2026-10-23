@@ -1,6 +1,6 @@
 # Question 2: AI lord and construction with AI opponents 0
 
-Run `noai-h-175358` (hold run, slot 1, speed 3). Fixture `playtest-noai`. Evidence: `evidence/q2-ai-village-goldhof.png`.
+Run `noai-h-175358` (hold run, slot 1, speed 3). Fixture `playtest-noai`. Evidence: `evidence/q2-ai-village-goldhof.jpg`.
 
 ## Verdict
 
