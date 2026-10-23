@@ -25,6 +25,7 @@ state:register("raid_state", 0, "integer")
 state:register("raid_returned", 0, "integer")
 state:register("raid_lost", 0, "integer")
 state:register("raid_burned", 0, "integer")
+state:register("raid_plunder_record", "none", "string")
 
 local end_watchers = {}    -- functions called with the raid summary when a raid is no longer active (M08 protection)
 local leave_watchers = {}  -- functions called with the raid summary when a role raid begins to leave (M06 sack)
@@ -106,13 +107,23 @@ local function log_day(today)
     end
 end
 
+-- The goods record of the latest Hussite raid, as text "<good>-<amount>_...", so a load can show it (ModState has no table kind).
+local function save_record(raid)
+    if raid.lord == nil or not state.loaded then return end
+    local parts = {}
+    for good, count in pairs(raid.plunder_goods) do parts[#parts + 1] = string.format("%d-%d", good, count) end
+    table.sort(parts)
+    set_if_changed("raid_plunder_record", #parts > 0 and table.concat(parts, "_") or "none")
+end
+
 -- The plunder tick: while the lord army stands at the manor, goods leave the village stores (once a day).
 local function check_plunder(entry, seen, today)
     local raid = entry.raid
     local want = rules.plunder_amount(raid, seen, plunder, leave, today, config.carry_cap)
     if want <= 0 then return end
-    local taken = world.plunder(want, config.store_tiers)
-    rules.record_plunder(raid, taken)
+    local taken, by_good = world.plunder(want, config.store_tiers)
+    rules.record_plunder(raid, taken, by_good)
+    save_record(raid)
     core.log.info(TAG, string.format("RAID_BEHAVIOR plunder id=%d day=%s wanted=%d taken=%d plundered=%d", raid.id, tostring(today), want, taken, raid.plundered))
 end
 
@@ -157,7 +168,7 @@ end
 local function step_raid(entry, seen, today, slow_look)
     local raid = entry.raid
     local was_active = raid.state == "active"
-    rules.update(raid, seen, config, today)
+    rules.note_deaths(raid, rules.update(raid, seen, config, today))
     write_caps(seen)
     check_plunder(entry, seen, today)
     check_steal(entry, seen, today)
@@ -218,6 +229,44 @@ local function tick()
     end
 end
 
+-- The pit poll (change add-corpse-pit-loot). A delivered body has no hook: it shows only as the pit corpse count rising.
+-- It runs once a game second, only after a Hussite raid exists. A rise pays one share for each unpaid dead Hussite raider;
+-- other bodies (villagers, native raiders) are ignored. No pit means no give-back.
+local pit_baseline = {}   -- pit key -> corpse count at the last look
+
+local function raid_records()
+    local list = {}
+    for _, id in ipairs(order) do list[#list + 1] = raids[id].raid end
+    return list
+end
+
+local function has_hussite_raid()
+    for _, id in ipairs(order) do
+        if raids[id].raid.lord ~= nil then return true end
+    end
+    return false
+end
+
+local function pit_poll()
+    if not has_hussite_raid() then return end
+    local pits = world.pits()
+    if pits == nil then return end
+    for _, pit in ipairs(pits) do
+        local before = pit_baseline[pit.key]
+        pit_baseline[pit.key] = pit.corpses
+        if before ~= nil and pit.corpses > before then
+            local goods, paid = rules.pay_bodies(raid_records(), pit.corpses - before)
+            if paid > 0 then
+                local ok, problem = world.pit_add(pit, goods)
+                if not ok then core.log.error(TAG, "pit give-back failed: " .. tostring(problem)) end
+                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d paid=%d unpaid=%d", pit.corpses - before, paid, rules.unpaid_total(raid_records())))
+            end
+        end
+    end
+end
+
+require("scheduler").every(TAG .. ".pit", config.pit_poll_ms, pit_poll)
+
 require("scheduler").every(TAG, config.poll_ms, tick)
 
 ---------------------------------------------------------------------------------------------
@@ -238,6 +287,24 @@ end
 
 if has_commands then
     commands.register("InvasionMod.raid_behavior_state", command_state, {})
+    -- Test: the corpse pits (corpse count and goods) and the dead raiders that no pit delivery has paid yet.
+    commands.register("InvasionMod.raid_behavior_pit_state", function()
+        local pits = {}
+        for _, pit in ipairs(world.pits() or {}) do
+            local goods = {}
+            for good, amount in pairs(pit.goods) do goods[#goods + 1] = { good = good, amount = amount } end
+            table.sort(goods, function(a, b) return a.good < b.good end)
+            pits[#pits + 1] = { corpses = pit.corpses, goods = goods, limit = world.pit_limit(pit) }
+        end
+        local record = {}
+        for _, id in ipairs(order) do
+            local goods = {}
+            for good, amount in pairs(raids[id].raid.plunder_goods) do goods[#goods + 1] = { good = good, amount = amount } end
+            table.sort(goods, function(a, b) return a.good < b.good end)
+            record[#record + 1] = { id = id, goods = goods, unpaid = raids[id].raid.unpaid }
+        end
+        return { pits = pits, raids = record }
+    end, {})
     -- Test commands. They change the leave rules for this session only (not saved) and act on the raid of this session.
     commands.register("InvasionMod.raid_behavior_test_set_leave", function(args)
         for _, key in ipairs({ "loot_per_raider", "loss_share", "max_days" }) do
