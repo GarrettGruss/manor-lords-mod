@@ -168,7 +168,7 @@ end
 local function step_raid(entry, seen, today, slow_look)
     local raid = entry.raid
     local was_active = raid.state == "active"
-    rules.update(raid, seen, config, today)
+    rules.note_deaths(raid, rules.update(raid, seen, config, today))
     write_caps(seen)
     check_plunder(entry, seen, today)
     check_steal(entry, seen, today)

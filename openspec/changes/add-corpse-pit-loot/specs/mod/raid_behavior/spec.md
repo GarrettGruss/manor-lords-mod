@@ -25,7 +25,7 @@ The mod SHALL poll the corpse pit inventory entry `Type 233` (corpse) about once
 #### Scenario: One body is delivered
 - **WHEN** a Hussite raid of 10 raiders has a record of 40 planks, and the body of one raider reaches the pit
 - **THEN** the pit inventory gains 4 planks
-- Checked by `mod/InvasionMod/scenarios/raid_behavior/pit_loot.py` (written, not run in the real game yet), on the default fixture `base-corpse-pit`.
+- Checked by `mod/InvasionMod/scenarios/raid_behavior/pit_loot.py` (real run 20261023-032125-a80d passed), on the default fixture `base-corpse-pit`.
 
 #### Scenario: Rounding down
 - **WHEN** the record holds 5 logs for 10 raiders and one body reaches the pit

@@ -64,11 +64,17 @@ def run(ctx) -> dict:
     killed = ctx.mod.command("InvasionMod.raid_behavior_test_kill_raiders", share=0.5)["killed"]
     ctx.metric("killed", killed)
     ctx.check("raiders were killed", killed >= 1, killed)
-    ctx.run_until(lambda: pit_state(ctx)["pits"][0]["corpses"] > base_pit["corpses"], 600, what="a body at the pit")
-    ctx.run_until(lambda: pit_state(ctx)["raids"][0]["unpaid"] < killed, 60, what="a paid body")
+    ctx.run_until(lambda: pit_state(ctx)["raids"][0]["unpaid"] >= killed, 30, what="the deaths noted")
+    unpaid_start = pit_state(ctx)["raids"][0]["unpaid"]
+    # The game stays paused between days, so the bodies need game days to reach the pit.
+    for _ in range(DAY_LIMIT):
+        if pit_state(ctx)["raids"][0]["unpaid"] < unpaid_start:
+            break
+        run_day(ctx)
+    ctx.check("a body was paid", pit_state(ctx)["raids"][0]["unpaid"] < unpaid_start, pit_state(ctx))
     ctx.screenshot("pit_after")
     after = pit_state(ctx)
-    paid = killed - after["raids"][0]["unpaid"]
+    paid = unpaid_start - after["raids"][0]["unpaid"]
     ctx.metric("bodies_paid", paid)
     for row in record:
         share = row["amount"] // initial
