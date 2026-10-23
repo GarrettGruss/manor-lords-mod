@@ -10,7 +10,7 @@
 
 ## 3. One real call
 
-- [ ] 3.1 Make one still with one public domain reference image, after the owner's cost approval. Verified by the log line and the owner's review of the still.
+- [x] 3.1 Make one still with one public domain reference image, after the owner's cost approval. Verified by the log line and the owner's review of the still.
 
 ## 4. Docs and close
 
