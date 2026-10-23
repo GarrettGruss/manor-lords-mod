@@ -26,7 +26,7 @@ Today the start menu has one global Difficulty (Easy, Normal, Hard) and a Great 
 
 ## Overlap
 - `update-raid-banners` (#400): "Great raids Off" there is level 0 of the Great raid setting here. A raid type at level 0 shows no banner.
-- `add-scenario-settings-menu` (#375): its requirements for the menu and the Great raids setting are MODIFIED here. This change must rebase on it when it is archived first. `update-raid-clock-yearly` also changes the raid timing.
+- `add-scenario-settings-menu` (#375) is not archived yet, so `mod/scenario_settings` has no living spec. The delta here uses MODIFIED for its requirements (validate shows an info line). Archive that change first, then this one; if the order changes, turn the delta into ADDED. `update-raid-clock-yearly` also changes the raid timing.
 
 ## Impact
 - Specs: `mod/scenario_settings` (menu settings, Great raids setting, commands), `mod/invasion` (raid size, difficulty, subjugation raid, waves, relief army).
