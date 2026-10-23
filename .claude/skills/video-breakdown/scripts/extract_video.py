@@ -96,8 +96,11 @@ def require_tools():
         raise RuntimeError(f"Missing tools on PATH: {', '.join(missing)}. Install ffmpeg.")
 
 
+COOKIE_ARGS = []
+
+
 def yt_dlp(*args):
-    return run([sys.executable, "-m", "yt_dlp", "--no-warnings", *args])
+    return run([sys.executable, "-m", "yt_dlp", "--no-warnings", *COOKIE_ARGS, *args])
 
 
 def fetch_video(source, out, max_height):
@@ -194,8 +197,14 @@ def main(argv=None):
     parser.add_argument("--max-height", type=int, default=DEFAULT_MAX_HEIGHT)
     parser.add_argument("--whisper", choices=("auto", "always", "never"), default="auto",
                         help="auto: transcribe only when there are no captions.")
+    parser.add_argument("--cookies", type=Path,
+                        help="A Netscape cookies.txt file, for age-restricted videos. Keep it out of git.")
     args = parser.parse_args(argv)
 
+    if args.cookies:
+        if not args.cookies.is_file():
+            raise SystemExit(f"Cookies file not found: {args.cookies}")
+        COOKIE_ARGS[:] = ["--cookies", str(args.cookies)]
     require_tools()
     args.out.mkdir(parents=True, exist_ok=True)
     print("1/6 video"); meta = fetch_video(args.source, args.out, args.max_height)

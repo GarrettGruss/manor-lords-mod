@@ -42,6 +42,8 @@ Output in `<out-dir>`:
 
 The yt-dlp warning about a missing JavaScript runtime is harmless for most videos.
 
+**Age-restricted videos** fail with "Sign in to confirm your age". Stop and ask the user. Never search or read browser profiles or cookies yourself. Offer two options: the user downloads the video and gives you the file, or the user exports a `cookies.txt` file (Netscape format) from a signed-in browser and gives you its path; then add `--cookies <file>`. The file gives access to the user's Google session: keep it outside the repo, never print or commit it, and ask the user to delete it after the run.
+
 ## Step 2: look
 
 1. Read `storyboard.jpg`. Read it again in parts if it is large, or read single `storyboard/Snn.jpg` files.
