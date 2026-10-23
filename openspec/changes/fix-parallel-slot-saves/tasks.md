@@ -12,6 +12,6 @@
 
 ## 3. Check
 
-- [ ] 3.1 Run the full tests and `openspec validate fix-parallel-slot-saves --strict`
-- [ ] 3.2 Real run on 3 slots at once, one with `--keep-open` (result in `notes/`)
+- [x] 3.1 Run the full tests and `openspec validate fix-parallel-slot-saves --strict`
+- [x] 3.2 Real run on 3 slots at once, one with `--keep-open` (result in `notes/`)
 - [x] 3.3 Update `CHANGELOG.md`, the wiki and the skill `harness-run-scenario` if affected
