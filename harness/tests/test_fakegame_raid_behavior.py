@@ -462,6 +462,12 @@ class CorpsePitLootTests(RaidBehaviorTestCase):
         self.game.advance(3)
         self.assertEqual(pit["goods"], [(233, 2)], before)
 
+    def test_the_pit_state_command_lists_the_pit(self):
+        self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 2), (3, 5)], btype=113)
+        answer = self.ask("raid_behavior_pit_state")
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["pits"], [{"corpses": 2, "goods": [{"good": 3, "amount": 5}, {"good": 233, "amount": 2}]}])
+
     def test_the_plunder_returns_the_goods_by_type(self):
         result = self.game.lua.eval("(function() local taken, by_good = require('features.raid_behavior.world').plunder(20, require('config').raid_behavior.store_tiers); return taken .. ',' .. by_good[16] end)")()
         self.assertEqual(result, "16,10")

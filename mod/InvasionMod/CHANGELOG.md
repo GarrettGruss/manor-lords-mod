@@ -5,6 +5,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Feature `raid_behavior` (change `add-corpse-pit-loot`, #386): the body share of Hussite plunder goes to the corpse pit. See the root `CHANGELOG.md`.
 - Feature `scenario_settings` (change `add-scenario-settings-menu`, #375): the scenario settings menu of a new game (difficulty, first Hussite raid after 1 to 3 years, raid size, great raids on or off), kept in the mod state. The raid menu lost its difficulty buttons. See the root `CHANGELOG.md`.
 - Features `raid_widget`, `tech_tree_widget`, `liege_influence` (change `add-mod-menu-access-rule`, #308): each menu opens with one click on its own button (Raid, Tech, Liege) in the game's bottom bar. All menus use the base menu `Scripts/core/menu.lua` (full-screen dimmed backdrop that blocks clicks to the game, Close button, one menu at a time). F8 and F9 stay as shortcuts. The spike "Mods" button and its commands `spike_entry_open`, `spike_entry_state` are removed.
 

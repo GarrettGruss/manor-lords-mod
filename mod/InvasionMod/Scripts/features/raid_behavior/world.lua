@@ -243,7 +243,7 @@ end
 local PIT_BUILDING = 113   -- DT_Buildings id of the Corpse Pit
 local CORPSE_ITEM = 233    -- DT_Items row of a delivered body; its amt rises by 1 for each body (spike corpse-pit-loot)
 
--- Standing corpse pits of the player region: { building, key, corpses }. Reads only the type and the inventory (never unit fields).
+-- Standing corpse pits of the player region: { building, key, corpses, goods (good -> amount) }. Reads only the type and the inventory (never unit fields).
 -- Empty list when there is no pit. nil when the region cannot be read.
 function M.pits()
     local region = core.player_region()
@@ -256,7 +256,7 @@ function M.pits()
             for _, good in ipairs(listOf(building.Inventory)) do
                 if read(function() return good.Type end) == CORPSE_ITEM then corpses = corpses + (read(function() return good.amt end) or 0) end
             end
-            pits[#pits + 1] = { building = building, key = read(function() return building:GetAddress() end) or ("pit" .. (#pits + 1)), corpses = corpses }
+            pits[#pits + 1] = { building = building, goods = goods_of(building), key = read(function() return building:GetAddress() end) or ("pit" .. (#pits + 1)), corpses = corpses }
         end
     end
     return pits

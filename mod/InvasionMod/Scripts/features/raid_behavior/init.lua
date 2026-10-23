@@ -287,6 +287,24 @@ end
 
 if has_commands then
     commands.register("InvasionMod.raid_behavior_state", command_state, {})
+    -- Test: the corpse pits (corpse count and goods) and the dead raiders that no pit delivery has paid yet.
+    commands.register("InvasionMod.raid_behavior_pit_state", function()
+        local pits = {}
+        for _, pit in ipairs(world.pits() or {}) do
+            local goods = {}
+            for good, amount in pairs(pit.goods) do goods[#goods + 1] = { good = good, amount = amount } end
+            table.sort(goods, function(a, b) return a.good < b.good end)
+            pits[#pits + 1] = { corpses = pit.corpses, goods = goods }
+        end
+        local record = {}
+        for _, id in ipairs(order) do
+            local goods = {}
+            for good, amount in pairs(raids[id].raid.plunder_goods) do goods[#goods + 1] = { good = good, amount = amount } end
+            table.sort(goods, function(a, b) return a.good < b.good end)
+            record[#record + 1] = { id = id, goods = goods, unpaid = raids[id].raid.unpaid }
+        end
+        return { pits = pits, raids = record }
+    end, {})
     -- Test commands. They change the leave rules for this session only (not saved) and act on the raid of this session.
     commands.register("InvasionMod.raid_behavior_test_set_leave", function(args)
         for _, key in ipairs({ "loot_per_raider", "loss_share", "max_days" }) do
