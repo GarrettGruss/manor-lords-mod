@@ -53,7 +53,7 @@ Every still, panel and clip that shows an army SHALL show the banner of its side
 
 #### Scenario: Hussite banner
 - **WHEN** a frame shows the Hussites
-- **THEN** their banner is a red chalice (a cup with a foot and a stem, no gems) on a black field, on a tall, narrow banner
+- **THEN** their banner is a gold chalice (a cup with a foot and a stem, no gems) on a red field, on a tall, narrow banner, as in the Jena Codex
 - Checked by review.
 
 #### Scenario: Crusader banner and the king's seal
@@ -63,7 +63,7 @@ Every still, panel and clip that shows an army SHALL show the banner of its side
 
 #### Scenario: Militia banner
 - **WHEN** a frame shows the narrator's militia
-- **THEN** it carries the player's heraldry from the game, and that heraldry does not use the Hussite red and black
+- **THEN** it carries the player's heraldry from the game, and that heraldry does not use the Hussite red and gold
 - Checked by review.
 
 #### Scenario: The reference image exists

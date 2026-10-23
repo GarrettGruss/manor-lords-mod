@@ -40,14 +40,15 @@ Each side is known by its banner at a glance, also in a 1 s cut. The spec change
 
 | Side | Banner | Where |
 | --- | --- | --- |
-| **Hussites** | A red chalice on a black field. Tall, narrow, carried on a pole above the heads. | S08 (over the wagon fort), S09, the raid shots, S25–S27. |
+| **Hussites** | A gold chalice on a red field, as in the Jena Codex (owner decision, 2026-10-23). Tall, narrow, carried on a pole above the heads. | S08 (over the wagon fort), S09, the raid shots, S25–S27. |
 | **Crusaders and the king** | A white field with a red cross (crusaders). The king's seal (S06b) uses a black eagle on gold. | Only in the history act: S06b, and the broken crusader army behind S09 if one is shown. |
 | **The narrator's militia** | The player's own heraldry, made in the game's banner editor. It is the only bright, clean color in the Day look. | S20, S21, S22–S24. |
 
 Rules:
 - The chalice is always a cup with a foot and a stem, never a goblet or a grail with gems.
-- Red and black belong to the Hussites. Do not use them for the militia.
-- The Jena Codex shows a chalice banner with "Veritas vincit". Use the chalice, not the motto: the text is unreadable at trailer speed.
+- Red and gold belong to the Hussites. Do not use them for the militia. Black is neutral: in the Jena Codex the crusader knights wear black plate.
+- The Jena Codex shows the chalice banner with the motto "Veritas vincit". Use the chalice, not the motto: text is noise at trailer speed.
+- Chalice shape reference: the folio with illuminations in `design/trailer/references/museum-of-prague/` (cup, stem, knob, foot).
 
 ## Costume and arms (1429)
 
