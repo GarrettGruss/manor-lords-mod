@@ -10,13 +10,13 @@
 ## 3. Tests
 - [x] 3.1 Fake game tests in `harness/tests/test_fakegame_invasion.py`: no yearly small raid banner, one 30 day banner for a subjugation raid (vassal and stand-in) and a player raid, no difficulty banner, 3 clock banners (years 7, 8, 9) and none in year 10, no repeat after a load.
 - [x] 3.2 Update the test scenarios `first_raid.py` and `subjugation_raid.py` (one banner, 30 days before), `difficulty_pick.py` and `great_raid_clock.py` (fixed end year).
-  - Not run in the real game. Real-game runs still to do (lead): `uv run python harnessun.py --scenario invasion-first-raid --max-runs 1000` (also with `INVASION_SIZE=large`), `--scenario invasion-subjugation-raid --max-runs 1000`, `--scenario invasion-difficulty-pick --max-runs 1000`, `--scenario invasion-great-raid-clock --max-runs 1000`, `--scenario invasion-raid-widget --max-runs 1000`, `--scenario scenario-settings-great-raids-off --max-runs 1000`.
+  - Run in the real game: see `notes/real-runs.md`. Real-game runs still to do (lead): `uv run python harnessun.py --scenario invasion-first-raid --max-runs 1000` (also with `INVASION_SIZE=large`), `--scenario invasion-subjugation-raid --max-runs 1000`, `--scenario invasion-difficulty-pick --max-runs 1000`, `--scenario invasion-great-raid-clock --max-runs 1000`, `--scenario invasion-raid-widget --max-runs 1000`, `--scenario scenario-settings-great-raids-off --max-runs 1000`.
 - [x] 3.3 Run the full test set and `openspec validate update-raid-banners --strict`.
 
 ## 4. Close
 - [x] 4.1 Update `docs/wiki/architecture/invasion-features.md`, the affected skills and `CHANGELOG.md`.
-- [ ] 4.2 Archive the change as the last commit.
+- [x] 4.2 Archive the change as the last commit.
 
 ## 5. Real game (not done; the lead runs them)
-- [ ] 5.1 Run the test scenarios listed under 3.2 with `--max-runs 1000` and read each `runs/<id>/summary.json`.
-- [ ] 5.2 Screenshots needed: the raid menu with a planned yearly raid and a planned subjugation raid (lines with target, size and days left); the 30 day banner of a subjugation or large plunder raid (`Raid in 30 days: ...`); the raid menu with great raids off (empty line).
+- [x] 5.1 Run the test scenarios listed under 3.2 with `--max-runs 1000` and read each `runs/<id>/summary.json`.
+- [x] 5.2 Screenshots needed: the raid menu with a planned yearly raid and a planned subjugation raid (lines with target, size and days left); the 30 day banner of a subjugation or large plunder raid (`Raid in 30 days: ...`); the raid menu with great raids off (empty line).

@@ -4,6 +4,9 @@ Runs on a fixture (a loaded save: the menu does not open). It saves nothing.
 """
 
 import re
+import time
+
+from runlib import osinput
 
 NAME = "scenario-settings-great-raids-off"
 DESCRIPTION = "Great raids Off: no great raid end day, no clock banner, no waves after 3 game days."
@@ -35,4 +38,10 @@ def run(ctx) -> dict:
     ctx.check("G3 no clock start or clock banner after the switch", clock_lines(ctx) == before, [before, clock_lines(ctx)])
     lines = ctx.mod.command(PREFIX + "raid_widget_state")["wanted_lines"]
     ctx.check("G4 the raid widget has an empty great raid line", lines[2] == "", lines)
+    if ctx.mod.command(PREFIX + "raid_widget_open").get("ok"):
+        time.sleep(1.0)
+        osinput.Win32Input().bring_to_front(ctx.game_window()["hwnd"])
+        time.sleep(1.0)
+        ctx.screenshot("raid-menu-great-raids-off")
+        ctx.mod.command(PREFIX + "raid_widget_close")
     return ctx.result()

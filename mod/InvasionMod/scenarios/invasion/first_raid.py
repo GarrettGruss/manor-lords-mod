@@ -7,6 +7,9 @@ The scenario runs the real countdown (1 to 90 game days). It saves nothing.
 """
 
 import re
+import time
+
+from runlib import osinput
 
 NAME = "invasion-first-raid"
 LIMIT_S = 900
@@ -38,6 +41,13 @@ def run(ctx) -> dict:
     plan = ctx.mod.command("InvasionMod.invasion_set_size", size=size)
     expected_squads = MULTIPLIERS[size] * difficulty
     ctx.log.info(f"INVASION plan {plan}")
+    if ctx.variant_option("INVASION_MENU_SHOT", "0") == "1":  # picture evidence of the raid menu with a planned yearly raid (needs --pak raidmenu)
+        ctx.mod.command("InvasionMod.raid_widget_open")
+        time.sleep(1.0)
+        osinput.Win32Input().bring_to_front(ctx.game_window()["hwnd"])
+        time.sleep(1.0)
+        ctx.screenshot("raid-menu-yearly-planned")
+        ctx.mod.command("InvasionMod.raid_widget_close")
 
     wait = plan["raid_day"] - plan["plan_day"]
     ctx.check("A1 the planned day is 1 to 90 days after the plan (the season rule)", 1 <= wait <= 90, wait)
