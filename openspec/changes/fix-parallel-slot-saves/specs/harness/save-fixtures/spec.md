@@ -17,17 +17,17 @@ The harness SHALL hash the user save folder before and after each run. If any fi
 #### Scenario: Another slot rewrites the settings file
 - **WHEN** the game of another slot changes `rtsSettings.sav` while a run is in preflight or running
 - **THEN** the guard does not report it, also when the harness settings are not installed
-- Checked by `harness/tests/test_runlib_fixtures.py` (planned).
+- Checked by `harness/tests/test_runlib_fixtures.py`.
 
 #### Scenario: Another slot installs a fixture slot
 - **WHEN** a ledger entry of a run whose game still runs adds or keeps its files in the folder
 - **THEN** the guard does not report those files
-- Checked by `harness/tests/test_runlib_fixtures.py` (planned).
+- Checked by `harness/tests/test_runlib_fixtures.py`.
 
 #### Scenario: A user save or the menu save changes
 - **WHEN** an existing `saveGame_<n>` file or `menu.sav` changes, even while other slots run
 - **THEN** the guard reports it
-- Checked by `harness/tests/test_runlib_fixtures.py` (planned).
+- Checked by `harness/tests/test_runlib_fixtures.py`.
 
 ### Requirement: Slots from an earlier run are removed
 At the start of a run the harness SHALL remove the slots that an earlier run left (for example with `--keep-open`), using the ledger. It SHALL remove only the entries of its own game slot, and the entries whose game no longer runs. It SHALL keep the entries whose game still runs in another game slot.
@@ -40,19 +40,19 @@ At the start of a run the harness SHALL remove the slots that an earlier run lef
 #### Scenario: A kept-open run on another slot
 - **WHEN** the ledger holds a slot of a `--keep-open` run on game slot 0, its harness process has ended, and its game still runs
 - **THEN** preflight of a run on game slot 1 keeps the slot and its files
-- Checked by `harness/tests/test_runlib_saveslots.py` (planned).
+- Checked by `harness/tests/test_runlib_saveslots.py`.
 
 #### Scenario: A leftover slot of the same game slot
 - **WHEN** the ledger holds a slot of an earlier run on the same game slot as the new run
 - **THEN** preflight removes it, because the new run stops that game first
-- Checked by `harness/tests/test_runlib_saveslots.py` (planned).
+- Checked by `harness/tests/test_runlib_saveslots.py`.
 
 #### Scenario: The game of a ledger entry is gone
 - **WHEN** the ledger holds a slot of another game slot and no game process runs under its game folder
 - **THEN** preflight removes its files
-- Checked by `harness/tests/test_runlib_saveslots.py` (planned).
+- Checked by `harness/tests/test_runlib_saveslots.py`.
 
 #### Scenario: An old ledger entry without a game slot
 - **WHEN** a ledger entry has no game slot field
 - **THEN** it counts as left over and is removed
-- Checked by `harness/tests/test_runlib_saveslots.py` (planned).
+- Checked by `harness/tests/test_runlib_saveslots.py`.
