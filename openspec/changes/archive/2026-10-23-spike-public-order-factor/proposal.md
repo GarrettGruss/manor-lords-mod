@@ -37,3 +37,14 @@ None. A spike records findings only.
 - Real game runs, one at a time, single-player, with `--pak`. Each run id goes into the notes.
 - Pictures go in `evidence/`, each listed with its test scenario and run id.
 - Never print or commit the AES key.
+
+## Owner decision (2026-10-23)
+- The mod keeps its own order value `mod_order` (internal state).
+- Route A (tested first): after each game recompute, write the region public order = game value + `mod_order`, every tick. Check that the shown value and the game effects follow. Result: `notes/tick-write.md`.
+- Backup, route B (only if A fails): overlay a mod bar or number on the game's top bar that shows the mod order. Not built now, only recorded.
+
+## Owner decision (2026-10-23, after the tick-write test): accept route A
+- The mod overwrites the region `publicOrder` every tick with its own value. The mod keeps `mod_order` and the last game value itself.
+- The effects of order are applied in mod code. This is a separate later change.
+- Flicker (short 0 and 100 transients, about 12 percent of samples) is accepted as a risk.
+- Route B (overlay bar) is not needed now.
