@@ -104,7 +104,7 @@ The menu that opens when a new game starts: a title, a background text, four row
 - A menu that cannot open (a missing pak) logs the reason, applies the defaults and does not pause.
 - Registered mod state defaults keep the old behaviour (year 2, random size, great raids on). The config defaults (Normal, 2 years, Medium, On) are written by the menu, by `scenario_settings_skip` and for an old save.
 - Commands: `scenario_settings_state`, `scenario_settings_skip` (defaults, closes the menu), `scenario_settings_set` (any of `difficulty`, `first_raid_years`, `size_class`, `great_raids`), `scenario_settings_open`, `scenario_settings_click` (test: `action` choose, defaults or begin).
-- Tests: `test_fakegame_scenario_settings.py`; test scenarios `scenario-settings-new-game-menu` (`--new-game --pak raidmenu`), `-first-raid-delay`, `-great-raids-off`, `-load-keeps-settings` (needs the guarded `save_game`; not run yet).
+- Tests: `test_fakegame_scenario_settings.py`; test scenarios `scenario-settings-new-game-menu` (`--new-game --pak raidmenu`), `scenario-settings-player-launch-pause` (also `--env HARNESS_BOOT_NO_PAUSE=1`; the menu re-pauses when the clock moves, `pause_guard_epsilon`), `-first-raid-delay`, `-great-raids-off`, `-load-keeps-settings` (needs the guarded `save_game`; not run yet).
 - A test scenario on a fixture (a loaded save) never sees the menu. A fixture counts as an old save and gets the defaults (first raid in year 3): a test that needs the raid in year 2 calls `scenario_settings_set first_raid_years=1` first.
 
 ### raid_behavior (M03)

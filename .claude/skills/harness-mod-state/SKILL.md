@@ -26,7 +26,7 @@ commands.metric("MyMod.captives", function() return state.captives end)
 - Do not advance rules with a loop. The stand-ins read `TemporalComponent.daysTotal` lazily on each command or metric read.
 
 ## From a scenario
-- A new game opens the scenario settings menu of the Invasion Mod and pauses the game until "Begin the game". A test scenario with `--new-game` calls `scenario_settings_skip` (defaults) or `scenario_settings_set` (any of `difficulty`, `first_raid_years`, `size_class`, `great_raids`) first, or it tests the menu (`scenarios/scenario_settings/new_game_menu.py`). A fixture load never opens the menu: it counts as an old save with the defaults (first raid in year 3). A test that needs the first raid in year 2 calls `scenario_settings_set first_raid_years=1`.
+- A new game opens the scenario settings menu of the Invasion Mod and pauses the game until "Begin the game". A test scenario with `--new-game` calls `scenario_settings_skip` (defaults) or `scenario_settings_set` (any of `difficulty`, `first_raid_years`, `size_class`, `great_raids`) first, or it tests the menu (`scenarios/scenario_settings/new_game_menu.py`). The menu pauses the game again if the clock moves while it is open; `player_launch_pause.py` tests this with `--env HARNESS_BOOT_NO_PAUSE=1` (HarnessBoot skips its pause). A fixture load never opens the menu: it counts as an old save with the defaults (first raid in year 3). A test that needs the first raid in year 2 calls `scenario_settings_set first_raid_years=1`.
 ```python
 ctx.mod.command("MyMod.capture", count=5)            # returns the result, raises ModCommandError / ModDidNotAnswer
 ctx.mod.refusal("MyMod.free_captives", count=10)     # returns the refusal text, or None if it was accepted

@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Fixed
+- The scenario settings menu keeps the game paused (change `fix-settings-menu-pause`, #418): if the game clock moves while the menu is open (for example a speed key), the mod pauses again. New test switch `HARNESS_BOOT_NO_PAUSE=1` (HarnessBoot skips its pause) and test scenario `scenario-settings-player-launch-pause`.
 - Parallel game slots (change `fix-parallel-slot-saves`, #393, #378): a run no longer removes the fixture slot of a `--keep-open` run on another slot, and the save folder guard always ignores `rtsSettings.sav`. A ledger entry now records `game_slot` and `game_root`.
 
 ### Changed

@@ -24,6 +24,7 @@ local S = {
     waiting_since = nil,                   -- os.clock() when the menu waited for the intro
     selection = rules.defaults(config),    -- what the menu shows
     session = false, paused = false,       -- the menu is open and we paused the game
+    guard_clock = nil, repauses = 0,       -- the game clock at the last look while the menu is open, and how often the mod paused again
     widget = nil, title = nil, background = nil, labels = {}, choices = {}, buttons = {},
     last_error = nil, clicks = 0, unknown_logged = false,
 }
@@ -82,6 +83,27 @@ local function set_paused(paused)
         return false, tostring(problem)
     end
     return true
+end
+
+local function game_clock()
+    local e = engine()
+    if not isValid(e) then return nil end
+    local value = read(function() return e:getGameTimeAdjusted() end)
+    return type(value) == "number" and value or nil
+end
+
+-- While the menu is open the game must stand still. The player can un-pause with a key, and the game restores its speed after the
+-- intro cinematic (#418). If the clock moves, pause again. The first look after a pause only sets the reference.
+local function guard_pause()
+    local clock = game_clock()
+    if clock == nil then return end
+    local before = S.guard_clock
+    S.guard_clock = clock
+    if before == nil or math.abs(clock - before) < config.pause_guard_epsilon then return end
+    S.repauses = S.repauses + 1
+    core.log.warn(TAG, string.format("the game clock moved while the menu is open (%.3f -> %.3f); pausing again (%d)", before, clock, S.repauses))
+    S.paused = set_paused(true)
+    S.guard_clock = nil
 end
 
 -- The game undoes the first disable_autosave right after a new game from the menu (spike #358). It is sent again after the
@@ -237,6 +259,7 @@ local function on_close()
     local was_session = S.session
     reset_widget()
     S.session = false
+    S.guard_clock = nil
     if not was_session then return end
     apply(S.selection)
     if S.paused then
@@ -251,6 +274,7 @@ end
 local function open_menu()
     S.selection = rules.defaults(config)
     S.session = true
+    S.guard_clock = nil
     local result = menu.open(MENU_ID)
     if not result.ok then
         S.session = false
@@ -286,7 +310,10 @@ end
 
 local function after_open_tick()
     if S.session and not is_open() then on_close() end -- the game removed the widget (a load)
-    if S.session then drain_clicks() end
+    if S.session then
+        guard_pause()
+        drain_clicks()
+    end
 end
 
 ---------------------------------------------------------------------------------------------
@@ -353,7 +380,7 @@ local function describe()
         difficulty = settings.difficulty, first_raid_years = settings.first_raid_years, size_class = settings.size_class,
         size_random = settings.size_random, great_raids = settings.great_raids,
         settings_applied = state:get("settings_applied") == 1, difficulty_chosen = state:get("difficulty_chosen") == 1,
-        kind = S.kind, decided = S.decided, open = is_open(), paused = S.paused, selection = S.selection, clicks = S.clicks,
+        kind = S.kind, decided = S.decided, open = is_open(), paused = S.paused, repauses = S.repauses, selection = S.selection, clicks = S.clicks,
         last_error = S.last_error, save_file = save_file_name(), day = current_day(), intro_playing = intro_playing(),
     }
 end
