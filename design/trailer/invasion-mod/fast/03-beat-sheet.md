@@ -6,7 +6,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Cold open: the line holds | 0:00–0:02.5 | 2.5 s | S01–S02 | 1.2 s | 4 | 1 |
 | 2 | Constance: the fire | 0:02.5–0:12 | 9.5 s | S03–S05 | 3.2 s | 2 | — |
-| 3 | The given word | 0:12–0:17 | 5 s | S06 | 5 s | 0 | — |
+| 3 | The given word | 0:12–0:17 | 5 s | S06–S06b | 2.5 s | 0 | — |
 | 4 | Bohemia answers | 0:17–0:24 | 7 s | S07–S09 | 2.3 s | 3 | — |
 | 5 | Anchor 1: the burned house | 0:24–0:27 | 3 s | S10 | 3 s | 1 | 3 (S10) |
 | 6 | Escalation: the war comes | 0:27–0:39 | 12 s | S11–S16 | 2.0 s → 1.0 s | 3 → 4 | 3, 4 and 6 |

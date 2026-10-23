@@ -10,10 +10,11 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 | S04 | 0:06.5 | 1.5 | 2 | M | M | Follow the torch down | The torch is thrown to the ground, into straw | Panel |
 | S05a | 0:08 | 1.5 | 2 | M | M | Static, light grows | Flames erupt; their light shows Hus at the stake | Panel |
 | S05b | 0:09.5 | 2.5 | 2 | M | M→W | Tilt up | He sings again, quieter; the fire breaks the song off at 0:10.5; fire alone to 0:12 | Panel |
-| S06 | 0:12 | 5.0 | 3 | — | — | — | Black, two subtitle lines | Text |
-| S07 | 0:17 | 2.0 | 4 | M | M | Parallax | Peasants beat flails into weapons | Panel |
-| S08 | 0:19 | 2.5 | 4 | M | M | Slow push-in | A captain raises the chalice banner | Panel |
-| S09 | 0:21.5 | 2.5 | 4 | M | W | Parallax; page edge burns | A black army under a red sky | Panel |
+| S06 | 0:12 | 4.0 | 3 | — | — | — | Black, two subtitle lines | Text |
+| S06b | 0:16 | 1.0 | 3 | M | C | Static | A sealed letter with the king's seal over dark water (the threat to drown the Hussites) | Panel |
+| S07 | 0:17 | 2.0 | 4 | M | M | Parallax | Peasants, men and women, beat flails into weapons | Panel |
+| S08 | 0:19 | 2.5 | 4 | M | M | Slow push-in | A captain raises the chalice banner over a ring of war wagons | Panel |
+| S09 | 0:21.5 | 2.5 | 4 | M | W | Parallax; page edge burns | A black army under a red sky, singing | Panel |
 | S10 | 0:24 | 3.0 | 5 | E | W | Static after the page burn | The narrator alone at a table in a burned house; caption "Franconia, 1429." | Open |
 | S11 | 0:27 | 2.0 | 6 | A | W | Slow pan | Smoke on the horizon over a village | Game |
 | S12 | 0:29 | 2.0 | 6 | A | W | Slow pan | A column of raiders on a road toward a far village; smoke behind | Game |
@@ -39,10 +40,10 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 
 ## Counts
 
-- 32 shots in 60 s; 30 shots in the 55.5 s before the last black (average 1.85 s). Alfred: 50 shots in 75 s (average 1.5 s). This cut is slower in the history act and as fast in the fight.
-- Shortest: 1.0 s (S16a–c, S19–S25). Longest: 5.0 s (S06); 3.0 s of singing in black (S01).
+- 33 shots in 60 s; 31 shots in the 55.5 s before the last black (average 1.85 s). Alfred: 50 shots in 75 s (average 1.5 s). This cut is slower in the history act and as fast in the fight.
+- Shortest: 1.0 s (S16a–c, S19–S25). Longest: 4.0 s (S06); 3.0 s of singing in black (S01).
 - Anchor shots in the burned house: 3 (S10, S17, S19), at 0:24, 0:39 and 0:44.5.
-- By source: 9 panel or text shots, 3 audio-only shots (black), 17 game shots (S27 is game and panel), 3 open.
+- By source: 10 panel or text shots, 3 audio-only shots (black), 17 game shots (S27 is game and panel), 3 open.
 
 ## Capture notes
 
@@ -52,3 +53,5 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 - **The Hus voice (S01, S05b)** is one recording of the same line, sung twice: once full, dry and close in the black; once shorter and quieter, broken off by the fire. The room tone (S01–S02) is a separate track: wind and a crowd, about 25 dB under the voice.
 - **The split frame (S18)** needs the same village in two states: a gallows in the square, and a full market. Two captures from one camera position.
 - No war wagons, no cavalry, no new 3D models (`invasion-mod.md`, Out of scope).
+- **The wagon fort (S08)** appears only in a panel. The game cannot show war wagons, so the trailer never shows them in gameplay.
+- **The hymn (S08–S09)** is a 15th-century Hussite hymn. The melody is old enough to be free to use; the recording must be new. Record a choir of rough, untrained voices, not a church choir.

@@ -11,16 +11,17 @@ All spoken lines come from `design/mod/trailer.md` and are unchanged. This cut a
 | 0:08 | MANUSCRIPT. Flames erupt. Their light shows Jan Hus, bound to the stake. | A roar of fire. |
 | 0:09.5 | MANUSCRIPT. The camera tilts up the stake. He sings again. The flames rise and engulf him. | Hus sings the line again, shorter and quieter, under the fire. The fire breaks it off at 0:10.5. Then 1.5 s of fire alone. |
 | 0:12 | Black. White subtitles. | Bohemian voice: *"Kostnice, léta Páně čtrnáct set patnáct."* (Constance, in the year of our Lord fourteen fifteen.) *"Dali mu slovo. Pak ho upálili."* (They gave him their word. Then they burned him.) |
-| 0:17 | MANUSCRIPT. Peasants beat farm flails into weapons. | Bohemian voice: *"Čechy odpověděly."* (Bohemia answered.) |
-| 0:19 | MANUSCRIPT. A captain raises the chalice banner. | Narrator: "Four crusades marched against them." |
-| 0:21.5 | MANUSCRIPT. A black army under a red sky. The page edge starts to burn. | Narrator: "Four crusades broke." |
+| 0:16 | MANUSCRIPT. A sealed letter with the king's seal, held over dark water. | Only the water. (Sigismund threatened to drown every Hussite.) |
+| 0:17 | MANUSCRIPT. Peasants, men and women, beat farm flails into weapons. | Bohemian voice: *"Čechy odpověděly."* (Bohemia answered.) |
+| 0:19 | MANUSCRIPT. A captain raises the chalice banner over a ring of war wagons. | Narrator: "Four crusades marched against them." The Hussite hymn "Ktož jsú boží bojovníci" ("Ye Who Are Warriors of God") begins under him: many voices, low and far away. |
+| 0:21.5 | MANUSCRIPT. A black army under a red sky, singing as it marches. The page edge starts to burn. | Narrator: "Four crusades broke." The hymn swells, then the fire takes the page. |
 | 0:24 | The page burns away. EMBER. Inside a burned house: charred beams, a broken wall, a hearth. The narrator sits alone at a table. Caption: "Franconia, 1429." | Drums begin, low and slow. Wind through the broken wall. |
 | 0:27 | ASH. Wide: smoke on the horizon over a small village. | Narrator: "I did not choose this war." |
 | 0:29 | ASH. Wide: a long, dark column of raiders on a road toward a far village. Smoke behind them. | Narrator: "Then they rode west, into Franconia." |
 | 0:31 | ASH. Coins handed over at a town gate. Cut: a village that did not pay, burning. | Narrator: "Towns that paid were spared. Towns that would not, burned." |
 | 0:33 | ASH. Raiders carry sacks out of a granary. | Narrator: "And the hungry want bread." Drums faster. |
 | 0:34.5 | ASH. Refugees on the road; bandits wait in the trees beside it. | — |
-| 0:36 | ASH. Three fast cuts: a barn burns; villagers fall; a raider's torch in the dark. | Narrator: "And Bohemia wants a reckoning." Drums loud. |
+| 0:36 | ASH. Three fast cuts: a barn burns; villagers fall; a raider's torch in the dark. | Narrator: "We marched on Bohemia. Now Bohemia marches on us." Drums loud. |
 | 0:39 | EMBER. The narrator in the burned house, very still. His hand rests on a sword on the table. | Drums stop. Only the hearth. |
 | 0:41.5 | Split frame: a gallows on one side, a full market on the other. | Narrator: "Rule by fear, or by faith." |
 | 0:44.5 | EMBER. He stands and takes the sword. | A drum hit. Drums return, faster. |

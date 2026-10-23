@@ -9,10 +9,11 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 | S03 | 0:02.5 | 2.5 | 2 | — | C | Static | Black; a flint strikes; a torch catches | Panel |
 | S04 | 0:05 | 2.0 | 2 | M | M | Parallax | The torch falls; flames in the straw | Panel |
 | S05 | 0:07 | 5.0 | 2 | M | M→W | Tilt up | Jan Hus at the stake, singing; flames rise | Panel |
-| S06 | 0:12 | 5.0 | 3 | — | — | — | Black, two subtitle lines | Text |
-| S07 | 0:17 | 2.0 | 4 | M | M | Parallax | Peasants beat flails into weapons | Panel |
-| S08 | 0:19 | 2.5 | 4 | M | M | Slow push-in | A captain raises the chalice banner | Panel |
-| S09 | 0:21.5 | 2.5 | 4 | M | W | Parallax; page edge burns | A black army under a red sky | Panel |
+| S06 | 0:12 | 4.0 | 3 | — | — | — | Black, two subtitle lines | Text |
+| S06b | 0:16 | 1.0 | 3 | M | C | Static | A sealed letter with the king's seal over dark water (the threat to drown the Hussites) | Panel |
+| S07 | 0:17 | 2.0 | 4 | M | M | Parallax | Peasants, men and women, beat flails into weapons | Panel |
+| S08 | 0:19 | 2.5 | 4 | M | M | Slow push-in | A captain raises the chalice banner over a ring of war wagons | Panel |
+| S09 | 0:21.5 | 2.5 | 4 | M | W | Parallax; page edge burns | A black army under a red sky, singing | Panel |
 | S10 | 0:24 | 3.0 | 5 | E | W | Static after the page burn | The narrator alone at a table in a burned house; caption "Franconia, 1429." | Open |
 | S11 | 0:27 | 2.0 | 6 | A | W | Slow pan | Smoke on the horizon over a village | Game |
 | S12 | 0:29 | 2.0 | 6 | A | W | Slow pan | A column of raiders on a road toward a far village; smoke behind | Game |
@@ -38,10 +39,10 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 
 ## Counts
 
-- 31 shots in 60 s; 29 shots in the 55.5 s before the black (average 1.9 s). Alfred: 50 shots in 75 s (average 1.5 s). This cut is slower in the history act and as fast in the fight.
+- 32 shots in 60 s; 30 shots in the 55.5 s before the black (average 1.9 s). Alfred: 50 shots in 75 s (average 1.5 s). This cut is slower in the history act and as fast in the fight.
 - Shortest: 1.0 s (S16a–c, S19–S25). Longest: 5.0 s (S05, S06).
 - Anchor shots in the burned house: 3 (S10, S17, S19), at 0:24, 0:39 and 0:44.5.
-- By source: 8 panel or text shots, 1 audio-only shot, 19 game shots (S27 is game and panel), 3 open.
+- By source: 9 panel or text shots, 1 audio-only shot, 19 game shots (S27 is game and panel), 3 open.
 
 ## Capture notes
 
@@ -51,3 +52,5 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 - **S01–S02 and S22** are the same moment. Capture it once, with enough length for both.
 - **The split frame (S18)** needs the same village in two states: a gallows in the square, and a full market. Two captures from one camera position.
 - No war wagons, no cavalry, no new 3D models (`invasion-mod.md`, Out of scope).
+- **The wagon fort (S08)** appears only in a panel. The game cannot show war wagons, so the trailer never shows them in gameplay.
+- **The hymn (S08–S09)** is a 15th-century Hussite hymn. The melody is old enough to be free to use; the recording must be new. Record a choir of rough, untrained voices, not a church choir.
