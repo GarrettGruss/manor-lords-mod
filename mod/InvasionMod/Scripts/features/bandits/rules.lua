@@ -1,56 +1,49 @@
--- Pure rules of the bandits feature (M04). No game access, so the fake game and plain Lua can test them.
+-- Pure rules of the bandits feature. No game access, so the fake game and plain Lua can test them.
+-- The mod keeps its own public order (mod order). Every tick adds the manor term and removes the homeless term.
+-- Low order starts a timer. When the timer expires, villagers leave to become bandits.
 local M = {}
-
--- debuff = (100 - approval) x difficulty, rounded up (M00 decisions 11 to 15, 30).
-function M.debuff(approval, difficulty)
-    local gap = math.max(0, 100 - approval)
-    return math.ceil(gap * difficulty)
-end
 
 function M.clamp_order(value)
     return math.max(0, math.min(100, value))
 end
 
--- The approval bonus of the tech tree counts like real approval, up to 100.
-function M.effective_approval(approval, approval_bonus)
-    return math.min(100, approval + (approval_bonus or 0))
+-- A tick is due when `tick_days` game days passed since the last tick. last < 0: no tick yet, the caller only stores the day.
+function M.tick_due(today, last, tick_days)
+    return last >= 0 and today - last >= tick_days
 end
 
--- modifiers (optional, from the tech tree): order_bonus is added to the natural order, approval_bonus to the approval of the debuff.
-function M.debuffed_order(natural, approval, difficulty, modifiers)
-    modifiers = modifiers or {}
-    local debuff = M.debuff(M.effective_approval(approval, modifiers.approval_bonus), difficulty)
-    return M.clamp_order(natural + (modifiers.order_bonus or 0) - debuff)
+-- One order tick. cfg: manor_term, homeless_term. order_bonus (tech tree) is added to the manor term.
+-- Returns the record the telemetry and the log use.
+function M.tick_order(order, homeless_count, order_bonus, cfg)
+    local manor_term = cfg.manor_term + (order_bonus or 0)
+    local homeless_term = cfg.homeless_term * homeless_count
+    return {
+        order_before = order, manor_term = manor_term, homeless_count = homeless_count,
+        homeless_term = homeless_term, order_after = M.clamp_order(order + manor_term - homeless_term),
+    }
 end
 
--- The game rewrites Region.publicOrder from time to time. A value that differs from the last value
--- the mod wrote is the game's own value. A value equal to it is still the mod's write.
--- Returns the natural order the mod must use now.
-function M.natural_order(current, last_written, known_natural)
-    if last_written == nil or known_natural == nil then return current end
-    if current == last_written then return known_natural end
-    return current
-end
-
--- First threshold that the order is under. thresholds: list of { below = 75, chance = 0.10 }, sorted from the highest.
--- The chance of the lowest matching band applies.
-function M.chance_for(order, bands)
-    local chance = 0
-    for _, band in ipairs(bands) do
-        if order < band.below then chance = band.chance end
+-- What the banditry timer does now. timer_start < 0: no timer.
+-- Returns action ("none", "start", "reset", "wait", "leave"), days_left (nil without a timer) and warn (true when the 30 day warning is due).
+function M.timer_step(order, timer_start, today, cfg)
+    if timer_start < 0 then
+        if order < cfg.threshold then return { action = "start", days_left = cfg.timer_days } end
+        return { action = "none" }
     end
-    return chance
+    if order >= cfg.threshold then return { action = "reset" } end
+    local left = cfg.timer_days - (today - timer_start)
+    if left <= 0 then return { action = "leave", days_left = 0 } end
+    return { action = "wait", days_left = left, warn = left <= cfg.warn_days }
 end
 
--- One roll for the region. roll is a number in [0, 1). True when the roll is under the chance.
-function M.should_convert(order, bands, roll)
-    return roll < M.chance_for(order, bands)
+-- Families that leave: at most `leavers`, and the village keeps `min_left`.
+function M.leavers_for(families, cfg)
+    return math.max(0, math.min(cfg.leavers, families - cfg.min_families_left))
 end
 
--- A season tick is due when the season differs from the saved one.
--- last -1 means no season is saved yet: the caller only stores the season then and does not roll.
-function M.season_changed(current, last)
-    return last >= 0 and current ~= last
+-- Order after the leave.
+function M.order_after_leave(order, cfg)
+    return M.clamp_order(order + cfg.order_gain)
 end
 
 -- Buy-back (iteration 03). Scaled values round up (M00 decision 30).
