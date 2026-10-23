@@ -17,3 +17,10 @@ Recommend a way only if it holds across polls (unlike `Region.Approval`) and the
 - State: the mod keeps `mod_order`. The game keeps its own value.
 - Route A: write `publicOrder = game value + mod_order` (clamped 0..100) on every tick, after the game recompute. Test: hold a fixed target for 10 game days, sample the flicker rate, compare a game effect with a control run (`notes/tick-write.md`).
 - Route B (backup, not built now): an overlay bar or number on the game's top bar shows `mod_order`. Host candidate: the right group of the top bar (the scale icon).
+
+## Owner decision (2026-10-23): route A accepted
+- Route A is the chosen way. Route B is not needed now.
+- The mod keeps `mod_order` and the last game value. It writes its own value to `publicOrder` every tick. The game never restores its value, so the mod cannot read the game value after a write.
+- Game effects of order (families, approval) did not follow the written value in 10 days. The mod applies its own order effects in mod code (later change).
+- Risk accepted: transient values 0 and 100 (about 12 percent of samples).
+- Routes tested and closed: new factor row by pak (not possible), `publicOrderMemory` append (no effect), config weight by pak (no effect in 10 days), per-tick write (holds, display only).

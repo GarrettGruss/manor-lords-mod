@@ -13,6 +13,7 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-21-spike-playtest-telemetry/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-new-game-difficulty-setting/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/salt-mine-deposit.md
+  - resource: repo://openspec/changes/spike-public-order-factor/notes/tick-write.md
 ---
 # Engine limits found by spikes
 
@@ -97,3 +98,15 @@ Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the note
 - A dead raider keeps `ItemsLooted`, and the same object stays in `Region.corpses` until a worker picks it up.
 - Reading `unit.currAnim`, `unit.dropsTo:GetFName()` or `unit.Speed` (one of them) crashed the game (access violation 0x18).
 - Owner decision 2026-10-22: the pit replaces the direct store add; loot give-back is for Hussite raids only (change `add-corpse-pit-loot`). Notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.
+
+## Public order factors (spike #403)
+
+Real game runs on 2026-10-22 and 2026-10-23. Notes: `openspec/changes/spike-public-order-factor/notes/`.
+
+- **Factors are an enum plus config weights, not data rows.** `EApprovalFactorType` has 34 values (0 to 33), for example unemployment 17, patrols 18, administration 19. Public order uses the same enum as approval. A pak cannot add a factor.
+- **Weights come only from config.** `ApprovalSettings.ApprovalFactors` is a `float[34]` from `DefaultGame.ini`. Lua (bridge or raw) reaches only element 0. Read the defaults with `GetDefaultApprovalRateForFactor(i)`.
+- **A config pak can change a weight** (`ManorLords/Config/DefaultGame.ini` in a `~mods` pak), but index 17 = -50 changed neither `publicOrder` nor approval in 10 game days.
+- **`publicOrderMemory` entries have no effect.** An appended entry is safe, but the game rewrites `effectByPopulation` to a small per-person value, never lists it in `summedPublicOrderFactors`, and `publicOrder` stays equal to a control run.
+- **A per-tick `Region.publicOrder` write holds.** The top bar shows the written value. The game never restores its own value, so the game value is unreadable after the first write. Families and approval did not change (order 2 against 42, 10 days).
+- **Transient values.** `publicOrder` reads 0 or 100 for about 12 percent of samples (about one per game hour, also 100 in a control run). The paused top bar shows the stable value.
+- Owner decision 2026-10-23: route A. The mod writes its own order value every tick and applies order effects in mod code.
