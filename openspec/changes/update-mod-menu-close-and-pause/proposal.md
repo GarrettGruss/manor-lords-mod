@@ -6,7 +6,7 @@ Issue: #420.
 
 The owner asked for two changes to the mod menus (2026-10-23):
 
-1. The Close button is at the top left. It SHALL be at the bottom middle of the screen, in the game's button format. The style reference is the Scenario Templates panel of the game's New Game screen.
+1. The Close button is at the top left. It SHALL be at the bottom middle of the screen, in the game's Close label style. The style reference is the Close label of the game's Diplomacy screen (`reference/diplomacy-close.jpg`): a plain white serif text "Close" with a small fleur-de-lis on each side, no frame or box, centered at the very bottom (about 95% of the screen height) over a dark band. The game shows "Game Paused" on that screen.
 2. A fullscreen mod menu SHALL pause the game while it is open.
 
 ## What changes

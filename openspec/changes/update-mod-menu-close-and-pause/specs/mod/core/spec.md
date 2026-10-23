@@ -2,7 +2,7 @@
 <!-- Issue: #420 -->
 
 ### Requirement: Mod menus are fullscreen and block clicks to the game
-Each mod menu SHALL cover the full screen, like the game's developments menu. While a mod menu is open, a mouse click SHALL NOT reach the game world or the game HUD behind the menu. A click on the menu SHALL act only on the menu, also a click on the empty background of the menu content. A mod menu SHALL have a Close button that the player can click with the mouse (a click on the backdrop does nothing). The Close button SHALL be at the bottom middle of the screen, in the format of the game's buttons.
+Each mod menu SHALL cover the full screen, like the game's developments menu. While a mod menu is open, a mouse click SHALL NOT reach the game world or the game HUD behind the menu. A click on the menu SHALL act only on the menu, also a click on the empty background of the menu content. A mod menu SHALL have a Close button that the player can click with the mouse (a click on the backdrop does nothing). The Close button SHALL be at the bottom middle of the screen, in the style of the game's Close label on the Diplomacy screen (white serif text "Close" with a fleur-de-lis on each side, no frame).
 
 #### Scenario: A click on the menu does not reach the world
 - **WHEN** a mod menu is open over a burgage plot, and the player clicks a menu button at the place of the plot
@@ -50,5 +50,5 @@ Every mod menu on the base menu (raid, tech, liege and tribute, scenario setting
 
 #### Scenario: The Close button is at the bottom middle
 - **WHEN** a picture of an open mod menu is taken
-- **THEN** the Close button is at the bottom middle of the screen, in the game's button format
+- **THEN** the Close button is at the bottom middle of the screen, in the game's Close label style
 - Checked by picture evidence (`evidence/`), reviewed by the owner.

@@ -4,7 +4,7 @@
 
 The Close button is made in Lua, not in the pak. `make_close_button` in `core/menu.lua` clones the game's bar button class (`mainTabButton_C`) and places it with `SetPositionInViewport({X=24, Y=24})`. The pak widgets (raidmenu, techmenu) do not hold it. So the move needs no pak rebuild.
 
-The new place is the bottom middle: X is half the viewport width minus half the button width, Y is the viewport height minus the button height minus a margin. Use the viewport size and the widget desired size, or an anchor and alignment, whichever the game accepts. The button keeps the game's button format. Check the look against the Scenario Templates panel in a picture.
+The new place is the bottom middle: X is half the viewport width minus half the button width, Y is the viewport height minus the button height minus a margin. Use the viewport size and the widget desired size, or an anchor and alignment, whichever the game accepts. The style is the Close label of the Diplomacy screen (`reference/diplomacy-close.jpg`): white serif text with a fleur-de-lis on each side, no frame, at about 95% of the screen height. The clone of the bar button may need its frame hidden and a label with ornaments; check the look in a picture.
 
 ## Pause
 
