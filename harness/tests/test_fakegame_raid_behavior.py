@@ -448,6 +448,15 @@ class CorpsePitLootTests(RaidBehaviorTestCase):
         self.assertEqual(result, "1,3,true")
         self.assertIn((3, 4), pit["goods"])
 
+    def test_a_pit_add_raises_the_storage_limits_to_the_stored_total(self):
+        pit = self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 3), (3, 10)], btype=113)
+        pit["object"].storageLimitGeneric = 0
+        pit["object"].storageLimitLarge = 0
+        pit["object"].storageLimitPantry = 5
+        result = self.game.lua.eval("(function() local world = require('features.raid_behavior.world'); local pits = world.pits(); world.pit_add(pits[1], { [3] = 400, [15] = 7 }); return world.pit_limit(pits[1]) end)")()
+        self.assertEqual(result, 420)
+        self.assertEqual(sum(a for t, a in pit["goods"] if t == 3), 410)
+
     def test_no_pit_is_an_empty_list(self):
         self.assertEqual(self.game.lua.eval("(function() return #require('features.raid_behavior.world').pits() end)")(), 0)
 
@@ -466,7 +475,7 @@ class CorpsePitLootTests(RaidBehaviorTestCase):
         self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 2), (3, 5)], btype=113)
         answer = self.ask("raid_behavior_pit_state")
         self.assertTrue(answer["ok"], answer)
-        self.assertEqual(answer["result"]["pits"], [{"corpses": 2, "goods": [{"good": 3, "amount": 5}, {"good": 233, "amount": 2}]}])
+        self.assertEqual(answer["result"]["pits"], [{"corpses": 2, "goods": [{"good": 3, "amount": 5}, {"good": 233, "amount": 2}], "limit": 0}])
 
     def test_the_plunder_returns_the_goods_by_type(self):
         result = self.game.lua.eval("(function() local taken, by_good = require('features.raid_behavior.world').plunder(20, require('config').raid_behavior.store_tiers); return taken .. ',' .. by_good[16] end)")()

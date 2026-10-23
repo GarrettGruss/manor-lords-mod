@@ -294,7 +294,7 @@ if has_commands then
             local goods = {}
             for good, amount in pairs(pit.goods) do goods[#goods + 1] = { good = good, amount = amount } end
             table.sort(goods, function(a, b) return a.good < b.good end)
-            pits[#pits + 1] = { corpses = pit.corpses, goods = goods }
+            pits[#pits + 1] = { corpses = pit.corpses, goods = goods, limit = world.pit_limit(pit) }
         end
         local record = {}
         for _, id in ipairs(order) do

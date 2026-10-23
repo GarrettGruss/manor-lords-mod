@@ -3,7 +3,8 @@
 Fixture: the default `base-corpse-pit` (a built corpse pit, no workers). Option (run.py --env): INVASION_DIFFICULTY (1 to 3, default 1).
 Steps: assign a family to the pit (building_assign_worker type=113), force a small Hussite raid, run game days until the plunder
 tick has recorded goods, kill the raiders (just_die), then wait until the workers deliver bodies. Each delivered body of the raid
-must add floor(record / raiders at the start) of each recorded good to the pit. A body of an animal or a villager is ignored.
+must add floor(record / raiders at the start) of each recorded good to the pit.
+Nothing may be lost when the pit is full: the gain must equal the paid shares, and the storage limit of the pit must cover the stored goods. A body of an animal or a villager is ignored.
 It saves nothing.
 """
 
@@ -80,5 +81,7 @@ def run(ctx) -> dict:
         share = row["amount"] // initial
         gained = amount(after["pits"][0]["goods"], row["good"]) - amount(base_pit["goods"], row["good"])
         ctx.metric(f"gain_good_{row['good']}", gained)
-        ctx.check(f"good {row['good']}: the pit gained {paid} shares of {share}", gained >= paid * share, (gained, paid, share))
+        ctx.check(f"good {row['good']}: the pit gained exactly {paid} shares of {share}", gained == paid * share, (gained, paid, share))
+    stored = sum(row["amount"] for row in after["pits"][0]["goods"])
+    ctx.check("the storage limit of the pit is not below the stored goods (no full alert)", after["pits"][0]["limit"] >= stored, (after["pits"][0]["limit"], stored))
     return ctx.result()

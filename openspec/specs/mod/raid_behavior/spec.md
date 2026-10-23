@@ -196,6 +196,14 @@ The mod SHALL poll the corpse pit inventory entry `Type 233` (corpse) about once
 - **THEN** the pit gains two shares
 - Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
+### Requirement: The corpse pit keeps every added good and shows no full alert
+The pit has storage limits of 0, and the game shows "Storage is full (Corpse Pit)" when it holds any good. Before each add, the mod SHALL raise the storage limits of the pit (`storageLimitGeneric`, `storageLimitLarge`, `storageLimitPantry`) to at least the stored total after the add, so no alert shows. The pit SHALL keep every added good: the stored amount rises by exactly the added amount, also above the old limit.
+
+#### Scenario: The pit is overfilled
+- **WHEN** a share is added to a pit whose storage limits are 0
+- **THEN** the stored amount rises by exactly the share, the storage limits are not below the stored total, and the full alert is gone
+- Checked by `mod/InvasionMod/scenarios/raid_behavior/pit_loot.py` (real run 20261023-162856-41a4 passed) and `test_fakegame_raid_behavior.py`.
+
 ### Requirement: Native raids and a missing pit give nothing back
 The mod SHALL NOT add goods to the pit for the body of a raider of a native raid. If no corpse pit exists, the mod SHALL add no goods and SHALL NOT add them to a store. The mod SHALL NOT start the give-back for bodies left on the ground.
 

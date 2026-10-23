@@ -262,13 +262,45 @@ function M.pits()
     return pits
 end
 
+-- The pit has storage limits of 0 and shows "Storage is full (Corpse Pit)" for any good (spike corpse-pit-capacity). addToInventory
+-- keeps goods above the limit, so nothing is lost. Raise the limits to the stored total so the alert does not show.
+local PIT_LIMITS = { "storageLimitGeneric", "storageLimitLarge", "storageLimitPantry" }
+
+local function stored_total(pit)
+    local total = 0
+    for _, amount in pairs(goods_of(pit.building)) do total = total + amount end
+    return total
+end
+
+-- The greatest limit of the pit after the raise, or nil when no limit could be written.
+function M.pit_raise_limits(pit, total)
+    local top = nil
+    for _, name in ipairs(PIT_LIMITS) do
+        local current = read(function() return pit.building[name] end) or 0
+        if current < total then pcall(function() pit.building[name] = total end) end
+        local now = read(function() return pit.building[name] end)
+        if type(now) == "number" and (top == nil or now > top) then top = now end
+    end
+    return top
+end
+
 -- Add goods (good -> amount) to a pit. Returns true, or false and a message. addToInventory counts in the region stock at once.
 function M.pit_add(pit, goods)
+    local total = stored_total(pit)
+    for _, amount in pairs(goods) do total = total + amount end
+    M.pit_raise_limits(pit, total)
     for good, amount in pairs(goods) do
         local ok, problem = pcall(function() pit.building:addToInventory({ Type = good, amt = amount }) end)
         if not ok then return false, tostring(problem) end
     end
     return true
+end
+
+-- The greatest storage limit of a pit (0 when not raised), for the test state.
+function M.pit_limit(pit)
+    local top = 0
+    for _, name in ipairs(PIT_LIMITS) do top = math.max(top, read(function() return pit.building[name] end) or 0) end
+    return top
 end
 
 function M.current_day()
