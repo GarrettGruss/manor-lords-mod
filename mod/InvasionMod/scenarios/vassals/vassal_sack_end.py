@@ -1,7 +1,7 @@
 """Change add-vassal-sack-wipe: a sack of a vassal that ends without a wipe.
 
-The scenario makes one vassal (M07.02) and lets it grow. `vassals_sack` starts the sack: the mod removes all logs and planks of the
-region and collapses 80 percent of the buildings. At once `vassals_end_sack` ends the sack before the poll that wipes the village.
+The scenario adopts the AI-lord region Goldhof (Hochweg, internal name; option VASSAL_REGION) as a vassal (command `vassals_adopt`). `vassals_sack` starts the sack: the mod removes all logs and planks of the
+region and collapses 80 percent of the buildings. The option `hold` keeps the sack from wiping; when the ruins are there, `vassals_end_sack` ends it.
 The mod gives 50 logs and 100 planks and orders the rebuild of every ruin. The scenario watches the ruins become construction sites
 and the sites get built. It saves nothing.
 Environment (run.py --env): REBUILD_DAYS (game days to watch after the order, default 15).
@@ -12,8 +12,7 @@ DESCRIPTION = "A sack that ends without a wipe removes the wood, gives 50 logs a
 LIMIT_S = 1200
 SPEED = 3
 LONG_REASON = "Claim, settle and handover (about 100 s), 10 game days of growth, then up to 15 game days of rebuild at speed 3."
-INFLUENCE = 1000
-GROWTH_DAYS = 10
+GROWTH_DAYS = 1
 STEP_DAYS = 5
 
 
@@ -25,21 +24,11 @@ def census(ctx, region: str) -> dict:
     return ctx.mod.command("InvasionMod.vassals_region_census", region=region)
 
 
-def free_region(ctx) -> str:
-    rows = ctx.actions.regions_state()["regions"]
-    free = [row["region"] for row in rows if not row.get("owner") and not row.get("settled")]
-    if not free:
-        raise RuntimeError(f"no free region in this start: {rows}")
-    return free[0]
-
-
 def make_vassal(ctx) -> str:
-    region = free_region(ctx)
-    ctx.actions.set_influence(INFLUENCE)
-    ctx.actions.claim_region(region, target=0, finalize=True)
-    ctx.run_until(lambda: vassals(ctx)["count"] == 1, 30, what="the claim in the registry")
-    ctx.actions.settle_region(region, target=0, settlement_type=1, supply=2)
-    ctx.run_until(lambda: vassals(ctx)["vassals"][0]["lord"] != "none", 40, what="the handover")
+    """Adopt a region that an AI lord already owns (owner, 2026-10-22: a vassal is a region of an AI lord). Default Goldhof (Hochweg)."""
+    region = ctx.variant_option("VASSAL_REGION", "Goldhof")
+    answer = ctx.mod.command("InvasionMod.vassals_adopt", region=region)
+    ctx.log.info(f"adopted {region}: slot {answer['adopted_slot']}")
     return region
 
 
@@ -51,7 +40,9 @@ def run(ctx) -> dict:
     before = census(ctx, region)
     ctx.metric("buildings_before_sack", before["total"])
 
-    started = ctx.mod.command("InvasionMod.vassals_sack", slot=1)["sack"]
+    started = ctx.mod.command("InvasionMod.vassals_sack", slot=1, hold=True)["sack"]
+    needed = -(-before["total"] * 4 // 5)
+    ctx.run_until(lambda: census(ctx, region)["rubble"] >= needed, 60, what="the collapses of the sack")
     ctx.log.info(f"sack started: {started}")
     ctx.check("E1 the sack start removed the wood (both goods reported)", set(started.get("wood_removed", {})) == {"logs", "planks"}, started)
     ended = ctx.mod.command("InvasionMod.vassals_end_sack", slot=1)

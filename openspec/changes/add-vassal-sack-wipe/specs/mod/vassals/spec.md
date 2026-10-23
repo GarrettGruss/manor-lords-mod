@@ -63,7 +63,7 @@ The command `InvasionMod.vassals_restore` SHALL take 100 silver (flat, owner 202
 - Checked by `harness/tests/test_fakegame_vassals.py`.
 
 ### Requirement: A restored vassal pays tribute after the rebuild
-A restored vassal SHALL get a slot again with the flag `rebuilding`. Its tribute SHALL wait while the flag is set. The flag SHALL end when `vassals.restore.rebuilt_share` (default 0.50) of the buildings before the wipe are built again. A construction site is not built.
+A restored vassal SHALL get a slot again with the flag `rebuilding`. Its tribute SHALL wait while the flag is set. The flag SHALL end when `vassals.restore.rebuilt_share` (default 0.50) of the ruins that the restore ordered are built, counted above the buildings that are built right after the order. A construction site is not built.
 
 #### Scenario: The tribute waits
 - **WHEN** a restored vassal is rebuilding at a season change

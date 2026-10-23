@@ -366,8 +366,10 @@ local function wipe_vassal(slot, run)
 end
 
 -- Wipe the vassal when enough buildings are ruins. Returns done (true when the sack ended), then the event or the error text.
+-- The AI demolishes ruins while the sack runs (27 of 28 in run 20261023-005824-8bac): the share counts against the buildings that are still there.
 local function wipe_if_complete(slot, run, census)
-    if not rules.sack_complete(run.total, census.rubble, sack_config.ruin_share) then return false end
+    if not rules.sack_complete(math.min(run.total, census.total), census.rubble, sack_config.ruin_share) then return false end
+    if run.hold then return false end -- test option: the sack waits for vassals_end_sack and never wipes
     sacks[slot] = nil
     local event, why = wipe_vassal(slot, run)
     if event == nil then
@@ -393,6 +395,7 @@ local function advance_sack(slot)
     if census == nil then sacks[slot] = nil; return nil, "region " .. run.region .. " not found" end
     local done, event, why = wipe_if_complete(slot, run, census)
     if done then return event, why end
+    if run.hold and rules.sack_complete(math.min(run.total, census.total), census.rubble, sack_config.ruin_share) then return nil end -- hold: wait for the end command
     if run.steps >= sack_config.max_steps then
         sacks[slot] = nil
         sack_errors[tostring(slot)] = string.format("sack gave up after %d steps: %d of %d ruins", run.steps, census.rubble, run.needed)
@@ -401,12 +404,14 @@ local function advance_sack(slot)
         return nil, sack_errors[tostring(slot)]
     end
     run.steps = run.steps + 1
-    local hit = world.collapse_buildings(run.region, rules.houses_to_collapse(run.needed, census.rubble)) or 0
+    -- From the second step on, collapse a few more than needed: the AI rebuilds a ruin about as fast as the sack collapses one (real run 20261023-010105-f526: 27 of 28 for 6 steps).
+    local margin = run.steps > 1 and sack_config.retry_margin or 0
+    local hit = world.collapse_buildings(run.region, rules.houses_to_collapse(rules.ruins_needed(math.min(run.total, census.total), sack_config.ruin_share), census.rubble) + margin) or 0
     core.log.info(TAG, string.format("VASSALS sack slot=%d region=%s step=%d collapsed=%d ruins=%d/%d", slot, run.region, run.steps, hit, census.rubble, run.needed))
     return nil
 end
 
-local function start_sack(slot, reason)
+local function start_sack(slot, reason, hold)
     local region = state:get(slot_key(slot, "region"))
     if region == rules.NO_REGION then return nil, "slot " .. slot .. " is empty" end
     if sacks[slot] then return nil, "slot " .. slot .. " is already sacked" end
@@ -414,7 +419,7 @@ local function start_sack(slot, reason)
     if census == nil then return nil, "region " .. region .. " not found" end
     local wood = world.remove_goods(region, sack_config.wood) or {}
     core.log.info(TAG, "VASSALS sack removes wood region=" .. region .. " " .. json_text(wood))
-    sacks[slot] = { region = region, total = census.total, needed = rules.ruins_needed(census.total, sack_config.ruin_share), steps = 0, reason = reason, wood_removed = wood }
+    sacks[slot] = { region = region, total = census.total, needed = rules.ruins_needed(census.total, sack_config.ruin_share), steps = 0, reason = reason, wood_removed = wood, hold = hold or nil }
     core.log.info(TAG, string.format("VASSALS sack starts slot=%d region=%s buildings=%d ruins needed=%d reason=%s", slot, region, census.total, sacks[slot].needed, reason))
     local event, why = advance_sack(slot)
     return event or { slot = slot, region = region, started = true, wood_removed = wood }, why
@@ -466,10 +471,13 @@ local function restore_vassal(region)
     state:set(slot_key(slot, "handed_day"), (world.current_day() or 0) + 1)
     state:set(slot_key(slot, "handed_buildings"), world.region_buildings(name) or 0)
     state:set(slot_key(slot, "rebuilding"), true)
-    -- The rebuild is ordered, so the AI builds in the old spots. The tribute waits until rebuilt_share of the old buildings are built.
+    -- The rebuild is ordered. The tribute waits until rebuilt_share of the ordered ruins are built. The restore adds 3 to 4 buildings
+    -- itself (spike restore-to-five.md), so the target counts from the buildings that are built right after the order.
     local rebuild, rebuild_why = world.rebuild_ruins(name)
     if rebuild == nil then core.log.error(TAG, "VASSALS restore rebuild order failed: " .. tostring(rebuild_why)) end
-    state:set(slot_key(slot, "rebuilt_target"), rules.rebuilt_target(buildings_before, config.restore.rebuilt_share))
+    local built_now = (world.census(name) or { built = 0 }).built
+    local ordered = rebuild and rebuild.ordered or 0
+    state:set(slot_key(slot, "rebuilt_target"), built_now + (ordered > 0 and rules.rebuilt_target(ordered, config.restore.rebuilt_share) or 0))
     state:set("wiped" .. index .. "_region", rules.NO_REGION)
     core.log.info(TAG, string.format("VASSALS restored region=%s slot=%d lord=%s silver paid=%d families=%s", name, slot, lord, config.restore.silver, tostring(settled.families)))
     core.show_banner("A village is restored", string.format("%s has villagers again", name))
@@ -540,12 +548,26 @@ if has_commands then
         return result
     end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals } })
     commands.register("InvasionMod.vassals_sack", function(args)
-        local started, why = start_sack(args.slot, "command")
+        local started, why = start_sack(args.slot, "command", args.hold)
         if not started then return nil, why end
         local result = command_state()
         result.sack = started
         return result
-    end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals } })
+    end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals }, hold = { type = "boolean", required = false } })
+    -- Test command: take a region that an AI lord already owns into the registry (no claim, no handover, no write to the game).
+    commands.register("InvasionMod.vassals_adopt", function(args)
+        if rules.slot_of_region(slot_regions(), config.max_vassals, args.region) then return nil, args.region .. " is already a vassal" end
+        local lord = world.region_lord_name(args.region)
+        if lord == nil then return nil, args.region .. " has no AI lord as owner" end
+        local slot, why = register_vassal(args.region)
+        if slot == nil then return nil, why end
+        state:set(slot_key(slot, "lord"), lord)
+        state:set(slot_key(slot, "handed_day"), (world.current_day() or 0) + 1)
+        state:set(slot_key(slot, "handed_buildings"), world.region_buildings(args.region) or 0)
+        local result = command_state()
+        result.adopted_slot = slot
+        return result
+    end, { region = { type = "string", required = true } })
     commands.register("InvasionMod.vassals_end_sack", function(args)
         local run = sacks[args.slot]
         if run == nil then return nil, "slot " .. args.slot .. " has no running sack" end

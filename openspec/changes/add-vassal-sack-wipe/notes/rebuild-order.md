@@ -38,3 +38,15 @@ Live session with the owner, slot 0, fixture `base`, runs `20261022-231049-8008`
 
 - Whether it survives a save and load (needs the guarded `save_game`).
 - The lord handover after a wipe (give the region to an AI lord again).
+
+## Test region choice (owner correction 2026-10-22, implementation)
+
+- The owner's model: a vassal region is a region owned by an AI lord. In the `base` fixture the region `Eichenhau` (Wilde Wand) has no AI lord of its own: the old test scenario faked one through `settle_region`, and after a wipe the map shows it vacant. The scenarios `vassals-wipe` and `vassals-sack-end` no longer use it.
+- Both scenarios now adopt an existing AI-lord region, default `Goldhof` (Hochweg, 34 buildings, owner `PawnCPP_AI`; option `VASSAL_REGION`). The smallest way to register it: the new test command `InvasionMod.vassals_adopt` (region): it reads the lord name of the region owner, takes a free slot and sets lord, handed day and handed buildings. It writes nothing to the game.
+- The wipe and the restore also run on Goldhof: the lord pawn exists, so the restore hands the region to it again (`lord_receive_region` of the existing lord), then adds 5 families, goods and the rebuild order.
+- The sack-end scenario uses the test option `hold` of `vassals_sack` (the sack collapses but never wipes until `vassals_end_sack`). Ending a sack right after its start ordered only 4 of 28 ruins, because `collapseBuilding` results show a little later (run 20261023-004441-9d86). A real sack end must wait until the collapses are done.
+- Real runs on Goldhof (slot 0, fixture `base`): sack-end 20261023-005025-a2b9 pass (28 of 28 ruins ordered, built 2 to 6 in 15 days); wipe 20261023-005438-80b8 (26 ruins ordered, built 5 to 7 in 20 days). Run 20261023-005320-e91a crashed (access violation) at the first camera picture of Goldhof, before any mod action: a camera/screenshot call, not the sack.
+- After the wipe only 26 of the 28 ruins remained (the AI removes some ruins), so the wipe check uses 70 percent.
+- Earlier runs on Eichenhau (20261023-003012-a0df, -003542-1cff, -003926-72d7): the rebuild order worked (4 of 4 ordered) but the sites of that tiny village (5 buildings, lord stalled) were not built in 20 days.
+- The AI rebuilds a fresh ruin about as fast as the sack collapses one (27 of 28 for 6 steps, run 20261023-010105-f526, the sack gave up and ordered the rebuild). The sack now collapses `retry_margin` (3) more than needed from the second step on. Passing runs after that: wipe 20261023-011135-bce6 (28 ruins at the wipe, 5 families, 26 ruins ordered, 400 goods), sack-end 20261023-010729-519b. Crash 20261023-010958-4796: access violation right after the wipe of the 16-family Goldhof village (4 other wipes of it did not crash; same class as the earlier same-tick wipe crash).
+- After the restore the sites are built slowly with 5 families (built 3 to 3 in 20 game days in run -010329-225e, 5 to 7 in -005438-80b8), so the scenario logs it as a metric, not a check.

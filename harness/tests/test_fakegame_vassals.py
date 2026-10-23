@@ -200,6 +200,7 @@ class HandoverBase(VassalsTestCase):
         self.deposits = []     # (region, building index, good id, amount)
         self.old_types = {}    # (region name, building index) -> typeBeforeChange of a ruin (default 3)
         self.setups = []       # (region, building index, bType, constructed, hp) at each SetupBuilding call
+        self.sites = set()     # (region, building index) of construction sites made by SetupBuilding
         self.game.exec("package.loaded['HarnessSack'] = { MAX_GOODS_REMOVED = 5000, remove_goods = function(region, kind, amount) WOOD_REMOVED = (WOOD_REMOVED or {}); WOOD_REMOVED[#WOOD_REMOVED + 1] = kind; return 7 end }")
         self.families = {}     # region name -> list of families (each a list of member objects)
         self.region_by_name = {}
@@ -216,12 +217,13 @@ class HandoverBase(VassalsTestCase):
         self.game.method(building, "collapseBuilding", lambda _self: self.ruins[name].add(index))
         self.game.method(building, "addToInventory", lambda _self, item: self.deposits.append((name, index, item.Type, item.amt)))
         building.typeBeforeChange = self.old_types.get((name, index), 3) if index in self.ruins[name] else 0
-        building.Data = self.game.obj("BuildingData", bType=75 if index in self.ruins[name] else 3, constructed=True, hp=100, other=5)
+        building.Data = self.game.obj("BuildingData", bType=75 if index in self.ruins[name] else 3, constructed=(name, index) not in self.sites, hp=100, other=5)
 
         def set_up(own):
             data = own.Data
             self.setups.append((name, index, data.bType, data.constructed, data.hp))
             self.ruins[name].discard(index)
+            self.sites.add((name, index))
         self.game.method(building, "SetupBuilding", set_up)
         return building
 
@@ -508,6 +510,28 @@ class SackWipeTests(HandoverBase):
         self.assertTrue(answer["ok"], answer)
         self.assertEqual(answer["result"]["lost_events"][0]["reason"], "wiped")
 
+    def test_adopt_registers_a_region_that_an_ai_lord_owns(self):
+        self.add_region("Goldhof", True, 6)
+        self.game.exec("package.loaded['features.vassals.world'].region_lord_name = function(name) return name == 'Goldhof' and 'Endlein' or nil end")
+        answer = self.ask("vassals_adopt", region="Goldhof")
+        self.assertTrue(answer["ok"], answer)
+        rows = {row["region"]: row for row in answer["result"]["vassals"]}
+        self.assertEqual(rows["Goldhof"]["lord"], "Endlein")
+        self.assertFalse(self.ask("vassals_adopt", region="Goldhof")["ok"])
+        self.assertFalse(self.ask("vassals_adopt", region="Home")["ok"])
+
+    def test_the_share_counts_against_the_buildings_that_are_still_there(self):
+        self.game.exec(NO_COLLAPSE)
+        for index in range(15):
+            self.ruins["Eichenhau"].add(index)
+        self.counts["Eichenhau"] = 19   # the AI demolished one ruin: 15 of 19 is 79 percent, so 16 are still needed
+        self.sack()
+        self.assertEqual(self.state()["lost"], 0)
+        self.ruins["Eichenhau"].add(15)
+        self.counts["Eichenhau"] = 19   # 16 ruins; 16 of 19 is complete
+        self.game.advance(10)
+        self.assertEqual(self.state()["lost_events"][0]["reason"], "wiped")
+
     def test_the_sack_start_removes_the_logs_and_planks(self):
         self.game.exec(NO_COLLAPSE)
         self.sack()
@@ -610,11 +634,9 @@ class RestoreTests(HandoverBase):
     def test_the_rebuilding_flag_ends_when_enough_buildings_stand(self):
         self.restore()
         self.assertTrue(self.state()["vassals"][0]["rebuilding"])
-        for index in range(10):
-            self.ruins["Eichenhau"].add(index)
         self.game.advance(10)
-        self.assertTrue(self.state()["vassals"][0]["rebuilding"])
-        self.ruins["Eichenhau"].clear()
+        self.assertTrue(self.state()["vassals"][0]["rebuilding"])   # the ordered ruins are sites, not built
+        self.sites.clear()
         self.game.advance(10)
         self.assertFalse(self.state()["vassals"][0]["rebuilding"])
 

@@ -257,6 +257,17 @@ function M.remove_goods(name, goods)
     return removed
 end
 
+-- The lord name of the AI pawn that owns a region, or nil (no owner, or the owner is not an AI lord).
+function M.region_lord_name(name)
+    local region = region_object(name)
+    if region == nil then return nil end
+    local owner = core.read(function() return region.ownerPawn end)
+    if not core.isValid(owner) then return nil end
+    local text = core.textOf(core.read(function() return owner.lordsName end))
+    if text == nil or text == "" then return nil end
+    return text
+end
+
 -- Give a wiped region back to an AI lord (the handover of a new vassal: lord_receive_region). The lord is spawned when it is gone.
 function M.hand_over_to_lord(lord_name, region)
     local number = M.lord_number(lord_name)

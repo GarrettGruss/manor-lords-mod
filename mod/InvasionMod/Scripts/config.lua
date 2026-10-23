@@ -214,6 +214,7 @@ return {
         sack_wipe = {
             ruin_share = 0.80,       -- owner, 2026-10-20: the sack is complete at 80 percent ruins
             max_steps = 6,           -- sack steps (one for each vassal poll) before the mod gives up and logs an error
+            retry_margin = 3,        -- buildings collapsed above the need in a retry step: the AI rebuilds ruins while the sack runs
             max_wiped = 6,           -- wiped regions that the mod remembers for a restore
             -- Owner, 2026-10-22: a sack removes all logs and planks of the region. A sack that ends without a wipe gives some back and orders the rebuild at once.
             wood = { { id = 16, name = "logs" }, { id = 17, name = "planks" } },
@@ -225,7 +226,7 @@ return {
             silver = 100,
             goods = { { id = 16, amount = 100, name = "logs" }, { id = 17, amount = 200, name = "planks" }, { id = 15, amount = 100, name = "rubble_stone" } },
             deposit_tries = 10,      -- buildings tried for each good
-            rebuilt_share = 0.50,    -- the village is rebuilt when this share of its buildings before the wipe is built again (a site does not count); then the tribute starts (TBD)
+            rebuilt_share = 0.50,    -- the village is rebuilt when this share of the ruins that the restore ordered is built (a site does not count); then the tribute starts (TBD)
         },
         -- Iteration 03. Policies are mod-owned. Values are TBD for playtests.
         policies = {
