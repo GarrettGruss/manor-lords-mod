@@ -2,7 +2,7 @@
 <!-- Issue: #425 -->
 
 ### Requirement: The liege screen has a button to request an arms shipment
-The liege screen SHALL have a button "Request arms shipment". A click SHALL cost 200 silver and SHALL deliver 30 large shields and 30 spears to the manor store at once. The amounts, the cost and the cooldown SHALL come from config values. The button SHALL be disabled, with the reason shown, when the silver is below 200 or when a cooldown runs (the days left are shown). The cooldown is 180 game days. The mod SHALL take the silver only when the delivery succeeded. The mod SHALL store the day of the last shipment in the mod state, so the cooldown is kept over a save and load.
+The liege screen SHALL have a button "Request arms shipment". A click SHALL cost 200 silver and SHALL deliver 30 large shields and 30 spears to the manor store at once. The amounts and the cost SHALL come from config values. The mod SHALL take the silver only when the delivery succeeded.
 
 #### Scenario: Buy a shipment
 - **WHEN** the player has 200 or more silver, no cooldown runs, and the player clicks the button
@@ -10,6 +10,14 @@ The liege screen SHALL have a button "Request arms shipment". A click SHALL cost
 - **AND** the silver is 200 lower
 - **AND** the button is disabled and shows the days left
 - Checked by `mod/InvasionMod/scenarios/liege_influence/arms_shipment.py` (proposed) and `harness/tests/test_fakegame_liege_influence.py` (proposed).
+
+#### Scenario: A failed delivery costs nothing
+- **WHEN** the delivery to the manor store fails
+- **THEN** the silver and the cooldown day do not change and a log line says why
+- Checked by `harness/tests/test_fakegame_liege_influence.py` (proposed).
+
+### Requirement: The arms shipment has a cooldown
+After a shipment the button SHALL be disabled for 180 game days (a config value). The button SHALL also be disabled, with the reason shown, when the silver is below 200. While it is disabled for the cooldown, it SHALL show the days left. The mod SHALL store the day of the last shipment in the mod state, so the cooldown is kept over a save and load.
 
 #### Scenario: Not enough silver
 - **WHEN** the player has less than 200 silver
@@ -21,11 +29,6 @@ The liege screen SHALL have a button "Request arms shipment". A click SHALL cost
 - **WHEN** a shipment came 100 game days ago
 - **THEN** the button is disabled and shows 80 days left
 - **AND** after 180 game days it is enabled again if the silver is enough
-- Checked by `harness/tests/test_fakegame_liege_influence.py` (proposed).
-
-#### Scenario: A failed delivery costs nothing
-- **WHEN** the delivery to the manor store fails
-- **THEN** the silver and the cooldown day do not change and a log line says why
 - Checked by `harness/tests/test_fakegame_liege_influence.py` (proposed).
 
 #### Scenario: The cooldown is saved
