@@ -52,3 +52,17 @@ Every mod menu on the base menu (raid, tech, liege and tribute, scenario setting
 - **WHEN** a picture of an open mod menu is taken
 - **THEN** the Close button is at the bottom middle of the screen, in the game's Close label style
 - Checked by picture evidence (`evidence/`), reviewed by the owner.
+
+### Requirement: The Esc key closes an open mod menu
+While a mod menu is open, a press of the Esc key SHALL close it, like the Close button, and the pause rule applies. The game's own Esc menu SHALL NOT open on that press. With no mod menu open, Esc SHALL work as before.
+
+#### Scenario: Esc closes the menu and restores the speed
+- **WHEN** a mod menu is open and the player presses Esc
+- **THEN** the menu and its backdrop are gone, and the game speed is restored
+- **AND** the game's own Esc menu is not open
+- Checked by `mod/InvasionMod/scenarios/menu/base.py` and `harness/tests/test_fakegame_menu.py`. Not checked yet: how Esc reaches the game must be found first (task 2b).
+
+#### Scenario: Esc with no mod menu open opens the game menu
+- **WHEN** no mod menu is open and the player presses Esc
+- **THEN** the game's own Esc menu opens as before
+- Checked by `mod/InvasionMod/scenarios/menu/base.py`.

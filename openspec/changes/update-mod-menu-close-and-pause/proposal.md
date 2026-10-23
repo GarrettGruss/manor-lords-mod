@@ -13,6 +13,7 @@ The owner asked for two changes to the mod menus (2026-10-23):
 
 - The Close button of every mod menu moves to the bottom middle of the screen. It stays a clone of the game's bar button (made in Lua, see `design.md`).
 - The base menu (`core/menu.lua`) pauses the game when a menu opens and restores the game speed when it closes. This holds for every menu on the base menu: raid, tech, liege and tribute, scenario settings.
+- Esc closes an open mod menu like the Close button, and the game's own Esc menu does not open on that press (owner request 2026-10-23; how Esc reaches the game is a spike task).
 - Close by the Close button, by the F8 or F9 shortcut, or by the game removing the widget all restore the speed.
 
 ## Decided by the owner (2026-10-23)
