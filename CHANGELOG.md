@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Parallel game slots (change `fix-parallel-slot-saves`, #393, #378): a run no longer removes the fixture slot of a `--keep-open` run on another slot, and the save folder guard always ignores `rtsSettings.sav`. A ledger entry now records `game_slot` and `game_root`.
+
 ### Changed
 - The raid menu (F8 and the Raid button) has no difficulty buttons any more (change `add-scenario-settings-menu`, #375): the player picks the difficulty in the scenario settings menu of a new game. `invasion_set_difficulty` now also marks the difficulty as chosen (no "Pick the difficulty" banner after it). The first year of the season roll of the raid clock comes from the setting "First Hussite raid" (1, 2 or 3 years; a mod state key `first_raid_years`). Great raids can be turned off (key `great_raids`), the plunder raid size class can be fixed (key `size_class_fixed`).
 - Raid clock (change `update-raid-clock-yearly`, #339): the Invasion Mod plans no raid in the first game year. From the second year one raid comes each year, decided by a roll at each season change (25, 33, 50 and 100 percent, setting `invasion.yearly.chance_by_season`; the fourth season always raids). The settings `first_raid_days_min`, `first_raid_days_max` and `subjugation.wait_days_min`, `wait_days_max` are removed. New test commands `invasion_yearly_state`, `invasion_yearly_advance_season` and `invasion_plan_now`; new test scenario `invasion-yearly-raid`.

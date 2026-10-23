@@ -19,3 +19,12 @@ The check runs under the shared saves lock, so no entry changes in between.
 ## Risk
 
 A run that has no game slot (old tests, fake game kit) uses `game_slot = 0`. The process check uses only the game folder, so it works with the fake game kit.
+
+## Owner decisions (2026-10-22)
+
+All three were accepted: always ignore `rtsSettings.sav`; remove ledger entries of runs that no longer exist; ignoring the save files of other running slots is acceptable.
+
+## Implementation notes
+
+- An entry without `game_slot` that has a live owner stays (as before the change); without a live owner it is removed. `record_saved` (harness saves) writes no game slot, so it follows this rule.
+- `harness_file_names` already lists every ledger file, so the guard ignores the files of entries of running games without more code. The new tests prove it.
