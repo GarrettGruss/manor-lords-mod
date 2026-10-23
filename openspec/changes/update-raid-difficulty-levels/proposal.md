@@ -33,8 +33,9 @@ Today the start menu has one global Difficulty (Easy, Normal, Hard) and a Great 
 - Code: `features/scenario_settings`, `features/invasion` (`init.lua`, `plan.lua`), the widget `make_scenario_settings_widget.py`, the pak.
 - Tests: `test_fakegame_scenario_settings.py`, `test_fakegame_invasion.py`, test scenarios under `scenario_settings/` and `invasion/`. Picture evidence of the new menu.
 
-## Open questions for the owner
-1. The old global Difficulty is removed. Is that right, or should it stay as a default for the three levels?
-2. "First Hussite raid" and "Raid size" are kept (a menu with 5 settings). Should they stay? "Raid size" may overlap with the yearly player raid level.
-3. Is the default of 2 (medium) for each level right?
-4. Does the small yearly plunder raid follow the yearly player raid level, or is it a separate raid with no level?
+## Owner decisions (2026-10-22)
+The owner approved gate 1 with the answers proposed above:
+1. The global Difficulty setting is removed.
+2. "First Hussite raid" and "Raid size" are kept.
+3. The default is level 2 (medium) for each of the three levels (the menu "Use defaults" and an old save). The start value of the mod state before the menu applies anything is level 1, as the old difficulty was 1 (`config.invasion.levels`); this keeps the fake game tests and the fixtures that skip the menu on the old numbers.
+4. The small yearly plunder raid follows the yearly player raid level. It has no own switch.
