@@ -39,6 +39,6 @@ Sources: the story is `design/mod/trailer.md` (owner). The shot plan is `design/
 
 ## Open points for the owner
 
-1. **Copy in the video export.** The scroll page shows each chapter's copy as text. The trailer video has no subtitles. Should the export hide the copy, except "Franconia, 1429" and the title? (Recommended: yes.)
+1. **Copy in the video export (decided).** The export hides the copy, except "Franconia, 1429." and the title (owner, 2026-10-23). The scroll page shows all copy.
 2. **Hard cuts.** Four cuts are on purpose: black to the first light (00→01), the map to black (14→15), black to the title (15→16), and none in the middle of a gameplay montage. Every other chapter change is a connector.
 3. **Gameplay chapters.** `09-raids` and `13-battle` hold several game shots each. Inside a chapter they are hard cuts in the capture itself, not Seedance connectors.

@@ -23,5 +23,5 @@ Change `add-invasion-trailer` (#408). Decisions for the `sn-motion-html` project
 | Gate | Status |
 | --- | --- |
 | Style approval (gate 1 of the skill) | Approved by the owner (2026-10-23): `prompts/style-preamble.txt`, `prompts/style-motion.txt`, `docs/identity-blocks.md`, with the draft panels in `design/trailer/invasion-mod/storyboard/` as the reference set. |
-| Content and shot-plan approval (gate 2) | Approved by the owner (2026-10-23): `docs/storyboard.md`. Open: whether the video export hides the copy. |
+| Content and shot-plan approval (gate 2) | Approved by the owner (2026-10-23): `docs/storyboard.md`. The video export hides the copy, except "Franconia, 1429." and the title (owner, 2026-10-23). |
 | Paid video | Not authorized. |

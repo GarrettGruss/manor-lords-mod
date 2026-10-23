@@ -8,7 +8,7 @@
 ## 2. Stills
 
 - [x] 2.1 Make 3 test stills (opening, middle, end) with Gemini. Verified by owner approval of the style.
-- [ ] 2.2 Make the full still set after both approvals. Verified by a contact sheet and owner review.
+- [x] 2.2 Make the full still set after both approvals. Verified by a contact sheet and owner review.
 
 ## 3. Clips (each batch needs cost approval)
 
