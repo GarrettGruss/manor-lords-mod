@@ -11,6 +11,40 @@
   "generate_audio": false,
   "watermark": false,
   "conditioning_mode": "reference_images",
-  "dives": [],
-  "connectors": []
+  "dives": [
+    {
+      "id": "01-flint",
+      "prompt": "prompts/video/dives/01-flint.txt",
+      "still": "assets/images/scenes/01-flint.png",
+      "output": "assets/video/dives/01-flint.mp4"
+    },
+    {
+      "id": "02-torch",
+      "prompt": "prompts/video/dives/02-torch.txt",
+      "still": "assets/images/scenes/02-torch.png",
+      "output": "assets/video/dives/02-torch.mp4"
+    },
+    {
+      "id": "03-stake",
+      "prompt": "prompts/video/dives/03-stake.txt",
+      "still": "assets/images/scenes/03-stake.png",
+      "output": "assets/video/dives/03-stake.mp4"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "01-flint-to-02-torch",
+      "from": "01-flint",
+      "to": "02-torch",
+      "prompt": "prompts/video/connectors/01-flint-to-02-torch.txt",
+      "output": "assets/video/connectors/01-flint-to-02-torch.mp4"
+    },
+    {
+      "id": "02-torch-to-03-stake",
+      "from": "02-torch",
+      "to": "03-stake",
+      "prompt": "prompts/video/connectors/02-torch-to-03-stake.txt",
+      "output": "assets/video/connectors/02-torch-to-03-stake.mp4"
+    }
+  ]
 }
