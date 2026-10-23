@@ -11,7 +11,7 @@ function M.new_raid(id, start_day, squads, unit_keys, roles, lord)
     return {
         id = id, start_day = start_day, squads = squads, units = units, initial = living, living = living,
         deaths = 0, departures = 0, carried_out = 0, returned = 0, lost = 0, capped = 0, peak_loot = 0,
-        burned = 0, leaving = false, roles = roles == true, lord = lord, plundered = 0, last_plunder_day = nil, stolen = 0, last_steal_day = nil, leave_reason = nil, state = living > 0 and "active" or "empty", end_day = nil,
+        burned = 0, leaving = false, roles = roles == true, lord = lord, plundered = 0, plunder_goods = {}, unpaid = 0, last_plunder_day = nil, stolen = 0, last_steal_day = nil, leave_reason = nil, state = living > 0 and "active" or "empty", end_day = nil,
     }
 end
 
@@ -136,7 +136,49 @@ function M.plunder_amount(raid, seen, plunder, leave, day, carry_cap)
     return math.max(0, math.min(math.floor(inside * plunder.per_unit_day), missing))
 end
 
-function M.record_plunder(raid, amount) raid.plundered = raid.plundered + amount end
+-- `by_good` (optional) maps a good type to the amount taken. Only a Hussite raid keeps the goods (the pit give-back).
+function M.record_plunder(raid, amount, by_good)
+    raid.plundered = raid.plundered + amount
+    if raid.lord == nil or by_good == nil then return end
+    for good, count in pairs(by_good) do raid.plunder_goods[good] = (raid.plunder_goods[good] or 0) + count end
+end
+
+-- Count the dead raiders of a Hussite raid that no pit delivery has paid yet. `deaths` is the list that M.update returned.
+function M.note_deaths(raid, deaths)
+    if raid.lord == nil then return end
+    raid.unpaid = raid.unpaid + #deaths
+end
+
+-- Share of each good for one body: floor(record / raiders at the start). The remainder is lost (owner decision 2026-10-22).
+function M.body_share(raid)
+    local share = {}
+    if raid.lord == nil or raid.initial < 1 then return share end
+    for good, count in pairs(raid.plunder_goods) do
+        local part = math.floor(count / raid.initial)
+        if part > 0 then share[good] = part end
+    end
+    return share
+end
+
+-- A pit received `bodies` new bodies. Pay one share for each unpaid dead Hussite raider, oldest raid first; extra bodies
+-- (villagers, native raiders) are ignored. `raid_list` is in start order. Returns the goods to add (good -> amount) and the bodies paid.
+function M.pay_bodies(raid_list, bodies)
+    local goods, paid = {}, 0
+    for _, raid in ipairs(raid_list) do
+        while paid < bodies and raid.unpaid > 0 do
+            raid.unpaid = raid.unpaid - 1
+            paid = paid + 1
+            for good, part in pairs(M.body_share(raid)) do goods[good] = (goods[good] or 0) + part end
+        end
+    end
+    return goods, paid
+end
+
+function M.unpaid_total(raid_list)
+    local total = 0
+    for _, raid in ipairs(raid_list) do total = total + raid.unpaid end
+    return total
+end
 
 -- The tier of a store type (1 or 2), or nil for a type that has no tier. `tiers` maps an EBuildingType to a tier.
 function M.tier_of(tiers, building_type)
@@ -181,7 +223,7 @@ function M.summary(raid)
         id = raid.id, start_day = raid.start_day, end_day = raid.end_day, squads = raid.squads, state = raid.state,
         initial = raid.initial, living = raid.living, deaths = raid.deaths, departures = raid.departures,
         loot = M.total_loot(raid), looted_total = M.looted_total(raid), carried_out = raid.carried_out, peak_loot = raid.peak_loot, returned = raid.returned, lost = raid.lost,
-        capped = raid.capped, carry_cap = raid.carry_cap, raid_type = M.raid_type(raid), burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, stolen = raid.stolen, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
+        capped = raid.capped, carry_cap = raid.carry_cap, raid_type = M.raid_type(raid), burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, unpaid = raid.unpaid, stolen = raid.stolen, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
     }
 end
 

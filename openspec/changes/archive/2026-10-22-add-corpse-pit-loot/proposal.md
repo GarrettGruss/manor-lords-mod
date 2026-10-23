@@ -26,3 +26,9 @@ Owner decisions (chat, 2026-10-21 and 2026-10-22):
 - Code later: `mod/InvasionMod/Scripts/features/raid_behavior/` (plunder tick, new pit poll), mod state keys.
 - Tests: fake game test and a test scenario on the default fixture `base-corpse-pit`.
 - Spike notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.
+
+## Owner decisions (2026-10-22)
+
+- Option (a) for Hussite raids only. No loot give-back for the native raid.
+- Share = floor(goods / raiders at the start). The remainder is lost.
+- Pit deliveries from bodies the mod does not know are ignored.

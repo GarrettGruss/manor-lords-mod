@@ -87,6 +87,8 @@ The mod owns the raid timer. Files: `plan.lua`, `difficulty.lua`, `great_raid.lu
 - The great raid clock, its waves, the relief army and the final battle (iterations 02 and 06).
 - Difficulty 1 to 3, picked by the player (iteration 04). Raid squads use Hussite roles (`config.invasion.roles`): melee and ranged tiers from game unit templates. With `lord_army` the raid is the army of an AI lord at war with the player, else bandit squads.
 - Vassals can be targets (iteration 07, `target.lua`).
+- Corpse pit loot (change `add-corpse-pit-loot`): `raid_behavior` records the goods of each plunder tick per Hussite raid (`raid.plunder_goods`, text key `raid_plunder_record`). `pit_poll` (each `pit_poll_ms`) reads the corpse count (`Type 233`) of the pit (building 113); each rise pays one share (`floor(record / initial)`) for each unpaid dead Hussite raider (`rules.pay_bodies`) with `addToInventory`. No hook exists for a delivery. Native raids, unknown bodies and a missing pit give nothing. Test command `raid_behavior_pit_state`.
+
 Commands: `invasion_state`, `invasion_force_next`, `invasion_set_difficulty`, `invasion_set_size`, `invasion_set_roles`, `invasion_raid_squads`, `invasion_difficulty_state`, `invasion_pick_difficulty`, `invasion_clock_state`, `invasion_clock_set_days_left`, `invasion_great_state`, `invasion_great_force_start`, `invasion_great_skip_wait`, `invasion_subjugation_state`, `invasion_subjugation_force_next`, `invasion_yearly_state`, `invasion_yearly_advance_season` (test: counts one season change and rolls, optional fixed `roll`), `invasion_plan_now` (test: plans a raid now, optional `kind`). `invasion_force_next` plans a plunder raid first when none is planned.
 
 ### raid_widget (M02 iteration 05)

@@ -15,3 +15,9 @@ Parallel game slots (spec 11) break two rules of `harness/save-fixtures`. Issues
 - Spec `harness/save-fixtures`: two requirements are modified ("The user save folder is guarded", "Slots from an earlier run are removed").
 - Code (in the implementation pull request): `harness/runlib/saveslots.py`, `harness/runlib/phases.py`, `harness/runlib/gameslots.py`.
 - Issues: #393 (this change), #378 (the first problem).
+
+## Owner decisions (2026-10-22)
+
+- The guard always ignores `rtsSettings.sav`.
+- A run removes the ledger entries of runs that no longer exist (no live game under the game folder, no live owner).
+- The guard may ignore the save files of other running slots.

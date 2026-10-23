@@ -80,6 +80,7 @@ return {
     raid_behavior = {
         enabled = true,
         poll_ms = 1000,         -- real time between two looks at the raiders
+        pit_poll_ms = 1000,     -- real time between two looks at the corpse pit (change add-corpse-pit-loot)
         slow_every = 5,         -- the building scan and the AI log scan run every Nth look (they read many objects)
         carry_cap = 10,         -- most goods a Hussite raid plunders for each raider at its start (M00: Hussite grain 10). It is also the loot goal of a Hussite raid. Other raids are not capped.
         exit_y = -85000,       -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
