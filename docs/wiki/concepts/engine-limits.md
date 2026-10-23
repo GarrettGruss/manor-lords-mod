@@ -97,3 +97,15 @@ Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the note
 - A dead raider keeps `ItemsLooted`, and the same object stays in `Region.corpses` until a worker picks it up.
 - Reading `unit.currAnim`, `unit.dropsTo:GetFName()` or `unit.Speed` (one of them) crashed the game (access violation 0x18).
 - Owner decision 2026-10-22: the pit replaces the direct store add; loot give-back is for Hussite raids only (change `add-corpse-pit-loot`). Notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.
+
+## Ruins and the rebuild order (change `add-vassal-sack-wipe`, #341)
+
+- `collapseBuilding()` makes a building rubble (`Data.bType` 75) at once and stores the old type in `typeBeforeChange` (0 on a standing building). After a rebuild `typeBeforeChange` reads 75.
+- No reflected UFunction rebuilds a ruin. The panel rebuild button runs native code, and hooks on the pawn and panel Blueprint functions caught nothing.
+- A rebuild order from Lua works: write `building.Data` back as a whole struct with `bType = typeBeforeChange`, `constructed = false`, `hp = 0`, then call `building:SetupBuilding()`. It rebuilds the parts (2 to 53), restores `maxHp` and storage, and the building is a construction site. Skip a ruin whose `typeBeforeChange` is 0 or 75. No crash in any of these calls.
+- Do not call `convertBlueprintsToBuildings` after it: it cuts the parts (42 to 6, 50 to 25) and the finished building has no model. Writing `Data` without `SetupBuilding` gives a "finished" building with the rubble parts only (a pile of ash).
+- `addToInventory({Type, amt})` is accepted on a ruin, so goods can be given when no building stands.
+- AI lord with ruins: one collapsed building was a site again within about 1 game day. After the order on 35 ruins the AI built 13 in about 2 game days (against 1 or 2 at a time without it), and the owner saw full models. Removing logs and planks only delays an AI rebuild briefly (villagers make planks at once).
+- A wiped region has no AI lord on the map although `region.ownerPawn` still points to the old pawn, and nobody builds. `ResetAIBuildingOptions` changed nothing, and `IsActive` of a planner is false in healthy villages too, so it means nothing. The mod gives the region to a lord again (`lord_receive_region`).
+- Not tested: whether a rebuild order survives a save and a load (needs the guarded `save_game`).
+- Source: `openspec/changes/add-vassal-sack-wipe/notes/rebuild-order.md` (runs 20261022-231049-8008 and 20261022-231824-d19d).

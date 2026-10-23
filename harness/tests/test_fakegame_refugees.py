@@ -52,6 +52,12 @@ class WaveTests(RefugeeTestCase):
         self.assertTrue(result["active"])
         self.assertEqual((result["wave_families"], result["base_homeless"]), (5, 0))
 
+    def test_the_default_wave_is_50_percent_of_the_families(self):
+        answer = self.ask("refugees_send_wave", families=10)
+        self.assertTrue(answer["ok"], answer)
+        last = answer["result"]["last_wave"]
+        self.assertEqual((last["share"], last["wanted"], last["calls"]), (0.5, 5, 1))
+
     def test_the_wave_is_sent_to_the_home_region(self):
         self.ask("refugees_vassal_lost", slot=1, share=30)
         self.assertEqual(self.game.exec("return SETTLE_CALLS[1]"), "Home")

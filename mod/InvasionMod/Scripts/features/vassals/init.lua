@@ -5,6 +5,7 @@ local ModState = require("ModState")
 local rules = require("features.vassals.rules")
 local world = require("features.vassals.world")
 local config = require("config").vassals
+local silver_world = require("features.bandits.world")
 
 local TAG = "InvasionMod.vassals"
 local STATE_VERSION = 1
@@ -20,8 +21,17 @@ for slot = 1, config.max_vassals do
     state:register("vassal" .. slot .. "_handed_day", 0, "integer")      -- game day of the handover, 0 when not handed over
     state:register("vassal" .. slot .. "_handed_buildings", 0, "integer") -- buildings of the region at the handover
     state:register("vassal" .. slot .. "_stalled", false, "boolean")    -- the lord built nothing in growth_check_days
-    state:register("vassal" .. slot .. "_capital", false, "boolean")    -- the player took the region back as the fallback capital (M06.03)
+    state:register("vassal" .. slot .. "_rebuilding", false, "boolean") -- restored after a wipe; the tribute waits until the village is rebuilt
+    state:register("vassal" .. slot .. "_rebuilt_target", 0, "integer") -- standing buildings that end the rebuilding
     state:register("vassal" .. slot .. "_policy", "fair", "string")      -- tribute policy: light, fair or heavy (iteration 03)
+end
+
+-- Wiped regions (outside the slots, owner question 5): a sacked vassal keeps no slot, but the player may restore its village.
+for index = 1, config.sack_wipe.max_wiped do
+    state:register("wiped" .. index .. "_region", rules.NO_REGION, "string")
+    state:register("wiped" .. index .. "_lord", rules.NO_REGION, "string")
+    state:register("wiped" .. index .. "_day", 0, "integer")
+    state:register("wiped" .. index .. "_buildings", 0, "integer") -- buildings of the region at the start of the sack
 end
 
 local last_goal = nil        -- the goal as read at the last poll
@@ -72,7 +82,7 @@ local function slot_row(slot)
     if region == rules.NO_REGION then return nil end
     return { slot = slot, region = region, lord = state:get(slot_key(slot, "lord")),
         since_day = state:get(slot_key(slot, "since_day")),
-        handed_day = state:get(slot_key(slot, "handed_day")), stalled = state:get(slot_key(slot, "stalled")), capital = state:get(slot_key(slot, "capital")), policy = state:get(slot_key(slot, "policy")) }
+        handed_day = state:get(slot_key(slot, "handed_day")), stalled = state:get(slot_key(slot, "stalled")), rebuilding = state:get(slot_key(slot, "rebuilding")), policy = state:get(slot_key(slot, "policy")) }
 end
 
 local function slot_rows(with_region)
@@ -161,7 +171,7 @@ local function scan_regions()
     for _, row in ipairs(rows) do
         if row.region ~= home then
             local slot = rules.slot_of_region(slot_regions(), config.max_vassals, row.region) or register_vassal(row.region)
-            if slot ~= nil and row.settled and state:get(slot_key(slot, "lord")) == rules.NO_REGION and not state:get(slot_key(slot, "capital")) then try_hand_over(slot, row.region) end
+            if slot ~= nil and row.settled and state:get(slot_key(slot, "lord")) == rules.NO_REGION then try_hand_over(slot, row.region) end
         end
     end
 end
@@ -192,6 +202,7 @@ end
 
 local growth_checked = {} -- slot -> true once the growth check ran in this session
 local detect_losses -- defined in the loss section below
+local advance_sacks, check_rebuilt -- defined in the sack section below
 
 -- A handed-over lord can fail to build (3 of 6 real runs: AI_build failed to find place). The mod flags it, so that later features do not count on growth.
 local function check_growth()
@@ -225,15 +236,12 @@ local function poll()
     watch_wars()
     check_growth()
     detect_losses()
+    advance_sacks()
+    check_rebuilt()
 end
 
 require("scheduler").every(TAG, config.poll_ms, poll)
 
--- The player took the region of this slot back as the fallback capital: the scan must not hand it to a lord again.
-local function set_capital(slot)
-    state:set(slot_key(slot, "capital"), true)
-    state:set(slot_key(slot, "lord"), rules.NO_REGION)
-end
 
 ---------------------------------------------------------------------------------------------
 -- Policies (iteration 03). Mod-owned: the game policy system is not used (enactPolicy returned false in 95 tries).
@@ -251,6 +259,7 @@ local function set_policy(slot, name)
     return true
 end
 
+
 ---------------------------------------------------------------------------------------------
 -- Loss (iteration 04)
 ---------------------------------------------------------------------------------------------
@@ -263,17 +272,17 @@ local function on_lost(listener)
     lost_listeners[#lost_listeners + 1] = listener
 end
 
--- Free the slot and tell the listeners. The families are read first, because the wave size depends on them.
-local function lose_vassal(slot, reason)
+-- Free the slot and tell the listeners. The families are read first (or passed in), because the wave size depends on them.
+local function lose_vassal(slot, reason, families)
     local region = state:get(slot_key(slot, "region"))
     if region == rules.NO_REGION then return nil, "slot " .. slot .. " is empty" end
-    if state:get(slot_key(slot, "capital")) then return nil, "slot " .. slot .. " is the fallback capital" end
-    local event = { slot = slot, region = region, families = world.region_families(region) or 0, reason = reason,
+    local event = { slot = slot, region = region, families = families or world.region_families(region) or 0, reason = reason,
         lord = state:get(slot_key(slot, "lord")), day = world.current_day() }
     state:set(slot_key(slot, "region"), rules.NO_REGION)
     state:set(slot_key(slot, "lord"), rules.NO_REGION)
     state:set(slot_key(slot, "handed_day"), 0)
     state:set(slot_key(slot, "stalled"), false)
+    state:set(slot_key(slot, "rebuilding"), false)
     state:set("vassals_lost", state:get("vassals_lost") + 1)
     lost_events[#lost_events + 1] = event
     core.log.info(TAG, string.format("VASSALS lost slot=%d region=%s families=%d reason=%s", slot, region, event.families, reason))
@@ -286,7 +295,7 @@ end
 detect_losses = function()
     for slot = 1, config.max_vassals do
         local lord = state:get(slot_key(slot, "lord"))
-        if lord ~= rules.NO_REGION and not state:get(slot_key(slot, "capital")) then
+        if lord ~= rules.NO_REGION then
             local status = world.lord_status(lord)
             local owner = world.region_owner(state:get(slot_key(slot, "region")))
             if status and owner and owner ~= status.object then lose_vassal(slot, "taken") end
@@ -294,21 +303,240 @@ detect_losses = function()
     end
 end
 
+---------------------------------------------------------------------------------------------
+-- Sack and wipe (change add-vassal-sack-wipe)
+-- A Hussite sack of a vassal collapses its buildings until sack_wipe.ruin_share of the buildings at the start are ruins.
+-- Then the mod deletes all villagers, frees the slot (reason `wiped`) and the refugee wave starts. The land stays a village of rubble.
+---------------------------------------------------------------------------------------------
+
+local sack_config = config.sack_wipe
+local end_sack_without_wipe, end_sack  -- forward declarations, defined below
+
+local function json_text(map)
+    local parts = {}
+    for key, value in pairs(map) do parts[#parts + 1] = key .. "=" .. tostring(value) end
+    table.sort(parts)
+    return "{" .. table.concat(parts, ",") .. "}"
+end
+local sacks = {}   -- slot -> { region, total, needed, steps, reason }: the sacks of this session (a load ends a running sack)
+local sack_errors = {}
+
+local function wiped_regions()
+    local regions = {}
+    for index = 1, sack_config.max_wiped do regions[index] = state:get("wiped" .. index .. "_region") end
+    return regions
+end
+
+local function wiped_rows()
+    local rows = {}
+    for index = 1, sack_config.max_wiped do
+        local region = state:get("wiped" .. index .. "_region")
+        if region ~= rules.NO_REGION then
+            rows[#rows + 1] = { index = index, region = region, lord = state:get("wiped" .. index .. "_lord"),
+                day = state:get("wiped" .. index .. "_day"), buildings = state:get("wiped" .. index .. "_buildings") }
+        end
+    end
+    return rows
+end
+
+-- The wiped record lives outside the slots (owner question 5, design default): the slot is free for a new vassal.
+local function record_wiped(region, lord, buildings)
+    local index = rules.free_slot(wiped_regions(), sack_config.max_wiped)
+    if index == nil then
+        core.log.warn(TAG, "VASSALS no free wiped record for " .. region .. "; it cannot be restored")
+        return nil
+    end
+    state:set("wiped" .. index .. "_region", region)
+    state:set("wiped" .. index .. "_lord", lord)
+    state:set("wiped" .. index .. "_day", world.current_day() or 0)
+    state:set("wiped" .. index .. "_buildings", buildings)
+    return index
+end
+
+-- Free the slot and tell the listeners (the refugee wave). This runs only after the villagers are gone and the count was stable for one poll.
+local function finish_wipe(slot, run)
+    local region = state:get(slot_key(slot, "region"))
+    record_wiped(region, state:get(slot_key(slot, "lord")), run.total)
+    local event = lose_vassal(slot, "wiped", run.families_start)
+    event.people_deleted = run.people
+    core.log.info(TAG, string.format("VASSALS wiped region=%s ruins needed=%d of %d buildings, villagers deleted families=%d people=%d", region, run.needed, run.total, run.families_start, run.people))
+    return event
+end
+
+local function fail_wipe(slot, why)
+    sacks[slot] = nil
+    sack_errors[tostring(slot)] = why
+    core.log.error(TAG, "VASSALS wipe failed: " .. tostring(why))
+end
+
+-- The wipe runs in three polls (change add-vassal-sack-wipe, crash notes/wipe-crash.md): families are removed down to one,
+-- then the last family goes when the count was stable for one poll, then the slot is freed when the count was stable again.
+-- Why: the game crashed once in the same tick as the removal of all families and the refugee wave (run 20261023-010958-4796).
+local function wipe_step(slot, run)
+    local region = state:get(slot_key(slot, "region"))
+    local now = world.region_families(region) or 0
+    if run.phase == nil then
+        run.families_start, run.people = now, 0
+        local deleted, why = world.delete_villagers(region, 1)
+        if deleted == nil then return fail_wipe(slot, why) end
+        run.people = run.people + deleted.people
+        run.phase, run.families_seen = "last", world.region_families(region) or 0
+        return nil
+    end
+    if now ~= run.families_seen then run.families_seen = now; return nil end -- the count still changes: wait one more poll
+    if run.phase == "last" then
+        local deleted, why = world.delete_villagers(region)
+        if deleted == nil then return fail_wipe(slot, why) end
+        run.people = run.people + deleted.people
+        run.phase, run.families_seen = "free", world.region_families(region) or 0
+        return nil
+    end
+    run.stable = (run.stable or 0) + 1
+    if run.stable < sack_config.free_stable_polls then return nil end -- the refugee wave crashed the game right after a wipe (runs -010958-4796, -021314-dec3): wait longer
+    sacks[slot] = nil
+    return finish_wipe(slot, run)
+end
+
+-- Wipe the vassal when enough buildings are ruins. Returns done (true when the sack is in its wipe or ended), then the event (the last poll only).
+-- The AI demolishes ruins while the sack runs (27 of 28 in run 20261023-005824-8bac): the share counts against the buildings that are still there.
+local function wipe_if_complete(slot, run, census)
+    if run.phase == nil and not rules.sack_complete(math.min(run.total, census.total), census.rubble, sack_config.ruin_share) then return false end
+    if run.hold then return false end -- test option: the sack waits for vassals_end_sack and never wipes
+    return true, wipe_step(slot, run)
+end
+
+-- A sack that ends and does not wipe the village (owner, 2026-10-22): give wood and order the rebuild of every ruin at once.
+-- A pcall keeps an error here from stopping the poll.
+end_sack_without_wipe = function(run)
+    local deposited = world.deposit_goods(run.region, sack_config.give, sack_config.deposit_tries, true) or {}
+    local ordered, why = world.rebuild_ruins(run.region)
+    core.log.info(TAG, string.format("VASSALS sack ends without wipe region=%s gave=%s ordered=%s", run.region, json_text(deposited), ordered and tostring(ordered.ordered) or tostring(why)))
+    return { given = deposited, rebuild = ordered }
+end
+
+-- End a running sack that has not started its wipe: wood, then the rebuild order. Called by the raid end (tribute feature) and by the command.
+end_sack = function(slot)
+    local run = sacks[slot]
+    if run == nil then return nil, "slot " .. slot .. " has no running sack" end
+    if run.phase ~= nil then return nil, "slot " .. slot .. " is already in its wipe" end
+    sacks[slot] = nil
+    return end_sack_without_wipe(run)
+end
+
+-- One step of a sack: wipe when enough buildings are ruins, else collapse the missing ones. The wipe waits for the next poll: a wipe in the same tick as the collapses crashed the game in 1 of 2 real runs (20261022-042514-3045).
+local function advance_sack(slot)
+    local run = sacks[slot]
+    local census = world.census(run.region)
+    if census == nil then sacks[slot] = nil; return nil, "region " .. run.region .. " not found" end
+    local done, event, why = wipe_if_complete(slot, run, census)
+    if done then return event, why end
+    if run.hold and rules.sack_complete(math.min(run.total, census.total), census.rubble, sack_config.ruin_share) then return nil end -- hold: wait for the end command
+    if run.steps >= sack_config.max_steps then
+        sacks[slot] = nil
+        sack_errors[tostring(slot)] = string.format("sack gave up after %d steps: %d of %d ruins", run.steps, census.rubble, run.needed)
+        core.log.error(TAG, "VASSALS " .. sack_errors[tostring(slot)])
+        end_sack_without_wipe(run)
+        return nil, sack_errors[tostring(slot)]
+    end
+    run.steps = run.steps + 1
+    -- From the second step on, collapse a few more than needed: the AI rebuilds a ruin about as fast as the sack collapses one (real run 20261023-010105-f526: 27 of 28 for 6 steps).
+    local margin = run.steps > 1 and sack_config.retry_margin or 0
+    local hit = world.collapse_buildings(run.region, rules.houses_to_collapse(rules.ruins_needed(math.min(run.total, census.total), sack_config.ruin_share), census.rubble) + margin) or 0
+    core.log.info(TAG, string.format("VASSALS sack slot=%d region=%s step=%d collapsed=%d ruins=%d/%d", slot, run.region, run.steps, hit, census.rubble, run.needed))
+    return nil
+end
+
+local function start_sack(slot, reason, hold)
+    local region = state:get(slot_key(slot, "region"))
+    if region == rules.NO_REGION then return nil, "slot " .. slot .. " is empty" end
+    if sacks[slot] then return nil, "slot " .. slot .. " is already sacked" end
+    local census = world.census(region)
+    if census == nil then return nil, "region " .. region .. " not found" end
+    local wood = world.remove_goods(region, sack_config.wood) or {}
+    core.log.info(TAG, "VASSALS sack removes wood region=" .. region .. " " .. json_text(wood))
+    sacks[slot] = { region = region, total = census.total, needed = rules.ruins_needed(census.total, sack_config.ruin_share), steps = 0, reason = reason, wood_removed = wood, hold = hold or nil }
+    core.log.info(TAG, string.format("VASSALS sack starts slot=%d region=%s buildings=%d ruins needed=%d reason=%s", slot, region, census.total, sacks[slot].needed, reason))
+    local event, why = advance_sack(slot)
+    return event or { slot = slot, region = region, started = true, wood_removed = wood }, why
+end
+
+advance_sacks = function()
+    for slot = 1, config.max_vassals do
+        if sacks[slot] then core.log.try(TAG, function() advance_sack(slot) end) end
+    end
+end
+
+---------------------------------------------------------------------------------------------
+-- Restore (owner answers 2026-10-21: flat cost; goods for the rebuild)
+---------------------------------------------------------------------------------------------
+
+-- A restored village counts as rebuilt when enough buildings stand again. Until then the tribute waits.
+check_rebuilt = function()
+    for slot = 1, config.max_vassals do
+        if state:get(slot_key(slot, "rebuilding")) then
+            local census = world.census(state:get(slot_key(slot, "region")))
+            if census and (census.built or census.standing) >= state:get(slot_key(slot, "rebuilt_target")) then
+                state:set(slot_key(slot, "rebuilding"), false)
+                core.log.info(TAG, string.format("VASSALS slot %d rebuilt: %d buildings stand", slot, census.standing))
+            end
+        end
+    end
+end
+
+-- Pay the cost, raise the villager count to 5 and spawn the rebuild goods. A refusal takes nothing.
+local function restore_vassal(region)
+    local index = rules.find_wiped(wiped_regions(), sack_config.max_wiped, region)
+    local refusal = rules.restore_refusal(index, rules.free_slot(slot_regions(), config.max_vassals), silver_world.silver(), config.restore.silver)
+    if refusal then return nil, refusal end
+    local name = state:get("wiped" .. index .. "_region")
+    local lord = state:get("wiped" .. index .. "_lord")
+    local buildings_before = state:get("wiped" .. index .. "_buildings")
+    local handed, hand_why = world.hand_over_to_lord(lord, name)
+    if handed == nil then return nil, "the region could not be given to a lord: " .. tostring(hand_why) end
+    local settled, why = world.restore_villagers(name)
+    if settled == nil then return nil, "the villagers could not be raised: " .. tostring(why) end
+    local paid, pay_why = silver_world.add_silver(-config.restore.silver)
+    if not paid then error("restore payment failed: " .. tostring(pay_why), 0) end
+    local goods = world.deposit_goods(name, config.restore.goods, config.restore.deposit_tries, true) or {}
+    for good, amount in pairs(goods) do
+        if amount == 0 then core.log.warn(TAG, "VASSALS restore: no building took the goods " .. good) end
+    end
+    local slot = register_vassal(name)
+    state:set(slot_key(slot, "lord"), lord)
+    state:set(slot_key(slot, "handed_day"), (world.current_day() or 0) + 1)
+    state:set(slot_key(slot, "handed_buildings"), world.region_buildings(name) or 0)
+    state:set(slot_key(slot, "rebuilding"), true)
+    -- The rebuild is ordered. The tribute waits until rebuilt_share of the ordered ruins are built. The restore adds 3 to 4 buildings
+    -- itself (spike restore-to-five.md), so the target counts from the buildings that are built right after the order.
+    local rebuild, rebuild_why = world.rebuild_ruins(name)
+    if rebuild == nil then core.log.error(TAG, "VASSALS restore rebuild order failed: " .. tostring(rebuild_why)) end
+    local built_now = (world.census(name) or { built = 0 }).built
+    local ordered = rebuild and rebuild.ordered or 0
+    state:set(slot_key(slot, "rebuilt_target"), built_now + (ordered > 0 and rules.rebuilt_target(ordered, config.restore.rebuilt_share) or 0))
+    state:set("wiped" .. index .. "_region", rules.NO_REGION)
+    core.log.info(TAG, string.format("VASSALS restored region=%s slot=%d lord=%s silver paid=%d families=%s", name, slot, lord, config.restore.silver, tostring(settled.families)))
+    core.show_banner("A village is restored", string.format("%s has villagers again", name))
+    return { region = name, slot = slot, cost = config.restore.silver, goods = goods, families = settled.families, lord = lord, rebuild = rebuild }
+end
+
 -- Regions that a subjugation raid may attack: handed-over vassals.
 local function target_regions()
     local regions = {}
     for _, row in ipairs(slot_rows()) do
-        if row.lord ~= rules.NO_REGION and not row.capital then regions[#regions + 1] = row.region end
+        if row.lord ~= rules.NO_REGION then regions[#regions + 1] = row.region end
     end
     return regions
 end
 
 local function command_state()
     local setup = world.setup_state()
+    local running = {}
+    for slot, run in pairs(sacks) do running[tostring(slot)] = run end
     return {
         day = world.current_day(), goal = last_goal, goal_error = goal_error, goal_writes = state:get("vassals_goal_writes"),
         victory_status = setup and setup.victory_status, count = rules.count_used(slot_regions(), config.max_vassals),
         lost = state:get("vassals_lost"), lost_events = lost_events, vassals = slot_rows(true), home_region = state:get("vassals_home_region"), handover_errors = handover_errors, wars = war_status, peace_calls = peace_calls, keep_peace = config.keep_peace,
+        sacks = running, sack_errors = sack_errors, wiped = wiped_rows(), restore_cost = config.restore.silver, silver = silver_world.silver(),
     }
 end
 
@@ -348,32 +576,59 @@ if has_commands then
         return command_state()
     end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals }, policy = { type = "string", required = true } })
     commands.register("InvasionMod.vassals_lose", function(args)
-        local region = state:get(slot_key(args.slot, "region"))
-        local taker
-        if config.loss_region == "take_by_lord" then
-            local excluded = {}
-            for _, name in ipairs(config.lord_names) do excluded[name] = true end
-            taker = world.other_lord_number(excluded)
-            if taker == nil then return nil, "no other AI lord exists to take the region" end
-        end
         local event, why = lose_vassal(args.slot, "command")
         if not event then return nil, why end
-        if taker then
-            -- A capture test: another lord owns the region (an owner write, spike S11). It crashed the game in 1 of 1 runs (20261018-093533-4f17).
-            local taken = require("HarnessLords").lord_take_region({ lord = taker, region = region })
-            if not taken.ok then core.log.error(TAG, "VASSALS take region failed: " .. tostring(taken.error)) end
-        end
         local result = command_state()
         result.event = event
-        result.taker = taker
         return result
     end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals } })
-    commands.register("InvasionMod.vassals_set_loss_region", function(args)
-        config.loss_region = args.mode
-        return command_state()
-    end, { mode = { type = "string", required = true, oneOf = { "forget", "take_by_lord" } } })
+    commands.register("InvasionMod.vassals_sack", function(args)
+        local started, why = start_sack(args.slot, "command", args.hold)
+        if not started then return nil, why end
+        local result = command_state()
+        result.sack = started
+        return result
+    end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals }, hold = { type = "boolean", required = false } })
+    -- Test command: take a region that an AI lord already owns into the registry (no claim, no handover, no write to the game).
+    commands.register("InvasionMod.vassals_adopt", function(args)
+        if rules.slot_of_region(slot_regions(), config.max_vassals, args.region) then return nil, args.region .. " is already a vassal" end
+        local lord = world.region_lord_name(args.region)
+        if lord == nil then return nil, args.region .. " has no AI lord as owner" end
+        local slot, why = register_vassal(args.region)
+        if slot == nil then return nil, why end
+        state:set(slot_key(slot, "lord"), lord)
+        state:set(slot_key(slot, "handed_day"), (world.current_day() or 0) + 1)
+        state:set(slot_key(slot, "handed_buildings"), world.region_buildings(args.region) or 0)
+        local result = command_state()
+        result.adopted_slot = slot
+        return result
+    end, { region = { type = "string", required = true } })
+    commands.register("InvasionMod.vassals_end_sack", function(args)
+        local ended, why = end_sack(args.slot)
+        if ended == nil then return nil, why end
+        local result = command_state()
+        result.ended = ended
+        return result
+    end, { slot = { type = "integer", required = true, min = 1, max = config.max_vassals } })
+    commands.register("InvasionMod.vassals_rebuild_ruins", function(args)
+        local ordered, why = world.rebuild_ruins(args.region)
+        if ordered == nil then return nil, why end
+        return ordered
+    end, { region = { type = "string", required = true } })
+    commands.register("InvasionMod.vassals_restore", function(args)
+        local restored, why = restore_vassal(args.region)
+        if not restored then return nil, why end
+        local result = command_state()
+        result.restored = restored
+        return result
+    end, { region = { type = "string", required = false } })
+    commands.register("InvasionMod.vassals_region_census", function(args)
+        local census, why = world.census(args.region)
+        if census == nil then return nil, why or ("no region " .. args.region) end
+        return census
+    end, { region = { type = "string", required = true } })
     commands.register("InvasionMod.vassals_set_goal", command_set_goal, { goal = { type = "integer", required = true, min = 0, max = 3 } })
 end
 
 core.log.info(TAG, "feature vassals loaded")
-return { state = state, on_lost = on_lost, lose_vassal = lose_vassal, policy_of = policy_of, set_policy = set_policy, set_capital = set_capital, region_families = world.region_families, target_regions = target_regions, register_vassal = register_vassal, slot_rows = slot_rows, slot_regions = slot_regions }
+return { state = state, on_lost = on_lost, lose_vassal = lose_vassal, start_sack = start_sack, end_sack = end_sack, sack_slot_of_region = function(region) for slot, run in pairs(sacks) do if run.region == region then return slot end end end, restore_vassal = restore_vassal, policy_of = policy_of, set_policy = set_policy, region_families = world.region_families, target_regions = target_regions, register_vassal = register_vassal, slot_rows = slot_rows, slot_regions = slot_regions }

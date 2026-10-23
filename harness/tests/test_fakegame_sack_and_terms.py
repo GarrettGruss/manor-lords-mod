@@ -276,6 +276,27 @@ class TermsTests(SackTestCase):
         self.assertFalse(self.ask("terms_accept", kind="payment")["ok"])
         self.assertIsNone(self.raid().get("leave_reason"))
 
+    def test_a_sack_closes_the_open_offer_and_refuses_a_new_one_for_the_same_raid(self):
+        self.ask("terms_offer")
+        self.assertIsNotNone(self.terms()["offer"])
+        self.assertTrue(self.ask("sack_now", difficulty=1)["ok"])
+        state = self.terms()
+        self.assertEqual((state["state"], state.get("offer")), (0, None))
+        answer = self.ask("terms_offer")
+        self.assertFalse(answer["ok"])
+        self.assertIn("no terms after a sack", answer["error"])
+        self.assertFalse(self.ask("terms_accept", kind="payment")["ok"])
+        self.assertEqual(self.pawn.silver, 500)
+
+    def test_a_raid_that_leaves_by_loot_sacks_and_closes_its_offer(self):
+        self.ask("terms_offer")
+        for unit in self.units[-SQUAD_UNITS:]:
+            unit.ItemsLooted = 4
+        self.game.advance(3)
+        self.assertEqual(self.sack_state()["sack_count"], 1)
+        self.assertEqual(self.terms()["state"], 0)
+        self.assertFalse(self.ask("terms_offer")["ok"])
+
 
 if __name__ == "__main__":
     unittest.main()
