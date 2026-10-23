@@ -7,6 +7,7 @@ Each entry names its feature. Format: Keep a Changelog.
 - Feature `invasion` and `raid_widget` (change `update-raid-banners`, #400): one 30 day banner for a subjugation raid and a large plunder raid, no banner for a yearly raid or the difficulty, the great raid at game year 10 with a banner in years 7, 8 and 9, the raid menu lists the upcoming raids. See the root `CHANGELOG.md`.
 
 ### Added
+- Features `scenario_settings` and `liege_influence` (change `add-scenario-start-kit`, #425): start kit (10 people, 300 silver) at "Begin the game" of a new game, and the liege button "Request arms shipment" (200 silver, 30 large shields and 30 spears in the manor store, 180 game days cooldown). See the root `CHANGELOG.md`.
 - Feature `vassals` (change `add-vassal-sack-wipe`, #341): sack of vassal houses (80 percent ruins), wipe of all villagers (reason `wiped`), refugee wave of 50 percent, and `vassals_restore` (100 silver, 5 families, goods for the rebuild). Feature `sack_and_terms`: no terms after a sack of the player region.
 
 ### Changed
