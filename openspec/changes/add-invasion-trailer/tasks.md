@@ -2,6 +2,7 @@
 
 - [ ] 1.1 Make the project `trailer/` with `init_project.py`. Verified by `serve_project.py` showing the template.
 - [ ] 1.2 Write the style preamble and identity blocks (Jan Hus, the Bohemian captain, the chalice banner, the narrator). Verified by owner review.
+- [ ] 1.4 Make the banner reference image `references/banners.png` (Gemini, small cost) and list it in `references/README.md` with its prompt and model. Verified by owner review.
 - [ ] 1.3 Write the storyboard: chapter, subject, camera move, copy position, connector, time in the video. Verified by owner review (shot plan approval).
 
 ## 2. Stills
@@ -22,7 +23,7 @@
 
 ## 5. Page and export
 
-- [ ] 5.1 Build the page: copy, Czech subtitles, seal marks, title card. Verified by browser checks: forward, back, chapter jump, 390 px width, reduced motion.
+- [ ] 5.1 Build the page: copy, seal marks, title card. Verified by browser checks: forward, back, chapter jump, 390 px width, reduced motion.
 - [ ] 5.2 Write `content/timing.json` to the shot list. Export the video. Verified by `ffprobe` (1920x1080, 30 fps, 55 to 60 s).
 - [ ] 5.3 Picture evidence: stills of each chapter on desktop and phone into `evidence/`. Verified by review.
 

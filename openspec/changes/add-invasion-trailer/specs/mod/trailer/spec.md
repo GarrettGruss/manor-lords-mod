@@ -35,15 +35,38 @@ The export SHALL make an MP4 at 1920x1080, 30 frames per second, H.264, of 60 s 
 - **THEN** `ffprobe` reports 1920x1080, 30 frames per second and a duration between 55 and 60 s
 - Not checked yet.
 
-#### Scenario: Czech lines have subtitles
-- **WHEN** the Bohemian voice speaks (0:12 to 0:22)
-- **THEN** the frame shows the English subtitle of the line
+#### Scenario: All spoken lines are in English
+- **WHEN** the Bohemian voice or the narrator speaks
+- **THEN** the line is in English and the frame shows no subtitle; only the Latin line of Hus and the Hussite hymn over the title are not in English
 - Checked by review.
 
 ### Requirement: The trailer keeps the tone of the script
-The copy and images SHALL NOT show the Hussites as a religion to hate. Historical claims in the copy SHALL match the facts listed in `design/mod/trailer.md`.
+The narrator SHALL hate the Hussites for what they do to his people. The copy and images SHALL NOT draw the Hussites as monsters or as evil; they SHALL show what the Hussites do. Historical claims in the copy SHALL match the facts listed in `design/mod/trailer.md`.
 
 #### Scenario: Copy review
 - **WHEN** the owner reviews the shot plan and the copy
 - **THEN** the owner approves the tone and the facts
 - Checked by review.
+
+### Requirement: Each side is known by its banner
+Every still, panel and clip that shows an army SHALL show the banner of its side, as drawn in the banner reference image `references/banners.png` of this change. Banners SHALL carry no readable text. The details are in `design/trailer/invasion-mod/slow/02-mood-board.md`, section Banners.
+
+#### Scenario: Hussite banner
+- **WHEN** a frame shows the Hussites
+- **THEN** their banner is a red chalice (a cup with a foot and a stem, no gems) on a black field, on a tall, narrow banner
+- Checked by review.
+
+#### Scenario: Crusader banner and the king's seal
+- **WHEN** a frame shows the crusaders or the king's seal
+- **THEN** the crusader banner is a red cross on a white field, and the seal is a black eagle on gold
+- Checked by review.
+
+#### Scenario: Militia banner
+- **WHEN** a frame shows the narrator's militia
+- **THEN** it carries the player's heraldry from the game, and that heraldry does not use the Hussite red and black
+- Checked by review.
+
+#### Scenario: The reference image exists
+- **WHEN** the change is validated
+- **THEN** `references/banners.png` exists in the change folder and is listed in `references/README.md` with its prompt and model
+- Not checked yet.
