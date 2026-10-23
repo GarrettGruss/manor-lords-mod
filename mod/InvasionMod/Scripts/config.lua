@@ -16,7 +16,10 @@ return {
     invasion = {
         enabled = true,
         difficulty = 1,                                      -- start value, 1 to 3. The player picks it (start UI comes later).
-        first_raid_days_min = 30, first_raid_days_max = 90,  -- game days from the day the plan is made
+        yearly = {                                           -- update-raid-clock-yearly: no raid in game year 1, then one raid a year
+            chance_by_season = { 25, 33, 50, 100 },          -- percent at the season change, first to fourth season of the year (owner decision 2026-10-21)
+            season_days = 90,                                -- the raid comes 1 to this many game days after the successful roll
+        },
         warning_days_min = 14, warning_days_max = 56,        -- 2 to 8 game weeks
         size_multipliers = { small = 1, medium = 2, large = 3 }, -- squads = multiplier x difficulty
         squad_units = 18,                                    -- units in one squad of spawnRaiders
@@ -36,10 +39,9 @@ return {
             relief_offset = { x = 0, y = 2500 },             -- the relief army appears this far from the player pawn
             prompt_every_days = 7,                           -- iteration 04: the pick prompt repeats until the player picks                          -- a banner for the clock when no minor raid banner shows
         },
-        -- M02 iteration 03: the subjugation raid (major). One is planned after the first raid. Values are TBD for playtests.
+        -- M02 iteration 03: the subjugation raid (major). The yearly roll plans it as the second raid. Values are TBD for playtests.
         subjugation = {
             enabled = true,
-            wait_days_min = 60, wait_days_max = 120,         -- game days from the first raid spawn to the subjugation raid
             size_class = 3,                                  -- large: squads = 3 x difficulty (TBD, "major" has no size rule in M00)
         },
         poll_ms = 300,                                       -- real time between two checks of the game day
@@ -86,9 +88,16 @@ return {
             battle_radius = 4000,   -- a raider counts as inside this far from the manor (the army stood within 1300 in run 20261018-035856-248b)
             per_unit_day = 1,       -- goods taken for each raider inside, each game day. The goal is leave.loot_per_raider for each raider.
         },
+        -- Change add-raid-storage-tiers. Store tiers by EBuildingType: tier 1 (storehouse 6, granary 72) can be robbed by the mod, tier 2 (the manor modules) never.
+        store_tiers = { [6] = 1, [72] = 1, [50] = 2, [57] = 2, [58] = 2, [81] = 2, [82] = 2, [83] = 2, [95] = 2, [98] = 2 },
+        steal = {                   -- baron (lord) raid steal: a raider farther than threshold from the battle marker takes goods from tier 1 stores
+            threshold = 20000,      -- game units (1 unit = 1 cm, so 200 m; owner 2026-10-20). The army fights about 14000 from the marker.
+            rate = 10,              -- goods for each stealing raider, each game day
+            goals = { plunder = 100, great = 300 }, -- most goods one raid steals, by raid kind (small and large raid; no scaling by difficulty yet)
+        },
         leave = {
             enabled = true,
-            loot_per_raider = 4,    -- leaves when the loot taken is this much for each raider of the start (native raiders carry 4 to 5)
+            loot_per_raider = 4,   -- leaves when the loot taken is this much for each raider of the start (native raiders carry 4 to 5)
             loss_share = 0.5,       -- leaves when this share of the raiders died
             max_days = 25,          -- leaves this many game days after the spawn (native raids ended on day 12 to 19)
         },
@@ -145,6 +154,27 @@ return {
         refresh_ms = 500,                    -- real time between two refreshes of the labels
         z_order = 500,
         position = { X = 300, Y = 150 },
+    },
+    -- add-scenario-settings-menu (#375): the menu that opens when a new game starts. The owner writes the background text.
+    scenario_settings = {
+        enabled = true,
+        defaults = { difficulty = 2, first_raid_years = 2, size_class = 2, great_raids = 1 }, -- Normal, 2 years, Medium, On
+        title = "The Hussites Are Coming",
+        background_text = "Placeholder text. The owner writes the background of the scenario here: who the Hussites are, and why they ride against your village.",
+        labels = { difficulty = "Difficulty", first_raid_years = "First Hussite raid", size_class = "Raid size", great_raids = "Great raids" },
+        choice_names = {
+            difficulty = { "Easy", "Normal", "Hard" },
+            first_raid_years = { "After 1 year", "After 2 years", "After 3 years" },
+            size_class = { "Small", "Medium", "Large" },
+            great_raids = { "On", "Off" },
+        },
+        begin_label = "Begin the game", defaults_label = "Use defaults",
+        new_game_max_day = 10,               -- a game with no save file name is new only when its day is at most this (a fixture that lost savefileToLoad is not)
+        intro_wait_s = 60,                   -- real seconds to wait for the intro cinematic to end before the menu opens anyway
+        begin_speed = 1,                     -- the game speed after "Begin the game" (a new game starts at speed 0)
+        disable_autosave = true,             -- send disable_autosave after the intro and after Begin (spike #358: the first call after a new game is undone)
+        poll_ms = 100,
+        z_order = 500, position = { X = 300, Y = 120 },
     },
     -- M06 sack_and_terms, iteration 01. All values are TBD for playtests (M00 gives only the range 20 to 50 percent).
     sack_and_terms = {

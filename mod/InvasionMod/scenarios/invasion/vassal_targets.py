@@ -66,7 +66,7 @@ def finish_first_raid(ctx) -> None:
     ctx.mod.command("InvasionMod.invasion_set_size", size="small")
     ctx.mod.command("InvasionMod.invasion_force_next")
     ctx.run_until(lambda: len(raids(ctx)) >= 1, 30, what="the first raid record")
-    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_subjugation_state")["sub_day"] > 0, 30, what="the subjugation plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now", kind="subjugation")["day"] is not None and ctx.mod.command("InvasionMod.invasion_subjugation_state")["sub_day"] > 0, 30, what="the subjugation plan")
     days = 0
     while raids(ctx)[0]["state"] == "active" and days < DAY_LIMIT:
         run_day(ctx)
@@ -76,7 +76,7 @@ def finish_first_raid(ctx) -> None:
 def run(ctx) -> dict:
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=1)
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
-    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     region = make_vassal(ctx)
     finish_first_raid(ctx)
 

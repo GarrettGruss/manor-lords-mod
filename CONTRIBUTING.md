@@ -1,11 +1,11 @@
 # Contributing
 
-This repo is an agent harness for making and testing Manor Lords mods, and the Invasion Mod that is built with it. People and AI agents work in it with the same rules. This file holds those rules. [`CLAUDE.md`](CLAUDE.md) imports this file and adds only what is specific to agents: their permissions, subagents, skills and the full safety list.
+This repo is an agent harness for making and testing Manor Lords mods, and the Invasion Mod that is built with it. People and AI agents work in it with the same rules. This file holds those rules. [`CLAUDE.md`](CLAUDE.md) imports this file and adds only what is specific to agents: their permissions, subagents and skills. The full safety list is in [`DANGEROUS_ACTIONS.md`](DANGEROUS_ACTIONS.md).
 
 ## Read first
 
 1. This file.
-2. The Safety section of [`CLAUDE.md`](CLAUDE.md), before you touch saves or the game.
+2. [`DANGEROUS_ACTIONS.md`](DANGEROUS_ACTIONS.md), before you touch saves or the game.
 3. [`docs/wiki/quickstart.md`](docs/wiki/quickstart.md): what each part does and which page or skill to use for a job.
 4. [`openspec/specs/process/spec-workflow/spec.md`](openspec/specs/process/spec-workflow/spec.md) and [`openspec/config.yaml`](openspec/config.yaml): how work is planned, recorded and closed.
 
@@ -173,7 +173,7 @@ Details and merge-conflict hints: [`.claude/skills/harness-git-workflow/SKILL.md
 
 ## Safety
 
-The full list, with the calls that crash the game or write into real saves, is in the Safety section of [`CLAUDE.md`](CLAUDE.md). In short:
+The full list, with the calls that crash the game or write into real saves, is in [`DANGEROUS_ACTIONS.md`](DANGEROUS_ACTIONS.md). In short:
 
 - **Saves:** game save functions write into the REAL save folder, even in a run with a private `LOCALAPPDATA`. Only the guarded harness action `save_game` may save. Never call a save function from a probe, a test scenario or raw Lua eval. Back up `%LOCALAPPDATA%\ManorLords\Saved\SaveGames` before tests. Never write to the original test save.
 - **Calls that crash the game:** some bridge calls crash the game. Check the list before a spike.

@@ -1,6 +1,6 @@
 """M09 iteration 01, R1 to R7: a lost vassal sends a wave of refugee families to the home region.
 
-The scenario makes one vassal like M07.02, then calls refugees_vassal_lost. Run it on the default fixture (base: 10 families, approval about 71, free homes). On a new game all 5 start families are homeless and approval stays 50, so R4 cannot show a fall. It saves nothing.
+The scenario makes one vassal like M07.02, then calls refugees_vassal_lost. Run it with `--fixture base` (10 families, approval about 71, free homes). On a new game all 5 start families are homeless and approval stays 50, so R4 cannot show a fall. It saves nothing.
 """
 
 NAME = "refugees-wave"

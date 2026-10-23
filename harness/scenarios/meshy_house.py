@@ -1,6 +1,6 @@
 """Build one burgage house and take close screenshots of it (change add-meshy-agent-house-test).
 
-Run it on the default fixture (base). With `--pak meshyhouse` the three level 1 cottage meshes are replaced by a model made
+Run it on the default fixture. With `--pak meshyhouse` the three level 1 cottage meshes are replaced by a model made
 with the Meshy agent CLI; without the pak the vanilla house shows. It saves nothing.
 The replaced mesh keeps the vanilla asset path, so the path cannot tell the two runs apart: read the screenshots.
 """

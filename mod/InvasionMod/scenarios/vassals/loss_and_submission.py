@@ -1,6 +1,6 @@
 """M07 iteration 04, L6 to L8: a lost vassal frees its slot and sends refugees.
 
-The scenario makes one vassal (M07.02). The lord keeps the land: the mod never writes the region owner. Run it on the default fixture (base). It saves nothing.
+The scenario makes one vassal (M07.02). The lord keeps the land: the mod never writes the region owner. Run it on the default fixture. It saves nothing.
 """
 
 NAME = "vassals-loss-and-submission"
