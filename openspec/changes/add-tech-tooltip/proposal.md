@@ -7,11 +7,11 @@ Issue: #428.
 ## What changes
 
 - Mouse over a node button or a law button of the tech tree menu shows a tooltip.
-- The tooltip has one line for each effect of the node or law. A line comes from the effect data in `data/tech_tree/tree.json`. There is no hand-written duplicate text.
+- The tooltip lists the numerical effects of the node or law, each with its value. The design builds the text from the effect data in `data/tech_tree/tree.json`, so there is no hand-written duplicate text (a design choice, not a requirement).
 - A percent effect (factor) shows as a signed percentage: factor 0.10 shows "+10%", factor -0.25 shows "-25%".
 - A flat effect (public order, approval, retinue capacity, manor storage) shows as a signed number, with its name.
 - An effect with a condition (`min_garrison_squads`) shows the condition on the same line.
-- A node that opens a vassal policy shows one more line (not a statistic): "Opens vassal policy <name>".
+- The tooltip MAY show other information, for example a condition or an opened vassal policy.
 - A pure text builder in `tech_tree_widget/lines.lua` makes the text. It is tested in the fake game.
 
 ## Non-goals
@@ -20,7 +20,7 @@ Issue: #428.
 - No new effect kinds, and no change to the header line "Effects: ...".
 - No tooltip on path buttons (a path has no effect data).
 - No new model, texture or animation.
-- No percentage for flat effects: public order, approval, retinue and storage are counts in the game data, not factors. See the open question in `design.md`.
+- No rule that every effect kind needs a text, and no rule that every value is a percentage.
 
 ## Design pillars
 

@@ -7,7 +7,7 @@
 ## 2. Text builder
 
 - [ ] 2.1 Add `KIND_TEXT` and `effect_lines` to `tech_tree_widget/lines.lua`: all 8 kinds, percent and flat, condition, policy line. Verified by `harness/tests/test_fakegame_tech_tooltip.py`.
-- [ ] 2.2 Test that `KIND_TEXT` and `tree.EFFECT_KINDS` have the same keys, and that the shipped tree makes the expected lines for every node and law. Verified by the same test.
+- [ ] 2.2 Test that the shipped tree makes the expected lines for every node and law. Verified by the same test.
 
 ## 3. Widget
 
