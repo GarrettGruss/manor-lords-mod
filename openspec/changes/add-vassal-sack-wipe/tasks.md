@@ -18,4 +18,10 @@
 
 ## 4. Close
 - [x] 4.1 Update the wiki pages, the skills that name the removed commands, the Purpose lines of the changed living specs, and `CHANGELOG.md`; verify with `wiki.py check`.
-- [ ] 4.2 Run the full tests and write the test results table of the implementation pull request.
+## 5. Rebuild order (owner decisions, 2026-10-22)
+- [x] 5.1 Add `world.rebuild_ruins`, the wood removal at sack start, the give and rebuild at sack end, the handover and rebuild in the restore, the command `vassals_rebuild_ruins` and `vassals_end_sack`; verify with `test_fakegame_vassals.py`.
+- [ ] 5.2 Update `vassal_wipe.py` and add a test scenario for a sack that ends without a wipe; verify with real game runs.
+- [ ] 5.3 Move the engine facts (typeBeforeChange, SetupBuilding, convertBlueprintsToBuildings, AI rebuild) into the wiki; verify with `wiki.py check`.
+
+## 6. Final
+- [ ] 6.1 Run the full tests and write the test results table of the implementation pull request.

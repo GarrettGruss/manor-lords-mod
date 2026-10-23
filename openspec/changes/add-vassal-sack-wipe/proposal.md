@@ -17,13 +17,14 @@ Today a lost vassal only frees its slot and the lord keeps the land. The fallbac
 - A sack of the player region offers no terms after it.
 - A Hussite sack of a vassal runs through the mod sack of houses. The sack is complete when 80 percent of the buildings of the vassal region are ruins.
 - At that point the mod deletes all villagers of the region and the vassal is lost. A homeless wave of 50 percent of the population before the wipe starts (refugees).
-- The land stays a village of rubble. The player can pay gold to raise its villager count to 5. Then the AI rebuilds the village and the tribute of the vassal starts again.
+- The land stays a village of rubble. The player can pay gold to raise its villager count to 5. The restore also gives the region back to an AI lord and orders the rebuild of every ruin. The tribute of the vassal starts again when enough buildings are built.
+- When a sack of a vassal region starts, the mod removes all logs and planks of the region. When a sack ends and the village is not wiped, the mod gives 50 logs and 100 planks and orders the rebuild of every ruin at once (owner, 2026-10-22).
 - Drop the loss mode `take_by_lord` and the command `vassals_set_loss_region`.
 - The tasks start with a spike: what an AI village does when all villagers are dead, and whether a count of 5 makes the AI rebuild.
 
 ## Non-goals
 - Vassal loyalty. The change `remove-vassal-loyalty` (#344) removes it.
-- Any effect on an AI region other than the sack of houses (owner, item 10). The mod does not give orders to the AI rebuild; it only adds villagers.
+- Any effect on an AI region other than the sack of houses and the rebuild of its ruins (owner, item 10; the rebuild order is the owner decision of 2026-10-22).
 - Changes to the raid clock, the sack of the player region and the fatal sack rule.
 - Game design text in `design/mod/`.
 
