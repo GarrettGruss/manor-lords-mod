@@ -27,7 +27,7 @@ uv run --no-project --with yt-dlp --with faster-whisper --with numpy \
   python -I .claude/skills/video-breakdown/scripts/extract_video.py "<url-or-file>" <out-dir>
 ```
 
-Options: `--scene-threshold 0.15` (lower finds more cuts; 0.3 finds only hard cuts), `--max-height 720`, `--whisper auto|always|never` (`auto` uses YouTube captions when they exist, otherwise Whisper).
+Options: `--scene-threshold 0.15` (lower finds more cuts; 0.3 finds only hard cuts), `--max-height 720`, `--whisper auto|always|never` (`auto` uses YouTube captions when they exist, otherwise Whisper). For dark films (night, low-key light), start at `0.08`: at 0.15 a dark opening of 57 s came out as one shot.
 
 Output in `<out-dir>`:
 
@@ -44,6 +44,11 @@ The yt-dlp warning about a missing JavaScript runtime is harmless for most video
 
 **Age-restricted videos** fail with "Sign in to confirm your age". Stop and ask the user. Never search or read browser profiles or cookies yourself. Offer two options: the user downloads the video and gives you the file, or the user exports a `cookies.txt` file (Netscape format) from a signed-in browser and gives you its path; then add `--cookies <file>`. The file gives access to the user's Google session: keep it outside the repo, never print or commit it, and ask the user to delete it after the run.
 
+When the user exports cookies with a browser extension:
+- A "current site" export of `www.youtube.com` can be empty. The sign-in cookies live on `.youtube.com` and `.google.com`. A full export works, but reduce it first: keep only the lines whose domain is `.youtube.com` or `.google.com`, in a private file (mode 600) outside the repo, and delete it after the run. Print only line counts, never cookie lines.
+- Some extensions write FALSE in the subdomain column for a domain that starts with a dot. yt-dlp then fails with "invalid Netscape format". Set that column to TRUE for dot domains and FALSE for the others.
+- Signed-in YouTube downloads need a JavaScript runtime. Add `--with "yt-dlp[default]" --with deno` to the `uv run` command.
+
 ## Step 2: look
 
 1. Read `storyboard.jpg`. Read it again in parts if it is large, or read single `storyboard/Snn.jpg` files.
@@ -52,7 +57,7 @@ The yt-dlp warning about a missing JavaScript runtime is harmless for most video
 
    ```bash
    ffmpeg -loglevel error -y -ss <start> -t <seconds> -i <out-dir>/video.mp4 \
-     -vf "fps=2,scale=320:-1,drawtext=text='%{pts\:flt}':x=4:y=4:fontsize=18:fontcolor=yellow:box=1:boxcolor=black,tile=4x4" \
+     -vf "fps=2,scale=320:-1,drawtext=text='%{pts\:flt\:<start>}':x=4:y=4:fontsize=18:fontcolor=yellow:box=1:boxcolor=black,tile=4x4" \
      -frames:v 1 <out-dir>/detail.jpg
    ```
 
