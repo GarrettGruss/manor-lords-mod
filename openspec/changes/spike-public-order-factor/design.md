@@ -12,3 +12,8 @@ Static search first (extracted JSON, jmap, usmap). Then a pak test. Then a run-t
 
 ## Decision rule
 Recommend a way only if it holds across polls (unlike `Region.Approval`) and the player can see it. Otherwise recommend keeping the `publicOrder` write of `mod/bandits`.
+
+## Owner decision (2026-10-23): route A and route B
+- State: the mod keeps `mod_order`. The game keeps its own value.
+- Route A: write `publicOrder = game value + mod_order` (clamped 0..100) on every tick, after the game recompute. Test: hold a fixed target for 10 game days, sample the flicker rate, compare a game effect with a control run (`notes/tick-write.md`).
+- Route B (backup, not built now): an overlay bar or number on the game's top bar shows `mod_order`. Host candidate: the right group of the top bar (the scale icon).

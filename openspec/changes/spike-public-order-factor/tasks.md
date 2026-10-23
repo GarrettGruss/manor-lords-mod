@@ -11,3 +11,7 @@
 ## 4. Close
 - [ ] 4.1 Write `notes/recommendation.md` with a follow-up change, and ask the owner.
 - [ ] 4.2 Move lasting engine facts to the wiki and add a `CHANGELOG.md` line if a tool changed.
+
+## 5. Route A (owner decision 2026-10-23)
+- [x] 5.1 Tick-write test of route A: flicker rate and effect against a control run. Written to `notes/tick-write.md` (verdict: A partly works). Evidence in `evidence/`.
+- [ ] 5.2 Route B (overlay on the top bar) is the backup. Do not build it now; only record it (done in `notes/tick-write.md`).
