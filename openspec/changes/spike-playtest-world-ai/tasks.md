@@ -1,6 +1,6 @@
 ## 1. Setup
 
-- [ ] 1.1 Add the fixture `playtest-noai` to `harness/fixtures/fixtures.json` (entry in `notes/fixture.md`) and check that it loads.
+- [x] 1.1 Add the fixture `playtest-noai` to `harness/fixtures/fixtures.json` (entry in `notes/fixture.md`) and check that it loads.
 - [ ] 1.2 Back up the save folder. Run the base fixture once as the control.
 
 ## 2. Question 1: bandit camps
