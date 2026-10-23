@@ -77,7 +77,7 @@ A restored vassal SHALL get a slot again with the flag `rebuilding`. Its tribute
 - Checked by `harness/tests/test_fakegame_tribute.py` and `harness/tests/test_fakegame_vassals.py`.
 
 ### Requirement: A sack removes the wood and a sack that ends without a wipe orders the rebuild
-When a sack of a vassal region starts, the mod SHALL remove all logs (good 16) and planks (good 17) from the buildings of the region. When a sack ends and the village is not wiped, the mod SHALL give 50 logs and 100 planks to the region and SHALL give the rebuild order to every ruin of the region at once. A sack ends this way when the raid that sacks the region has no living raider left (all dead or gone), or when it gives up, unless its wipe has started. The command `InvasionMod.vassals_end_sack` SHALL end a running sack this way for tests.
+When a sack of a vassal region starts, the mod SHALL remove all logs (good 16) and planks (good 17) from the buildings of the region. When a sack ends and the village is not wiped, the mod SHALL give 50 logs and 100 planks to the region and SHALL give the rebuild order to every ruin of the region at once.
 
 #### Scenario: The sack starts
 - **WHEN** a sack of a vassal region starts
@@ -89,13 +89,16 @@ When a sack of a vassal region starts, the mod SHALL remove all logs (good 16) a
 - **THEN** the region gets 50 logs and 100 planks and every ruin with an old type other than 0 and 75 becomes a construction site
 - Checked by `harness/tests/test_fakegame_vassals.py` and `mod/InvasionMod/scenarios/vassals/vassal_sack_end.py` (real game).
 
-### Requirement: The rebuild order of a ruin
-The rebuild order for a ruin SHALL write the building data back with the old building type (`typeBeforeChange`), `constructed` false and `hp` 0, and then call `SetupBuilding`. It SHALL skip a building whose old type is 0 or 75. It SHALL NOT call `convertBlueprintsToBuildings`. Each order SHALL be logged.
+### Requirement: A sack ends when its raid ends
+A sack that has not started its wipe SHALL end without a wipe when the raid that sacks the region has no living raider left (all dead or gone), or when it gives up. The command `InvasionMod.vassals_end_sack` SHALL end a running sack this way for tests.
 
 #### Scenario: The raid ends
 - **WHEN** the raid that sacks a vassal region has no living raider left and the wipe has not started
 - **THEN** the sack ends without a wipe, with the wood and the rebuild order
 - Checked by `harness/tests/test_fakegame_vassals.py`.
+
+### Requirement: The rebuild order of a ruin
+The rebuild order for a ruin SHALL write the building data back with the old building type (`typeBeforeChange`), `constructed` false and `hp` 0, and then call `SetupBuilding`. It SHALL skip a building whose old type is 0 or 75. It SHALL NOT call `convertBlueprintsToBuildings`. Each order SHALL be logged.
 
 #### Scenario: A ruin without a usable old type
 - **WHEN** the rebuild order meets a ruin with the old type 0 or 75
