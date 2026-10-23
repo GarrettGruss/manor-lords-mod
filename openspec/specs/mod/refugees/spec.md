@@ -1,15 +1,15 @@
 # mod/refugees Specification
 
 ## Purpose
-A lost vassal sends refugee families to the home region. The player must house them, or the unhoused families turn into bandits.
+A lost vassal (a vassal that a Hussite sack wiped) sends refugee families to the home region (50 percent of its families). The player must house them, or the unhoused families turn into bandits.
 
 ## Requirements
 
 ### Requirement: A lost vassal sends a refugee wave
-The mod SHALL send a wave of refugee families to the home region when a vassal is lost. The wave size SHALL be `ceil(vassal families x share)` with a share between `share_min` and `share_max` (default 0.30 and 0.60), and at least 1 family. The mod SHALL show the banner "Refugees have arrived".
+The mod SHALL send a wave of refugee families to the home region when a vassal is lost. The wave size SHALL be `ceil(vassal families x share)` with the share 0.50 of the population before the loss (`share_min` and `share_max` both 0.50 by default), and at least 1 family. The mod SHALL show the banner "Refugees have arrived".
 
 #### Scenario: A vassal is lost
-- **WHEN** a handed-over vassal of 5 families is lost
+- **WHEN** a handed-over vassal of 10 families is wiped
 - **THEN** the home region gains 5 families and the wave is active
 - **AND** the home region has at least 1 homeless family when it has fewer than 5 free home slots
 - Checked by `mod/InvasionMod/scenarios/refugees/refugee_wave.py`.

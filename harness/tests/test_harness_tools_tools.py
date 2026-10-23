@@ -195,7 +195,10 @@ class GameStatusTest(ToolsTestCase):
     def test_status_with_lock_and_counter(self):
         (self.runs / ".iterations").write_text("7")
         (self.runs / ".lock").write_text(str(os.getpid()))
-        with mock.patch.object(tools.game, "find_game_processes", return_value=[]):
+        # The default cap is under test, so a HARNESS_MAX_RUNS in the shell must not change it.
+        with mock.patch.object(tools.game, "find_game_processes", return_value=[]), \
+                mock.patch.dict(os.environ, {}, clear=False) as env:
+            env.pop("HARNESS_MAX_RUNS", None)
             result = tools.game_status(self.runs, REPO_ROOT)
         self.assertEqual(result["lock_holder_pid"], os.getpid())
         self.assertEqual((result["runs_used"], result["max_runs"], result["runs_left"]), (7, 400, 393))

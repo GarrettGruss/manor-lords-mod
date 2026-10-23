@@ -5,28 +5,26 @@ The invasion feature owns the raid schedule of the Invasion Mod. It plans the ra
 
 ## Requirements
 
-### Requirement: The first minor raid is planned within a day range
-The mod SHALL plan one minor (plunder) raid on its first daily step. The raid day SHALL be a random number of game days after the plan day, between `first_raid_days_min` and `first_raid_days_max` (default 30 to 90). The warning time SHALL be between `warning_days_min` and `warning_days_max` (default 14 to 56 game days), and never longer than the wait. The plan SHALL be kept in ModState and SHALL survive a load.
-
-#### Scenario: The plan after the start
-- **WHEN** a game starts and the first daily step runs
-- **THEN** the raid day is between 30 and 90 game days after the plan day
-- **AND** the warning time is between 14 and 56 game days
-- Checked by `mod/InvasionMod/scenarios/invasion/first_raid.py`.
-
-#### Scenario: The plan is stored in the pawn Tags
-- **WHEN** the plan exists
-- **THEN** the plan keys are entries in the Tags of the player pawn
-- Checked by `harness/tests/test_fakegame_invasion.py`.
-
 ### Requirement: A daily banner counts down to the raid
-From the warning day, the mod SHALL show one banner on each game day, with the days left and the size estimate (`Raid in N days, about S raiders`). The second line of the banner SHALL show the days left to the great raid. The mod SHALL NOT show a banner before the warning day or two banners on one day.
+The mod SHALL NOT show a countdown banner or a warning banner for a minor (yearly) raid, and SHALL NOT show a banner on each game day before any raid. For the subjugation raid and the player raid (see the assumption in the proposal) the mod SHALL show exactly one banner, 30 game days before the raid day, with the target type and the size estimate: `Raid in 30 days: <target>, about S raiders`, where `<target>` is `your vassal <name>` or `you`. If the raid is planned less than 30 days ahead, the banner SHALL show once on the plan day. The mod SHALL NOT show this banner again after a load. The warning time (`warning_days_min`, `warning_days_max`) and the second banner line with the days left to the great raid SHALL be removed. The banner at the spawn of a raid (`Raiders are here`) is not changed by this requirement.
 
 #### Scenario: The countdown
-- **WHEN** the game days run from the warning day to the raid day
-- **THEN** each day has one banner and its days left equal the raid day minus that day
-- **AND** the size estimate in each banner equals the size of the spawned raid
-- Checked by `mod/InvasionMod/scenarios/invasion/first_raid.py`.
+- **WHEN** a minor raid is planned and the game days run from the plan day to the raid day
+- **THEN** no banner shows on any of these days
+- **AND** the log has no `INVASION banner` event
+- Checked by `harness/tests/test_fakegame_invasion.py` and `mod/InvasionMod/scenarios/invasion/first_raid.py`.
+
+#### Scenario: A subjugation raid against a vassal
+- **WHEN** a subjugation raid targets the vassal `V` and the game days run from 40 days before the raid day to the raid day
+- **THEN** exactly one banner shows, on the day that is 30 days before the raid day
+- **AND** it names `your vassal V` and its size estimate equals the size of the spawned raid
+- Checked by `harness/tests/test_fakegame_invasion.py` and `mod/InvasionMod/scenarios/invasion/subjugation_raid.py`.
+
+#### Scenario: A raid against the player
+- **WHEN** a player raid is planned 60 game days ahead and the game days run to the raid day
+- **THEN** exactly one banner shows, 30 days before the raid day, and it names `you` and the size estimate
+- **AND** a load after the banner does not show it again
+- Checked by `harness/tests/test_fakegame_invasion.py`.
 
 ### Requirement: The raid spawns on the planned day
 The mod SHALL spawn the planned raid on the raid day, plus or minus 1 game day. The raid size SHALL be the size multiplier of the size class times the difficulty, in squads. The size class SHALL be picked at random between small, medium and large with the multipliers 1, 2 and 3 (`size_multipliers`). The mod SHALL spawn the first minor raid only once.
@@ -84,7 +82,7 @@ With `roles.lord_army.enabled` (default on), the mod SHALL spawn a role raid as 
 - Checked by `harness/tests/test_fakegame_invasion.py`.
 
 ### Requirement: The player picks the difficulty once
-The mod SHALL keep a difficulty from 1 to 3 (default `invasion.difficulty`). Until the player picks one, the mod SHALL show the banner `Pick the difficulty: 1, 2 or 3` every `prompt_every_days` (default 7) game days. `invasion_pick_difficulty` SHALL set the difficulty once. It SHALL be refused after the first pick, after the first raid spawned, and for a value outside 1 to 3. A pick SHALL re-plan the squads of an unspawned raid.
+The mod SHALL keep a difficulty from 1 to 3 (default `invasion.difficulty`). The player SHALL choose it only in the scenario start menu of `mod/scenario_settings`, before the game starts. The mod SHALL NOT show any difficulty banner, in any state: the banner `Pick the difficulty: 1, 2 or 3` and the setting `prompt_every_days` SHALL be removed. `invasion_set_difficulty` SHALL set the difficulty at any time and SHALL mark it as chosen. `invasion_pick_difficulty` SHALL stay as a test command: it SHALL set the difficulty once, and it SHALL be refused after the first pick, after the first raid spawned, and for a value outside 1 to 3. A pick SHALL re-plan the squads of an unspawned raid.
 
 #### Scenario: A pick at difficulty 2
 - **WHEN** no pick was made and a test picks difficulty 2
@@ -93,6 +91,17 @@ The mod SHALL keep a difficulty from 1 to 3 (default `invasion.difficulty`). Unt
 - **AND** the relief army has 8 squads and the great raid has 2 waves
 - **AND** the planned squads are a multiple of 2 between 1 and 3 times 2
 - Checked by `mod/InvasionMod/scenarios/invasion/difficulty_pick.py`.
+
+#### Scenario: The settings menu sets the difficulty
+- **WHEN** the player begins the game with Hard in the settings menu
+- **THEN** the difficulty is 3 and chosen is true, and no pick banner shows
+- **AND** `invasion_set_difficulty` 1 afterwards sets the difficulty to 1
+- Checked by `mod/InvasionMod/scenarios/scenario_settings/new_game_menu.py` (run 20261022-045227-57f0) and `harness/tests/test_fakegame_scenario_settings.py`.
+
+#### Scenario: No difficulty banner
+- **WHEN** a game runs 30 game days with no pick and with no settings applied
+- **THEN** no banner about the difficulty shows and the log has no `INVASION difficulty prompt` event
+- Checked by `harness/tests/test_fakegame_invasion.py`.
 
 ### Requirement: A subjugation raid follows the first raid
 After the first raid spawned, the mod SHALL plan one subjugation (major) raid `subjugation.wait_days_min` to `wait_days_max` (default 60 to 120) game days later, with a warning banner like the first raid. The raid SHALL be large: 3 x difficulty squads. It SHALL be a lord raid that does not plunder and does not leave. It SHALL spawn once.
@@ -118,14 +127,24 @@ The mod SHALL ask the registered vassal provider for target regions when a subju
 - Checked by `mod/InvasionMod/scenarios/invasion/subjugation_raid.py`.
 
 ### Requirement: A great raid clock counts the game days
-The mod SHALL start the great raid clock on the first daily step. The clock length SHALL be a random whole number of game days between `great_raid.min_days` and `max_days` (default 1095 to 1825, 3 to 5 game years). The end day SHALL be kept in ModState. The mod SHALL show a clock banner every `banner_every_days` (default 30) game days when no raid banner shows, at most one per game day.
+The mod SHALL start the great raid clock on the first daily step. The clock SHALL end at the first day of game year `great_raid.start_year` (default 10). The settings `min_days`, `max_days` and `banner_every_days` SHALL be removed. The end day SHALL be kept in ModState. The mod SHALL show one clock warning banner on the first day of each of the 3 game years before the start year (default years 7, 8 and 9), with the years left (`Great raid in N years`). It SHALL NOT show a clock banner in any other year, including the start year, SHALL NOT repeat a banner after a load in the same year, and SHALL show none when "Great raids" is Off.
 
 #### Scenario: The clock after the start
 - **WHEN** the clock starts and three game days pass
-- **THEN** the clock length is between 1095 and 1825 game days
-- **AND** the end day does not change and the days left fall by the days that passed
-- **AND** each clock banner shows the days left of its day
+- **THEN** the end day is the first day of game year 10 and does not change
+- **AND** the days left fall by the days that passed
 - Checked by `mod/InvasionMod/scenarios/invasion/great_raid_clock.py`.
+
+#### Scenario: Three warnings
+- **WHEN** a test moves the fake game calendar through game years 1 to 10
+- **THEN** exactly 3 clock banners show, on the first day of years 7, 8 and 9, with 3, 2 and 1 years left
+- **AND** no clock banner shows in years 1 to 6 or in year 10
+- Checked by `harness/tests/test_fakegame_invasion.py`.
+
+#### Scenario: A load does not repeat the banner
+- **WHEN** the game is loaded in a year whose clock banner was shown
+- **THEN** no second clock banner shows in that year
+- Checked by `harness/tests/test_fakegame_invasion.py`.
 
 ### Requirement: The great raid starts with waves
 When the clock ends, the mod SHALL spawn one wave for each difficulty point. Each wave SHALL have `wave_squads` (default 15) squads. Waves SHALL be `wave_gap_days` (default 10) game days apart. The mod SHALL NOT spawn a wave twice.
@@ -162,3 +181,44 @@ The mod SHALL offer these commands for scenarios: `invasion_state`, `invasion_fo
 - **WHEN** a test calls `invasion_great_force_start` after the great raid started
 - **THEN** the command is refused
 - Checked by `harness/tests/test_fakegame_invasion.py`.
+
+### Requirement: No raid comes in the first game year
+The mod SHALL NOT plan or spawn a raid in the first game year after the game start. Base game raids stay lifted (see "The mod owns the base game raid timer").
+
+#### Scenario: The first year is quiet
+- **WHEN** the 3 season changes of the first game year pass (a fake game test moves the calendar by real season changes; the real game test scenario runs the first days and counts the other changes with a test command)
+- **THEN** no raid is planned and the log has no raid spawn event
+- Checked by `harness/tests/test_fakegame_invasion.py` and `mod/InvasionMod/scenarios/invasion/yearly_raid.py`.
+
+### Requirement: One raid comes in each later game year, by a season roll
+From the second game year, the mod SHALL roll at each season change while no raid was done in the current game year. The chance of the roll SHALL be `yearly.chance_by_season` (default 25, 33, 50 and 100 percent for the first to the fourth season). A successful roll SHALL plan one raid in that season. The mod SHALL spawn at most one raid in a game year. The year, the roll state and the planned raid SHALL be kept in ModState and SHALL survive a load. A season SHALL NOT be rolled twice.
+
+#### Scenario: Chances by season
+- **WHEN** a test runs the season roll with the roll value 0.2 in the first season of year 2
+- **THEN** a raid is planned
+- **AND** with the roll value 0.9 no raid is planned and the second season rolls next
+- Checked by `harness/tests/test_fakegame_invasion.py`.
+
+#### Scenario: The last season always raids
+- **WHEN** no raid was planned in the first three seasons of year 2
+- **THEN** a raid is planned in the fourth season, whatever the roll value is
+- Checked by `harness/tests/test_fakegame_invasion.py`.
+
+#### Scenario: One raid a year
+- **WHEN** 3 game years pass in a test scenario
+- **THEN** exactly 2 raids spawn (years 2 and 3), at most one in each year
+- Checked by `harness/tests/test_fakegame_invasion.py` (3 years of real season changes) and `mod/InvasionMod/scenarios/invasion/yearly_raid.py` (season changes counted by a test command).
+
+#### Scenario: A load does not repeat a roll
+- **WHEN** the game is loaded in a season that was already rolled
+- **THEN** no new roll runs in that season
+- Checked by `harness/tests/test_fakegame_invasion.py`.
+
+### Requirement: A subjugation raid is large and does not plunder
+A subjugation (major) raid SHALL be large: 3 x difficulty squads. It SHALL be a lord raid that does not plunder and does not leave. The yearly roll SHALL pick the kind of the raid by the kind rules: the first yearly raid is a plunder raid, the second is the subjugation raid (once), and every later yearly raid is a plunder raid.
+
+#### Scenario: The subjugation raid at difficulty 1
+- **WHEN** a subjugation raid spawns
+- **THEN** it has 3 squads x difficulty
+- **AND** the tracker shows `kind = subjugation`, no plunder and no leave reason within 12 game days
+- Checked by `mod/InvasionMod/scenarios/invasion/subjugation_raid.py`.

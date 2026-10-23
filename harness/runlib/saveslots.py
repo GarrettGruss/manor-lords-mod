@@ -137,13 +137,19 @@ class Installed:
     label: str
     files: dict  # file name -> SHA-256 of the written file
     save_dir: str
+    game_slot: int | None = None  # the game slot of the run that installed it (#393); None for an old or unowned entry
+    game_root: str | None = None
 
     def as_dict(self) -> dict:
-        return {"slot": self.slot, "label": self.label, "files": self.files, "save_dir": self.save_dir,
-                "installed": int(time.time()), **_this_process()}
+        entry = {"slot": self.slot, "label": self.label, "files": self.files, "save_dir": self.save_dir,
+                 "installed": int(time.time()), **_this_process()}
+        if self.game_slot is not None:
+            entry.update({"game_slot": self.game_slot, "game_root": self.game_root})
+        return entry
 
 
-def install(save_dir: Path, sources: dict[str, Path], label: str, ledger_path: Path | None = None) -> Installed:
+def install(save_dir: Path, sources: dict[str, Path], label: str, ledger_path: Path | None = None,
+            game_slot: int | None = None, game_root: Path | None = None) -> Installed:
     """Copy the slot files `sources` (suffix -> path) into `save_dir` under the next free slot name."""
     ledger_path = ledger_path or LEDGER_PATH
     for needed in REQUIRED_SUFFIXES:
@@ -159,7 +165,7 @@ def install(save_dir: Path, sources: dict[str, Path], label: str, ledger_path: P
     contents[DESCRIPTOR_SUFFIX] = rewrite_str_property(descriptor, "saveName", f"harness {label}")
     written: dict[str, str] = {}
     entries = read_ledger(ledger_path)
-    record = Installed(slot, label, written, str(save_dir))
+    record = Installed(slot, label, written, str(save_dir), game_slot, str(game_root) if game_root else None)
     entries.append(record.as_dict())
     _write_ledger(entries, ledger_path)  # first: an install that stops half way can still be removed
     for suffix, target in targets.items():
@@ -199,14 +205,33 @@ def uninstall_slot(slot: str, ledger_path: Path | None = None) -> dict:
     return result
 
 
-def uninstall_all(save_dir: Path, ledger_path: Path | None = None) -> list[dict]:
-    """Uninstall every ledger slot of `save_dir` (for example copies left by a --keep-open run). Other entries stay.
+def game_still_runs(entry: dict) -> bool:
+    """True if a game process runs under the game folder of the entry (a --keep-open run leaves its game running)."""
+    from .game import find_game_processes  # late import: game.py imports the runner, which this module must not need
+    root = entry.get("game_root")
+    return bool(root) and bool(find_game_processes(Path(root)))
 
-    Entries of another run that is still alive stay too: it runs in another game slot at the same time (spec 11).
+
+def _keep_entry(entry: dict, game_slot: int | None) -> bool:
+    """The three rules of `uninstall_all`. True if the entry belongs to a run that is still in use."""
+    if entry.get("game_slot") is None:
+        return has_live_owner(entry)  # an old entry: left over, unless a live run owns it
+    if entry["game_slot"] == game_slot:
+        return False  # the new run stops that game first
+    return game_still_runs(entry) or has_live_owner(entry)
+
+
+def uninstall_all(save_dir: Path, ledger_path: Path | None = None, game_slot: int | None = None) -> list[dict]:
+    """Uninstall the left-over ledger slots of `save_dir` (for example copies left by a --keep-open run). Other entries stay.
+
+    Per entry (design.md of fix-parallel-slot-saves): the same `game_slot` as the caller is removed; an entry of another
+    game slot stays while its game runs or its owner lives (spec 11); an entry without a game slot is removed unless its
+    owner lives. An entry whose files are gone leaves the ledger too.
     """
     ledger_path = ledger_path or LEDGER_PATH
     entries = read_ledger(ledger_path)
-    mine = [entry for entry in entries if Path(entry["save_dir"]) == Path(save_dir) and not has_live_owner(entry)]
+    mine = [entry for entry in entries
+            if Path(entry["save_dir"]) == Path(save_dir) and not _keep_entry(entry, game_slot)]
     if not mine:
         return []
     results = [uninstall(entry) for entry in mine]

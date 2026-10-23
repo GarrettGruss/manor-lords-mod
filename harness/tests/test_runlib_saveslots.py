@@ -88,6 +88,61 @@ class InstallTest(unittest.TestCase):
         self.assertEqual([e["label"] for e in saveslots.read_ledger(self.ledger)], ["elsewhere"])
         self.assertTrue((other / "saveGame_0.sav").exists())
 
+    def _entry(self, label, **kw):
+        installed = saveslots.install(self.saves, self.sources, label, self.ledger, **kw)
+        entries = saveslots.read_ledger(self.ledger)
+        return installed, entries
+
+    def _live_owner(self, alive=True):
+        return mock.patch.object(saveslots, "has_live_owner", return_value=alive)
+
+    def test_install_records_the_game_slot_and_root(self):
+        self._entry("a", game_slot=2, game_root=Path("C:/g2"))
+        entry = saveslots.read_ledger(self.ledger)[0]
+        self.assertEqual((entry["game_slot"], entry["game_root"]), (2, str(Path("C:/g2"))))
+
+    def test_a_kept_open_run_on_another_slot_stays(self):
+        installed, _ = self._entry("a", game_slot=0, game_root=Path("C:/g0"))
+        with self._live_owner(False), mock.patch("runlib.game.find_game_processes", return_value=[object()]) as find:
+            self.assertEqual(saveslots.uninstall_all(self.saves, self.ledger, game_slot=1), [])
+        find.assert_called_once_with(Path("C:/g0"))
+        self.assertTrue((self.saves / f"{installed.slot}.sav").exists())
+        self.assertEqual(len(saveslots.read_ledger(self.ledger)), 1)
+
+    def test_a_leftover_of_the_same_game_slot_is_removed(self):
+        installed, _ = self._entry("a", game_slot=1, game_root=Path("C:/g1"))
+        with self._live_owner(False), mock.patch("runlib.game.find_game_processes", return_value=[object()]):
+            results = saveslots.uninstall_all(self.saves, self.ledger, game_slot=1)
+        self.assertEqual([r["slot"] for r in results], [installed.slot])
+        self.assertFalse((self.saves / f"{installed.slot}.sav").exists())
+
+    def test_an_entry_whose_game_is_gone_is_removed(self):
+        installed, _ = self._entry("a", game_slot=0, game_root=Path("C:/g0"))
+        with self._live_owner(False), mock.patch("runlib.game.find_game_processes", return_value=[]):
+            results = saveslots.uninstall_all(self.saves, self.ledger, game_slot=1)
+        self.assertEqual([r["slot"] for r in results], [installed.slot])
+        self.assertEqual(saveslots.read_ledger(self.ledger), [])
+
+    def test_an_entry_without_a_game_slot_is_removed(self):
+        installed, _ = self._entry("a")
+        self.assertNotIn("game_slot", saveslots.read_ledger(self.ledger)[0])
+        with self._live_owner(False):
+            results = saveslots.uninstall_all(self.saves, self.ledger, game_slot=1)
+        self.assertEqual([r["slot"] for r in results], [installed.slot])
+
+    def test_an_entry_without_a_game_slot_stays_while_its_owner_lives(self):
+        self._entry("a")
+        with self._live_owner(True):
+            self.assertEqual(saveslots.uninstall_all(self.saves, self.ledger, game_slot=1), [])
+
+    def test_a_removed_run_leaves_the_ledger_even_if_its_files_are_gone(self):
+        installed, _ = self._entry("a", game_slot=0, game_root=Path("C:/g0"))
+        (self.saves / f"{installed.slot}.sav").unlink()
+        with self._live_owner(False), mock.patch("runlib.game.find_game_processes", return_value=[]):
+            results = saveslots.uninstall_all(self.saves, self.ledger, game_slot=1)
+        self.assertIn(f"{installed.slot}.sav (missing)", results[0]["kept"])
+        self.assertEqual(saveslots.read_ledger(self.ledger), [])
+
     def test_a_save_without_descriptor_is_refused(self):
         with self.assertRaisesRegex(saveslots.SlotError, "_descr.sav"):
             saveslots.install(self.saves, {".sav": self.sources[".sav"]}, "x", self.ledger)

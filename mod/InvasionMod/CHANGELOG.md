@@ -3,12 +3,20 @@
 Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
+### Changed
+- Feature `invasion` and `raid_widget` (change `update-raid-banners`, #400): one 30 day banner for a subjugation raid and a large plunder raid, no banner for a yearly raid or the difficulty, the great raid at game year 10 with a banner in years 7, 8 and 9, the raid menu lists the upcoming raids. See the root `CHANGELOG.md`.
 
 ### Added
+- Feature `vassals` (change `add-vassal-sack-wipe`, #341): sack of vassal houses (80 percent ruins), wipe of all villagers (reason `wiped`), refugee wave of 50 percent, and `vassals_restore` (100 silver, 5 families, goods for the rebuild). Feature `sack_and_terms`: no terms after a sack of the player region.
+
+### Changed
+- Refugee wave of a lost vassal is 50 percent of its families. A long siege of a vassal starts the sack of its houses.
+- Feature `raid_behavior` (change `add-corpse-pit-loot`, #386): the body share of Hussite plunder goes to the corpse pit. See the root `CHANGELOG.md`.
 - Feature `scenario_settings` (change `add-scenario-settings-menu`, #375): the scenario settings menu of a new game (difficulty, first Hussite raid after 1 to 3 years, raid size, great raids on or off), kept in the mod state. The raid menu lost its difficulty buttons. See the root `CHANGELOG.md`.
 - Features `raid_widget`, `tech_tree_widget`, `liege_influence` (change `add-mod-menu-access-rule`, #308): each menu opens with one click on its own button (Raid, Tech, Liege) in the game's bottom bar. All menus use the base menu `Scripts/core/menu.lua` (full-screen dimmed backdrop that blocks clicks to the game, Close button, one menu at a time). F8 and F9 stay as shortcuts. The spike "Mods" button and its commands `spike_entry_open`, `spike_entry_state` are removed.
 
 ### Removed
+- Fallback capital, loss mode `take_by_lord` and command `vassals_set_loss_region` (#341).
 - Feature `vassals` and `tribute`, tech tree (change `remove-vassal-loyalty`, #344): no vassal loyalty. A vassal survives or dies. No gift order, no submission, no loyalty change after a raid, no law effect `vassal_loyalty`. The tribute share is fixed at 0.20 (`tribute.share`). Old saves are read without error.
 
 ### Fixed

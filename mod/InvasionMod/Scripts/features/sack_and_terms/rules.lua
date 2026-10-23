@@ -47,8 +47,7 @@ function M.count_sack(window_start, window_count, day, cfg)
 end
 
 -- The region to sack: the region under attack when the player owns it, else the home region when the player owns it, else nil.
--- nil means "the first region of the player" (the old behaviour). Why not always the first: after a fallback capital move (M06.03)
--- the first region can be the capital and not the village that was attacked.
+-- nil means "the first region of the player" (the old behaviour).
 function M.sack_region(target, home, player_regions)
     local owned = {}
     for _, name in ipairs(player_regions) do owned[name] = true end

@@ -68,7 +68,7 @@ A slot folder:
 
 While installed, the user's own play also uses the harness settings. Run `uninstall.ps1` before you play.
 
-Python reads the result in `harness/runlib/gameslots.py`: `installed_slots()` returns slot 0 plus each slot in `slots.json` whose exe exists. `settings_installed()` is true when `settings.json` exists. Then the user-save guard of a run leaves out `rtsSettings.sav` (`install_managed_save_files`). Each slot has a screen tile (`TILES`) for its 1280x720 window.
+Python reads the result in `harness/runlib/gameslots.py`: `installed_slots()` returns slot 0 plus each slot in `slots.json` whose exe exists. `settings_installed()` is true when `settings.json` exists. The user-save guard of a run always leaves out `rtsSettings.sav` (`GAME_REWRITTEN_SAVE_FILES`), because the game rewrites it at any time. Each slot has a screen tile (`TILES`) for its 1280x720 window.
 
 ## Key environment variables
 

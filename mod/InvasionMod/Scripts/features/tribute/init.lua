@@ -81,7 +81,7 @@ local function run_tick()
     local day = current_day()
     local result = { day = day, payments = {} }
     for _, row in ipairs(vassals.slot_rows()) do
-        if row and row.lord ~= "none" then result.payments[#result.payments + 1] = pay_vassal(row) end
+        if row and row.lord ~= "none" and not row.rebuilding then result.payments[#result.payments + 1] = pay_vassal(row) end
     end
     local total = 0
     for _, payment in ipairs(result.payments) do total = total + payment.paid end
@@ -113,8 +113,20 @@ local function resolve_siege(summary)
     if result == nil then return end
     siege_resolved[tostring(summary.id)] = result
     core.log.info(TAG, string.format("TRIBUTE siege raid=%d region=%s slot=%d result=%s", summary.id, summary.target, slot, result))
-    if result == "taken" then vassals.lose_vassal(slot, "taken") end
+    if result == "taken" then
+        local started, why = vassals.start_sack(slot, "siege")
+        if started == nil then core.log.error(TAG, "TRIBUTE sack did not start: " .. tostring(why)) end
+    end
 end
+
+-- The raid that sacks a vassal region ended (all raiders dead or gone): a sack that is not in its wipe ends without a wipe (owner, 2026-10-22).
+local function on_raid_end(summary)
+    local slot = summary.target and vassal_slot(summary.target)
+    if slot == nil or not vassals.sack_slot_of_region(summary.target) then return end
+    local ended, why = vassals.end_sack(slot)
+    core.log.info(TAG, string.format("TRIBUTE raid %d ended: sack of %s ended without wipe=%s %s", summary.id, summary.target, tostring(ended ~= nil), why or ""))
+end
+raid_behavior.watch_end(on_raid_end)
 
 local function siege_poll()
     for _, summary in ipairs(raid_behavior.active_raids()) do resolve_siege(summary) end
@@ -162,4 +174,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature tribute loaded")
-return { state = state, run_tick = run_tick, set_share_factor = function(value) share_factor = value end }
+return { state = state, run_tick = run_tick, on_raid_end = on_raid_end, set_share_factor = function(value) share_factor = value end }

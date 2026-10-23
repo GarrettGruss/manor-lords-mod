@@ -20,12 +20,17 @@ class LinesTests(unittest.TestCase):
         game.exec(f'package.path = "{(find_pack_mod() / "Scripts").as_posix()}/?.lua;" .. package.path')
         return game.lua.eval(f"(function() local lines = require('features.raid_widget.lines'); {code} end)")()
 
-    def test_next_raid_and_size(self):
-        text = self.run_lua("local i = { raid_days_left = 12, raiders = 54, squads = 3 }; return lines.next_raid(i) .. '|' .. lines.size_estimate(i)")
-        self.assertEqual(text, "Next raid: in 12 days|Size estimate: about 54 raiders (3 squads)")
+    def test_upcoming_raids_list_type_target_size_and_days(self):
+        text = self.run_lua("local i = { upcoming = { plunder = { days_left = 12, target = 'you', raiders = 54, squads = 3, size = 'large' }, "
+                            "subjugation = { planned = true, days_left = 1, target = 'your vassal V', raiders = 36, squads = 2 } } }; "
+                            "return lines.next_raid(i) .. '|' .. lines.subjugation_raid(i)")
+        self.assertEqual(text, "Yearly raid: you, large about 54 raiders (3 squads), in 12 days|"
+                               "Subjugation raid: your vassal V, about 36 raiders (2 squads), in 1 day")
 
-    def test_unplanned_raid(self):
-        self.assertEqual(self.run_lua("return lines.next_raid({}) .. '|' .. lines.size_estimate({})"), "Next raid: not planned yet|Size estimate: not known yet")
+    def test_unplanned_raids_and_switched_off_types(self):
+        self.assertEqual(self.run_lua("return lines.next_raid({}) .. '|' .. lines.subjugation_raid({})"), "Yearly raid: not planned yet|")
+        self.assertEqual(self.run_lua("return lines.subjugation_raid({ upcoming = { subjugation = { planned = false } } })"), "Subjugation raid: not planned yet")
+        self.assertEqual(self.run_lua("return lines.great_raid({ great_raids = false })"), "")
 
     def test_great_raid_clock_and_phases(self):
         self.assertEqual(self.run_lua("return lines.great_raid({ great_phase = 0, great_days_left = 1 })"), "Great raid: in 1 day")
@@ -53,7 +58,7 @@ class WidgetFeatureTests(InvasionTestCase):
         self.assertTrue(answer["ok"], answer)
         wanted = answer["result"]["wanted_lines"]
         self.assertEqual(len(wanted), 5)
-        self.assertTrue(wanted[0].startswith("Next raid"), wanted)
+        self.assertTrue(wanted[0].startswith("Yearly raid"), wanted)
         self.assertTrue(wanted[3].startswith("Difficulty: 1 (not picked"), wanted)
 
     def test_a_pick_shows_in_the_difficulty_line(self):

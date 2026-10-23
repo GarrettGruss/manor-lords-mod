@@ -31,7 +31,7 @@ def run(ctx) -> dict:
     ctx.log.info(f"widget {state}")
     expect.equals("W1 the widget is in the viewport", state["in_viewport"], True)
     expect.equals("W2 the shown lines equal the wanted lines", state["lines"], state["wanted_lines"])
-    prefixes = ["Next raid", "Size estimate", "Great raid", "Difficulty", "Terms"]
+    prefixes = ["Yearly raid", "Subjugation raid", "Great raid", "Difficulty", "Terms"]
     expect.equals("W2 the five lines are in order", [line.split(":")[0] for line in state["lines"]], prefixes)
     expect.equals("W3 the widget has no difficulty buttons", "buttons" in state, False)
     ctx.screenshot("raid-widget")

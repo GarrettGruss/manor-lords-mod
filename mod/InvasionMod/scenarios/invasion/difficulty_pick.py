@@ -23,5 +23,8 @@ def run(ctx) -> dict:
     ctx.check("D3 planned squads are a multiple of the difficulty", plan["squads"] % pick == 0 and 1 <= plan["squads"] // pick <= 3, plan["squads"])
     bandits = ctx.mod.command("InvasionMod.bandits_state")
     ctx.check("D4 the bandits feature reads the picked difficulty", bandits["difficulty"] == pick, bandits.get("difficulty"))
+    log = ctx.run_dir / "mod.log"
+    text = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
+    ctx.check("D5 no difficulty banner was shown", "INVASION difficulty prompt" not in text, "prompt line found")
     ctx.metric("difficulty", pick)
     return ctx.result()

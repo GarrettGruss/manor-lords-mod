@@ -1,7 +1,7 @@
 # mod/tribute Specification
 
 ## Purpose
-Handed-over vassals send goods to the player each season. A raid on a vassal region changes the loyalty of that vassal, and a long siege can take the vassal.
+Handed-over vassals send goods to the player each season. A long siege of a vassal region starts the sack of its houses.
 
 ## Requirements
 
@@ -50,16 +50,17 @@ The mod SHALL pay iron and salt next to the main goods, with the same share, as 
 - Checked by `mod/InvasionMod/scenarios/finite_resources/vassal_supply.py`.
 
 ### Requirement: A long siege takes a vassal
-The mod SHALL take a vassal (loss reason `taken`) when a subjugation raid on its region has been active for `siege.days` game days (default 8) with at least `siege.min_living` of its units alive (default 0.5). A vassal SHALL be lost once for each raid. A younger raid, a beaten raid, a plunder raid and a raid on the home region SHALL take nothing.
+The mod SHALL start the sack of the houses of a vassal (see `mod/vassals`) when a subjugation raid on its region has been active for `siege.days` game days (default 8) with at least `siege.min_living` of its units alive (default 0.5). The vassal SHALL be lost when the sack is complete. A vassal SHALL be sacked once for each raid. A younger raid, a beaten raid, a plunder raid and a raid on the home region SHALL start no sack.
 
 #### Scenario: A subjugation raid holds for 8 days
 - **WHEN** a subjugation raid targets a vassal region and stays active for 8 game days
-- **THEN** the vassal is lost with the reason `taken`
+- **THEN** the sack of the vassal houses starts
+- **AND** when 80 percent of the buildings are ruins the vassal is lost with the reason `wiped`
 - Checked by `mod/InvasionMod/scenarios/invasion/vassal_targets.py`.
 
 #### Scenario: Siege rules in the fake game
 - **WHEN** the raid is younger than 8 days, beaten, a plunder raid, or targets home
-- **THEN** the vassal stays
+- **THEN** no sack starts and the vassal stays
 - Checked by `harness/tests/test_fakegame_tribute.py`.
 
 ### Requirement: The feature offers named commands

@@ -41,20 +41,6 @@ The menu SHALL show five text lines in this order: `Next raid`, `Size estimate`,
 - **THEN** the line reads `Terms: offered, 200 silver or vassalage (60 a year)`
 - Checked by `harness/tests/test_fakegame_raid_widget.py`.
 
-### Requirement: A click on a difficulty button picks the difficulty
-The menu SHALL show three difficulty buttons only while a pick is allowed: the difficulty is not picked and no raid has spawned. A click on button N SHALL pick difficulty N through the same function as `invasion_pick_difficulty`. A click SHALL be the `OnClicked` hook event of a click button of the shared module `HarnessClickHooks`; the hook only queues it, and the feature handles it on its next scheduler tick.
-
-#### Scenario: The player clicks a button
-- **WHEN** the player clicks a difficulty button with the mouse
-- **THEN** the difficulty is picked and equals the value of the button
-- **AND** the difficulty line shows `Difficulty: <value>`
-- Checked by `mod/InvasionMod/scenarios/invasion/raid_widget.py`.
-
-#### Scenario: A pick is made by command
-- **WHEN** the difficulty is picked with the command
-- **THEN** the wanted difficulty line is `Difficulty: 3` for a pick of 3
-- Checked by `harness/tests/test_fakegame_raid_widget.py`.
-
 ### Requirement: A missing pak gives a clear message
 If the widget class cannot be loaded, `raid_widget_open` SHALL return `ok = false` with a message that names the pak `raidmenu_P.pak`, and SHALL NOT raise an error.
 
@@ -70,3 +56,16 @@ The mod SHALL offer `InvasionMod.raid_widget_open`, `raid_widget_close` and `rai
 - **WHEN** a test calls `raid_widget_state` with the menu closed
 - **THEN** the wanted lines have five entries and the first starts with `Next raid`
 - Checked by `harness/tests/test_fakegame_raid_widget.py`.
+
+### Requirement: The raid menu lists the upcoming raids
+The raid menu SHALL list the upcoming raids all the time, not only on a banner. For the yearly (plunder) raid and the subjugation raid it SHALL show the type, the target (`you` or `your vassal <name>`), the size estimate and the days left, or `not planned yet`. The line of a raid type that is switched off (the subjugation raid off, or "Great raids" Off) SHALL be empty. The menu SHALL show no difficulty banner text.
+
+#### Scenario: A planned raid is listed
+- **WHEN** a subjugation raid is planned and the raid menu is open
+- **THEN** its line shows the target, the size and the days left, and it updates when the days pass
+- Checked by `harness/tests/test_fakegame_raid_widget.py` and `mod/InvasionMod/scenarios/invasion/raid_widget.py`.
+
+#### Scenario: A switched-off raid type is not listed
+- **WHEN** "Great raids" is Off
+- **THEN** the great raid line is empty
+- Checked by `harness/tests/test_fakegame_scenario_settings.py`.

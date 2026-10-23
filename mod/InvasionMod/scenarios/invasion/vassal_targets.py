@@ -1,4 +1,4 @@
-"""M02 iteration 07, V1 to V6: the subjugation raid targets a vassal region and takes the vassal after 8 active days.
+"""M02 iteration 07, V1 to V6: the subjugation raid targets a vassal region and sacks it after 8 active days (the vassal is wiped).
 
 The scenario makes one vassal (M07.02), lets the first raid end, then forces the subjugation raid and runs game days.
 The region owner is never written (it crashes the game). It saves nothing.
@@ -7,7 +7,7 @@ The region owner is never written (it crashes the game). It saves nothing.
 import re
 
 NAME = "invasion-vassal-targets"
-DESCRIPTION = "A subjugation raid picks the vassal region as target; after 8 active days the vassal is lost with reason taken."
+DESCRIPTION = "A subjugation raid picks the vassal region as target; after 8 active days its houses are sacked and the vassal is lost with reason wiped."
 LIMIT_S = 1800
 SPEED = 3
 LONG_REASON = "Claim, settle and handover (about 100 s), the first raid ends (up to 40 game days), then the subjugation raid runs up to 14 game days."
@@ -93,10 +93,12 @@ def run(ctx) -> dict:
     state = vassals(ctx)
     ctx.metric("siege_days", days)
     ctx.check("V3 the vassal is lost after the siege", state["lost"] == 1 and state["count"] == 0, state)
-    ctx.check("V3 the reason is taken", bool(state["lost_events"]) and state["lost_events"][0]["reason"] == "taken", state["lost_events"])
+    ctx.check("V3 the reason is wiped (the sack of houses completed)", bool(state["lost_events"]) and state["lost_events"][0]["reason"] == "wiped", state["lost_events"])
     ctx.check("V3 the siege lasted at least 8 days", days >= 7, days)
     owner_after = owner_of(ctx, region)
     ctx.check("V5 the region owner is unchanged (no owner write)", owner_after == owner_before, [owner_before, owner_after])
+    families = next(r for r in ctx.actions.regions_state()["regions"] if r["region"] == region)["families"]
+    ctx.check("V4 the wiped region has no villagers", (families or 0) == 0, families)
     ctx.time.run_game_days(2, speed=SPEED)
     ctx.check("V6 the game runs 2 days after the loss", vassals(ctx)["day"] is not None, vassals(ctx))
     return ctx.result()

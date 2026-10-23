@@ -68,7 +68,7 @@ The autosave timer of the game runs in real time, also while the game is paused 
 
 ## Guard 5: the slot ledger
 
-`harness/runlib/saveslots.py` installs a fixture save into the real folder under a free slot (see [dev loop and fixtures](../workflows/dev-loop-and-fixtures.md)). An install writes only new files (`open(..., "xb")`) and refuses when a target exists. Every file is written to a ledger (`SHARED_RUNS/.installed-slots.json`) with its SHA-256. An uninstall deletes only ledger files whose hash still matches. A changed or missing file is reported, never deleted. A lock (`saves_lock`) serializes all changes to the save folder and the ledger, because parallel runs share both. Entries of a run that is still alive are not removed by another run.
+`harness/runlib/saveslots.py` installs a fixture save into the real folder under a free slot (see [dev loop and fixtures](../workflows/dev-loop-and-fixtures.md)). An install writes only new files (`open(..., "xb")`) and refuses when a target exists. Every file is written to a ledger (`SHARED_RUNS/.installed-slots.json`) with its SHA-256. An uninstall deletes only ledger files whose hash still matches. A changed or missing file is reported, never deleted. A lock (`saves_lock`) serializes all changes to the save folder and the ledger, because parallel runs share both. A ledger entry records the `game_slot` and `game_root` of its run. A run removes an entry of its own game slot. It keeps an entry of another game slot while a game process runs under that `game_root` (a `--keep-open` run) or its owner is alive. An entry without a game slot is removed unless its owner is alive.
 
 ## Crash-prone calls
 

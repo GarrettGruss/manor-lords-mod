@@ -50,4 +50,40 @@ function M.has_war_tag(tags)
     return false
 end
 
+-- Ruins that complete a sack: a share of the buildings at the start of the sack, rounded up (decision 28).
+function M.ruins_needed(total, share)
+    return math.ceil(total * share - 1e-9)
+end
+
+function M.sack_complete(total, ruins, share)
+    return ruins >= M.ruins_needed(total, share)
+end
+
+-- Standing buildings still to collapse so that `needed` ruins exist.
+function M.houses_to_collapse(needed, ruins)
+    return math.max(0, needed - ruins)
+end
+
+-- A restored village counts as rebuilt when this many buildings stand again (a share of the buildings before the wipe, at least 1).
+function M.rebuilt_target(buildings_at_wipe, share)
+    return math.max(1, math.ceil(buildings_at_wipe * share - 1e-9))
+end
+
+-- The first used wiped record whose region is `region` (or the first used one when `region` is nil). Returns the index or nil.
+function M.find_wiped(regions, max_wiped, region)
+    for index = 1, max_wiped do
+        local name = regions[index]
+        if name ~= nil and name ~= M.NO_REGION and (region == nil or region == name) then return index end
+    end
+    return nil
+end
+
+-- Refusal text for a restore, or nil when it may go on. The gold is checked first; nothing is taken before all checks pass.
+function M.restore_refusal(wiped_index, free_slot, silver, cost)
+    if wiped_index == nil then return "no wiped region to restore" end
+    if free_slot == nil then return "all vassal slots are used" end
+    if type(silver) ~= "number" or silver < cost then return string.format("silver %s is below the restore cost %d", tostring(silver), cost) end
+    return nil
+end
+
 return M

@@ -304,7 +304,7 @@ class EffectTests(SettingsTestCase):
         self.assertEqual(self.ask("invasion_clock_state")["result"]["great_raid_day"], 0)
         self.assertEqual(self.ask("invasion_great_state")["result"]["phase"], 0)
         self.assertEqual([text for text in self.banners if text.startswith(("Great raid", "The great raid"))], [])
-        self.assertEqual(self.ask("raid_widget_state")["result"]["wanted_lines"][2], "Great raid: off")
+        self.assertEqual(self.ask("raid_widget_state")["result"]["wanted_lines"][2], "")
 
     def test_great_raids_on_runs_the_clock(self):
         self.ask("scenario_settings_set", great_raids=0)
@@ -342,11 +342,11 @@ class DifficultyTests(SettingsTestCase):
             self.set_day(self.calendar.daysTotal + 1)
         self.assertEqual([text for text in self.banners if text.startswith("Pick the difficulty")], [])
 
-    def test_the_pick_banner_still_shows_before_any_setting(self):
+    def test_no_pick_banner_before_any_setting(self):
         self.banners.clear()
         for _ in range(8):
             self.set_day(self.calendar.daysTotal + 1)
-        self.assertTrue(any(text.startswith("Pick the difficulty") for text in self.banners))
+        self.assertEqual([text for text in self.banners if text.startswith("Pick the difficulty")], [])
 
     def test_an_old_save_gets_no_pick_banner(self):
         self.start_game("saveGame_4", 61)
