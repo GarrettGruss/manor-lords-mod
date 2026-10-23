@@ -12,7 +12,7 @@ Production plans (2026-10-22): two cuts of this story, in [`design/trailer/invas
 - Tone: dark and dramatic. The lord hates the Hussites: they kill his people. The trailer does not draw them as evil; it shows what they do, and his hate follows from that.
 
 ## Voices
-- **Bohemian voice:** an old man. Speaks Czech, with English subtitles.
+- **Bohemian voice:** an old man. Speaks English, with a light Czech accent.
 - **Narrator (the player character):** a lieutenant lord in Franconia. English. Quiet, tired, honest. He does not want this war. He hates the Hussites for what they do to his people.
 
 ## Shot list
@@ -22,8 +22,8 @@ Production plans (2026-10-22): two cuts of this story, in [`design/trailer/invas
 | 0:00 to 0:03 | Black. A flint strikes. A torch catches. | Flint, fire. |
 | 0:03 to 0:06 | The torch falls. Flames run through the straw. | Fire grows. |
 | 0:06 to 0:12 | The camera tilts up the stake. Jan Hus is bound. He sings. The flames rise over him. The singing stops. | Hus sings in Latin: *"Christe, fili Dei vivi, miserere mei."* Then only fire. |
-| 0:12 to 0:18 | Black. White subtitles. | Bohemian voice: *"Kostnice, léta Páně čtrnáct set patnáct."* (Constance, in the year of our Lord fourteen fifteen.) *"Dali mu slovo. Pak ho upálili."* (They gave him their word. Then they burned him.) |
-| 0:18 to 0:22 | Panel: peasants, men and women, beat farm flails into weapons. Before it, one panel: a sealed letter with the king's seal over dark water. | Bohemian voice: *"Čechy odpověděly."* (Bohemia answered.) |
+| 0:12 to 0:18 | Black. | Bohemian voice: "Constance, in the year of our Lord fourteen fifteen. They gave him their word. Then they burned him." |
+| 0:18 to 0:22 | Panel: peasants, men and women, beat farm flails into weapons. Before it, one panel: a sealed letter with the king's seal over dark water. | Bohemian voice: "Bohemia answered." |
 | 0:22 to 0:28 | Panels: a captain raises the chalice banner over a ring of war wagons. A black army under a red sky, singing. | Narrator: "Four crusades marched against them. Four crusades broke." Under it, an army sings the hymn "Ktož jsú boží bojovníci" ("Ye Who Are Warriors of God"). |
 | 0:28 to 0:48 | The pages burn away into gameplay. Caption: "Franconia, 1429." Cuts of about 1.5 s: smoke on the horizon, a granary looted, a barn burning, villagers falling, refugees on the road, bandits in the trees. | Drums grow. Narrator: "I did not choose this war. Then they rode west, into Franconia. Towns that paid were spared. Towns that would not, burned. And the hungry want bread. We marched on Bohemia. Now Bohemia marches on us." |
 | 0:48 to 0:51 | Split frame: a gallows on one side, a full market on the other. | Narrator: "Rule by fear, or by faith." |
@@ -44,6 +44,4 @@ Production plans (2026-10-22): two cuts of this story, in [`design/trailer/invas
 ## Open points
 1. Is the narrator at Constance (personal guilt), or only a storyteller?
 2. Does the liege appear in one shot?
-3. Optional echo at 0:54: start the whisper in Czech (*"Obnov řád..."*) and end it in English. Try both versions.
-4. A native Czech speaker must check the Czech lines before recording.
-5. Cut ideas that may come back: the defenestration of Prague, the ashes in the Rhine, the torch in the narrator's hand at the end.
+3. Cut ideas that may come back: the defenestration of Prague, the ashes in the Rhine, the torch in the narrator's hand at the end.

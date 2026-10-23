@@ -20,18 +20,17 @@ The story, the voices and the lines are the same. The cut changes:
 2. **Anchor shot (new):** the narrator in a burned house, at 0:24, 0:39 and 0:44.5. It shows the cost of the war without a word about the scenario.
 3. **The montage (0:28–0:48 in `trailer.md`) is split.** The escalation lines run 0:27–0:39, then a still pause in the burned house.
 4. **A fight and a rout (new, 0:44.5–0:53):** the narrator stands, the militia holds, the raiders break and flee. The narrator is silent here.
-5. **The map (0:51–0:54 in `trailer.md`) moves to 0:53–0:55.5** and becomes the pull-back from the field. It now shows the great raid still coming after the win.
-6. Black, whisper and title stay at the end.
+4. **The map (0:51–0:54 in `trailer.md`) moves to 0:53–0:55.5** and becomes the pull-back from the field. It now shows the great raid still coming after the win.
+5. Black, whisper and title stay at the end.
 
 ## Open points
 
 From `trailer.md` (still open):
 1. Is the narrator at Constance (personal guilt), or only a storyteller?
 2. Does the liege appear in one shot?
-3. The whisper at 0:55.5: English only, or Czech first and English second? Who says it?
-4. A native Czech speaker must check the Czech lines before recording.
+3. The whisper at 0:55.5: who says it?
 
 New:
-5. **The anchor shot.** Can the game pose a seated lord in a burned house (S10, S17, S19)? If not, is a Manuscript panel acceptable?
-6. **A fight in a 60 s trailer.** `trailer.md` has no battle. This cut adds 8.5 s of turn, fight and rout, and takes the time from Constance and the montage. Keep it, shorten it, or cut it?
-7. **The end card.** Alfred spends about 20% of its length on branding. Ours has 3 s of title. Add an end card after 1:00 (mod name, link)?
+4. **The anchor shot.** Can the game pose a seated lord in a burned house (S10, S17, S19)? If not, is a Manuscript panel acceptable?
+5. **A fight in a 60 s trailer.** `trailer.md` has no battle. This cut adds 8.5 s of turn, fight and rout, and takes the time from Constance and the montage. Keep it, shorten it, or cut it?
+6. **The end card.** Alfred spends about 20% of its length on branding. Ours has 3 s of title. Add an end card after 1:00 (mod name, link)?

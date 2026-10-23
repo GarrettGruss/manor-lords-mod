@@ -10,7 +10,7 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 | S04 | 0:06.5 | 1.5 | 2 | M | M | Follow the torch down | The torch is thrown to the ground, into straw | Panel |
 | S05a | 0:08 | 1.5 | 2 | M | M | Static, light grows | Flames erupt; their light shows Hus at the stake | Panel |
 | S05b | 0:09.5 | 2.5 | 2 | M | M→W | Tilt up | He sings again, quieter; the fire breaks the song off at 0:10.5; fire alone to 0:12 | Panel |
-| S06 | 0:12 | 4.0 | 3 | — | — | — | Black, two subtitle lines | Text |
+| S06 | 0:12 | 4.0 | 3 | — | — | — | Black; the Bohemian voice | Audio |
 | S06b | 0:16 | 1.0 | 3 | M | C | Static | A sealed letter with the king's seal over dark water (the threat to drown the Hussites) | Panel |
 | S07 | 0:17 | 2.0 | 4 | M | M | Parallax | Peasants, men and women, beat flails into weapons | Panel |
 | S08 | 0:19 | 2.5 | 4 | M | M | Slow push-in | A captain raises the chalice banner over a ring of war wagons | Panel |
@@ -43,7 +43,7 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 - 33 shots in 60 s; 31 shots in the 55.5 s before the last black (average 1.85 s). Alfred: 50 shots in 75 s (average 1.5 s). This cut is slower in the history act and as fast in the fight.
 - Shortest: 1.0 s (S16a–c, S19–S25). Longest: 4.0 s (S06); 3.0 s of singing in black (S01).
 - Anchor shots in the burned house: 3 (S10, S17, S19), at 0:24, 0:39 and 0:44.5.
-- By source: 10 panel or text shots, 3 audio-only shots (black), 17 game shots (S27 is game and panel), 3 open.
+- By source: 10 panel shots, 3 audio-only shots (black), 17 game shots (S27 is game and panel), 3 open.
 
 ## Capture notes
 
