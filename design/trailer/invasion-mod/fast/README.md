@@ -17,7 +17,7 @@ Inspiration: the structure and pacing of the Thrones of Britannia "Alfred the Gr
 The story, the voices and the lines are the same. The cut changes:
 
 1. **Cold open (new, 0:00–0:02.5):** a short shot of the militia line meeting the raiders. Constance moves 2.5 s later and is 2.5 s shorter.
-2. **Anchor shot (new):** the narrator in a burned house, at 0:24, 0:39 and 0:44.5. "My lord gave me a burned village" now has a place you can see.
+2. **Anchor shot (new):** the narrator in a burned house, at 0:24, 0:39 and 0:44.5. It shows the cost of the war without a word about the scenario.
 3. **The montage (0:28–0:48 in `trailer.md`) is split.** The escalation lines run 0:27–0:39, then a still pause in the burned house.
 4. **A fight and a rout (new, 0:44.5–0:53):** the narrator stands, the militia holds, the raiders break and flee. The narrator is silent here.
 5. **The map (0:51–0:54 in `trailer.md`) moves to 0:53–0:55.5** and becomes the pull-back from the field. It now shows the great raid still coming after the win.

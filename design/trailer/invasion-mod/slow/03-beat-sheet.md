@@ -4,7 +4,7 @@
 
 | # | Beat | Time | Length | Shots | Average shot | Energy | Alfred |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Singing in the dark | 0:00–0:05 | 5 s | S01–S02 | — | 1 | — |
+| 1 | Singing in the dark | 0:00–0:05 | 5 s | S01–S02 | 2.5 s | 1 | — |
 | 2 | Constance: the fire | 0:05–0:12 | 7 s | S03–S05b | 1.75 s | 2 → 3 | — |
 | 3 | The given word | 0:12–0:17 | 5 s | S06 | 5 s | 0 | — |
 | 4 | Bohemia answers | 0:17–0:24 | 7 s | S07–S09 | 2.3 s | 3 | — |
@@ -45,10 +45,10 @@ energy
 
 ## Rules for this cut
 
-- **Singing in the dark.** The trailer opens in full black. Hus sings alone for 4 s, then stops. 1 s of silence. Only then the flint strikes: the torch is the first light. The flames erupt and show Hus at the stake. He sings again while the fire takes him, and the song stops at 0:12. The silence after the song leads into the black subtitle card.
+- **Singing in the dark** (sound rules from the Witcher 3 launch cinematic breakdown). The trailer opens in full black, on quiet room tone. Hus sings alone for 3 s, then stops. About 2 s of room tone, not silence. Then the flint strikes, with a hard sound hit on the first lit frame: the torch is the first light. The flames erupt and show Hus at the stake. He sings the line again, shorter and quieter; the fire breaks it off at 0:10.5. 1.5 s of fire alone leads into the black subtitle card and the Bohemian voice.
 - **The anchor returns twice** (S10, S17), about 15 s apart, like the Alfred table shot. He is in the same burned house both times; only his posture changes. The third time he stands (S19).
 - **Cuts get shorter as the war comes:** about 2 s at 0:27, 1.5 s at 0:33, 1 s at 0:36. The pause at S17 follows the fastest cuts.
 - **The narrator is silent from 0:44.5 to 0:55.5.** Like Alfred, the voice stops for the fight.
-- **The rout is the payoff of the raid.** The raiders who looted the granary at S13 now flee past their captain at S26. He looks around and sees his line break.
+- **The rout is the payoff of the raid.** The raiders who looted the granary at S14 now flee past their captain at S26. He looks around and sees his line break.
 - **The pull-back does not end on victory.** The map shows a larger dark army moving toward the town: the great raid (pillar 4).
 - **Silence before the title,** as `trailer.md` asks.

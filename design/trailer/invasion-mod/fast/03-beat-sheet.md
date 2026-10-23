@@ -49,6 +49,6 @@ energy
 - **The anchor returns twice** (S10, S17), about 15 s apart, like the Alfred table shot. He is in the same burned house both times; only his posture changes. The third time he stands (S19).
 - **Cuts get shorter as the war comes:** about 2 s at 0:27, 1.5 s at 0:33, 1 s at 0:36. The pause at S17 follows the fastest cuts.
 - **The narrator is silent from 0:44.5 to 0:55.5.** Like Alfred, the voice stops for the fight.
-- **The rout is the payoff of the raid.** The raiders who looted the granary at S13 now flee past their captain at S26. He looks around and sees his line break.
+- **The rout is the payoff of the raid.** The raiders who looted the granary at S14 now flee past their captain at S26. He looks around and sees his line break.
 - **The pull-back does not end on victory.** The map shows a larger dark army moving toward the town: the great raid (pillar 4).
 - **Silence before the title,** as `trailer.md` asks.

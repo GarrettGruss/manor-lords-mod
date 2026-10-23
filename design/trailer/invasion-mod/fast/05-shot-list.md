@@ -15,10 +15,10 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 | S09 | 0:21.5 | 2.5 | 4 | M | W | Parallax; page edge burns | A black army under a red sky | Panel |
 | S10 | 0:24 | 3.0 | 5 | E | W | Static after the page burn | The narrator alone at a table in a burned house; caption "Franconia, 1429." | Open |
 | S11 | 0:27 | 2.0 | 6 | A | W | Slow pan | Smoke on the horizon over a village | Game |
-| S12 | 0:29 | 2.0 | 6 | A | M | Track alongside | Refugees with carts on a road | Game |
-| S13 | 0:31 | 2.0 | 6 | A | M | Slow push-in | Villagers raise timber over a ruin | Game |
+| S12 | 0:29 | 2.0 | 6 | A | W | Slow pan | A column of raiders on a road toward a far village; smoke behind | Game |
+| S13 | 0:31 | 2.0 | 6 | A | M | Static, then cut | Coins handed over at a town gate; a village that did not pay, burning | Game (coins: Open) |
 | S14 | 0:33 | 1.5 | 6 | A | M | Low, static | Raiders carry sacks out of a granary | Game |
-| S15 | 0:34.5 | 1.5 | 6 | A | M | Static, through trees | Bandits wait by the road | Game |
+| S15 | 0:34.5 | 1.5 | 6 | A | M | Static, through trees | Refugees on the road; bandits wait in the trees | Game |
 | S16a | 0:36 | 1.0 | 6 | A | M | Hand-held | A barn burns | Game |
 | S16b | 0:37 | 1.0 | 6 | A | M | Hand-held | Villagers fall | Game |
 | S16c | 0:38 | 1.0 | 6 | A | C | Hand-held | A raider's torch in the dark | Game |

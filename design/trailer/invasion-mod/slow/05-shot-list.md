@@ -4,22 +4,22 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 
 | Shot | Start | Length (s) | Beat | Look | Size | Camera | Content | Source |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| S01 | 0:00 | 4.0 | 1 | — | — | — | Black; Hus sings alone | Audio |
-| S02 | 0:04 | 1.0 | 1 | — | — | — | Black; the singing stops; silence | Audio |
+| S01 | 0:00 | 3.0 | 1 | — | — | — | Black; room tone; Hus sings alone | Audio |
+| S02 | 0:03 | 2.0 | 1 | — | — | — | Black; the singing stops; room tone | Audio |
 | S03 | 0:05 | 1.5 | 2 | — | C | Static | A flint strikes; a torch catches; the first light | Panel |
 | S04 | 0:06.5 | 1.5 | 2 | M | M | Follow the torch down | The torch is thrown to the ground, into straw | Panel |
 | S05a | 0:08 | 1.5 | 2 | M | M | Static, light grows | Flames erupt; their light shows Hus at the stake | Panel |
-| S05b | 0:09.5 | 2.5 | 2 | M | M→W | Tilt up | He sings again; flames engulf him; the singing stops | Panel |
+| S05b | 0:09.5 | 2.5 | 2 | M | M→W | Tilt up | He sings again, quieter; the fire breaks the song off at 0:10.5; fire alone to 0:12 | Panel |
 | S06 | 0:12 | 5.0 | 3 | — | — | — | Black, two subtitle lines | Text |
 | S07 | 0:17 | 2.0 | 4 | M | M | Parallax | Peasants beat flails into weapons | Panel |
 | S08 | 0:19 | 2.5 | 4 | M | M | Slow push-in | A captain raises the chalice banner | Panel |
 | S09 | 0:21.5 | 2.5 | 4 | M | W | Parallax; page edge burns | A black army under a red sky | Panel |
 | S10 | 0:24 | 3.0 | 5 | E | W | Static after the page burn | The narrator alone at a table in a burned house; caption "Franconia, 1429." | Open |
 | S11 | 0:27 | 2.0 | 6 | A | W | Slow pan | Smoke on the horizon over a village | Game |
-| S12 | 0:29 | 2.0 | 6 | A | M | Track alongside | Refugees with carts on a road | Game |
-| S13 | 0:31 | 2.0 | 6 | A | M | Slow push-in | Villagers raise timber over a ruin | Game |
+| S12 | 0:29 | 2.0 | 6 | A | W | Slow pan | A column of raiders on a road toward a far village; smoke behind | Game |
+| S13 | 0:31 | 2.0 | 6 | A | M | Static, then cut | Coins handed over at a town gate; a village that did not pay, burning | Game (coins: Open) |
 | S14 | 0:33 | 1.5 | 6 | A | M | Low, static | Raiders carry sacks out of a granary | Game |
-| S15 | 0:34.5 | 1.5 | 6 | A | M | Static, through trees | Bandits wait by the road | Game |
+| S15 | 0:34.5 | 1.5 | 6 | A | M | Static, through trees | Refugees on the road; bandits wait in the trees | Game |
 | S16a | 0:36 | 1.0 | 6 | A | M | Hand-held | A barn burns | Game |
 | S16b | 0:37 | 1.0 | 6 | A | M | Hand-held | Villagers fall | Game |
 | S16c | 0:38 | 1.0 | 6 | A | C | Hand-held | A raider's torch in the dark | Game |
@@ -40,7 +40,7 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 ## Counts
 
 - 32 shots in 60 s; 30 shots in the 55.5 s before the last black (average 1.85 s). Alfred: 50 shots in 75 s (average 1.5 s). This cut is slower in the history act and as fast in the fight.
-- Shortest: 1.0 s (S02, S16a–c, S19–S25). Longest: 5.0 s (S06); 4.0 s of singing in black (S01).
+- Shortest: 1.0 s (S16a–c, S19–S25). Longest: 5.0 s (S06); 3.0 s of singing in black (S01).
 - Anchor shots in the burned house: 3 (S10, S17, S19), at 0:24, 0:39 and 0:44.5.
 - By source: 9 panel or text shots, 3 audio-only shots (black), 17 game shots (S27 is game and panel), 3 open.
 
@@ -49,6 +49,6 @@ Look: M = Manuscript, E = Ember, A = Ash, D = Day. Size: W = wide, M = medium, C
 - **The anchor (S10, S17, S19)** is the hardest shot. It needs a lord character seated inside a burned house, lit by a hearth. It is not known yet whether the game can pose a character like that. If it cannot, make the anchor a Manuscript panel instead; it then matches the history act, and the turn to Day at S20 is still the first clean light.
 - **The rout (S25–S26)** uses the game's own rout behavior. It must be caught, not scripted: run the raid test scenario several times and keep the best take.
 - **The dropped sack (S26)** shows the mod rule "loot goes back to the store". It is only a visual if the game shows the carried goods; if not, cut the sack and keep the rout.
-- **The Hus voice (S01, S05b)** is one recording of the same line, sung twice: once dry and close in the black, once with the fire under it.
+- **The Hus voice (S01, S05b)** is one recording of the same line, sung twice: once full, dry and close in the black; once shorter and quieter, broken off by the fire. The room tone (S01–S02) is a separate track: wind and a crowd, about 25 dB under the voice.
 - **The split frame (S18)** needs the same village in two states: a gallows in the square, and a full market. Two captures from one camera position.
 - No war wagons, no cavalry, no new 3D models (`invasion-mod.md`, Out of scope).

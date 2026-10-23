@@ -25,7 +25,7 @@ Production plans (2026-10-22): two cuts of this story, in [`design/trailer/invas
 | 0:12 to 0:18 | Black. White subtitles. | Bohemian voice: *"Kostnice, léta Páně čtrnáct set patnáct."* (Constance, in the year of our Lord fourteen fifteen.) *"Dali mu slovo. Pak ho upálili."* (They gave him their word. Then they burned him.) |
 | 0:18 to 0:22 | Panel: peasants beat farm flails into weapons. | Bohemian voice: *"Čechy odpověděly."* (Bohemia answered.) |
 | 0:22 to 0:28 | Panels: a captain raises the chalice banner. A black army under a red sky. | Narrator: "Five crusades marched against them. Five crusades broke." |
-| 0:28 to 0:48 | The pages burn away into gameplay. Caption: "Franconia, 1429." Cuts of about 1.5 s: smoke on the horizon, a granary looted, a barn burning, villagers falling, refugees on the road, bandits in the trees. | Drums grow. Narrator: "I did not choose this war. My lord gave me a burned village and one order: restore the peace. But the hungry want bread. And Bohemia wants a reckoning." |
+| 0:28 to 0:48 | The pages burn away into gameplay. Caption: "Franconia, 1429." Cuts of about 1.5 s: smoke on the horizon, a granary looted, a barn burning, villagers falling, refugees on the road, bandits in the trees. | Drums grow. Narrator: "I did not choose this war. Then they rode west, into the Empire. Towns that paid were spared. Towns that would not, burned. And the hungry want bread. And Bohemia wants a reckoning." |
 | 0:48 to 0:51 | Split frame: a gallows on one side, a full market on the other. | Narrator: "Rule by fear, or by faith." |
 | 0:51 to 0:54 | A dark army moves across a parchment map toward the town. | Drums peak. |
 | 0:54 to 0:57 | Black. | Silence. Then a whisper: "Restore order. Or burn with it." |
