@@ -33,7 +33,7 @@ flowchart LR
 ```
 
 ### 1. Reference images - `harness/tools/genimage.py`
-Gemini API (default model `gemini-3.1-flash-image`, `--list-models` shows more). Key from `GEMINI_API_KEY` (environment, else Windows user scope); never printed. At most 4 images per call. Each call goes to `runs/genimage/log.jsonl`. Ask for two views of the object, plain background, floating, no ground, no text. Look at every image. Files go to the git-ignored `runs/genmesh/<name>/`. Review a set with `harness/tools/contact_sheet.py`.
+Gemini API (default model `gemini-3.1-flash-image`, `--list-models` shows more). Key from `GEMINI_API_KEY` (environment, else Windows user scope); never printed. At most 4 images per call. `--ref FILE` (up to 3 times) sends local reference images (PNG, JPEG or WebP, at most 7 MB) before the prompt, so an image can follow a style anchor; Gemini models only. Each call goes to `runs/genimage/log.jsonl`, with the reference files and their SHA-256 hashes. Ask for two views of the object, plain background, floating, no ground, no text. Look at every image. Files go to the git-ignored `runs/genmesh/<name>/`. Review a set with `harness/tools/contact_sheet.py`.
 
 ### 2. Mesh - `harness/tools/genmesh.py`
 ```
@@ -86,4 +86,4 @@ Copy only the files of this model into the build folder (`modtools/work/<pak>/Ma
 ```
 uv run python -m unittest discover -s harness/tests -p "test_genmesh.py"
 ```
-It uses fake API calls (success, day cap, failed task, task id logged before polling, resume, image count). The UE scripts and `genimage.py` have no unit test. They are checked in the real editor and game.
+It uses fake API calls (success, day cap, failed task, task id logged before polling, resume, image count). `harness/tests/test_genimage.py` checks `genimage.py` the same way (request parts, reference checks, Imagen refusal, count range, log line). The UE scripts have no unit test. They are checked in the real editor and game.
