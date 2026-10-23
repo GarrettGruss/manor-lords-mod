@@ -1,8 +1,9 @@
-"""M02 iteration 01, A1 to A5: one scheduled raid with a daily banner, spawned on the planned day.
+"""M02 iteration 01 and update-raid-banners, A1 to A5: one scheduled yearly raid, spawned on the planned day.
 
 Options (run.py --env): INVASION_DIFFICULTY (1 to 3, default 1), INVASION_SIZE (small, medium or large, default medium).
-The size is forced so the unit count can be checked (A3). The scenario runs the real countdown (1 to 90 game days).
-It saves nothing.
+The size is forced so the unit count can be checked (A3). A small or medium yearly raid has no banner (A2).
+A large yearly raid (the player raid) has one banner, 30 game days before the raid, or on the plan day when the plan is shorter (A2).
+The scenario runs the real countdown (1 to 90 game days). It saves nothing.
 """
 
 import re
@@ -10,11 +11,13 @@ import re
 NAME = "invasion-first-raid"
 LIMIT_S = 900
 SPEED = 3
-LONG_REASON = "The countdown is real: 30 to 90 game days plus a margin. One game day takes about 5 wall seconds at speed 3 (about 450 s)."
+LONG_REASON = "The countdown is real: up to 90 game days plus a margin. One game day takes about 5 wall seconds at speed 3 (about 450 s)."
 CHUNK_DAYS = 5
 MAX_DAYS_PAST_PLAN = 3
 MULTIPLIERS = {"small": 1, "medium": 2, "large": 3}
-BANNER = re.compile(r"INVASION banner day=(\d+) days_left=(\d+) raiders=(\d+) shown=(\w+)")
+BANNER_DAYS = 30
+RAID_BANNER = re.compile(r"INVASION raid banner kind=(\w+) day=(\d+) days_left=(\d+) target=(.*?) raiders=(\d+) shown=(\w+)")
+OLD_BANNER = re.compile(r"INVASION banner day=")
 SPAWN = re.compile(r"INVASION spawn day=(\d+) planned_day=(\d+) squads=(\d+) raiders=(\d+)")
 
 
@@ -36,11 +39,8 @@ def run(ctx) -> dict:
     expected_squads = MULTIPLIERS[size] * difficulty
     ctx.log.info(f"INVASION plan {plan}")
 
-    plan_day = plan["day"]
     wait = plan["raid_day"] - plan["plan_day"]
-    warning = plan["raid_day"] - plan["warning_day"]
     ctx.check("A1 the planned day is 1 to 90 days after the plan (the season rule)", 1 <= wait <= 90, wait)
-    ctx.check("A1 the warning time is 14 to 56 days and at most the wait", 1 <= warning <= min(56, wait) and (warning >= 14 or warning == wait), warning)
     ctx.check("A3 planned squads = multiplier x difficulty", plan["squads"] == expected_squads, plan["squads"])
     ctx.check("A3 the composition has one template for each squad", len(plan["composition"].split("-")) == expected_squads, plan["composition"])
     planned_units = plan["raiders"]  # the sum of the squad sizes of the composition (M05 iteration 02)
@@ -51,26 +51,27 @@ def run(ctx) -> dict:
     ctx.check("the raid was spawned", plan["raids_spawned"] == 1, plan["raids_spawned"])
 
     lines = log_lines(ctx)
-    banners = [tuple(int(v) for v in m.groups()[:3]) for m in map(BANNER.search, lines) if m]
+    banners = [m.groups() for m in map(RAID_BANNER.search, lines) if m]
     spawns = [tuple(int(v) for v in m.groups()) for m in map(SPAWN.search, lines) if m]
     ctx.check("A4 one spawn in the log", len(spawns) == 1, spawns)
     spawn_day, _, _, spawn_raiders = spawns[0] if spawns else (0, 0, 0, 0)
     ctx.check("A3 the raid spawned on the planned day, plus or minus 1", abs(spawn_day - plan["raid_day"]) <= 1, [spawn_day, plan["raid_day"]])
-
-    shown = {day: (left, raiders) for day, left, raiders in banners}
-    for day in range(plan["warning_day"], plan["raid_day"]):
-        entry = shown.get(day)
-        ctx.check(f"A2 banner on day {day} with the right days left", entry is not None and entry[0] == plan["raid_day"] - day, entry)
-    ctx.check("A2 no banner before the warning", all(day >= plan["warning_day"] for day in shown), sorted(shown)[:1])
-    ctx.check("A2 no day has two banners", len(banners) == len(shown), len(banners))
+    ctx.check("A2 no daily countdown banner", not any(OLD_BANNER.search(line) for line in lines), "an INVASION banner line was found")
 
     # The raid is a lord army (not the bandit side), so the census of bandits does not see it. The raid tracker counts its units at the start.
     spawned_units = ctx.mod.command("InvasionMod.raid_behavior_state")["raids"][0]["initial"]
     ctx.check("A3 spawned unit count = planned units (a few raiders may die at once)", 0.9 * planned_units <= spawned_units <= planned_units,
               [spawned_units, planned_units])
-    # The forced size comes after the first check. A banner of the plan day can show the random size from before.
-    estimates = {raiders for day, _, raiders in banners if day > plan_day}
-    ctx.check("A5 every banner estimate equals the spawned size", estimates == {spawned_units}, [sorted(estimates), spawned_units])
+    if size == "large":
+        ctx.check("A2 a large raid has exactly one banner", len(banners) == 1, banners)
+        if banners:
+            kind, _, days_left, target, raiders, _ = banners[0]
+            ctx.check("A2 the banner is for the plunder raid and names the player", kind == "plunder" and target == "you", [kind, target])
+            ctx.check("A2 the banner shows 30 days before, or on the plan day for a shorter plan", abs(int(days_left) - min(BANNER_DAYS, wait)) <= 1,
+                      [days_left, wait])
+            ctx.check("A5 the banner estimate equals the spawned size", int(raiders) == spawned_units, [raiders, spawned_units])
+    else:
+        ctx.check("A2 a small or medium raid has no banner", banners == [], banners)
     ctx.check("A5 the log spawn size equals the unit count", spawn_raiders == spawned_units, spawn_raiders)
     ctx.metric("difficulty", difficulty)
     ctx.metric("spawned_units", spawned_units)

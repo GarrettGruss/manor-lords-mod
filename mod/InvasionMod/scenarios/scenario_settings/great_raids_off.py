@@ -34,5 +34,5 @@ def run(ctx) -> dict:
     ctx.check("G2 the phase stays none", great["phase"] == 0 and great["wave"] == 0, great)
     ctx.check("G3 no clock start or clock banner after the switch", clock_lines(ctx) == before, [before, clock_lines(ctx)])
     lines = ctx.mod.command(PREFIX + "raid_widget_state")["wanted_lines"]
-    ctx.check("G4 the raid widget says the great raid is off", lines[2] == "Great raid: off", lines)
+    ctx.check("G4 the raid widget has an empty great raid line", lines[2] == "", lines)
     return ctx.result()

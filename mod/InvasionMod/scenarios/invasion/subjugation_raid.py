@@ -13,6 +13,8 @@ LONG_REASON = "The first raid must end (up to 25 game days), then the subjugatio
 DAY_LIMIT = 40
 SUB_DAYS = 12
 SPAWN = re.compile(r"INVASION spawn day=(\d+) .*kind=(\w+) target=(\S+) stand_in=(\w+)")
+BANNER = re.compile(r"INVASION raid banner kind=subjugation day=(\d+) days_left=(\d+) target=(.*?) raiders=(\d+) shown=(\w+)")
+BANNER_DAYS = 30
 
 
 def log_lines(ctx) -> list[str]:
@@ -53,6 +55,14 @@ def run(ctx) -> dict:
         days += 1
     ctx.check("the first raid ended before the subjugation raid", raids(ctx)[0]["state"] != "active", raids(ctx)[0]["state"])
 
+    # update-raid-banners: one banner 30 game days before the raid. Move the raid day to 33 days ahead and run 4 days.
+    ctx.mod.command("InvasionMod.invasion_set_raid_days", days=BANNER_DAYS + 3, kind="subjugation")
+    for _ in range(4):
+        run_day(ctx)
+    banners = [m.groups() for m in map(BANNER.search, log_lines(ctx)) if m]
+    ctx.check("S5 one banner, 30 days before the raid, naming the target", len(banners) == 1 and int(banners[0][1]) == BANNER_DAYS, banners)
+    ctx.check("S5 the stand-in target is named as you", all(target == "you" for _, _, target, _, _ in banners), banners)
+    ctx.check("S5 the banner estimate equals the planned size", all(int(raiders) == state["raiders"] for _, _, _, raiders, _ in banners), [banners, state["raiders"]])
     ctx.mod.command("InvasionMod.invasion_subjugation_force_next")
     ctx.run_until(lambda: len(raids(ctx)) >= 2, 30, what="the subjugation raid record")
     for _ in range(SUB_DAYS):

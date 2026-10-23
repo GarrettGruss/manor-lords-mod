@@ -20,14 +20,15 @@ return {
             chance_by_season = { 25, 33, 50, 100 },          -- percent at the season change, first to fourth season of the year (owner decision 2026-10-21)
             season_days = 90,                                -- the raid comes 1 to this many game days after the successful roll
         },
-        warning_days_min = 14, warning_days_max = 56,        -- 2 to 8 game weeks
         size_multipliers = { small = 1, medium = 2, large = 3 }, -- squads = multiplier x difficulty
         squad_units = 18,                                    -- units in one squad of spawnRaiders
         base_timer_floor = 300,                              -- the mod lifts the base game raid timer when it falls under this
         base_timer_refill = 700,
-        great_raid = {                                       -- M02 iteration 02: the clock to the great raid (365 game days a year)
-            min_days = 3 * 365, max_days = 5 * 365,          -- M00 balance target: 3 to 5 game years
-            banner_every_days = 30,
+        raid_banner_days = 30,                               -- update-raid-banners: the one banner of a subjugation or player raid shows this many game days before the raid
+        great_raid = {                                       -- the great raid starts at the first day of a game year (4 season changes a year)
+            start_year = 10,                                 -- game year of the first wave (owner decision 2026-10-22)
+            warning_years = 3,                               -- one clock banner at the start of each of this many years before the start year
+            season_estimate_days = 92,                       -- estimate of the days left to the start year (a season has about 91 days; the real day replaces it)
             relief_full_squads = 15,                         -- relief army at difficulty 1 (decisions 17, 26)
             wave_squads = 15,                                -- a large army (decision 16)
             -- M02 iteration 06: the waves, the relief army and the final battle. All values are TBD for playtests.
@@ -37,7 +38,6 @@ return {
             final_tier_difficulty = 2,                       -- the tier mix of the final army (roles table of this difficulty)
             relief_templates = { "militiaFoot", "spearMilitia", "bowMilitia", "crossbowMilitia" }, -- the liege squads, cycled
             relief_offset = { x = 0, y = 2500 },             -- the relief army appears this far from the player pawn
-            prompt_every_days = 7,                           -- iteration 04: the pick prompt repeats until the player picks                          -- a banner for the clock when no minor raid banner shows
         },
         -- M02 iteration 03: the subjugation raid (major). The yearly roll plans it as the second raid. Values are TBD for playtests.
         subjugation = {
