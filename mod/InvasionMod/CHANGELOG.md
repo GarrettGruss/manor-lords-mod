@@ -3,6 +3,8 @@
 Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
+### Changed
+- Feature `invasion` and `raid_widget` (change `update-raid-banners`, #400): one 30 day banner for a subjugation raid and a large plunder raid, no banner for a yearly raid or the difficulty, the great raid at game year 10 with a banner in years 7, 8 and 9, the raid menu lists the upcoming raids. See the root `CHANGELOG.md`.
 
 ### Added
 - Feature `vassals` (change `add-vassal-sack-wipe`, #341): sack of vassal houses (80 percent ruins), wipe of all villagers (reason `wiped`), refugee wave of 50 percent, and `vassals_restore` (100 silver, 5 families, goods for the rebuild). Feature `sack_and_terms`: no terms after a sack of the player region.
