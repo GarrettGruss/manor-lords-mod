@@ -22,6 +22,6 @@ Change `add-invasion-trailer` (#408). Decisions for the `sn-motion-html` project
 
 | Gate | Status |
 | --- | --- |
-| Style approval (gate 1 of the skill) | Draft panels shown and accepted as guides (owner, 2026-10-23). Formal approval of `prompts/style-preamble.txt` and `docs/identity-blocks.md`: pending. |
-| Content and shot-plan approval (gate 2) | Pending: `docs/storyboard.md`. |
+| Style approval (gate 1 of the skill) | Approved by the owner (2026-10-23): `prompts/style-preamble.txt`, `prompts/style-motion.txt`, `docs/identity-blocks.md`, with the draft panels in `design/trailer/invasion-mod/storyboard/` as the reference set. |
+| Content and shot-plan approval (gate 2) | Approved by the owner (2026-10-23): `docs/storyboard.md`. Open: whether the video export hides the copy. |
 | Paid video | Not authorized. |

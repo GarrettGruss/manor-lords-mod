@@ -1,6 +1,6 @@
 # Storyboard (task 1.3)
 
-Status: draft for the owner's content and shot-plan approval (gate 2 of `sn-motion-html`). Slow cut. The table is generated from `docs/chapters.py`; edit the chapter list there and run `uv run python docs/chapters.py` from the project root.
+Status: approved by the owner (2026-10-23, gate 2 of `sn-motion-html`). Slow cut. The table is generated from `docs/chapters.py`; edit the chapter list there and run `uv run python docs/chapters.py` from the project root.
 
 Sources: the story is `design/mod/trailer.md` (owner). The shot plan is `design/trailer/invasion-mod/slow/` (05-shot-list.md for shot ids, 04-script.md for sound). Draft panels for the stills are in `design/trailer/invasion-mod/storyboard/`.
 
