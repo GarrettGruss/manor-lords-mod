@@ -171,6 +171,7 @@ end
 
 local function is_open() return menu.is_open(MENU_ID) end
 
+local refresh_arms_button -- defined below (forward declaration)
 -- The labels change only when the value changes (no SetText each tick).
 local function refresh()
     if not isValid(S.widget) then return false end
@@ -187,16 +188,13 @@ local function refresh()
 end
 
 -- The arms button label and look follow the rule (the reason is in the label). A change is written once, not each tick.
-local function refresh_arms_button()
+function refresh_arms_button()
     local slot = S.buttons.ArmsButton
     if slot == nil then return end
-    local status = shipment_status()
     local label = arms_label()
     if S.arms_label ~= label then
         S.arms_label = label
         clickhooks.set_text(slot.handle, label)
-        local widget = slot.handle.widget
-        if isValid(widget) then pcall(function() widget:SetIsEnabled(status.enabled) end) end
     end
 end
 
@@ -314,6 +312,11 @@ if has_commands then
     end, {})
     commands.register("InvasionMod.liege_menu_state", menu_state, {})
     commands.register("InvasionMod.liege_state", command_state, {})
+    -- Test helper: set the day of the last shipment (a cooldown of N days left needs no 180 day wait).
+    commands.register("InvasionMod.liege_test_set_arms_day", function(args)
+        state:set("arms_last_day", args.day)
+        return command_state()
+    end, { day = { type = "integer", required = true, min = -1, max = 1000000 } })
     commands.register("InvasionMod.liege_request_arms", function()
         local result, reason = request_arms_shipment()
         if not result then return nil, reason end

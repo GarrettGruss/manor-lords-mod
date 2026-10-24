@@ -9,12 +9,12 @@ The liege screen SHALL have a button "Request arms shipment". A click SHALL cost
 - **THEN** the manor store holds 30 more large shields and 30 more spears
 - **AND** the silver is 200 lower
 - **AND** the button is disabled and shows the days left
-- Checked by `mod/InvasionMod/scenarios/liege_influence/arms_shipment.py` (proposed) and `harness/tests/test_fakegame_liege_influence.py` (proposed).
+- Checked by `mod/InvasionMod/scenarios/liege_influence/arms_shipment.py` and `harness/tests/test_fakegame_liege_influence.py`.
 
 #### Scenario: A failed delivery costs nothing
 - **WHEN** the delivery to the manor store fails
 - **THEN** the silver and the cooldown day do not change and a log line says why
-- Checked by `harness/tests/test_fakegame_liege_influence.py` (proposed).
+- Checked by `harness/tests/test_fakegame_liege_influence.py`.
 
 ### Requirement: The arms shipment has a cooldown
 After a shipment the button SHALL be disabled for 180 game days (a config value). The button SHALL also be disabled, with the reason shown, when the silver is below 200. While it is disabled for the cooldown, it SHALL show the days left. The mod SHALL store the day of the last shipment in the mod state, so the cooldown is kept over a save and load.
@@ -23,15 +23,15 @@ After a shipment the button SHALL be disabled for 180 game days (a config value)
 - **WHEN** the player has less than 200 silver
 - **THEN** the button is disabled and the reason names the missing silver
 - **AND** a click delivers nothing and takes no silver
-- Checked by `harness/tests/test_fakegame_liege_influence.py` (proposed).
+- Checked by `harness/tests/test_fakegame_liege_influence.py`.
 
 #### Scenario: Cooldown
 - **WHEN** a shipment came 100 game days ago
 - **THEN** the button is disabled and shows 80 days left
 - **AND** after 180 game days it is enabled again if the silver is enough
-- Checked by `harness/tests/test_fakegame_liege_influence.py` (proposed).
+- Checked by `harness/tests/test_fakegame_liege_influence.py`.
 
 #### Scenario: The cooldown is saved
 - **WHEN** a shipment was bought, the game is saved and loads in a new run
 - **THEN** the cooldown day is the same and the button shows the days left
-- Not checked yet (proposed: fake game test of the mod state key; a real load needs the guarded `save_game`).
+- Checked by `harness/tests/test_fakegame_liege_influence.py` (the mod state entry `arms_last_day`). A real save and load is not run (needs the guarded `save_game`).
