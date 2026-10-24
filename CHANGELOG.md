@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Villager banditry (change `update-banditry-bandit-camp`, #453): when families leave for banditry, the mod spawns one bandit camp (`spawnBanditCamp`, 18 Brigands) instead of squads at their homes. The camp call makes the bandit pawn when the game has none, so banditry works with bandit camps 0. The rule "one squad per 5 families" is removed. See `mod/InvasionMod/CHANGELOG.md`.
+
 ### Added
 - Scenario template "The Hussites Are Coming" (change `add-hussite-scenario-template`, #451): the New Game screen of the game shows a 6th template with the game settings of the mod (End goal Growth, AI opponents 0, Off map adversary Absent, Raider frequency None, bandit camps 0, Starting season Spring, Royal tax None, Approval Low penalty, Weather Difficult and more). It is a row in `DT_GameSetupPresets` in `InvasionMod_P.pak` (build: `pakmod.py buildmod InvasionMod`) with its own title and texts and the thumbnail of the City Building template. The mod start menu still opens in a new game. The mod stores the mod state key `hussite_template` (1 when the new game used the template). `modpak.py` supports tables with row names, paths into structs and maps (`gameSetupData/*/goals`) and `"pak": false` for a feature. New test scenario `scenario-settings-hussite-template`.
 - Public Order tooltip rows (change `add-order-tooltip-rows`, #454): the game's Public Order tooltip lists the terms of the mod order (`Manor +10`, `Homeless families -N`, `Left for banditry +25` until the next tick) and shows the mod order in its header. The native rows are hidden. New feature `order_tooltip`, state command `order_tooltip_state` and test scenario `order-tooltip-rows` (needs the real mouse).

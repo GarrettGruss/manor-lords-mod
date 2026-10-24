@@ -1,7 +1,7 @@
 """Bandits: low order starts a 90 game day timer, the timer resets, and the villagers leave when it expires.
 
 The expiry is brought forward with `bandits_set_timer_days_left`, so the test needs a few game days, not 90.
-It works with and without the game's bandit pawn: the villagers must leave in both worlds, and the mod must log it.
+It works with and without the game's bandit pawn: the villagers leave and one bandit camp spawns in both worlds; the mod makes the pawn when missing.
 Run on the default fixture and on `--fixture playtest-noai`. It saves nothing.
 """
 
@@ -43,20 +43,24 @@ def run(ctx) -> dict:
     ctx.check("the families dropped by the number that left", after["families"] <= before["families"] - leave["removed"] + 5, [before["families"], after["families"], leave])
     ctx.check("the order rose by 25 (a tick may add 10)", 45 <= after["mod_order"] <= 55, after["mod_order"])
     ctx.check("the timer is off because the order is 25 or more", after["timer"]["active"] is False, after["timer"])
-    if after["bandit_pawn"]:
-        ctx.run_until(lambda: bandits(ctx) > units_before, 20, what="the bandit squads")
-        ctx.check("bandit units appeared", bandits(ctx) > units_before, [units_before, bandits(ctx)])
-        ctx.check("one brigand squad forms for each 5 families that left", leave["squads"] == leave["removed"] // 5, leave)
-        ctx.check("a squad has 18 units", leave["bandit_units"] == 18 * leave["squads"], leave)
-    else:
-        ctx.check("no bandit pawn: no bandit spawned and it is logged", leave["spawned"] is False and bandits(ctx) == units_before, leave)
-        log = ctx.run_dir / "mod.log"
-        text = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
-        ctx.check("the log says that no bandits spawned", "no bandits spawned" in text, "log line missing")
+    ctx.run_until(lambda: bandits(ctx) > units_before, 20, what="the bandit camp")
+    ctx.check("bandit units appeared", bandits(ctx) > units_before, [units_before, bandits(ctx)])
+    ctx.check("one bandit camp spawned, whatever the number of families", leave["camps"] == 1, leave)
+    ctx.check("the camp has 18 units", leave["bandit_units"] == 18, leave)
+    ctx.check("the bandit pawn exists afterward", after["bandit_pawn"] is True, after)
+    ctx.check("the pawn was made only when the world had none", leave["pawn_created"] is (not before["bandit_pawn"]), [before["bandit_pawn"], leave])
+    ctx.metric("camp_distance", leave.get("camp_distance"))
+    if leave.get("camp_at"):  # picture evidence: look at the new camp
+        try:
+            ctx.bridge.centre_camera_on(leave["camp_at"]["x"], leave["camp_at"]["y"])
+            ctx.bridge.centre_camera_on(leave["camp_at"]["x"], leave["camp_at"]["y"])
+        except RuntimeError as problem:
+            ctx.metric("camera_centred", 0)
+        ctx.screenshot("camp")
 
     ctx.time.run_game_days(10, speed=1)  # the game resets a higher speed while the new bandits are near
     final = state(ctx)
     ctx.check("the game runs 10 more game days", final["day"] >= after["day"] + 10, [after["day"], final["day"]])
     ctx.metric("families_left", leave["removed"])
-    ctx.metric("bandit_pawn", 1 if after["bandit_pawn"] else 0)
+    ctx.metric("pawn_created", 1 if leave["pawn_created"] else 0)
     return ctx.result()
