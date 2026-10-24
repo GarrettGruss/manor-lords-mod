@@ -235,26 +235,62 @@ class TimerTests(BanditsTestCase):
 
 
 class LeaveTests(BanditsTestCase):
-    def test_with_a_bandit_pawn_one_squad_forms_per_5_families(self):
-        self.game.obj("PawnCPP", isBandit=True)
+    def install_camp_engine(self):
+        """The fake engine plays spawnBanditCamp: it makes the bandit pawn when missing and adds 18 bandit units."""
+        def spawn(_self):
+            self.camp_calls += 1
+            if not self.bandit_pawns:
+                self.bandit_pawns.append(self.game.obj("PawnCPP", isBandit=True))
+            self.game.exec(f"BANDIT_UNITS = (BANDIT_UNITS or 0) + 18")
+        self.camp_calls = 0
+        self.bandit_pawns = []
+        self.relation_calls = []
+        self.game.method(self.engine, "spawnBanditCamp", spawn)
+        self.game.method(self.engine, "addPawnRelations", lambda _self, pawn: self.relation_calls.append(pawn))
+
+    def test_with_a_bandit_pawn_one_camp_spawns_for_18_families(self):
+        self.install_camp_engine()
+        self.bandit_pawns.append(self.game.obj("PawnCPP", isBandit=True))
         self.families = 40
         result = self.ask("bandits_leave_now")["result"]
-        self.assertEqual(self.rebel_calls(), 3)  # 18 families: 3 squads of 5, the other 3 leave without a squad
-        self.assertEqual(self.game.exec("return LAST_REBEL.families_per_squad"), 5)
-        self.assertEqual(self.game.exec("return LAST_REBEL.count"), 5)
-        self.assertEqual(self.game.exec("return REMOVED_TOTAL"), 3)
+        self.assertEqual(self.camp_calls, 1)  # one camp, not 3 squads
+        self.assertEqual(self.rebel_calls(), 0)
+        self.assertEqual(self.game.exec("return REMOVED_TOTAL"), 18)
+        self.assertEqual(self.relation_calls, [])  # the pawn is not new
         self.assertTrue(result["last_leave"]["spawned"])
         self.assertEqual(result["last_leave"]["removed"], 18)
+        self.assertEqual(result["last_leave"]["camps"], 1)
+        self.assertEqual(result["last_leave"]["bandit_units"], 18)
+        self.assertFalse(result["last_leave"]["pawn_created"])
 
-    def test_without_a_bandit_pawn_the_villagers_still_leave_and_it_is_logged(self):
+    def test_without_a_bandit_pawn_the_camp_call_makes_the_pawn(self):
+        self.install_camp_engine()
         self.families = 40
         result = self.ask("bandits_leave_now")["result"]
-        self.assertEqual(self.rebel_calls(), 0)
-        self.assertFalse(result["last_leave"]["spawned"])
+        self.assertEqual(self.camp_calls, 1)
+        self.assertEqual(len(self.bandit_pawns), 1)
+        self.assertEqual(len(self.relation_calls), 1)  # addPawnRelations for the new pawn
+        self.assertTrue(result["last_leave"]["pawn_created"])
+        self.assertTrue(result["last_leave"]["spawned"])
         self.assertEqual(result["last_leave"]["removed"], 18)
         self.assertEqual(result["mod_order"], 100)  # clamped
         self.assertEqual(self.game.exec("return REMOVED_TOTAL"), 18)
-        self.assertTrue(any("no bandits spawned" in line for line in self.game.log_lines()))
+
+    def test_the_last_family_stays_and_no_camp_spawns(self):
+        self.install_camp_engine()
+        self.families = 1
+        result = self.ask("bandits_leave_now")["result"]
+        self.assertEqual(self.camp_calls, 0)
+        self.assertEqual(result["last_leave"]["removed"], 0)
+
+    def test_a_failed_camp_call_is_logged_and_the_families_still_left(self):
+        self.install_camp_engine()
+        self.game.method(self.engine, "spawnBanditCamp", lambda _self: (_ for _ in ()).throw(RuntimeError("boom")))
+        self.families = 40
+        result = self.ask("bandits_leave_now")["result"]
+        self.assertFalse(result["last_leave"]["spawned"])
+        self.assertEqual(result["last_leave"]["removed"], 18)
+        self.assertTrue(any("camp failed" in line for line in self.game.log_lines()))
 
 
 class BuyBackTests(BanditsTestCase):

@@ -8,4 +8,4 @@
 
 ## 3. Close
 - [x] 3.1 CHANGELOG, wiki, evidence README.
-- [ ] 3.2 Archive: `openspec archive fix-order-tooltip-arrows --yes`.
+- [x] 3.2 Archive: `openspec archive fix-order-tooltip-arrows --yes`.

@@ -46,21 +46,25 @@ A border point SHALL be the point of the map border nearest to the target region
 ## MODIFIED Requirements
 
 ### Requirement: The raid spawns on the planned day
-The mod SHALL spawn the planned raid on the raid day, plus or minus 1 game day. The army SHALL arrive from the map border (requirement `Spawned armies arrive from the map border`), so the raid starts at arrival, on the raid day, plus or minus 1 game day. The raid size SHALL be the size multiplier of the size class times the difficulty, in squads. The size class SHALL be picked at random between small, medium and large with the multipliers 1, 2 and 3 (`size_multipliers`). The mod SHALL spawn the first minor raid only once.
+The mod SHALL spawn the planned yearly raid on the raid day, plus or minus 1 game day. The army SHALL arrive from the map border (requirement `Spawned armies arrive from the map border`), so the raid starts at arrival, on the raid day, plus or minus 1 game day. The raid size SHALL be the size multiplier of the size class times the Yearly player raid level, in squads. The size class SHALL be picked at random between small, medium and large with the multipliers 1, 2 and 3 (`size_multipliers`), unless the settings menu fixed it. At level 0 the mod SHALL plan and spawn no yearly raid.
 
 #### Scenario: A medium raid at difficulty 2
-- **WHEN** the raid day arrives for a medium raid at difficulty 2
+- **WHEN** the raid day arrives for a medium raid at the yearly level 2
 - **THEN** the raid has 4 squads (2 x 2)
-- **AND** the number of raiders is between 90 and 100 percent of the planned units (some raiders die at once)
-- Checked by `mod/InvasionMod/scenarios/invasion/first_raid.py`.
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`).
 
 #### Scenario: A forced raid
 - **WHEN** a test calls `invasion_force_next` after the plan exists
 - **THEN** the raid spawns at the next check, and a second call is refused because the raid was spawned
 - Checked by `harness/tests/test_fakegame_invasion.py`.
 
+#### Scenario: The yearly level is 0
+- **WHEN** the yearly level is 0 and a game year passes
+- **THEN** no yearly raid is planned or spawned and no banner shows
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`).
+
 ### Requirement: A role raid is the army of an AI lord
-With `roles.lord_army.enabled` (default on), the mod SHALL spawn a role raid as the army of the AI lord `Hussite Raiders`, at war with the player, with its battlefield at the player manor. The army SHALL arrive from the map border (requirement `Spawned armies arrive from the map border`). If that fails before any army exists, the mod SHALL spawn bandit squads instead. If it fails after some armies exist, the mod SHALL NOT spawn bandit squads on top, and SHALL try again on the next daily step.
+With `roles.lord_army.enabled` (default on), the mod SHALL spawn a role raid as the army of the AI lord `Hussite Raiders`, at war with the player, with its battlefield at the player manor. The army SHALL arrive from the map border (requirement `Spawned armies arrive from the map border`). The anchor SHALL be the player manor. If the player has no manor, the anchor SHALL be the average location of the buildings in the player home region. The anchor SHALL NOT depend on the camera. If that fails before any army exists, the mod SHALL spawn bandit squads instead. If it fails after some armies exist, the mod SHALL NOT spawn bandit squads on top, and SHALL try again on the next daily step.
 
 #### Scenario: A lord raid
 - **WHEN** a role raid spawns
@@ -71,6 +75,21 @@ With `roles.lord_army.enabled` (default on), the mod SHALL spawn a role raid as 
 - **WHEN** the lord raid fails after some armies were spawned
 - **THEN** no bandit squads are added
 - Checked by `harness/tests/test_fakegame_invasion.py`.
+
+#### Scenario: The player has a manor
+- **WHEN** a role raid spawns and the player has a manor
+- **THEN** the anchor is the location of the manor
+- Checked by `mod/InvasionMod/scenarios/invasion/raid_anchor_manor.py` and `harness/tests/test_fakegame_harnessbattlefield.py`.
+
+#### Scenario: The player has no manor
+- **WHEN** a role raid spawns and the player has no manor
+- **THEN** the anchor is the average location of the buildings in the home region
+- Checked by `harness/tests/test_fakegame_harnessbattlefield.py`.
+
+#### Scenario: The camera is over another region
+- **WHEN** a role raid spawns while the camera is over a region that is not the home region
+- **THEN** the anchor is the same as with the camera over the home region
+- Checked by `mod/InvasionMod/scenarios/invasion/raid_anchor_manor.py` and `harness/tests/test_fakegame_harnessbattlefield.py`.
 
 ### Requirement: The great raid starts with waves
 When the clock ends, the mod SHALL spawn one wave for each difficulty point. Each wave SHALL have `wave_squads` (default 15) squads. Waves SHALL be `wave_gap_days` (default 10) game days apart, counted from the arrival of the previous wave. Each wave SHALL arrive from the map border (requirement `Spawned armies arrive from the map border`). The mod SHALL NOT spawn a wave twice.

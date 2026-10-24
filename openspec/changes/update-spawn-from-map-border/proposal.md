@@ -9,7 +9,7 @@ Owner requirement (2026-10-23): when the mod spawns units, they arrive from the 
 - a lord raid: `lords.lord_spawn_army` with `dx = 0, dy = start_dy` (-50000) from the player pawn;
 - the great raid waves and the final army: the same call;
 - the relief army: `relief_offset` (0, 2500) from the manor centre;
-- bandit squads of a family conversion, and the test spawns of HarnessBattle and HarnessBandits.
+- the test spawns of HarnessBattle.
 
 An army that pops up at the village is not "dread from knowing" (pillar 4). A raid that walks in from the edge is announced by its approach, and the player sees it come. It also matches the game's own raiders.
 
@@ -18,9 +18,7 @@ Design reference: `design/mod/invasion-mod.md`, pillar 4 (dread from knowing: ra
 ## What changes
 
 - New requirement `Spawned armies arrive from the map border` in `mod/invasion`. It covers every hostile or arriving army of the mod: role raids (lord raid), great raid waves, the final army, the relief army, and raid stand-ins.
-- The same rule for bandit squads in `mod/bandits`.
 - `mod/invasion` requirements that say where or when an army spawns are modified: `The raid spawns on the planned day`, `A role raid is the army of an AI lord`, `The great raid starts with waves`, `A relief army and a final battle end the great raid`.
-- `mod/bandits` requirement `A conversion removes two families and spawns a bandit squad` is modified.
 - First choice of method: pass an arrival time greater than 0 days to `spawnArmy` and test whether the game brings the army in from off the map. Fallback: spawn at a border point and order a march.
 
 ## Which spawns
@@ -31,7 +29,6 @@ Design reference: `design/mod/invasion-mod.md`, pillar 4 (dread from knowing: ra
 | Great raid waves, final army | `invasion/init.lua` (`spawn_great_army`) -> lord raid | hostile |
 | Relief army | `invasion/relief.lua`, `relief_offset` in `config.lua` | player |
 | Raid stand-ins (no lord) | `HarnessBattle.spawn_at` | hostile |
-| Bandit squads | `bandits` feature, `HarnessBandits` `bandit_spawn_at` | hostile |
 
 Not in this list: squads that the player pays for (`manor_stronghold/squads.lua`, retinue). They are the player's own men and stay at the manor.
 
@@ -48,7 +45,7 @@ Not in this list: squads that the player pays for (`manor_stronghold/squads.lua`
 1. Which border? Default: the border point nearest to the target region. Alternative: a fixed edge for each raid type.
 2. How long may the march take? Default: the arrival time is in game days, between 1 and 3 (`arrival_days`, to tune in play tests).
 3. Do banners and timers count from spawn or from arrival? Default: the raid "starts" at arrival. The 30-day banner counts to arrival. The raid tracker and the leave rules (`raid_behavior`) start at arrival.
-4. Bandits from a family conversion are made inside the village. Default: they also arrive from the border, as the owner said "bandit bands". Alternative: keep them at the village.
+4. (Closed 2026-10-24.) Bandits of a family conversion are no longer part of this change: change `update-banditry-bandit-camp` replaced the village squads with one bandit camp per leave event (`spawnBanditCamp`), at a place the game picks. The owner accepts a random bandit location.
 5. Does the relief army come from the same border as the enemy, or from the liege side? Default: the border point nearest to the manor, away from the enemy border point when more than one is possible.
 
 Each question is answered by the spikes in `tasks.md`.
