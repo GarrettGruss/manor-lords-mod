@@ -29,6 +29,7 @@
 -- As a second guard, each poller writes a random token to <ModName>/owner.txt and stops when the file holds another token.
 
 local log = require("HarnessLog")
+local loop = require("HarnessLoop")
 local json = require("HarnessJson")
 
 local M = {}
@@ -315,7 +316,7 @@ local function startPoller(modName)
     local token = newToken()
     writeAtomic(ownerPath(modName), token)
     local nextNumber = firstUnhandledNumber(modName)
-    LoopAsync(POLL_MS, function()
+    loop.every(POLL_MS, function()
         local owner = readFile(ownerPath(modName))
         if owner ~= nil and owner ~= token then
             pollers[modName] = nil

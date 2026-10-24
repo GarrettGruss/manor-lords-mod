@@ -8,6 +8,7 @@
 --
 -- Rules: call only on the game thread. No save function. Every input is checked before it is used.
 
+local loop = require("HarnessLoop")
 local units = require("HarnessUnits")
 local battle = require("HarnessBattle")
 
@@ -108,7 +109,7 @@ end
 local function startTimer()
     if timer.started then return end
     timer.started = true
-    LoopAsync(M.TIMER_MS, function()
+    loop.every(M.TIMER_MS, function()
         if not hasOverrides() then return false end
         ExecuteInGameThread(function()
             local ok, err = pcall(applyAll)

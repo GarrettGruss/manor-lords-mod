@@ -189,3 +189,8 @@ Columns: date (local), run (worktree), address, group, first non-system frame, s
 - Since 2026-10-22: last tags `HarnessCommands` 6, `InvasionMod.bandits` 4, `InvasionMod.vassals` 2, `HarnessLogTest` 2, `HarnessActions` 1, `scenario_settings` 1, `invasion` 1.
 - Group A addresses are garbage (`0xffffffffffffffff`, `0x1ed87797829`, `0x25e55dc06e1`), and several crashes sit in table code (`getgeneric`, `luaH_next`). This points to a damaged Lua heap or table, not to one stale UObject.
 - Both banditcamp crashes (`20261024-024700-6523`, `20261024-021558-0d65`) and `levels-first-raid-6` follow a `BANDITS` log line within 1 to 5 s. The bandits feature writes the region `publicOrder` every tick and logs "game rewrote order".
+
+## Lead data points added during the spike
+
+- armsbutton runs `20261024-025200-6707` and `20261024-025737-e905` are in the table above (group C, rethrow site `+12787ef` and game code `+11d623a`). Both follow `liege_menu_state` and `liege_state` commands, which call `manor_state` (a building list read) at each refresh. The armsbutton agent reports 3 of 3 clean runs after caching that read.
+- uparrow runs `uparrow-spike` and `uparrow-spike2` (a bridge eval called `GetClass` on a widget from `GetChildAt` with no `IsValid` check). Their `crash/` folders are empty: the run did not copy a report. The most likely match is the real-folder crash `REAL:A0A88A6_0000` at 2026-10-23 22:14, 116 s after game start, address `0x10`, group B (`UObjectBase` wrapper). This match is by time only (the run folders were at 22:12 to 22:16).

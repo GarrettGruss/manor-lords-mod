@@ -167,6 +167,7 @@
 -- Rules: no eval, only the commands below, an id is handled once, every input is checked before it is used.
 
 local log = require("HarnessLog")
+local loop = require("HarnessLoop")
 local json = require("HarnessJson")
 local autosave = require("HarnessAutosave")
 local datatable = require("HarnessDataTable")
@@ -677,7 +678,7 @@ end
 skipHandled()
 log.try(TAG, garrison.install)
 
-LoopAsync(POLL_MS, function()
+loop.every(POLL_MS, function()
     local raw = readFile(requestPath(nextNumber))
     if not raw then return false end
     local number = nextNumber

@@ -63,3 +63,18 @@ R5 = stale UObject references across ticks. A grep for module-level or state-lev
 2. R2b: remove the table append from the key bind callback.
 3. R4a: cache the manor read (the armsbutton worktree already shows the effect).
 4. R4c: do not scan all units in the same tick as a spawn (tested in `ab-results.md`).
+
+## R6 child-widget lookups without IsValid (lead data point: uparrow spike)
+
+`GetChildAt(i)` can return an invalid wrapper. Calling a method on it (`GetClass`, `GetVisibility`) dereferences a null object (group B, small addresses such as `0x10`).
+
+| File:line | Check before use? |
+|---|---|
+| `mod/InvasionMod/Scripts/core/menu.lua:334` | yes (`isValid(child)`) |
+| `mod/InvasionMod/Scripts/features/order_tooltip/widget.lua:17` | **no**: `box:GetChildAt(i):SetVisibility(COLLAPSED)` |
+| `mod/InvasionMod/Scripts/features/order_tooltip/widget.lua:49` | **no**: `child:GetVisibility()` and `child.DescriptionText:GetText()` |
+| `mod/shared/HarnessClickHooks/HarnessClickHooks.lua:94` | partly: inside `pcall`, then `valid(text)`. A `pcall` does not catch an access violation. |
+| `mod/shared/HarnessGameSetup/HarnessGameSetup.lua:86` | through `step()` (pcall wrapper), no `IsValid` |
+| `mod/shared/HarnessUiProbe/HarnessUiProbe.lua:57`, `:120` | `pcall` only, probe module |
+
+A Lua `pcall` cannot stop a native access violation, so only an `IsValid` check before the call helps. The two `order_tooltip` sites are the clear fixes.
