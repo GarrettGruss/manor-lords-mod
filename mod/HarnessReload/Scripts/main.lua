@@ -12,6 +12,7 @@
 -- Rules: the request file is deleted when read, an id is handled once, the wait has a time limit.
 
 local log = require("HarnessLog")
+local loop = require("HarnessLoop")
 
 local VERSION = "2.0"
 local TAG = "HarnessReload"
@@ -110,7 +111,7 @@ local function findVersionLine(modName, offset)
 end
 
 local function waitForVersion(request, offset, startedAt)
-    LoopAsync(POLL_MS, function()
+    loop.every(POLL_MS, function()
         local version, line = findVersionLine(request.mod, offset)
         local elapsed = os.time() - startedAt
         if version then
@@ -161,7 +162,7 @@ local function handle(raw)
     end
 end
 
-LoopAsync(POLL_MS, function()
+loop.every(POLL_MS, function()
     if waiting then return false end
     local raw = readFile(REQUEST)
     if not raw then return false end

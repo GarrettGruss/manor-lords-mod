@@ -271,20 +271,23 @@ function RestartMod(name)
     if fg.on_restart then fg.on_restart(name) end
 end
 
-local function add_loop(ms, fn, once)
+local function add_loop(ms, fn, once, on_game_thread)
     local seconds = math.max(ms / 1000, 0.001)
-    local loop = { interval = seconds, due = fg.now + seconds, fn = fn, once = once, dead = false }
+    local loop = { interval = seconds, due = fg.now + seconds, fn = fn, once = once, dead = false, game = on_game_thread == true }
     fg.loops[#fg.loops + 1] = loop
     return loop
 end
 function LoopAsync(ms, fn) return add_loop(ms, fn, false) end
 function ExecuteWithDelay(ms, fn) return add_loop(ms, fn, true) end
 function ExecuteAsync(fn) return add_loop(0, fn, true) end
+-- The game-thread timer of UE4SS: the same loop, but the callback runs on the game thread. It returns a handle.
+function LoopInGameThreadWithDelay(ms, fn) return add_loop(ms, fn, false, true) end
+function CancelDelayedAction(handle) handle.dead = true end
 
 local function run_due_loops()
     for _, loop in ipairs({ table.unpack(fg.loops) }) do
         while not loop.dead and loop.due <= fg.now + 1e-9 do
-            local stop = in_thread(false, loop.fn)
+            local stop = in_thread(loop.game, loop.fn)
             if loop.once or stop == true then loop.dead = true end
             loop.due = loop.due + loop.interval
         end

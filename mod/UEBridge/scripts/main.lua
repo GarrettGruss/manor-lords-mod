@@ -40,6 +40,7 @@ local MOD_PATH = MOD_DIR .. "\\scripts\\main.lua"
 package.path = MOD_DIR .. "\\scripts\\?.lua;" .. package.path
 local json = require("json")
 local UEHelpers = require("UEHelpers")
+local loop = require("HarnessLoop") -- PATCH P10 (harness): game-thread timers instead of LoopAsync
 
 -- PATCH P9 (harness): one live HarnessLog line per request. The log is optional: no module, no lines.
 local okLog, HarnessLog = pcall(require, "HarnessLog")
@@ -1015,7 +1016,7 @@ function UEB.watch(ref, names, label, interval_ms, every)
         if not ok then pcall(trace, "watch " .. label .. ": " .. tostring(err)) end
     end
 
-    LoopAsync(interval, function()
+    loop.every(interval, function()
         if not rec.active or UEB_STREAMS[label] ~= rec then return true end
         -- One sample in flight at a time: a slow game thread must not queue overlapping closures.
         if rec.busy then return false end
@@ -1435,7 +1436,7 @@ if not SETTINGS.enabled then
     return
 end
 
-LoopAsync(POLL_MS, function()
+loop.every(POLL_MS, function()
     if myGeneration ~= UEB_GENERATION then return true end
     -- PATCH P4 (harness): recover if the game thread never answered
     if busy then

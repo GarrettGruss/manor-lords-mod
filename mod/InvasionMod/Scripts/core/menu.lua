@@ -314,8 +314,9 @@ function M.toggle(id)
     return M.open(id)
 end
 
--- For a key callback or a hook: it only sets a flag. The tick does the work on the game thread.
-function M.request_toggle(id) S.toggles[#S.toggles + 1] = id end
+-- For a key callback (input thread) or a hook. It hands the request to the game thread: the state table must not
+-- change on the input thread. The tick does the work.
+function M.request_toggle(id) ExecuteInGameThread(function() S.toggles[#S.toggles + 1] = id end) end
 
 ---------------------------------------------------------------------------------------------
 -- The bottom bar
@@ -598,8 +599,8 @@ if has_commands then
     end, { id = { type = "string", required = true } })
 end
 
--- A key callback only counts the press. The tick does the work on the game thread.
-RegisterKeyBind(Key.ESCAPE, function() S.esc_requests = S.esc_requests + 1 end)
+-- A key callback runs on the input thread: it hands the count to the game thread. The tick does the work.
+RegisterKeyBind(Key.ESCAPE, function() ExecuteInGameThread(function() S.esc_requests = S.esc_requests + 1 end) end)
 
 -- A named command for tests: the same path as the key press.
 if has_commands then
