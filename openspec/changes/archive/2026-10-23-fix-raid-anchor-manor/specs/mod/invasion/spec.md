@@ -17,14 +17,14 @@ With `roles.lord_army.enabled` (default on), the mod SHALL spawn a role raid as 
 #### Scenario: The player has a manor
 - **WHEN** a role raid spawns and the player has a manor
 - **THEN** the anchor is the location of the manor
-- Not checked yet.
+- Checked by `mod/InvasionMod/scenarios/invasion/raid_anchor_manor.py` and `harness/tests/test_fakegame_harnessbattlefield.py`.
 
 #### Scenario: The player has no manor
 - **WHEN** a role raid spawns and the player has no manor
 - **THEN** the anchor is the average location of the buildings in the home region
-- Not checked yet.
+- Checked by `harness/tests/test_fakegame_harnessbattlefield.py`.
 
 #### Scenario: The camera is over another region
 - **WHEN** a role raid spawns while the camera is over a region that is not the home region
 - **THEN** the anchor is the same as with the camera over the home region
-- Not checked yet.
+- Checked by `mod/InvasionMod/scenarios/invasion/raid_anchor_manor.py` and `harness/tests/test_fakegame_harnessbattlefield.py`.

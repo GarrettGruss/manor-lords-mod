@@ -58,6 +58,27 @@ local function regionAnchor(region)
     return nil
 end
 
+-- The raid anchor: the manor of the player home region, else the average location of its buildings, else regionAnchor.
+-- It never reads the camera (the current region of the pawn).
+local function homeAnchor()
+    local region, problem = core.player_region()
+    if not region then return nil, problem end
+    local manor = read(function() return region.manor end)
+    if isValid(manor) then
+        local at = location(manor)
+        if at then return at, "manor" end
+    end
+    local sx, sy, sz, n = 0, 0, 0, 0
+    for _, building in ipairs(core.listOf(read(function() return region:GetBuildings() end))) do
+        local at = isValid(building) and location(building) or nil
+        if at then sx, sy, sz, n = sx + at.X, sy + at.Y, sz + at.Z, n + 1 end
+    end
+    if n > 0 then return { X = sx / n, Y = sy / n, Z = sz / n }, "buildings_average" end
+    local at, kind = regionAnchor(region)
+    if at then return at, kind end
+    return nil, "no anchor position in the home region"
+end
+
 local function targetRegion(request)
     local engineObject = FindFirstOf("RTSMultiEngineCPP")
     if request.region then
@@ -78,6 +99,7 @@ local function resolveAnchor(request)
         if math.abs(request.x) > M.MAX_COORD or math.abs(request.y) > M.MAX_COORD then return nil, "x and y are out of range" end
         return { X = request.x, Y = request.y, Z = request.z or 0 }, "xy"
     end
+    if request.home then return homeAnchor() end
     local region, problem = targetRegion(request)
     if not region then return nil, problem end
     local at, kind = regionAnchor(region)
@@ -121,6 +143,7 @@ end
 
 -- Move all battlefield actors to the anchor, optionally start a challenge (lord, target) in the same step,
 -- and put the actors back after delay_ms. The anchor is x,y or the manor of the region (region name, or the target's region).
+-- With home = true the anchor is the player manor or, without one, the average of the home-region buildings.
 function M.battlefield_anchor(request)
     if pending then return { ok = false, error = "an anchor is still active; wait for the restore" } end
     local delay, badDelay = checkedDelay(request)
