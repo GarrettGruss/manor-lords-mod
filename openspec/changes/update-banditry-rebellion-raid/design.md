@@ -14,17 +14,40 @@ Order of steps 2 to 4: check first, remove after. If a step after the removal fa
 
 ## Weapon item ids
 
-The config holds the list `rebellion_weapon_ids`. Known ids: 133 (spear), 271 (large shield), 163 and 273 (other gear of `spearMilitia`, `docs/wiki/concepts/unit-templates.md`). Homes may hold other weapon and armor goods. Spike task 2.1 reads the inventory of homes in real fixtures and completes the list. Until then the default list is `{133, 271, 163, 273}`.
+The config holds the list `rebellion_weapon_ids`. Known ids from the extracted `DT_Items` table (it may be older than the game): 133 spears, 271 shields_large, 270 shields_small, 177 weapons_sidearms, 178 weapons_polearms, 205 warbows, 206 crossbows, 163 gambesons (armor), 164 mail_armor, 273 militia_helmets_resource, 288 and 289 mercenary helmets. `spearMilitia` gear is 163, 133, 271, 273 (gambeson, spear, large shield, helmet; `docs/wiki/concepts/unit-templates.md`). Only 133 and 271 were seen stocked in homes. Spike task 2.1 reads the inventory of homes in real fixtures and completes the list. Until then the default list does not change: `{133, 271, 163, 273}`.
 
 ## Loot override state
 
-- Where: a module in `features/raid_behavior` (generic: it knows units and goods, not rebellions). API: `set(unit_key, goods)`, `get(unit_key)`, `take(unit_key)` (get and clear), `clear_all()`.
-- Key: `unit:GetAddress()`. A body in `Region.corpses` is the same SMUnit object as the live unit (spike-corpse-pit-loot, `body-owner.md`), so the key stays valid when the unit dies. `ItemsLooted` stays on the body.
+- Where: a module in `features/raid_behavior` (generic: it knows units and goods, not rebellions). API: `set(unit, goods)`, `get(unit)`, `take(unit)` (get and clear), `clear_all()`, `relink()` (after a load).
+- Session key: `unit:GetAddress()`. A body in `Region.corpses` is the same SMUnit object as the live unit (spike-corpse-pit-loot, `body-owner.md`), so the key stays valid when the unit dies. `ItemsLooted` stays on the body. `GetAddress` changes after a load, so it is only the in-memory index.
 - Read: the corpse pit pay-out path. When the pit receives a body whose key has an override, the mod adds the override goods to the pit (`addToInventory`) and clears the entry (`take`). Without an override the existing rules apply (Hussite share, or nothing for native raids). The pit storage-limit rules stay.
 - Other body loot paths: the mod has none besides the pit pay-out. The game's own plunder (`ItemsLooted`, carried goods) is not changed, so live plunder loot still works.
-- Lifetime: an entry is cleared at pay-out. When the squad leaves the map the units vanish and their goods are lost. The mod clears entries of units that no longer exist at the next poll. The weapons are not returned to homes.
-- Save and load: the map is not saved in this change (addresses change at load). After a load the map is empty and the brigands give the normal loot. Open question for the owner.
 - A brigand may carry plundered goods (`ItemsLooted`) and have an override. Both stay: the game handles the plundered goods, the mod pays the override.
+
+### Save with ModState
+
+Owner decision 2026-10-24: the map is saved while the unit is alive.
+
+- ModState has no removal and needs registered keys (`mod/shared/ModState/ModState.lua`), so the map uses a fixed set of slots. The feature registers `loot_slot_1` to `loot_slot_<N>` (kind `string`, default empty, N from config `loot_override_slots`, proposed 40: 18 per rebellion squad, room for two rebellions). A slot value uses only the characters A-Z a-z 0-9 `_` `.` `-`. A slot holds one unit: `<unit key>_<good id>-<good id>...` (the stable unit key is below). One Tag name is far below the 1023 character limit. A cleared slot is set to the empty string (overwritten in place, no Tag removed). `set` takes the first empty slot. If all slots are full, `set` logs an error and drops the new entry (the unit then gives the config loot). The mod never writes the Tags array with the bridge.
+- `set`, `take` and every drop write the slot at once (`state:set` flushes).
+- The limits of spec 24 are respected: the slot Tags are created once, in place, and their count is fixed by N.
+
+### Stable unit key (engine fact, spike task 2.8)
+
+After a load the game builds new SMUnit objects. The entry needs a key that is the same before and after the save. Candidates, in order of preference. None is checked yet ("Not checked yet"):
+
+1. Squad id plus unit index in the squad. Needs: a squad has a stable id or index across a load and the unit order in the squad is kept.
+2. A unit name or id property that the game saves.
+3. Re-match by squad: save the squad key (for example squad owner pawn, spawn location or squad index) and the list of goods per squad. After a load, give the goods to the living units of that squad in squad order. Units that died meanwhile lose the goods at the end of the list. This is the fallback if 1 and 2 do not exist. It keeps the number of goods per squad, not who carries which one. That is acceptable: every brigand has one item and the pit gets goods per body.
+
+The spike reads these facts in a save and a load of a real run (saved by `save_game`) and writes `notes/`. The design then fixes the key. Until then the slot value format above is provisional.
+
+### Re-link on load
+
+- After a load the mod waits until the player pawn exists (as ModState does) and until the Outlaws squads exist again, then runs `relink()`: it reads all slots, finds the unit of each key (rule above), sets the session index `GetAddress` to the goods, and logs the count of linked and lost entries.
+- An entry whose unit is not found at the end of a poll window (proposed: 10 game seconds, config) is dropped and logged. Its slot is cleared.
+- Bodies (proposed, owner to confirm): when a unit with an entry dies, the entry stays in its slot and now belongs to the body. Bodies last about 30 game days (archive `2026-10-24-spike-rebel-without-corpses`). The slot stays until the pit pays out the body or the body expires. So a save with a body on the ground keeps the override. The body is found after a load by the same re-link (bodies are in `Region.corpses`). Not checked yet: that a body keeps the stable key after a load.
+- Unit leaves the map: the units vanish and the entry is dropped at the next poll (slot cleared). The weapons are not returned to homes.
 
 ## Militia
 
@@ -47,6 +70,8 @@ The spike `spike-rebel-without-corpses` (running) checks if killed families leav
 
 ## Decisions
 
+- The loot override map is saved with ModState (owner, 2026-10-24).
+- The militia fallback and the camp removal wait for the spike `spike-militia-corpses-and-camp-removal`.
 - Reuse `homeless_rebel` (proven). No new engine call for the spawn.
 - Keep `spawnBanditCamp` only to create the pawn.
 - Config keys stay in the `bandits` table of `Scripts/config.lua`.
