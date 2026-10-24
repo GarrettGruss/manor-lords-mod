@@ -108,10 +108,13 @@ class SettingsTestCase(InvasionTestCase):
     def menu_flag(self, name):
         return self.game.exec(f"return T.{name}", state=self.mod_name)
 
-    def start_game(self, save_file, day):
+    def start_game(self, save_file, day, setup=None):
         """Makes the game instance (the first read that can tell a new game from a loaded one) at the given day."""
         self.calendar.daysTotal = day
-        self.game.obj("MLGameInstance", savefileToLoad=self.game.text(save_file))
+        props = {"savefileToLoad": self.game.text(save_file)}
+        if setup is not None:
+            props["gameSetup"] = self.game.struct(currentGameSetup=self.game.struct(**setup))
+        self.instance = self.game.obj("MLGameInstance", **props)
         self.game.advance(2)
 
     def settings(self):
@@ -218,6 +221,67 @@ class NewGameTests(SettingsTestCase):
         state = self.settings()
         self.assertEqual((state["decided"], state["open"], state["settings_applied"]), (False, False, False))
         self.assertEqual(self.pauses, [])
+
+
+HUSSITE_SETUP = {"royalTaxMultiplier": 0, "weatherDamage": 2, "loyaltyLossRate": 0.5, "numGenericAILords": 0,
+                 "adversary_baron": False, "maxBanditCamps": 0, "initialBanditCamps": 0}
+GAME_SETUP = {**HUSSITE_SETUP, "royalTaxMultiplier": 1, "weatherDamage": 1, "loyaltyLossRate": 1.0}
+
+
+class HussiteTemplateMarkerTests(SettingsTestCase):
+    def marker(self):
+        return self.settings()["hussite_template"]
+
+    def test_a_new_game_from_the_hussite_template_sets_the_marker(self):
+        self.stand_in_menu()
+        self.start_game("", 1, HUSSITE_SETUP)
+        self.assertTrue(self.marker())
+
+    def test_a_new_game_from_a_game_template_does_not_set_it(self):
+        self.stand_in_menu()
+        self.start_game("", 1, GAME_SETUP)
+        self.assertFalse(self.marker())
+
+    def assert_no_marker_when(self, field, value):
+        self.stand_in_menu()
+        self.start_game("", 1, {**HUSSITE_SETUP, field: value})
+        self.assertFalse(self.marker())
+
+    def test_an_off_map_adversary_is_not_the_template(self):
+        self.assert_no_marker_when("adversary_baron", True)
+
+    def test_an_ai_lord_is_not_the_template(self):
+        self.assert_no_marker_when("numGenericAILords", 1)
+
+    def test_a_bandit_camp_is_not_the_template(self):
+        self.assert_no_marker_when("maxBanditCamps", 3)
+
+    def test_an_unreadable_setup_does_not_set_the_marker(self):
+        self.stand_in_menu()
+        self.start_game("", 1)
+        self.assertFalse(self.marker())
+
+    def test_a_loaded_game_does_not_set_the_marker(self):
+        self.start_game("saveGame_1", 40, HUSSITE_SETUP)
+        self.assertFalse(self.marker())
+
+
+class SecondGameInOneSessionTests(SettingsTestCase):
+    def test_a_new_game_after_a_load_in_one_session_opens_the_menu(self):
+        self.stand_in_menu()
+        self.start_game("saveGame_1", 40)
+        self.assertEqual(self.settings()["kind"], "old_save")
+        self.assertEqual(self.menu_flag("opens"), 0)
+        # The player goes to the main menu and starts a new game: a new pawn, a new ModState load, an empty save file name.
+        self.pawn.Tags = self.game.array([])
+        self.game.exec('require("ModState").open("invasion", "pawn"):load()', state=self.mod_name)
+        self.calendar.daysTotal = 1
+        self.instance.savefileToLoad = self.game.text("")
+        self.instance.gameSetup = self.game.struct(currentGameSetup=self.game.struct(**HUSSITE_SETUP))
+        self.game.advance(2)
+        state = self.settings()
+        self.assertEqual((state["kind"], state["open"], state["hussite_template"]), ("opened", True, True))
+        self.assertEqual(self.menu_flag("opens"), 1)
 
 
 class LoadedGameTests(SettingsTestCase):
