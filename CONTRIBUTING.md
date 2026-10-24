@@ -46,7 +46,7 @@ Every new harness feature, mod feature, mod iteration and spike is an OpenSpec c
 - **Archive:** `openspec/changes/archive/YYYY-MM-DD-<change-name>/`.
 - **Deferred:** `openspec/deferred/<change-name>/`. The owner postponed these changes. See [`openspec/deferred/README.md`](openspec/deferred/README.md).
 
-A change passes two review gates. Each gate is one pull request, and each needs the project owner's approval on GitHub.
+A change passes two gates. Each gate is one pull request. Since 2026-10-23 the ruleset on `main` requires no approval: a pull request merges by auto-merge. The owner reviews after the merge and asks for fixes in new pull requests.
 
 ### Gate 1: the spec pull request
 
@@ -121,7 +121,7 @@ Check these points, also when you merge in the GitHub web UI:
   - Reference the issue: `Refs #<n>` in commits and in the spec pull request, `Closes #<n>` in the implementation pull request.
   - Check the staged files (`git diff --cached --stat`) before each commit.
 - **Remote:** `origin` is `git@github.com:GarrettGruss/manor-lords-mod.git`. The default branch is `main`.
-- **Approval:** a ruleset on `main` requires 1 approval for every pull request. GitHub does not let an account approve its own pull request, so agents open pull requests as the bot account `garrettgruss-bot` and turn on auto-merge. The owner's approval merges the pull request.
+- **Merging:** since 2026-10-23 the ruleset on `main` requires no approval. Agents open pull requests as the bot account `garrettgruss-bot` and turn on auto-merge; GitHub merges the pull request as soon as it can. Nobody merges by hand or uses an admin bypass.
 - **Pull requests:** keep the body light. Use the template `.github/pull_request_template.md`: Summary, Spec changes, Test results (a table: check, run id or test file, verdict, key number or range), Evidence and Not verified. No raw logs. Write "None" for an empty section. Merge stacked pull requests in order, and retarget the next one to `main` before its merge.
 - **Forbidden:** never force push and never skip hooks. If a pushed commit is wrong, fix it with a new commit.
 - **Not in git:** `runs/`, `slots/`, `modtools/`, original game paks, extracts and the pak AES key (it lives only in the gitignored `modtools/work/aes_key.txt` and `.env`). Compiled mod paks (`*_P.pak`) may be committed, also when they hold modified game data. Before you commit a pak or a pak tool change, search the diff for the AES key.

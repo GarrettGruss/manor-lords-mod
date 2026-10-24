@@ -30,7 +30,7 @@ class LinesTests(unittest.TestCase):
     def test_unplanned_raids_and_switched_off_types(self):
         self.assertEqual(self.run_lua("return lines.next_raid({}) .. '|' .. lines.subjugation_raid({})"), "Yearly raid: not planned yet|")
         self.assertEqual(self.run_lua("return lines.subjugation_raid({ upcoming = { subjugation = { planned = false } } })"), "Subjugation raid: not planned yet")
-        self.assertEqual(self.run_lua("return lines.great_raid({ great_raids = false })"), "")
+        self.assertEqual(self.run_lua("return lines.great_raid({ levels = { yearly = 2, great = 0, vassal = 2 } })"), "")
 
     def test_great_raid_clock_and_phases(self):
         self.assertEqual(self.run_lua("return lines.great_raid({ great_phase = 0, great_days_left = 1 })"), "Great raid: in 1 day")
@@ -39,11 +39,15 @@ class LinesTests(unittest.TestCase):
         self.assertEqual(self.run_lua("return lines.great_raid({ great_phase = 3 })"), "Great raid: won")
 
     def test_difficulty_and_terms(self):
-        self.assertEqual(self.run_lua("return lines.difficulty({ difficulty = 2, difficulty_chosen = false })"), "Difficulty: 2 (not picked yet)")
+        levels = "levels = { yearly = 2, great = 0, vassal = 3 }"
+        self.assertEqual(self.run_lua(f"return lines.difficulty({{ {levels}, difficulty_chosen = false }})"), "Raid levels: yearly 2, great 0, vassal 3 (not picked yet)")
+        self.assertEqual(self.run_lua(f"return lines.difficulty({{ {levels}, difficulty_chosen = true }})"), "Raid levels: yearly 2, great 0, vassal 3")
+        self.assertEqual(self.run_lua("return lines.next_raid({ levels = { yearly = 0, great = 2, vassal = 2 }, raid_days_left = 5 })"), "")
+        self.assertEqual(self.run_lua("return lines.great_raid({ levels = { yearly = 2, great = 0, vassal = 2 } })"), "")
         self.assertEqual(self.run_lua("return lines.terms(nil)"), "Terms: not in this game")
         self.assertEqual(self.run_lua("return lines.terms({ state = 1, offer = { payment = 200, tribute = 60 } })"),
                          "Terms: offered, 200 silver or vassalage (60 a year)")
-        self.assertEqual(self.run_lua("return #lines.all({ difficulty = 1 }, nil)"), 5)
+        self.assertEqual(self.run_lua("return #lines.all({ levels = { yearly = 1, great = 1, vassal = 1 } }, nil)"), 5)
 
 
 class WidgetFeatureTests(InvasionTestCase):
@@ -59,12 +63,12 @@ class WidgetFeatureTests(InvasionTestCase):
         wanted = answer["result"]["wanted_lines"]
         self.assertEqual(len(wanted), 5)
         self.assertTrue(wanted[0].startswith("Yearly raid"), wanted)
-        self.assertTrue(wanted[3].startswith("Difficulty: 1 (not picked"), wanted)
+        self.assertTrue(wanted[3].startswith("Raid levels: yearly 2, great 2, vassal 2 (not picked"), wanted)
 
     def test_a_pick_shows_in_the_difficulty_line(self):
         self.ask("invasion_pick_difficulty", value=3)
         wanted = self.ask("raid_widget_state")["result"]["wanted_lines"]
-        self.assertEqual(wanted[3], "Difficulty: 3")
+        self.assertEqual(wanted[3], "Raid levels: yearly 3, great 3, vassal 3")
 
 
 if __name__ == "__main__":

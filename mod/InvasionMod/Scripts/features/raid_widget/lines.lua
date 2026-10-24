@@ -17,12 +17,13 @@ local function raid_text(raid)
 end
 
 function M.next_raid(info)
+    if info.levels and info.levels.yearly == 0 then return "" end -- level 0: no entry
     local plunder = info.upcoming and info.upcoming.plunder
     if plunder == nil then return "Yearly raid: not planned yet" end
     return "Yearly raid: " .. raid_text(plunder)
 end
 
--- Empty when the subjugation raid is switched off.
+-- Empty at vassal level 0.
 function M.subjugation_raid(info)
     local sub = info.upcoming and info.upcoming.subjugation
     if sub == nil then return "" end
@@ -30,9 +31,9 @@ function M.subjugation_raid(info)
     return "Subjugation raid: " .. raid_text(sub)
 end
 
--- Empty when great raids are off.
+-- Empty at great level 0.
 function M.great_raid(info)
-    if info.great_raids == false then return "" end
+    if info.levels and info.levels.great == 0 then return "" end
     local phase = info.great_phase or 0
     if phase == 1 then return string.format("Great raid: wave %d of %d", info.great_wave, info.great_waves) end
     if phase > 1 then return "Great raid: " .. PHASE_TEXT[phase] end
@@ -41,8 +42,10 @@ function M.great_raid(info)
 end
 
 function M.difficulty(info)
-    if info.difficulty_chosen then return string.format("Difficulty: %d", info.difficulty) end
-    return string.format("Difficulty: %d (not picked yet)", info.difficulty)
+    local levels = info.levels
+    local text = string.format("Raid levels: yearly %d, great %d, vassal %d", levels.yearly, levels.great, levels.vassal)
+    if info.difficulty_chosen then return text end
+    return text .. " (not picked yet)"
 end
 
 -- `terms` is the summary of the terms feature, or nil when that feature is off.
