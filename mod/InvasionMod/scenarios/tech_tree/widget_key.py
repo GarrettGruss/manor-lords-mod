@@ -1,13 +1,13 @@
 """M12 fix: the real F9 key opens and closes the tech tree menu and the game keeps answering.
 
-Needs the pak: `run.py --scenario tech-tree-widget-key --pak techmenu`. Real keyboard input only.
+Needs the pak: `run.py --scenario tech-tree-widget-key --pak InvasionMod`. Real keyboard input only.
 The menu is never opened by command, so the key path is the only way in.
 """
 
 import time
 
 NAME = "tech-tree-widget-key"
-DESCRIPTION = "Press the real F9 key to open and close the tech tree menu, then check the bridge answers. Needs --pak techmenu."
+DESCRIPTION = "Press the real F9 key to open and close the tech tree menu, then check the bridge answers. Needs --pak InvasionMod."
 LIMIT_S = 300
 EXCLUSIVE = True
 LONG_REASON = "Waits for the widget and real keyboard input."

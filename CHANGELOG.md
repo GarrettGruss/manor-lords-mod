@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- Invasion Mod pak (change `update-single-mod-pak`, #471): one pak `InvasionMod_P.pak` holds all widgets and data rows; `raidmenu_P.pak` and `techmenu_P.pak` are gone; use `--pak InvasionMod`. The release check no longer counts a `require` of a Lua file of the mod itself as a shared module.
 - Villager banditry (change `update-banditry-bandit-camp`, #453): when families leave for banditry, the mod spawns one bandit camp (`spawnBanditCamp`, 18 Brigands) instead of squads at their homes. The camp call makes the bandit pawn when the game has none, so banditry works with bandit camps 0. The rule "one squad per 5 families" is removed. See `mod/InvasionMod/CHANGELOG.md`.
 
 ### Added

@@ -160,7 +160,7 @@ local function command_state()
 end
 
 ---------------------------------------------------------------------------------------------
--- The tribute menu: a cooked Widget Blueprint in the pak raidmenu_P.pak (mod/InvasionMod/ue/make_liege_widget.py).
+-- The tribute menu: a cooked Widget Blueprint in the pak InvasionMod_P.pak (mod/InvasionMod/ue/make_liege_widget.py).
 -- It is built on the base menu (core/menu.lua): a Tribute button in the bottom bar, fullscreen, clicks blocked to the game.
 -- Lua puts a click button into each Border (shared module HarnessClickHooks). A click is a hook event, not a poll (spec 34).
 ---------------------------------------------------------------------------------------------

@@ -40,7 +40,7 @@ Harness code must not name the mod or its features. The harness finds the mod th
 | `data/<feature>/patches/*.json` | Row patches for game tables (today only the `example` feature). `data/tech_tree/tree.json` is a data file read by Lua. |
 | `scenarios/<feature>/*.py` | Real-game scenarios of the feature. |
 | `ue/` | Unreal project files and `make_raid_widget.py`, `make_tech_widget.py` that cook the widget Blueprints. |
-| `paks/` | Built paks: `raidmenu_P.pak` and `techmenu_P.pak`. |
+| `paks/` | The one built pak `InvasionMod_P.pak` (table rows and all widgets). |
 | `CHANGELOG.md` | One changelog. Each entry names its feature. |
 
 One feature name is used in `Scripts/features/`, `data/`, `scenarios/` and the living spec `openspec/specs/mod/<feature>/`.
@@ -100,7 +100,7 @@ Why one loop: every `LoopAsync` callback runs Lua on its own thread. Several loo
 - Row patches are JSON files `data/<feature>/patches/*.json` with `table`, `row`, `op` (`add` or `set`), `from` and `set`. Only the `example` feature has patches now (`buildingStats` rows 1000 to 1099 and `DT_Upgrades` rows 117 to 126 reserved in `mod.json`).
 - `pakmod.py buildmod InvasionMod` reads `mod.json` and all patches, checks format, conflicts and id ranges, extracts the tables from the current game paks, applies the patches in feature order, then file name, and builds one pak. See [Pak mods](../workflows/pak-mods.md) and the [build notes](../../../openspec/changes/archive/2026-10-15-legacy-22-mod-pack-layout/implementation-notes/buildmod.md).
 - Conflict check: the build fails when two features set the same field of a row or add the same row. The message names both files.
-- `mod.json` field `pak` is `{"name": "raidmenu", "source": "file"}`. The committed paks in `paks/` are built from cooked assets (the widget Blueprints of `raid_widget` and `tech_tree_widget`). The AES key is never committed.
+- `mod.json` field `pak` is `{"name": "InvasionMod", "source": "file"}`. The one committed pak `paks/InvasionMod_P.pak` holds the table rows and the cooked widget Blueprints, which are files in `data/<feature>/assets/` (`WBP_ClickButton` is owned by `invasion`, the others by `raid_widget`, `scenario_settings`, `liege_influence`, `tech_tree_widget`). The AES key is never committed.
 - A release copies `Scripts/` and the pak. `data/` and `scenarios/` do not go into a release. See [Mod releases](../workflows/releases.md).
 
 ## Scenarios and tests

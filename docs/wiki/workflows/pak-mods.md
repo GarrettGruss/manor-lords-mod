@@ -82,7 +82,7 @@ flowchart LR
 - After a run killed by a timeout, or when you are done with a `--keep-open` game, close the game, run `pakmod.py list`, and run `remove --all`.
 
 ## Invasion Mod pak (`buildmod`)
-`pakmod.py buildmod InvasionMod` builds `mod/InvasionMod/paks/InvasionMod_P.pak` from the sources of all features. Logic is in `harness/tools/modpak.py` (pure, tools passed in as functions so tests need no game). The mod folder layout is in the [Invasion Mod structure](../architecture/invasion-mod.md) page.
+`pakmod.py buildmod InvasionMod` builds `mod/InvasionMod/paks/InvasionMod_P.pak` from the sources of all features. Logic is in `harness/tools/modpak.py` (pure, tools passed in as functions so tests need no game). The mod folder layout is in the [Invasion Mod structure](../architecture/invasion-mod.md) page. Widgets are cooked files in `data/<feature>/assets/`, so the same pak holds them (change `update-single-mod-pak`, #471). Runs use `--pak InvasionMod`.
 
 Steps in `build_mod`:
 1. `read_manifest` reads `mod.json`. `load_patches` reads `data/<feature>/patches/*.json` in feature order of `mod.json`, then by file name.
@@ -105,7 +105,7 @@ Patch format (keys: `table`, `row`, `op`, `from`, `set`):
 - A list value replaces an array field by copying its first element as a template. An empty array fails.
 - Example patches: `mod/InvasionMod/data/example/patches/`. Notes: [buildmod.md](../../../openspec/changes/archive/2026-10-15-legacy-22-mod-pack-layout/implementation-notes/buildmod.md).
 
-Note that the `mod.json` of the Invasion Mod names pak `raidmenu` with `source: file`, and `mod/InvasionMod/paks/` holds committed paks. See [Mod releases](releases.md).
+Note that the `mod.json` of the Invasion Mod names the one pak `InvasionMod` with `source: file`. `mod/InvasionMod/paks/InvasionMod_P.pak` holds the table rows and all widgets (cooked widget files are assets under `data/<feature>/assets/`). See [Mod releases](releases.md).
 
 ## Rules
 - Original game paks are read only. Do not commit them, extracts, `.usmap` files or `modtools/work`.

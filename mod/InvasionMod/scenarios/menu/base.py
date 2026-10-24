@@ -4,7 +4,7 @@ The camera is moved over a building, so a click at the screen centre would selec
 1. A real click on the bar button opens the menu (the content stands over the centre).
 2. Menu open: a real click at the centre must not open the building panel. The picture shows it. The menu stays open.
 3. Menu closed: the same click opens the panel (the control).
-Needs the paks: `run.py --scenario menu-base --slot 0 --pak raidmenu --pak techmenu`. Real mouse input: no other game on the slot.
+Needs the paks: `run.py --scenario menu-base --slot 0 --pak InvasionMod`. Real mouse input: no other game on the slot.
 The menu pauses the game on open and puts back the speed on close (change update-mod-menu-close-and-pause): the scenario runs the game
 at speed 2 before the open. It saves nothing. Options: POINT=x,y (the world click point, default 0.5,0.5), MENU (raid, tech or tribute; default tribute).
 """
@@ -14,7 +14,7 @@ import time
 from runlib import osinput
 
 NAME = "menu-base"
-DESCRIPTION = "Base menu: bar button opens the menu, the backdrop covers the screen, a click does not reach a building. Needs --pak raidmenu --pak techmenu."
+DESCRIPTION = "Base menu: bar button opens the menu, the backdrop covers the screen, a click does not reach a building. Needs --pak InvasionMod."
 LIMIT_S = 400
 EXCLUSIVE = True
 LONG_REASON = "Hover sweep over the bottom bar and real mouse clicks."

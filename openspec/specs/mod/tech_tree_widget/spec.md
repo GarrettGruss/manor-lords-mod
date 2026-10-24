@@ -15,7 +15,7 @@ The mod SHALL open the tech tree menu with the key F9 (config `tech_tree_widget.
 - Checked by `mod/InvasionMod/scenarios/tech_tree/widget_key.py`.
 
 ### Requirement: The menu needs the pak
-The menu SHALL be a Widget Blueprint from the pak `techmenu_P.pak`. Without the pak the open call SHALL fail with a clear message and SHALL NOT crash the game.
+The menu SHALL be a Widget Blueprint from the pak `InvasionMod_P.pak`. Without the pak the open call SHALL fail with a clear message and SHALL NOT crash the game.
 
 #### Scenario: No pak loaded
 - **WHEN** the menu is opened and the pak is not loaded

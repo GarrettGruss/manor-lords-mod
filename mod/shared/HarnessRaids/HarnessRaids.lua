@@ -149,12 +149,12 @@ end
 
 -- request.trace = 1 logs every step before it runs. Use it to find a read that ends the game.
 function M.units_census(request)
-    if request.trace == 1 then
-        local log = require("HarnessLog")
+    local has_log, log = pcall(require, "HarnessLog") -- optional: a player release has no HarnessLog
+    if request.trace == 1 and has_log then
         units.trace = function(text) log.info("HarnessUnits", text) end
     end
     local ok, answer = pcall(units.census, { sample = request.sample or 0 })
-    if request.trace == 1 then units.trace("census returned") end
+    if units.trace then units.trace("census returned") end
     units.trace = nil
     if not ok then return { ok = false, error = tostring(answer) } end
     return { ok = true, census = answer }

@@ -41,7 +41,7 @@ def run(ctx) -> dict:
     plan = ctx.mod.command("InvasionMod.invasion_set_size", size=size)
     expected_squads = MULTIPLIERS[size] * difficulty
     ctx.log.info(f"INVASION plan {plan}")
-    if ctx.variant_option("INVASION_MENU_SHOT", "0") == "1":  # picture evidence of the raid menu with a planned yearly raid (needs --pak raidmenu)
+    if ctx.variant_option("INVASION_MENU_SHOT", "0") == "1":  # picture evidence of the raid menu with a planned yearly raid (needs --pak InvasionMod)
         ctx.mod.command("InvasionMod.raid_widget_open")
         time.sleep(1.0)
         osinput.Win32Input().bring_to_front(ctx.game_window()["hwnd"])

@@ -1,6 +1,6 @@
 """add-scenario-settings-menu: a new game opens the scenario settings menu. The game stays paused until "Begin the game".
 
-Needs a new game and the pak: `run.py --scenario scenario-settings-new-game-menu --new-game --pak raidmenu --slot N`. The menu opens
+Needs a new game and the pak: `run.py --scenario scenario-settings-new-game-menu --new-game --pak InvasionMod --slot N`. The menu opens
 by itself after the intro. The scenario chooses with the named command `scenario_settings_click` (the same code as a click button).
 It saves nothing and does not open the game's Game Setup screen. Pictures (`ctx.screenshot`): the menu at the defaults, after the
 changes and after Begin.
@@ -11,7 +11,7 @@ import time
 from runlib import osinput
 
 NAME = "scenario-settings-new-game-menu"
-DESCRIPTION = "New game: the menu opens and pauses the game, the choices apply on Begin, the game runs and the autosave stays far away. Needs --new-game --pak raidmenu."
+DESCRIPTION = "New game: the menu opens and pauses the game, the choices apply on Begin, the game runs and the autosave stays far away. Needs --new-game --pak InvasionMod."
 LIMIT_S = 300
 PREFIX = "InvasionMod."
 DEFAULTS = {"yearly": 2, "great": 2, "vassal": 2, "first_raid_years": 2, "size_class": 2}

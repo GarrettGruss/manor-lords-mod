@@ -1,13 +1,13 @@
 """add-liege-influence: the tribute menu opens, and a real mouse click on the tribute button sends one tribute.
 
-Needs the pak: `run.py --scenario liege-tribute-menu --new-game --pak raidmenu`. Real mouse input: no other game at the same time.
+Needs the pak: `run.py --scenario liege-tribute-menu --new-game --pak InvasionMod`. Real mouse input: no other game at the same time.
 It saves nothing. Do not run the UE editor while a screenshot is taken.
 """
 
 import time
 
 NAME = "liege-tribute-menu"
-DESCRIPTION = "Open the liege tribute menu, click the tribute button with the real mouse, check silver and influence, close it. Needs --pak raidmenu."
+DESCRIPTION = "Open the liege tribute menu, click the tribute button with the real mouse, check silver and influence, close it. Needs --pak InvasionMod."
 LIMIT_S = 400
 EXCLUSIVE = True
 LONG_REASON = "Hover scan and real mouse clicks."

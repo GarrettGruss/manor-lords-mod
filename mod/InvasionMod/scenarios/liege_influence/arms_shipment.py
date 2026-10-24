@@ -1,6 +1,6 @@
 """add-scenario-start-kit: the liege screen button "Request arms shipment" (a real mouse click).
 
-Needs the pak: `run.py --scenario liege-arms-shipment --pak raidmenu`. Real mouse input: no other game at the same time. It saves nothing.
+Needs the pak: `run.py --scenario liege-arms-shipment --pak InvasionMod`. Real mouse input: no other game at the same time. It saves nothing.
 Two starts (change fix-arms-button-manor, #455):
 - a fixture with a built manor (the default fixture): the button is enabled, a real click delivers, then the cooldown look shows;
 - `--new-game` (no manor): the button is disabled with "Build a manor first", a real click does nothing.
@@ -12,7 +12,7 @@ import time
 from runlib import osinput
 
 NAME = "liege-arms-shipment"
-DESCRIPTION = "Open the liege screen with a manor and silver, click Request arms shipment, check the goods in the manor, the silver and the cooldown. Needs --pak raidmenu."
+DESCRIPTION = "Open the liege screen with a manor and silver, click Request arms shipment, check the goods in the manor, the silver and the cooldown. Needs --pak InvasionMod."
 LIMIT_S = 500
 EXCLUSIVE = True
 LONG_REASON = "Places a Keep and clicks with the real mouse."

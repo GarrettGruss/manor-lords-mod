@@ -3,6 +3,8 @@
 Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
+### Changed
+- Change `update-single-mod-pak` (#471): the Invasion Mod ships one pak, `InvasionMod_P.pak`, with all widgets and the data rows (the 6th scenario template). `raidmenu_P.pak` and `techmenu_P.pak` are removed. Run test scenarios with `--pak InvasionMod`. The release zip builds now (the release check ignores `require` of the mod's own Lua files, `HarnessAutosave` is no longer in `shared`).
 ### Fixed
 - Feature `liege_influence` (change `fix-arms-button-manor`, #455): the arms button is disabled (grey look, clicks ignored) while no manor is built, with "Build a manor first" under it; the cooldown and silver cases use the same look. See the root `CHANGELOG.md`.
 

@@ -1,13 +1,13 @@
 """M12 iteration 05: the tech tree menu lists the laws and its law buttons work. No real mouse.
 
-Needs the pak: `run.py --scenario tech-tree-widget-laws --pak techmenu`. The scenario calls the same handler that a click calls
+Needs the pak: `run.py --scenario tech-tree-widget-laws --pak InvasionMod`. The scenario calls the same handler that a click calls
 (command tech_tree_widget_press). Real mouse clicks on the law buttons are open (issue #203). It saves nothing.
 """
 
 import time
 
 NAME = "tech-tree-widget-laws"
-DESCRIPTION = "Open the tech tree menu, check the law lines and labels, enact and repeal laws through the button handlers. Needs --pak techmenu."
+DESCRIPTION = "Open the tech tree menu, check the law lines and labels, enact and repeal laws through the button handlers. Needs --pak InvasionMod."
 LIMIT_S = 300
 PREFIX = "InvasionMod."
 SETTLE_S = 1.0

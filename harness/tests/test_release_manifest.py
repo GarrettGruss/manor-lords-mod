@@ -207,6 +207,10 @@ class ClosureTests(unittest.TestCase):
             shared_closure(root / "Demo", root / "shared", ["Nope"])
         self.assertIn("does not exist", str(caught.exception))
 
+    def test_a_module_that_is_a_file_of_the_mod_needs_no_shared_entry(self):
+        root = self.make_tree({"Demo/Scripts/main.lua": 'require("config")', "Demo/Scripts/config.lua": "return {}"})
+        self.assertEqual(shared_closure(root / "Demo", root / "shared", []), [])
+
     def test_a_mod_that_needs_only_manor_core_needs_no_harness_module(self):
         root = self.make_tree({
             "Demo/mod.json": json.dumps(changed(shared=["ManorCore"])),

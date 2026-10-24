@@ -4,7 +4,7 @@ Each registered menu has a button in the game's bottom bar. A real mouse click o
 A click on the Close button (bottom middle, the game's Close label style) closes it. A picture is taken of the bar and of each menu.
 Each menu pauses the game when it opens and puts back the speed when it closes (change update-mod-menu-close-and-pause). Esc closes
 an open menu, and the game's Esc menu does not open on that press; Esc with no mod menu opens the game's Esc menu.
-Needs the paks: `run.py --scenario menu-smoke --slot 0 --pak raidmenu --pak techmenu`. Real mouse input: no other game on the slot.
+Needs the paks: `run.py --scenario menu-smoke --slot 0 --pak InvasionMod`. Real mouse input: no other game on the slot.
 It saves nothing. Do not run the UE editor while a screenshot is taken.
 """
 
@@ -13,7 +13,7 @@ import time
 from runlib import osinput
 
 NAME = "menu-smoke"
-DESCRIPTION = "Every mod menu opens from its bottom bar button with one real click, shows its content, and closes. Needs --pak raidmenu --pak techmenu."
+DESCRIPTION = "Every mod menu opens from its bottom bar button with one real click, shows its content, and closes. Needs --pak InvasionMod."
 LIMIT_S = 400
 EXCLUSIVE = True
 LONG_REASON = "Hover sweep over the bottom bar and real mouse clicks."

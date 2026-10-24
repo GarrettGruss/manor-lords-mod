@@ -3,7 +3,7 @@
 -- The settings are stored in the mod state of the invasion feature (so they are saved with the game by the player's own save).
 -- The mod never calls a save function. It does not use or change the game's own new game menus.
 -- The menu is built on the base menu (core/menu.lua) without a bottom bar button. Its layout is a cooked Widget Blueprint in the
--- pak raidmenu_P.pak (ue/make_scenario_settings_widget.py). The click buttons are WBP_ClickButton (HarnessClickHooks).
+-- pak InvasionMod_P.pak (ue/make_scenario_settings_widget.py). The click buttons are WBP_ClickButton (HarnessClickHooks).
 -- Rules: game objects are touched on the game thread only (the scheduler runs jobs there). A click is a hook event.
 local core = require("ManorCore")
 local menu = require("core.menu")

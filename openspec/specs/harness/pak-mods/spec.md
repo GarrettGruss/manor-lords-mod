@@ -200,3 +200,11 @@ A pak SHALL NOT add a `DT_Upgrades` row with a new id, and SHALL NOT set `upgrad
 - **WHEN** a pak adds a `DT_Upgrades` row with a new id
 - **THEN** the game copies the cost into `needs` but never carries out the upgrade
 - Checked by spike runs `rowid-control-b` and `rowid-control-e` (notes/id-persistence.md).
+
+### Requirement: Cooked widgets are mod pak assets
+A cooked Widget Blueprint (`.uasset` and `.uexp`) SHALL be a file under `data/<feature>/assets/`, so `buildmod` puts it in the same pak as the table rows. One widget file SHALL have one owner feature.
+
+#### Scenario: A widget in the mod pak
+- **WHEN** `buildmod` runs for a mod with a widget asset in a feature
+- **THEN** the pak holds the widget and the table rows
+- Checked by `harness/tests/test_modpak.py` and `harness/tests/test_invasionmod_pak.py`.
