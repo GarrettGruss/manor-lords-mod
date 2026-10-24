@@ -1247,21 +1247,26 @@ class Actions:
         return self._command("lord_challenge", lord=lord, target=target)
 
     def battlefield_anchor(self, lord: int | None = None, target: int = 0, x: float | None = None, y: float | None = None,
-                           region: str | None = None, delay_ms: int = 500) -> dict:
+                           region: str | None = None, delay_ms: int = 500, home: bool = False) -> dict:
         """Move every battlefield_BP_C actor to an anchor, then back after `delay_ms` (spec 10, issue #99).
 
         The anchor is (x, y), or the manor of the region named `region` (an object name), or the manor of the target's current region.
         When `lord` is set, the challenge starts in the same step, so the game picks an actor that stands at the anchor.
         """
         fields = {"target": target, "delay_ms": delay_ms}
+        if home:
+            fields["home"] = True
         for name, value in (("lord", lord), ("x", x), ("y", y), ("region", region)):
             if value is not None:
                 fields[name] = value
         return self._command("battlefield_anchor", **fields)
 
-    def battlefield_state(self, target: int = 0) -> dict:
+    def battlefield_state(self, target: int = 0, home: bool = False) -> dict:
         """Where the battlefield actors are now, whether an anchor is active, the result of the last restore, and the anchor
-        (`would_anchor`) that battlefield_anchor would use for the target's region. Read only."""
+        (`would_anchor`) that battlefield_anchor would use for the target's region, or with `home` for the player manor
+        (else the average of the home-region buildings; spec mod/invasion). Read only."""
+        if home:
+            return self._command("battlefield_state", target=target, home=True)
         return self._command("battlefield_state", target=target)
 
     def lord_claim(self, lord: int, target: int = 0) -> dict:

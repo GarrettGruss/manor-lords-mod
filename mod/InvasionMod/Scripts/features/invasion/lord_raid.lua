@@ -67,7 +67,7 @@ function M.start_checked(templates, settings)
         squads[#squads + 1] = { id = answer.squads and answer.squads[1] or false, template = template }
     end
     local home = core.player_region()
-    local anchored = battlefield.battlefield_anchor({ lord = lord_number })
+    local anchored = battlefield.battlefield_anchor({ lord = lord_number, home = true })
     ok, problem = step("battlefield_anchor", anchored)
     if not ok then return false, problem, #squads > 0 end
     ok, problem = step("challenge", anchored.challenge)

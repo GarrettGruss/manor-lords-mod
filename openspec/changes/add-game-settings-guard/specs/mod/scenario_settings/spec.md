@@ -2,11 +2,11 @@
 <!-- Issue: #438 -->
 
 ### Requirement: The guard values are mod settings saved in ModState
-At new game start, the mod SHALL read the game setup once and SHALL save three mod settings in ModState: `vassals` (true/false: false when AI opponents (`numGenericAILords`) is 0, else true), `villager_banditry` (false when bandit camps are off: initial 0 and limit 0) and `hussites_enabled` (true when the off-map adversary is present). The settings SHALL stay over save and load, and the menu SHALL read them.
+At new game start, the mod SHALL read the game setup once and SHALL save two mod settings in ModState: `vassals` (true/false: false when AI opponents (`numGenericAILords`) is 0, else true) and `hussites_enabled` (true when the off-map adversary is present). `villager_banditry` is not a guard setting: the mod makes the bandit pawn itself (change `update-banditry-bandit-camp`). The settings SHALL stay over save and load, and the menu SHALL read them.
 
 #### Scenario: A new game stores the settings from the game setup
 - **WHEN** a new game starts with AI opponents 2, bandit camps 0 and limit 0, and the off-map adversary present
-- **THEN** ModState holds `vassals` true, `villager_banditry` false and `hussites_enabled` true
+- **THEN** ModState holds `vassals` true and `hussites_enabled` true
 - Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed).
 
 #### Scenario: AI opponents 0 disables vassals
@@ -15,27 +15,18 @@ At new game start, the mod SHALL read the game setup once and SHALL save three m
 - Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed).
 
 #### Scenario: The settings stay over a load
-- **WHEN** a save with the three settings is loaded
+- **WHEN** a save with the two settings is loaded
 - **THEN** the mod uses the saved values and does not read the game setup again
 - Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed) and a real load run (proposed).
 
 ### Requirement: An old save without the settings uses the live check
-When a loaded save has no guard settings, the mod SHALL use a live check and SHALL store the result in ModState as the three settings. In the live check, `villager_banditry` is false when no bandit pawn exists (a pawn with isBandit true), and `vassals` is false when no AI lord pawn exists. The live check SHALL NOT set `hussites_enabled` to false, unless the real-game spike shows a way to detect it.
+When a loaded save has no guard settings, the mod SHALL use a live check and SHALL store the result in ModState as the two settings. In the live check, `vassals` is false when no AI lord pawn exists. The live check SHALL NOT set `hussites_enabled` to false, unless the real-game spike shows a way to detect it.
 
 #### Scenario: An old save uses the live check and stores it
-- **WHEN** a save without the settings is loaded and no bandit pawn and no AI lord pawn exist
-- **THEN** ModState holds `villager_banditry` false and `vassals` false
+- **WHEN** a save without the settings is loaded and no AI lord pawn exists
+- **THEN** ModState holds `vassals` false
 - **AND** the next load uses these stored values
 - Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed) and a real run on fixture `playtest-noai` (proposed).
-
-### Requirement: Bandit camps off disables banditry and warns
-When `villager_banditry` is false, the mod SHALL disable the banditry timer and the banditry leave. The scenario settings menu SHALL show a warning line, for example "Locked: this game was started with bandit camps off". The mod SHALL show no banner at game start.
-
-#### Scenario: Bandit camps off disables banditry
-- **WHEN** the game was started with bandit camps 0 and limit 0 and the menu opens
-- **THEN** the menu shows the bandit camps warning line
-- **AND** the banditry timer and leave are disabled
-- Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed) and `mod/InvasionMod/scenarios/scenario_settings/game_settings_guard.py` (proposed).
 
 ### Requirement: AI opponents 0 warns that vassals are not enabled
 When `vassals` is false, the menu SHALL show the warning "vassals are not enabled". The mod SHALL NOT lock a row for it.
@@ -55,9 +46,9 @@ When `hussites_enabled` is false, the Yearly player raid, Great raid and Vassal 
 - Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed) and a real run on fixture `playtest-noai` (proposed).
 
 ### Requirement: Normal game settings lock nothing
-When bandit camps, AI opponents and the off-map adversary are on, the menu SHALL lock no row and show no warning.
+When AI opponents and the off-map adversary are on, the menu SHALL lock no row and show no warning.
 
 #### Scenario: Normal settings lock nothing
-- **WHEN** the game was started with bandit camps, AI opponents and the off-map adversary on
+- **WHEN** the game was started with AI opponents and the off-map adversary on
 - **THEN** no row is locked and no warning shows
 - Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed) and a real run on fixture `base` (proposed).

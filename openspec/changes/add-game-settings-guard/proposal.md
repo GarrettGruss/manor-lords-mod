@@ -4,9 +4,9 @@ Issue: #438. The Invasion Mod needs three game parts: bandit camps, the off-map 
 
 ## What Changes
 
-- At new game start, the mod reads the game setup once and saves three mod settings in ModState: `vassals` (true/false), `villager_banditry` (true/false) and `hussites_enabled` (true/false).
+- At new game start, the mod reads the game setup once and saves two mod settings in ModState: `vassals` (true/false) and `hussites_enabled` (true/false).
 - In the scenario settings menu, each mod setting that depends on an off part is set to 0 (off) and locked. The player cannot raise it.
-- Next to a locked value, the menu shows a warning, for example "Locked: this game was started with bandit camps off".
+- Next to a locked value, the menu shows a warning, for example "Locked: this game was started without the off-map adversary".
 - After a load, the mod uses the stored result. A save without a stored result uses a live check.
 - No banner at game start. The warnings show only in the existing mod start menu.
 
@@ -14,7 +14,7 @@ Issue: #438. The Invasion Mod needs three game parts: bandit camps, the off-map 
 
 | Game setting off | Mod part that breaks | Proposed default | Status |
 |---|---|---|---|
-| Bandit camps: initial 0 and limit 0 | Villager banditry (no bandit pawn, confirmed in playtest-noai) | Disable the banditry timer and leave. The menu shows a warning line. No menu row to lock | Confirmed in playtest-noai; spike#430 / #416 may add detail |
+| Bandit camps: initial 0 and limit 0 | None. The mod makes the bandit pawn itself (owner decision 2026-10-23, change `update-banditry-bandit-camp`) | No lock, no warning | Decided |
 | AI opponents 0 (`numGenericAILords`) | Vassals are not enabled | Warn only in the menu: "vassals are not enabled". No lock | Owner decision 2026-10-23 |
 | Off map adversary absent (field `adversary_baron` or other, see spike) | Hussite raids do not work | Set Yearly player raid, Great raid and Vassal raids to 0, lock them and warn. Vassal raids are Hussite raids in the code (the subjugation raid is a lord raid of the mod, `invasion/init.lua`) | Lock rule decided. A task confirms in playtest-noai (spike #430 Q3) |
 
@@ -28,6 +28,6 @@ The menu rows come from change `update-raid-difficulty-levels` (#404, PR #435): 
 
 ## Impact
 
-- Specs: `mod/scenario_settings` (ADDED requirements).
-- Code: `mod/shared/HarnessGameSetup`, the scenario_settings feature (menu, ModState); the bandits and vassals features read the guard.
+- Specs: `mod/scenario_settings` (ADDED requirements). Edited by change `update-banditry-bandit-camp`: no banditry lock.
+- Code: `mod/shared/HarnessGameSetup`, the scenario_settings feature (menu, ModState); the vassals feature reads the guard.
 - No change to the game files.
