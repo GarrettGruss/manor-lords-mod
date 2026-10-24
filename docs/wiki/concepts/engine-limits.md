@@ -158,3 +158,12 @@ Fixture `playtest-noai` (AI opponents 0, Off map adversary Absent, Raider freque
 - Registered, not rallied militia men stock one spear and one shield each in their burgage plots (`bType` 3) from the storehouse. It took about 6 game days for 10 men. The goods stay in the home `Inventory` and still count in the region stock. `region:getNumAssignedMilitaryStockOfType(id)` reports the number reserved for the militia.
 - `building:consumeGoodNoCheck(id)` on a home removes one item from the home.
 - `SMUnit:turnToBandit` on villagers (family members) does not make bandit units: the unit leaves its family and gets role 5 (Soldier), the side counts stay the same. A bandit squad at the homes (`homeless_rebel mode home`) is made of new units, and 3 families were killed. With no AI lords and no raids, that squad left the map (AI log "enough looted. Leaving map") and burned nothing in 1180 game seconds.
+
+## Removing villagers: bodies and destroy (spike-rebel-without-corpses, 2026-10-24)
+
+- `SMUnit:just_die` on a family member makes a body (`VAMP_DefaultUnit_C`, `dead`) where the person stands. It stays in `Region.corpses` about 1 230 game s (30 game days) without a corpse pit, and its actor vanishes about 400 game s later.
+- `K2_DestroyActor` on any `SMUnit` crashes the game: a dead body (also after the list was emptied) within seconds (reading 0xe60), a living villager within seconds to 2 game days (reading 0x938).
+- `Region:removeWorkerFamilyAt(familyID)` deletes only the family record. The people stay alive. Its argument is a family id, not an index.
+- Safe on bodies: `SetActorHiddenInGame(true)` (`bHidden` true) and `Region.corpses:Empty()`. No visual effect was shown in a picture.
+- `SMUnit:turnToSoldierJoinSquad` needs a Squad struct (unsafe to read). No reflected setter for the side of a unit was found.
+- No native emigrate or evict function exists on Region, SMUnit or the pawn. Immigration refills the village about every 3 game days.

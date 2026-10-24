@@ -25,6 +25,7 @@ When you find a new dangerous action, add it here in the same pull request as th
 - Do not pass a Lua string to a UFunction that takes an `FName` argument on a component or mesh that may lack it. UE4SS crashes in `push_nameproperty` (access violation at `0x70`). Known cases: `pivot_attach`, and `GetSocketLocation` or `DoesSocketExist` on the ox shed meshes (spec 18 `hitch-socket-world-positions.md`). Read the socket list first (`GetAllSocketNames`), or skip the call.
 - Never call `Button.OnClicked:Add` on a Button made at run time (found in the menu framework, #308).
 - Do not use `take_by_lord`.
+- Never call `K2_DestroyActor` on an `SMUnit`, living or dead. It crashed the game in 4 of 4 tries (reading 0xe60 for bodies, 0x938 for living units; spike-rebel-without-corpses). Use `just_die`, and `SetActorHiddenInGame` if the body must not show.
 - Check a widget returned by `GetChildAt` (or any child lookup) with `IsValid` before you call a method on it. A `GetClass` call on an unchecked child crashed the game (change `fix-order-tooltip-arrows`, #462).
 - A game crash writes its UE crash report into the REAL `%LOCALAPPDATA%\ManorLords\Saved\Crashes`, not the private one. The launcher copies it.
 
