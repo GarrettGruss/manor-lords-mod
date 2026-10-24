@@ -29,7 +29,13 @@ function Box:GetChildAt(i) return self.kids[i + 1] end
 function Box:AddChildToVerticalBox(w) self.kids[#self.kids + 1] = w end
 
 local function native_row(d, v)
-    local r = { DescriptionText = Block.new(d), ValueText = Block.new(v), vis = 0 }
+    local arrow = { angle = 180 }
+    function arrow:GetClass() return { GetFName = function() return { ToString = function() return "Image" end } end } end
+    function arrow:SetRenderTransformAngle(a) self.angle = a end
+    local bar = Box.new()
+    bar:AddChildToVerticalBox(arrow)
+    local r = { DescriptionText = Block.new(d), ValueText = Block.new(v), vis = 0, arrow = arrow,
+        WidgetTree = { RootWidget = { GetChildAt = function() return bar end } } }
     function r:SetVisibility(x) self.vis = x end
     function r:GetVisibility() return self.vis end
     function r:IsValid() return true end
@@ -99,6 +105,17 @@ class OrderTooltipTests(unittest.TestCase):
             return added .. "#" .. read.header .. "#" .. table.concat(read.rows, ";") .. "#" .. tip.recentFactors_VB.kids[1].vis
         end)()""")
         self.assertEqual(str(result), "2#77%#Manor | +10;Homeless families | -10#1")
+
+    def test_positive_row_has_up_arrow_and_negative_row_down_arrow(self):
+        result = self.lua.eval("""(function()
+            local widget = require("features.order_tooltip.widget")
+            local rows = require("features.order_tooltip.rows")
+            local tip = new_tip()
+            widget.apply(tip, rows.build({ order = 77, manor_term = 10, homeless_term = 10 }))
+            local kids = tip.recentFactors_VB.kids
+            return kids[2].arrow.angle .. "#" .. kids[3].arrow.angle
+        end)()""")
+        self.assertEqual(str(result), "0.0#180.0")
 
     def test_failing_widget_call_raises_for_the_caller_to_log(self):
         ok = self.lua.eval("""(function()

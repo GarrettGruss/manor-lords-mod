@@ -6,7 +6,7 @@ The Public Order tooltip shows the mod order terms as rows and the mod order in 
 ## Requirements
 
 ### Requirement: The Public Order tooltip lists the mod order terms
-Each time the player opens the Public Order tooltip, the mod SHALL add one row for each term of the last order tick of the mod order: `Manor +<n>` (green), `Homeless families -<n>` (red, only when the term is above 0) and, from a leave until the next tick, `Left for banditry +<n>` (green). The values SHALL be the values of the last tick and of the last leave, in order points.
+Each time the player opens the Public Order tooltip, the mod SHALL add one row for each term of the last order tick of the mod order: `Manor +<n>` (green), `Homeless families -<n>` (red, only when the term is above 0) and, from a leave until the next tick, `Left for banditry +<n>` (green). The values SHALL be the values of the last tick and of the last leave, in order points. A row with a positive value SHALL show an up arrow, and a row with a negative value SHALL show a down arrow.
 
 #### Scenario: Rows match the last tick
 - **WHEN** a tick ran with manor term 10 and 2 homeless families, and the player opens the tooltip
@@ -27,6 +27,11 @@ Each time the player opens the Public Order tooltip, the mod SHALL add one row f
 - **WHEN** the player opens the tooltip twice
 - **THEN** each open shows one row for each term, with no duplicates
 - Checked by `mod/InvasionMod/scenarios/order_tooltip/rows.py`.
+
+#### Scenario: A positive row shows an up arrow
+- **WHEN** the tooltip shows `Manor +10` and `Homeless families -10`
+- **THEN** the Manor row shows an up arrow and the Homeless row shows a down arrow
+- Checked by `harness/tests/test_fakegame_order_tooltip.py` and a picture from `mod/InvasionMod/scenarios/order_tooltip/rows.py`.
 
 ### Requirement: The tooltip header shows the mod order
 While the mod order is active, the header sum of the tooltip SHALL show the mod order (for example `77%`), and the native rows SHALL be hidden (default; owner decision open).
