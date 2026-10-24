@@ -368,6 +368,7 @@ menu.register({
     class_path = "/Game/HarnessMod/WBP_ScenarioSettings.WBP_ScenarioSettings_C", package_path = "/Game/HarnessMod", asset_name = "WBP_ScenarioSettings",
     z_order = config.z_order, position = config.position,
     on_open = on_open, on_close = on_close,
+    manages_speed = true, -- the menu pauses with its own guard and sets config.begin_speed on Begin; the base menu must not restore a speed
 })
 
 ---------------------------------------------------------------------------------------------
