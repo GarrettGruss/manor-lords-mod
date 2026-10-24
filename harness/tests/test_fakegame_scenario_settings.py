@@ -515,3 +515,103 @@ class DifficultyTests(SettingsTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+VILLAGE = """
+function(fg, pawn, engine, sizes)
+    local units, families = {}, {}
+    for _, size in ipairs(sizes) do
+        local members = {}
+        for _ = 1, size do
+            local unit = fg.object("SMUnit", { dead = false })
+            fg.set_method(unit, "just_die", function(self) self.dead = true end)
+            members[#members + 1] = unit
+            units[#units + 1] = unit
+        end
+        families[#families + 1] = fg.object("Family", { familyMembers = fg.array(members, { wrap = false }) })
+    end
+    local region = fg.object("Region", { ownerPawn = pawn, workerFamilies = fg.array(families, { wrap = false }) })
+    fg.set_method(region, "getNumTotalPopulation", function()
+        local n = 0
+        for _, unit in ipairs(units) do if not unit.dead then n = n + 1 end end
+        return n
+    end)
+    fg.set_method(pawn, "GetAddress", function() return 1 end)
+    engine.regions = fg.array({ region }, { wrap = false })
+end
+"""
+
+
+class StartKitTests(SettingsTestCase):
+    def village(self, *sizes):
+        self.game.lua.eval(VILLAGE)(self.game.fg, self.pawn, self.engine, self.game.lua.table_from(list(sizes)))
+        self.pawn.silver = 0
+
+    def kit(self):
+        answer = self.ask("start_kit_state")
+        self.assertTrue(answer["ok"], answer)
+        return answer["result"]
+
+    def begin(self):
+        self.stand_in_menu()
+        self.start_game("", 1)
+        self.ask("scenario_settings_click", action="begin")
+
+    def test_a_new_game_gets_10_people_and_300_silver_at_begin(self):
+        self.village(2, 2, 2, 2, 2)
+        self.stand_in_menu()
+        self.start_game("", 1)
+        self.assertEqual((self.kit()["given"], self.pawn.silver), (False, 0), "nothing before Begin")
+        self.ask("scenario_settings_click", action="begin")
+        kit = self.kit()
+        self.assertEqual((kit["given"], kit["people"], kit["silver"]), (True, 10, 300))
+        self.assertEqual(self.pawn.silver, 300)
+
+    def test_a_village_with_more_people_is_cut_to_10(self):
+        self.village(3, 3, 3, 3, 3)
+        self.begin()
+        self.assertEqual(self.kit()["people"], 10)
+
+    def test_a_village_with_fewer_people_keeps_them(self):
+        self.village(2, 2, 2)
+        self.begin()
+        kit = self.kit()
+        self.assertEqual((kit["people"], kit["silver"]), (6, 300))
+
+    def test_the_kit_is_given_once(self):
+        self.village(2, 2, 2, 2, 2)
+        self.begin()
+        self.pawn.silver = 50
+        self.assertTrue(self.ask("scenario_settings_set", yearly=1)["ok"])
+        self.assertEqual(self.pawn.silver, 50, "a second apply gives no second kit")
+
+    def test_a_loaded_save_gets_no_kit(self):
+        self.village(3, 3, 3, 3, 3)
+        self.stand_in_menu()
+        self.start_game("saveGame_4", 61)
+        self.pawn.silver = 12
+        self.assertTrue(self.ask("scenario_settings_set", yearly=1)["ok"])
+        kit = self.kit()
+        self.assertEqual((kit["given"], kit["people"], self.pawn.silver), (False, 15, 12))
+
+    def test_a_save_with_the_flag_gets_no_kit_either(self):
+        self.village(3, 3, 3, 3, 3)
+        self.stand_in_menu()
+        self.start_game("", 1)
+        self.ask("scenario_settings_click", action="begin")
+        self.pawn.silver = 12
+        self.assertTrue(self.ask("scenario_settings_set", yearly=2)["ok"])
+        self.assertEqual(self.pawn.silver, 12)
+
+    def test_the_amounts_come_from_the_config(self):
+        self.game.exec('require("config").scenario_settings.start_kit = { villagers = 4, silver = 77 }')
+        self.village(2, 2, 2, 2, 2)
+        self.begin()
+        kit = self.kit()
+        self.assertEqual((kit["people"], kit["silver"]), (4, 77))
+
+    def test_a_command_in_a_new_game_gives_the_kit(self):
+        self.village(2, 2, 2, 2, 2)
+        self.start_game("", 1)
+        self.ask("scenario_settings_skip")
+        self.assertEqual((self.kit()["given"], self.pawn.silver), (True, 300))

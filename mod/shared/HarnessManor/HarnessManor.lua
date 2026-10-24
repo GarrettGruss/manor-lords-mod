@@ -25,7 +25,7 @@ local sack = require("HarnessSack")
 
 local M = {}
 
-M.MAX_GOOD = 200
+M.MAX_GOOD = 400   -- item ids go above 200 (large shield 271); the Python action check keeps 200
 M.MAX_AMOUNT = 1000
 M.CAPACITY = 200   -- units of goods that one manor module holds through put (mod rule)
 M.MAX_ROWS = 20

@@ -11,6 +11,7 @@ Each entry names its feature. Format: Keep a Changelog.
 - Features `invasion`, `scenario_settings`, `raid_widget` (change `update-raid-difficulty-levels`, #404): one level 0 to 3 for each raid type (yearly player raid, great raid, vassal raids) in place of the global difficulty and the Great raids switch. Level 0 turns the raid type off. Bandits, sack and terms read the highest level.
 
 ### Added
+- Features `scenario_settings` and `liege_influence` (change `add-scenario-start-kit`, #425): start kit (10 people, 300 silver) at "Begin the game" of a new game, and the liege button "Request arms shipment" (200 silver, 30 large shields and 30 spears in the manor store, 180 game days cooldown). See the root `CHANGELOG.md`.
 - Feature `vassals` (change `add-vassal-sack-wipe`, #341): sack of vassal houses (80 percent ruins), wipe of all villagers (reason `wiped`), refugee wave of 50 percent, and `vassals_restore` (100 silver, 5 families, goods for the rebuild). Feature `sack_and_terms`: no terms after a sack of the player region.
 
 ### Changed
