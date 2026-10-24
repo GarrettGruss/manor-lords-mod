@@ -4,7 +4,7 @@ Issue: #438. The Invasion Mod needs three game parts: bandit camps, the off-map 
 
 ## What Changes
 
-- At new game start, the mod reads the game setup and stores a guard result in ModState: which of the three parts are off.
+- At new game start, the mod reads the game setup once and saves three mod settings in ModState: `vassals` (true/false), `villager_banditry` (true/false) and `hussites_enabled` (true/false).
 - In the scenario settings menu, each mod setting that depends on an off part is set to 0 (off) and locked. The player cannot raise it.
 - Next to a locked value, the menu shows a warning, for example "Locked: this game was started with bandit camps off".
 - After a load, the mod uses the stored result. A save without a stored result uses a live check.
