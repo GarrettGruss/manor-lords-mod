@@ -50,6 +50,13 @@ def run(ctx) -> dict:
     ctx.check("the bandit pawn exists afterward", after["bandit_pawn"] is True, after)
     ctx.check("the pawn was made only when the world had none", leave["pawn_created"] is (not before["bandit_pawn"]), [before["bandit_pawn"], leave])
     ctx.metric("camp_distance", leave.get("camp_distance"))
+    if leave.get("camp_at"):  # picture evidence: look at the new camp
+        try:
+            ctx.bridge.centre_camera_on(leave["camp_at"]["x"], leave["camp_at"]["y"])
+            ctx.bridge.centre_camera_on(leave["camp_at"]["x"], leave["camp_at"]["y"])
+        except RuntimeError as problem:
+            ctx.metric("camera_centred", 0)
+        ctx.screenshot("camp")
 
     ctx.time.run_game_days(10, speed=1)  # the game resets a higher speed while the new bandits are near
     final = state(ctx)
