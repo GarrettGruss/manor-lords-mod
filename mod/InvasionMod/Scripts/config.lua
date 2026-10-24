@@ -176,6 +176,7 @@ return {
             first_raid_years = { "After 1 year", "After 2 years", "After 3 years" },
             size_class = { "Small", "Medium", "Large" },
         },
+        vassals_warning = "Warning: vassals are not enabled.",
         begin_label = "Begin the game", defaults_label = "Use defaults",
         new_game_max_day = 10,               -- a game with no save file name is new only when its day is at most this (a fixture that lost savefileToLoad is not)
         intro_wait_s = 60,                   -- real seconds to wait for the intro cinematic to end before the menu opens anyway

@@ -31,6 +31,7 @@ local S = {
 }
 state:register("start_kit_given", 0, "integer") -- 1 after the start kit was given (saved with the game)
 state:register("hussite_template", 0, "integer") -- 1 when the new game started from the template "The Hussites Are Coming"
+state:register("vassals", -1, "integer") -- the guard value: 1 vassals work, 0 AI opponents were 0 (no vassals), -1 not known (change add-game-settings-guard, #438)
 
 ---------------------------------------------------------------------------------------------
 -- Game reads
@@ -304,7 +305,7 @@ local function on_open(made)
     S.title, S.background = texts.SettingsTitle, texts.BackgroundText
     if S.title == nil or S.background == nil then reset_widget(); return nil, "the title or the background text was not found in the widget" end
     set_text(S.title, config.title)
-    set_text(S.background, config.background_text)
+    set_text(S.background, rules.background_with_warning(config, state:get("vassals")))
     for row_index, row in ipairs(rules.ROWS) do
         S.labels[row_index] = texts["RowLabel" .. (row_index - 1)]
         set_text(S.labels[row_index], config.labels[row.key])
@@ -399,6 +400,31 @@ local function read_template_setup()
     }
 end
 
+-- The live check for a save without the value: the number of AI lord pawns (FindAllOf gives nil when there is none).
+local function count_ai_lords()
+    local found = read(function() return FindAllOf("PawnCPP_AI") end) or {}
+    local count = 0
+    for _, pawn in ipairs(found) do
+        if isValid(pawn) and not pawn:GetFullName():find("Default__", 1, true) then count = count + 1 end
+    end
+    return count
+end
+
+-- The guard value `vassals`: read once at a new game, kept by ModState over a load. A save without it uses the live check and stores the result.
+local function decide_vassals(kind)
+    local value
+    if kind == "new" then
+        local ok, setup_module = pcall(require, "HarnessGameSetup")
+        local setup = ok and setup_module.game_setup_state() or nil
+        value = rules.vassals_from_setup(setup and setup.ok and setup or nil)
+    elseif state:get("vassals") == -1 then
+        value = rules.vassals_from_lord_count(count_ai_lords())
+    end
+    if value == nil then return end
+    state:set("vassals", value)
+    core.log.info(TAG, string.format("vassals guard: %d (%s)", value, kind == "new" and "game setup" or "live check"))
+end
+
 -- The decision is per game, not per session: a player may load a save, go to the main menu and start a new game. Each
 -- ModState load (a new player pawn) makes a new values table, so a changed table means a new game or a load.
 local function forget_decision_of_an_earlier_game()
@@ -428,6 +454,7 @@ local function decide()
     S.new_game = kind == "new"
     core.log.info(TAG, string.format("game is %s (save_file=%q applied=%d day=%s)", kind, tostring(info.save_file), info.applied, tostring(info.day)))
     S.holding = kind == "new"
+    decide_vassals(kind)
     if kind == "new" then
         local setup = read_template_setup()
         state:set("hussite_template", rules.is_hussite_template(setup) and 1 or 0)
@@ -481,6 +508,7 @@ local function describe()
         yearly = settings.yearly, great = settings.great, vassal = settings.vassal,
         first_raid_years = settings.first_raid_years, size_class = settings.size_class, size_random = settings.size_random,
         settings_applied = state:get("settings_applied") == 1, difficulty_chosen = state:get("difficulty_chosen") == 1,
+        vassals = state:get("vassals"), warning = state:get("vassals") == 0 and config.vassals_warning or nil,
         hussite_template = state:get("hussite_template") == 1, kind = S.kind, decided = S.decided, open = is_open(), paused = S.paused, repauses = S.repauses, selection = S.selection, clicks = S.clicks,
         last_error = S.last_error, kit_given = state:get("start_kit_given") == 1, kit = S.kit, save_file = save_file_name(), day = current_day(), intro_playing = intro_playing(),
     }
