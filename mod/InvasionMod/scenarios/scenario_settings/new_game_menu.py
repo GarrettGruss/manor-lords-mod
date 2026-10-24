@@ -14,8 +14,8 @@ NAME = "scenario-settings-new-game-menu"
 DESCRIPTION = "New game: the menu opens and pauses the game, the choices apply on Begin, the game runs and the autosave stays far away. Needs --new-game --pak raidmenu."
 LIMIT_S = 300
 PREFIX = "InvasionMod."
-DEFAULTS = {"difficulty": 2, "first_raid_years": 2, "size_class": 2, "great_raids": 1}
-CHANGED = {"difficulty": 3, "first_raid_years": 3, "size_class": 3, "great_raids": 0}
+DEFAULTS = {"yearly": 2, "great": 2, "vassal": 2, "first_raid_years": 2, "size_class": 2}
+CHANGED = {"yearly": 3, "great": 0, "vassal": 1, "first_raid_years": 3, "size_class": 3}
 MIN_REMAINING_S = 1_000_000
 SETTLE_S = 1.5
 
@@ -43,7 +43,7 @@ def run(ctx) -> dict:
     ctx.check("N1 the game is told as new (empty save file name)", first["save_file"] == "", first["save_file"])
     ctx.check("N1 the menu opened and the game was paused by it", first["open"] is True and first["paused"] is True, first)
     ctx.check("N1 the intro is over", first["intro_playing"] is False, first["intro_playing"])
-    ctx.check("N1 the choices are the defaults", {k: first["selection"][k] for k in DEFAULTS} == DEFAULTS, first["selection"])
+    ctx.check("N1 the choices are the defaults (three levels at 2, no Difficulty setting)", first["selection"] == DEFAULTS, first["selection"])
     ctx.check("N1 the settings are not applied before Begin", first["settings_applied"] is False, first["settings_applied"])
     clock = ctx.read_clock()
     ctx.check("N2 the game clock stands still while the menu is open", clock["paused"], clock["change"], [0, 0.001])
@@ -61,7 +61,7 @@ def run(ctx) -> dict:
     ctx.screenshot("menu-changed")
     click(ctx, action="defaults")
     reset = settings(ctx)
-    ctx.check("N3 Use defaults resets all four", {k: reset["selection"][k] for k in DEFAULTS} == DEFAULTS, reset["selection"])
+    ctx.check("N3 Use defaults resets all five", {k: reset["selection"][k] for k in DEFAULTS} == DEFAULTS, reset["selection"])
     for key, value in CHANGED.items():
         click(ctx, action="choose", key=key, value=value)
 
@@ -70,7 +70,7 @@ def run(ctx) -> dict:
     after = settings(ctx)
     ctx.check("N4 the menu is closed and the settings are applied", after["open"] is False and after["settings_applied"] is True, after)
     ctx.check("N4 the settings are the chosen ones", {k: after[k] for k in CHANGED} == CHANGED, after)
-    ctx.check("N4 the difficulty counts as chosen (no pick banner)", after["difficulty_chosen"] is True, after["difficulty_chosen"])
+    ctx.check("N4 the levels count as chosen (no pick banner)", after["difficulty_chosen"] is True, after["difficulty_chosen"])
     ctx.check("N4 the game is not paused by the menu any more", after["paused"] is False, after["paused"])
     speed = ctx.bridge.read_game_speed()
     running = ctx.read_clock(3.0)
@@ -85,8 +85,10 @@ def run(ctx) -> dict:
     autosave = ctx.actions.autosave_status()
     ctx.check("N6 the autosave timer is far away after Begin", autosave.get("remaining_s", 0) >= MIN_REMAINING_S, autosave.get("remaining_s"))
     difficulty = ctx.mod.command(PREFIX + "invasion_difficulty_state")
-    ctx.check("N7 the difficulty is Hard and chosen", difficulty["difficulty"] == 3 and difficulty["chosen"] is True, difficulty)
+    ctx.check("N7 the levels are yearly 3, great 0, vassal 1 and chosen",
+              (difficulty["yearly"], difficulty["great"], difficulty["vassal"]) == (3, 0, 1) and difficulty["chosen"] is True, difficulty)
     ctx.mod.command(PREFIX + "invasion_set_difficulty", value=1)
-    ctx.check("N7 invasion_set_difficulty works afterwards", ctx.mod.command(PREFIX + "invasion_difficulty_state")["difficulty"] == 1)
+    after_set = ctx.mod.command(PREFIX + "invasion_difficulty_state")
+    ctx.check("N7 invasion_set_difficulty sets all three levels afterwards", (after_set["yearly"], after_set["great"], after_set["vassal"]) == (1, 1, 1), after_set)
     ctx.pause()
     return ctx.result()

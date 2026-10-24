@@ -30,6 +30,24 @@ local function set_line(index, text)
     S.lines[index]:SetText(FText(text))
 end
 
+-- The tooltip is the UMG property ToolTipText of the Border around the click button (spike: notes/hover-route.md).
+-- It is set again only when the text changes.
+local function set_tooltip(slot, text)
+    if slot.tooltip == text then return end
+    local ok, problem = pcall(function() slot.border:SetToolTipText(FText(text)) end)
+    if ok then
+        slot.tooltip = text
+    elseif not S.tooltip_error then
+        S.tooltip_error = tostring(problem)
+        core.log.warn(TAG, "tooltip failed: " .. S.tooltip_error)
+    end
+end
+
+local function tooltip_text(row, by_id)
+    local source = by_id[row.id]
+    return source and lines.effect_lines(source, tech_tree.tree) or ""
+end
+
 local function place(slot)
     local position = lines.position(slot.row.layout, config.step_x, config.step_y)
     local ok, problem = pcall(function() slot.border.Slot:SetPosition(position) end)
@@ -52,6 +70,9 @@ local function refresh_nodes(view)
                     pcall(function() slot.handle.widget:SetColorAndOpacity(lines.color(row.status)) end)
                 end
                 place(slot)
+                set_tooltip(slot, tooltip_text(row, tech_tree.tree.by_id))
+            else
+                set_tooltip(slot, "")
             end
         end
     end
@@ -71,6 +92,7 @@ local function refresh_laws(view)
             slot.row = view.laws[i]
             set_visible(slot, slot.row ~= nil)
             if slot.row then clickhooks.set_text(slot.handle, lines.law_label(slot.row)) end
+            set_tooltip(slot, slot.row and tooltip_text(slot.row, tech_tree.tree.laws_by_id) or "")
         end
     end
 end
@@ -225,7 +247,8 @@ menu.register({
 local function button_row(slot, extra)
     local row = { visibility = read(function() return slot.handle.widget:GetVisibility() end),
         hovered = read(function() return slot.handle.widget:IsHovered() end),
-        label = read(function() return slot.handle.text:GetText():ToString() end) }
+        label = read(function() return slot.handle.text:GetText():ToString() end),
+        tooltip = read(function() return slot.border.ToolTipText:ToString() end) }
     for key, value in pairs(extra or {}) do row[key] = value end
     return row
 end
@@ -247,7 +270,7 @@ local function describe()
         lines = shown, wanted_lines = lines.header(tech_tree.view()), paths = paths, nodes = nodes, laws = laws, clicks = S.clicks,
         laws_line = S.laws_line and read(function() return S.laws_line:GetText():ToString() end) or nil,
         wanted_laws_line = lines.laws_line(tech_tree.view()),
-        last_error = S.last_error, position_error = S.position_error }
+        last_error = S.last_error, tooltip_error = S.tooltip_error, position_error = S.position_error }
 end
 
 local has_commands, commands = pcall(require, "HarnessCommands")

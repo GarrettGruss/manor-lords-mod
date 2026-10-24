@@ -1,4 +1,4 @@
-"""add-scenario-settings-menu: Great raids Off. The clock does not run, no clock banner shows and the phase stays none.
+"""update-raid-difficulty-levels: Great raid level 0 (was the Great raids Off switch). The clock does not run, no clock banner shows and the phase stays none.
 
 Runs on a fixture (a loaded save: the menu does not open). It saves nothing.
 """
@@ -9,7 +9,7 @@ import time
 from runlib import osinput
 
 NAME = "scenario-settings-great-raids-off"
-DESCRIPTION = "Great raids Off: no great raid end day, no clock banner, no waves after 3 game days."
+DESCRIPTION = "Great raid level 0: no great raid end day, no clock banner, no waves after 3 game days."
 LIMIT_S = 240
 SPEED = 3
 DAYS = 3
@@ -25,9 +25,10 @@ def clock_lines(ctx) -> int:
 
 def run(ctx) -> dict:
     ctx.run_until(lambda: ctx.mod.command(PREFIX + "scenario_settings_state")["decided"], 60, what="the settings decision")
-    state = ctx.mod.command(PREFIX + "scenario_settings_set", great_raids=0)
+    state = ctx.mod.command(PREFIX + "scenario_settings_set", great=0)
     ctx.log.info(f"settings {state}")
-    ctx.check("G1 the setting reads Off", state["great_raids"] == 0, state["great_raids"])
+    ctx.check("G1 the great level reads 0", state["great"] == 0, state["great"])
+    ctx.check("G1 the other levels did not change", state["yearly"] != 0 and state["vassal"] != 0, state)
     ctx.check("G1 the menu is not open on a loaded save", state["open"] is False, state["open"])
     before = clock_lines(ctx)
     ctx.time.run_game_days(DAYS, speed=SPEED)
@@ -35,7 +36,7 @@ def run(ctx) -> dict:
     great = ctx.mod.command(PREFIX + "invasion_great_state")
     ctx.check("G2 no great raid end day exists", clock["great_raid_day"] == 0, clock)
     ctx.check("G2 the phase stays none", great["phase"] == 0 and great["wave"] == 0, great)
-    ctx.check("G3 no clock start or clock banner after the switch", clock_lines(ctx) == before, [before, clock_lines(ctx)])
+    ctx.check("G3 no clock start or clock banner after the level 0", clock_lines(ctx) == before, [before, clock_lines(ctx)])
     lines = ctx.mod.command(PREFIX + "raid_widget_state")["wanted_lines"]
     ctx.check("G4 the raid widget has an empty great raid line", lines[2] == "", lines)
     if ctx.mod.command(PREFIX + "raid_widget_open").get("ok"):
