@@ -70,7 +70,7 @@ class PlanTests(InvasionTestCase):
         state = self.state()
         self.assertEqual(state["plan_day"], 61)
         self.assertTrue(PLAN_DAYS[0] <= state["raid_day"] - 61 <= PLAN_DAYS[1], state)
-        self.assertIn(state["squads"], (1, 2, 3))
+        self.assertIn(state["squads"], (2, 4, 6))  # size class 1 to 3 times level 2
         self.assertEqual(len(state["composition"].split("-")), state["squads"])
 
     def test_the_plan_is_kept_in_the_pawn_tags(self):
@@ -93,7 +93,7 @@ class CommandTests(InvasionTestCase):
             self.assertEqual(answer["result"]["squads"], squads)
             self.assertEqual(len(answer["result"]["composition"].split("-")), squads)
 
-    def test_a_difficulty_outside_one_to_three_is_refused(self):
+    def test_a_difficulty_outside_zero_to_three_is_refused(self):
         self.assertFalse(self.ask("invasion_set_difficulty", value=4)["ok"])
         self.assertFalse(self.ask("invasion_set_size", size="huge")["ok"])
 
@@ -109,7 +109,7 @@ class RaidTests(InvasionTestCase):
         self.run_days(62, plan["raid_day"] + 5)
         self.assertEqual(self.banners, ["Raiders are here"])
         self.assertEqual(len(self.armies), 1)
-        self.assertEqual(len(self.armies[0][0]), 2)
+        self.assertEqual(len(self.armies[0][0]), 4)  # medium class (2) times level 2
         self.assertEqual(self.raids, [])
         self.assertEqual(self.state()["raids_spawned"], 1)
 
@@ -285,7 +285,7 @@ class DifficultyTests(InvasionTestCase):
     def test_before_a_pick_the_default_is_used_and_no_banner_shows(self):
         info = self.difficulty()
         self.assertFalse(info["chosen"])
-        self.assertEqual(info["difficulty"], 1)
+        self.assertEqual((info["yearly"], info["great"], info["vassal"]), (2, 2, 2))
         for day in range(62, 92):
             self.set_day(day)
         self.assertFalse(any("difficulty" in text.lower() for text in self.banners), self.banners)
@@ -296,7 +296,7 @@ class DifficultyTests(InvasionTestCase):
         self.assertTrue(self.ask("invasion_pick_difficulty", value=2)["ok"])
         info = self.difficulty()
         self.assertTrue(info["chosen"])
-        self.assertEqual((info["difficulty"], info["relief_squads"], info["waves"]), (2, 8, 2))
+        self.assertEqual(((info["yearly"], info["great"], info["vassal"]), info["relief_squads"], info["waves"]), ((2, 2, 2), 8, 2))
         self.assertFalse(self.ask("invasion_pick_difficulty", value=3)["ok"])
         self.assertEqual(self.state()["squads"] % 2, 0)
 
