@@ -31,7 +31,7 @@ def run(ctx) -> dict:
     expect.equals("K2 the player has 300 silver", after["silver"], 300)
 
     ctx.actions.set_silver(41)
-    ctx.mod.command(PREFIX + "scenario_settings_set", difficulty=1)
+    ctx.mod.command(PREFIX + "scenario_settings_set", yearly=1)
     again = kit(ctx)
     expect.equals("K3 a second apply gives no second kit", again["silver"], 41)
     ctx.pause()

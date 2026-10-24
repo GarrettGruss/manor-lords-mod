@@ -556,7 +556,7 @@ class StartKitTests(SettingsTestCase):
         self.village(2, 2, 2, 2, 2)
         self.begin()
         self.pawn.silver = 50
-        self.ask("scenario_settings_set", difficulty=1)
+        self.assertTrue(self.ask("scenario_settings_set", yearly=1)["ok"])
         self.assertEqual(self.pawn.silver, 50, "a second apply gives no second kit")
 
     def test_a_loaded_save_gets_no_kit(self):
@@ -564,7 +564,7 @@ class StartKitTests(SettingsTestCase):
         self.stand_in_menu()
         self.start_game("saveGame_4", 61)
         self.pawn.silver = 12
-        self.ask("scenario_settings_set", difficulty=1)
+        self.assertTrue(self.ask("scenario_settings_set", yearly=1)["ok"])
         kit = self.kit()
         self.assertEqual((kit["given"], kit["people"], self.pawn.silver), (False, 15, 12))
 
@@ -574,7 +574,7 @@ class StartKitTests(SettingsTestCase):
         self.start_game("", 1)
         self.ask("scenario_settings_click", action="begin")
         self.pawn.silver = 12
-        self.ask("scenario_settings_set", difficulty=2)
+        self.assertTrue(self.ask("scenario_settings_set", yearly=2)["ok"])
         self.assertEqual(self.pawn.silver, 12)
 
     def test_the_amounts_come_from_the_config(self):
