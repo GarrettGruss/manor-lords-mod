@@ -1,7 +1,7 @@
-# order_tooltip Specification
+# mod/order_tooltip Specification
 
 ## Purpose
-TBD - created by archiving change add-order-tooltip-rows. Update Purpose after archive.
+The Public Order tooltip shows the mod order terms as rows and the mod order in its header, so the player sees why the mod order has its value.
 
 ## Requirements
 
