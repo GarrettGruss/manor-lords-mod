@@ -8,7 +8,7 @@ When the banditry timer expires, the mod SHALL remove `leavers` (default 18) vil
 - **WHEN** the banditry timer expires (a test forces it) with enough villagers
 - **THEN** the villagers that leave are between 1 and 18, and the village keeps at least 1 family
 - **AND** the game runs 10 more game days with no crash
-- Checked by `mod/InvasionMod/scenarios/bandits/convert_families.py`.
+- Checked by `mod/InvasionMod/scenarios/bandits/banditry_timer.py`.
 
 #### Scenario: The last family stays
 - **WHEN** the village has only 1 family and the timer expires
@@ -23,7 +23,7 @@ When the banditry timer expires, the mod SHALL remove `leavers` (default 18) vil
 #### Scenario: The conversion banner
 - **WHEN** villagers leave for banditry
 - **THEN** the banner `Families have turned to banditry` shows
-- Not checked yet.
+- Checked by `mod/InvasionMod/scenarios/bandits/banditry_banners.py`.
 
 ### Requirement: The tech tree can change the bandit rules
 The mod SHALL accept the modifiers `order_bonus` (added to the manor term of each tick) and `buy_back_multiplier` (a factor on the price) from the tech tree, and SHALL apply them at once.
@@ -39,7 +39,7 @@ The mod SHALL accept the modifiers `order_bonus` (added to the manor term of eac
 - Checked by `harness/tests/test_bandits_rules.py`.
 
 ### Requirement: Named commands show and drive the feature
-The mod SHALL offer `InvasionMod.bandits_state`, `bandits_tick_now`, `bandits_set_order` and `bandits_buy_back`. `bandits_tick_now` SHALL run one order tick at once. `bandits_state` SHALL return the mod order, the game order, the homeless count, the last tick, the timer (start day and days left), families, outstanding and returned families.
+The mod SHALL offer `InvasionMod.bandits_state`, `bandits_tick_now`, `bandits_set_order`, `bandits_buy_back` and the test commands `bandits_leave_now` and `bandits_set_timer_days_left`. `bandits_tick_now` SHALL run one order tick at once. `bandits_state` SHALL return the mod order, the game order, the homeless count, the last tick, the timer (start day and days left), families, outstanding and returned families.
 
 #### Scenario: A forced tick
 - **WHEN** a test calls `bandits_tick_now`

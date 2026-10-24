@@ -1,4 +1,4 @@
-"""M02 iteration 04, D1 to D4: the player picks the difficulty at the start. It scales the raid plan, the relief army and the Public Order debuff.
+"""M02 iteration 04, D1 to D4: the player picks the difficulty at the start. It scales the raid plan and the relief army.
 
 Option (run.py --env): INVASION_DIFFICULTY (1 to 3, default 2). It saves nothing.
 """
@@ -21,8 +21,6 @@ def run(ctx) -> dict:
     ctx.check("D3 waves equal the difficulty", after["waves"] == pick, after["waves"])
     plan = ctx.mod.command("InvasionMod.invasion_state")
     ctx.check("D3 planned squads are a multiple of the difficulty", plan["squads"] % pick == 0 and 1 <= plan["squads"] // pick <= 3, plan["squads"])
-    bandits = ctx.mod.command("InvasionMod.bandits_state")
-    ctx.check("D4 the bandits feature reads the picked difficulty", bandits["difficulty"] == pick, bandits.get("difficulty"))
     log = ctx.run_dir / "mod.log"
     text = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
     ctx.check("D5 no difficulty banner was shown", "INVASION difficulty prompt" not in text, "prompt line found")
