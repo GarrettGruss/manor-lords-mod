@@ -167,3 +167,11 @@ Fixture `playtest-noai` (AI opponents 0, Off map adversary Absent, Raider freque
 - Safe on bodies: `SetActorHiddenInGame(true)` (`bHidden` true) and `Region.corpses:Empty()`. No visual effect was shown in a picture.
 - `SMUnit:turnToSoldierJoinSquad` needs a Squad struct (unsafe to read). No reflected setter for the side of a unit was found.
 - No native emigrate or evict function exists on Region, SMUnit or the pawn. Immigration refills the village about every 3 game days.
+
+## Militia gear, rally and removing a bandit camp (spike-militia-corpses-and-camp-removal, #489)
+
+- **Rally has no reflected call.** The Rally button (`Skill_Rally`, `W_HUD_ArmySkillButtonV2_C`, `SkillType` 11) only calls `PawnCPP:setPlaceRallyingPoint()`. The rally point is set by a real mouse click: `LMB_BP_pressed` and `LMB_BP_released` called from Lua do nothing. `SquadComponent:SetSkillActive(handle, 11, ...)` returns false (it works for sprint, skill 9). A squad handle is a struct `{Value = id}`, and `SMUnit.assignedSquadID.Value` is readable. `PawnCPP:selectSquad({Value=id}, false, false)` selects a squad.
+- **Equip and unequip work on a living unit.** `SMUnit:equip(itemId, true, false)` fills a slot (spear 133 slot 1, large shield 271 slot 2; read with `GetEquippedID(slot)`). `SMUnit:unequip(slot)` clears it. This is cosmetic for a villager: it changes no stock and reverts in about 1 game day.
+- **Dead militia:** each body is in `Region.corpses`, the squad shrinks, residents drop, the family record stays. The weapons in the home of a dead man go back to the storehouse in about 1 game day. Region stock stays the same. Hiding the bodies and `Region.corpses:Empty()` ran without a crash for about 30 game days.
+- **Disband from Lua does not work.** `SquadComponent:RequestDisbandSquad` and `PawnCPP:disbandSquad` return without error and change nothing. Clicking `Skill_Disband` did not remove the squad.
+- **A bandit camp can be removed.** After `just_die` on its 18 Brigands, `SMBuildingMaster:demolish(true)` on the camp master (`bType` 100; `canBeDemolished()` says false, `demolish()` needs its 1 argument) removes the 17 parts and the master in about 10 game s. The Outlaws pawn survives. The game did not respawn the camp or brigands in 28 game days. No crash.
