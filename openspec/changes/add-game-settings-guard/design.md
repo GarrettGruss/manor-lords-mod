@@ -1,17 +1,17 @@
 ## Context
 
-The game setup values are not in the save (archived change `spike-new-game-difficulty-setting`, `notes/game-settings.md`). `mod/shared/HarnessGameSetup` reads `MLGameInstance.gameSetup.currentGameSetup`: `initialBanditCamps`, `maxBanditCamps`, `numGenericAILords`, `adversary_baron` and others.
+The game setup values are not in the save (archived change `spike-new-game-difficulty-setting`, `notes/game-settings.md`). `mod/shared/HarnessGameSetup` reads `MLGameInstance.gameSetup.currentGameSetup`, for example `numGenericAILords`.
 
 ## Decisions
 
-- Read once at new game start. Save two mod settings in ModState: `vassals` (bool, false when `numGenericAILords` is 0) and `hussites_enabled` (bool, from the off-map adversary field; mapping to confirm in the real game). Reason: the game values are lost after a save and load. Menu rows and warnings read these settings.
+- Read once at new game start. Save one mod setting in ModState: `vassals` (bool, false when `numGenericAILords` is 0). Reason: the game values are lost after a save and load. The menu warning reads this setting.
 - After a load, use the stored result. Old saves: live check (AI lord pawns). A live check can only prove "off" when no such pawn exists.
-- One table maps a game part to the mod settings it locks and to its warning text. The menu and the commands read this table.
-- Lock in two places: the menu (row disabled, value 0, warning text) and the command (refuses a value above 0).
-- No start banner (owner decision 2026-10-23): warnings show only in the mod start menu.
-- Off-map adversary absent locks all three levels (vassal raids are Hussite raids in the code). Bandit camps 0 locks nothing: the mod makes the bandit pawn itself (change `update-banditry-bandit-camp`). AI opponents 0 warns only.
+- No lock and no command refusal. The only output is the menu warning "vassals are not enabled".
+- No start banner (owner decision 2026-10-23): the warning shows only in the mod start menu.
+- No Hussite lock and no `hussites_enabled` setting (owner decision 2026-10-24). Spike #430 showed that Hussite raids work with Off Map Adversary absent. No other requirement needs the setting, so it is not kept as information.
+- Bandit camps 0 locks nothing: the mod makes the bandit pawn itself (change `update-banditry-bandit-camp`).
 
 ## Risks
 
-- The field name for the off-map adversary may differ from `adversary_baron`. The spike decides.
 - A live check can be wrong early in a game (lords not spawned yet). Run it after the intro.
+- The guard is very small now. See the proposal.
