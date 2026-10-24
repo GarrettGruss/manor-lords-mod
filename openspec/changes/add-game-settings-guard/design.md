@@ -8,7 +8,8 @@ The game setup values are not in the save (archived change `spike-new-game-diffi
 - After a load, use the stored result. Old saves: live check (bandit pawn from `HarnessBattle`, `isBandit = true`; AI lord pawns). A live check can only prove "off" when no such pawn exists.
 - One table maps a game part to the mod settings it locks and to its warning text. The menu and the commands read this table.
 - Lock in two places: the menu (row disabled, value 0, warning text) and the command (refuses a value above 0).
-- Only locks that the spike confirms are active. The off-map adversary starts as warn only.
+- No start banner (owner decision 2026-10-23): warnings show only in the mod start menu.
+- Off-map adversary absent locks all three levels (vassal raids are Hussite raids in the code). Bandit camps off disables the banditry timer and leave. AI opponents 0 warns only.
 
 ## Risks
 
