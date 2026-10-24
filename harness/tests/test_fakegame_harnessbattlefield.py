@@ -102,6 +102,55 @@ class AnchorTests(BattlefieldTestCase):
         self.assertFalse(self.send("battlefield_anchor", region="Nowhere")["ok"])
         self.assertEqual(self.send("battlefield_state")["positions"][0], {"x": 100, "y": 200, "z": 10})
 
+SETUP_HOME_ANCHOR = """
+function(fg, mode)
+    local engine = FindFirstOf("RTSMultiEngineCPP")
+    local home = engine.playerRef.currentRegion
+    local other
+    for _, region in ipairs(require("ManorCore").listOf(engine.regions)) do
+        if region:GetFullName() ~= home:GetFullName() then other = region end
+    end
+    fg.set_method(engine.playerRef, "GetAddress", function() return 1 end)
+    home.ownerPawn = engine.playerRef
+    engine.playerRef.currentRegion = other
+    if mode == "no_manor" then
+        home.manor = nil
+        local buildings = {}
+        for _, at in ipairs({ { 1000.0, 2000.0 }, { 3000.0, 4000.0 } }) do
+            local building = fg.object("SMBuildingMaster", {})
+            fg.set_method(building, "K2_GetActorLocation", function() return { X = at[1], Y = at[2], Z = 0.0 } end)
+            buildings[#buildings + 1] = building
+        end
+        fg.set_method(home, "GetBuildings", function() return fg.array(buildings, { wrap = false }) end)
+    end
+end
+"""
+
+
+class HomeAnchorTests(BattlefieldTestCase):
+    def camera_elsewhere(self, mode):
+        self.game.lua.eval(SETUP_HOME_ANCHOR)(self.game.fg, mode)
+
+    def test_the_home_anchor_is_the_manor_with_the_camera_in_another_region(self):
+        self.camera_elsewhere("manor")
+        answer = self.send("battlefield_anchor", lord=1, home=True)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual((answer["anchor_kind"], answer["anchor"]["x"], answer["anchor"]["y"]), ("manor", 5000, 6000))
+        self.game.advance(1)
+        self.assertEqual(self.send("lords_state", log=0)["challenges"][0]["center"], {"x": 5000, "y": 6000})
+
+    def test_without_a_manor_the_anchor_is_the_average_of_the_buildings(self):
+        self.camera_elsewhere("no_manor")
+        answer = self.send("battlefield_anchor", home=True)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual((answer["anchor_kind"], answer["anchor"]["x"], answer["anchor"]["y"]), ("buildings_average", 2000, 3000))
+
+    def test_the_camera_region_does_not_change_the_home_anchor(self):
+        self.camera_elsewhere("manor")
+        state = self.send("battlefield_state", home=True)
+        self.assertEqual((state["would_anchor"]["x"], state["would_anchor_kind"]), (5000, "manor"))
+        self.assertEqual(self.send("battlefield_state", target=0)["would_anchor_kind"], "village_centre")
+
 
 if __name__ == "__main__":
     unittest.main()

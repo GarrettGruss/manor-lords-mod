@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tech tree tooltip (change `add-tech-tooltip`, #428): mouse over a node button or a law button of the tech tree menu shows a tooltip with the numerical effects of the tech and their values (percent effects as a signed percent, flat effects as a signed number). The text is built from `tree.json` (`lines.effect_lines`). The state command `tech_tree_widget_state` lists the tooltip of each button. New test scenario `tech-tree-widget-tooltip`.
 
 ### Fixed
+- A Hussite raid anchors its army and challenge at the player manor (change `fix-raid-anchor-manor`, #449), or at the average of the home-region buildings when there is no manor. It no longer follows the camera region (spike #430). `battlefield_anchor` and `battlefield_state` take `home=true`. New test scenario `invasion-raid-anchor-manor`.
 - The scenario settings menu keeps the game paused (change `fix-settings-menu-pause`, #418): if the game clock moves while the menu is open (for example a speed key), the mod pauses again. New test switch `HARNESS_BOOT_NO_PAUSE=1` (HarnessBoot skips its pause) and test scenario `scenario-settings-player-launch-pause`.
 - Parallel game slots (change `fix-parallel-slot-saves`, #393, #378): a run no longer removes the fixture slot of a `--keep-open` run on another slot, and the save folder guard always ignores `rtsSettings.sav`. A ledger entry now records `game_slot` and `game_root`.
 
