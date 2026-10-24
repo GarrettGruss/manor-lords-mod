@@ -1,5 +1,5 @@
 -- Feature tech_tree_widget (M12 iteration 02): the menu of the tech tree.
--- The pak techmenu_P.pak holds a cooked Widget Blueprint with a POOL of Borders on a canvas (mod/InvasionMod/ue/make_tech_widget.py).
+-- The pak InvasionMod_P.pak holds a cooked Widget Blueprint with a POOL of Borders on a canvas (mod/InvasionMod/ue/make_tech_widget.py).
 -- Lua puts a click button (WBP_ClickButton, shared module HarnessClickHooks) into each Border. A click is a hook event, not a poll (spec 34).
 -- The tree is data driven: Lua labels, shows, hides, colours and moves the buttons from the nodes of the tech_tree feature
 -- (data/tech_tree/tree.json, with the layout data). A click on a path button or a node button calls the tech_tree feature.

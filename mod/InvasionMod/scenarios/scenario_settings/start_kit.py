@@ -1,10 +1,10 @@
 """add-scenario-start-kit: a new game gets the start kit (10 people, 300 silver) once, when the player clicks "Begin the game".
 
-Needs a new game and the pak: `run.py --scenario scenario-settings-start-kit --new-game --pak raidmenu`. It saves nothing.
+Needs a new game and the pak: `run.py --scenario scenario-settings-start-kit --new-game --pak InvasionMod`. It saves nothing.
 """
 
 NAME = "scenario-settings-start-kit"
-DESCRIPTION = "New game: no kit before Begin; after Begin the village has 10 people and the player 300 silver; a second apply gives nothing. Needs --new-game --pak raidmenu."
+DESCRIPTION = "New game: no kit before Begin; after Begin the village has 10 people and the player 300 silver; a second apply gives nothing. Needs --new-game --pak InvasionMod."
 LIMIT_S = 300
 PREFIX = "InvasionMod."
 

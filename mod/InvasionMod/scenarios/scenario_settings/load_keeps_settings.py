@@ -1,9 +1,9 @@
 """add-scenario-settings-menu: a save keeps the settings, and the menu stays closed after the load.
 
 Two parts in two runs (the harness action `save_game` is the only save call; spec 24):
-  1. `run.py --scenario scenario-settings-load-keeps-settings --new-game --pak raidmenu --env SETTINGS_PART=save`:
+  1. `run.py --scenario scenario-settings-load-keeps-settings --new-game --pak InvasionMod --env SETTINGS_PART=save`:
      begin a new game with the levels yearly 3 (hard), great 0 (off) and vassal 1 (easy), 3 years and Large, then save with the guarded `save_game` (keep=True).
-  2. `run.py --scenario scenario-settings-load-keeps-settings --save <the saved slot> --pak raidmenu`:
+  2. `run.py --scenario scenario-settings-load-keeps-settings --save <the saved slot> --pak InvasionMod`:
      after the load the menu is closed and the five values are the same.
 NOT RUN YET: the first real `save_game` needs a fresh save backup and the owner told first (CLAUDE.md, Safety).
 """

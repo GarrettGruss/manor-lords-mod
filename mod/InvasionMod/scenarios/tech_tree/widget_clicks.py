@@ -1,6 +1,6 @@
 """Spec 34: real single clicks on a tech tree menu button each reach the click handler exactly once.
 
-Needs the pak: `run.py --scenario tech-tree-widget-clicks --pak techmenu`. Real mouse input: no other game at the same time.
+Needs the pak: `run.py --scenario tech-tree-widget-clicks --pak InvasionMod`. Real mouse input: no other game at the same time.
 The click button of the menu is a Blueprint widget whose OnClicked event is a hook event (shared module HarnessClickHooks).
 The handler counts each press in `clicks`, also a refused one. It saves nothing.
 """
@@ -8,7 +8,7 @@ The handler counts each press in `clicks`, also a refused one. It saves nothing.
 import time
 
 NAME = "tech-tree-widget-clicks"
-DESCRIPTION = "Click a law button of the tech tree menu with the real mouse 10 times, one click each second. Each click counts once. Needs --pak techmenu."
+DESCRIPTION = "Click a law button of the tech tree menu with the real mouse 10 times, one click each second. Each click counts once. Needs --pak InvasionMod."
 LIMIT_S = 600
 EXCLUSIVE = True
 LONG_REASON = "Hover scan and real mouse clicks."

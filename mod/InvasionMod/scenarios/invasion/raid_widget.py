@@ -1,14 +1,14 @@
 """M02 iteration 05, W1 to W4: the raid widget shows the raid information and F8 toggles it.
 
 The three difficulty buttons were removed (change add-scenario-settings-menu): the player picks the difficulty in the scenario
-settings menu. Needs the pak: `run.py --scenario invasion-raid-widget --pak raidmenu`. Real key input: no other game at the same time.
+settings menu. Needs the pak: `run.py --scenario invasion-raid-widget --pak InvasionMod`. Real key input: no other game at the same time.
 It saves nothing. Do not run the UE editor while a screenshot is taken.
 """
 
 import time
 
 NAME = "invasion-raid-widget"
-DESCRIPTION = "Open the raid widget, check its lines (no difficulty buttons), toggle it with F8. Needs --pak raidmenu."
+DESCRIPTION = "Open the raid widget, check its lines (no difficulty buttons), toggle it with F8. Needs --pak InvasionMod."
 LIMIT_S = 300
 EXCLUSIVE = True
 LONG_REASON = "Waits for the widget and real key input."

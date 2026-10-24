@@ -1,13 +1,13 @@
 """M12 iteration 02, U1 to U6: the tech tree menu shows the data driven tree and takes real mouse clicks.
 
-Needs the pak: `run.py --scenario tech-tree-widget --pak techmenu`. Real mouse input: no other game at the same time.
+Needs the pak: `run.py --scenario tech-tree-widget --pak InvasionMod`. Real mouse input: no other game at the same time.
 It saves nothing. Do not run the UE editor while a screenshot is taken.
 """
 
 import time
 
 NAME = "tech-tree-widget"
-DESCRIPTION = "Open the tech tree menu, pick a path and a node with real mouse clicks, check the node positions. Needs --pak techmenu."
+DESCRIPTION = "Open the tech tree menu, pick a path and a node with real mouse clicks, check the node positions. Needs --pak InvasionMod."
 LIMIT_S = 600
 EXCLUSIVE = True
 LONG_REASON = "Hover scans with a real mouse, many short waits."

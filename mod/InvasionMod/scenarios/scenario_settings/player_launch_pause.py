@@ -1,6 +1,6 @@
 """fix-settings-menu-pause (#418): the settings menu keeps the game paused in a player launch (no HarnessBoot pause).
 
-Needs: `run.py --scenario scenario-settings-player-launch-pause --new-game --pak raidmenu --env HARNESS_BOOT_NO_PAUSE=1 --slot N`.
+Needs: `run.py --scenario scenario-settings-player-launch-pause --new-game --pak InvasionMod --env HARNESS_BOOT_NO_PAUSE=1 --slot N`.
 HARNESS_BOOT_NO_PAUSE=1 makes HarnessBoot skip its pauseGame step, so the intro cinematic ends on a running game as it does for a
 player. The scenario samples the clock, the game speed and the menu state until the menu is open, then watches that the clock stays
 still for HOLD_S seconds, then clicks Begin. It saves nothing.
@@ -11,7 +11,7 @@ import time
 from runlib import osinput
 
 NAME = "scenario-settings-player-launch-pause"
-DESCRIPTION = "Player launch (HarnessBoot pause off): the menu keeps the clock still through and after the intro. Needs --new-game --pak raidmenu --env HARNESS_BOOT_NO_PAUSE=1."
+DESCRIPTION = "Player launch (HarnessBoot pause off): the menu keeps the clock still through and after the intro. Needs --new-game --pak InvasionMod --env HARNESS_BOOT_NO_PAUSE=1."
 LIMIT_S = 300
 PREFIX = "InvasionMod."
 HOLD_S = 10
