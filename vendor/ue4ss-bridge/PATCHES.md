@@ -14,6 +14,7 @@ Each changed place in the code has a comment `PATCH P<n> (harness)`. Search for 
 | P9 | `mod/UEBridge/scripts/main.lua` | One `HarnessLog` line per request (id, verb, target, duration, error text). It holds no property value and no Lua source. |
 | P3 | none | The Lua mod lives in `mod/UEBridge/`, so `harness/deploy.ps1` deploys it as `Mods\UEBridge`. |
 | P7 | `pyproject.toml` and `uv.lock` (was `mcp/requirements.txt`), `.mcp.json`, `.claude/settings.json` | `mcp` is pinned. Stdio only. All tools of both project MCP servers are allowed without a prompt (user decision 2026-10-12); the game-side `allow_writes` and `allow_eval` settings and `UE4SS_BRIDGE_ALLOW_EVAL` still decide what runs. |
+| P10 | `mod/UEBridge/scripts/main.lua` | The two `LoopAsync` timers (request poll, stream sampler) use `HarnessLoop.every`, so their Lua runs on the game thread (change fix-lua-thread-safety). |
 
 ## Known limits of the patches
 - In-game tests so far: see `openspec/changes/archive/2026-10-15-legacy-01-ue4ss-bridge/implementation-notes/smoke-test-log.md`. No Lua interpreter exists on the dev machine, so the Lua is checked only by reading it and by running it in the game.

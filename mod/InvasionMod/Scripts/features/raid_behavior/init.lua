@@ -41,7 +41,12 @@ local function before_spawn()
     return world.read_units()
 end
 
-local function after_spawn(before, info)
+-- Why a delay: a scan of all units in the tick of a spawn touches objects that are just made. Crashes were seen there
+-- (spike-lua-crash-after-spawn). The scan of the new units runs in a later game-thread tick.
+local SCAN_DELAY_S = 0.25
+local pending_scans = {}
+
+local function register_raid(before, info)
     local keys = world.new_keys(before, world.read_units())
     local id = #order + 1
     local raid = rules.new_raid(id, info.day, info.squads, keys, info.roles, info.lord_raid)
@@ -55,6 +60,20 @@ local function after_spawn(before, info)
     end
     core.log.info(TAG, string.format("RAID_BEHAVIOR start id=%d day=%d squads=%d raiders=%d roles=%s", id, info.day, info.squads, #keys, tostring(info.roles == true)))
 end
+
+local function after_spawn(before, info)
+    pending_scans[#pending_scans + 1] = { before = before, info = info, at = os.clock() }
+end
+
+-- Runs from the scheduler. An entry waits until a later tick than its spawn.
+local function resolve_pending_scans()
+    if #pending_scans == 0 or os.clock() - pending_scans[1].at < SCAN_DELAY_S then return end
+    local entries = pending_scans
+    pending_scans = {}
+    for _, entry in ipairs(entries) do core.log.try(TAG, register_raid, entry.before, entry.info) end
+end
+
+require("scheduler").every(TAG .. ".scan", 200, resolve_pending_scans)
 
 invasion.watch_spawn(before_spawn, after_spawn)
 

@@ -120,6 +120,17 @@ class RaidStartTests(RaidBehaviorTestCase):
         raid = self.raid()
         self.assertEqual((raid["state"], raid["initial"], raid["living"], raid["squads"]), ("active", SQUAD_UNITS, SQUAD_UNITS, 1))
 
+    def test_the_scan_of_the_new_units_runs_in_a_later_tick_than_the_spawn(self):
+        self.ask("invasion_plan_now")
+        self.ask("invasion_set_size", size="small")
+        self.game.exec("SCANS = {}; local find = FindAllOf; FindAllOf = function(name) if name == 'SMUnit' then SCANS[#SCANS + 1] = os.clock() end return find(name) end")
+        self.assertTrue(self.ask("invasion_force_next")["ok"])
+        self.game.advance(3)
+        times = self.game.exec("return table.concat(SCANS, ',')").split(",")
+        self.assertGreaterEqual(len(times), 2)
+        self.assertGreaterEqual(float(times[1]) - float(times[0]), 0.25, "the scan after the spawn waits for a later tick")
+        self.assertEqual(self.raid()["initial"], SQUAD_UNITS)
+
     def test_units_that_existed_before_are_not_raiders(self):
         self.make_unit()
         self.start_raid("small")

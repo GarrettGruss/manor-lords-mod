@@ -17,6 +17,7 @@
 
 local log = require("HarnessLog")
 local autosave = require("HarnessAutosave")
+local loop = require("HarnessLoop")
 
 local TAG = "HarnessBoot"
 local DEFAULT_SLOT = "saveGame_0"
@@ -640,7 +641,7 @@ else
 end
 setState("WAITING_FOR_MENU")
 
-LoopAsync(POLL_MS, function()
+loop.every(POLL_MS, function()
     if finished() then return true end
     ExecuteInGameThread(function()
         if not finished() then runStep() end
