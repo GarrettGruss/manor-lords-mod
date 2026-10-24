@@ -29,12 +29,22 @@ def settings(ctx) -> dict:
     return ctx.mod.command(PREFIX + "scenario_settings_state")
 
 
+def menu_is_open(ctx) -> bool:
+    """The player pawn is not live right after READY; the state command then fails. Treat that as not open yet."""
+    try:
+        return bool(settings(ctx)["open"])
+    except Exception as error:
+        if "no live player pawn" in str(error):
+            return False
+        raise
+
+
 def click(ctx, **args) -> dict:
     return ctx.mod.command(PREFIX + "scenario_settings_click", **args)
 
 
 def run(ctx) -> dict:
-    ctx.run_until(lambda: settings(ctx)["open"], 150, what="the settings menu opens", poll_s=1.0)
+    ctx.run_until(lambda: menu_is_open(ctx), 150, what="the settings menu opens", poll_s=1.0)
     time.sleep(SETTLE_S)  # the widget needs a frame before it is painted
     first = settings(ctx)
     ctx.log.info(f"menu open: {first}")
