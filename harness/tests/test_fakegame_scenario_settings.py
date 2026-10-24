@@ -114,7 +114,7 @@ class SettingsTestCase(InvasionTestCase):
         props = {"savefileToLoad": self.game.text(save_file)}
         if setup is not None:
             props["gameSetup"] = self.game.struct(currentGameSetup=self.game.struct(**setup))
-        self.game.obj("MLGameInstance", **props)
+        self.instance = self.game.obj("MLGameInstance", **props)
         self.game.advance(2)
 
     def settings(self):
@@ -264,6 +264,24 @@ class HussiteTemplateMarkerTests(SettingsTestCase):
     def test_a_loaded_game_does_not_set_the_marker(self):
         self.start_game("saveGame_1", 40, HUSSITE_SETUP)
         self.assertFalse(self.marker())
+
+
+class SecondGameInOneSessionTests(SettingsTestCase):
+    def test_a_new_game_after_a_load_in_one_session_opens_the_menu(self):
+        self.stand_in_menu()
+        self.start_game("saveGame_1", 40)
+        self.assertEqual(self.settings()["kind"], "old_save")
+        self.assertEqual(self.menu_flag("opens"), 0)
+        # The player goes to the main menu and starts a new game: a new pawn, a new ModState load, an empty save file name.
+        self.pawn.Tags = self.game.array([])
+        self.game.exec('require("ModState").open("invasion", "pawn"):load()', state=self.mod_name)
+        self.calendar.daysTotal = 1
+        self.instance.savefileToLoad = self.game.text("")
+        self.instance.gameSetup = self.game.struct(currentGameSetup=self.game.struct(**HUSSITE_SETUP))
+        self.game.advance(2)
+        state = self.settings()
+        self.assertEqual((state["kind"], state["open"], state["hussite_template"]), ("opened", True, True))
+        self.assertEqual(self.menu_flag("opens"), 1)
 
 
 class LoadedGameTests(SettingsTestCase):

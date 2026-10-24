@@ -399,8 +399,22 @@ local function read_template_setup()
     }
 end
 
+-- The decision is per game, not per session: a player may load a save, go to the main menu and start a new game. Each
+-- ModState load (a new player pawn) makes a new values table, so a changed table means a new game or a load.
+local function forget_decision_of_an_earlier_game()
+    if not state.loaded then return end
+    if S.seen_values ~= nil and S.seen_values ~= state.values and S.decided then
+        S.decided, S.kind, S.new_game, S.holding, S.waiting_since, S.unknown_logged, S.kit = false, nil, false, false, nil, false, nil
+        S.selection = rules.defaults(config)
+        core.log.info(TAG, "a new game or a load started in this session: the decision is made again")
+    end
+    S.seen_values = state.values
+end
+
 local function decide()
-    if S.decided or not state.loaded then return end
+    if not state.loaded then return end
+    forget_decision_of_an_earlier_game()
+    if S.decided then return end
     local info = { save_file = save_file_name(), applied = state:get("settings_applied"), day = current_day() }
     local kind = rules.kind_of_game(info, config)
     if kind == "unknown" then
