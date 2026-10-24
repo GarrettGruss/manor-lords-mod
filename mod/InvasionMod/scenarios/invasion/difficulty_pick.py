@@ -1,5 +1,5 @@
 """M02 iteration 04, D1 to D4, and update-raid-difficulty-levels (#404): the test pick sets the three levels together; each level can then be set alone.
-The levels scale the raid plan (yearly, vassal), the waves and the relief army (great) and the Public Order debuff.
+The levels scale the raid plan (yearly, vassal), the waves and the relief army (great).
 
 Option (run.py --env): INVASION_DIFFICULTY (1 to 3, default 2). It saves nothing.
 """
@@ -22,8 +22,6 @@ def run(ctx) -> dict:
     ctx.check("D3 waves equal the difficulty", after["waves"] == pick, after["waves"])
     plan = ctx.mod.command("InvasionMod.invasion_state")
     ctx.check("D3 planned squads are a multiple of the difficulty", plan["squads"] % pick == 0 and 1 <= plan["squads"] // pick <= 3, plan["squads"])
-    bandits = ctx.mod.command("InvasionMod.bandits_state")
-    ctx.check("D4 the bandits feature reads the picked difficulty", bandits["difficulty"] == pick, bandits.get("difficulty"))
     # D5: one level at a time. Yearly 1, great 3, vassal 0: the plan and the great raid follow their own level.
     ctx.mod.command("InvasionMod.invasion_set_level", kind="yearly", value=1)
     ctx.mod.command("InvasionMod.invasion_set_level", kind="great", value=3)

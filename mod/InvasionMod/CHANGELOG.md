@@ -4,6 +4,7 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 ### Changed
+- Bandits public order (change `update-bandits-public-order`, #424): the mod keeps its own public order (100 in a new game) and writes it to the game. Every 30 game days it adds 10 (plus the tech tree `order_bonus`) and subtracts 5 for each homeless family; each tick is logged and in the telemetry (`bandits_order`). Order under 25 starts a 90 game day timer; when it ends, up to 18 families leave to become bandits (a bandit band spawns only when the game has a bandit pawn, otherwise the mod logs it) and order rises by 25. Three banners: timer start, 30 game days before, leave. This replaces the approval debuff and the season roll. The tech tree `approval_bonus` has no effect now.
 - Feature `invasion` and `raid_widget` (change `update-raid-banners`, #400): one 30 day banner for a subjugation raid and a large plunder raid, no banner for a yearly raid or the difficulty, the great raid at game year 10 with a banner in years 7, 8 and 9, the raid menu lists the upcoming raids. See the root `CHANGELOG.md`.
 
 ### Changed

@@ -8,43 +8,66 @@ from lupa import LuaRuntime
 from test_fakegame_modstate import find_pack_mod
 
 RULES = find_pack_mod() / "Scripts" / "features" / "bandits" / "rules.lua"
-BANDS = [(75, 0.10), (50, 0.25), (25, 0.50)]
 
 
 class RulesTests(unittest.TestCase):
     def setUp(self):
         self.lua = LuaRuntime()
         self.rules = self.lua.execute(RULES.read_text(encoding="utf-8"))
-        self.bands = self.lua.table_from([self.lua.table_from({"below": b, "chance": c}) for b, c in BANDS])
 
-    def test_debuff_rounds_up(self):
-        self.assertEqual(self.rules.debuff(65, 1), 35)
-        self.assertEqual(self.rules.debuff(65, 2), 70)
-        self.assertEqual(self.rules.debuff(65, 1.5), 53)
+    def order_cfg(self):
+        return self.lua.table_from({
+            "manor_term": 10, "homeless_term": 5, "threshold": 25, "timer_days": 90, "warn_days": 30,
+            "leavers": 18, "order_gain": 25, "min_families_left": 1,
+        })
+
+    def timer(self, order, start, today):
+        step = self.rules.timer_step(order, start, today, self.order_cfg())
+        return step.action, step.days_left, step.warn
 
     def test_order_is_clamped(self):
-        self.assertEqual(self.rules.debuffed_order(100, 0, 3), 0)
+        self.assertEqual([self.rules.clamp_order(v) for v in (-5, 0, 50, 100, 130)], [0, 0, 50, 100, 100])
 
-    def test_chance_bands(self):
-        chances = {order: self.rules.chance_for(order, self.bands) for order in (80, 75, 74, 49, 24, 0)}
-        self.assertEqual(chances, {80: 0, 75: 0, 74: 0.10, 49: 0.25, 24: 0.50, 0: 0.50})
+    def test_tick_with_homeless_villagers(self):
+        record = self.rules.tick_order(50, 4, 0, self.order_cfg())
+        self.assertEqual(
+            (record.order_before, record.manor_term, record.homeless_count, record.homeless_term, record.order_after),
+            (50, 10, 4, 20, 40),
+        )
 
-    def test_roll_under_the_chance_converts(self):
-        self.assertTrue(self.rules.should_convert(60, self.bands, 0.09))
-        self.assertFalse(self.rules.should_convert(60, self.bands, 0.10))
-        self.assertFalse(self.rules.should_convert(90, self.bands, 0.0))
+    def test_tick_is_clamped(self):
+        self.assertEqual(self.rules.tick_order(95, 0, 0, self.order_cfg()).order_after, 100)
+        self.assertEqual(self.rules.tick_order(10, 5, 0, self.order_cfg()).order_after, 0)
 
-    def test_natural_order_follows_the_game(self):
-        self.assertEqual(self.rules.natural_order(80, None, None), 80)
-        self.assertEqual(self.rules.natural_order(35, 35, 100), 100)  # the mod's own write
-        self.assertEqual(self.rules.natural_order(90, 35, 100), 90)   # the game rewrote it
+    def test_order_bonus_is_added_to_the_manor_term(self):
+        record = self.rules.tick_order(50, 0, 5, self.order_cfg())
+        self.assertEqual((record.manor_term, record.order_after), (15, 65))
 
-    def test_season_changed(self):
-        self.assertFalse(self.rules.season_changed(1, -1))  # nothing saved: store only
-        self.assertFalse(self.rules.season_changed(1, 1))
-        self.assertTrue(self.rules.season_changed(2, 1))
-        self.assertTrue(self.rules.season_changed(0, 3))  # autumn to winter
+    def test_tick_is_due_after_tick_days(self):
+        self.assertFalse(self.rules.tick_due(100, -1, 30))  # nothing saved: store only
+        self.assertFalse(self.rules.tick_due(129, 100, 30))
+        self.assertTrue(self.rules.tick_due(130, 100, 30))
 
+    def test_timer_starts_below_the_threshold(self):
+        self.assertEqual(self.timer(20, -1, 200)[0], "start")
+        self.assertEqual(self.timer(25, -1, 200)[0], "none")
+
+    def test_timer_waits_warns_and_expires(self):
+        self.assertEqual(self.timer(20, 200, 230), ("wait", 60, False))
+        self.assertEqual(self.timer(20, 200, 260), ("wait", 30, True))
+        self.assertEqual(self.timer(20, 200, 290)[0], "leave")
+
+    def test_timer_resets_when_order_reaches_the_threshold(self):
+        self.assertEqual(self.timer(25, 200, 230)[0], "reset")
+        self.assertEqual(self.timer(25, 200, 400)[0], "reset")  # also after the time ran out
+
+    def test_leavers_keep_one_family(self):
+        cfg = self.order_cfg()
+        self.assertEqual([self.rules.leavers_for(n, cfg) for n in (40, 19, 10, 1, 0)], [18, 18, 9, 0, 0])
+
+    def test_order_after_the_leave(self):
+        cfg = self.order_cfg()
+        self.assertEqual([self.rules.order_after_leave(n, cfg) for n in (20, 90)], [45, 100])
 
     def cfg(self, multiplier=1.0):
         return self.lua.table_from({"silver_per_family": 10, "price_multiplier": multiplier})

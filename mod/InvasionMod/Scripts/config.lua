@@ -132,12 +132,15 @@ return {
     bandits = {
         enabled = true,
         poll_ms = 1000,                  -- real time between two checks of Public Order
-        bands = {                        -- the chance applies when Public Order is below "below"; the lowest matching band wins
-            { below = 75, chance = 0.10 },
-            { below = 50, chance = 0.25 },
-            { below = 25, chance = 0.50 },
-        },
-        families_per_conversion = 2,     -- families removed by one successful roll
+        start_order = 100,               -- mod order in a new game
+        tick_days = 30,                  -- game days between two order ticks
+        manor_term = 10,                 -- order gain for each tick (plus the tech tree order_bonus)
+        homeless_term = 5,               -- order loss for each tick and each homeless family
+        threshold = 25,                  -- order below this value starts the banditry timer
+        timer_days = 90,                 -- game days from the timer start to the leave
+        warn_days = 30,                  -- the warning banner shows when this many game days are left
+        leavers = 18,                    -- families that leave when the timer expires
+        order_gain = 25,                 -- order gain when the families leave
         families_per_squad = 2,          -- one Brigands squad (18 units) per 2 families (spike 15 proposal)
         min_families_left = 1,           -- the village never loses its last family to this feature
         buy_back = {                     -- iteration 03. Starting values, tuned in playtests.
