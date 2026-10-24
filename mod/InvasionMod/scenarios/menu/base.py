@@ -5,7 +5,8 @@ The camera is moved over a building, so a click at the screen centre would selec
 2. Menu open: a real click at the centre must not open the building panel. The picture shows it. The menu stays open.
 3. Menu closed: the same click opens the panel (the control).
 Needs the paks: `run.py --scenario menu-base --slot 0 --pak raidmenu --pak techmenu`. Real mouse input: no other game on the slot.
-It saves nothing. Options: POINT=x,y (the world click point, default 0.5,0.5), MENU (raid, tech or tribute; default tribute).
+The menu pauses the game on open and puts back the speed on close (change update-mod-menu-close-and-pause): the scenario runs the game
+at speed 2 before the open. It saves nothing. Options: POINT=x,y (the world click point, default 0.5,0.5), MENU (raid, tech or tribute; default tribute).
 """
 
 import time
@@ -22,6 +23,8 @@ SETTLE_S = 1.2
 HOVER_WAIT_S = 0.2
 BAR_X = tuple(round(0.30 + 0.01 * step, 3) for step in range(41))
 BAR_Y = (0.945, 0.96)
+GAME_SPEED = 2          # speed index 2 = game speed factor 4
+GAME_SPEED_FACTOR = 4.0
 
 
 def state(ctx) -> dict:
@@ -65,6 +68,7 @@ def run(ctx) -> dict:
     time.sleep(2.0)
 
     fx, fy = find_button(ctx, menu_id)
+    ctx.time.set_speed(GAME_SPEED)
     front(ctx)
     ctx.screenshot("before-open")
     ctx.click_with_mouse(fx, fy)
@@ -73,6 +77,8 @@ def run(ctx) -> dict:
     opened = state(ctx)
     expect.equals("B1 one bar click opened the menu", opened["press_count"], 1)
     expect.equals("B2 the backdrop is Visible (hit testable)", opened["blocker_visibility"], 0)
+    expect.equals("B3 the menu paused the game", ctx.bridge.read_game_speed(), 0)
+    expect.equals("B3 the speed before the open is stored", opened["saved_speed"], GAME_SPEED_FACTOR)
     front(ctx)
     ctx.screenshot("menu-open")
 
@@ -89,6 +95,7 @@ def run(ctx) -> dict:
     if after["open"]:
         ctx.mod.command(PREFIX + "menu_close")
         time.sleep(0.8)
+        expect.equals("B4 the close put back the speed", ctx.bridge.read_game_speed(), GAME_SPEED_FACTOR)
     ctx.hover_with_mouse(px, py)
     time.sleep(0.4)
     ctx.click_with_mouse(px, py)

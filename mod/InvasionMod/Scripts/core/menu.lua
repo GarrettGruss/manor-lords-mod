@@ -4,8 +4,11 @@
 --   * the open and close of the menu, one menu at a time;
 --   * a full-screen layer under the menu content that dims the view and blocks clicks to the game (notes/click-blocking.md:
 --     a full-screen Button blocks a click, a Border does not);
---   * a Close button (a clone of the bar button class) at the top left, over the layer. A click on the layer does nothing:
---     OnClicked:Add on a Button made at run time crashes the game (notes/menu-findings.md), so the layer has no click callback.
+--   * a Close button at the bottom middle, over the layer: the game's own Close button class (menuButton_C, the Close label of the
+--     Diplomacy screen: serif text with a fleur-de-lis on each side). A click on the layer does nothing:
+--     OnClicked:Add on a Button made at run time crashes the game (notes/menu-findings.md), so the layer has no click callback;
+--   * the pause: a menu pauses the game when it opens and puts back the speed when it closes (change update-mod-menu-close-and-pause);
+--   * the Esc key closes the open menu, and the game's own Esc menu is closed again on that press (notes/esc-key.md).
 -- A menu adds only its own parts through `register`. The menu content is a cooked Widget Blueprint of the pak.
 -- Rules: game objects are touched on the game thread only (the scheduler runs the jobs there). A hook or a key callback only
 -- sets a flag or pushes to a queue. Only this module makes a mod menu widget (test_menu_widget_sites.py).
@@ -18,6 +21,13 @@ local BACKDROP_ALPHA = 0.55
 local BAR_POLL_MS = 1000
 local TICK_MS = 100
 local BAR_BUTTON_CLASS = "/Game/UI/HUD/mainTabButton.mainTabButton_C"
+local CLOSE_CLASS = "/Game/UI/Common/menuButton.menuButton_C"   -- the game's Close button (Diplomacy screen)
+local CLOSE_ANCHOR = { X = 0.5, Y = 0.95 }                      -- the centre of the Close button: bottom middle, 95 percent down
+local ESC_MENU_CLASS = "mainMenu_widget_C"                      -- the game's Esc menu (made on demand, kept, collapsed when closed)
+local ESC_GUARD_S = 1.5                                         -- real seconds to watch for the game's Esc menu after a mod menu closed on Esc
+local COLLAPSED = 1
+-- gameSpeed of the engine (0 paused, 1, 4, 8) -> the index of changeGameSpeed (spec 04 time-measurements)
+local SPEED_INDEX = { [1] = 1, [4] = 2, [8] = 3 }
 local HUD_CLASS, PANEL_NAME = "MainUICPP_C", "main_tabs_HB"
 local LABEL_SCALE = 0.5
 local LABEL_COLOR = { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
@@ -28,6 +38,9 @@ local M = {}
 local menus, order = {}, {}   -- id -> spec; the ids in the order of registration (the order of the buttons)
 local S = {
     open_id = nil, content = nil, blocker = nil, close_button = nil,
+    saved_speed = nil,         -- the game speed factor before the open (0: it was paused); nil: not read, or the menu manages its speed
+    esc_requests = 0, esc_guard_until = nil, esc_guard_speed = nil, esc_closes = 0, esc_menu_hidden = 0,
+    pauses = 0, restores = 0,
     toggles = {},              -- ids to toggle at the next tick (a key or a bar click)
     bar_clicks = {},           -- ids of bar buttons clicked since the last tick
     buttons = {},              -- id -> { widget, name }
@@ -35,7 +48,7 @@ local S = {
     last_error = nil, bar_error = nil, press_count = 0, close_presses = 0, bar_polls = 0, hud_found = false, pass_through = 0,
 }
 
-local set_label, install_hooks -- defined in the bottom bar part
+local set_label, install_hooks, set_close_text -- defined in the bottom bar part
 local function library() return StaticFindObject("/Script/UMG.Default__WidgetBlueprintLibrary") end
 
 ---------------------------------------------------------------------------------------------
@@ -159,16 +172,18 @@ end
 
 local CLOSE_ID = "__close"
 
--- A clone of the game's bar button at the top left, above the menu content. Its click is the HandleClicked hook (install_hooks).
+-- The game's Close button class, made at run time. It sits at the bottom middle (an anchor and an alignment need no viewport size),
+-- above the menu content. Its click is the DoOnReleased hook (install_hooks).
 local function make_close_button()
-    local class = StaticFindObject(BAR_BUTTON_CLASS)
-    if not isValid(class) then error("bar button class not loaded: " .. BAR_BUTTON_CLASS, 0) end
+    local class = StaticFindObject(CLOSE_CLASS)
+    if not isValid(class) then error("close button class not loaded: " .. CLOSE_CLASS, 0) end
     local controller = FindFirstOf("PlayerController")
     local widget = library():Create(controller, class, controller)
     if not isValid(widget) then error("Create returned no close button", 0) end
     widget:AddToViewport(CONTENT_Z + 10)
-    widget:SetPositionInViewport({ X = 24, Y = 24 }, false)
-    set_label(widget, "Close")
+    widget:SetAnchorsInViewport({ Minimum = CLOSE_ANCHOR, Maximum = CLOSE_ANCHOR })
+    widget:SetAlignmentInViewport({ X = 0.5, Y = 0.5 })
+    set_close_text(widget, "Close")
     return { widget = widget, name = widget:GetFName():ToString() }
 end
 
@@ -187,28 +202,89 @@ local function fail(message)
     return { ok = false, error = message }
 end
 
-function M.close()
+-- The game speed factor now: 0 paused, 1, 4 or 8. nil when it cannot be read.
+local function read_speed()
+    local engine = FindFirstOf("RTSMultiEngineCPP")
+    if not isValid(engine) then return nil end
+    local speed = core.read(function() return engine.gameSpeed end)
+    return type(speed) == "number" and speed or nil
+end
+
+local function player_pawn()
+    local engine = FindFirstOf("RTSMultiEngineCPP")
+    if not isValid(engine) then return nil end
+    local pawn = core.read(function() return engine.playerRef end)
+    if isValid(pawn) then return pawn end
+    return nil
+end
+
+-- Pause the game and remember the speed it had. A paused game stays "paused" (saved speed 0).
+local function pause_for_menu()
+    local pawn = player_pawn()
+    if pawn == nil then return core.log.warn(TAG, "the game is not paused by the menu: no player pawn") end
+    S.saved_speed = read_speed()
+    local ok, problem = pcall(function() pawn:pauseGame() end)
+    if not ok then
+        S.saved_speed = nil
+        return core.log.warn(TAG, "pauseGame failed: " .. tostring(problem))
+    end
+    S.pauses = S.pauses + 1
+end
+
+-- Put back the speed from before the open. A game that was paused stays paused. A speed that cannot be read: nothing changes.
+local function restore_speed(speed)
+    if speed == nil or speed == 0 then return end
+    local pawn = player_pawn()
+    if pawn == nil then return core.log.warn(TAG, "the game speed was not restored: no player pawn") end
+    local ok, problem = pcall(function()
+        pawn:unPauseGame()
+        pawn:changeGameSpeed(SPEED_INDEX[speed] or 1, false)
+    end)
+    if not ok then return core.log.warn(TAG, "the game speed was not restored: " .. tostring(problem)) end
+    S.restores = S.restores + 1
+end
+
+-- Closes the widgets and calls on_close. `keep_speed`: the next menu opens at once, so the saved speed stays for it.
+local function close_menu(keep_speed)
     local id = S.open_id
     if id == nil then return { ok = true, already_closed = true } end
+    local speed = S.saved_speed
+    S.saved_speed = nil
     core.log.try(TAG, menus[id].on_close)
     remove_widget(S.content)
     remove_widget(S.blocker)
     if S.close_button then remove_widget(S.close_button.widget) end
     S.open_id, S.content, S.blocker, S.close_button = nil, nil, nil, nil
-    return { ok = true }
+    if keep_speed then
+        S.saved_speed = speed
+    elseif not menus[id].manages_speed then
+        restore_speed(speed)
+    end
+    return { ok = true, speed = speed }
 end
+
+function M.close() return close_menu(false) end
 
 function M.open(id)
     local spec = menus[id]
     if not spec then return fail("unknown menu: " .. tostring(id)) end
     if M.is_open(id) then return { ok = true, already_open = true } end
-    if S.open_id ~= nil then M.close() end -- one menu at a time
+    local carried = nil
+    if S.open_id ~= nil then -- one menu at a time; the speed from before the first menu stays
+        carried = S.saved_speed
+        close_menu(true)
+        S.saved_speed = nil
+    end
     S.hover_id = nil -- a hover event names a button only when the mouse enters it, so forget the old one
     local content, problem = M.create_pak_widget(spec)
-    if not content then return fail(problem) end
+    if not content then
+        restore_speed(carried)
+        return fail(problem)
+    end
     local ok_on_open, opened, open_problem = pcall(spec.on_open, content)
     if not ok_on_open or not opened then
         remove_widget(content)
+        restore_speed(carried)
         return fail("menu " .. id .. " did not open: " .. tostring(ok_on_open and open_problem or opened))
     end
     local made, blocker = pcall(make_blocker)
@@ -218,6 +294,7 @@ function M.open(id)
         remove_widget(content)
         if made then remove_widget(blocker) end
         core.log.try(TAG, spec.on_close)
+        restore_speed(carried)
         return fail("the backdrop or close button of menu " .. id .. " failed: " .. tostring(made and close_button or blocker))
     end
     S.pass_through = let_clicks_reach_the_backdrop(content)
@@ -225,6 +302,10 @@ function M.open(id)
     S.open_id, S.content, S.blocker, S.close_button, S.last_error = id, content, blocker, close_button, nil
     content:AddToViewport(spec.z_order or CONTENT_Z)
     if spec.position then content:SetPositionInViewport(spec.position, false) end
+    if not spec.manages_speed then
+        pause_for_menu()
+        if carried ~= nil then S.saved_speed = carried end -- the game was already paused by the first menu
+    end
     return { ok = true }
 end
 
@@ -299,6 +380,20 @@ function set_label(widget, text)
     return ok
 end
 
+-- The label of the game's Close button: the text key "Close" is the game's own text; the TextBlock is set as a fallback.
+function set_close_text(widget, text)
+    local ok, problem = pcall(function()
+        widget.TextKey = FName(text)
+        widget:updateText()
+    end)
+    if not ok then core.log.info(TAG, "close button text key not set: " .. tostring(problem)) end
+    local block = find_in(widget, "textblock", 0)
+    if block and isValid(block) then
+        local set, set_problem = pcall(function() block:SetText(FText(text)) end)
+        if not set then core.log.info(TAG, "close button text not set: " .. tostring(set_problem)) end
+    end
+end
+
 local function id_of_button(name)
     if S.close_button and S.close_button.name == name then return CLOSE_ID end
     for id, button in pairs(S.buttons) do
@@ -322,6 +417,15 @@ function install_hooks()
             if id then S.bar_clicks[#S.bar_clicks + 1] = id end
         end)
         RegisterHook(BAR_BUTTON_CLASS .. ":HandleHovered", function(self)
+            local id = id_of_button(button_name_of(self))
+            if id then S.hover_id = id end
+        end)
+        -- The Close button is the game's menuButton_C: it has no HandleClicked, but DoOnReleased runs on a click.
+        RegisterHook(CLOSE_CLASS .. ":DoOnReleased", function(self)
+            local id = id_of_button(button_name_of(self))
+            if id then S.bar_clicks[#S.bar_clicks + 1] = id end
+        end)
+        RegisterHook(CLOSE_CLASS .. ":OnMouseEnter", function(self)
             local id = id_of_button(button_name_of(self))
             if id then S.hover_id = id end
         end)
@@ -396,7 +500,57 @@ end
 -- Tick
 ---------------------------------------------------------------------------------------------
 
+---------------------------------------------------------------------------------------------
+-- The Esc key
+---------------------------------------------------------------------------------------------
+
+-- The game opens its own Esc menu on the same press (UE4SS does not swallow the key). It is a widget that the game keeps after the
+-- first use and collapses when it is closed. After a mod menu closed on Esc, watch for it for a short time and close it again,
+-- then put back the game speed (the game's menu pauses the game and may undo our restore).
+local function hide_game_esc_menu()
+    local widget = FindFirstOf(ESC_MENU_CLASS)
+    if not isValid(widget) then return false end
+    local visibility = core.read(function() return widget:GetVisibility() end)
+    if visibility == nil or visibility == COLLAPSED then return false end
+    -- `continue` is the Continue button of the menu: it closes the menu and gives the HUD back. DoCloseAndHideSelf only collapses
+    -- the widget and leaves the HUD hidden (spike notes/esc-key.md), so it is the fallback.
+    local ok, problem = pcall(function() widget:continue() end)
+    if not ok then ok, problem = pcall(function() widget:DoCloseAndHideSelf() end) end
+    if not ok then
+        core.log.warn(TAG, "the game Esc menu could not be closed: " .. tostring(problem))
+        return false
+    end
+    S.esc_menu_hidden = S.esc_menu_hidden + 1
+    core.log.info(TAG, "the game Esc menu opened on the press that closed a mod menu; closed it again")
+    return true
+end
+
+local function esc_guard_tick()
+    if S.esc_guard_until == nil then return end
+    if hide_game_esc_menu() then
+        restore_speed(S.esc_guard_speed)
+        S.esc_guard_until, S.esc_guard_speed = nil, nil
+    elseif os.clock() > S.esc_guard_until then
+        S.esc_guard_until, S.esc_guard_speed = nil, nil
+    end
+end
+
+-- Esc with a mod menu open: close it like the Close button. With no mod menu open nothing happens here, so the game opens its menu.
+local function handle_esc()
+    if S.open_id == nil then return end
+    local speed = S.saved_speed
+    local spec = menus[S.open_id]
+    S.esc_closes = S.esc_closes + 1
+    core.log.info(TAG, "Esc pressed: closing the menu " .. S.open_id)
+    M.close()
+    S.esc_guard_until = os.clock() + ESC_GUARD_S
+    S.esc_guard_speed = (spec ~= nil and not spec.manages_speed) and speed or nil
+end
+
 local function tick()
+    for _ = 1, S.esc_requests do handle_esc() end
+    S.esc_requests = 0
+    esc_guard_tick()
     local clicks, toggles = S.bar_clicks, S.toggles
     S.bar_clicks, S.toggles = {}, {}
     for _, id in ipairs(clicks) do
@@ -425,7 +579,8 @@ function M.state()
     local blocker_visibility = isValid(S.blocker) and core.read(function() return S.blocker:GetVisibility() end) or nil
     return {
         open_id = S.open_id, open = M.is_open(), registered = order, buttons = buttons, hover_id = S.hover_id,
-        press_count = S.press_count, blocker = isValid(S.blocker), blocker_visibility = blocker_visibility,
+        press_count = S.press_count, saved_speed = S.saved_speed, pauses = S.pauses, restores = S.restores,
+        esc_closes = S.esc_closes, esc_menu_hidden = S.esc_menu_hidden, esc_guard = S.esc_guard_until ~= nil, blocker = isValid(S.blocker), blocker_visibility = blocker_visibility,
         close_button = S.close_button ~= nil and isValid(S.close_button.widget), close_presses = S.close_presses, bar_polls = S.bar_polls, pass_through = S.pass_through, hud_found = S.hud_found, bar_error = S.bar_error, last_error = S.last_error,
     }
 end
@@ -441,6 +596,14 @@ if has_commands then
         S.bar_clicks[#S.bar_clicks + 1] = args.id
         return { ok = true }
     end, { id = { type = "string", required = true } })
+end
+
+-- A key callback only counts the press. The tick does the work on the game thread.
+RegisterKeyBind(Key.ESCAPE, function() S.esc_requests = S.esc_requests + 1 end)
+
+-- A named command for tests: the same path as the key press.
+if has_commands then
+    commands.register("InvasionMod.menu_press_esc", function() S.esc_requests = S.esc_requests + 1; return { ok = true } end, {})
 end
 
 require("scheduler").every(TAG, TICK_MS, tick)

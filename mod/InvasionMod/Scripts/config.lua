@@ -177,6 +177,7 @@ return {
         begin_speed = 1,                     -- the game speed after "Begin the game" (a new game starts at speed 0)
         disable_autosave = true,             -- send disable_autosave after the intro and after Begin (spike #358: the first call after a new game is undone)
         poll_ms = 100,
+        pause_guard_epsilon = 0.01,          -- game clock change between two looks that counts as "the game runs" while the menu is open (#418)
         z_order = 500, position = { X = 300, Y = 120 },
     },
     -- M06 sack_and_terms, iteration 01. All values are TBD for playtests (M00 gives only the range 20 to 50 percent).

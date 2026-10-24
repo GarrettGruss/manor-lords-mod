@@ -14,7 +14,7 @@ When a new game starts, the mod SHALL open the scenario settings menu and SHALL 
 - **WHEN** a new game starts from a normal launch with the menu open, and the intro cinematic ends
 - **THEN** the game clock does not move until the player clicks "Begin the game"
 - **AND** if the clock moves, the mod pauses the game again
-- Checked by the new test scenario `mod/InvasionMod/scenarios/scenario_settings/player_launch_pause.py` (it disables the HarnessBoot pause) and the new fake-game test in `harness/tests/test_fakegame_scenario_settings.py`. Not checked yet.
+- Checked by the new test scenario `mod/InvasionMod/scenarios/scenario_settings/player_launch_pause.py` (it disables the HarnessBoot pause) and the new fake-game test in `harness/tests/test_fakegame_scenario_settings.py`. Run 20261023-232209-eb8a (before the fix: 20261023-224512-647a). The test scenario also presses Space and 2 while the menu is open. Pictures: `evidence/`.
 
 #### Scenario: A loaded game does not open the menu
 - **WHEN** a save loads that holds the settings
