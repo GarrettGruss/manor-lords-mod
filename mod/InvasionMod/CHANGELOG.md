@@ -3,6 +3,30 @@
 Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-10-24
+First release for play testers. The mod turns Manor Lords into "The Hussites Are Coming": a growth game where Hussite armies raid you and your vassals.
+
+### What the mod does
+- **New game template and start menu:** the New Game screen has a 6th template, "The Hussites Are Coming". A new game opens a start menu where you pick the raid level for yearly raids, great raids and vassal raids (0 off, 1 easy, 2 medium, 3 hard). The game stays paused until you click "Begin the game". You start with 10 people and 300 silver.
+- **Raids:** no raid comes in the first game year. From the second year, one raid can come each year (a roll at each season change). Raids are Hussite armies of mixed units, led by an AI lord. A banner warns you 30 game days before a large plunder raid or a subjugation raid. The great raid starts at game year 10, with banners in years 7, 8 and 9. The raid menu (F8 or the Raid button) lists the next raids.
+- **Raid behavior:** raiders steal goods from your tier 1 stores (storehouse, granary), never from the manor store, and carry only a limited load. Goods that raiders take go to the corpse pit when their bodies arrive there. A lost battle sacks the town; the invader may offer terms, but not after a sack of your region.
+- **Vassals:** friendly AI lords run regions in your name. They pay goods each season as tribute (also iron and salt). A Hussite sack can wipe a vassal (80 percent ruins). You can pay silver to restore it. A lost vassal sends refugee families to you.
+- **Public order and bandits:** the mod keeps its own public order. Low order starts a timer; when it ends, families leave and form a bandit camp. You can pay silver to bring families back. The Public Order tooltip lists the terms.
+- **Tech tree (F9 or the Tech button):** two exclusive paths, Oppression and Prosperity, with nodes, laws and vassal policies. A tooltip shows the effects.
+- **Liege screen:** pay silver as tribute to earn influence, and request an arms shipment (200 silver, 30 large shields and 30 spears, 180 game days cooldown; needs a built manor).
+- **Manor and economy:** the manor module is a store with a capacity and tech upgrades. Home deposits of iron, salt and clay run out; vassal tribute is the lasting supply.
+- **Unit balance:** unarmored units lose defence, so armor matters.
+
+### Known limits
+- English only.
+- The City Building thumbnail shows on the Hussite template.
+- RE-UE4SS experimental build 4.0.0-rc1 is required.
+- Vassals need the game setting AI opponents above 0. With 0, the start menu shows "Warning: vassals are not enabled."
+- Not verified in the real game: the tech tree tooltip on mouse hover, and the arms shipment cooldown over a save and a load.
+- The terms of the Public Order tooltip are not saved over a load.
+
+### Details by change
 ### Added
 - Feature `scenario_settings` (change `add-game-settings-guard`, #438): guard value `vassals` and the menu warning "vassals are not enabled". See the root `CHANGELOG.md`.
 

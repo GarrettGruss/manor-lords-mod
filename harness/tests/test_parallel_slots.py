@@ -288,8 +288,9 @@ class LedgerOwnerTest(TempCase):
         with mock.patch.object(saveslots, "LEDGER_PATH", self.ledger):
             with mock.patch.object(gameslots, "settings_installed", return_value=True):
                 self.assertEqual(set(phases.user_files(install)), {"saveGame_0.sav"})
+            # The save folder guard always ignores the settings file since #393, whatever the install state.
             with mock.patch.object(gameslots, "settings_installed", return_value=False):
-                self.assertEqual(set(phases.user_files(install)), {"saveGame_0.sav", "rtsSettings.sav"})
+                self.assertEqual(set(phases.user_files(install)), {"saveGame_0.sav"})
 
 
 class SlotInstallTest(TempCase):

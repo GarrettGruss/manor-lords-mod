@@ -14,6 +14,8 @@ from test_fakegame_modstate import find_pack_mod
 
 WIDGET_CALLS = re.compile(r"AddToViewport|WidgetBlueprintLibrary")
 BASE_MENU = "core/menu.lua"
+# A tooltip row is not a menu: it joins the game's own tooltip list and has no backdrop or bottom bar button (change add-order-tooltip-rows).
+TOOLTIP_ROW_FILES = {"features/order_tooltip/widget.lua"}
 
 
 def is_comment(line: str) -> bool:
@@ -24,7 +26,7 @@ def find_sites(scripts: Path) -> list[str]:
     found = []
     for path in sorted(scripts.rglob("*.lua")):
         relative = path.relative_to(scripts).as_posix()
-        if relative == BASE_MENU:
+        if relative == BASE_MENU or relative in TOOLTIP_ROW_FILES:
             continue
         for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), start=1):
             if WIDGET_CALLS.search(line) and not is_comment(line):

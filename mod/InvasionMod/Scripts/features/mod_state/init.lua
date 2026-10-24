@@ -63,6 +63,10 @@ loop.every(HOOK_RETRY_MS, function()
     attempts = attempts + 1
     if pcall(hook_begin_play) then
         core.log.info(TAG, "hooked " .. PAWN_BEGIN_PLAY)
+        -- The hook can come after the pawn began play (a new game opened right at boot). Then no hook call follows.
+        ExecuteInGameThread(function()
+            if not state.loaded and state:owner_object() ~= nil then reload_state("pawn existed at hook time") end
+        end)
         return true
     end
     if attempts >= HOOK_MAX_ATTEMPTS then
