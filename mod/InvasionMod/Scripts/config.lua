@@ -141,7 +141,6 @@ return {
         warn_days = 30,                  -- the warning banner shows when this many game days are left
         leavers = 18,                    -- families that leave when the timer expires
         order_gain = 25,                 -- order gain when the families leave
-        families_per_squad = 5,          -- one Brigands squad per 5 families that leave (owner decision 2026-10-23); the rest leave without a squad
         min_families_left = 1,           -- the village never loses its last family to this feature
         buy_back = {                     -- iteration 03. Starting values, tuned in playtests.
             silver_per_family = 10,      -- 2 families cost 20 silver, the amount of the proven letter
