@@ -78,24 +78,24 @@ function M.bandit_pawn_exists()
     return false
 end
 
--- Villagers leave: remove `count` families in batches. A bandit band spawns for them only when the bandit pawn exists.
+-- Villagers leave. Every `families_per_squad` families that leave form one brigand squad: squads = floor(count / families_per_squad).
+-- The remaining families leave without a squad. A squad spawns only when the bandit pawn exists.
 -- Returns { removed, squads, bandit_units, spawned } or nil and a message.
 function M.leave(region, count, families_per_squad)
     local spawn = M.bandit_pawn_exists()
     local result = { removed = 0, squads = 0, bandit_units = 0, spawned = spawn }
+    local full_squads = math.floor(count / families_per_squad)
+    for _ = 1, spawn and full_squads or 0 do
+        local answer, problem = M.rebel(families_per_squad, families_per_squad)
+        if answer == nil then return nil, problem end
+        result.removed = result.removed + (answer.families_removed or families_per_squad)
+        result.squads = result.squads + #answer.squads
+        result.bandit_units = result.bandit_units + (answer.bandit_units_spawned or 0)
+    end
     while result.removed < count do
-        local batch = math.min(core.MAX_REBEL_FAMILIES, count - result.removed)
-        if spawn then
-            local answer, problem = M.rebel(batch, families_per_squad)
-            if answer == nil then return nil, problem end
-            result.removed = result.removed + (answer.families_removed or batch)
-            result.squads = result.squads + #answer.squads
-            result.bandit_units = result.bandit_units + (answer.bandit_units_spawned or 0)
-        else
-            local removed = core.remove_families(region, batch)
-            if removed < 1 then break end
-            result.removed = result.removed + removed
-        end
+        local removed = core.remove_families(region, math.min(core.MAX_REBEL_FAMILIES, count - result.removed))
+        if removed < 1 then break end
+        result.removed = result.removed + removed
     end
     return result
 end
