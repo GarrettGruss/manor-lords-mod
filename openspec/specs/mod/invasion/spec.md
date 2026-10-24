@@ -73,7 +73,7 @@ The mod SHALL give each squad of a raid one unit template. About `ranged_share` 
 - Checked by `mod/InvasionMod/scenarios/unit_balance/role_templates.py`.
 
 ### Requirement: A role raid is the army of an AI lord
-With `roles.lord_army.enabled` (default on), the mod SHALL spawn a role raid as the army of the AI lord `Hussite Raiders`, at war with the player, with its battlefield at the player manor. If that fails before any army exists, the mod SHALL spawn bandit squads instead. If it fails after some armies exist, the mod SHALL NOT spawn bandit squads on top, and SHALL try again on the next daily step.
+With `roles.lord_army.enabled` (default on), the mod SHALL spawn a role raid as the army of the AI lord `Hussite Raiders`, at war with the player, with its battlefield at the player manor. The anchor SHALL be the player manor. If the player has no manor, the anchor SHALL be the average location of the buildings in the player home region. The anchor SHALL NOT depend on the camera. If that fails before any army exists, the mod SHALL spawn bandit squads instead. If it fails after some armies exist, the mod SHALL NOT spawn bandit squads on top, and SHALL try again on the next daily step.
 
 #### Scenario: A lord raid
 - **WHEN** a role raid spawns
@@ -84,6 +84,21 @@ With `roles.lord_army.enabled` (default on), the mod SHALL spawn a role raid as 
 - **WHEN** the lord raid fails after some armies were spawned
 - **THEN** no bandit squads are added
 - Checked by `harness/tests/test_fakegame_invasion.py`.
+
+#### Scenario: The player has a manor
+- **WHEN** a role raid spawns and the player has a manor
+- **THEN** the anchor is the location of the manor
+- Checked by `mod/InvasionMod/scenarios/invasion/raid_anchor_manor.py` and `harness/tests/test_fakegame_harnessbattlefield.py`.
+
+#### Scenario: The player has no manor
+- **WHEN** a role raid spawns and the player has no manor
+- **THEN** the anchor is the average location of the buildings in the home region
+- Checked by `harness/tests/test_fakegame_harnessbattlefield.py`.
+
+#### Scenario: The camera is over another region
+- **WHEN** a role raid spawns while the camera is over a region that is not the home region
+- **THEN** the anchor is the same as with the camera over the home region
+- Checked by `mod/InvasionMod/scenarios/invasion/raid_anchor_manor.py` and `harness/tests/test_fakegame_harnessbattlefield.py`.
 
 ### Requirement: The player picks the difficulty once
 The mod SHALL keep three levels from 0 to 3, one for each raid type: yearly, great and vassal (default 2 each, `invasion.levels`). The player SHALL choose them in the scenario start menu of `mod/scenario_settings`. There is no global difficulty. `invasion_set_difficulty` SHALL set all three levels to one value from 0 to 3 at any time, and a new command SHALL set one level. `invasion_pick_difficulty` SHALL stay as a test command that sets the levels once. It SHALL be refused after the first pick, after the first raid spawned, and for a value outside 0 to 3. A change SHALL re-plan the squads of an unspawned raid of that type.
