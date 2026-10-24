@@ -1,6 +1,6 @@
 """M04 iteration 03, C1 to C7 and C9: the player pays silver and the converted families come back.
 
-The conversion is forced (approval 0, roll 0). The buy-back uses the native settle letter through the named command.
+The conversion is forced (bandits_leave_now). The buy-back uses the native settle letter through the named command.
 C6 (no free home slot) cannot be made in the real game without building changes, so it is covered by the fake game tests.
 It saves nothing.
 """
@@ -28,13 +28,12 @@ def unchanged(before: dict, after: dict) -> bool:
 
 
 def check_refusals(ctx) -> None:
-    ctx.mod.command("InvasionMod.bandits_set_approval", value=0)
     before = state(ctx)
     answer = ctx.mod.command("InvasionMod.bandits_buy_back")
     ctx.check("C7 refused with nothing outstanding", answer["accepted"] is False and "no families" in answer["reason"], answer)
     ctx.check("C7 nothing changed", unchanged(before, state(ctx)), [before, state(ctx)])
 
-    ctx.mod.command("InvasionMod.bandits_tick_now", roll=0.0)
+    ctx.mod.command("InvasionMod.bandits_leave_now", count=2)
     ctx.run_until(lambda: state(ctx)["outstanding_families"] == 2, 20, what="the conversion")
     ctx.time.run_game_seconds(10, speed=SPEED)
     ctx.actions.set_silver(5)

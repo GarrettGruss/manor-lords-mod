@@ -63,6 +63,43 @@ function M.rebel(count, families_per_squad)
     return answer
 end
 
+function M.homeless(region)
+    local ok, value = pcall(function() return region:getNumHomelessFamilies() end)
+    if ok and type(value) == "number" then return value end
+    return nil
+end
+
+-- The game has a bandit pawn only when the game settings made bandit camps. Without it no bandit can spawn.
+function M.bandit_pawn_exists()
+    for _, pawn in ipairs(FindAllOf("PawnCPP") or {}) do
+        local ok, bandit = pcall(function() return pawn:IsValid() and not pawn:GetFullName():find("Default__", 1, true) and pawn.isBandit == true end)
+        if ok and bandit then return true end
+    end
+    return false
+end
+
+-- Villagers leave: remove `count` families in batches. A bandit band spawns for them only when the bandit pawn exists.
+-- Returns { removed, squads, bandit_units, spawned } or nil and a message.
+function M.leave(region, count, families_per_squad)
+    local spawn = M.bandit_pawn_exists()
+    local result = { removed = 0, squads = 0, bandit_units = 0, spawned = spawn }
+    while result.removed < count do
+        local batch = math.min(core.MAX_REBEL_FAMILIES, count - result.removed)
+        if spawn then
+            local answer, problem = M.rebel(batch, families_per_squad)
+            if answer == nil then return nil, problem end
+            result.removed = result.removed + (answer.families_removed or batch)
+            result.squads = result.squads + #answer.squads
+            result.bandit_units = result.bandit_units + (answer.bandit_units_spawned or 0)
+        else
+            local removed = core.remove_families(region, batch)
+            if removed < 1 then break end
+            result.removed = result.removed + removed
+        end
+    end
+    return result
+end
+
 function M.free_slots(region)
     local ok, value = pcall(function() return region:getAvailableLivingSpace().constructed end)
     if ok and type(value) == "number" then return value end

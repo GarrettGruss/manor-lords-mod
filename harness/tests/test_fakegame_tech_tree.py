@@ -117,6 +117,7 @@ class TechTreeTestCase(unittest.TestCase):
         self.game.load_mod(self.mod_name)
         self.game.advance(3)
         self.counter = 0
+        self.ask("invasion_set_difficulty", value=1)  # these tests use the numbers of level 1; the mod default is level 2
 
     def ask(self, name, **args):
         self.counter += 1
@@ -197,33 +198,32 @@ class EffectTests(TechTreeTestCase):
             self.assertTrue(answer["ok"], answer)
         self.game.advance(4)
 
+    def manor_term(self):
+        self.ask("bandits_set_order", value=0)
+        return self.ask("bandits_tick_now")["result"]["last_tick"]["manor_term"]
+
     def test_oppression_nodes_add_public_order(self):
-        # approval 65 gives a debuff of 35: order 100 - 35 = 65. Martial Law and Iron Hand add 10 and 15.
+        # Martial Law and Iron Hand add 10 and 15 to the manor term of each tick (base 10).
         self.game.advance(3)
-        self.assertEqual(self.region.publicOrder, 65)
+        self.assertEqual(self.manor_term(), 10)
         self.unlock_chain("oppression", ["martial_law", "iron_hand"])
-        self.assertEqual(self.region.publicOrder, 90)
+        self.assertEqual(self.manor_term(), 35)
 
     def test_fear_of_the_lord_needs_four_squads(self):
         self.unlock_chain("oppression", ["martial_law", "iron_hand", "veteran_levies", "fear_of_the_lord"])
-        self.assertEqual(self.region.publicOrder, 90)  # 100 - 35 + 25; the last 25 waits for 4 squads
+        self.assertEqual(self.manor_term(), 35)  # the last 25 waits for 4 squads
         self.assertEqual(self.state()["totals"]["order_bonus"], 25)
 
     def test_fear_of_the_lord_counts_with_four_squads(self):
         self.pawn.commandedSquads = self.game.array([1, 2, 3, 4])
         self.unlock_chain("oppression", ["martial_law", "iron_hand", "veteran_levies", "fear_of_the_lord"])
         self.assertEqual(self.state()["totals"]["order_bonus"], 50)
-        self.assertEqual(self.region.publicOrder, 100)
+        self.assertEqual(self.manor_term(), 60)
 
-    def test_prosperity_raises_the_approval_used_by_the_debuff(self):
+    def test_prosperity_approval_bonus_has_no_effect_on_order(self):
         self.unlock_chain("prosperity", ["fair_courts"])
-        self.assertEqual(self.region.publicOrder, 70)  # approval 65 + 5 gives a debuff of 30
-        self.assertEqual(self.region.Approval, 65)     # the real approval is not written
-
-    def test_golden_age_removes_the_debuff_at_high_approval(self):
-        self.region.Approval = 90
-        self.unlock_chain("prosperity", ["fair_courts", "amnesty", "militia_rights", "golden_age"])
-        self.assertEqual(self.region.publicOrder, 100)  # approval 90 + 5 + 15 is capped at 100
+        self.assertEqual(self.manor_term(), 10)  # approval_bonus is not used by the order rules
+        self.assertEqual(self.region.Approval, 65)
 
     def test_buy_back_price_factor_of_the_nodes(self):
         self.assertEqual(self.state()["totals"]["buy_back_multiplier"], 1)

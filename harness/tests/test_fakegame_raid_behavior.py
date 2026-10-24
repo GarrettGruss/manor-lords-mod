@@ -43,6 +43,7 @@ class RaidBehaviorTestCase(unittest.TestCase):
         self.game.load_mod(self.mod_name)
         self.game.advance(2)
         self.counter = 0
+        self.ask("invasion_set_difficulty", value=1)  # these tests use the numbers of level 1; the mod default is level 2
 
     # -- the fake village and the fake units ---------------------------------------------
 

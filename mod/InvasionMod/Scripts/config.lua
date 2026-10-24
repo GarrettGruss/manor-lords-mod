@@ -15,12 +15,12 @@ return {
     -- M02 invasion, iterations 01 and 02 (the tick runs at each season change). First guesses from the M00 balance targets.
     invasion = {
         enabled = true,
-        difficulty = 1,                                      -- start value, 1 to 3. The player picks it (start UI comes later).
+        levels = { yearly = 2, great = 2, vassal = 2 },     -- update-raid-difficulty-levels: start value of the level of each raid type, 0 (off) to 3 (hard); the owner default is 2 (medium), also before the settings menu applies anything.
         yearly = {                                           -- update-raid-clock-yearly: no raid in game year 1, then one raid a year
             chance_by_season = { 25, 33, 50, 100 },          -- percent at the season change, first to fourth season of the year (owner decision 2026-10-21)
             season_days = 90,                                -- the raid comes 1 to this many game days after the successful roll
         },
-        size_multipliers = { small = 1, medium = 2, large = 3 }, -- squads = multiplier x difficulty
+        size_multipliers = { small = 1, medium = 2, large = 3 }, -- squads = multiplier x level of the raid type
         squad_units = 18,                                    -- units in one squad of spawnRaiders
         base_timer_floor = 300,                              -- the mod lifts the base game raid timer when it falls under this
         base_timer_refill = 700,
@@ -132,12 +132,15 @@ return {
     bandits = {
         enabled = true,
         poll_ms = 1000,                  -- real time between two checks of Public Order
-        bands = {                        -- the chance applies when Public Order is below "below"; the lowest matching band wins
-            { below = 75, chance = 0.10 },
-            { below = 50, chance = 0.25 },
-            { below = 25, chance = 0.50 },
-        },
-        families_per_conversion = 2,     -- families removed by one successful roll
+        start_order = 100,               -- mod order in a new game
+        tick_days = 30,                  -- game days between two order ticks
+        manor_term = 10,                 -- order gain for each tick (plus the tech tree order_bonus)
+        homeless_term = 5,               -- order loss for each tick and each homeless family
+        threshold = 25,                  -- order below this value starts the banditry timer
+        timer_days = 90,                 -- game days from the timer start to the leave
+        warn_days = 30,                  -- the warning banner shows when this many game days are left
+        leavers = 18,                    -- families that leave when the timer expires
+        order_gain = 25,                 -- order gain when the families leave
         families_per_squad = 2,          -- one Brigands squad (18 units) per 2 families (spike 15 proposal)
         min_families_left = 1,           -- the village never loses its last family to this feature
         buy_back = {                     -- iteration 03. Starting values, tuned in playtests.
@@ -159,15 +162,14 @@ return {
     -- add-scenario-settings-menu (#375): the menu that opens when a new game starts. The owner writes the background text.
     scenario_settings = {
         enabled = true,
-        defaults = { difficulty = 2, first_raid_years = 2, size_class = 2, great_raids = 1 }, -- Normal, 2 years, Medium, On
+        defaults = { yearly = 2, great = 2, vassal = 2, first_raid_years = 2, size_class = 2 }, -- levels Medium, 2 years, Medium size
         title = "The Hussites Are Coming",
         background_text = "Placeholder text. The owner writes the background of the scenario here: who the Hussites are, and why they ride against your village.",
-        labels = { difficulty = "Difficulty", first_raid_years = "First Hussite raid", size_class = "Raid size", great_raids = "Great raids" },
+        labels = { yearly = "Yearly player raid", great = "Great raid", vassal = "Vassal raids", first_raid_years = "First Hussite raid", size_class = "Raid size" },
         choice_names = {
-            difficulty = { "Easy", "Normal", "Hard" },
+            yearly = { "Off", "Easy", "Medium", "Hard" }, great = { "Off", "Easy", "Medium", "Hard" }, vassal = { "Off", "Easy", "Medium", "Hard" },
             first_raid_years = { "After 1 year", "After 2 years", "After 3 years" },
             size_class = { "Small", "Medium", "Large" },
-            great_raids = { "On", "Off" },
         },
         begin_label = "Begin the game", defaults_label = "Use defaults",
         new_game_max_day = 10,               -- a game with no save file name is new only when its day is at most this (a fixture that lost savefileToLoad is not)

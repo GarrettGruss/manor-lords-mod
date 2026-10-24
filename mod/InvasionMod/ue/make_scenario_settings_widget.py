@@ -1,8 +1,8 @@
 # Runs inside UnrealEditor-Cmd (-ExecutePythonScript).
 # Makes /Game/HarnessMod/WBP_ScenarioSettings from a stock engine widget (same method as make_raid_widget.py).
-# The scenario settings menu (change add-scenario-settings-menu): a title, a background text, four rows (a label and up to three
+# The scenario settings menu (change add-scenario-settings-menu): a title, a background text, five rows (a label and up to four
 # choice buttons) and two buttons. Lua puts a WBP_ClickButton into each Border (HarnessClickHooks) and fills the texts.
-# Lua finds the widgets by name: SettingsTitle, BackgroundText, RowLabel0..3, Choice<row>_<choice> (row 0..3, choice 0..2),
+# Lua finds the widgets by name: SettingsTitle, BackgroundText, RowLabel0..4, Choice<row>_<choice> (row 0..4, choice 0..3),
 # DefaultsButton, BeginButton.
 # Look: parchment colours (a Border brush colour and dark text). The PNG images of the mockup are not in this pak yet.
 import unreal
@@ -12,8 +12,8 @@ PATH = "/Game/HarnessMod"
 NAME = "WBP_ScenarioSettings"
 FULL = PATH + "/" + NAME
 SEED_WIDGET = "StackBox_51"
-ROW_COUNT = 4
-CHOICE_COUNT = 3
+ROW_COUNT = 5
+CHOICE_COUNT = 4
 LEFTOVER_FUNCTIONS = ["GatherInputInfo"]
 PARCHMENT = unreal.LinearColor(0.62, 0.50, 0.30, 0.97)
 INK = unreal.LinearColor(0.10, 0.06, 0.02, 1.0)

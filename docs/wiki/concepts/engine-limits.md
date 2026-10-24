@@ -13,7 +13,7 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-21-spike-playtest-telemetry/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-new-game-difficulty-setting/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/salt-mine-deposit.md
-  - resource: repo://openspec/changes/spike-public-order-factor/notes/tick-write.md
+  - resource: repo://openspec/changes/archive/2026-10-23-spike-public-order-factor/notes/tick-write.md
 ---
 # Engine limits found by spikes
 
@@ -103,7 +103,7 @@ Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the note
 
 ## Public order factors (spike #403)
 
-Real game runs on 2026-10-22 and 2026-10-23. Notes: `openspec/changes/spike-public-order-factor/notes/`.
+Real game runs on 2026-10-22 and 2026-10-23. Notes: `openspec/changes/archive/2026-10-23-spike-public-order-factor/notes/`.
 
 - **Factors are an enum plus config weights, not data rows.** `EApprovalFactorType` has 34 values (0 to 33), for example unemployment 17, patrols 18, administration 19. Public order uses the same enum as approval. A pak cannot add a factor.
 - **Weights come only from config.** `ApprovalSettings.ApprovalFactors` is a `float[34]` from `DefaultGame.ini`. Lua (bridge or raw) reaches only element 0. Read the defaults with `GetDefaultApprovalRateForFactor(i)`.
