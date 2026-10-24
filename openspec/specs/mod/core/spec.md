@@ -121,7 +121,7 @@ Each mod root menu SHALL have its own button in the game's bottom bar, after the
 - Checked by picture evidence (`evidence/bar-with-mod-buttons.jpg`, `bar-button-hover.jpg`), reviewed by the owner. The label is a small text under the game's default icon.
 
 ### Requirement: Mod menus are fullscreen and block clicks to the game
-Each mod menu SHALL cover the full screen, like the game's developments menu. While a mod menu is open, a mouse click SHALL NOT reach the game world or the game HUD behind the menu. A click on the menu SHALL act only on the menu, also a click on the empty background of the menu content. A mod menu SHALL have a Close button that the player can click with the mouse (a click on the backdrop does nothing). The Close button SHALL be at the bottom middle of the screen, in the style of the game's Close label on the Diplomacy screen (white serif text "Close" with a fleur-de-lis on each side, no frame).
+Each mod menu SHALL cover the full screen, like the game's developments menu. While a mod menu is open, a mouse click SHALL NOT reach the game world or the game HUD behind the menu. A click on the menu SHALL act only on the menu, also a click on the empty background of the menu content. A mod menu SHALL have a Close button that the player can click with the mouse (a click on the backdrop does nothing). Its place and style are in the scenarios below.
 
 #### Scenario: A click on the menu does not reach the world
 - **WHEN** a mod menu is open over a burgage plot, and the player clicks a menu button at the place of the plot
