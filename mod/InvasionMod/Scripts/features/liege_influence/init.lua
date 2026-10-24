@@ -66,10 +66,7 @@ end
 -- The arms shipment (change add-scenario-start-kit, #425): silver for goods in the manor store, with a cooldown.
 ---------------------------------------------------------------------------------------------
 local manor = require("HarnessManor")
-
-local function shipment_status()
-    return rules.shipment_status(config.arms_shipment, silver(), current_day(), state:get("arms_last_day"))
-end
+local NO_MANOR_REASON = "Build a manor first"
 
 -- The first built manor module and its units of goods. Returns the module and the total, or nil and a reason.
 local function manor_module()
@@ -78,7 +75,34 @@ local function manor_module()
     for _, module in ipairs(listed.modules) do
         if module.built then return module end
     end
-    return nil, "build a manor first"
+    return nil, NO_MANOR_REASON
+end
+
+-- A manor is needed first (change fix-arms-button-manor, #455). The other reasons come from the pure rule.
+-- The menu refresh asks for a cached manor answer: a built manor stays built while the menu is open, and a missing manor is
+-- looked for again after MANOR_RECHECK_S. Without this the building list was read twice a second (two real runs crashed the
+-- game after such reads). A click and the commands read the manor fresh.
+local MANOR_RECHECK_S = 2
+local manor_cache = { built = false, problem = nil, checked = nil }
+
+local function reset_manor_cache() manor_cache = { built = false, problem = nil, checked = nil } end
+
+local function manor_module_cached()
+    if manor_cache.built then return true end
+    local now = os.clock()
+    if manor_cache.checked == nil or now - manor_cache.checked >= MANOR_RECHECK_S then
+        local module, problem = manor_module()
+        manor_cache = { built = module ~= nil, problem = problem, checked = now }
+    end
+    if manor_cache.built then return true end
+    return nil, manor_cache.problem
+end
+
+local function shipment_status(cached)
+    local module, problem
+    if cached then module, problem = manor_module_cached() else module, problem = manor_module() end
+    if not module then return { enabled = false, reason = problem, days_left = 0 } end
+    return rules.shipment_status(config.arms_shipment, silver(), current_day(), state:get("arms_last_day"))
 end
 
 -- Puts every good of the shipment into the manor. On a failure the goods already put are taken out again.
@@ -152,14 +176,14 @@ local function arms_info()
     local cfg = config.arms_shipment
     local parts = {}
     for _, good in ipairs(cfg.goods) do parts[#parts + 1] = good.amount .. " " .. good.name .. "s" end
-    return string.format("Arms shipment: %d silver for %s", cfg.cost, table.concat(parts, " and "))
+    local info = string.format("Arms shipment: %d silver for %s", cfg.cost, table.concat(parts, " and "))
+    local status = S.refresh_status or shipment_status(true)
+    if not status.enabled then info = info .. "\n" .. tostring(status.reason) end
+    return info
 end
 
-local function arms_label()
-    local status = shipment_status()
-    if status.enabled then return "Request arms shipment" end
-    return "Request arms shipment (" .. status.reason .. ")"
-end
+-- The label stays the same. The reason of a disabled button shows under it, in the info text.
+local function arms_label() return "Request arms shipment" end
 
 local function wanted_texts()
     return {
@@ -175,6 +199,8 @@ local refresh_arms_button -- defined below (forward declaration)
 -- The labels change only when the value changes (no SetText each tick).
 local function refresh()
     if not isValid(S.widget) then return false end
+    -- The manor scan runs once for each refresh, not once for each use of the status.
+    S.refresh_status = shipment_status(true)
     for name, text in pairs(wanted_texts()) do
         if S.texts[name] and S.shown[name] ~= text then
             S.shown[name] = text
@@ -184,13 +210,24 @@ local function refresh()
         end
     end
     refresh_arms_button()
+    S.refresh_status = nil
     return true
 end
 
--- The arms button label and look follow the rule (the reason is in the label). A change is written once, not each tick.
+-- Disabled look: a grey tint of the click button (SetColorAndOpacity, as the tech tree widget does). SetIsEnabled is not
+-- used: a Lua error inside a UObject call can crash UE4SS. Clicks are ignored in press() while the rule says disabled.
+local ENABLED_TINT = { R = 1, G = 1, B = 1, A = 1 }
+local DISABLED_TINT = { R = 0.4, G = 0.4, B = 0.4, A = 1 }
+
+-- The arms button label and look follow the rule. A change is written once, not each tick.
 function refresh_arms_button()
     local slot = S.buttons.ArmsButton
     if slot == nil then return end
+    local disabled = not (S.refresh_status or shipment_status(true)).enabled
+    if S.arms_disabled ~= disabled and isValid(slot.handle.widget) then
+        S.arms_disabled = disabled
+        slot.handle.widget:SetColorAndOpacity(disabled and DISABLED_TINT or ENABLED_TINT)
+    end
     local label = arms_label()
     if S.arms_label ~= label then
         S.arms_label = label
@@ -206,7 +243,7 @@ end
 
 local function reset()
     release_buttons()
-    S.widget, S.texts, S.buttons, S.shown, S.arms_label = nil, {}, {}, {}, nil
+    S.widget, S.texts, S.buttons, S.shown, S.arms_label, S.arms_disabled = nil, {}, {}, {}, nil, nil
 end
 
 -- The base menu calls this with the made widget. On a failure this function cleans up and returns nil and a message.
@@ -241,7 +278,8 @@ local function on_open(made)
     end
     clickhooks.set_text(S.buttons.TributeButton.handle, "Send tribute")
     clickhooks.set_text(S.buttons.CloseButton.handle, "Close")
-    S.arms_label = nil
+    S.arms_label, S.arms_disabled = nil, nil
+    reset_manor_cache()
     refresh()
     return true
 end
@@ -260,6 +298,10 @@ local function press(name)
     end
     local result, reason
     if name == "ArmsButton" then
+        if not shipment_status().enabled then
+            refresh() -- a disabled button ignores the click
+            return
+        end
         result, reason = request_arms_shipment()
     else
         result, reason = send_tribute(config.tribute_button_amount)
@@ -300,7 +342,7 @@ local function menu_state()
             hovered = read(function() return slot.handle.widget:IsHovered() end) }
     end
     return { open = is_open(), in_viewport = is_open() and read(function() return S.widget:IsInViewport() end) or false,
-        texts = shown, wanted_texts = wanted_texts(), arms_label = arms_label(), buttons = buttons, tributes = S.tributes, shipments = S.shipments or 0, last_error = S.last_error }
+        texts = shown, wanted_texts = wanted_texts(), arms_label = arms_label(), arms_disabled = S.arms_disabled, buttons = buttons, tributes = S.tributes, shipments = S.shipments or 0, last_error = S.last_error }
 end
 
 local has_commands, commands = pcall(require, "HarnessCommands")
