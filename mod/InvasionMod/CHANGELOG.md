@@ -6,6 +6,9 @@ Each entry names its feature. Format: Keep a Changelog.
 ### Changed
 - Feature `invasion` and `raid_widget` (change `update-raid-banners`, #400): one 30 day banner for a subjugation raid and a large plunder raid, no banner for a yearly raid or the difficulty, the great raid at game year 10 with a banner in years 7, 8 and 9, the raid menu lists the upcoming raids. See the root `CHANGELOG.md`.
 
+### Changed
+- Features `invasion`, `scenario_settings`, `raid_widget` (change `update-raid-difficulty-levels`, #404): one level 0 to 3 for each raid type (yearly player raid, great raid, vassal raids) in place of the global difficulty and the Great raids switch. Level 0 turns the raid type off. Bandits, sack and terms read the highest level.
+
 ### Added
 - Feature `vassals` (change `add-vassal-sack-wipe`, #341): sack of vassal houses (80 percent ruins), wipe of all villagers (reason `wiped`), refugee wave of 50 percent, and `vassals_restore` (100 silver, 5 families, goods for the rebuild). Feature `sack_and_terms`: no terms after a sack of the player region.
 

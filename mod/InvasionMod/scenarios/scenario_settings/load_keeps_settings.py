@@ -2,9 +2,9 @@
 
 Two parts in two runs (the harness action `save_game` is the only save call; spec 24):
   1. `run.py --scenario scenario-settings-load-keeps-settings --new-game --pak raidmenu --env SETTINGS_PART=save`:
-     begin a new game with Hard, 3 years, Large and Off, then save with the guarded `save_game` (keep=True).
+     begin a new game with the levels yearly 3 (hard), great 0 (off) and vassal 1 (easy), 3 years and Large, then save with the guarded `save_game` (keep=True).
   2. `run.py --scenario scenario-settings-load-keeps-settings --save <the saved slot> --pak raidmenu`:
-     after the load the menu is closed and the four values are the same.
+     after the load the menu is closed and the five values are the same.
 NOT RUN YET: the first real `save_game` needs a fresh save backup and the owner told first (CLAUDE.md, Safety).
 """
 
@@ -12,7 +12,7 @@ NAME = "scenario-settings-load-keeps-settings"
 DESCRIPTION = "Part save: begin with non-default settings and save (guarded). Part load: the values are the same and the menu stays closed."
 LIMIT_S = 300
 PREFIX = "InvasionMod."
-CHANGED = {"difficulty": 3, "first_raid_years": 3, "size_class": 3, "great_raids": 0}
+CHANGED = {"yearly": 3, "great": 0, "vassal": 1, "first_raid_years": 3, "size_class": 3}
 
 
 def settings(ctx) -> dict:
@@ -35,7 +35,7 @@ def load_part(ctx) -> None:
     ctx.run_until(lambda: settings(ctx)["decided"], 60, what="the settings decision")
     state = settings(ctx)
     ctx.check("L2 the menu did not open and the game is not paused by the mod", state["open"] is False and state["paused"] is False, state)
-    ctx.check("L2 the four values are the saved ones", {k: state[k] for k in CHANGED} == CHANGED, state)
+    ctx.check("L2 the five values are the saved ones", {k: state[k] for k in CHANGED} == CHANGED, state)
     ctx.check("L2 the settings count as applied", state["settings_applied"] is True, state["settings_applied"])
 
 

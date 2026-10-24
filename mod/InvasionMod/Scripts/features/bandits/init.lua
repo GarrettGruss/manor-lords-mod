@@ -35,7 +35,7 @@ local buy_backs = {}      -- the results, for the state command
 local modifiers = { order_bonus = 0, approval_bonus = 0, buy_back_multiplier = 1 }
 
 local function difficulty()
-    return invasion.state:get("difficulty")
+    return invasion.difficulty()
 end
 
 -- Every set writes the Tags of the player pawn, so write only a change.

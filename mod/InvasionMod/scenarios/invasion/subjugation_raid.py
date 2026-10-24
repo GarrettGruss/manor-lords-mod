@@ -66,6 +66,8 @@ def run(ctx) -> dict:
     ctx.log.info(f"yearly plan {ctx.mod.command('InvasionMod.invasion_plan_now')}")
     shot_menu(ctx, "raid-menu-planned")
     ctx.check("S2 it is large: 3 squads x difficulty", state["squads"] == 3 * difficulty, state["squads"])
+    # The season rule plans the raid 1 to 90 days ahead; the first raid can last 25 days. Move the day out so the first raid ends first.
+    ctx.mod.command("InvasionMod.invasion_set_raid_days", days=45, kind="subjugation")
 
     days = 0
     while raids(ctx)[0]["state"] == "active" and days < DAY_LIMIT:
