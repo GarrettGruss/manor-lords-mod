@@ -5,6 +5,7 @@ description: Things the game does not allow from Lua or data, found by spikes, w
 tags: [engine, limits, bailey, manor, spike]
 generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-19T00:00:00Z }
 sources:
+  - resource: repo://openspec/changes/archive/2026-10-24-spike-militia-weapon-rebellion/notes/q3-homes-stock-weapons.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/README.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/implementation-notes/bailey-buildings.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-12-manor-exploration/
@@ -150,3 +151,10 @@ Fixture `playtest-noai` (AI opponents 0, Off map adversary Absent, Raider freque
 - `pcall` does not catch a native access violation. Check `IsValid` before a method call on a widget from `GetChildAt` or on an object from `FindAllOf`.
 - Not proven: that the timer change removes the crashes. After all timers moved (change `fix-lua-thread-safety`), `invasion-first-raid` had 0 crashes in 10 runs (3 of 11 before). The speed failure `TimeControlError` of `invasion-great-raid-waves` stayed (5 of 10); it is not caused by the timers. Details: `openspec/changes/archive/*-spike-lua-crash-after-spawn/notes/`.
 - Each run folder has `hostmem.jsonl` (free and total PC memory and game resident memory every 2 s). Free memory fell to about 1 GB in runs without a crash.
+
+## Militia squads, weapons in homes and turning villagers into bandits (spike #482)
+- `PawnCPP:addMilitiaSquad(region, FName("spearMilitia"))` registers a militia squad from villagers without the mouse. It moves existing men (roles Husband and Son) from squad 0 into a new squad. The total unit count does not change. The squad size depends on the free men (10, 6, 4 in a village of 15 to 24 residents). The squads count in `pawn.commandedSquads` and the units count as side `player`. `canAddNewMilitiaSquad()` was true for 3 squads.
+- Item 133 is the spear and item 271 is the large shield (the gear of `spearMilitia` is `163/133/271/273`). `building:addToInventory({Type=<id>, amt=<n>})` on the storehouse (`Data.bType` 72) raises `region:getStockOfGood` by exactly `n`.
+- Registered, not rallied militia men stock one spear and one shield each in their burgage plots (`bType` 3) from the storehouse. It took about 6 game days for 10 men. The goods stay in the home `Inventory` and still count in the region stock. `region:getNumAssignedMilitaryStockOfType(id)` reports the number reserved for the militia.
+- `building:consumeGoodNoCheck(id)` on a home removes one item from the home.
+- `SMUnit:turnToBandit` on villagers (family members) does not make bandit units: the unit leaves its family and gets role 5 (Soldier), the side counts stay the same. A bandit squad at the homes (`homeless_rebel mode home`) is made of new units, and 3 families were killed. With no AI lords and no raids, that squad left the map (AI log "enough looted. Leaving map") and burned nothing in 1180 game seconds.

@@ -1,5 +1,8 @@
 # Wiki update log
 
+## 2026-10-24
+* **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds militia squads, weapons in homes and turning villagers into bandits (change `spike-militia-weapon-rebellion`, #482).
+
 ## 2026-10-23
 * **Update**: [Invasion features](architecture/invasion-features.md) adds the feature `order_tooltip`; [Engine limits](concepts/engine-limits.md) notes that a row's text is set after the add (change `add-order-tooltip-rows`, #454).
 
