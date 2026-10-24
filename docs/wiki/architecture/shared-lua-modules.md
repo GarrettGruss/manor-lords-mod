@@ -38,6 +38,7 @@ sources:
 |---|---|
 | `HarnessLog` | Line-buffered, flush-on-write log. File: `$HARNESS_RUN_DIR/mod.log`, else `ue4ss/harness/mod.log`. Line: `<unix_time> <LEVEL> [<tag>] <message>`. `log.try` runs a function with a stack trace on error. |
 | `HarnessJson` | JSON encoder and strict decoder. A table with keys `1..n` is an array. Other tables are objects with sorted keys. nil, NaN and infinity become null. The decoder only reads data. |
+| `HarnessLoop` | `every(ms, fn)`: a repeating timer on the game thread (`LoopInGameThreadWithDelay`; `fn` returns true to stop). `HARNESS_LOOP_MODE=async` switches to `LoopAsync` for A/B tests. Falls back to `LoopAsync` when the UE4SS functions are missing (fake game kit). |
 | `HarnessCommands` | Command and metric registry (see below). |
 | `HarnessTelemetry` | Sampler. It appends one JSON line per sample to `telemetry.jsonl`. `register(name, fn)` adds a metric. `start()` is safe to call twice. Env: `HARNESS_TELEMETRY_INTERVAL_S` (default 5, 0 turns it off). It uses wall time, so it works while the game is paused. |
 | `ManorCore` | Game calls that a player mod needs, with no harness dependency: logger (uses `HarnessLog` if it exists), player region, `settle_region`, `forest_spot`, `tent_find_spot`, `rebel_raid_rally`, `show_banner`, policy list and `set_policy_signed`. The harness modules `HarnessLords`, `HarnessHousing`, `HarnessSack` and `HarnessBandits` call it, so there is one copy of the code. |

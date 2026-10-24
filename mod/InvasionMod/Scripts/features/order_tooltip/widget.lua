@@ -14,7 +14,10 @@ local function paint(block, name)
 end
 
 local function collapse_children(box)
-    for i = 0, box:GetChildrenCount() - 1 do box:GetChildAt(i):SetVisibility(COLLAPSED) end
+    for i = 0, box:GetChildrenCount() - 1 do
+        local child = box:GetChildAt(i)
+        if child ~= nil and child:IsValid() then child:SetVisibility(COLLAPSED) end
+    end
 end
 
 local function add_row(tip, spec)
@@ -47,7 +50,7 @@ function M.read_rows(tip)
     local box = tip.recentFactors_VB
     for i = 0, box:GetChildrenCount() - 1 do
         local child = box:GetChildAt(i)
-        if child:GetVisibility() ~= COLLAPSED then
+        if child ~= nil and child:IsValid() and child:GetVisibility() ~= COLLAPSED then
             list[#list + 1] = child.DescriptionText:GetText():ToString() .. " | " .. child.ValueText:GetText():ToString()
         end
     end

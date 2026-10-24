@@ -15,6 +15,7 @@ Start with the cheapest evidence. Do not rerun before you know why it failed.
 - `mod.log`: live log of the mods (`HarnessLog`, flushed each line). Look for `loaded version N` lines of each mod, `command NNNN <name> ok=false`, and `WARN`/`ERROR`.
 - `mod.log` also holds one `[UEBridge] request id=... verb=... target=... ms=...` line for each bridge request. A failed request is a `WARN` line with `FAILED error=<text>`. A request in `bridge/` with no line here never reached the mod.
 - `UE4SS.log`: buffered, not live. Check Lua errors and mod start lines.
+- `hostmem.jsonl`: free PC memory every 2 s during the scenario (rules memory pressure in or out for a crash).
 - `telemetry.jsonl`: game clock, speed, silver, units. `screenshots/`: only open them when the summary points to them.
 - `bridge/`, `commands/`, `modcmd/<Mod>/`: request and result files. A request without a result means the mod did not answer.
 - `mod_files.json`: SHA-256 of every mod file at the run. Compare two runs to see which mod file changed.

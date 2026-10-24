@@ -49,7 +49,8 @@ class HostMemorySampler:
 
     def _loop(self) -> None:
         with open(self._path, "a", encoding="utf-8") as handle:
-            while not self._stop.is_set():
+            while True:
                 handle.write(sample_line(self._game_pid) + "\n")
                 handle.flush()
-                self._stop.wait(self._interval_s)
+                if self._stop.wait(self._interval_s):
+                    return
