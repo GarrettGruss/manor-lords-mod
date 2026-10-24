@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Tech tree tooltip (change `add-tech-tooltip`, #428): mouse over a node button or a law button of the tech tree menu shows a tooltip with the numerical effects of the tech and their values (percent effects as a signed percent, flat effects as a signed number). The text is built from `tree.json` (`lines.effect_lines`). The state command `tech_tree_widget_state` lists the tooltip of each button. New test scenario `tech-tree-widget-tooltip`.
+
 ### Fixed
 - Parallel game slots (change `fix-parallel-slot-saves`, #393, #378): a run no longer removes the fixture slot of a `--keep-open` run on another slot, and the save folder guard always ignores `rtsSettings.sav`. A ledger entry now records `game_slot` and `game_root`.
 

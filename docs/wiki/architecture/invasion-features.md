@@ -153,6 +153,7 @@ Commands: `tech_tree_state`, `tech_tree_choose_path`, `tech_tree_unlock`, `tech_
 Built on the base menu: a Tech button in the bottom bar opens it; F9 stays as a shortcut.
 The menu of the tech tree. `techmenu_P.pak` holds a cooked Widget Blueprint with a pool of node buttons on a canvas (`ue/make_tech_widget.py`). Lua labels, shows, hides, colours and moves the buttons from the nodes of `tech_tree`. F9 opens and closes it (`toggle_key` in config); the key only sets a flag, the scheduler tick toggles. Scenario `tech-tree-widget-key` presses the real F9 key (`--pak techmenu`). A click calls `tech_tree`.
 Commands: `tech_tree_widget_open`, `tech_tree_widget_close`, `tech_tree_widget_state`, `tech_tree_widget_press`.
+Tooltip (change `add-tech-tooltip`): `init.lua` calls `SetToolTipText` on the `Border` of each node and law button. The text is `lines.effect_lines(source, tree)`: one line for each effect of `tree.json` (percent kinds as a signed percent, add kinds as a signed number), then "Opens vassal policy ..." lines. `tech_tree_widget_state` lists the tooltip of each button. Lua only, no pak change. Test scenario `tech-tree-widget-tooltip`.
 
 ## Base menu
 Change `add-mod-menu-access-rule` (#308), file `core/menu.lua`. All mod menus (`raid_widget`, `tech_tree_widget`, the tribute menu of `liege_influence`) register with `core/menu.lua`. A menu gives its id, a short label, the pak widget class and two functions: `on_open(widget)` (attach the click buttons, show the first values) and `on_close()`. The base menu does the rest:
