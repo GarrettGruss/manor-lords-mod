@@ -17,5 +17,6 @@ return {
     { name = "tech_tree", requires = { "bandits", "unit_balance", "mod_state", "manor_stronghold", "vassals", "tribute" } },
     { name = "refugees", requires = { "vassals", "bandits" } },
     { name = "tech_tree_widget", requires = { "tech_tree" } },
+    { name = "order_tooltip", requires = { "bandits" } },
     { name = "liege_influence", requires = { "mod_state", "tribute" } },
 }

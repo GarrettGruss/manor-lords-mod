@@ -43,5 +43,5 @@ The rows SHALL show with the game paused. If the hook does not fire or a widget 
 
 #### Scenario: A failing widget call
 - **WHEN** adding a row raises an error
-- **THEN** the error is logged once and no error reaches the game
-- Checked by `harness/tests/test_fakegame_order_tooltip.py`.
+- **THEN** the call raises to the caller, which logs it once and does not pass it to the game
+- The log-once is Not checked yet (the raise is checked by `harness/tests/test_fakegame_order_tooltip.py`).
