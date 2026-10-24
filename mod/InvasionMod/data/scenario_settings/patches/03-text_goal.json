@@ -1,0 +1,9 @@
+{
+  "table": "DT_Translation_GameSetups",
+  "row": "hussites_are_coming_goal",
+  "op": "add",
+  "from": "peaceful_citybuilding_goal",
+  "set": {
+    "*": "Grow your settlement and survive the raids."
+  }
+}

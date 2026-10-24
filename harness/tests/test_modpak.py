@@ -220,6 +220,58 @@ class BuildTests(ModTestCase):
         self.assertFalse((self.mod / "paks").exists())
 
 
+class NamedTableTests(ModTestCase):
+    """Tables with row names (DT_GameSetupPresets) and paths into structs and maps."""
+
+    def named_table(self):
+        def prop(name, value):
+            return {"Name": name, "Value": value, "IsZero": True}
+        struct = {"Name": "gameSetupData", "$type": "StructPropertyData", "Value": [prop("goals", "Growth"), prop("spoilage", 0)]}
+        pairs = [[{"Value": "Medium"}, dict(struct)], [{"Value": "High"}, {**struct, "Value": [prop("goals", "Growth"), prop("spoilage", 3)]}]]
+        row = {"Name": "peaceful", "Value": [{"Name": "gameSetupData", "$type": "MapPropertyData", "Value": pairs},
+                                              {"Name": "current", "$type": "StructPropertyData", "Value": [prop("goals", "Conquest")]}]}
+        return {"NameMap": ["peaceful"], "Exports": [{"Table": {"Data": [row]}}]}
+
+    def apply(self, **changes):
+        data = {"table": "DT_GameSetupPresets", "row": "mine", "op": "add", "from": "peaceful"}
+        data.update(changes)
+        write_json(self.mod / "data" / "alpha" / "patches" / "a.json", data)
+        tables = {"DT_GameSetupPresets": self.named_table()}
+        modpak.apply_patches(tables, modpak.load_patches(self.mod, self.manifest))
+        return modpak.table_rows(tables["DT_GameSetupPresets"])
+
+    def test_named_row_is_added_without_an_id_range(self):
+        write_json(self.mod / "data" / "alpha" / "patches" / "a.json",
+                   {"table": "DT_GameSetupPresets", "row": "mine", "op": "add", "from": "peaceful"})
+        modpak.check_id_ranges(modpak.load_patches(self.mod, self.manifest), self.manifest)
+
+    def test_numeric_table_refuses_a_word_row(self):
+        self.patch("alpha", "a.json", row="mine")
+        self.assert_build_refused("a.json", "digits")
+
+    def test_path_with_star_sets_every_map_entry(self):
+        rows = self.apply(set={"gameSetupData/*/spoilage": 2, "current/goals": "Growth"})
+        mine = rows[-1]
+        self.assertEqual(mine["Name"], "mine")
+        self.assertEqual([p[1]["Value"][1]["Value"] for p in mine["Value"][0]["Value"]], [2, 2])
+        self.assertEqual(mine["Value"][1]["Value"][0]["Value"], "Growth")
+        self.assertEqual(rows[0]["Value"][1]["Value"][0]["Value"], "Conquest", "the source row must stay unchanged")
+
+    def test_bad_path_fails(self):
+        with self.assertRaises(modpak.ModPakError):
+            self.apply(set={"gameSetupData/*/nope": 1})
+
+    def test_feature_with_pak_false_is_not_built(self):
+        self.manifest["features"][1]["pak"] = False
+        write_json(self.mod / "mod.json", self.manifest)
+        self.patch("beta", "b.json", row="1100")
+        self.patch("alpha", "a.json")
+        calls = []
+        self.build(calls)
+        edited = json.loads((self.work / "json" / "buildingStats.json").read_text())
+        self.assertEqual([r["Name"] for r in modpak.table_rows(edited)], ["30", "31", "1000"])
+
+
 class RepoModsTests(unittest.TestCase):
     def test_every_patch_of_the_repo_mods_passes_the_checks(self):
         for manifest_path in sorted((HARNESS_DIR.parent / "mod").glob("*/mod.json")):

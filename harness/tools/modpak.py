@@ -9,16 +9,22 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-# Patch table name -> game asset path (no extension). Only tables with numeric row ids are supported.
+# Patch table name -> game asset path (no extension).
 TABLES = {
     "buildingStats": "ManorLords/Content/NotStronghold/Data/buildingStats",
     "DT_Upgrades": "ManorLords/Content/NotStronghold/Data/DT_Upgrades",
+    "DT_GameSetupPresets": "ManorLords/Content/ManorLords/Database/DT_GameSetupPresets",
+    "DT_Translation_GameSetups": "ManorLords/Content/Translation/HoodedHorse/DT_Translation_GameSetups",
 }
+# Tables with row names (words) instead of numeric ids. Their new rows need no id range in mod.json.
+NAMED_TABLES = {"DT_GameSetupPresets", "DT_Translation_GameSetups"}
+NAME_PATTERN = re.compile(r"^[A-Za-z0-9_]+$")
 OPS = ("add", "set")
 PATCH_KEYS = {"table", "row", "op", "from", "set"}
 
@@ -57,6 +63,16 @@ def feature_list(manifest: dict) -> list[dict]:
     return features
 
 
+def is_row_id(value: object, named: bool) -> bool:
+    if not isinstance(value, str):
+        return False
+    return bool(NAME_PATTERN.match(value)) if named else value.isdigit()
+
+
+def row_id_kind(named: bool) -> str:
+    return "a row name of letters, digits and underscores" if named else "a string of digits"
+
+
 def check_patch_format(data: object, file: str) -> None:
     if not isinstance(data, dict):
         raise ModPakError(f"{file}: a patch must be a JSON object")
@@ -65,9 +81,10 @@ def check_patch_format(data: object, file: str) -> None:
         raise ModPakError(f"{file}: unknown keys {unknown}. Allowed: {sorted(PATCH_KEYS)}")
     if data.get("table") not in TABLES:
         raise ModPakError(f"{file}: 'table' must be one of {sorted(TABLES)}, got {data.get('table')!r}")
+    named = data["table"] in NAMED_TABLES
     row = data.get("row")
-    if not isinstance(row, str) or not row.isdigit():
-        raise ModPakError(f"{file}: 'row' must be a string of digits, got {row!r}")
+    if not is_row_id(row, named):
+        raise ModPakError(f"{file}: 'row' must be {row_id_kind(named)}, got {row!r}")
     if data.get("op") not in OPS:
         raise ModPakError(f"{file}: 'op' must be one of {list(OPS)}, got {data.get('op')!r}")
     fields = data.get("set", {})
@@ -77,8 +94,8 @@ def check_patch_format(data: object, file: str) -> None:
         raise ModPakError(f"{file}: op 'set' needs a non-empty 'set'")
     if data["op"] == "set" and "from" in data:
         raise ModPakError(f"{file}: 'from' is only allowed with op 'add'")
-    if data["op"] == "add" and not (isinstance(data.get("from"), str) and data["from"].isdigit()):
-        raise ModPakError(f"{file}: op 'add' needs 'from', the row to clone (a string of digits)")
+    if data["op"] == "add" and not is_row_id(data.get("from"), named):
+        raise ModPakError(f"{file}: op 'add' needs 'from', the row to clone ({row_id_kind(named)})")
 
 
 def read_patch(path: Path, mod_dir: Path, feature: str) -> Patch:
@@ -122,7 +139,7 @@ def check_conflicts(patches: list[Patch]) -> None:
 def check_id_ranges(patches: list[Patch], manifest: dict) -> None:
     ranges = {f["name"]: f.get("ids", {}) for f in feature_list(manifest)}
     for patch in patches:
-        if patch.op != "add":
+        if patch.op != "add" or patch.table in NAMED_TABLES:
             continue
         span = ranges[patch.feature].get(patch.table)
         if not span:
@@ -145,7 +162,47 @@ def find_row(rows: list, name: str, patch: Patch, what: str) -> dict:
     return hits[0]
 
 
+def children(node: dict) -> list:
+    """The child property dicts of a struct, an array or a LocalizedText. A map gives its value structs."""
+    if "MapPropertyData" in node.get("$type", ""):
+        return [pair[1] for pair in node["Value"]]
+    return node["Value"]
+
+
+def find_leaves(row: dict, path: str, patch: Patch) -> list[dict]:
+    """Follow a path such as 'gameSetupData/*/goals'. '*' means every child. Each other part names one property."""
+    nodes = [row]
+    for part in path.split("/"):
+        found = []
+        for node in nodes:
+            if part == "*":
+                found.extend(children(node))
+            else:
+                hits = [child for child in children(node) if child["Name"] == part]
+                if len(hits) != 1:
+                    raise ModPakError(f"{patch.file}: {patch.table}/{row['Name']} has no single property {part!r} in path {path!r}")
+                found.extend(hits)
+        nodes = found
+    if not nodes:
+        raise ModPakError(f"{patch.file}: path {path!r} of {patch.table}/{row['Name']} matches nothing")
+    return nodes
+
+
+def set_path(row: dict, path: str, value: object, patch: Patch) -> None:
+    if isinstance(value, (list, dict)):
+        raise ModPakError(f"{patch.file}: a path field takes a single value, got {value!r} for {path!r}")
+    for leaf in find_leaves(row, path, patch):
+        if isinstance(leaf["Value"], list):
+            raise ModPakError(f"{patch.file}: path {path!r} ends at a container, not a value")
+        leaf["Value"] = value
+        if "IsZero" in leaf:
+            leaf["IsZero"] = False
+
+
 def set_field(row: dict, field: str, value: object, patch: Patch) -> None:
+    if "/" in field or field == "*":
+        set_path(row, field, value, patch)
+        return
     hits = [prop for prop in row["Value"] if prop["Name"] == field]
     if len(hits) != 1:
         raise ModPakError(f"{patch.file}: row {patch.table}/{row['Name']} has no single field {field!r}")
@@ -190,10 +247,15 @@ def apply_patches(tables: dict[str, dict], patches: list[Patch]) -> None:
 
 # ---- assets and the build ----
 
+def pak_features(manifest: dict) -> list[dict]:
+    """The features that go into the pak. A feature with "pak": false (a test stub) is checked but not built."""
+    return [feature for feature in feature_list(manifest) if feature.get("pak") is not False]
+
+
 def copy_assets(mod_dir: Path, manifest: dict, target: Path) -> list[str]:
     """Copy data/<feature>/assets/** into the pak folder. Two features may not write the same file."""
     owners: dict[str, str] = {}
-    for feature in feature_list(manifest):
+    for feature in pak_features(manifest):
         base = mod_dir / "data" / feature["name"] / "assets"
         for source in sorted(base.rglob("*")) if base.is_dir() else []:
             if source.is_symlink():
@@ -226,6 +288,8 @@ def build_mod(
     patches = load_patches(mod_dir, manifest)
     check_conflicts(patches)
     check_id_ranges(patches, manifest)
+    built = {feature["name"] for feature in pak_features(manifest)}
+    patches = [patch for patch in patches if patch.feature in built]
     used = sorted({patch.table for patch in patches})
     tables, paths = {}, {}
     for table in used:

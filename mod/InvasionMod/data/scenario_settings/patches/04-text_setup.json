@@ -1,0 +1,9 @@
+{
+  "table": "DT_Translation_GameSetups",
+  "row": "hussites_are_coming_setup",
+  "op": "add",
+  "from": "peaceful_citybuilding_setup",
+  "set": {
+    "*": "Hussite warbands march toward your land. Build a strong town and prepare your defenses. The Invasion Mod start menu sets the raids."
+  }
+}

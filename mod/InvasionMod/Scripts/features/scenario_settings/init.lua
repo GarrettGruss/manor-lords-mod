@@ -30,6 +30,7 @@ local S = {
     new_game = false, kit = nil,           -- the start kit is for a new game only
 }
 state:register("start_kit_given", 0, "integer") -- 1 after the start kit was given (saved with the game)
+state:register("hussite_template", 0, "integer") -- 1 when the new game started from the template "The Hussites Are Coming"
 
 ---------------------------------------------------------------------------------------------
 -- Game reads
@@ -386,6 +387,18 @@ end
 -- New game or loaded save (once per game session)
 ---------------------------------------------------------------------------------------------
 
+-- The game setup of the new game, as the template rule reads it. A value that cannot be read stays nil.
+local function read_template_setup()
+    local instance = FindFirstOf("MLGameInstance")
+    if not isValid(instance) then return nil end
+    local function field(name) return read(function() return instance.gameSetup.currentGameSetup[name] end) end
+    return {
+        royal_tax = field("royalTaxMultiplier"), weather = field("weatherDamage"), approval_loss = field("loyaltyLossRate"),
+        ai_lords = field("numGenericAILords"), adversary_baron = field("adversary_baron"),
+        max_bandit_camps = field("maxBanditCamps"), initial_bandit_camps = field("initialBanditCamps"),
+    }
+end
+
 local function decide()
     if S.decided or not state.loaded then return end
     local info = { save_file = save_file_name(), applied = state:get("settings_applied"), day = current_day() }
@@ -401,6 +414,12 @@ local function decide()
     S.new_game = kind == "new"
     core.log.info(TAG, string.format("game is %s (save_file=%q applied=%d day=%s)", kind, tostring(info.save_file), info.applied, tostring(info.day)))
     S.holding = kind == "new"
+    if kind == "new" then
+        local setup = read_template_setup()
+        state:set("hussite_template", rules.is_hussite_template(setup) and 1 or 0)
+        core.log.info(TAG, string.format("hussite template: %d (royal_tax=%s weather=%s approval_loss=%s)", state:get("hussite_template"),
+            tostring(setup and setup.royal_tax), tostring(setup and setup.weather), tostring(setup and setup.approval_loss)))
+    end
     if kind == "old_save" then apply_old_save() end
     if kind == "loaded" or kind == "old_save" then invasion.settings_changed() end
 end
@@ -448,7 +467,7 @@ local function describe()
         yearly = settings.yearly, great = settings.great, vassal = settings.vassal,
         first_raid_years = settings.first_raid_years, size_class = settings.size_class, size_random = settings.size_random,
         settings_applied = state:get("settings_applied") == 1, difficulty_chosen = state:get("difficulty_chosen") == 1,
-        kind = S.kind, decided = S.decided, open = is_open(), paused = S.paused, repauses = S.repauses, selection = S.selection, clicks = S.clicks,
+        hussite_template = state:get("hussite_template") == 1, kind = S.kind, decided = S.decided, open = is_open(), paused = S.paused, repauses = S.repauses, selection = S.selection, clicks = S.clicks,
         last_error = S.last_error, kit_given = state:get("start_kit_given") == 1, kit = S.kit, save_file = save_file_name(), day = current_day(), intro_playing = intro_playing(),
     }
 end
