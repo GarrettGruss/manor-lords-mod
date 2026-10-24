@@ -75,7 +75,7 @@
 --   {"command":"lord_declare_war","lord":1,"target":0}      declareWar     {"command":"lord_declare_peace","lord":1,"target":0}   declarePeace
 --   {"command":"lord_set_influence","lord":1,"value":500}   write the influence of the lord
 --   {"command":"lord_challenge","lord":1,"target":0}        initChallenge over the target's current region
---   {"command":"battlefield_anchor","lord":1,"target":0,"x":0,"y":0,"delay_ms":500}   move all battlefield_BP_C to the anchor (x,y, or the manor of "region" / the target region), challenge when "lord" is set, restore after delay_ms
+--   {"command":"battlefield_anchor","lord":1,"target":0,"x":0,"y":0,"home":true,"delay_ms":500}   move all battlefield_BP_C to the anchor (x,y, "home" = the player manor or the average of the home-region buildings, or the manor of "region" / the target region), challenge when "lord" is set, restore after delay_ms
 --   {"command":"battlefield_state"}                          where the battlefield actors are now (read only)
 --   {"command":"lord_claim","lord":1,"target":0}            layClaim on the target's current region
 --   {"command":"lord_spawn_army","lord":1,"template":"spearMilitia","count":2,"dx":0,"dy":0}   spawnArmy with the lord as owner
@@ -266,6 +266,7 @@ local function parseRequest(raw)
         x = tonumber(raw:match('"x"%s*:%s*(-?[%d%.]+)')),
         y = tonumber(raw:match('"y"%s*:%s*(-?[%d%.]+)')),
         z = tonumber(raw:match('"z"%s*:%s*(-?[%d%.]+)')),
+        home = raw:match('"home"%s*:%s*true') ~= nil,
         side = raw:match('"side"%s*:%s*"(%a+)"'),
         method = raw:match('"method"%s*:%s*"(%a+)"'),
         percent = tonumber(raw:match('"percent"%s*:%s*(%d+)')),

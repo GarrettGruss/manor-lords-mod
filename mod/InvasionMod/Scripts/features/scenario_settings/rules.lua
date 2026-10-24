@@ -85,6 +85,17 @@ function M.kind_of_game(info, config)
     return "new"
 end
 
+-- Was the game started from the template "The Hussites Are Coming" (change add-hussite-scenario-template, #451)?
+-- The game keeps no template name, so the marker is the settings combination of the template row. No game template has
+-- Royal tax None together with Difficult weather and Low approval penalty.
+-- `setup` = { royal_tax, weather, approval_loss, ai_lords, adversary_baron, max_bandit_camps, initial_bandit_camps }. A missing value gives false.
+function M.is_hussite_template(setup)
+    if type(setup) ~= "table" then return false end
+    return setup.royal_tax == 0 and setup.weather == 2 and setup.approval_loss == 0.5
+        and setup.ai_lords == 0 and setup.adversary_baron == false
+        and setup.max_bandit_camps == 0 and setup.initial_bandit_camps == 0
+end
+
 -- The start kit is given once, in a new game only (a loaded save never gets it).
 function M.kit_due(is_new_game, given)
     return is_new_game == true and given ~= 1

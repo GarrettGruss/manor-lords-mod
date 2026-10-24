@@ -69,34 +69,72 @@ function M.homeless(region)
     return nil
 end
 
--- The game has a bandit pawn only when the game settings made bandit camps. Without it no bandit can spawn.
-function M.bandit_pawn_exists()
+local function bandit_pawn()
     for _, pawn in ipairs(FindAllOf("PawnCPP") or {}) do
         local ok, bandit = pcall(function() return pawn:IsValid() and not pawn:GetFullName():find("Default__", 1, true) and pawn.isBandit == true end)
-        if ok and bandit then return true end
+        if ok and bandit then return pawn end
     end
-    return false
+    return nil
 end
 
--- Villagers leave. Every `families_per_squad` families that leave form one brigand squad: squads = floor(count / families_per_squad).
--- The remaining families leave without a squad. A squad spawns only when the bandit pawn exists.
--- Returns { removed, squads, bandit_units, spawned } or nil and a message.
-function M.leave(region, count, families_per_squad)
-    local spawn = M.bandit_pawn_exists()
-    local result = { removed = 0, squads = 0, bandit_units = 0, spawned = spawn }
-    local full_squads = math.floor(count / families_per_squad)
-    for _ = 1, spawn and full_squads or 0 do
-        local answer, problem = M.rebel(families_per_squad, families_per_squad)
-        if answer == nil then return nil, problem end
-        result.removed = result.removed + (answer.families_removed or families_per_squad)
-        result.squads = result.squads + #answer.squads
-        result.bandit_units = result.bandit_units + (answer.bandit_units_spawned or 0)
+function M.bandit_pawn_exists()
+    return bandit_pawn() ~= nil
+end
+
+local function camp_place()
+    local ok, encampment = pcall(require, "HarnessEncampment")
+    if not ok then return nil end
+    local read_ok, answer = pcall(encampment.encampment_sites, nil, '{"type":100}')
+    if not read_ok or type(answer) ~= "table" or not answer.sites then return nil end
+    local last = answer.sites[#answer.sites]
+    return last and last.at or nil
+end
+
+local function distance_to_village(at)
+    local e = engine()
+    if at == nil or e == nil then return nil end
+    local ok, village = pcall(function() return e.playerRef:K2_GetActorLocation() end)
+    if not ok or village == nil then return nil end
+    return math.floor(math.sqrt((at.x - village.X) ^ 2 + (at.y - village.Y) ^ 2))
+end
+
+-- One bandit camp (18 Brigands). The same call makes the bandit pawn when the game has none (bandit camps 0).
+-- The game picks the place: spawnBanditCamp has no argument. A new pawn has no relation row, so addPawnRelations follows.
+-- Returns { pawn_created, bandit_units, at, distance } or nil and a message.
+function M.spawn_camp()
+    local e = engine()
+    if e == nil then return nil, "no RTSMultiEngineCPP" end
+    local units_before = M.bandit_units() or 0
+    local had_pawn = bandit_pawn() ~= nil
+    local called, problem = pcall(function() e:spawnBanditCamp() end)
+    if not called then return nil, "spawnBanditCamp: " .. tostring(problem) end
+    local pawn = bandit_pawn()
+    if not had_pawn then
+        if pawn == nil then return nil, "spawnBanditCamp made no bandit pawn" end
+        local related, why = pcall(function() e:addPawnRelations(pawn) end)
+        if not related then core.log.warn("Bandits", "addPawnRelations failed: " .. tostring(why)) end
     end
+    local at = camp_place()
+    return { pawn_created = not had_pawn, bandit_units = (M.bandit_units() or 0) - units_before, at = at, distance = distance_to_village(at) }
+end
+
+-- Villagers leave and one bandit camp appears for the leave event (the number of families does not change the number of camps).
+-- Returns { removed, camps, squads, bandit_units, spawned, pawn_created, at, distance } or nil and a message.
+function M.leave(region, count)
+    local result = { removed = 0, camps = 0, squads = 0, bandit_units = 0, spawned = false, pawn_created = false }
     while result.removed < count do
         local removed = core.remove_families(region, math.min(core.MAX_REBEL_FAMILIES, count - result.removed))
         if removed < 1 then break end
         result.removed = result.removed + removed
     end
+    if result.removed < 1 then return result end
+    local camp, problem = M.spawn_camp()
+    if camp == nil then
+        core.log.error("Bandits", "camp failed: " .. tostring(problem))
+        return result
+    end
+    result.camps, result.squads, result.spawned = 1, 1, true
+    result.bandit_units, result.pawn_created, result.at, result.distance = camp.bandit_units, camp.pawn_created, camp.at, camp.distance
     return result
 end
 

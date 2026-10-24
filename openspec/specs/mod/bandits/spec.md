@@ -6,28 +6,30 @@ The bandits feature turns low approval into low Public Order, and low Public Ord
 ## Requirements
 
 ### Requirement: A conversion removes two families and spawns a bandit squad
-When the banditry timer expires, the mod SHALL remove `leavers` (default 18) villagers, as families, through `homeless_rebel` (`ManorCore.remove_families`), and SHALL spawn bandits for them only when the game's bandit pawn exists. Every `families_per_squad` (default 5) families that leave SHALL form one squad of the brigands template: `squads = floor(families that left / 5)`, so 18 families give 3 squads and the 3 extra families leave without a squad (a default the owner can change). Otherwise it SHALL log that no bandits spawned. A villager here is a family. The village SHALL keep at least `min_families_left` (default 1) families, so fewer than 18 may leave. The mod SHALL show the banner `Families have turned to banditry`.
+When the banditry timer expires, the mod SHALL remove `leavers` (default 18) villagers, as families, and SHALL spawn one bandit camp (`RTSMultiEngineCPP:spawnBanditCamp()`, a camp with 18 Brigands) for the leave event. The mod SHALL NOT spawn squads at the homes. The number of squads does not depend on the number of families (the rule "one squad per 5 families" is removed). When the game has no bandit pawn, the same call SHALL make the bandit pawn, and the mod SHALL then call `addPawnRelations` for it, so villager banditry works with the game setting bandit camps 0. The game picks the camp place; the mod SHALL log the camp place. A villager here is a family. The village SHALL keep at least `min_families_left` (default 1) families, so fewer than 18 may leave. The mod SHALL show the banner `Families have turned to banditry`.
 
 #### Scenario: A forced conversion
 - **WHEN** the banditry timer expires (a test forces it) with enough villagers
 - **THEN** the villagers that leave are between 1 and 18, and the village keeps at least 1 family
+- **AND** one bandit camp exists and the bandit units grow by 18
 - **AND** the game runs 10 more game days with no crash
 - Checked by `mod/InvasionMod/scenarios/bandits/banditry_timer.py`.
 
 #### Scenario: The last family stays
 - **WHEN** the village has only 1 family and the timer expires
-- **THEN** no family leaves
+- **THEN** no family leaves and no camp spawns
 - Checked by `harness/tests/test_fakegame_bandits.py`.
 
 #### Scenario: One squad for every 5 families
-- **WHEN** 18 families leave and the game has a bandit pawn
-- **THEN** 3 brigand squads spawn, one for each 5 families, and the 3 extra families leave without a squad
+- **WHEN** 18 families leave (the old rule gave 3 squads)
+- **THEN** exactly one camp spawns, whatever the number of families, and no squad spawns at the homes
 - Checked by `harness/tests/test_fakegame_bandits.py` and `mod/InvasionMod/scenarios/bandits/banditry_timer.py`.
 
 #### Scenario: No bandit pawn
-- **WHEN** villagers leave and the game has no bandit pawn
-- **THEN** no bandit spawns, the mod logs it, and no error is raised
-- Checked by `harness/tests/test_fakegame_bandits.py`.
+- **WHEN** villagers leave and the game has no bandit pawn (bandit camps 0)
+- **THEN** the mod makes the bandit pawn with the camp (one `spawnBanditCamp` call) and calls `addPawnRelations`
+- **AND** the bandit pawn exists afterward
+- Checked by `harness/tests/test_fakegame_bandits.py` and a real run on fixture `playtest-noai` (proposed).
 
 #### Scenario: The conversion banner
 - **WHEN** villagers leave for banditry

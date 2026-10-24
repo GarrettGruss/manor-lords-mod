@@ -24,6 +24,7 @@ state:register("bandits_leaves", 0, "integer")
 
 local last_tick = nil     -- the last tick record, for the state command and the telemetry
 local last_leave = nil    -- the last leave record
+local leave_gain = nil    -- order gained at the last leave; cleared by the next tick (read by order_tooltip)
 local overwrites = 0      -- how often the game replaced the mod's value
 local written = nil       -- the last value the mod wrote
 local pending = nil       -- a sent buy-back that is not finished
@@ -72,6 +73,7 @@ local function run_tick(today)
     local record = rules.tick_order(mod_order(), world.homeless(region) or 0, modifiers.order_bonus, config)
     record.day = today
     last_tick = record
+    leave_gain = nil
     state:set("bandits_last_tick_day", today)
     state:set("bandits_ticks", state:get("bandits_ticks") + 1)
     set_mod_order(record.order_after)
@@ -96,24 +98,25 @@ local function stop_timer(today)
     core.log.info(TAG, string.format("BANDITS timer reset day=%d order=%d", today, mod_order()))
 end
 
--- The villagers leave. When no bandit pawn exists, they leave the map and the mod logs that no bandits spawned.
+-- The villagers leave and one bandit camp spawns. The camp call makes the bandit pawn when none exists.
 local function leave(today, count)
     local region = world.region()
     local families = region and world.families(region) or 0
     local wanted = count or rules.leavers_for(families, config)
-    local result = { removed = 0, squads = 0, bandit_units = 0, spawned = false }
+    local result = { removed = 0, camps = 0, squads = 0, bandit_units = 0, spawned = false }
     if region ~= nil and wanted > 0 then
-        local answer, problem = world.leave(region, wanted, config.families_per_squad)
+        local answer, problem = world.leave(region, wanted)
         if answer == nil then core.log.error(TAG, "BANDITS leave failed: " .. tostring(problem)) else result = answer end
     end
-    last_leave = { day = today, wanted = wanted, removed = result.removed, spawned = result.spawned, squads = result.squads, bandit_units = result.bandit_units }
+    last_leave = { day = today, wanted = wanted, removed = result.removed, spawned = result.spawned, camps = result.camps, squads = result.squads, bandit_units = result.bandit_units, pawn_created = result.pawn_created, camp_at = result.at, camp_distance = result.distance }
     state:set("bandits_leaves", state:get("bandits_leaves") + 1)
     state:set("bandits_converted_families", state:get("bandits_converted_families") + result.removed)
     state:set("bandits_outstanding_families", state:get("bandits_outstanding_families") + result.removed)
-    core.log.info(TAG, string.format("BANDITS leave day=%d wanted=%d families_left=%d bandits_spawned=%s squads=%d bandit_units=%d",
-        today, wanted, result.removed, tostring(result.spawned), result.squads, result.bandit_units))
-    if not result.spawned then core.log.info(TAG, "BANDITS no bandit pawn or spawn failed: no bandits spawned") end
+    core.log.info(TAG, string.format("BANDITS leave day=%d wanted=%d families_left=%d bandits_spawned=%s camps=%d bandit_units=%d pawn_created=%s camp_at=%s camp_distance=%s",
+        today, wanted, result.removed, tostring(result.spawned), result.camps, result.bandit_units, tostring(result.pawn_created), result.at and (result.at.x .. "," .. result.at.y) or "unknown", tostring(result.distance)))
+    if not result.spawned and result.removed > 0 then core.log.info(TAG, "BANDITS camp spawn failed: no bandits spawned") end
     set_mod_order(rules.order_after_leave(mod_order(), config))
+    leave_gain = config.order_gain
     core.show_banner("Families have turned to banditry", string.format("%d families left their homes", result.removed))
     return result
 end
@@ -322,5 +325,15 @@ local function set_modifiers(values)
         tostring(modifiers.order_bonus), tostring(modifiers.buy_back_multiplier)))
 end
 
+-- Read-only: the mod order and the terms of the last tick, for the order tooltip. Terms are nil before the first tick.
+local function order_terms()
+    if not state.loaded then return nil end
+    return {
+        order = mod_order(),
+        manor_term = last_tick and last_tick.manor_term, homeless_term = last_tick and last_tick.homeless_term,
+        leave_gain = leave_gain,
+    }
+end
+
 core.log.info(TAG, "feature bandits loaded")
-return { state = state, set_modifiers = set_modifiers }
+return { state = state, set_modifiers = set_modifiers, order_terms = order_terms }

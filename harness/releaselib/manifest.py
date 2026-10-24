@@ -13,7 +13,7 @@ PAK_SOURCES = ("build", "file")
 REQUIRED_KEYS = {"name", "version", "description", "shared", "tested", "gate_scenarios"}
 OPTIONAL_KEYS = {"pak", "display_name", "features"}
 KEYS = REQUIRED_KEYS | OPTIONAL_KEYS
-FEATURE_KEYS = {"name", "requires", "ids"}
+FEATURE_KEYS = {"name", "requires", "ids", "pak"}
 TESTED_KEYS = {"game", "game_build", "ue4ss"}
 PAK_KEYS = {"name", "source", "path"}
 

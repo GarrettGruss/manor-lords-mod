@@ -40,6 +40,14 @@ local function snapshot(instance)
         initial_bandit_camps = read(function() return instance.gameSetup.currentGameSetup.initialBanditCamps end),
         ai_aggressiveness = read(function() return instance.gameSetup.currentGameSetup.AI_aggressiveness end),
         adversary_baron = read(function() return instance.gameSetup.currentGameSetup.adversary_baron end),
+        -- The settings of the template "The Hussites Are Coming" (change add-hussite-scenario-template, #451).
+        royal_tax = read(function() return instance.gameSetup.currentGameSetup.royalTaxMultiplier end),
+        armament_delivery = read(function() return instance.gameSetup.currentGameSetup.armamentDelivery end),
+        requirement_bias = read(function() return instance.gameSetup.currentGameSetup.requirementDiscontentBias end),
+        spoilage = read(function() return instance.gameSetup.currentGameSetup.spoilage end),
+        approval_loss = read(function() return instance.gameSetup.currentGameSetup.loyaltyLossRate end),
+        water_veins = read(function() return instance.gameSetup.currentGameSetup.generateWaterVeins end),
+        weather = read(function() return instance.gameSetup.currentGameSetup.weatherDamage end),
     }
 end
 
