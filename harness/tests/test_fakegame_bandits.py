@@ -28,6 +28,8 @@ package.loaded["HarnessBandits"] = {
         return { ok = LETTER_OK ~= false }
     end,
 }
+TELEMETRY = {}
+package.loaded["HarnessTelemetry"] = { register = function(name, fn) TELEMETRY[name] = fn end }
 package.loaded["HarnessUnits"] = {
     counts = function() return { by_side = { bandit = BANDIT_UNITS or 0 } } end,
 }
@@ -44,15 +46,18 @@ class BanditsTestCase(unittest.TestCase):
         self.game.exec(f'package.path = "{(pack / "Scripts").as_posix()}/?.lua;" .. package.path')
         self.game.exec(FNAME + HELPERS + STUB)
         self.pawn = self.game.obj("PawnCPP", Tags=self.game.array([]))
-        self.game.method(self.pawn, "playEventMessage", lambda _self, _kind, _text, _sub: None)
+        self.banners = []
+        self.game.method(self.pawn, "playEventMessage", lambda _self, _kind, text, sub: self.banners.append((text, sub)))
         self.game.method(self.pawn, "K2_GetActorLocation", lambda _self: self.game.struct(X=0.0, Y=0.0, Z=0.0))
         self.game.method(self.pawn, "GetAddress", lambda _self: 1)
         self.calendar = self.game.obj("TemporalComponent", daysTotal=61, daysUntilNextRaid=730, Season=1)
         self.region = self.game.obj("Region", ownerPawn=self.pawn, publicOrder=100, Approval=65)
         self.families = 10
         self.slots = 4
+        self.homeless = 0
         self.pawn.silver = 83
         self.game.method(self.region, "getTotalNumFamilies", lambda _self: self.families)
+        self.game.method(self.region, "getNumHomelessFamilies", lambda _self: self.homeless)
         self.game.method(self.region, "getAvailableLivingSpace", lambda _self: self.game.struct(constructed=self.slots, unconstructed=0))
         self.engine = self.game.obj("RTSMultiEngineCPP", playerRef=self.pawn, TemporalComponent=self.calendar,
                                     regions=self.game.array([self.region]), debugLog_AI_general=self.game.array([]))
@@ -61,6 +66,7 @@ class BanditsTestCase(unittest.TestCase):
         self.game.load_mod(self.mod_name)
         self.game.advance(3)
         self.counter = 0
+        self.game.exec('require("ManorCore").remove_families = function(_region, count) REMOVED_TOTAL = (REMOVED_TOTAL or 0) + count; return count, count end')
 
     def ask(self, name, **args):
         self.counter += 1
@@ -80,128 +86,183 @@ class BanditsTestCase(unittest.TestCase):
         return self.game.exec("return REBEL_CALLS or 0")
 
 
-class DebuffTests(BanditsTestCase):
-    def test_order_is_natural_minus_debuff(self):
-        self.game.advance(3)
-        self.assertEqual(self.region.publicOrder, 65)  # approval 65, difficulty 1
-
-    def test_the_debuff_does_not_stack(self):
-        self.game.advance(10)
-        self.assertEqual(self.region.publicOrder, 65)
-        self.assertEqual(self.state()["natural_order"], 100)
-
-    def test_the_game_value_is_taken_as_natural(self):
-        self.game.advance(3)
-        self.region.publicOrder = 90  # the game recalculates
-        self.game.advance(3)
-        self.assertEqual(self.region.publicOrder, 55)
-        self.assertEqual(self.state()["natural_order"], 90)
-
-    def test_full_approval_gives_back_the_natural_value(self):
-        self.game.advance(3)
-        self.assertTrue(self.ask("bandits_set_approval", value=100)["ok"])
+class OrderTests(BanditsTestCase):
+    def test_a_new_game_starts_at_100_and_the_mod_writes_it(self):
+        self.region.publicOrder = 60  # the game's own value
         self.game.advance(3)
         self.assertEqual(self.region.publicOrder, 100)
+        self.assertEqual(self.state()["mod_order"], 100)
 
-    def test_difficulty_two_doubles_the_debuff_and_stops_at_zero(self):
-        self.ask("invasion_set_difficulty", value=2)
+    def test_the_game_value_is_overwritten_again(self):
         self.game.advance(3)
-        self.assertEqual(self.region.publicOrder, 30)
-        self.ask("bandits_set_approval", value=20)
+        self.region.publicOrder = 40  # the game recalculates
         self.game.advance(3)
-        self.assertEqual(self.region.publicOrder, 0)
+        self.assertEqual(self.region.publicOrder, 100)
+        self.assertGreaterEqual(self.state()["overwrites"], 1)
 
-
-class ConversionTests(BanditsTestCase):
-    def low_order(self):
-        self.ask("bandits_set_approval", value=0)
+    def test_set_order_writes_the_game_value(self):
+        self.ask("bandits_set_order", value=70)
         self.game.advance(3)
-        self.assertEqual(self.region.publicOrder, 0)
+        self.assertEqual(self.region.publicOrder, 70)
 
-    def test_low_order_and_a_winning_roll_convert_families(self):
-        self.low_order()
-        result = self.ask("bandits_tick_now", roll=0.0)["result"]
-        self.assertEqual(result["converted_families"], 2)
-        self.assertEqual(self.rebel_calls(), 1)
-        self.assertEqual(self.game.exec("return LAST_REBEL.mode"), "home")
-
-    def test_a_losing_roll_converts_nothing(self):
-        self.low_order()
-        self.assertEqual(self.ask("bandits_tick_now", roll=0.99)["result"]["converted_families"], 0)
-        self.assertEqual(self.rebel_calls(), 0)
-
-    def test_high_order_never_converts(self):
-        self.ask("bandits_set_approval", value=100)
+    def test_a_reload_keeps_the_order_and_the_tick_day(self):
+        self.ask("bandits_set_order", value=70)
+        self.calendar.daysTotal = 80
         self.game.advance(3)
-        self.assertEqual(self.ask("bandits_tick_now", roll=0.0)["result"]["converted_families"], 0)
-        self.assertEqual(self.rebel_calls(), 0)
+        before = self.state()
+        self.game.load_mod(self.mod_name)  # ModState keeps the saved values
+        self.game.advance(5)
+        after = self.state()
+        self.assertEqual((after["mod_order"], after["last_tick_day"]), (70, before["last_tick_day"]))
+
+
+class TickTests(BanditsTestCase):
+    def test_no_tick_before_30_days(self):
+        self.ask("bandits_set_order", value=50)
+        self.calendar.daysTotal = 61 + 29
+        self.game.advance(5)
+        state = self.state()
+        self.assertEqual((state["ticks"], state["mod_order"]), (0, 50))
+
+    def test_a_tick_every_30_days(self):
+        self.ask("bandits_set_order", value=50)
+        self.game.advance(3)
+        self.calendar.daysTotal = 61 + 30
+        self.game.advance(3)
+        self.calendar.daysTotal = 61 + 59
+        self.game.advance(3)
+        self.assertEqual(self.state()["ticks"], 1)
+        self.calendar.daysTotal = 61 + 61
+        self.game.advance(3)
+        state = self.state()
+        self.assertEqual((state["ticks"], state["mod_order"]), (2, 70))
+
+    def test_a_tick_with_homeless_villagers_is_recorded(self):
+        self.homeless = 4
+        self.ask("bandits_set_order", value=50)
+        tick = self.ask("bandits_tick_now")["result"]["last_tick"]
+        self.assertEqual(
+            {key: tick[key] for key in ("order_before", "manor_term", "homeless_count", "homeless_term", "order_after")},
+            {"order_before": 50, "manor_term": 10, "homeless_count": 4, "homeless_term": 20, "order_after": 40},
+        )
+        self.assertEqual(self.region.publicOrder, 40)
+
+    def test_the_tick_is_logged(self):
+        self.ask("bandits_tick_now")
+        self.assertTrue(any("BANDITS tick day=" in line for line in self.game.log_lines()))
+
+    def test_the_tech_tree_order_bonus_adds_to_the_manor_term(self):
+        self.game.exec('require("features.bandits.init").set_modifiers({ order_bonus = 5 })')
+        self.ask("bandits_set_order", value=50)
+        self.assertEqual(self.ask("bandits_tick_now")["result"]["last_tick"]["manor_term"], 15)
+
+    def test_the_telemetry_metric_holds_the_last_tick(self):
+        self.ask("bandits_tick_now")
+        self.assertEqual(self.game.exec("return TELEMETRY.bandits_order().last_tick.order_after"), 100)
+
+
+class TimerTests(BanditsTestCase):
+    def setUp(self):
+        super().setUp()
+        self.game.exec('require("config").bandits.tick_days = 100000')  # no tick moves the order in these tests
+
+    def test_low_order_starts_the_timer_with_a_banner(self):
+        self.ask("bandits_set_order", value=20)
+        state = self.state()
+        self.assertTrue(state["timer"]["active"])
+        self.assertEqual(state["timer"]["days_left"], 90)
+        self.assertEqual(len(self.banners), 1)
+        self.assertIn("unrest", self.banners[0][0].lower())
+
+    def test_the_timer_resets_when_order_reaches_25(self):
+        self.families = 40
+        self.ask("bandits_set_order", value=20)
+        self.ask("bandits_set_order", value=25)
+        self.assertFalse(self.state()["timer"]["active"])
+        self.calendar.daysTotal = 61 + 200
+        self.game.advance(5)
+        self.assertEqual(self.state()["converted_families"], 0)
+
+    def test_the_warning_shows_once_30_days_before(self):
+        self.ask("bandits_set_order", value=20)
+        self.calendar.daysTotal = 61 + 59
+        self.game.advance(3)
+        self.assertEqual(len(self.banners), 1)
+        self.calendar.daysTotal = 61 + 60
+        self.game.advance(3)
+        self.calendar.daysTotal = 61 + 70
+        self.game.advance(3)
+        self.assertEqual(len(self.banners), 2)
+        self.assertIn("about to leave", self.banners[1][0])
+
+    def test_the_villagers_leave_when_the_timer_expires(self):
+        self.families = 40
+        self.ask("bandits_set_order", value=20)
+        self.calendar.daysTotal = 61 + 90
+        self.game.advance(3)
+        state = self.state()
+        self.assertEqual(state["converted_families"], 18)
+        self.assertEqual(state["mod_order"], 45)  # 20 + 25
+        self.assertFalse(state["timer"]["active"])  # order 45 is not under 25
+        self.assertEqual(self.banners[-1][0], "Families have turned to banditry")
+        self.assertEqual(self.game.exec("return REMOVED_TOTAL"), 18)
+
+    def test_the_timer_restarts_after_a_leave_when_order_stays_under_25(self):
+        self.families = 40
+        self.ask("bandits_set_order", value=0)
+        self.game.exec('require("config").bandits.order_gain = 10')
+        self.calendar.daysTotal = 61 + 90
+        self.game.advance(3)
+        state = self.state()
+        self.assertEqual(state["mod_order"], 10)
+        self.assertTrue(state["timer"]["active"])
+        self.assertEqual(state["timer"]["days_left"], 90)
 
     def test_the_last_family_stays(self):
-        self.families = 2
-        self.low_order()
-        self.assertEqual(self.ask("bandits_tick_now", roll=0.0)["result"]["converted_families"], 1)
-
-    def test_no_roll_on_the_first_poll_or_in_the_same_season(self):
-        self.low_order()
-        self.calendar.daysTotal = 61 + 40
-        self.game.advance(5)
-        self.assertEqual(self.state()["rolls"], 0)
-        self.assertEqual(self.state()["last_season"], 1)
-
-
-class SeasonTickTests(BanditsTestCase):
-    def change_season(self, season):
-        self.calendar.Season = season
+        self.families = 1
+        self.ask("bandits_set_order", value=20)
+        self.calendar.daysTotal = 61 + 90
         self.game.advance(3)
+        self.assertEqual(self.state()["converted_families"], 0)
+        self.assertEqual(self.game.exec("return REMOVED_TOTAL or 0"), 0)
 
-    def test_one_roll_per_season_change(self):
-        self.change_season(2)
-        self.change_season(3)
-        self.game.advance(10)
-        state = self.state()
-        self.assertEqual(state["rolls"], 2)
-        self.assertEqual(state["last_season"], 3)
-
-    def test_winter_rolls_once_when_the_year_changes(self):
-        self.change_season(3)
-        self.change_season(0)
-        self.calendar.Year = 2
-        self.game.advance(5)
-        self.assertEqual(self.state()["rolls"], 2)
-
-    def test_a_season_change_converts_with_a_winning_roll(self):
-        self.ask("bandits_set_approval", value=0)
+    def test_fewer_families_than_18_all_but_one_leave(self):
+        self.families = 10
+        self.ask("bandits_set_order", value=20)
+        self.calendar.daysTotal = 61 + 90
         self.game.advance(3)
-        self.game.exec("math.random = function() return 0.0 end")
-        self.change_season(2)
-        self.assertEqual(self.state()["converted_families"], 2)
-        self.assertEqual(self.rebel_calls(), 1)
-
-    def test_a_reload_in_the_same_season_does_not_roll(self):
-        self.change_season(2)
-        self.assertEqual(self.state()["rolls"], 1)
-        self.game.load_mod(self.mod_name)  # ModState keeps the saved season
-        self.game.advance(5)
-        self.assertEqual(self.state()["rolls"], 1)
+        self.assertEqual(self.state()["converted_families"], 9)
 
 
-class DistributionTests(BanditsTestCase):
-    def test_the_conversion_rate_matches_the_chance_bands(self):
-        rules = self.game.exec('return require("features.bandits.rules")')
-        bands = self.game.exec('return require("config").bandits.bands')
-        random = __import__("random").Random(7)
-        for order, chance in ((80, 0.0), (60, 0.10), (40, 0.25), (10, 0.50)):
-            hits = sum(1 for _ in range(20000) if rules.should_convert(order, bands, random.random()))
-            self.assertAlmostEqual(hits / 20000, chance, delta=0.015, msg=f"order {order}")
+class LeaveTests(BanditsTestCase):
+    def test_with_a_bandit_pawn_one_squad_forms_per_5_families(self):
+        self.game.obj("PawnCPP", isBandit=True)
+        self.families = 40
+        result = self.ask("bandits_leave_now")["result"]
+        self.assertEqual(self.rebel_calls(), 3)  # 18 families: 3 squads of 5, the other 3 leave without a squad
+        self.assertEqual(self.game.exec("return LAST_REBEL.families_per_squad"), 5)
+        self.assertEqual(self.game.exec("return LAST_REBEL.count"), 5)
+        self.assertEqual(self.game.exec("return REMOVED_TOTAL"), 3)
+        self.assertTrue(result["last_leave"]["spawned"])
+        self.assertEqual(result["last_leave"]["removed"], 18)
+
+    def test_without_a_bandit_pawn_the_villagers_still_leave_and_it_is_logged(self):
+        self.families = 40
+        result = self.ask("bandits_leave_now")["result"]
+        self.assertEqual(self.rebel_calls(), 0)
+        self.assertFalse(result["last_leave"]["spawned"])
+        self.assertEqual(result["last_leave"]["removed"], 18)
+        self.assertEqual(result["mod_order"], 100)  # clamped
+        self.assertEqual(self.game.exec("return REMOVED_TOTAL"), 18)
+        self.assertTrue(any("no bandits spawned" in line for line in self.game.log_lines()))
 
 
 class BuyBackTests(BanditsTestCase):
     """C1, C4 to C7 in the fake game. The stub plays the game: it records the letter, the test moves silver, units and families."""
 
     def convert(self):
-        self.ask("bandits_set_approval", value=0)
-        self.game.advance(3)
-        self.ask("bandits_tick_now", roll=0.0)
+        self.game.obj("PawnCPP", isBandit=True)
+        self.ask("bandits_leave_now", count=2)
         self.game.exec("BANDIT_UNITS = 18")
         self.families -= 2
 

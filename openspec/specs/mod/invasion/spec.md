@@ -27,18 +27,22 @@ The mod SHALL NOT show a countdown banner or a warning banner for a minor (yearl
 - Checked by `harness/tests/test_fakegame_invasion.py`.
 
 ### Requirement: The raid spawns on the planned day
-The mod SHALL spawn the planned raid on the raid day, plus or minus 1 game day. The raid size SHALL be the size multiplier of the size class times the difficulty, in squads. The size class SHALL be picked at random between small, medium and large with the multipliers 1, 2 and 3 (`size_multipliers`). The mod SHALL spawn the first minor raid only once.
+The mod SHALL spawn the planned yearly raid on the raid day, plus or minus 1 game day. The raid size SHALL be the size multiplier of the size class times the Yearly player raid level, in squads. The size class SHALL be picked at random between small, medium and large with the multipliers 1, 2 and 3 (`size_multipliers`), unless the settings menu fixed it. At level 0 the mod SHALL plan and spawn no yearly raid.
 
 #### Scenario: A medium raid at difficulty 2
-- **WHEN** the raid day arrives for a medium raid at difficulty 2
+- **WHEN** the raid day arrives for a medium raid at the yearly level 2
 - **THEN** the raid has 4 squads (2 x 2)
-- **AND** the number of raiders is between 90 and 100 percent of the planned units (some raiders die at once)
-- Checked by `mod/InvasionMod/scenarios/invasion/first_raid.py`.
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`).
 
 #### Scenario: A forced raid
 - **WHEN** a test calls `invasion_force_next` after the plan exists
 - **THEN** the raid spawns at the next check, and a second call is refused because the raid was spawned
 - Checked by `harness/tests/test_fakegame_invasion.py`.
+
+#### Scenario: The yearly level is 0
+- **WHEN** the yearly level is 0 and a game year passes
+- **THEN** no yearly raid is planned or spawned and no banner shows
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`).
 
 ### Requirement: The mod owns the base game raid timer
 The mod SHALL lift the base game raid timer (`daysUntilNextRaid`) to `base_timer_refill` (default 700) whenever it falls below `base_timer_floor` (default 300), so the base game starts no raid of its own.
@@ -82,21 +86,23 @@ With `roles.lord_army.enabled` (default on), the mod SHALL spawn a role raid as 
 - Checked by `harness/tests/test_fakegame_invasion.py`.
 
 ### Requirement: The player picks the difficulty once
-The mod SHALL keep a difficulty from 1 to 3 (default `invasion.difficulty`). The player SHALL choose it only in the scenario start menu of `mod/scenario_settings`, before the game starts. The mod SHALL NOT show any difficulty banner, in any state: the banner `Pick the difficulty: 1, 2 or 3` and the setting `prompt_every_days` SHALL be removed. `invasion_set_difficulty` SHALL set the difficulty at any time and SHALL mark it as chosen. `invasion_pick_difficulty` SHALL stay as a test command: it SHALL set the difficulty once, and it SHALL be refused after the first pick, after the first raid spawned, and for a value outside 1 to 3. A pick SHALL re-plan the squads of an unspawned raid.
+The mod SHALL keep three levels from 0 to 3, one for each raid type: yearly, great and vassal (default 2 each, `invasion.levels`). The player SHALL choose them in the scenario start menu of `mod/scenario_settings`. There is no global difficulty. `invasion_set_difficulty` SHALL set all three levels to one value from 0 to 3 at any time, and a new command SHALL set one level. `invasion_pick_difficulty` SHALL stay as a test command that sets the levels once. It SHALL be refused after the first pick, after the first raid spawned, and for a value outside 0 to 3. A change SHALL re-plan the squads of an unspawned raid of that type.
 
 #### Scenario: A pick at difficulty 2
-- **WHEN** no pick was made and a test picks difficulty 2
-- **THEN** `chosen` was false before and is true after, and the difficulty is 2
-- **AND** a second pick is refused
-- **AND** the relief army has 8 squads and the great raid has 2 waves
-- **AND** the planned squads are a multiple of 2 between 1 and 3 times 2
-- Checked by `mod/InvasionMod/scenarios/invasion/difficulty_pick.py`.
+- **WHEN** no pick was made and a test picks the level 2 for all three types, and later sets yearly 1, great 3 and vassal 0
+- **THEN** the yearly raid has the squads of level 1, the great raid has 3 waves, and no vassal raid is planned
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`); real game runs `levels-invasion-difficulty-pick-1`, `levels-pick-d1-1` and `levels-pick-d3-1` passed.
+
+#### Scenario: A bad level
+- **WHEN** a test sets a level to 4
+- **THEN** the command is refused and the levels do not change
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`DifficultyTests`).
 
 #### Scenario: The settings menu sets the difficulty
-- **WHEN** the player begins the game with Hard in the settings menu
-- **THEN** the difficulty is 3 and chosen is true, and no pick banner shows
-- **AND** `invasion_set_difficulty` 1 afterwards sets the difficulty to 1
-- Checked by `mod/InvasionMod/scenarios/scenario_settings/new_game_menu.py` (run 20261022-045227-57f0) and `harness/tests/test_fakegame_scenario_settings.py`.
+- **WHEN** the player begins the game with yearly 3, great 0 and vassal 1 in the settings menu
+- **THEN** the three levels are 3, 0 and 1 and chosen is true, and no pick banner shows
+- **AND** `invasion_set_difficulty` 1 afterwards sets all three levels to 1
+- Checked by `harness/tests/test_fakegame_scenario_settings.py`; real game run `levels-newgame-1` passed.
 
 #### Scenario: No difficulty banner
 - **WHEN** a game runs 30 game days with no pick and with no settings applied
@@ -147,22 +153,20 @@ The mod SHALL start the great raid clock on the first daily step. The clock SHAL
 - Checked by `harness/tests/test_fakegame_invasion.py`.
 
 ### Requirement: The great raid starts with waves
-When the clock ends, the mod SHALL spawn one wave for each difficulty point. Each wave SHALL have `wave_squads` (default 15) squads. Waves SHALL be `wave_gap_days` (default 10) game days apart. The mod SHALL NOT spawn a wave twice.
+When the clock ends, the mod SHALL spawn one wave for each Great raid level point. Each wave SHALL have `wave_squads` (default 15) squads. Waves SHALL be `wave_gap_days` (default 10) game days apart. The mod SHALL NOT spawn a wave twice. At level 0 the mod SHALL NOT start the clock or spawn waves.
 
 #### Scenario: The first wave at difficulty 1
-- **WHEN** a test forces the clock to end at difficulty 1
+- **WHEN** a test forces the clock to end at the great level 1
 - **THEN** wave 1 has 15 squads and exactly 1 wave spawns
-- Checked by `mod/InvasionMod/scenarios/invasion/great_raid_waves.py`.
+- Checked by `mod/InvasionMod/scenarios/invasion/great_raid_waves.py` (real game run `levels-great-raid-waves-4` passed, INVASION_DIFFICULTY=1).
 
 ### Requirement: A relief army and a final battle end the great raid
-`relief_delay_days` (default 10) game days after the last wave, the mod SHALL spawn the relief army on the player side (15, 8 or 0 squads at difficulty 1, 2 or 3) and a hostile final army of `final_squads` (default 25) squads, not scaled by difficulty. When the final army is dead, the phase SHALL become `won`.
+`relief_delay_days` (default 10) game days after the last wave, the mod SHALL spawn the relief army on the player side (15, 8 or 0 squads at the Great raid level 1, 2 or 3) and a hostile final army of `final_squads` (default 25) squads, not scaled by the level. When the final army is dead, the phase SHALL become `won`.
 
 #### Scenario: The relief army and the final army at difficulty 1
-- **WHEN** the wait after the last wave is over
-- **THEN** the relief army has 15 squads and spawned
-- **AND** the final army has 25 squads
-- **AND** the game still answers with all squads on the map
-- Checked by `mod/InvasionMod/scenarios/invasion/great_raid_waves.py`.
+- **WHEN** the wait after the last wave is over at the great level 1
+- **THEN** the relief army has 15 squads and the final army has 25 squads
+- Checked by `mod/InvasionMod/scenarios/invasion/great_raid_waves.py` (real game run `levels-great-raid-waves-4` passed, INVASION_DIFFICULTY=1).
 
 #### Scenario: The win
 - **WHEN** the final army has no living unit
@@ -215,10 +219,15 @@ From the second game year, the mod SHALL roll at each season change while no rai
 - Checked by `harness/tests/test_fakegame_invasion.py`.
 
 ### Requirement: A subjugation raid is large and does not plunder
-A subjugation (major) raid SHALL be large: 3 x difficulty squads. It SHALL be a lord raid that does not plunder and does not leave. The yearly roll SHALL pick the kind of the raid by the kind rules: the first yearly raid is a plunder raid, the second is the subjugation raid (once), and every later yearly raid is a plunder raid.
+A subjugation (major) raid SHALL be large: 3 x the Vassal raids level in squads. It SHALL be a lord raid that does not plunder and does not leave. The yearly roll SHALL pick the kind of the raid by the kind rules: the first yearly raid is a plunder raid, the second is the subjugation raid (once), and every later yearly raid is a plunder raid. At the Vassal raids level 0 the mod SHALL plan no subjugation raid and show no banner for it, and the kind rules give a plunder raid instead. It SHALL spawn once for each plan.
 
 #### Scenario: The subjugation raid at difficulty 1
-- **WHEN** a subjugation raid spawns
-- **THEN** it has 3 squads x difficulty
+- **WHEN** the vassal level is 1 and the subjugation raid spawns
+- **THEN** it has 3 squads
 - **AND** the tracker shows `kind = subjugation`, no plunder and no leave reason within 12 game days
-- Checked by `mod/InvasionMod/scenarios/invasion/subjugation_raid.py`.
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`); real game run `levels-invasion-subjugation-raid-3` passed.
+
+#### Scenario: Vassal level 0
+- **WHEN** the vassal level is 0 and the first raid has ended
+- **THEN** no subjugation raid is planned
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`LevelTests`).

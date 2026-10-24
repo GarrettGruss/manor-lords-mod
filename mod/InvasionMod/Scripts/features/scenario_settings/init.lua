@@ -1,5 +1,5 @@
 -- Feature scenario_settings (change add-scenario-settings-menu, #375): the menu that opens when a new game starts.
--- The player sets the difficulty, the first Hussite raid year, the raid size and the great raids, then clicks "Begin the game".
+-- The player sets the level of the yearly player raid, the great raid and the vassal raids (0 off to 3 hard), the first Hussite raid year and the raid size, then clicks "Begin the game".
 -- The settings are stored in the mod state of the invasion feature (so they are saved with the game by the player's own save).
 -- The mod never calls a save function. It does not use or change the game's own new game menus.
 -- The menu is built on the base menu (core/menu.lua) without a bottom bar button. Its layout is a cooked Widget Blueprint in the
@@ -17,7 +17,7 @@ local MENU_ID = "scenario_settings"
 local isValid, read = core.isValid, core.read
 local state = invasion.state
 
-local MAX_CHOICES = 3
+local MAX_CHOICES = 4
 local S = {
     decided = false, kind = nil,           -- the decision runs once per game session
     holding = false,                       -- a new game waits for the menu: the invasion feature plans and shows nothing
@@ -104,9 +104,9 @@ end
 local function current_settings()
     local fixed = state:get("size_class_fixed")
     return {
-        difficulty = state:get("difficulty"), first_raid_years = state:get("first_raid_years"),
+        yearly = invasion.level("yearly"), great = invasion.level("great"), vassal = invasion.level("vassal"),
+        first_raid_years = state:get("first_raid_years"),
         size_class = fixed >= 1 and fixed or config.defaults.size_class, size_random = fixed == 0,
-        great_raids = state:get("great_raids"),
     }
 end
 
@@ -175,28 +175,26 @@ local function give_kit()
         tostring(people_problem or ""), tostring(silver_problem or "")))
 end
 
--- The player's choice: the difficulty counts as chosen. "settings_applied" says the settings exist.
+-- The player's choice: the levels count as chosen. "settings_applied" says the settings exist.
 local function apply(selection)
     S.holding = false
-    invasion.set_difficulty(selection.difficulty)
+    invasion.set_levels({ yearly = selection.yearly, great = selection.great, vassal = selection.vassal })
     state:set("first_raid_years", selection.first_raid_years)
     state:set("size_class_fixed", selection.size_class)
-    state:set("great_raids", selection.great_raids)
     state:set("settings_applied", 1)
     invasion.settings_changed()
-    core.log.info(TAG, string.format("settings applied: difficulty=%d first_raid_years=%d size_class=%d great_raids=%d",
-        selection.difficulty, selection.first_raid_years, selection.size_class, selection.great_raids))
+    core.log.info(TAG, string.format("settings applied: yearly=%d great=%d vassal=%d first_raid_years=%d size_class=%d",
+        selection.yearly, selection.great, selection.vassal, selection.first_raid_years, selection.size_class))
     give_kit()
 end
 
--- A save without settings (made before this feature): the defaults, no menu. A difficulty the player chose stays.
+-- A save without settings (made before this feature): the defaults, no menu. The old global difficulty is not used any more.
 local function apply_old_save()
     S.holding = false
     local defaults = rules.defaults(config)
-    if state:get("difficulty_chosen") == 0 then state:set("difficulty", defaults.difficulty) end
+    invasion.set_levels({ yearly = defaults.yearly, great = defaults.great, vassal = defaults.vassal }, true)
     state:set("first_raid_years", defaults.first_raid_years)
     state:set("size_class_fixed", defaults.size_class)
-    state:set("great_raids", defaults.great_raids)
     state:set("settings_applied", 1)
     invasion.settings_changed()
     core.log.info(TAG, "an old save without settings got the defaults")
@@ -419,8 +417,8 @@ menu.register({
 local function describe()
     local settings = current_settings()
     return {
-        difficulty = settings.difficulty, first_raid_years = settings.first_raid_years, size_class = settings.size_class,
-        size_random = settings.size_random, great_raids = settings.great_raids,
+        yearly = settings.yearly, great = settings.great, vassal = settings.vassal,
+        first_raid_years = settings.first_raid_years, size_class = settings.size_class, size_random = settings.size_random,
         settings_applied = state:get("settings_applied") == 1, difficulty_chosen = state:get("difficulty_chosen") == 1,
         kind = S.kind, decided = S.decided, open = is_open(), paused = S.paused, selection = S.selection, clicks = S.clicks,
         last_error = S.last_error, kit_given = state:get("start_kit_given") == 1, kit = S.kit, save_file = save_file_name(), day = current_day(), intro_playing = intro_playing(),
@@ -441,14 +439,13 @@ local function command_skip()
     return describe()
 end
 
--- Set any of the four settings by name, apply them and close the menu. A setting that is not named stays as it is now.
+-- Set any of the five settings by name, apply them and close the menu. A setting that is not named stays as it is now.
 local function command_set(args)
     decide()
     local selection = rules.defaults(config)
     local now = current_settings()
-    selection.difficulty, selection.first_raid_years, selection.great_raids = now.difficulty, now.first_raid_years, now.great_raids
-    selection.size_class = now.size_class
-    for _, key in ipairs({ "difficulty", "first_raid_years", "size_class", "great_raids" }) do
+    for _, key in ipairs({ "yearly", "great", "vassal", "first_raid_years", "size_class" }) do selection[key] = now[key] end
+    for _, key in ipairs({ "yearly", "great", "vassal", "first_raid_years", "size_class" }) do
         if args[key] ~= nil then
             local chosen, problem = rules.choose(selection, key, args[key])
             if not chosen then return nil, problem end
@@ -492,10 +489,9 @@ if has_commands then
     commands.register("InvasionMod.scenario_settings_skip", command_skip, {})
     commands.register("InvasionMod.scenario_settings_open", command_open, {})
     commands.register("InvasionMod.scenario_settings_set", command_set, {
-        difficulty = { type = "integer", min = 1, max = 3 },
+        yearly = { type = "integer", min = 0, max = 3 }, great = { type = "integer", min = 0, max = 3 }, vassal = { type = "integer", min = 0, max = 3 },
         first_raid_years = { type = "integer", min = 1, max = 3 },
         size_class = { type = "integer", min = 1, max = 3 },
-        great_raids = { type = "integer", min = 0, max = 1 },
     })
     commands.register("InvasionMod.scenario_settings_click", command_click, {
         action = { type = "string", required = true, oneOf = { "choose", "defaults", "begin" } },

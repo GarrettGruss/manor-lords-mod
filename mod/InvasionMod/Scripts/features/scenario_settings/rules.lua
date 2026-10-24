@@ -1,13 +1,13 @@
 -- Pure rules of the scenario settings menu (change add-scenario-settings-menu, #375). No game calls, so a test can run them.
 local M = {}
 
--- The four settings, in the order of the rows. `values` are the numbers stored in the mod state, in the order of the choices.
--- For great_raids the choices are On (1) and Off (0).
+-- The five settings, in the order of the rows. `values` are the numbers stored in the mod state, in the order of the choices.
 M.ROWS = {
-    { key = "difficulty", values = { 1, 2, 3 } },
+    { key = "yearly", values = { 0, 1, 2, 3 } },   -- the three levels: 0 off, 1 easy, 2 medium, 3 hard
+    { key = "great", values = { 0, 1, 2, 3 } },
+    { key = "vassal", values = { 0, 1, 2, 3 } },
     { key = "first_raid_years", values = { 1, 2, 3 } },
     { key = "size_class", values = { 1, 2, 3 } },
-    { key = "great_raids", values = { 1, 0 } },
 }
 
 local function row_of(key)
@@ -66,7 +66,7 @@ function M.choice_text(config, key, index, selected)
     return name
 end
 
--- Which choice of a row is selected: the index (1 to 3), or nil.
+-- Which choice of a row is selected: the index (1 to 4), or nil.
 function M.selected_index(selection, key)
     local row = row_of(key)
     return row and index_of(row, selection[key]) or nil

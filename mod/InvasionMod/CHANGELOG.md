@@ -4,7 +4,11 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 ### Changed
+- Bandits public order (change `update-bandits-public-order`, #424): Every 5 families that leave form one brigand squad (18 families give 3 squads). the mod keeps its own public order (100 in a new game) and writes it to the game. Every 30 game days it adds 10 (plus the tech tree `order_bonus`) and subtracts 5 for each homeless family; each tick is logged and in the telemetry (`bandits_order`). Order under 25 starts a 90 game day timer; when it ends, up to 18 families leave to become bandits (a bandit band spawns only when the game has a bandit pawn, otherwise the mod logs it) and order rises by 25. Three banners: timer start, 30 game days before, leave. This replaces the approval debuff and the season roll. The tech tree `approval_bonus` has no effect now.
 - Feature `invasion` and `raid_widget` (change `update-raid-banners`, #400): one 30 day banner for a subjugation raid and a large plunder raid, no banner for a yearly raid or the difficulty, the great raid at game year 10 with a banner in years 7, 8 and 9, the raid menu lists the upcoming raids. See the root `CHANGELOG.md`.
+
+### Changed
+- Features `invasion`, `scenario_settings`, `raid_widget` (change `update-raid-difficulty-levels`, #404): one level 0 to 3 for each raid type (yearly player raid, great raid, vassal raids) in place of the global difficulty and the Great raids switch. Level 0 turns the raid type off. Bandits, sack and terms read the highest level.
 
 ### Added
 - Features `scenario_settings` and `liege_influence` (change `add-scenario-start-kit`, #425): start kit (10 people, 300 silver) at "Begin the game" of a new game, and the liege button "Request arms shipment" (200 silver, 30 large shields and 30 spears in the manor store, 180 game days cooldown). See the root `CHANGELOG.md`.
