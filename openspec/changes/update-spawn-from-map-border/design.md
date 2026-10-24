@@ -7,7 +7,6 @@ All mod spawns use the game call `RTSMultiEngineCPP:spawnArmy(position, template
 - `mod/shared/HarnessLords/HarnessLords.lua` `lord_spawn_army`: position = player pawn + (dx, dy), limit 60000.
 - `mod/shared/HarnessBattle/HarnessBattle.lua` `spawn_at`: a given point.
 - `mod/InvasionMod/Scripts/features/invasion/relief.lua`: a given spot.
-- `mod/shared/HarnessBandits/HarnessBandits.lua`: a given point.
 
 ## Lead 1: the arrival-days argument (try first)
 
@@ -17,7 +16,7 @@ The fifth argument of `spawnArmy` is "arrives in N days". The game uses it for i
 - Where does it appear (the position argument, or the map border)? Does it walk to the target region?
 - Does `spawnArmy` return squad ids before arrival, so the mod can track the army?
 - Does the AI lord, war and challenge setup still work?
-- Which owner pawn is needed (a lord, the player pawn, a bandit pawn)?
+- Which owner pawn is needed (a lord, the player pawn)?
 
 If the game brings the army in natively, the change is small: pass `arrival_days` from config and count timers from arrival. No custom border code.
 
@@ -28,7 +27,7 @@ If Spike A fails (the army appears at the position at once, or not at all):
 1. The target is the target region (the player manor, or a vassal region for subjugation).
 2. Pick a border point. Default rule: the border point nearest to the target, or on the road towards it when a road reaches the border. Spike B finds the map bounds and the playable area.
 3. The point must be on walkable land. It must not be in water or outside the playable area. Spike B names the query that checks it. If a point fails, move along the border to the next candidate.
-4. Spawn the squads there with `spawnArmy(..., 0)`. Then order a march to the target. Spike C finds the march call (the bandit walk to a waypoint in `HarnessBandits` is a start).
+4. Spawn the squads there with `spawnArmy(..., 0)`. Then order a march to the target. Spike C finds the march call.
 5. A pure module (for example `features/invasion/border.lua`) holds the border point logic, so fake game tests can check it. Harness code must not name the mod (`test_boundary.py`).
 
 ## Timers and banners
