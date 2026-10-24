@@ -19,29 +19,36 @@ At new game start, the mod SHALL read the game setup values for bandit camps (in
 - **THEN** the mod marks bandit camps as off
 - Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed) and a real run on fixture `playtest-noai` (proposed).
 
-### Requirement: A setting that depends on an off game part is locked at 0 with a warning
-When a game part is off, each mod setting that depends on it SHALL be 0 (off) and locked: the player cannot raise it in the menu, and a command SHALL refuse a value above 0 for it. Next to the locked value, the menu SHALL show a warning that names the part, for example "Locked: this game was started with bandit camps off". A lock SHALL NOT be removed in that game. The dependency map is in the proposal of this change. Entries marked "to confirm" SHALL follow the result of the spike.
+### Requirement: Bandit camps off disables banditry and warns
+When the game was started with bandit camps off (initial 0 and limit 0), the mod SHALL disable the banditry timer and the banditry leave. The scenario settings menu SHALL show a warning line, for example "Locked: this game was started with bandit camps off". The mod SHALL show no banner at game start.
 
-#### Scenario: Bandit camps off warns
+#### Scenario: Bandit camps off disables banditry
 - **WHEN** the game was started with bandit camps 0 and limit 0 and the menu opens
-- **THEN** the menu shows the warning "Locked: this game was started with bandit camps off"
+- **THEN** the menu shows the bandit camps warning line
+- **AND** the banditry timer and leave are disabled
 - Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed) and `mod/InvasionMod/scenarios/scenario_settings/game_settings_guard.py` (proposed).
 
-#### Scenario: AI opponents 0 locks the vassal level
+### Requirement: AI opponents 0 warns that vassals are not enabled
+When the game was started with AI opponents 0, the menu SHALL show the warning "vassals are not enabled". The mod SHALL NOT lock a row for it.
+
+#### Scenario: AI opponents 0 warns only
 - **WHEN** the game was started with AI opponents 0 and the menu opens
-- **THEN** Vassal raids is 0 and locked, and a click or a command cannot raise it
-- **AND** the warning names AI opponents
+- **THEN** the menu shows "vassals are not enabled" and no row is locked
 - Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed) and a real run on fixture `playtest-noai` (proposed).
+
+### Requirement: Off-map adversary absent locks the Hussite raid levels
+When the game was started without the off-map adversary, the Yearly player raid, Great raid and Vassal raids levels SHALL be 0 and locked: the player cannot raise them, and a command SHALL refuse a value above 0. The menu SHALL show a warning next to each locked row. Vassal raids are Hussite raids in the code (the subjugation raid is a lord raid of the mod), so they are locked too. A lock SHALL NOT be removed in that game.
+
+#### Scenario: Off-map adversary absent locks the Hussite raid levels
+- **WHEN** the game was started without the off-map adversary and the menu opens
+- **THEN** Yearly player raid, Great raid and Vassal raids are 0 and locked, each with a warning
+- **AND** a command that sets one of them above 0 is refused
+- Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed) and a real run on fixture `playtest-noai` (proposed).
+
+### Requirement: Normal game settings lock nothing
+When bandit camps, AI opponents and the off-map adversary are on, the menu SHALL lock no row and show no warning.
 
 #### Scenario: Normal settings lock nothing
 - **WHEN** the game was started with bandit camps, AI opponents and the off-map adversary on
 - **THEN** no row is locked and no warning shows
 - Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed) and a real run on fixture `base` (proposed).
-
-### Requirement: A banner at game start lists the switched-off parts
-When at least one game part is off, the mod SHALL show a banner at game start that lists the switched-off parts. When all parts are on, the mod SHALL NOT show it.
-
-#### Scenario: The banner lists the parts
-- **WHEN** a game starts with bandit camps and AI opponents off
-- **THEN** the banner names both
-- Checked by `harness/tests/test_fakegame_game_settings_guard.py` (proposed).
