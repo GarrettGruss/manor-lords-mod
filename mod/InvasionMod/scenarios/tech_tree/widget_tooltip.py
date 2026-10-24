@@ -1,13 +1,13 @@
 """Change add-tech-tooltip: the tech tree menu sets a tooltip text on each node and law button.
 
-Needs the pak: `run.py --scenario tech-tree-widget-tooltip --pak techmenu`. Part 1 reads the tooltip property (no mouse).
+Needs the pak: `run.py --scenario tech-tree-widget-tooltip --pak InvasionMod`. Part 1 reads the tooltip property (no mouse).
 Part 2 hovers with the real OS mouse and takes a picture (needs exclusive use of the screen). It saves nothing.
 """
 
 import time
 
 NAME = "tech-tree-widget-tooltip"
-DESCRIPTION = "Open the tech tree menu, read the tooltip text of node and law buttons, hover a node and a law with the real mouse. Needs --pak techmenu."
+DESCRIPTION = "Open the tech tree menu, read the tooltip text of node and law buttons, hover a node and a law with the real mouse. Needs --pak InvasionMod."
 LIMIT_S = 600
 EXCLUSIVE = True
 LONG_REASON = "Hover scans with a real mouse, many short waits."

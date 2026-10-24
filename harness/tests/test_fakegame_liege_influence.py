@@ -152,13 +152,32 @@ class ArmsShipmentTests(ManorStorageTestCase):
         self.assertFalse(answer["ok"])
         self.assertEqual((self.stock(SHIELD), self.pawn.silver), (0, 150))
 
-    def test_a_failed_delivery_costs_nothing_and_keeps_the_cooldown_free(self):
+    def wanted_arms_text(self):
+        return self.ask("liege_menu_state")["result"]["wanted_texts"]["ArmsInfoText"]
+
+    def test_no_manor_disables_the_button_with_the_reason_and_a_click_does_nothing(self):
         self.world.buildings[1].Data.constructed = False  # no built manor
+        state = self.liege()
+        self.assertFalse(state["arms_enabled"])
+        self.assertEqual(state["arms_reason"], "Build a manor first")
+        self.assertTrue(self.wanted_arms_text().endswith("\nBuild a manor first"))
         answer = self.request()
         self.assertFalse(answer["ok"])
         self.assertIn("manor", answer["error"])
         state = self.liege()
-        self.assertEqual((self.pawn.silver, state["arms_last_day"], state["arms_enabled"]), (500, -1, True))
+        self.assertEqual((self.pawn.silver, state["arms_last_day"]), (500, -1))
+
+    def test_a_built_manor_enables_the_button_and_shows_no_reason(self):
+        state = self.liege()
+        self.assertTrue(state["arms_enabled"])
+        self.assertNotIn("\n", self.wanted_arms_text())
+
+    def test_the_reason_of_a_disabled_button_shows_under_it_for_silver_and_cooldown(self):
+        self.pawn.silver = 150
+        self.assertTrue(self.wanted_arms_text().endswith("\nneed 200 silver, 50 missing"))
+        self.pawn.silver = 500
+        self.request()
+        self.assertTrue(self.wanted_arms_text().endswith("\n180 days left"))
 
     def test_a_full_manor_store_fails_the_delivery(self):
         self.assertTrue(self.ask("manor_put", good=27, amount=180)["ok"])

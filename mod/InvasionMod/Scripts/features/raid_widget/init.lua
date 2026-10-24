@@ -1,5 +1,5 @@
 -- Feature raid_widget (M02 iteration 05, decision 4): one menu for all raid information.
--- The layout is a cooked Widget Blueprint in the pak raidmenu_P.pak (mod/InvasionMod/ue/make_raid_widget.py): a title, LINE_COUNT text
+-- The layout is a cooked Widget Blueprint in the pak InvasionMod_P.pak (mod/InvasionMod/ue/make_raid_widget.py): a title, LINE_COUNT text
 -- lines and three Borders (unused since add-scenario-settings-menu: the player picks the difficulty in the scenario settings menu).
 -- The menu is built on the base menu (core/menu.lua): it gets a bottom bar button, opens fullscreen and blocks clicks to the game.
 -- F8 stays as a shortcut.

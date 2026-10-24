@@ -155,7 +155,7 @@ return {
         poll_ms = 1000,   -- real time between two tries to set the hook (the tooltip class loads late)
         delay_ms = 60,    -- wait after updateContents (the game rebuilds the rows first)
     },
-    -- M02 iteration 05: the raid widget (one menu for all raid information). Needs the pak raidmenu_P.pak.
+    -- M02 iteration 05: the raid widget (one menu for all raid information). Needs the pak InvasionMod_P.pak.
     raid_widget = {
         enabled = true,
         toggle_key = Key.F8,                 -- F7 is the policy menu of the other mod; change here if F8 clashes
@@ -301,7 +301,7 @@ return {
         slots_per_level = 1,         -- decision 24: one node slot for each settlement level
         tree_file = "data/tech_tree/tree.json", -- relative to the mod folder
     },
-    -- M12 iteration 02: the tech tree menu. Needs the pak techmenu_P.pak.
+    -- M12 iteration 02: the tech tree menu. Needs the pak InvasionMod_P.pak.
     tech_tree_widget = {
         enabled = true,
         toggle_key = Key.F9,                 -- F7 is the policy menu and F8 the raid menu

@@ -11,11 +11,11 @@ local function signed(value)
 end
 
 local function row(text, value)
-    return { text = text, value = signed(value), color = value >= 0 and M.GREEN or M.RED }
+    return { text = text, value = signed(value), color = value >= 0 and M.GREEN or M.RED, up = value >= 0 }
 end
 
 -- Returns nil when there is no mod order (the tooltip then stays native), else { header, rows }.
--- A row is { text, value, color }: the value text has a sign, the colour is "green" or "red" as in the game.
+-- A row is { text, value, color, up }: the value text has a sign, the colour is "green" or "red" as in the game.
 function M.build(terms)
     if terms == nil or type(terms.order) ~= "number" then return nil end
     local rows = {}
