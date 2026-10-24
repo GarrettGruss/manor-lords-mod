@@ -15,6 +15,7 @@
 -- The function runs on the game thread, and its result goes into the sample under "custom".
 
 local log = require("HarnessLog")
+local loop = require("HarnessLoop")
 local json = require("HarnessJson")
 
 local M = {}
@@ -229,7 +230,7 @@ function M.start()
     end
     started = true
     log.say(TAG, "sampling every " .. interval .. " s into " .. log.dir() .. "/" .. FILE_NAME)
-    LoopAsync(math.floor(interval * 1000), function()
+    loop.every(math.floor(interval * 1000), function()
         ExecuteInGameThread(function()
             local ok, err = pcall(function()
                 local sample = M.sample()

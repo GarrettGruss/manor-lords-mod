@@ -140,3 +140,12 @@ Fixture `playtest-noai` (AI opponents 0, Off map adversary Absent, Raider freque
 - **Plunder needs goods in tier 1 stores.** `world.plunder` takes only from them. With 21 goods in the stores, the baron steal rule took all on day 1 and the plunder took 0 afterwards.
 - A fixture run that ends with `--keep-open` frees its slot lock: another agent's run can take the slot and kill the game. Hold the slot with a long scratch test scenario.
 - One game crash (`EXCEPTION_ACCESS_VIOLATION reading 0x328`) 30 s after the first unpause with 3 camps, a second lord and killed camp squads. Two repeats with one camp did not crash. Cause not isolated.
+
+## Crashes after spawns: threads and Lua state (spike #465)
+
+- Crash reports (143 unique, 2026-09-27 to 2026-10-23): 53 are access violations inside the Lua core with garbage pointers, 40 in the UE4SS UObject wrapper (small addresses such as `0x10`, `0x18`, `0x70`), 38 in game code or a rethrow site, 8 engine fatal errors, 3 aborts from a Lua error in a `LoopAsync` callback. 96 of 143 fault on the game thread (`engine_tick_hook`, `process_simple_actions`).
+- `LoopAsync`, `ExecuteAsync` and `ExecuteWithDelay` run the Lua callback on a separate thread. A Lua state is not thread safe, so this can damage the Lua heap of the mod. These functions are deprecated in the installed UE4SS. Use `LoopInGameThreadWithDelay(ms, fn)` and `ExecuteInGameThreadWithDelay`. Cancel with `CancelDelayedAction(handle)`. The shared module `HarnessLoop` wraps this.
+- `RegisterKeyBind` callbacks run on the input thread. Do not grow tables there.
+- `pcall` does not catch a native access violation. Check `IsValid` before a method call on a widget from `GetChildAt` or on an object from `FindAllOf`.
+- Not proven: that the timer change removes the crashes. 18 A/B runs had no crash in either variant. Details: `openspec/changes/archive/*-spike-lua-crash-after-spawn/notes/`.
+- Each run folder has `hostmem.jsonl` (free and total PC memory and game resident memory every 2 s). Free memory fell to about 1 GB in runs without a crash.

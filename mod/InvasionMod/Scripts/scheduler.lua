@@ -1,7 +1,8 @@
 -- One timer for all features of InvasionMod. Each job runs on the game thread.
 -- Why one: every LoopAsync callback runs Lua on its own thread. Five loops in one Lua state raced with the game thread
--- and crashed 120 day runs (issue 163). One loop with a short body keeps the off-thread Lua work small.
+-- and crashed 120 day runs (issue 163). Since spike-lua-crash-after-spawn the loop runs on the game thread (HarnessLoop).
 local core = require("ManorCore")
+local loop = require("HarnessLoop")
 
 local TICK_MS = 100 -- the click queue and the labels need no faster tick (spec 34)
 local M = {}
@@ -21,7 +22,7 @@ end
 
 local function start()
     started = true
-    LoopAsync(TICK_MS, function()
+    loop.every(TICK_MS, function()
         clock_ms = clock_ms + TICK_MS
         ExecuteInGameThread(run_due)
         return false

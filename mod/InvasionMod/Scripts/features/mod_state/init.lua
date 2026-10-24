@@ -1,6 +1,7 @@
 -- Feature mod_state (M01): keeps the values of the Invasion Mod inside the save, through the shared module ModState.
 -- Other features open the same state with ModState.open(MOD, "pawn") and register their own keys. They never write Tags.
 local core = require("ManorCore")
+local loop = require("HarnessLoop")
 local ModState = require("ModState")
 local config = require("config").mod_state
 
@@ -35,7 +36,7 @@ if state:owner_object() ~= nil then reload_state("mod start") end
 local function load_when_pawn_is_ready()
     local tries = 0
     local finished = false
-    LoopAsync(LOAD_POLL_MS, function()
+    loop.every(LOAD_POLL_MS, function()
         if finished then return true end
         tries = tries + 1
         ExecuteInGameThread(function()
@@ -58,7 +59,7 @@ end
 
 -- The pawn class is a Blueprint class. It loads after the mod, so the hook is tried again until it works.
 local attempts = 0
-LoopAsync(HOOK_RETRY_MS, function()
+loop.every(HOOK_RETRY_MS, function()
     attempts = attempts + 1
     if pcall(hook_begin_play) then
         core.log.info(TAG, "hooked " .. PAWN_BEGIN_PLAY)

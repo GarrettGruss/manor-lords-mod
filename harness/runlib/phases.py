@@ -16,6 +16,7 @@ from pathlib import Path
 from . import fixtures, gameslots, saveslots
 from .actions import ActionNotPossible
 from .environment import MOD_FILES_NAME, gather_environment, hash_mod_files, hash_mods
+from .hostmem import HostMemorySampler
 from .pak_phases import install_paks, keep_paks_phase, remove_paks_phase
 from .game import (
     DEFAULT_TELEMETRY_INTERVAL_S,
@@ -344,6 +345,8 @@ def _scenario(install: GameInstall, scenario_name: str):
         bridge = configure_bridge_client(ctx, install)
         scenario_ctx = ScenarioContext(ctx, bridge, screenshot_fn=take_screenshot)
         take_screenshot(ctx, "start")
+        memory_sampler = HostMemorySampler(ctx.run.path, ctx.state.get("game_pid"))
+        memory_sampler.start()
         try:
             result = scenario(scenario_ctx)
         except ActionNotPossible as error:
@@ -356,6 +359,8 @@ def _scenario(install: GameInstall, scenario_name: str):
         except Exception:
             ensure_game_alive(ctx, "scenario")  # a dead game explains the error: it is a crash
             raise
+        finally:
+            memory_sampler.stop()
         ctx.state["scenario_result"] = result
         atomic_write_text(ctx.run.path / "scenario.json", json.dumps(result, indent=2))
         return None

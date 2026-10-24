@@ -27,6 +27,7 @@ Each run makes a folder `runs/<id>/`. The id is `YYYYMMDD-HHMMSS-<4 hex>` in UTC
 | `boot.json` | HarnessBoot | State and history of the boot. |
 | `mod.log` | `HarnessLog` | Live log of all mods. |
 | `UE4SS.log` | collect, teardown | Copy of the buffered UE4SS log. |
+| `hostmem.jsonl` | `runlib/hostmem.py` | PC free and total memory and game resident memory every 2 s during the scenario (spike #465). |
 | `telemetry.jsonl` | HarnessTelemetry | Samples (clock, speed, silver). Absent if telemetry is off. |
 | `mod_files.json` | deploy | SHA-256 of every mod file. |
 | `game.json` | launch | Game pid, start time, appdata path. Used by `collect_crash.py`. |
