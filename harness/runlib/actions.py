@@ -1301,8 +1301,14 @@ class Actions:
         return self._command("lord_take_region", lord=lord, region=region)
 
     def game_setup_state(self) -> dict:
-        """Spec 26: goal (EGameGoals number), victory status, difficulty and start fields of the game instance (read only)."""
-        return self._command("game_setup_state")
+        """Spec 26: goal (EGameGoals number), victory status, difficulty and start fields of the game instance (read only).
+
+        It also works on the main menu map (the Game Setup screen), where no game world exists.
+        """
+        if self._commands is None:
+            raise ActionNotPossible("game_setup_state: no command channel to the mod HarnessActions in this context")
+        self._ensure_alive()
+        return self._commands.send("game_setup_state")
 
     def game_setup_set_byte(self, field: str, value: int) -> dict:
         """Spike 358: write one byte field of gameSetup.currentGameSetup (raidingFrequency and others). Reads it back."""

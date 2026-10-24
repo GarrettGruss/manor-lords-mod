@@ -1,0 +1,31 @@
+{
+  "table": "DT_GameSetupPresets",
+  "row": "hussites_are_coming",
+  "op": "add",
+  "from": "peaceful_citybuilding",
+  "set": {
+    "gameSetupData/*/goals": "Growth",
+    "gameSetupData/*/numGenericAILords": 0,
+    "gameSetupData/*/adversary_baron": false,
+    "gameSetupData/*/AI_aggressiveness": 0,
+    "gameSetupData/*/maxBanditCamps": 0,
+    "gameSetupData/*/initialBanditCamps": 0,
+    "gameSetupData/*/raidingFrequency": 0,
+    "gameSetupData/*/startingDay": 61,
+    "gameSetupData/*/startingSuppliesMultiplier": 1,
+    "gameSetupData/*/royalTaxMultiplier": 0,
+    "gameSetupData/*/armamentDelivery": false,
+    "gameSetupData/*/requirementDiscontentBias": 0,
+    "gameSetupData/*/spoilage": 2,
+    "gameSetupData/*/loyaltyLossRate": 0.5,
+    "gameSetupData/*/generateWaterVeins": true,
+    "gameSetupData/*/weatherDamage": 2,
+    "currentGameSetup/goals": "Growth",
+    "currentGameSetup/numGenericAILords": 0,
+    "currentGameSetup/adversary_baron": false,
+    "currentGameSetup/AI_aggressiveness": 0,
+    "currentGameSetup/maxBanditCamps": 0,
+    "currentGameSetup/initialBanditCamps": 0,
+    "currentGameSetup/raidingFrequency": 0
+  }
+}

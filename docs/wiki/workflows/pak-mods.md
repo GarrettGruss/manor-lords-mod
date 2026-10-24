@@ -98,7 +98,10 @@ Patch format (keys: `table`, `row`, `op`, `from`, `set`):
 { "table": "buildingStats", "row": "1000", "op": "add", "from": "97", "set": { "stableSpace": 4 } }
 ```
 - `op` is `add` (clone row `from`, give it the new name, add the name to the `NameMap`) or `set` (change fields of an existing row). `remove` is not supported.
-- Tables: `buildingStats` and `DT_Upgrades` (`TABLES` in `modpak.py`). Row ids are digit strings.
+- Tables: `buildingStats`, `DT_Upgrades`, `DT_GameSetupPresets` and `DT_Translation_GameSetups` (`TABLES` in `modpak.py`). The first two have digit row ids with an `ids` range. The last two (`NAMED_TABLES`) have row names of letters, digits and underscores and need no range.
+- A field key with `/` or `*` is a path into a struct or a map: `gameSetupData/*/goals` sets `goals` in every difficulty of the row, `currentGameSetup/goals` sets one struct field, and `*` alone sets every language text of a `LocalizedText` row. A path takes one value and must match at least one property.
+- A feature with `"pak": false` in `mod.json` (the `example` stub) is checked but not built into the pak.
+- The feature `scenario_settings` adds the row `hussites_are_coming` (a clone of `peaceful_citybuilding`) and its three text rows (`hussites_are_coming`, `_goal`, `_setup`). The game shows it as a 6th template on the New Game screen. A table pak replaces the whole file, so no other mod may change these tables.
 - A list value replaces an array field by copying its first element as a template. An empty array fails.
 - Example patches: `mod/InvasionMod/data/example/patches/`. Notes: [buildmod.md](../../../openspec/changes/archive/2026-10-15-legacy-22-mod-pack-layout/implementation-notes/buildmod.md).
 
