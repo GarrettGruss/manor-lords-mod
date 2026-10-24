@@ -17,6 +17,17 @@ local function collapse_children(box)
     for i = 0, box:GetChildrenCount() - 1 do box:GetChildAt(i):SetVisibility(COLLAPSED) end
 end
 
+-- The row shows one up-arrow texture; the game turns it by 180 degrees for a negative value (run uparrow-spike2: angle 0 for "+10%", 180 for "-10%").
+-- The row sets that angle when it is built, so the mod sets it again after the add.
+local function find_arrow(row)
+    local list = row.WidgetTree.RootWidget:GetChildAt(0) -- the HorizontalBox
+    for i = 0, list:GetChildrenCount() - 1 do
+        local child = list:GetChildAt(i)
+        if child:GetClass():GetFName():ToString() == "Image" then return child end
+    end
+    error("the row has no arrow image")
+end
+
 local function add_row(tip, spec)
     local controller = FindFirstOf("PlayerController")
     local library = StaticFindObject("/Script/UMG.Default__WidgetBlueprintLibrary")
@@ -27,6 +38,7 @@ local function add_row(tip, spec)
     made.DescriptionText:SetText(FText(spec.text))
     made.ValueText:SetText(FText(spec.value))
     paint(made.ValueText, spec.color)
+    find_arrow(made):SetRenderTransformAngle(spec.up and 0.0 or 180.0)
 end
 
 -- Hide the native rows, add one row for each mod term, write the mod order in the header.
