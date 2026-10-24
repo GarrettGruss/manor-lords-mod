@@ -96,6 +96,25 @@ function M.is_hussite_template(setup)
         and setup.max_bandit_camps == 0 and setup.initial_bandit_camps == 0
 end
 
+-- The guard value `vassals` (change add-game-settings-guard, #438): 1 vassals work, 0 they do not, -1 not known yet.
+-- AI opponents (numGenericAILords) 0 means no AI lord, so no vassals. A count that cannot be read gives nil (not known).
+function M.vassals_from_setup(setup)
+    if type(setup) ~= "table" or type(setup.ai_lords) ~= "number" then return nil end
+    return setup.ai_lords > 0 and 1 or 0
+end
+
+-- The live check of a save without the value: no AI lord pawn means no vassals. A count that cannot be read gives nil.
+function M.vassals_from_lord_count(count)
+    if type(count) ~= "number" then return nil end
+    return count > 0 and 1 or 0
+end
+
+-- The text of the background block. A warning is added below the background when vassals are not enabled.
+function M.background_with_warning(config, vassals)
+    if vassals ~= 0 then return config.background_text end
+    return config.background_text .. "\n\n" .. config.vassals_warning
+end
+
 -- The start kit is given once, in a new game only (a loaded save never gets it).
 function M.kit_due(is_new_game, given)
     return is_new_game == true and given ~= 1
