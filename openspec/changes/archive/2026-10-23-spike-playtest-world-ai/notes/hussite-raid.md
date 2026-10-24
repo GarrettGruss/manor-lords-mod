@@ -7,7 +7,7 @@ Evidence: `evidence/q3-base-raid-at-village.jpg`.
 
 **The Hussite raid works in the playtest world. The game settings do not block it.** Spawn, composition, the lord army, the challenge, the leave rule and the region guard all pass. Two things differ from `base`, and neither comes from a game setting:
 
-1. **The raid goes to the region under the camera, not to the village.** The fixture saves the camera over a free region (`selbitz`). A forced raid there spawned and anchored its challenge at `Goldhof` (a free region 54 000 units from the village), although the mod log says `target=Nusslohe`. The raiders never reached the village and left by the time rule after 25 game days (`loot=0`). With the camera moved to the village (`Nusslohe`), the challenge was over `Nusslohe` and the army stood at the village. The code path is the same in `base`, whose fixture camera is in the village. Cause: `lord_raid.start_checked` sends the lord to `battlefield_anchor({ lord })`, and that command uses the current region of the target pawn (the camera region). A player who looks at another region when a raid starts gets the raid there. This is a mod finding for the owner (follow-up change), not a settings problem.
+1. **The raid army goes to the region under the camera, not to the village.** The fixture saves the camera over a free region (`selbitz`). A forced raid there spawned and anchored its challenge at `Goldhof` (a free region 54 000 units from the village), although the mod log says `target=Nusslohe`. The army stood at Goldhof for the 25 game days and left by the time rule. With the camera moved to the village (`Nusslohe`), the challenge was over `Nusslohe` and the army stood at the village. The code path is the same in `base`, whose fixture camera was in the village. Cause: `lord_raid.start_checked` sends the lord to `battlefield_anchor({ lord })`, and that command uses the current region of the target pawn (the camera region). The camera also drifts by itself in a long run (cursor near the screen edge), so the region at the time of the spawn is not fixed. **This does not stop the plunder:** in a later control run (`menu-s-191029`, fixture `base`, camera region Goldhof, army at Goldhof about 60 000 units from the village) the plunder tick still took 68 goods a day (190 goods in 20 game days). The plunder is a mod rule that does not look at the army position. So the camera rule moves the army and the battle marker to a wrong place, but the village is still plundered. A mod finding for the owner (follow-up change), not a settings problem.
 2. **Nothing to plunder.** In the playtest village the tier 1 stores hold 21 goods in total. The baron steal rule took all 21 on the first day (`steal wanted=100 taken=21`, then `taken=0`). The plunder tick then had nothing to take (`plunder wanted=64 taken=0` on every one of 21 days, camera in the village). In `base` the raiders took 54 goods per day at first (`looted_total` 156 after 18 game days). So the empty plunder comes from the small stocks of the owner's village, not from the settings.
 
 ## Scenario results
@@ -27,7 +27,7 @@ The composition differs by random role pick (noai: `spearMilitia`, `mercenary_in
 
 | Run | Fixture | Camera region | Raid spawn | Challenge region | Result after about 20 game days |
 |---|---|---|---|---|---|
-| `noai-r-183429` | noai | selbitz (free) | day 116, 64 units, `target=Nusslohe` | Goldhof | stood at Goldhof, no plunder, left on day 141 (`reason=time`) |
+| `noai-r-183429` | noai | selbitz (free) | day 116, 64 units, `target=Nusslohe` | Goldhof | stood at Goldhof, `plunder taken=0` (stores empty, see 2), left on day 141 (`reason=time`) |
 | `noai-c-184435` | noai, camera moved to the village first | Nusslohe | day 116, 64 units | Nusslohe | army at the village, `plunder taken=0` (stores empty), still there on day 134 |
 | `base-r-184008` | base | Nusslohe | day 205, 54 units | Nusslohe | army at the village, plunder 54, 54, 32, ... goods per day, `looted_total` 156 |
 
@@ -41,5 +41,5 @@ The composition differs by random role pick (noai: `spearMilitia`, `mercenary_in
 ## Not verified
 
 - A full raid to the end in a village with stocks (plunder, burn, leave by loot) in the playtest world. Needs a village with goods.
-- Whether the camera region rule matters to the owner's play: the player normally looks at the village, but any raid that starts while the camera is elsewhere is sent there.
+- Whether the camera region rule matters to the owner's play: the army and the battle marker go to the region under the camera when the raid starts. The plunder is not affected (control run above), but the player sees the army in another place.
 - One run per cell. No A/B repeat (the question was "does it work", not a rate).

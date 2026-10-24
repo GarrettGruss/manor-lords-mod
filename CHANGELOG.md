@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- Fixture `playtest-noai` (spike #430): the owner's playtest world with AI opponents 0, Off map adversary Absent, Raider frequency None and bandit camps 0. Findings: the mod can make the bandit pawn with `spawnBanditCamp()`, an AI lord builds after a full claim, and the Hussite raid needs no game setting (but it goes to the camera region).
+- Fixture `playtest-noai` (spike #430): the owner's playtest world with AI opponents 0, Off map adversary Absent, Raider frequency None and bandit camps 0. Findings: the mod can make the bandit pawn with `spawnBanditCamp()`, an AI lord builds after a full claim, and the Hussite raid needs no game setting (but its army goes to the camera region).
 
 ### Fixed
 - Parallel game slots (change `fix-parallel-slot-saves`, #393, #378): a run no longer removes the fixture slot of a `--keep-open` run on another slot, and the save folder guard always ignores `rtsSettings.sav`. A ledger entry now records `game_slot` and `game_root`.
