@@ -96,10 +96,10 @@ The tribute menu SHALL have one tribute button. A click SHALL send `tribute_butt
 - Checked by `mod/InvasionMod/scenarios/liege_influence/tribute_menu.py`.
 
 ### Requirement: The liege screen has a button to request an arms shipment
-The liege screen SHALL have a button "Request arms shipment". A click SHALL cost 200 silver and SHALL deliver 30 large shields and 30 spears to the manor store at once. The amounts and the cost SHALL come from config values. The mod SHALL take the silver only when the delivery succeeded.
+The liege screen SHALL have a button "Request arms shipment". A click SHALL cost 200 silver and SHALL deliver 30 large shields and 30 spears to the manor store at once. The amounts and the cost SHALL come from config values. The mod SHALL take the silver only when the delivery succeeded. While no manor is built, the button SHALL be disabled (grey look, clicks ignored) and the reason "Build a manor first" SHALL show under it.
 
 #### Scenario: Buy a shipment
-- **WHEN** the player has 200 or more silver, no cooldown runs, and the player clicks the button
+- **WHEN** the player has 200 or more silver, no cooldown runs, a manor is built, and the player clicks the button
 - **THEN** the manor store holds 30 more large shields and 30 more spears
 - **AND** the silver is 200 lower
 - **AND** the button is disabled and shows the days left
@@ -110,18 +110,29 @@ The liege screen SHALL have a button "Request arms shipment". A click SHALL cost
 - **THEN** the silver and the cooldown day do not change and a log line says why
 - Checked by `harness/tests/test_fakegame_liege_influence.py`.
 
+#### Scenario: No manor built
+- **WHEN** no manor is built
+- **THEN** the button is disabled (grey look) and the text "Build a manor first" shows under it
+- **AND** a click delivers nothing, takes no silver and starts no cooldown
+- Checked by `harness/tests/test_fakegame_liege_influence.py` and `mod/InvasionMod/scenarios/liege_influence/arms_shipment.py`.
+
+#### Scenario: A manor is built
+- **WHEN** a manor is built, the silver is enough and no cooldown runs
+- **THEN** the button is enabled (normal look) and no reason shows
+- Checked by `harness/tests/test_fakegame_liege_influence.py` and `mod/InvasionMod/scenarios/liege_influence/arms_shipment.py`.
+
 ### Requirement: The arms shipment has a cooldown
-After a shipment the button SHALL be disabled for 180 game days (a config value). The button SHALL also be disabled, with the reason shown, when the silver is below 200. While it is disabled for the cooldown, it SHALL show the days left. The mod SHALL store the day of the last shipment in the mod state, so the cooldown is kept over a save and load.
+After a shipment the button SHALL be disabled for 180 game days (a config value). The button SHALL also be disabled, with the reason shown, when the silver is below 200. While it is disabled for the cooldown, it SHALL show the days left. A disabled button SHALL have the same grey look in every case (no manor, cooldown, not enough silver). The mod SHALL store the day of the last shipment in the mod state, so the cooldown is kept over a save and load.
 
 #### Scenario: Not enough silver
 - **WHEN** the player has less than 200 silver
-- **THEN** the button is disabled and the reason names the missing silver
+- **THEN** the button is disabled (grey look) and the reason names the missing silver
 - **AND** a click delivers nothing and takes no silver
 - Checked by `harness/tests/test_fakegame_liege_influence.py`.
 
 #### Scenario: Cooldown
 - **WHEN** a shipment came 100 game days ago
-- **THEN** the button is disabled and shows 80 days left
+- **THEN** the button is disabled (grey look) and shows 80 days left
 - **AND** after 180 game days it is enabled again if the silver is enough
 - Checked by `harness/tests/test_fakegame_liege_influence.py`.
 

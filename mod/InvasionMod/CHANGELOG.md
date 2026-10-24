@@ -3,6 +3,9 @@
 Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
+### Fixed
+- Feature `liege_influence` (change `fix-arms-button-manor`, #455): the arms button is disabled (grey look, clicks ignored) while no manor is built, with "Build a manor first" under it; the cooldown and silver cases use the same look. See the root `CHANGELOG.md`.
+
 ### Changed
 - Feature `bandits` (change `update-banditry-bandit-camp`, #453): families that leave for banditry go to a bandit camp. One camp (18 Brigands) spawns for each leave event, at a place the game picks. The mod makes the bandit pawn itself when the game has none (bandit camps 0). The rule "one squad per 5 families" is removed.
 
