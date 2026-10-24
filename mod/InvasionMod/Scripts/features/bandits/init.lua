@@ -106,7 +106,7 @@ local function leave(today, count)
         local answer, problem = world.leave(region, wanted, config.families_per_squad)
         if answer == nil then core.log.error(TAG, "BANDITS leave failed: " .. tostring(problem)) else result = answer end
     end
-    last_leave = { day = today, wanted = wanted, removed = result.removed, spawned = result.spawned, bandit_units = result.bandit_units }
+    last_leave = { day = today, wanted = wanted, removed = result.removed, spawned = result.spawned, squads = result.squads, bandit_units = result.bandit_units }
     state:set("bandits_leaves", state:get("bandits_leaves") + 1)
     state:set("bandits_converted_families", state:get("bandits_converted_families") + result.removed)
     state:set("bandits_outstanding_families", state:get("bandits_outstanding_families") + result.removed)

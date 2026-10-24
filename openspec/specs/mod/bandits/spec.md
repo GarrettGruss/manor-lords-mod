@@ -6,7 +6,7 @@ The bandits feature turns low approval into low Public Order, and low Public Ord
 ## Requirements
 
 ### Requirement: A conversion removes two families and spawns a bandit squad
-When the banditry timer expires, the mod SHALL remove `leavers` (default 18) villagers, as families, through `homeless_rebel` (`ManorCore.remove_families`), and SHALL spawn bandits for them only when the game's bandit pawn exists. Otherwise it SHALL log that no bandits spawned. The village SHALL keep at least `min_families_left` (default 1) families, so fewer than 18 may leave. The mod SHALL show the banner `Families have turned to banditry`.
+When the banditry timer expires, the mod SHALL remove `leavers` (default 18) villagers, as families, through `homeless_rebel` (`ManorCore.remove_families`), and SHALL spawn bandits for them only when the game's bandit pawn exists. Every `families_per_squad` (default 5) families that leave SHALL form one squad of the brigands template: `squads = floor(families that left / 5)`, so 18 families give 3 squads and the 3 extra families leave without a squad (a default the owner can change). Otherwise it SHALL log that no bandits spawned. A villager here is a family. The village SHALL keep at least `min_families_left` (default 1) families, so fewer than 18 may leave. The mod SHALL show the banner `Families have turned to banditry`.
 
 #### Scenario: A forced conversion
 - **WHEN** the banditry timer expires (a test forces it) with enough villagers
@@ -18,6 +18,11 @@ When the banditry timer expires, the mod SHALL remove `leavers` (default 18) vil
 - **WHEN** the village has only 1 family and the timer expires
 - **THEN** no family leaves
 - Checked by `harness/tests/test_fakegame_bandits.py`.
+
+#### Scenario: One squad for every 5 families
+- **WHEN** 18 families leave and the game has a bandit pawn
+- **THEN** 3 brigand squads spawn, one for each 5 families, and the 3 extra families leave without a squad
+- Checked by `harness/tests/test_fakegame_bandits.py` and `mod/InvasionMod/scenarios/bandits/banditry_timer.py`.
 
 #### Scenario: No bandit pawn
 - **WHEN** villagers leave and the game has no bandit pawn
@@ -92,7 +97,7 @@ The mod SHALL keep a mod order value, kept between 0 and 100, in ModState. The v
 - Checked by `harness/tests/test_fakegame_bandits.py`.
 
 ### Requirement: Public order ticks every 30 game days
-Every `tick_days` (default 30) game days, the mod SHALL set `order = clamp(order + manor_term - homeless_term)`, with `manor_term = 10` (plus `order_bonus`) and `homeless_term = 5 x homeless villagers`. Each tick SHALL be logged in the telemetry with day, order before, manor term, homeless count, homeless term and order after, and in one `HarnessLog` line.
+Every `tick_days` (default 30) game days, the mod SHALL set `order = clamp(order + manor_term - homeless_term)`, with `manor_term = 10` (plus `order_bonus`) and `homeless_term = 5 x homeless villagers`, where a homeless villager is a homeless family (`getNumHomelessFamilies`). Each tick SHALL be logged in the telemetry with day, order before, manor term, homeless count, homeless term and order after, and in one `HarnessLog` line.
 
 #### Scenario: A tick with homeless villagers
 - **WHEN** the order is 50 and 4 villagers are homeless

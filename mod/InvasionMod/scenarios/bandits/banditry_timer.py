@@ -46,6 +46,8 @@ def run(ctx) -> dict:
     if after["bandit_pawn"]:
         ctx.run_until(lambda: bandits(ctx) > units_before, 20, what="the bandit squads")
         ctx.check("bandit units appeared", bandits(ctx) > units_before, [units_before, bandits(ctx)])
+        ctx.check("one brigand squad forms for each 5 families that left", leave["squads"] == leave["removed"] // 5, leave)
+        ctx.check("a squad has 18 units", leave["bandit_units"] == 18 * leave["squads"], leave)
     else:
         ctx.check("no bandit pawn: no bandit spawned and it is logged", leave["spawned"] is False and bandits(ctx) == units_before, leave)
         log = ctx.run_dir / "mod.log"

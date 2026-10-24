@@ -235,11 +235,14 @@ class TimerTests(BanditsTestCase):
 
 
 class LeaveTests(BanditsTestCase):
-    def test_with_a_bandit_pawn_bands_spawn_in_batches_of_6(self):
+    def test_with_a_bandit_pawn_one_squad_forms_per_5_families(self):
         self.game.obj("PawnCPP", isBandit=True)
         self.families = 40
         result = self.ask("bandits_leave_now")["result"]
-        self.assertEqual(self.rebel_calls(), 3)  # 6 + 6 + 6
+        self.assertEqual(self.rebel_calls(), 3)  # 18 families: 3 squads of 5, the other 3 leave without a squad
+        self.assertEqual(self.game.exec("return LAST_REBEL.families_per_squad"), 5)
+        self.assertEqual(self.game.exec("return LAST_REBEL.count"), 5)
+        self.assertEqual(self.game.exec("return REMOVED_TOTAL"), 3)
         self.assertTrue(result["last_leave"]["spawned"])
         self.assertEqual(result["last_leave"]["removed"], 18)
 
