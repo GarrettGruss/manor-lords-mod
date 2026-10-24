@@ -75,7 +75,9 @@ Do not plan a feature that needs buildings inside the bailey.
 ## Game Setup values: readable, not saved (spike #358)
 
 - The new game setup values live in `MLGameInstance.gameSetup.currentGameSetup` (`raidingFrequency`, `yearsUntilFirstRaid`, `maxBanditCamps`, `initialBanditCamps`). Lua can read them (`HarnessGameSetup`). The game does not store them in the save.
-- A mod cannot add a working option to the stock Game Setup screen: a cloned option widget shows only "label".
+- A cloned option widget shows only "label" until the mod sets it up. Spike #416 (`openspec/changes/spike-scenario-template-menu/notes/`, until archived: `openspec/changes/archive/*-spike-scenario-template-menu/notes/`) showed that it works from Lua: `AddChildToGrid` (the rows are in a `GridPanel`), `Text:SetText`, `Spinner:UpdateOptions` with `SettingOption {Label, Value}`, and `Spinner:GetCurrentIndex` for the value. Rows are hidden with `SetVisibility(1)`.
+- The template bar `ModePresets` is made from the rows of the data table `DT_GameSetupPresets` (5 rows). A pak with a 6th row gives a 6th button, and a real click writes that row into `MLGameInstance.gameSetup` at once (AI lords, baron, difficulty, ...). A button made by Lua cannot select a preset (`HandlePressed` and `gamePresetSelected:Broadcast` do nothing).
+- The mod reads none of the raid, camp, aggressiveness, baron and AI count settings. Writing `raidingFrequency` or `daysUntilNextRaid` in a running game does not start or stop a native raid within 15 game days (the game recomputes the counter).
 - Opening the Game Setup screen writes the real `menu.sav`, even in a run with a private appdata. Back up first.
 - The first `disable_autosave` after a new game started from the menu is undone by the game; send it again after the intro.
 - Owner decision 2026-10-21: the mod opens its own scenario settings menu instead (change `add-scenario-settings-menu`, #375). Notes: `openspec/changes/archive/2026-10-21-spike-new-game-difficulty-setting/notes/`.
