@@ -30,5 +30,5 @@
     { "name": "order_tooltip", "requires": ["bandits"], "ids": {} },
     { "name": "liege_influence", "requires": ["mod_state", "tribute"], "ids": {} }
   ],
-  "gate_scenarios": []
+  "gate_scenarios": ["scenario-settings-new-game-menu", "invasion-first-raid"]
 }
