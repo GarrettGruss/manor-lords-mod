@@ -53,7 +53,9 @@ def shared_closure(mod_dir: Path, shared_dir: Path, declared: list[str]) -> list
     """
     own = _requires_of(mod_dir)
     _refuse_harness_only(own, mod_dir.name)
-    undeclared = sorted(name for name in own if name not in declared)
+    # A module that is a Lua file of the mod itself (for example config or scheduler) is not a shared module.
+    local = {path.stem for path in lua_files(mod_dir)}
+    undeclared = sorted(name for name in own if name not in declared and name not in local)
     if undeclared:
         raise ClosureError(f"{mod_dir.name} requires {', '.join(undeclared)} but mod.json shared does not list it")
     closure: list[str] = []
