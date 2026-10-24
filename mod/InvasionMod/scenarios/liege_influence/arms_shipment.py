@@ -13,7 +13,6 @@ NAME = "liege-arms-shipment"
 DESCRIPTION = "Open the liege screen with a manor and silver, click Request arms shipment, check the goods in the manor, the silver and the cooldown. Needs --pak raidmenu."
 LIMIT_S = 500
 EXCLUSIVE = True
-HIDDEN = True
 LONG_REASON = "Places a Keep and clicks with the real mouse."
 PREFIX = "InvasionMod."
 SETTLE_S = 1.0
