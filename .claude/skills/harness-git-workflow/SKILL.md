@@ -27,12 +27,12 @@ Rules are in CONTRIBUTING.md (the agent permissions in CLAUDE.md): atomic Conven
 `gh` is not on the PATH of the shells. Use `C:\Program Files\GitHub CLI\gh.exe`.
 - Write the body to a file and use `--body-file` (quoting inline bodies breaks). Follow `.github/pull_request_template.md`: Summary, Spec changes, Test results (a table: check, run id or test file, verdict, key number or range), Evidence, Not verified. No raw logs; "None" for an empty section. End with the line the session gives (`🤖 Generated with [Claude Code](https://claude.com/claude-code)`).
 - `gh` runs as the bot account `garrettgruss-bot` (check: `gh api user --jq .login`). The owner cannot approve a pull request from their own account, so never open one as the owner.
-- After `gh pr create`, turn on auto-merge: `gh pr merge <n> --auto --merge`. GitHub merges when the owner approves (ruleset on `main`: 1 approval, stale approvals dismissed on push). Never approve, review or merge by hand.
-- Gate 1: `gh pr create --base main --head spec/<change-name> ...` with `Refs #<n>`. Then mark the issue `status: awaiting user` and stop. Do not start gate 2 before the pull request is merged.
+- After `gh pr create`, turn on auto-merge: `gh pr merge <n> --auto --merge`. GitHub merges as soon as it can (ruleset on `main`: no approval since 2026-10-23). Never approve, review or merge by hand. Push every commit before `gh pr create`: a commit pushed after the merge needs a new pull request.
+- Gate 1: `gh pr create --base main --head spec/<change-name> ...` with `Refs #<n>`. Do not start gate 2 before the pull request is merged.
 - Gate 2: before you open the pull request, finish it: run the full tests, put picture evidence in `evidence/` when the result is visual, move lasting engine facts from `notes/` into the wiki, run `openspec archive <change-name> --yes`, check the merged living spec, commit `docs(openspec): archive <change-name>` and push. Then `gh pr create ... --body-file <file>` with `Closes #<n>`, and mark the issue `status: awaiting user`.
 - Link pictures with the commit SHA: `https://github.com/GarrettGruss/manor-lords-mod/raw/<sha>/openspec/changes/archive/<date>-<change-name>/evidence/<file>.png`.
 - `gh pr edit` fails on this repo (a GraphQL error about classic projects). Change a body with `gh api -X PATCH repos/GarrettGruss/manor-lords-mod/pulls/<n> -F "body=@<file>"`.
-- A pushed fix after an approval dismisses it. The owner must approve again. Check the state with `gh pr view <n> --json reviewDecision,mergeStateStatus,autoMergeRequest`.
+- If `gh pr merge --auto` fails because the pull request is already mergeable ("clean status"), tell the owner; do not merge by hand. Check the state with `gh pr view <n> --json mergeStateStatus,autoMergeRequest`.
 - When `main` moves and the pull request conflicts, merge `origin/main` into the branch, run the tests and push. Auto-merge stays on.
 - After a merge: `git checkout main && git pull`. If a gate 2 pull request was merged without its archive commit, archive on a new branch as its own commit.
 

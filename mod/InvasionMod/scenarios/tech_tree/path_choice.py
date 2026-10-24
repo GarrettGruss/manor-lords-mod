@@ -21,14 +21,14 @@ def bandits(ctx) -> dict:
     return ctx.mod.command("InvasionMod.bandits_state")
 
 
-def expected_order(state: dict, bonus: int) -> int:
-    return max(0, min(100, state["natural_order"] + bonus - state["debuff"]))
+def manor_term(ctx) -> int:
+    """The manor term of a forced tick, from order 0 so that no clamp hides it."""
+    ctx.mod.command("InvasionMod.bandits_set_order", value=0)
+    return ctx.mod.command("InvasionMod.bandits_tick_now")["last_tick"]["manor_term"]
 
 
 def check_start(ctx) -> None:
     ctx.run_until(lambda: tree(ctx).get("path") is not None, 30, what="the tech tree state")
-    ctx.mod.command("InvasionMod.bandits_set_approval", value=40)
-    ctx.run_until(lambda: bandits(ctx)["debuff"] > 0, 15, what="the Public Order debuff")
     start = tree(ctx)
     ctx.check("T1 the start has no path and 8 nodes", start["path"] == "none" and len(start["nodes"]) == 8, start)
     reason = ctx.mod.refusal("InvasionMod.tech_tree_unlock", node="martial_law")
@@ -54,7 +54,7 @@ def check_first_node(ctx) -> None:
     ctx.mod.command("InvasionMod.tech_tree_unlock", node="martial_law")
     ctx.run_until(lambda: bandits(ctx)["modifiers"]["order_bonus"] == 10, 15, what="the Public Order bonus")
     after = bandits(ctx)
-    ctx.check("T7 Public Order follows natural + 10 - debuff", after["order"] == expected_order(after, 10), [before["order"], after["order"], after["natural_order"], after["debuff"]])
+    ctx.check("T7 the manor term of a tick is 10 + 10", manor_term(ctx) == 20, [before["modifiers"], after["modifiers"]])
     full = ctx.mod.refusal("InvasionMod.tech_tree_unlock", node="iron_hand")
     ctx.check("T8 no free slot at level 1 after one node", full is not None and "no free node slot" in full, full)
 
@@ -65,13 +65,12 @@ def check_second_node(ctx) -> None:
     ctx.mod.command("InvasionMod.tech_tree_unlock", node="iron_hand")
     ctx.run_until(lambda: bandits(ctx)["modifiers"]["order_bonus"] == 25, 15, what="the second Public Order bonus")
     after = bandits(ctx)
-    ctx.check("T9 Public Order follows natural + 25 - debuff", after["order"] == expected_order(after, 25), after)
+    ctx.check("T9 the manor term of a tick is 10 + 25", manor_term(ctx) == 35, after["modifiers"])
     ctx.check("T10 the buy-back price factor is 1.25", abs(after["buy_back_multiplier"] - 1.25) < 1e-9, after["buy_back_multiplier"])
 
 
 def check_buy_back_price(ctx) -> None:
-    ctx.mod.command("InvasionMod.bandits_set_approval", value=0)
-    ctx.mod.command("InvasionMod.bandits_tick_now", roll=0.0)
+    ctx.mod.command("InvasionMod.bandits_leave_now", count=2)
     ctx.run_until(lambda: bandits(ctx)["outstanding_families"] >= 2, 20, what="the conversion")
     ctx.time.run_game_seconds(10, speed=SPEED)
     ctx.actions.set_silver(200)

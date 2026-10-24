@@ -5,76 +5,34 @@ The bandits feature turns low approval into low Public Order, and low Public Ord
 
 ## Requirements
 
-### Requirement: Low approval lowers Public Order
-The mod SHALL write `Region.publicOrder = natural - debuff` for the home region, with `debuff = ceil((100 - approval) x difficulty)` and the result kept between 0 and 100. The natural order is the value the game itself writes. The mod SHALL take a value that differs from its last write as the new natural value, so the debuff never stacks. At approval 100 the order SHALL equal the natural order. The difficulty is the one picked in the invasion feature.
-
-#### Scenario: Approval 71 at difficulty 1
-- **WHEN** the approval is about 71 at difficulty 1
-- **THEN** the order read after 2 game days is the natural order minus 29, within plus or minus 5
-- **AND** after 5 more game days the order is within 10 of that value, is 0 or more, and did not stack
-- Checked by `mod/InvasionMod/scenarios/bandits/order_debuff.py`.
-
-#### Scenario: Approval 100 and difficulty 2
-- **WHEN** the approval is set to 100, and later the difficulty is 2 with a low approval
-- **THEN** the order equals the natural order at once at approval 100
-- **AND** at difficulty 2 the debuff doubles and the order is 0 or more
-- Checked by `mod/InvasionMod/scenarios/bandits/order_debuff.py`.
-
-#### Scenario: The picked difficulty is used
-- **WHEN** the player picks difficulty 2 or 3
-- **THEN** `bandits_state` reports the picked difficulty
-- Checked by `mod/InvasionMod/scenarios/invasion/difficulty_pick.py`.
-
-#### Scenario: The game rewrites the order
-- **WHEN** the game writes its own Public Order after the mod wrote
-- **THEN** the mod takes the game value as natural and writes `natural - debuff` again
-- Checked by `harness/tests/test_fakegame_bandits.py`.
-
-### Requirement: Conversion chance depends on Public Order
-At each roll the mod SHALL use the chance of the lowest matching band of `bands` (default: below 75 is 10 percent, below 50 is 25 percent, below 25 is 50 percent). At Public Order 75 or above the chance SHALL be 0. A roll under the chance SHALL convert families.
-
-#### Scenario: The band rates
-- **WHEN** 20000 rolls are made at Public Order 80, 60, 40 and 10
-- **THEN** the conversion rate is 0 and within 0.015 of 0.10, 0.25 and 0.50
-- Checked by `harness/tests/test_fakegame_bandits.py`.
-
-#### Scenario: Forced rolls
-- **WHEN** Public Order is 80 or more and the roll is 0, or Public Order is under 25 and the roll is 0.99
-- **THEN** no family is removed and no bandit appears
-- Checked by `mod/InvasionMod/scenarios/bandits/convert_families.py`.
-
 ### Requirement: A conversion removes two families and spawns a bandit squad
-A successful roll SHALL remove `families_per_conversion` (default 2) families through `homeless_rebel` and SHALL spawn one Brigands squad of 18 units for each `families_per_squad` (default 2) families. The village SHALL keep at least `min_families_left` (default 1) families. The mod SHALL show the banner `Families have turned to banditry`.
+When the banditry timer expires, the mod SHALL remove `leavers` (default 18) villagers, as families, through `homeless_rebel` (`ManorCore.remove_families`), and SHALL spawn bandits for them only when the game's bandit pawn exists. Every `families_per_squad` (default 5) families that leave SHALL form one squad of the brigands template: `squads = floor(families that left / 5)`, so 18 families give 3 squads and the 3 extra families leave without a squad (a default the owner can change). Otherwise it SHALL log that no bandits spawned. A villager here is a family. The village SHALL keep at least `min_families_left` (default 1) families, so fewer than 18 may leave. The mod SHALL show the banner `Families have turned to banditry`.
 
 #### Scenario: A forced conversion
-- **WHEN** Public Order is under 25 and the roll is 0
-- **THEN** 2 families are removed and 18 bandit units appear
+- **WHEN** the banditry timer expires (a test forces it) with enough villagers
+- **THEN** the villagers that leave are between 1 and 18, and the village keeps at least 1 family
 - **AND** the game runs 10 more game days with no crash
-- Checked by `mod/InvasionMod/scenarios/bandits/convert_families.py`.
+- Checked by `mod/InvasionMod/scenarios/bandits/banditry_timer.py`.
 
 #### Scenario: The last family stays
-- **WHEN** the village has only 1 family and the roll wins
-- **THEN** no family is converted
+- **WHEN** the village has only 1 family and the timer expires
+- **THEN** no family leaves
+- Checked by `harness/tests/test_fakegame_bandits.py`.
+
+#### Scenario: One squad for every 5 families
+- **WHEN** 18 families leave and the game has a bandit pawn
+- **THEN** 3 brigand squads spawn, one for each 5 families, and the 3 extra families leave without a squad
+- Checked by `harness/tests/test_fakegame_bandits.py` and `mod/InvasionMod/scenarios/bandits/banditry_timer.py`.
+
+#### Scenario: No bandit pawn
+- **WHEN** villagers leave and the game has no bandit pawn
+- **THEN** no bandit spawns, the mod logs it, and no error is raised
 - Checked by `harness/tests/test_fakegame_bandits.py`.
 
 #### Scenario: The conversion banner
-- **WHEN** a conversion succeeds
+- **WHEN** villagers leave for banditry
 - **THEN** the banner `Families have turned to banditry` shows
-- Not checked yet.
-
-### Requirement: The roll runs once per season change
-The mod SHALL make one roll for the home region at each season change. It SHALL NOT roll on the first poll, and SHALL NOT roll again in the same season. The last season SHALL be kept in ModState, so a load in the same season does not roll.
-
-#### Scenario: Three season changes
-- **WHEN** the game crosses three season changes
-- **THEN** `rolls` grows by exactly 1 for each change and stays 0 before the first change and during 3 game days in one season
-- **AND** the game runs 10 more game days with no crash
-- Checked by `mod/InvasionMod/scenarios/bandits/season_tick.py`.
-
-#### Scenario: A reload in the same season
-- **WHEN** the feature loads again with the saved season equal to the current season
-- **THEN** no roll is made
-- Checked by `harness/tests/test_fakegame_bandits.py`.
+- Checked by `mod/InvasionMod/scenarios/bandits/banditry_banners.py`.
 
 ### Requirement: The player can buy families back
 `InvasionMod.bandits_buy_back` SHALL send the native settle letter. The price SHALL be `ceil(min(outstanding families, free home slots) x silver_per_family x price_multiplier)` (default 10 silver a family). The mod SHALL refuse, with a reason and no change, when no family is outstanding, no bandit unit is on the map, no home slot is free, the silver is below the price, or another buy-back is running.
@@ -105,17 +63,69 @@ If no family returns within `give_up_game_seconds` (default 120 game seconds), t
 - Checked by `mod/InvasionMod/scenarios/bandits/buy_back.py`.
 
 ### Requirement: The tech tree can change the bandit rules
-The mod SHALL accept the modifiers `order_bonus` (added to the natural order), `approval_bonus` (added to approval for the debuff, up to 100) and `buy_back_multiplier` (a factor on the price) from the tech tree, and SHALL apply them at once.
+The mod SHALL accept the modifiers `order_bonus` (added to the manor term of each tick) and `buy_back_multiplier` (a factor on the price) from the tech tree, and SHALL apply them at once.
 
 #### Scenario: Price multipliers
 - **WHEN** the multiplier is 1.25 or 0.5
 - **THEN** the price is 13 or 5 for 1 family, and 25 or 10 for 2 families
 - Checked by `harness/tests/test_bandits_rules.py`.
 
+#### Scenario: Order bonus
+- **WHEN** `order_bonus` is 5 and a tick runs
+- **THEN** the manor term is 15
+- Checked by `harness/tests/test_bandits_rules.py`.
+
 ### Requirement: Named commands show and drive the feature
-The mod SHALL offer `InvasionMod.bandits_state`, `bandits_set_approval`, `bandits_tick_now` and `bandits_buy_back`. `bandits_tick_now` SHALL accept an optional roll from 0 to 1. `bandits_state` SHALL return the order, natural order, approval, debuff, families, outstanding and returned families, rolls and the last ticks.
+The mod SHALL offer `InvasionMod.bandits_state`, `bandits_tick_now`, `bandits_set_order`, `bandits_buy_back` and the test commands `bandits_leave_now` and `bandits_set_timer_days_left`. `bandits_tick_now` SHALL run one order tick at once. `bandits_state` SHALL return the mod order, the game order, the homeless count, the last tick, the timer (start day and days left), families, outstanding and returned families.
 
 #### Scenario: A forced tick
-- **WHEN** a test calls `bandits_tick_now` with a roll
-- **THEN** the answer is the new state, and the tick used that roll
-- Checked by `mod/InvasionMod/scenarios/bandits/convert_families.py`.
+- **WHEN** a test calls `bandits_tick_now`
+- **THEN** the answer is the new state, and the last tick has day, order before, manor term, homeless count, homeless term and order after
+- Checked by `mod/InvasionMod/scenarios/bandits/order_tick.py`.
+
+### Requirement: The mod keeps its own public order
+The mod SHALL keep a mod order value, kept between 0 and 100, in ModState. The value SHALL start at 100 in a new game. It SHALL write `Region.publicOrder = mod order` for the home region at every tick. Game factors SHALL NOT change the mod order.
+
+#### Scenario: The game value is overwritten
+- **WHEN** the game writes its own order after the mod wrote
+- **THEN** the mod writes the mod order again at the next tick
+- Checked by `harness/tests/test_fakegame_bandits.py`.
+
+#### Scenario: A reload
+- **WHEN** the feature loads again
+- **THEN** the mod order and the tick day come from ModState
+- Checked by `harness/tests/test_fakegame_bandits.py`.
+
+### Requirement: Public order ticks every 30 game days
+Every `tick_days` (default 30) game days, the mod SHALL set `order = clamp(order + manor_term - homeless_term)`, with `manor_term = 10` (plus `order_bonus`) and `homeless_term = 5 x homeless villagers`, where a homeless villager is a homeless family (`getNumHomelessFamilies`). Each tick SHALL be logged in the telemetry with day, order before, manor term, homeless count, homeless term and order after, and in one `HarnessLog` line.
+
+#### Scenario: A tick with homeless villagers
+- **WHEN** the order is 50 and 4 villagers are homeless
+- **THEN** the tick gives 40 (50 + 10 - 20) and the telemetry record holds all six fields
+- Checked by `harness/tests/test_bandits_rules.py`.
+
+#### Scenario: The tick interval
+- **WHEN** the game runs 65 game days
+- **THEN** between 2 and 3 ticks ran
+- Checked by `mod/InvasionMod/scenarios/bandits/order_tick.py`.
+
+### Requirement: Low order starts a banditry timer
+When the order drops below `threshold` (default 25), the mod SHALL start a timer of `timer_days` (default 90) game days. When the timer expires, villagers SHALL leave to become bandits. When the order is 25 or more before the timer expires, the timer SHALL reset. After the villagers leave, the timer SHALL restart if the order is still below 25.
+
+#### Scenario: Timer start and expiry
+- **WHEN** a tick leaves the order at 20
+- **THEN** the timer starts, and the leave happens between 85 and 95 game days later if the order stays under 25
+- Checked by `mod/InvasionMod/scenarios/bandits/banditry_timer.py`.
+
+#### Scenario: The timer resets
+- **WHEN** the order rises to 25 or more before the timer expires
+- **THEN** the timer stops and no villager leaves
+- Checked by `harness/tests/test_bandits_rules.py`.
+
+### Requirement: Leaving for banditry raises public order
+When villagers leave for banditry, the mod SHALL add `order_gain` (default 25) to the mod order, kept at 100 or less.
+
+#### Scenario: The order after the leave
+- **WHEN** villagers leave and the order was 20
+- **THEN** the order is 45 and the timer restarts only if the order is under 25
+- Checked by `harness/tests/test_bandits_rules.py`.
