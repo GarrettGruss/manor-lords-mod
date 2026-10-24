@@ -57,7 +57,7 @@ The mod SHALL log one line `ready, features: <names>` with tag `InvasionMod` aft
 - Checked by `harness/tests/test_fakegame_featureloader.py`.
 
 ### Requirement: One scheduler timer runs all feature jobs
-The mod SHALL run periodic feature work through `scheduler.every(name, every_ms, run)`. The scheduler SHALL use one `LoopAsync` timer with a tick of 100 ms and SHALL run due jobs on the game thread. A job that raises an error SHALL be logged with a stack trace and SHALL NOT stop the other jobs. The tick SHALL NOT be faster than 100 ms, because a 50 ms tick broke the Lua state after about 3 minutes with a menu open (spec 34).
+The mod SHALL run periodic feature work through `scheduler.every(name, every_ms, run)`. The scheduler SHALL use one game-thread timer (`HarnessLoop.every`) with a tick of 100 ms and SHALL run due jobs on the game thread. A job that raises an error SHALL be logged with a stack trace and SHALL NOT stop the other jobs. The tick SHALL NOT be faster than 100 ms, because a 50 ms tick broke the Lua state after about 3 minutes with a menu open (spec 34).
 
 #### Scenario: Two jobs, one fails
 - **WHEN** two jobs are registered and one of them raises an error
@@ -201,3 +201,19 @@ While a mod menu is open, a press of the Esc key SHALL close it, like the Close 
 - **WHEN** no mod menu is open and the player presses Esc
 - **THEN** the game's own Esc menu opens as before
 - Checked by `mod/InvasionMod/scenarios/menu/smoke.py` (checks E4 and E5).
+
+### Requirement: Key bind callbacks do not change shared Lua tables
+A key bind callback runs on the input thread. It SHALL NOT read or write the mod state tables. It SHALL only queue the action with `ExecuteInGameThread`, and the table work SHALL run in that queued function.
+
+#### Scenario: A menu key is pressed
+- **WHEN** a key bind for a menu toggle or for Esc fires
+- **THEN** the toggle request is stored only after the game thread runs the queued function
+- Checked by `harness/tests/test_fakegame_menu.py`.
+
+### Requirement: A unit scan does not run in the tick of a wave spawn
+After a wave spawn the mod SHALL run the scan over all units in a later game-thread tick. Loops over `FindAllOf` results SHALL check `IsValid` for each object before they use it.
+
+#### Scenario: A wave spawns
+- **WHEN** a wave spawn finishes
+- **THEN** the unit scan does not run in the same scheduler tick
+- Checked by `harness/tests/test_fakegame_raid_behavior.py`.

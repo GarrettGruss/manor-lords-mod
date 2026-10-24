@@ -22,7 +22,7 @@ A key bind callback runs on the input thread. It SHALL NOT read or write the mod
 #### Scenario: A menu key is pressed
 - **WHEN** a key bind for a menu toggle or for Esc fires
 - **THEN** the toggle request is stored only after the game thread runs the queued function
-- Checked by `harness/tests/test_fakegame_menu_keys.py`.
+- Checked by `harness/tests/test_fakegame_menu.py`.
 
 ### Requirement: A unit scan does not run in the tick of a wave spawn
 After a wave spawn the mod SHALL run the scan over all units in a later game-thread tick. Loops over `FindAllOf` results SHALL check `IsValid` for each object before they use it.
@@ -30,4 +30,4 @@ After a wave spawn the mod SHALL run the scan over all units in a later game-thr
 #### Scenario: A wave spawns
 - **WHEN** a wave spawn finishes
 - **THEN** the unit scan does not run in the same scheduler tick
-- Checked by `harness/tests/test_fakegame_menu_keys.py`.
+- Checked by `harness/tests/test_fakegame_raid_behavior.py`.

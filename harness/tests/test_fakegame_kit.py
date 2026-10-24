@@ -100,6 +100,26 @@ class TimeAndLoopTests(KitCase):
         self.assertEqual(game.exec("return count"), 3)
         self.assertEqual(game.fg.live_loops(), 0)
 
+    def test_game_thread_loop_runs_on_the_game_thread_until_cancelled(self):
+        game = self.make_game(strict_threads=True)
+        game.obj("Thing")
+        game.exec("count = 0; handle = LoopInGameThreadWithDelay(1000, function() FindFirstOf('Thing'); count = count + 1 end)")
+        game.advance(3)
+        self.assertEqual(game.exec("return count"), 3)
+        game.exec("CancelDelayedAction(handle)")
+        game.advance(3)
+        self.assertEqual(game.exec("return count"), 3)
+        self.assertEqual(game.fg.live_loops(), 0)
+
+    def test_harness_loop_uses_the_game_thread_timer_and_stops_on_true(self):
+        game = self.make_game(strict_threads=True)
+        game.obj("Thing")
+        game.exec("""local loop = require('HarnessLoop'); count = 0
+            loop.every(1000, function() FindFirstOf('Thing'); count = count + 1; return count >= 2 end)""")
+        game.advance(5)
+        self.assertEqual(game.exec("return count"), 2)
+        self.assertEqual(game.fg.live_loops(), 0)
+
     def test_game_thread_work_waits_for_the_next_step(self):
         game = self.make_game()
         game.exec("ran = false; ExecuteInGameThread(function() ran = true end)")

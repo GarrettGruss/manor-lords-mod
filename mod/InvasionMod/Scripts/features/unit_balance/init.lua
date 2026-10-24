@@ -250,7 +250,7 @@ local function militia_pass(units, recheck)
     end
     local present = {}
     for _, unit in ipairs(units) do
-        local key = address_of(unit)
+        local key = isValid(unit) and address_of(unit) or nil
         if key ~= nil then
             present[key] = true
             local record = militia_known[key]
@@ -279,7 +279,7 @@ local function pass(force_experience)
     local recheck = needs_recheck(#units)
     local look_at_experience = settings.vet_enabled and (force_experience or totals.passes % config.veterancy.every == 0)
     for _, unit in ipairs(units) do
-        local key = address_of(unit)
+        local key = isValid(unit) and address_of(unit) or nil
         if key ~= nil then
             present[key] = true
             check_known(unit, key, recheck)

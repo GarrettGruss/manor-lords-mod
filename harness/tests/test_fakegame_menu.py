@@ -339,6 +339,25 @@ class MenuTests(InvasionTestCase):
         self.assertFalse(self.state_value("T.widget_a.viewport"))
         self.assertEqual(self.lua("return table.concat(T.closed, ',')"), "a")
 
+    def test_esc_key_hands_the_request_to_the_game_thread(self):
+        self.make_hud_and_wait()
+        self.click_bar_button(4)
+        queued_before = len(self.game.fg.queue)
+        self.game.press("ESCAPE")
+        self.assertEqual(len(self.game.fg.queue), queued_before + 1, "the key callback only queued work")
+        self.assertTrue(self.state_value("T.menu.state().open"), "nothing changed on the input thread")
+        self.game.advance(1)
+        self.assertFalse(self.state_value("T.menu.state().open"))
+
+    def test_toggle_request_is_stored_on_the_game_thread(self):
+        self.make_hud_and_wait()
+        queued_before = len(self.game.fg.queue)
+        self.lua("T.menu.request_toggle('a')")
+        self.assertEqual(len(self.game.fg.queue), queued_before + 1)
+        self.assertFalse(self.state_value("T.menu.state().open"))
+        self.game.advance(1)
+        self.assertTrue(self.state_value("T.menu.state().open"))
+
     def test_the_games_esc_menu_that_opens_on_the_same_press_is_closed_and_the_speed_is_put_back(self):
         self.make_hud_and_wait()
         self.lua("T.esc_menu = T.new('mainMenu_widget_C_1'); T.esc_menu.vis = 1")  # made by the game, collapsed

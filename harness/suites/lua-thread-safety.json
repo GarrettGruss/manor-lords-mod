@@ -1,0 +1,9 @@
+{
+  "name": "lua-thread-safety",
+  "scenarios": [
+    {"scenario": "invasion-first-raid", "repeat": 10, "variants": [{"name": "game-thread"}]},
+    {"scenario": "invasion-great-raid-waves", "repeat": 10, "variants": [{"name": "game-thread"}]}
+  ],
+  "time_budget_s": 7200,
+  "flake_retries": 0
+}
