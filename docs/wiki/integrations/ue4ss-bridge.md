@@ -57,7 +57,7 @@ Rules in `request()`:
 - On timeout, the error says which case it was: never picked up (game not running, or the mod is not loaded), picked up but no answer (the game thread is blocked, for example in a loading screen), or the game died (the message holds a crash report from `crash_dir`).
 
 Lua side (`main.lua`):
-- A `LoopAsync(POLL_MS, ...)` loop reads the request. `ping` and `hello` answer at once. `batch` and `eval` run in `ExecuteInGameThread`. Every UObject access is on the game thread.
+- A `HarnessLoop.every(POLL_MS, ...)` game-thread timer (patch P10) reads the request. `ping` and `hello` answer at once. `batch` and `eval` run in `ExecuteInGameThread`. Every UObject access is on the game thread.
 - `UEB.reload()` re-runs the file. A generation counter stops the old poll loop.
 - The Lua `os.remove(REQUEST)` happens before the handler runs, so one request is never run twice.
 

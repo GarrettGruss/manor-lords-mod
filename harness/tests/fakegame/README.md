@@ -76,7 +76,7 @@ Test mod code that talks to another mod through files, as the real mods must. Li
 - `array_wrap=True`: elements are wrappers, so `array[i].field` fails until `:get()`.
 - `fstring_mode=True` (default): a text property is not equal to a string until `:ToString()`, and other member access fails.
 - An unknown `Key.X` fails at once.
-- `strict_threads=True`: touching a game object inside a `LoopAsync` callback fails.
+- `strict_threads=True`: touching a game object inside a `LoopAsync` callback fails (`LoopInGameThreadWithDelay` callbacks are game thread).
 
 ## What the fake does NOT cover
 

@@ -11,7 +11,7 @@
 - [x] 4.1 Add `LoopInGameThreadWithDelay` and `CancelDelayedAction`, with tests.
 
 ## 5. Measure
-- [ ] 5.1 Suites: 10 runs each of `invasion-first-raid` and `invasion-great-raid-waves`. Write `notes/suite-results.md`.
+- [x] 5.1 Suites: 10 runs each of `invasion-first-raid` and `invasion-great-raid-waves`. Write `notes/suite-results.md`.
 
 ## 6. Close
-- [ ] 6.1 Tests, validate, CHANGELOG, wiki, archive.
+- [x] 6.1 Tests, validate, CHANGELOG, wiki, archive.
