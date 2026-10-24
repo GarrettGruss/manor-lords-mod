@@ -78,6 +78,11 @@ local function isNewGameMode()
     return os.getenv and os.getenv("HARNESS_NEW_GAME") == "1"
 end
 
+-- HARNESS_BOOT_NO_PAUSE=1: READY without the pause step, so a test scenario sees a game as a player launch gives it (#418).
+local function noPauseMode()
+    return os.getenv and os.getenv("HARNESS_BOOT_NO_PAUSE") == "1"
+end
+
 local function newGameMap()
     local fromEnv = os.getenv and os.getenv("HARNESS_NEW_GAME_MAP")
     if fromEnv and fromEnv ~= "" then return fromEnv end
@@ -436,12 +441,12 @@ local function readCalendar(engine)
     return calendar
 end
 
-local function writeReadyMarker(engine, clock)
+local function writeReadyMarker(engine, clock, notPaused)
     local cal = readCalendar(engine)
     -- "paused" is true only because the game clock was measured as stopped (see stepPausing).
     local text = string.format(
-        '{"slot":%s,"time":%d,"seconds_since_start":%d,"paused":true,"clock":%s,"day":%s,"month":%s,"year":%s,"season":%s}\n',
-        jsonString(boot.slot), os.time(), os.time() - boot.started, tostring(clock),
+        '{"slot":%s,"time":%d,"seconds_since_start":%d,"paused":%s,"clock":%s,"day":%s,"month":%s,"year":%s,"season":%s}\n',
+        jsonString(boot.slot), os.time(), os.time() - boot.started, notPaused and "false" or "true", tostring(clock),
         tostring(cal.day), tostring(cal.month), tostring(cal.Year), tostring(cal.Season))
     return writeAtomic(READY_FILE, text)
 end
@@ -487,6 +492,8 @@ end
 -- The step only restarts the timer. It calls no function that saves.
 ---------------------------------------------------------------------------------------------
 
+local function engine_for_marker() return FindFirstOf("RTSMultiEngineCPP") end
+
 local function stepDisablingAutosave()
     local changes, problem = autosave.disable()
     if not changes then
@@ -503,6 +510,16 @@ local function stepDisablingAutosave()
     end
     log.info(TAG, string.format("autosave disabled: timer remaining %s s -> %s s (settings period %s s)",
         tostring(changes.before.remaining_s), tostring(changes.after.remaining_s), tostring(changes.after.settings_period_s)))
+    if noPauseMode() then
+        log.warn(TAG, "HARNESS_BOOT_NO_PAUSE=1: the pause step is skipped and the game may run (player launch test)")
+        if writeReadyMarker(engine_for_marker(), 0, true) then
+            setState("READY")
+            autosave.guard_loads(log, TAG)
+        else
+            fail("could not write ready.marker")
+        end
+        return
+    end
     setState("PAUSING")
 end
 

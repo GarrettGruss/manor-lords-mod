@@ -75,7 +75,7 @@ Python reads the result in `harness/runlib/gameslots.py`: `installed_slots()` re
 | Variable | Set by | Meaning |
 |---|---|---|
 | `HARNESS_RUN_DIR` | launcher, per run | Run folder. The bridge folder and logs derive from it. |
-| `HARNESS_AUTOBOOT`, `HARNESS_TEST_SAVE`, `HARNESS_TELEMETRY_INTERVAL_S` | launcher (`build_game_environment`) | Boot mode, save to load, telemetry period (0 is off). `HARNESS_NEW_GAME` and `HARNESS_NEW_GAME_MAP` start a new game on a map. |
+| `HARNESS_AUTOBOOT`, `HARNESS_TEST_SAVE`, `HARNESS_TELEMETRY_INTERVAL_S` | launcher (`build_game_environment`) | Boot mode, save to load, telemetry period (0 is off). `HARNESS_NEW_GAME` and `HARNESS_NEW_GAME_MAP` start a new game on a map. `HARNESS_BOOT_NO_PAUSE=1` (set with `run.py --env`) makes HarnessBoot skip its pause step, to test a player launch. |
 | `LOCALAPPDATA` | launcher, per run | Private folder for the run's saves and crash data. It does not hold the game settings (see above). |
 | `HARNESS_MAX_RUNS` | user | Cap on runs in the runs folder. Default 400. `--max-runs` wins. Reset: delete `runs/.iterations`. |
 | `HARNESS_GAME_ARGS` | user | Extra game command line arguments, space separated. |

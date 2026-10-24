@@ -99,6 +99,8 @@ class SettingsTestCase(InvasionTestCase):
         self.game.method(self.pawn, "unPauseGame", lambda _self: self.unpauses.append(1))
         self.speeds = []
         self.game.method(self.pawn, "changeGameSpeed", lambda _self, speed, _flag: self.speeds.append(speed))
+        self.clock = [0.0]  # the game clock; a test moves it to play "the game runs"
+        self.game.method(self.engine, "getGameTimeAdjusted", lambda _self: self.clock[0])
 
     def stand_in_menu(self):
         self.game.exec(STAND_IN_MENU, state=self.mod_name)
@@ -144,6 +146,30 @@ class NewGameTests(SettingsTestCase):
         self.assertEqual(self.unpauses, [1])
         self.assertEqual(self.menu_flag("opens"), 1)
         self.assertEqual(self.speeds, [1], "a new game starts at speed 0: Begin sets the speed")
+
+    def test_the_mod_pauses_again_when_the_clock_moves_while_the_menu_is_open(self):
+        self.stand_in_menu()
+        self.start_game("", 1)
+        self.game.advance(1)  # a still clock sets the reference and does not pause again
+        self.assertEqual((self.pauses, self.settings()["repauses"]), ([1], 0))
+        self.clock[0] += 2.0  # the player pressed a speed key, or the game restored its speed after the intro
+        self.game.advance(1)
+        state = self.settings()
+        self.assertEqual((self.pauses, state["repauses"], state["paused"], state["open"]), ([1, 1], 1, True, True))
+        self.game.advance(1)
+        self.game.advance(1)
+        self.assertEqual(self.pauses, [1, 1], "a still clock after the pause: no more calls")
+        self.assertEqual(self.unpauses, [])
+
+    def test_the_clock_guard_stops_after_begin(self):
+        self.stand_in_menu()
+        self.start_game("", 1)
+        self.game.advance(1)
+        self.ask("scenario_settings_click", action="begin")
+        self.clock[0] += 5.0
+        self.game.advance(2)
+        self.assertEqual(self.pauses, [1], "the game runs after Begin: no pause")
+        self.assertEqual(self.unpauses, [1])
 
     def test_use_defaults_resets_the_choices_and_begin_applies_them(self):
         self.stand_in_menu()
