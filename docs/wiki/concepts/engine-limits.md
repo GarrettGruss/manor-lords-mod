@@ -123,3 +123,16 @@ Real game runs on 2026-10-22 and 2026-10-23. Notes: `openspec/changes/archive/20
 - A wiped region has no AI lord on the map although `region.ownerPawn` still points to the old pawn, and nobody builds. `ResetAIBuildingOptions` changed nothing, and `IsActive` of a planner is false in healthy villages too, so it means nothing. The mod gives the region to a lord again (`lord_receive_region`).
 - Not tested: whether a rebuild order survives a save and a load (needs the guarded `save_game`).
 - Source: `openspec/changes/add-vassal-sack-wipe/notes/rebuild-order.md` (runs 20261022-231049-8008 and 20261022-231824-d19d).
+
+## Bandit camps, AI lords and raids with the game settings at zero (spike #430)
+
+Fixture `playtest-noai` (AI opponents 0, Off map adversary Absent, Raider frequency None, Initial bandit camps 0, spawn limit 0). Notes: `openspec/changes/spike-playtest-world-ai/notes/` (until archived: `openspec/changes/archive/*-spike-playtest-world-ai/notes/`).
+
+- **No bandit pawn without a camp.** The world has one `PawnCPP` (the player). `bandit_state` is refused and `HarnessBattle.spawn_at("bandit")` returns "no pawn for side bandit".
+- **`RTSMultiEngineCPP:spawnBanditCamp()` makes the bandit pawn** ("Outlaws", trait `bandit`) with a camp (type 100, 17 parts) and 18 Brigands, also with camps 0 and limit 0. Each call makes another camp. The pawn has no relation row with the player: call `addPawnRelations` (`lord_relations`). The pawn stays when its units are killed with `just_die`. The camp squads walk on their own (one went to the player village and left).
+- **AI lords with AI opponents 0.** `spawnNewAILord` works. The lord builds only after a full claim: `lord_found_village` (free region) or `lord_receive_region` (settled region), plus `lord_relations` and `lord_start_ai(build)`. Writing `Region.ownerPawn` alone gives no buildings (0 in 55 game days); a founded village went from 4 to 21 buildings in about 85 game days (13 in the first 9 days).
+- **The Hussite raid needs no setting.** It is the army of a mod-made lord (`lord_raid.lua`). It spawns and passes the raid test scenarios with Off map adversary Absent, AI opponents 0 and Raider frequency None.
+- **The raid army goes to the camera region.** `battlefield_anchor({ lord })` uses the current region of the player pawn (the camera). A raid that starts with the camera over a free region puts the army and the battle marker there, although the mod log names the player's village as target. The mod plunder tick does not depend on the army position (a control run plundered 68 goods a day with the army 60 000 units from the village). The camera drifts in a long run when the cursor sits near the screen edge.
+- **Plunder needs goods in tier 1 stores.** `world.plunder` takes only from them. With 21 goods in the stores, the baron steal rule took all on day 1 and the plunder took 0 afterwards.
+- A fixture run that ends with `--keep-open` frees its slot lock: another agent's run can take the slot and kill the game. Hold the slot with a long scratch test scenario.
+- One game crash (`EXCEPTION_ACCESS_VIOLATION reading 0x328`) 30 s after the first unpause with 3 camps, a second lord and killed camp squads. Two repeats with one camp did not crash. Cause not isolated.

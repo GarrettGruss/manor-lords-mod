@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Fixture `playtest-noai` (spike #430): the owner's playtest world with AI opponents 0, Off map adversary Absent, Raider frequency None and bandit camps 0. Findings: the mod can make the bandit pawn with `spawnBanditCamp()`, an AI lord builds after a full claim, and the Hussite raid needs no game setting (but its army goes to the camera region).
 - Tech tree tooltip (change `add-tech-tooltip`, #428): mouse over a node button or a law button of the tech tree menu shows a tooltip with the numerical effects of the tech and their values (percent effects as a signed percent, flat effects as a signed number). The text is built from `tree.json` (`lines.effect_lines`). The state command `tech_tree_widget_state` lists the tooltip of each button. New test scenario `tech-tree-widget-tooltip`.
 
 ### Fixed
