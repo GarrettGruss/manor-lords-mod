@@ -150,6 +150,12 @@ return {
             give_up_game_seconds = 120,  -- game time (not real time, the game may be paused) before a missing family counts as a failed deal
         },
     },
+    -- change add-order-tooltip-rows: mod order rows in the Public Order tooltip
+    order_tooltip = {
+        enabled = true,
+        poll_ms = 1000,   -- real time between two tries to set the hook (the tooltip class loads late)
+        delay_ms = 60,    -- wait after updateContents (the game rebuilds the rows first)
+    },
     -- M02 iteration 05: the raid widget (one menu for all raid information). Needs the pak raidmenu_P.pak.
     raid_widget = {
         enabled = true,

@@ -1,5 +1,9 @@
-## ADDED Requirements
-<!-- Issue: #454 -->
+# mod/order_tooltip Specification
+
+## Purpose
+The Public Order tooltip shows the mod order terms as rows and the mod order in its header, so the player sees why the mod order has its value.
+
+## Requirements
 
 ### Requirement: The Public Order tooltip lists the mod order terms
 Each time the player opens the Public Order tooltip, the mod SHALL add one row for each term of the last order tick of the mod order: `Manor +<n>` (green), `Homeless families -<n>` (red, only when the term is above 0) and, from a leave until the next tick, `Left for banditry +<n>` (green). The values SHALL be the values of the last tick and of the last leave, in order points.
@@ -43,5 +47,5 @@ The rows SHALL show with the game paused. If the hook does not fire or a widget 
 
 #### Scenario: A failing widget call
 - **WHEN** adding a row raises an error
-- **THEN** the error is logged once and no error reaches the game
-- Checked by `harness/tests/test_fakegame_order_tooltip.py`.
+- **THEN** the call raises to the caller, which logs it once and does not pass it to the game
+- The log-once is Not checked yet (the raise is checked by `harness/tests/test_fakegame_order_tooltip.py`).

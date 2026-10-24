@@ -1,5 +1,8 @@
 # Wiki update log
 
+## 2026-10-23
+* **Update**: [Invasion features](architecture/invasion-features.md) adds the feature `order_tooltip`; [Engine limits](concepts/engine-limits.md) notes that a row's text is set after the add (change `add-order-tooltip-rows`, #454).
+
 ## 2026-10-22
 * **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds ruins and the rebuild order: `typeBeforeChange`, `SetupBuilding`, no `convertBlueprintsToBuildings`, AI rebuild behavior (change `add-vassal-sack-wipe`, #341).
 * **Update**: Added the corpse pit facts of spike #360 (polling `Type 233`, no hook, workers not auto-assigned, `addToInventory` hauled in 3 to 5 days) to [Engine limits](concepts/engine-limits.md).
