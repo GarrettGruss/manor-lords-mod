@@ -1,5 +1,8 @@
 # Wiki update log
 
+## 2026-10-25
+* **Update**: Added [Native modding and why the harness does not use it](concepts/native-modding.md): how native mods reach unlisted game code, the cost per game build, the decision to stay with reflection and paks, and the facts taken from AI Tweaks.
+
 ## 2026-10-24
 * **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds militia squads, weapons in homes and turning villagers into bandits (change `spike-militia-weapon-rebellion`, #482).
 
