@@ -2,7 +2,7 @@
 <!-- Issue: #480 -->
 
 ### Requirement: A loot override replaces the loot of a unit
-The mod SHALL keep a loot override state: a map from a unit key (`GetAddress` of the SMUnit, which is also the address of its body) to a list of goods. Any feature may set an entry. When the corpse pit pays out the body of a unit that has an entry, the mod SHALL add the goods of the entry to the pit (`addToInventory`) instead of the config loot, and SHALL clear the entry. A unit without an entry SHALL get the existing loot rules (the config values).
+The mod SHALL keep a loot override state: a map from a unit key (`GetAddress` of the SMUnit, which is also the address of its body, in memory; the saved key is fixed by task 2.8) to a list of goods. Any feature may set an entry. When the corpse pit pays out the body of a unit that has an entry, the mod SHALL add the goods of the entry to the pit (`addToInventory`) instead of the config loot, and SHALL clear the entry. A unit without an entry SHALL get the existing loot rules (the config values).
 
 #### Scenario: A body with an override reaches the pit
 - **WHEN** the body of a unit with the override `{spear}` reaches the pit
@@ -45,7 +45,7 @@ After a load the mod SHALL link each saved entry to its unit again, and SHALL dr
 - Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
 ### Requirement: A saved entry follows the unit to its body and is limited by slots
-When the unit dies, the entry SHALL move to its body and stay saved until the pit pays out or the body expires (proposed, owner to confirm). When all slots are full the mod SHALL log an error and drop the new entry.
+When the unit dies, the entry SHALL move to its body and stay saved until the pit pays out or the body disappears (about 30 game days, owner accepted). When all slots are full the mod SHALL log an error and drop the new entry.
 
 #### Scenario: All slots are full
 - **WHEN** an entry is set while all slots hold entries

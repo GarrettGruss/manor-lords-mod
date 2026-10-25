@@ -6,20 +6,21 @@
 
 ## MODIFIED Requirements
 
+
 ### Requirement: A rebellion removes families and spawns an Outlaws raid
-When the banditry timer expires and the weapon check passes, the mod SHALL remove the weapons (see the weapon requirement), SHALL remove `rebellion_families` (default 6) families (`ManorCore.remove_families`) and SHALL spawn `rebellion_squads` (default 1, one squad is 18 units) squads of the template Brigands for the bandit pawn "Outlaws" at the home of the first removed family (`HarnessBandits.homeless_rebel`, mode `home`, `spawnArmy`). The mod SHALL NOT call `spawnBanditCamp` for a leave event when the Outlaws pawn exists. When the pawn is missing, the mod SHALL create it with `spawnBanditCamp()` (side effect: one camp of 18 Brigands) and call `addPawnRelations` for it, and then spawn the squads. The native Outlaws AI SHALL do the raid: it burns buildings, logs "enough looted" and leaves the map. The mod does not steer it. The village SHALL keep at least `min_families_left` (default 1) families, so fewer than `rebellion_families` may leave. A villager here is a family. The mod SHALL show the banner `Families have turned to banditry`.
+When the banditry timer expires and the rebellion is not blocked (see the selection requirement), the mod SHALL take the goods of the chosen families (see the goods requirement), SHALL remove `rebellion_families` (default 6) families (`ManorCore.remove_families`: `just_die`, bodies hidden, never `K2_DestroyActor`) and SHALL spawn `rebellion_squads` (default 1, one squad is 18 units) squads of the template Brigands for the bandit pawn "Outlaws" at the home of the first removed family (`HarnessBandits.homeless_rebel`, mode `home`, `spawnArmy`). The mod SHALL NOT call `spawnBanditCamp` for a leave event. It SHALL call `ensure_outlaw_pawn()` first (see the Outlaws init requirement). The native Outlaws AI SHALL do the raid: it burns buildings, logs "enough looted" and leaves the map. The mod does not steer it. The village SHALL keep at least `min_families_left` (default 1) families. A villager here is a family. The mod SHALL show the banner `Families have turned to banditry`. If the spawn fails after the removal, the mod SHALL return the goods to the homes they came from and log an error.
 
 #### Scenario: A forced conversion
-- **WHEN** the banditry timer expires (a test forces it) with enough families
-- **THEN** the families that leave are between 1 and 6, and the village keeps at least 1 family
+- **WHEN** the banditry timer expires (a test forces it) with at least 6 valid families
+- **THEN** 6 families leave, and the village keeps at least 1 family
 - **AND** the bandit squad spawns within 500 units of a removed home
 - **AND** within 400 game seconds at least 1 building burns and the AI logs "enough looted"
 - **AND** the game runs 10 more game days with no crash
 - Checked by `mod/InvasionMod/scenarios/bandits/rebellion_raid.py` (to write, based on `probe_rebel_noai.py`).
 
 #### Scenario: The last family stays
-- **WHEN** the village has only 1 family and the timer expires
-- **THEN** no family leaves and no squad spawns
+- **WHEN** the village keeps only `min_families_left` families after the pick and the timer expires
+- **THEN** the families above that minimum leave, and the village keeps at least 1 family
 - Checked by `harness/tests/test_fakegame_bandits.py`.
 
 #### Scenario: One squad for every 5 families
@@ -27,13 +28,17 @@ When the banditry timer expires and the weapon check passes, the mod SHALL remov
 - **THEN** that many families leave and that many squads spawn at the first removed home
 - Checked by `harness/tests/test_fakegame_bandits.py`.
 
+#### Scenario: The spawn fails after the removal
+- **WHEN** the squad spawn fails after the goods were taken
+- **THEN** the goods return to the homes they came from and an error is logged
+- Checked by `harness/tests/test_fakegame_bandits.py`.
+
 #### Scenario: No bandit pawn
 - **WHEN** families leave and the game has no Outlaws pawn
-- **THEN** the mod creates the pawn with one `spawnBanditCamp` call, calls `addPawnRelations`, and then spawns the squads at the home
-- **AND** one camp of 18 Brigands exists as an accepted side effect
+- **THEN** `ensure_outlaw_pawn()` creates the pawn first (camp removed), and then the squads spawn at the home
 - Checked by `harness/tests/test_fakegame_bandits.py` and `mod/InvasionMod/scenarios/bandits/rebellion_raid.py`.
 
-#### Scenario: No camp when the pawn exists
+#### Scenario: No camp call for a leave event
 - **WHEN** families leave and the Outlaws pawn exists
 - **THEN** `spawnBanditCamp` is not called
 - Checked by `harness/tests/test_fakegame_bandits.py`.
@@ -78,52 +83,69 @@ When the order drops below `threshold` (default 25), the mod SHALL start a timer
 
 ## ADDED Requirements
 
-### Requirement: A rebellion needs weapons from the homes
-Before a rebellion, the mod SHALL count the weapons in villager homes: goods whose ids are in `rebellion_weapon_ids` (config; spears 133, large shields 271 and the other weapon and armor goods that homes hold). The rebellion needs `rebellion_weapons` (default 18). If the count is enough, the mod SHALL remove `rebellion_weapons` weapons at random from the homes (`consumeGoodNoCheck`, one call per item) and then start the rebellion. The mod SHALL check first and remove after.
+### Requirement: Only armed families can rebel
+A valid family is a family whose home holds at least one weapon or armor item: an id in `rebellion_weapon_ids` (config, default list in `design.md`). The mod SHALL pick `rebellion_families` (default 6) valid families AT RANDOM, not the best armed. If fewer valid families exist, NO rebellion SHALL happen: no family leaves, no squad spawns and the mod removes no good. The timer stays expired, the mod SHALL retry on the next tick and log `rebellion_blocked`.
 
-#### Scenario: Enough weapons
-- **WHEN** the timer expires and the homes hold 20 weapons
-- **THEN** exactly 18 weapons are removed from the homes and the rebellion starts
+#### Scenario: Enough valid families
+- **WHEN** the timer expires and 9 families hold weapons or armor
+- **THEN** 6 of the 9 leave, chosen at random
 - Checked by `harness/tests/test_fakegame_bandits.py`.
 
-### Requirement: Too few weapons block the rebellion
-If the weapon count is lower than `rebellion_weapons`, NO rebellion SHALL happen: no family leaves, no squad spawns and the mod removes no good. The banditry timer stays expired and the mod SHALL retry on the next tick. The mod SHALL log the telemetry event `rebellion_blocked` with the weapons found and needed.
-
-#### Scenario: Too few weapons
-- **WHEN** the timer expires and the homes hold 17 weapons
+#### Scenario: Too few valid families
+- **WHEN** the timer expires and only 5 families hold weapons or armor
 - **THEN** no family leaves, no squad spawns, no good is removed, the timer stays expired, the event `rebellion_blocked` is logged, and the next tick checks again
 - Checked by `harness/tests/test_fakegame_bandits.py` and `mod/InvasionMod/scenarios/bandits/rebellion_raid.py` (to write).
 
+#### Scenario: An unarmed village never rebels
+- **WHEN** no home holds an id of `rebellion_weapon_ids`
+- **THEN** the rebellion is blocked on every tick
+- Checked by `harness/tests/test_fakegame_bandits.py`.
+
 #### Scenario: Weapons arrive after a blocked tick
-- **WHEN** weapons are added to the homes after a blocked tick
+- **WHEN** homes get weapons after a blocked tick and 6 valid families exist
 - **THEN** the next tick starts the rebellion
 - Checked by `harness/tests/test_fakegame_bandits.py`.
 
-### Requirement: The removed weapons arm the brigands
-The mod SHALL record the removed goods and SHALL set them as a loot override (requirement "A loot override replaces the loot of a unit" of `mod/raid_behavior`) on the spawned brigands, one item for each unit. With 18 items and 18 units each unit gets one item.
+### Requirement: The rebels take the goods of their homes
+The mod SHALL take ALL weapon and armor goods (ids in `rebellion_weapon_ids`) from the homes of the chosen families (`consumeGoodNoCheck`, one call per item), and SHALL set them as loot overrides (requirement "A loot override replaces the loot of a unit" of `mod/raid_behavior`) on the spawned brigands, spread over the 18 units. The mod SHALL NOT re-apply gear with `SMUnit:equip` and SHALL take nothing from other homes.
 
-#### Scenario: One item for each brigand
-- **WHEN** a rebellion spawns 18 brigands after the removal of 18 weapons
-- **THEN** each brigand has an override with one of the removed goods
+#### Scenario: Goods of the chosen homes only
+- **WHEN** 6 of 9 valid families are chosen
+- **THEN** all weapon and armor goods of those 6 homes are removed and the other 3 homes keep theirs
 - Checked by `harness/tests/test_fakegame_bandits.py`.
 
-### Requirement: Rallied militia does not stop a rebellion
-Weapons that moved from homes onto rallied militia units SHALL still count toward `rebellion_weapons`. The mod SHALL count the weapons of rallied militia units of the rebelling region, so a rally cannot dodge the check.
+#### Scenario: Goods spread over the brigands
+- **WHEN** a rebellion spawns 18 brigands after the removal of 30 goods
+- **THEN** all 30 goods are in overrides of the 18 brigands, and no good is in two overrides
+- Checked by `harness/tests/test_fakegame_bandits.py`.
 
-#### Scenario: Weapons on rallied militia
-- **WHEN** the player rallies militia (homes hold 4 weapons, the units hold 16) and the timer expires
-- **THEN** the weapons of the units count, and the rebellion is not blocked by the rally
-- Not checked yet. Engine facts: spike task 2.2.
+### Requirement: The Outlaws pawn comes from an init module
+A separate module SHALL provide an idempotent `ensure_outlaw_pawn()`. If the Outlaws pawn exists, it SHALL do nothing. Otherwise it SHALL create the pawn with `spawnBanditCamp()` and remove the camp (steps in `design.md`). The game picks the camp place: the mod cannot select a region. The mod SHALL call it at game start, after each load and before each rebellion. A rebellion SHALL NOT start when it fails.
 
-#### Scenario: The rally cannot dodge the check
-- **WHEN** homes plus rallied units hold fewer than 18 weapons
-- **THEN** the rebellion is blocked as in the requirement "Too few weapons block the rebellion"
-- Not checked yet.
+#### Scenario: The pawn exists
+- **WHEN** `ensure_outlaw_pawn()` runs and the Outlaws pawn exists
+- **THEN** it calls nothing and returns true
+- Checked by `harness/tests/test_fakegame_outlaws.py` (to write).
 
-### Requirement: Weapons on rallied militia are removed or counted
-If the engine allows it, the mod SHALL remove the weapons from the rallied units first and then from homes. If it does not, the fallback in `design.md` applies (proposed, owner to confirm): the equipped weapons count toward the total and the mod removes only the rest from homes. If reading the equipped weapons is not possible, the rebellion is blocked while militia is rallied in the region.
+#### Scenario: The pawn is missing
+- **WHEN** `ensure_outlaw_pawn()` runs and no Outlaws pawn exists
+- **THEN** the pawn exists afterwards, the camp and its 18 brigands are gone, and a second call does nothing
+- Checked by `harness/tests/test_fakegame_outlaws.py` (to write). Real check: task 2.4.
 
-#### Scenario: Removal is impossible
-- **WHEN** the mod cannot remove equipped weapons and the units hold 10 weapons and the homes hold 8 or more
-- **THEN** the mod removes 8 weapons from homes and the rebellion starts
-- Not checked yet. Engine facts: spike task 2.2.
+#### Scenario: The guard before a rebellion
+- **WHEN** the timer expires and the pawn is missing
+- **THEN** the mod creates the pawn first, and then selects the families
+- Checked by `harness/tests/test_fakegame_bandits.py`.
+
+#### Scenario: The pawn survives a load
+- **WHEN** the camp was removed, the game is saved and loaded
+- **THEN** the pawn exists, or `ensure_outlaw_pawn()` makes it again
+- Not checked yet. Planned: task 2.10.
+
+### Requirement: Rallied militia weapons still count
+Weapons that sit on rallied militia men SHALL NOT make the village unarmed: a rally SHALL NOT dodge the rebellion. Rally and disband cannot be driven from Lua, and the weapons stay in the homes in the spike, so the family stays valid. Killing registered militia returns their home weapons to the storehouse, which the mod does not read.
+
+#### Scenario: A rally does not dodge the rebellion
+- **WHEN** the player rallies militia and the timer expires
+- **THEN** the families with weapons in their homes are still valid and the rebellion is not blocked by the rally
+- Manual: owner playtest. Task 2.11.
