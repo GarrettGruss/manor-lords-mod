@@ -7,6 +7,7 @@ generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T00:00:00Z }
 sources:
   - resource: https://github.com/Maxhem2/manor-lords-fixes
   - resource: repo://openspec/changes/archive/2026-10-25-spike-squad-raid-skill/
+  - resource: repo://openspec/changes/archive/2026-10-25-spike-raid-skill-near-enemy/
   - resource: repo://docs/wiki/concepts/engine-limits.md
 ---
 # Native modding and why the harness does not use it
@@ -52,7 +53,7 @@ The harness and the Invasion Mod use reflection and paks only, with named comman
 
 | Fact | Status |
 |---|---|
-| Squad skill 19 is the native raid skill. A native `SquadComponent` function toggles it with (squad, skill, enable, flag). | The toggle is reflected as `SquadComponent:SetSkillActive` (change `spike-squad-raid-skill`). In peacetime with no enemy nearby it started no raid. A raid near an enemy building is not checked yet. |
+| Squad skill 19 is the native raid skill. A native `SquadComponent` function toggles it with (squad, skill, enable, flag). | The toggle is reflected as `SquadComponent:SetSkillActive` (change `spike-squad-raid-skill`). With the skill on, the squad walks into the enemy village and stops, but no raid starts, also 55 units from a built enemy building at war (change `spike-raid-skill-near-enemy`). |
 | AI Tweaks makes a squad raid one exact building. It hooks the native "buildings of region" accessor during the raid task. | Native only. Lua cannot do it. |
 | The reflected `rallied` bool is not updated by the rally path in 0.8.117. Rallied men show up in the squad's unit array instead. | Not checked. |
 | Native militia limit per region: about 1 squad per 36 people, plus 1 when 12 or more are left over, at least 1. Native recruitment stops at the first settled region. | Not checked. |
