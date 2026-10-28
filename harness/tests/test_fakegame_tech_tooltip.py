@@ -42,13 +42,22 @@ class TooltipTests(unittest.TestCase):
         self.assertEqual(self.lines.effect_line(self.lua.table_from({"kind": "tribute_share", "value": 0.025}), self.lua.table_from({"tribute_share": "percent"})),
                          "Tribute share +2.5%")
 
+    def test_common_law_effects_have_a_text_without_a_number_error(self):
+        # The laws strip and the common law tooltips show these (flag and factor kinds). A factor shows its value.
+        self.assertEqual(self.text_of(self.tree.laws_by_id["strip_the_dead"]), ["Corpse loot at the pit"])
+        self.assertEqual(self.text_of(self.tree.laws_by_id["disarm_the_peasantry"]), ["Home weapons go to the storehouse", "Approval -3"])
+        self.assertEqual(self.text_of(self.tree.laws_by_id["curfew"]), ["Banditry order loss x0.5", "Approval -4"])
+
     def test_policy_line(self):
         self.assertIn("Opens vassal policy heavy", self.text_of(self.tree.by_id["martial_law"]))
         self.assertNotIn("Opens vassal policy heavy", self.text_of(self.tree.by_id["iron_hand"]))
 
     def test_every_node_and_law_has_one_line_per_effect(self):
+        # The common techs and laws have flag and factor effects (see the test above), not a signed number.
         for group, by_id in (("nodes", self.tree.by_id), ("laws", self.tree.laws_by_id)):
             for raw in self.doc[group]:
+                if raw.get("path") == "common":
+                    continue
                 text = self.text_of(by_id[raw["id"]])
                 numeric = [line for line in text if not line.startswith("Opens")]
                 self.assertEqual(len(numeric), len(raw["effect"]), raw["id"])

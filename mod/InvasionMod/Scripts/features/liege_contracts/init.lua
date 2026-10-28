@@ -20,7 +20,7 @@ local menu_config = all_config.liege_influence
 
 local TAG = "InvasionMod.liege_contracts"
 local STATE_VERSION = 2
-local SPRING = (all_config.tech_tree and all_config.tech_tree.spring_season) or config.spring_season
+local SPRING = config.spring_season -- the same value as tech_tree.spring_season (notes/season-values.md); an own key so that a test of one feature does not change the other
 local WINTER = config.winter_season
 
 local state = ModState.open("invasion", "pawn", STATE_VERSION)
@@ -184,12 +184,15 @@ local function pay_reward(reward)
         local ok, why = world.add_goods(reward.good, reward.amount)
         if not ok then return fail_reward(reward, why) end
     elseif kind == "public_order" then
-        local ok, why = pcall(bandits.raise_mod_order, reward.amount)
+        local ok, why = pcall(bandits.adjust_order, reward.amount)
         if not ok then return fail_reward(reward, why) end
     elseif kind == "tech_pick" then
         -- The picks belong to the tech tree (change update-tech-tree-yearly-picks, #499).
         if not tech_picks_state_exists() then return fail_reward(reward, "the tech tree has no pick state (change update-tech-tree-yearly-picks is not built)") end
-        state:set("tech_picks_earned", math.max(0, state:get("tech_picks_earned")) + reward.amount)
+        -- -1 means the start pick was not given yet: keep it (the tech tree gives it when the picks start).
+        local earned = state:get("tech_picks_earned")
+        if earned < 0 then earned = (all_config.tech_tree and all_config.tech_tree.initial_picks) or 0 end
+        state:set("tech_picks_earned", earned + reward.amount)
     end
 end
 

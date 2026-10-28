@@ -30,7 +30,7 @@ Issue: #499. Owner decisions 2026-10-27 (first set) and 2026-10-27 (answers to t
 ## Open questions (with defaults)
 
 1. The spring value of the game season enum. Default: config `tech_tree.spring_season`; gate 2 reads the value in the real game (task 1.3) and does not guess it.
-2. Loot of a bandit or soldier body. No such loot entry exists today (see `design.md`). Default: a config table `raid_behavior.body_loot`, filled by the owner before the balance run; until then Strip the Dead pays nothing for those bodies.
+2. Loot of a bandit or soldier body. No such loot entry existed (see `design.md`). Answered by the owner on 2026-10-28 for bandit bodies (Brigands): two variants, drawn at random for each body: 1 sword and 1 small shield; or 1 sword, 1 small shield and 1 helmet. Soldier bodies stay empty (no values yet). The table is `raid_behavior.body_loot`.
 
 ## Impact
 

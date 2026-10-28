@@ -51,4 +51,15 @@ def run(ctx) -> dict:
     except ModCommandError:
         again = True
     ctx.check("W7 a second complete is refused", again)
+
+    # The tech pick reward (change update-tech-tree-yearly-picks): keep_the_peace pays one pick to the tech tree.
+    picks_before = ctx.mod.command(PREFIX + "tech_tree_state")["picks_earned"]
+    ctx.mod.command(PREFIX + "liege_contracts_offer_now", ids="keep_the_peace.clear_the_roads.feed_the_city")
+    ctx.mod.command(PREFIX + "liege_contract_pick", id="keep_the_peace")
+    ctx.mod.command(PREFIX + "liege_contracts_test_progress", index=1, value=90)
+    ctx.mod.command(PREFIX + "liege_contract_complete")
+    picks_after = ctx.mod.command(PREFIX + "tech_tree_state")["picks_earned"]
+    ctx.metric("tech_picks_gained", picks_after - picks_before)
+    ctx.check("W8 the tech pick reward adds one pick to the tech tree", picks_after - picks_before == 1, [picks_before, picks_after])
+    ctx.check("W9 no reward failed", contracts(ctx)["failed_rewards"] == 0, contracts(ctx))
     return ctx.result()

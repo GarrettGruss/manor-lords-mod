@@ -15,6 +15,7 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-21-spike-new-game-difficulty-setting/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/salt-mine-deposit.md
   - resource: repo://openspec/changes/archive/2026-10-23-spike-public-order-factor/notes/tick-write.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/implementation-notes/siege-camp-and-bm.md
 ---
 # Engine limits found by spikes
 
@@ -103,7 +104,8 @@ Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the note
 - `pit:addToInventory({Type=<good>, amt=<n>})` counts in the region stock at once. Villagers haul the goods to a store in 3 to 5 game days. No goods pile actor exists and nothing shows on the ground.
 - A dead raider keeps `ItemsLooted`, and the same object stays in `Region.corpses` until a worker picks it up.
 - Reading `unit.currAnim`, `unit.dropsTo:GetFName()` or `unit.Speed` (one of them) crashed the game (access violation 0x18).
-- Owner decision 2026-10-22: the pit replaces the direct store add; loot give-back is for Hussite raids only (change `add-corpse-pit-loot`). Notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.
+- A body at the pit has no identity: the only signal is the corpse count (`Type 233`). A mod can pay a body only when it tracked the dead unit before (a raider of a raid it knows). Villager and militia bodies cannot be told from raider bodies at the pit (change `update-tech-tree-yearly-picks`).
+- Owner decision 2026-10-22: the pit replaces the direct store add; loot give-back is for Hussite raids only (change `add-corpse-pit-loot`). Since 2026-10-27 the pay-out needs the law Strip the Dead (change `update-tech-tree-yearly-picks`). Notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.
 
 ## Public order factors (spike #403)
 
@@ -178,3 +180,14 @@ Fixture `playtest-noai` (AI opponents 0, Off map adversary Absent, Raider freque
 - **A bandit camp can be removed.** After `just_die` on its 18 Brigands, `SMBuildingMaster:demolish(true)` on the camp master (`bType` 100; `canBeDemolished()` says false, `demolish()` needs its 1 argument) removes the 17 parts and the master in about 10 game s. The Outlaws pawn survives. The game did not respawn the camp or brigands in 28 game days. No crash.
 
 - **Squad skill 19 (raid) can be toggled from Lua.** `SquadComponent:SetSkillActive(handle, 19, true, false)` returns true and `IsSkillActiveForSquad(handle, 19)` becomes true (spike `spike-squad-raid-skill`, run `spike-squad-raid-1`). `isSkillAvailableForSquad(handle, skill, {})` takes an Out table as third argument. In peacetime, in the own region, `PawnCPP:isAnySquadRaiding({})` stayed false and no raid was seen. Next to a built building of an enemy village (a new AI lord at war, region of the village), skill 19 makes the squad walk by itself to the village and stop (flame on its banner), with flag false and with flag true, but no raid starts: `isAnySquadRaiding` stays false and no loot or fire shows in 240 to 400 game seconds, also 55 units from a built building (spike `spike-raid-skill-near-enemy`, probe `probe-raid-near`). Without the skill the squad stays still. A bandit camp is no target: its building has no region and the squad does not move. Why no raid starts is open (rally by mouse, unit type and goods not tested). A player squad can be put next to a target without a move order: centre the camera (`centre_camera_on`), then `spawn_units("player", ...)`. A real right click through `steer_cursor` did not move the squad this time. The village of a lord lies around world (0, 0), not at the region actor point. `GetSquadUnitCount` returned 0 for a 20-man squad.
+
+## Data for new buildings and goods (assessment `assess-endgame-buildings`, #521)
+
+Desk research on 2026-10-28, no game run. Notes: `openspec/changes/archive/*-assess-endgame-buildings/notes/`.
+
+- **Recipes are item rows.** `DT_Items` holds `Resources`, `craftingOutput`, `craftingTool`, `upgradesRequiredToCraft`, `techsRequiredToCraft`, `ExpertiseOnCraft`, `requirementLevel`, `Value`, `ItemCategory`, `Subcategory`. Which building runs a recipe is not a column. It follows the building `job` and the tool, and native code. A new building with an existing job making a new item is not tested.
+- **Native enums close three doors.** `EBuildingFunction` (23 values), `job` and the item categories are native. A pak row picks an existing value. Roads are native too: no data column or enum gives a road surface, so a cobblestone road needs native code.
+- **Unused vanilla data.** Row 59 "Fisherman's Hut" (`BM_SG_FishermansHut`, `Resource_Fish`, fish items 30 and 32) exists in `buildingStats`. The fish recipe names item rows 319 and 315, which are missing from the `DT_Items` extract. Whether the hut can be placed or works is not tested. A herbs garden asset and `DT_Upgrades` row 15 `herbs_garden` exist. The files hold no cobblestone, fountain, sewer, bath-house, town hall, dock or boat asset.
+- **Gates of a building row.** The columns `settlementLevel`, `maxInRegion`, `requiredPerks`, `requiredTech`, `placedWithin` and `bVisibleInUi` exist. `HarnessHousing` reads and writes the numbers live (new placements only). A card for a new id and a run-time card hide are not tested.
+- **Happiness effect from a mod.** A single `Region.Approval` write is recalculated in 1 to 3 game days. A per-tick public order write holds (spike #403). A per-tick approval write is not tested.
+- **Trade.** Merchants are native squads (`ESquadType` Merchants). `RTSMultiEngineCPP` has `tradepoints`, `ForeignMarketSupply` and `tradeLog`. A visit rate field was not looked for.

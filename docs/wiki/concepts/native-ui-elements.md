@@ -12,7 +12,7 @@ sources:
   - resource: repo://mod/shared/HarnessPolicies/HarnessPolicies.lua
   - resource: repo://mod/HarnessActions/Scripts/main.lua
   - resource: repo://docs/wiki/concepts/engine-limits.md
-  - resource: repo://openspec/changes/assess-native-ui-elements/notes/shelter-seekers-native-ui.md
+  - resource: repo://openspec/changes/archive/2026-10-27-assess-native-ui-elements/notes/shelter-seekers-native-ui.md
 ---
 # Native UI elements of the game
 
@@ -24,7 +24,7 @@ To build a new menu with these elements, see [Building mod UI](../workflows/buil
 
 - **Used**: shipped code in this repo uses it.
 - **Spike**: a spike in this repo checked it. Shipped code does not use it.
-- **Third-party**: seen only in the decompiled Shelter Seekers mod (`openspec/changes/assess-native-ui-elements/notes/shelter-seekers-native-ui.md`). Not checked in our build. Run a spike before you rely on it.
+- **Third-party**: seen only in the decompiled Shelter Seekers mod (`openspec/changes/archive/2026-10-27-assess-native-ui-elements/notes/shelter-seekers-native-ui.md`). Not checked in our build. Run a spike before you rely on it.
 
 ## How to get an instance
 

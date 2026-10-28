@@ -44,11 +44,30 @@ local function current_day()
     return e and read_number(function() return e.TemporalComponent.daysTotal end)
 end
 
+local function stored_total(building)
+    local total = 0
+    for _, held in ipairs(core.listOf(building.Inventory)) do
+        local amount = core.read(function() return held.amt end)
+        if type(amount) == "number" and amount > 0 then total = total + amount end
+    end
+    return total
+end
+
+-- Put goods into one store. The deposit is read back from the building inventory (addToInventory is proven on a storehouse).
+local function deposit(store, good, amount)
+    local before = stored_total(store.building)
+    local ok, problem = pcall(function() store.building:addToInventory({ Type = good, amt = amount }) end)
+    if not ok then return false, "addToInventory: " .. tostring(problem) end
+    local rise = stored_total(store.building) - before
+    if rise ~= amount then return false, string.format("store rose by %d, wanted %d", rise, amount) end
+    return true
+end
+
 -- Put `amount` of one good into the first store that takes all of it.
 local function pay_good(good, amount)
     if amount <= 0 then return true end
     for _, store in ipairs(raid_world.stores() or {}) do
-        local ok, why = raid_world.deposit(store, good, amount)
+        local ok, why = deposit(store, good, amount)
         if ok then return true end
         core.log.warn(TAG, string.format("TRIBUTE deposit of %d of good %d refused: %s", amount, good, tostring(why)))
     end

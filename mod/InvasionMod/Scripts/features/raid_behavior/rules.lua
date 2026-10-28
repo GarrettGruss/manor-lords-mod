@@ -11,7 +11,7 @@ function M.new_raid(id, start_day, squads, unit_keys, roles, lord)
     return {
         id = id, start_day = start_day, squads = squads, units = units, initial = living, living = living,
         deaths = 0, departures = 0, carried_out = 0, returned = 0, lost = 0, capped = 0, peak_loot = 0,
-        burned = 0, leaving = false, roles = roles == true, lord = lord, plundered = 0, plunder_goods = {}, unpaid = 0, last_plunder_day = nil, stolen = 0, last_steal_day = nil, leave_reason = nil, state = living > 0 and "active" or "empty", end_day = nil,
+        burned = 0, leaving = false, roles = roles == true, lord = lord, plundered = 0, plunder_goods = {}, unpaid = 0, unpaid_other = 0, last_plunder_day = nil, stolen = 0, last_steal_day = nil, leave_reason = nil, state = living > 0 and "active" or "empty", end_day = nil,
     }
 end
 
@@ -145,7 +145,10 @@ end
 
 -- Count the dead raiders of a Hussite raid that no pit delivery has paid yet. `deaths` is the list that M.update returned.
 function M.note_deaths(raid, deaths)
-    if raid.lord == nil then return end
+    if raid.lord == nil then
+        raid.unpaid_other = (raid.unpaid_other or 0) + #deaths
+        return
+    end
     raid.unpaid = raid.unpaid + #deaths
 end
 
@@ -169,6 +172,35 @@ function M.pay_bodies(raid_list, bodies)
             raid.unpaid = raid.unpaid - 1
             paid = paid + 1
             for good, part in pairs(M.body_share(raid)) do goods[good] = (goods[good] or 0) + part end
+        end
+    end
+    return goods, paid
+end
+
+-- Pick one variant of a loot list by weight. `variants` is a list of { goods = { [good] = amount }, weight = 1 } (weight is optional, default 1).
+-- `roll` is a number in [0, 1). Returns the goods table of the variant, or an empty table for an empty list.
+function M.pick_variant(variants, roll)
+    local total = 0
+    for _, variant in ipairs(variants or {}) do total = total + (variant.weight or 1) end
+    if total <= 0 then return {} end
+    local at = roll * total
+    for _, variant in ipairs(variants) do
+        at = at - (variant.weight or 1)
+        if at < 0 then return variant.goods or {} end
+    end
+    return variants[#variants].goods or {}
+end
+
+-- Bodies of tracked dead that are not Hussite (native raiders, bandit squads) are looted with the table `body_loot` (change
+-- update-tech-tree-yearly-picks). `kind` is the table key; each body draws one variant with its own roll (`rng()` returns [0, 1)).
+-- Pays at most the bodies that are still unpaid. Returns the goods (good -> amount) and the number of bodies looted.
+function M.pay_other_bodies(raid_list, bodies, body_loot, kind, rng)
+    local goods, paid = {}, 0
+    for _, raid in ipairs(raid_list) do
+        while paid < bodies and (raid.unpaid_other or 0) > 0 do
+            raid.unpaid_other = raid.unpaid_other - 1
+            paid = paid + 1
+            for good, part in pairs(M.pick_variant((body_loot or {})[kind], rng())) do goods[good] = (goods[good] or 0) + part end
         end
     end
     return goods, paid

@@ -4,8 +4,20 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Fixed
+- Feature `tribute` (#517): vassal tribute pays goods again. It called `raid_world.deposit`, which was removed from `raid_behavior`. It now deposits with its own helper (`addToInventory`, read back from the store inventory). No change to the rules.
+
 ### Changed
 - **liege_contracts (new), liege_influence:** the liege screen offers three contracts at each start of spring. You pick one. Completed contracts pay influence, silver, goods, public order or a tech point at once. A contract that is not complete when winter begins costs 500 influence. You can no longer buy influence with silver. The arms shipment is unchanged.
+- **Tech tree (window):** the tech window has a new layout: a header with the title, the tech picks counter ("1 free (0 of 1 used)") and a Close button; column heads I to IV (first to fourth tech); the rows Oppression, Prosperity and Common, with a card for each tech (name, status, effects, its law and an Enact or Repeal button) and links between the techs of a path; a laws strip ("N of 2 max") with a Repeal button for each law in force; and a footer with the last result (for example "Martial Law refused: no free pick.") and "One tech pick each spring. The path you swear to is final." The three text lines at the top are gone. Common techs can be clicked before a path is chosen.
+- **Tech tree (picks):** one pick at the start and one pick at each start of spring (banked when unused) replace the node slots of the settlement level. Every unlock of a path node or a common tech costs one pick. The pick state is saved with the game.
+- **Corpse pit (loot is now opt-in):** the pit pays loot only while the law Strip the Dead is in force. Before, it always paid the share of Hussite raiders.
+
+### Added
+- **Tech tree (common techs and laws):** Corpse Robbing, Armory Census and Night Watch need no path and can be unlocked before a path is chosen. They open three laws that count toward the limit of two laws:
+  - Strip the Dead: bodies of bandits at the corpse pit pay loot (a sword and a small shield, and in half of the bodies a helmet) and each looted body costs 1 Public Order.
+  - Disarm the Peasantry (approval -3): each game day the weapons of the homes go to the storehouse.
+  - Curfew (approval -4): banditry costs half as much Public Order for each homeless family.
 
 ### Removed
 - **liege_influence:** the tribute button, the command `liege_send_tribute` and the config values `influence_per_unit` and `tribute_button_amount`.
