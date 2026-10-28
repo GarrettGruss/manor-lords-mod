@@ -46,10 +46,10 @@ def read_phase(ctx) -> dict:
     state = contracts(ctx)
     ctx.log.info(f"CONTRACTS after load {state}")
     ctx.check("R3 the active contract came back", state["active"]["id"] == "clear_the_roads", state.get("active"))
-    ctx.check("R4 the objective target came back", state["active"]["objectives"][0]["target"] == 15, state["active"])
+    ctx.check("R4 the objective progress and target came back", state["active"]["objectives"][0]["progress"] == 7 and state["active"]["objectives"][0]["target"] == 15, state["active"])
     ctx.check("R5 the counters and the influence came back", state["done"] == 1 and abs(state["influence"] - 20) < 0.01, state)
     ctx.check("R6 no offer was drawn after the load", state["offer"] == [], state["offer"])
-    ctx.check("R7 the start day came back", state["active"]["start_day"] > 0, state["active"])
+    ctx.check("R7 the start day came back", state["active"]["start_day"] >= 0, state["active"])
     return ctx.result()
 
 

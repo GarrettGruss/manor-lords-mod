@@ -6,8 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- Liege contracts (change `update-liege-tribute-to-contracts`, #505): the liege screen offers three contracts at each start of spring instead of a tribute button. The player picks one; a completed contract pays at once (influence, silver, goods, public order, a tech point); a contract that is not complete when winter begins costs 500 influence (`config.liege_contracts.fail_penalty`, never below 0). The contracts are the data table `data/liege_contracts/contracts.json`. New pak widget `WBP_LiegeContracts` (replaces `WBP_LiegeTribute`). New commands `liege_contracts_state`, `liege_contract_pick`, `liege_contract_complete`, `liege_contracts_offer_now`, `liege_contracts_test_progress`. Influence rises only by contract rewards. The vassal goods tribute, the vassal policies and the tribute law effects stay.
 - Invasion Mod pak (change `update-single-mod-pak`, #471): one pak `InvasionMod_P.pak` holds all widgets and data rows; `raidmenu_P.pak` and `techmenu_P.pak` are gone; use `--pak InvasionMod`. The release check no longer counts a `require` of a Lua file of the mod itself as a shared module.
 - Villager banditry (change `update-banditry-bandit-camp`, #453): when families leave for banditry, the mod spawns one bandit camp (`spawnBanditCamp`, 18 Brigands) instead of squads at their homes. The camp call makes the bandit pawn when the game has none, so banditry works with bandit camps 0. The rule "one squad per 5 families" is removed. See `mod/InvasionMod/CHANGELOG.md`.
+
+### Removed
+- The liege tribute (change `update-liege-tribute-to-contracts`, #505): the command `liege_send_tribute`, the config values `liege_influence.influence_per_unit` and `tribute_button_amount`, the Tribute button, and the pak widget `WBP_LiegeTribute`.
 
 ### Added
 - Spike notes `spike-militia-corpses-and-camp-removal` (#489): militia gear and corpses, and removal of a bandit camp (`SMBuildingMaster:demolish(true)`). See `docs/wiki/concepts/engine-limits.md`.

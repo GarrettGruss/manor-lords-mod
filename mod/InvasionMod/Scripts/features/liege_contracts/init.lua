@@ -108,6 +108,8 @@ local function update_progress(contract)
         local value
         if S.override[index] ~= nil then
             value = S.override[index]
+        elseif objective.type == "kill_raiders" then
+            value, S.kill_seen = rules.add_kills(old[index] or 0, S.kill_seen, reading.kills)
         elseif objective.type == "hold_public_order" then
             local last_day = base[index] or reading.day
             value, base[index] = rules.hold_step(old[index] or 0, last_day, reading.day, reading.order, objective.min)
@@ -148,6 +150,7 @@ local function pick(id)
     local day = reading.day or world.current_day() or 0
     -- Saved before the log. The offer is gone: the other contracts are discarded. The window of this session still shows them as discarded.
     S.last_offer = offer_ids()
+    S.kill_seen = reading.kills
     state:set("contracts_active", id)
     state:set("contracts_start_day", day)
     state:set("contracts_baseline", rules.encode_numbers(make_baseline(contract, reading, info and info.no), { "s" }))
@@ -495,14 +498,16 @@ local function refresh()
     local active = model.active
     set_visible("ActivePanel", active ~= nil)
     set_button_visible("CompleteButton", active ~= nil)
-    if active then
+    if not active then
+        set_text("ActiveName", "")
+    else
         set_text("ActiveName", active.name)
         set_text("ActiveLine0", active.lines[1] or "")
         set_text("ActiveLine1", active.lines[2] or "")
         set_text("ActiveDays", active.days_text)
         set_disabled("CompleteButton", not active.complete)
     end
-    set_text("FooterText", W.last_error or S.last_message or "")
+    set_text("FooterText", W.last_error or W.hover_text or S.last_message or "")
     local status = liege.shipment_status(true)
     set_text("ArmsInfoText", arms_info(status))
     set_disabled("ArmsButton", not status.enabled)
@@ -522,6 +527,7 @@ end
 
 local function on_open(made)
     W.widget = made
+    W.opened_at, W.reapplied = os.clock(), false
     W.texts = menu.find_named(made, "TextBlock", NAMES.texts)
     local borders = menu.find_named(made, "Border", NAMES.borders)
     local button_borders = menu.find_named(made, "Border", NAMES.buttons)
@@ -606,6 +612,20 @@ local function press(name)
     refresh()
 end
 
+-- A hover tooltip (SetToolTipText on the item Border) does not show in the real game (notes/tooltip-hover.md). The text of the item
+-- under the mouse shows in the footer line instead. Reads IsHovered of the visible items only.
+local function look_for_hover()
+    local found
+    for name, tip in pairs(W.tooltips) do
+        local border = W.borders[name]
+        if W.visible[name] and tip ~= "" and border ~= nil and read(function() return border:IsHovered() end) == true then
+            found = (tip:gsub("\n", " - "))
+            break
+        end
+    end
+    W.hover_text = found
+end
+
 local function tick_window()
     if not is_open() then
         W.widget = nil
@@ -616,9 +636,16 @@ local function tick_window()
         if not is_open() then return end
     end
     local now = os.clock()
+    -- A collapse that is set in the first refresh does not hold for some borders (real runs 20261028-031836 and -034612): the
+    -- visibility is written once more, 1.5 s after the open.
+    if not W.reapplied and W.opened_at and now - W.opened_at >= 1.5 then
+        W.reapplied, W.visible = true, {}
+        refresh()
+    end
     if now - W.last_refresh >= menu_config.refresh_ms / 1000 then
         W.last_refresh = now
         refresh_progress()
+        look_for_hover()
         refresh()
     end
 end
@@ -636,7 +663,10 @@ local function menu_state()
     return { open = is_open(), in_viewport = is_open() and read(function() return W.widget:IsInViewport() end) or false,
              texts = shown, view = model, wanted_texts = { InfluenceText = model.influence_text, SilverText = model.silver_text, ArmsInfoText = arms_info(status) },
              arms_label = "Request arms shipment", arms_disabled = not status.enabled, buttons = buttons, shipments = W.shipments or 0,
-             last_error = W.last_error, picks = S.picks, completes = S.completes, tooltips = W.tooltips, visible = W.visible }
+             last_error = W.last_error, picks = S.picks, completes = S.completes, tooltips = W.tooltips, visible = W.visible, hover_text = W.hover_text,
+             panel_visibility = W.borders.ActivePanel and read(function() return W.borders.ActivePanel:GetVisibility() end),
+             card_visibility = W.borders.Card0 and read(function() return W.borders.Card0:GetVisibility() end),
+             panel_name = W.borders.ActivePanel and read(function() return W.borders.ActivePanel:GetFullName() end) }
 end
 
 require("scheduler").every(TAG .. ".window", math.max(100, menu_config.poll_ms), tick_window)

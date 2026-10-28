@@ -4,6 +4,12 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed
+- **liege_contracts (new), liege_influence:** the liege screen offers three contracts at each start of spring. You pick one. Completed contracts pay influence, silver, goods, public order or a tech point at once. A contract that is not complete when winter begins costs 500 influence. You can no longer buy influence with silver. The arms shipment is unchanged.
+
+### Removed
+- **liege_influence:** the tribute button, the command `liege_send_tribute` and the config values `influence_per_unit` and `tribute_button_amount`.
+
 ## [0.1.0] - 2026-10-24
 First release for play testers. The mod turns Manor Lords into "The Hussites Are Coming": a growth game where Hussite armies raid you and your vassals.
 

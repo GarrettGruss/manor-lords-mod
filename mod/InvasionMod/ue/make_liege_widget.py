@@ -17,7 +17,9 @@ NAME = "WBP_LiegeContracts"
 FULL = PATH + "/" + NAME
 SEED_WIDGET = "StackBox_51"
 CARDS, OBJ_ITEMS, REW_ITEMS = 3, 2, 3
-CARD_WIDTH = 330
+CARD_WIDTH = 280
+FONT_SIZE = 13
+TITLE_SIZE = 18
 LEFTOVER_FUNCTIONS = ["GatherInputInfo"]
 CARD_COLOR = unreal.LinearColor(0.15, 0.11, 0.07, 1.0)
 ICON_COLOR = unreal.LinearColor(0.09, 0.07, 0.05, 1.0)
@@ -37,9 +39,17 @@ def copy_source():
     return bp
 
 
-def make_text(tree, name, text):
+def make_text(tree, name, text, size=FONT_SIZE, wrap=False):
     block = unreal.new_object(unreal.TextBlock, tree, name)
     block.set_editor_property("text", text)
+    try:
+        font = block.get_editor_property("font")
+        font.set_editor_property("size", size)
+        block.set_editor_property("font", font)
+    except Exception as error:  # noqa: BLE001 - keep the default font when the editor API differs
+        log("font size failed for %s: %s" % (name, error))
+    if wrap:
+        block.set_editor_property("auto_wrap_text", True)
     return block
 
 
@@ -80,7 +90,7 @@ def make_card(tree, c):
     column = unreal.new_object(unreal.VerticalBox, tree, "CardColumn%d" % c)
     size.set_content(column)
     column.add_child(make_text(tree, "CardName%d" % c, "-"))
-    column.add_child(make_text(tree, "CardQuote%d" % c, ""))
+    column.add_child(make_text(tree, "CardQuote%d" % c, "", wrap=True))
     column.add_child(make_text(tree, "ObjLabel%d" % c, "OBJECTIVE"))
     for i in range(OBJ_ITEMS):
         column.add_child(make_item(tree, "ObjItem%d_%d" % (c, i), "ObjIcon%d_%d" % (c, i), "ObjText%d_%d" % (c, i)))
@@ -107,7 +117,7 @@ def add_menu(tree, seed):
         pad = unreal.new_object(unreal.Border, tree, name + "Pad")
         pad.set_editor_property("brush_color", CLEAR)
         pad.set_editor_property("padding", unreal.Margin(0, 0, 32, 8))
-        pad.set_content(make_text(tree, name, text))
+        pad.set_content(make_text(tree, name, text, TITLE_SIZE if name == "TitleText" else FONT_SIZE))
         header.add_child(pad)
     column.add_child(header)
     column.add_child(make_text(tree, "EmptyText", ""))

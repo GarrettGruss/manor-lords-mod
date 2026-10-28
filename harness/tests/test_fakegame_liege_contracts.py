@@ -426,6 +426,19 @@ class ProgressTests(ContractsTestCase):
     def test_raiders_killed_counts_the_dead_of_tracked_raids(self):
         self.assertEqual(self.game.exec('return require("features.raid_behavior.init").raiders_killed()'), 0)
 
+    def test_kills_are_a_running_total_over_a_session_restart(self):
+        result = self.game.exec("""
+            local rules = require("features.liege_contracts.rules")
+            local p, seen = 7, nil
+            p, seen = rules.add_kills(p, seen, 0)   -- first look after a load: nothing is added
+            local a = p
+            p, seen = rules.add_kills(p, seen, 3)   -- 3 new deaths
+            local b = p
+            p, seen = rules.add_kills(p, seen, 1)   -- the counter fell: a restart, nothing is added
+            return a .. ":" .. b .. ":" .. p .. ":" .. seen
+        """)
+        self.assertEqual(result, "7:10:10:1")
+
     def test_militia_squads_start_at_0(self):
         self.start("raise_the_levy")
         self.assertEqual(self.contracts()["active"]["objectives"][0]["progress"], 0)
@@ -588,11 +601,12 @@ class WindowViewTests(ContractsTestCase):
         self.assertIn("Wood", first["objectives"][0]["tooltip"])
         self.assertEqual(len(cards[2]["rewards"]), 3)
 
-    def test_the_active_panel_shows_progress_and_replaces_the_cards(self):
+    def test_the_active_panel_shows_progress_and_the_other_cards_as_discarded(self):
         self.set_stock(TIMBER, 12)
         self.start("timber_for_the_walls")
         view = self.view()["view"]
-        self.assertEqual(view["cards"], [])
+        self.assertEqual([(card["id"], card["state"]) for card in view["cards"]],
+                         [("timber_for_the_walls", "Active"), ("clear_the_roads", "Discarded"), ("keep_the_peace", "Discarded")])
         self.assertEqual(view["active"]["lines"], ["Deliver: 12 / 60"])
         self.assertFalse(view["active"]["complete"])
         self.assertEqual(view["active"]["days_text"], "Ends when winter begins")

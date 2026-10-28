@@ -282,7 +282,7 @@ return {
         poll_ms = 100,                   -- real time between two looks at the click queue of the menu (never faster)
         refresh_ms = 500,                -- real time between two refreshes of the menu labels
         z_order = 500,
-        position = { X = 300, Y = 150 },
+        position = { X = 50, Y = 25 },   -- the contracts window is wide: it starts near the top left corner
     },
     -- liege_contracts (change update-liege-tribute-to-contracts, #505). The contracts themselves are in data/liege_contracts/contracts.json.
     liege_contracts = {

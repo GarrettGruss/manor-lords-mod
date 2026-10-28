@@ -83,6 +83,15 @@ function M.measure(objective, reading, baseline)
     return nil
 end
 
+-- Kills are a running total: the counter of `raid_behavior` restarts at 0 in a new session (a load), so the progress adds the
+-- rise of the counter since the last look. `seen` is nil at the first look of a session (nothing is added). A fall of the
+-- counter counts as a restart. Returns the new progress and the new `seen`.
+function M.add_kills(progress, seen, now)
+    if now == nil then return progress, seen end
+    if seen == nil or now < seen then return progress, now end
+    return progress + (now - seen), now
+end
+
 -- Hold public order. `last_day` is the last day that was counted (the start day at the pick). Days that pass count while the
 -- order is at or above `min`; one look under `min` resets the streak to 0. Returns the new progress and the new last day.
 function M.hold_step(progress, last_day, day, order, min)
