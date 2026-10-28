@@ -16,7 +16,7 @@ When the banditry timer expires and the rebellion is not blocked (see the select
 - **AND** the bandit squad spawns within 500 units of a removed home
 - **AND** within 400 game seconds at least 1 building burns and the AI logs "enough looted"
 - **AND** the game runs 10 more game days with no crash
-- Checked by `mod/InvasionMod/scenarios/bandits/rebellion_raid.py` (to write, based on `probe_rebel_noai.py`).
+- Checked by `mod/InvasionMod/scenarios/bandits/rebellion_raid.py`.
 
 #### Scenario: The last family stays
 - **WHEN** the village keeps only `min_families_left` families after the pick and the timer expires
@@ -51,12 +51,12 @@ When the banditry timer expires and the rebellion is not blocked (see the select
 #### Scenario: Plunder by Outlaws squads
 - **WHEN** an Outlaws squad raids
 - **THEN** the result records whether goods are looted
-- Not checked yet.
+- Checked by `mod/InvasionMod/scenarios/bandits/rebellion_raid.py` (metric `stock_change`: the stock fell about 110 to 120 goods; burning also destroys goods, so the metric records but cannot split looting from burning).
 
 #### Scenario: Removal at the map edge
 - **WHEN** the squads leave the map after "enough looted"
 - **THEN** the bandit units fall to the camp units, or the result records that they stay
-- Not checked yet.
+- Checked by `mod/InvasionMod/scenarios/bandits/rebellion_raid.py` (metric `bandit_units_after_leave`: the 18 units stay on the map).
 
 #### Scenario: The conversion banner
 - **WHEN** families leave for banditry
@@ -94,7 +94,7 @@ A valid family is a family whose home holds at least one weapon or armor item: a
 #### Scenario: Too few valid families
 - **WHEN** the timer expires and only 5 families hold weapons or armor
 - **THEN** no family leaves, no squad spawns, no good is removed, the timer stays expired, the event `rebellion_blocked` is logged, and the next tick checks again
-- Checked by `harness/tests/test_fakegame_bandits.py` and `mod/InvasionMod/scenarios/bandits/rebellion_raid.py` (to write).
+- Checked by `harness/tests/test_fakegame_bandits.py` and `mod/InvasionMod/scenarios/bandits/rebellion_raid.py`.
 
 #### Scenario: An unarmed village never rebels
 - **WHEN** no home holds an id of `rebellion_weapon_ids`
@@ -125,12 +125,13 @@ A separate module SHALL provide an idempotent `ensure_outlaw_pawn()`. If the Out
 #### Scenario: The pawn exists
 - **WHEN** `ensure_outlaw_pawn()` runs and the Outlaws pawn exists
 - **THEN** it calls nothing and returns true
-- Checked by `harness/tests/test_fakegame_outlaws.py` (to write).
+- Checked by `harness/tests/test_fakegame_outlaws.py`.
 
 #### Scenario: The pawn is missing
 - **WHEN** `ensure_outlaw_pawn()` runs and no Outlaws pawn exists
-- **THEN** the pawn exists afterwards, the camp and its 18 brigands are gone, and a second call does nothing
-- Checked by `harness/tests/test_fakegame_outlaws.py` (to write). Real check: task 2.4.
+- **THEN** the pawn exists at once, and a second call does nothing
+- **AND** once the camp is built, its 18 brigands are killed and hidden and the camp is demolished (a camp is built by its brigands, so they must not die before it is built)
+- Checked by `harness/tests/test_fakegame_outlaws.py` and `mod/InvasionMod/scenarios/bandits/outlaws_init.py`.
 
 #### Scenario: The guard before a rebellion
 - **WHEN** the timer expires and the pawn is missing
@@ -140,7 +141,7 @@ A separate module SHALL provide an idempotent `ensure_outlaw_pawn()`. If the Out
 #### Scenario: The pawn survives a load
 - **WHEN** the camp was removed, the game is saved and loaded
 - **THEN** the pawn exists, or `ensure_outlaw_pawn()` makes it again
-- Not checked yet. Planned: task 2.10.
+- Checked by `mod/InvasionMod/scenarios/bandits/rebellion_loot_roundtrip.py` (fixture `playtest-noai`, write run and read run).
 
 ### Requirement: Rallied militia weapons still count
 Weapons that sit on rallied militia men SHALL NOT make the village unarmed: a rally SHALL NOT dodge the rebellion. Rally and disband cannot be driven from Lua, and the weapons stay in the homes in the spike, so the family stays valid. Killing registered militia returns their home weapons to the storehouse, which the mod does not read.
