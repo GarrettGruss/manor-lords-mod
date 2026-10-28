@@ -30,7 +30,7 @@ local overwrites = 0      -- how often the game replaced the mod's value
 local written = nil       -- the last value the mod wrote
 local pending = nil       -- a sent buy-back that is not finished
 local buy_backs = {}      -- the results, for the state command
-local blocked_tick = nil  -- bandits_last_tick_day at the last blocked rebellion; a blocked rebellion retries after the next tick
+local blocked_tick = nil  -- the tick count (bandits_ticks) at the last blocked rebellion; a blocked rebellion retries after the next tick
 local last_blocked = nil  -- the last blocked rebellion: { day, valid, needed, reason }
 local outlaws_watch = { pawn = nil, polls = 0, tries = 0, done = false, last = nil } -- ensure_outlaw_pawn at game start and after each load
 -- Set by the tech tree: order_bonus is added to the manor term of each tick. buy_back_multiplier is a price factor.
@@ -117,7 +117,7 @@ local function leave(today, count)
         pawn_created = result.pawn_created, camp_at = result.at, camp_distance = result.distance, valid = result.valid, taken = result.taken,
         returned = result.returned, overrides = result.overrides, blocked = result.blocked, error = result.error }
     if result.blocked ~= nil then
-        blocked_tick = state:get("bandits_last_tick_day")
+        blocked_tick = state:get("bandits_ticks")
         last_blocked = { day = today, valid = result.valid, needed = wanted, reason = result.blocked }
         state:set("bandits_blocks", state:get("bandits_blocks") + 1)
         core.log.info(TAG, string.format("BANDITS rebellion_blocked day=%d valid=%s needed=%d reason=%s", today, tostring(result.valid), wanted, result.blocked))
@@ -148,7 +148,7 @@ local function check_timer(today)
     end
     if step.action == "leave" then
         -- A blocked rebellion keeps the expired timer and tries again after the next order tick.
-        if not rules.retry_due(blocked_tick, state:get("bandits_last_tick_day")) then return end
+        if not rules.retry_due(blocked_tick, state:get("bandits_ticks")) then return end
         local result = leave(today)
         if result.blocked ~= nil then return end
         state:set("bandits_timer_start", -1)
@@ -266,6 +266,8 @@ end
 
 local function poll()
     if not state.loaded then return end
+    local outlaws = require("features.bandits.outlaws")
+    if outlaws.camp_pending() then core.log.try(TAG, function() outlaws.finish_camp_removal() end) end
     check_outlaws(world.region())
     check_buy_back()
     write_order()
@@ -308,7 +310,7 @@ local function command_state()
         timer = timer, warned = state:get("bandits_warned") == 1, last_leave = last_leave, leaves = state:get("bandits_leaves"),
         families = region and world.families(region), converted_families = state:get("bandits_converted_families"),
         outstanding_families = state:get("bandits_outstanding_families"), returned_families = state:get("bandits_returned_families"),
-        outlaws = { ready = outlaws_watch.done and outlaws_watch.last ~= nil, tries = outlaws_watch.tries, last = outlaws_watch.last },
+        outlaws = { ready = outlaws_watch.done and outlaws_watch.last ~= nil, tries = outlaws_watch.tries, last = outlaws_watch.last, camp_cleanup = require("features.bandits.outlaws").camp_pending() },
         blocked = last_blocked, blocks = state:get("bandits_blocks"),
         buy_back_pending = pending ~= nil, buy_backs = buy_backs, modifiers = modifiers, buy_back_multiplier = modifiers.buy_back_multiplier,
         free_slots = region and world.free_slots(region), silver = world.silver(), bandit_pawn = world.bandit_pawn_exists(),
@@ -346,17 +348,60 @@ local function command_set_timer_days_left(args)
     return command_state()
 end
 
+
+-- Test: the home inventories (all goods) and the number of valid families.
+local function command_homes()
+    local region = world.region()
+    if region == nil then return nil, "no region" end
+    local rows, housed = {}, 0
+    for _, row in ipairs(world.home_rows(region)) do
+        if row.housed then housed = housed + 1 end
+        if #rows < 40 then rows[#rows + 1] = { housed = row.housed, key = row.key, inventory = row.inventory } end
+    end
+    local valid = world.armed_families(region, rules.id_set(config.rebellion_weapon_ids))
+    return { families = world.families(region), housed = housed, valid = #valid, homes = rows, weapon_ids = config.rebellion_weapon_ids }
+end
+
+-- Test: put goods into the homes of the first `homes` housed families.
+local function command_stock_homes(args)
+    local region = world.region()
+    if region == nil then return nil, "no region" end
+    return { stocked = world.stock_homes(region, args.good, args.amount, args.homes) }
+end
+
+-- Test: call ensure_outlaw_pawn() now. Returns its record and whether the pawn exists.
+local function command_ensure_outlaws()
+    local ok, info = require("features.bandits.outlaws").ensure()
+    return { ok = ok == true, info = ok and info or tostring(info), bandit_pawn = world.bandit_pawn_exists() }
+end
+
+-- Test: take the weapon goods of the Nth armed family's home and report the inventory before and after (a probe of consumeGoodNoCheck).
+local function command_test_take_goods(args)
+    local region = world.region()
+    if region == nil then return nil, "no region" end
+    local valid = world.armed_families(region, rules.id_set(config.rebellion_weapon_ids))
+    local family = valid[args.index]
+    if family == nil then return nil, "no armed family " .. args.index end
+    local before = world.inventory(family.home)
+    local taken, failures = world.take_goods(family.home, family.goods)
+    return { before = before, wanted = #family.goods, taken = #taken, failures = failures, after = world.inventory(family.home) }
+end
 local function command_buy_back()
     return buy_back()
 end
 
 if has_commands then
     commands.register("InvasionMod.bandits_buy_back", command_buy_back, {})
+    commands.register("InvasionMod.bandits_homes", command_homes, {})
+    commands.register("InvasionMod.bandits_stock_homes", command_stock_homes, { good = { type = "integer", required = true, min = 1, max = 100000 },
+        amount = { type = "integer", required = true, min = 1, max = 100 }, homes = { type = "integer", required = true, min = 1, max = 200 } })
+    commands.register("InvasionMod.bandits_ensure_outlaws", command_ensure_outlaws, {})
+    commands.register("InvasionMod.bandits_test_take_goods", command_test_take_goods, { index = { type = "integer", required = true, min = 1, max = 200 } })
     commands.register("InvasionMod.bandits_state", command_state, {})
     commands.register("InvasionMod.bandits_set_order", command_set_order, { value = { type = "integer", required = true, min = 0, max = 100 } })
     commands.register("InvasionMod.bandits_tick_now", command_tick_now, {})
     commands.register("InvasionMod.bandits_leave_now", command_leave_now, { count = { type = "integer", required = false, min = 1, max = 60 } })
-    commands.register("InvasionMod.bandits_set_timer_days_left", command_set_timer_days_left, { days = { type = "integer", required = true, min = 1, max = 90 } })
+    commands.register("InvasionMod.bandits_set_timer_days_left", command_set_timer_days_left, { days = { type = "integer", required = true, min = 0, max = 90 } })
 end
 
 -- Called by the tech tree. Takes effect at once. approval_bonus has no use now and is ignored.

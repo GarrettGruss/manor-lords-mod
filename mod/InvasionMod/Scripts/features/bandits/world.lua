@@ -129,7 +129,8 @@ end
 
 -- One bandit camp (18 Brigands). The same call makes the bandit pawn when the game has none (bandit camps 0).
 -- The game picks the place: spawnBanditCamp has no argument. A new pawn has no relation row, so addPawnRelations follows.
--- Returns { pawn_created, units (the new bandit units), camps (the new camp buildings), at } or nil and a message.
+-- Returns { pawn_created, units (addresses of the new bandit units), camps (addresses of the new camp buildings), at } or nil and a message.
+-- Only addresses are kept: an object reference must not live across game time.
 function M.spawn_camp()
     local e = engine()
     if e == nil then return nil, "no RTSMultiEngineCPP" end
@@ -144,11 +145,11 @@ function M.spawn_camp()
         if not related then core.log.warn("Bandits", "addPawnRelations failed: " .. tostring(why)) end
     end
     local units, camps = {}, {}
-    for address, unit in pairs(bandit_unit_set()) do
-        if units_before[address] == nil then units[#units + 1] = unit end
+    for address in pairs(bandit_unit_set()) do
+        if units_before[address] == nil then units[#units + 1] = address end
     end
-    for address, camp in pairs(camp_set()) do
-        if camps_before[address] == nil then camps[#camps + 1] = camp end
+    for address in pairs(camp_set()) do
+        if camps_before[address] == nil then camps[#camps + 1] = address end
     end
     return { pawn_created = not had_pawn, units = units, camps = camps, at = camp_place() }
 end
@@ -168,18 +169,45 @@ function M.kill_and_hide(units)
     return killed
 end
 
--- Demolish camp buildings. demolish() without the argument is refused; demolish(true) works (spike militia-corpses-and-camp-removal).
--- Returns the number demolished, or nil and a message.
-function M.demolish_camps(camps)
-    local done = 0
-    for _, camp in ipairs(camps) do
-        if isValid(camp) then
-            local ok, problem = pcall(function() camp:demolish(true) end)
-            if not ok then return nil, "demolish: " .. tostring(problem) end
-            done = done + 1
+-- Kill and hide the living bandit units with these addresses. Returns the number killed.
+function M.kill_units_by_address(addresses)
+    local wanted, found = {}, {}
+    for _, address in ipairs(addresses) do wanted[address] = true end
+    for address, unit in pairs(bandit_unit_set()) do
+        if wanted[address] then found[#found + 1] = unit end
+    end
+    return M.kill_and_hide(found)
+end
+
+-- True when every camp building with these addresses that still stands is built (IsConstructed). A camp that is gone counts as built.
+function M.camps_built(addresses)
+    local standing = camp_set()
+    for _, address in ipairs(addresses) do
+        local camp = standing[address]
+        if camp ~= nil and isValid(camp) and read(function() return camp:IsConstructed() end) ~= true then return false end
+    end
+    return true
+end
+
+-- Demolish the camp buildings with these addresses. demolish() without the argument is refused; demolish(true) works
+-- (spike militia-corpses-and-camp-removal), but a camp that was made a moment ago is not built yet (IsConstructed false)
+-- and demolish(true) then does nothing (run rb-init-3). So only a built camp is demolished; the others wait for a later try.
+-- Returns the number of demolish calls made, the number of camps that still stand (after the calls), or nil and a message.
+function M.demolish_camps(addresses)
+    local called, standing_now = 0, 0
+    local standing = camp_set()
+    for _, address in ipairs(addresses) do
+        local camp = standing[address]
+        if camp ~= nil and isValid(camp) then
+            standing_now = standing_now + 1
+            if read(function() return camp:IsConstructed() end) ~= false then
+                local ok, problem = pcall(function() camp:demolish(true) end)
+                if not ok then return nil, "demolish: " .. tostring(problem) end
+                called = called + 1
+            end
         end
     end
-    return done
+    return called, standing_now
 end
 
 ---------------------------------------------------------------------------------------------
@@ -195,7 +223,13 @@ local function inventory_of(building)
     return rows
 end
 
--- The families whose home holds at least one item of `id_set`. Each row: { home, goods (a list of ids, one per item), members, at }.
+-- A building key that stays equal for the same building: its address, else the object itself.
+local function home_key(home)
+    return read(function() return home:GetAddress() end) or home
+end
+
+-- The families whose home holds at least one item of `id_set`. Each row: { home, key, goods (a list of ids, one per item), members, at }.
+-- Two families can share one home (seen in playtest-noai): the rows then share the key, and the goods of that home count once at the taking.
 -- The members are read here, in the same pass, so no family struct is read after a death (#357).
 function M.armed_families(region, id_set)
     local rows = {}
@@ -208,20 +242,36 @@ function M.armed_families(region, id_set)
             if #goods > 0 and x ~= nil then
                 local members = {}
                 for _, member in ipairs(listOf(family.familyMembers)) do members[#members + 1] = member end
-                rows[#rows + 1] = { home = home, goods = goods, members = members, at = { x = x, y = y, z = z } }
+                rows[#rows + 1] = { home = home, key = home_key(home), goods = goods, members = members, at = { x = x, y = y, z = z } }
             end
         end
     end
     return rows
 end
 
--- Take the goods (a list of ids) from a home: one consumeGoodNoCheck for each item. Returns the list of ids really taken.
-function M.take_goods(home, goods)
-    local taken = {}
-    for _, id in ipairs(goods) do
-        if pcall(function() home:consumeGoodNoCheck(id) end) then taken[#taken + 1] = id end
+local function count_of(home, id)
+    for _, row in ipairs(inventory_of(home)) do
+        if row.id == id then return row.amount end
     end
-    return taken
+    return 0
+end
+
+-- Take the goods (a list of ids) from a home: one consumeGoodNoCheck for each item. An item counts as taken only when the
+-- count of its id in the inventory fell. Returns the list of ids really taken and a list of messages for the failed items.
+function M.take_goods(home, goods)
+    local taken, failures = {}, {}
+    for _, id in ipairs(goods) do
+        local before = count_of(home, id)
+        local ok, problem = pcall(function() home:consumeGoodNoCheck(id) end)
+        if not ok then
+            failures[#failures + 1] = string.format("id %d: %s", id, tostring(problem))
+        elseif count_of(home, id) >= before then
+            failures[#failures + 1] = string.format("id %d: the count stayed %d", id, before)
+        else
+            taken[#taken + 1] = id
+        end
+    end
+    return taken, failures
 end
 
 -- Put goods back into the home they came from. `rows` is a list of { home, id }. Returns the number returned.
@@ -260,12 +310,37 @@ function M.spawn_squads(count, point)
     return { squads = ids, units = units }
 end
 
+-- Test reads and writes (named commands of the test scenarios). The home inventory of every housed family: a list of
+-- { id, amount } rows. A family without a valid home gives an empty row.
+function M.home_rows(region)
+    local rows = {}
+    for _, family in ipairs(listOf(region.workerFamilies)) do
+        local home = read(function() return family.familyHome end)
+        rows[#rows + 1] = { home = home, housed = isValid(home), key = isValid(home) and home_key(home) or nil, inventory = isValid(home) and inventory_of(home) or {} }
+    end
+    return rows
+end
+
+-- Put `amount` of `good` into the homes of the first `homes` housed families. Returns the number of homes stocked.
+function M.stock_homes(region, good, amount, homes)
+    local stocked = 0
+    for _, row in ipairs(M.home_rows(region)) do
+        if stocked >= homes then break end
+        if row.housed and pcall(function() row.home:addToInventory({ Type = good, amt = amount }) end) then stocked = stocked + 1 end
+    end
+    return stocked
+end
+
 -- A rebellion: see features/bandits/rebellion.lua. Returns its result record.
 function M.leave(region, wanted)
     local rebellion = require("features.bandits.rebellion")
     return rebellion.run(region, wanted, rebellion.default_deps())
 end
 
+
+function M.inventory(building)
+    return inventory_of(building)
+end
 function M.distance(at)
     return distance_to_village(at)
 end

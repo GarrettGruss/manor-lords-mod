@@ -3,6 +3,12 @@
 Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
+### Changed
+- **bandits (update-banditry-rebellion-raid):** banditry ends in an armed rebellion. Timer 60 game days (was 90). Valid families hold at least one weapon or armor item (config `rebellion_weapon_ids`) at home; 6 are picked at random (`rebellion_families`, was `leavers` 18); fewer valid families block the rebellion (retry after the next tick). The rebels take the goods of their homes. One Brigands squad (`rebellion_squads`) of the pawn Outlaws spawns at the first home and raids. No camp spawns for the leave event.
+
+### Added
+- **bandits:** `features/bandits/outlaws.lua` with `ensure_outlaw_pawn()`: makes the Outlaws pawn (camp call, brigands killed and hidden, camp demolished) at game start, after each load and before each rebellion.
+- **raid_behavior:** loot override. The goods that the rebels took become loot overrides of the brigands; the body of such a unit gives these goods at the corpse pit. Saved in ModState (`loot_override_slots` 200), linked again after a load.
 
 ## [0.1.0] - 2026-10-24
 First release for play testers. The mod turns Manor Lords into "The Hussites Are Coming": a growth game where Hussite armies raid you and your vassals.

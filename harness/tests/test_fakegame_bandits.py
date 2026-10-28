@@ -77,6 +77,8 @@ class BanditsTestCase(unittest.TestCase):
         self.family_rows, self.units, self.bandit_units, self.camps, self.bandit_pawns = [], [], [], [], []
         self.camp_calls, self.relation_calls, self.demolish_calls, self.next_squad, self.next_address = 0, [], [], 30, 5000
         self.camp_works = True
+        self.demolish_needs = 1  # demolish(true) calls before the camp is gone (the real game needed more than one)
+        self.camp_built = True   # False: the camp is not built yet and demolish(true) must wait
         self.home_adds = []
         self.install_camp_engine()
         if self.HAS_PAWN:
@@ -130,18 +132,26 @@ class BanditsTestCase(unittest.TestCase):
             self.next_address += 1
             address = self.next_address
             self.game.method(camp, "GetAddress", lambda _self, address=address: address)
-            self.game.method(camp, "demolish", lambda _self, flag, camp=camp: self.demolish_calls.append(flag))
+            def demolish(_self, flag, camp=camp):
+                self.demolish_calls.append(flag)
+                if len(self.demolish_calls) >= self.demolish_needs:
+                    self.game.invalidate(camp)  # the camp is gone
+            self.game.method(camp, "demolish", demolish)
+            self.game.method(camp, "IsConstructed", lambda _self: self.camp_built)
             self.camps.append(camp)
             self.game.exec("BANDIT_UNITS = (BANDIT_UNITS or 0) + 18")
         self.game.method(self.engine, "spawnBanditCamp", spawn)
         self.game.method(self.engine, "addPawnRelations", lambda _self, pawn: self.relation_calls.append(pawn))
 
-    def add_family(self, goods=(), members=3):
-        """A family with a home. goods: a list of (item id, amount) in the home inventory. Returns the row."""
+    def add_family(self, goods=(), members=3, shared_with=None):
+        """A family with a home. goods: a list of (item id, amount) in the home inventory. Returns the row.
+        shared_with: another row; the family then lives in the home of that row."""
         index = len(self.family_rows)
         row = {"goods": [list(g) for g in goods], "members": [], "index": index}
-        home = self.game.obj("SMBuildingMaster", Data=self.game.struct(bType=3))
+        home = shared_with["home"] if shared_with else self.game.obj("SMBuildingMaster", Data=self.game.struct(bType=3))
         row["home"] = home
+        if shared_with:
+            row["goods"] = shared_with["goods"]
 
         def refresh():
             home.Inventory = self.game.array([self.game.struct(Type=t, amt=a) for t, a in row["goods"]])
@@ -163,10 +173,11 @@ class BanditsTestCase(unittest.TestCase):
             self.home_adds.append((index, good["Type"], good["amt"]))
             refresh()
 
-        self.game.method(home, "consumeGoodNoCheck", consume)
-        self.game.method(home, "addToInventory", add)
-        self.game.method(home, "K2_GetActorLocation", lambda _self, index=index: self.game.struct(X=1000.0 * (index + 1), Y=500.0, Z=10.0))
-        refresh()
+        if not shared_with:
+            self.game.method(home, "consumeGoodNoCheck", consume)
+            self.game.method(home, "addToInventory", add)
+            self.game.method(home, "K2_GetActorLocation", lambda _self, index=index: self.game.struct(X=1000.0 * (index + 1), Y=500.0, Z=10.0))
+            refresh()
         for _ in range(members):
             row["members"].append(self.make_unit(squad=900 + index, bandit=False))
         family = self.game.struct(familyHome=home, familyMembers=self.game.array(row["members"]))
@@ -489,6 +500,16 @@ class RebellionTests(BanditsTestCase):
         self.assertEqual(len(slots), 6)
         self.assertTrue(all("=" in name and name.split("=")[1].count("_") == 2 for name in slots))
 
+    def test_two_families_in_one_home_take_the_goods_of_that_home_once(self):
+        first = self.add_family(goods=((SPEAR, 2), (SHIELD, 1)))
+        self.add_family(goods=(), members=2, shared_with=first)
+        self.arm(4, goods=((SPEAR, 1),))
+        result = self.rebel(count=6)
+        self.assertEqual(result["last_leave"]["removed"], 6)
+        self.assertEqual(result["last_leave"]["taken"], 3 + 4)  # the shared home counts once
+        self.assertEqual(result["last_leave"].get("returned", 0), 0)
+        self.assertFalse(any("could not be taken" in line for line in self.game.log_lines()))
+
     def test_a_failed_spawn_returns_the_goods_and_logs_an_error(self):
         rows = self.arm(7, goods=((SPEAR, 2), (SHIELD, 1)))
         self.game.exec("SPAWN_FAIL = true")
@@ -550,6 +571,27 @@ class BlockedTests(BanditsTestCase):
         result = self.blocked()
         self.assertIsNone(result["last_leave"].get("blocked"))
         self.assertEqual(result["last_leave"]["removed"], 6)
+
+
+class TestCommandTests(BanditsTestCase):
+    """The commands that the real-game test scenarios use to read and stock the homes."""
+
+    def test_homes_lists_the_inventories_and_counts_the_valid_families(self):
+        self.arm(3, goods=((SPEAR, 2), (BREAD, 1)))
+        self.add_family(goods=((BREAD, 4),))
+        answer = self.ask("bandits_homes")["result"]
+        self.assertEqual((answer["housed"], answer["valid"]), (4, 3))
+        self.assertEqual(answer["homes"][0]["inventory"], [{"id": SPEAR, "amount": 2}, {"id": BREAD, "amount": 1}])
+
+    def test_stock_homes_adds_goods_to_the_first_homes(self):
+        rows = [self.add_family(goods=()) for _ in range(4)]
+        answer = self.ask("bandits_stock_homes", good=SPEAR, amount=2, homes=3)["result"]
+        self.assertEqual(answer["stocked"], 3)
+        self.assertEqual([self.goods_of(row) for row in rows], [{SPEAR: 2}, {SPEAR: 2}, {SPEAR: 2}, {}])
+
+    def test_ensure_outlaws_reports_the_pawn(self):
+        answer = self.ask("bandits_ensure_outlaws")["result"]
+        self.assertEqual((answer["ok"], answer["bandit_pawn"], answer["info"]["created"]), (True, True, False))
 
 
 class BuyBackTests(BanditsTestCase):

@@ -52,8 +52,18 @@ function M.run(region, wanted, deps)
     end
     local chosen = rules.pick_families(valid, wanted, deps.random)
     local taken, members = {}, {}
+    result.take_failures = 0
+    local emptied = {}   -- homes whose goods were taken already (families can share a home)
     for _, family in ipairs(chosen) do
-        for _, id in ipairs(world.take_goods(family.home, family.goods)) do taken[#taken + 1] = { home = family.home, id = id } end
+        if not emptied[family.key] then
+            emptied[family.key] = true
+            local ids, failures = world.take_goods(family.home, family.goods)
+            for _, id in ipairs(ids) do taken[#taken + 1] = { home = family.home, id = id } end
+            if failures ~= nil and #failures > 0 then
+                result.take_failures = result.take_failures + #failures
+                log.warn(TAG, string.format("BANDITS %d of %d goods could not be taken from a home: %s", #failures, #family.goods, failures[1]))
+            end
+        end
         for _, member in ipairs(family.members) do members[#members + 1] = member end
     end
     result.taken = #taken

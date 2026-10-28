@@ -126,8 +126,8 @@ function M.spread_goods(goods, unit_count)
 end
 
 -- A blocked rebellion retries only after a new order tick.
-function M.retry_due(blocked_tick_day, last_tick_day)
-    return blocked_tick_day == nil or blocked_tick_day ~= last_tick_day
+function M.retry_due(blocked_ticks, ticks)
+    return blocked_ticks == nil or blocked_ticks ~= ticks
 end
 
 return M
