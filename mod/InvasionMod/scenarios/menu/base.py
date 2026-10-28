@@ -6,7 +6,7 @@ The camera is moved over a building, so a click at the screen centre would selec
 3. Menu closed: the same click opens the panel (the control).
 Needs the paks: `run.py --scenario menu-base --slot 0 --pak InvasionMod`. Real mouse input: no other game on the slot.
 The menu pauses the game on open and puts back the speed on close (change update-mod-menu-close-and-pause): the scenario runs the game
-at speed 2 before the open. It saves nothing. Options: POINT=x,y (the world click point, default 0.5,0.5), MENU (raid, tech or tribute; default tribute).
+at speed 2 before the open. It saves nothing. Options: POINT=x,y (the world click point, default 0.5,0.5), MENU (raid, tech or liege; default liege).
 """
 
 import time
@@ -58,7 +58,7 @@ def find_button(ctx, menu_id: str) -> tuple:
 
 def run(ctx) -> dict:
     expect = ctx.expect
-    menu_id = ctx.variant_option("MENU", "tribute")
+    menu_id = ctx.variant_option("MENU", "liege")
     px, py = (float(part) for part in ctx.variant_option("POINT", "0.5,0.5").split(","))
     front(ctx)  # a game window behind another window may be throttled
     wait_for_bar(ctx)

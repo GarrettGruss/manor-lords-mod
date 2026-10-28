@@ -50,6 +50,11 @@ Open question 1 (scope of "tribute") is decided: option A (owner, issue #505 com
 Findings of gate 2 that change a decision (details in `notes/`):
 
 - Goods ids (`notes/goods-ids.md`): id 15 is Rubble, not bread. The reward of `feed_the_city` is bread (id 172). Ids 14 (iron ore), 16 (wood), 17 (planks), 30 (carp), 145 (salt) and 133 (spears) are as in the starter set.
+- Kill count (`notes/kill-count.md`): raider deaths of tracked raids count (9 of 9 in the real game); deaths in a bandit camp do not (0 of 5). The objective text says "raiders". The count is a running total over a load.
+- Tooltip (`notes/tooltip-hover.md`): the game draws no hover box for the item Borders. The text of the hovered item shows in the footer line (the design fallback).
+- Storehouse take (`notes/storehouse-take.md`): `consumeGoodNoCheck` on the stores works (stock 87 to 27 for 60 units). No fallback is needed.
+- Season values (`notes/season-values.md`): winter 0, spring 1 (both read in the real game).
+- A contract whose objectives are met when the deadline comes is completed by the poll and pays (it does not fail). A contract picked in winter ends at the next winter.
 - Saved text (`notes/state-encoding.md`): ModState strings allow only letters, digits, `_`, `.` and `-`. The progress and baseline text use `o<index>-<value>` entries separated by dots (for example `o0-12.o1-40`), not `key=value;` pairs.
 
 ## Impact
