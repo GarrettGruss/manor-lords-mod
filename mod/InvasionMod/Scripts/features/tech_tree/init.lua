@@ -202,7 +202,7 @@ local function law_rows(path, unlocked, law_path)
         if law.path == (law_path or path) then
             local reason = rules.enact_refusal(tree, path, unlocked, enacted, config.max_active_laws, law.id)
             local status = in_force[law.id] and "enacted" or (reason == nil and "available" or "locked")
-            rows[#rows + 1] = { id = law.id, name = law.name, status = status, reason = reason }
+            rows[#rows + 1] = { id = law.id, name = law.name, status = status, reason = reason, requires = law.requires }
         end
     end
     return rows

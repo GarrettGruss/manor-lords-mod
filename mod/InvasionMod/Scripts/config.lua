@@ -349,8 +349,14 @@ return {
         poll_ms = 100,                       -- real time between two looks at the click queue (clicks are hook events, spec 34)
         refresh_ms = 500,                    -- real time between two refreshes of the labels
         z_order = 500,
-        position = { X = 300, Y = 150 },
-        step_x = 180, step_y = 60,           -- pixels for one layout unit of a node
+        -- No position: the pak widget centres its window (the seed slot has centre anchors).
+        -- Layout in pixels of the window canvas (the mockup scaled to 0.8: a canvas of 1152 x 704). A card stands at origin + layout * step.
+        origin_x = 160, origin_y = 100,      -- top left of the first card
+        step_x = 248, step_y = 160,          -- pixels for one layout unit of a card
+        card_w = 216, card_h = 150,
+        law_row_h = 48,                      -- the bottom of a card: the law name and its button (the click area of the card is above)
+        lane_x = 20,                         -- left edge of the row labels
+        colhead_y = 72, band_top = 67, band_h = 453, -- column heads and bands
     },
     -- M09 refugees. Values are TBD for playtests (owner, 2026-10-20: 50 percent of the vassal population).
     refugees = {

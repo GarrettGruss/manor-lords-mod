@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tech tree layout mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&amp;family=Alegreya+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0d0a06}
+#board{width:1440px;height:810px;position:relative;overflow:hidden;background:#17120c;color:#eadfc8;font-family:'Alegreya Sans',sans-serif}
+.abs{position:absolute}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid #f3dca4;outline-offset:2px}
+#head{left:0;top:0;width:1440px;height:84px;box-sizing:border-box;padding:0 32px;display:flex;align-items:center;gap:24px;background:#221a11;border-bottom:2px solid #6b5432}
+#head h1{margin:0;font-family:Cinzel,serif;font-weight:700;font-size:30px;letter-spacing:2px;color:#e2c27a;flex-grow:1}
+.cap{font-size:13px;color:#b8a888;letter-spacing:1px;text-transform:uppercase}
+.val{font-family:Cinzel,serif;font-size:24px;color:#eadfc8}
+.btn{height:44px;padding:0 16px;background:#3a2c1a;color:#eadfc8;border:1px solid #8a6d3e;border-radius:4px;font-family:Cinzel,serif;font-size:15px}
+.btn:hover{background:#4a3822}
+.btn.small{height:36px;padding:0 12px;font-size:13px}
+.band{top:84px;width:310px;height:566px;border-right:1px solid #2e2416}
+.colhead{top:90px;width:260px;display:flex;align-items:baseline;justify-content:center;gap:10px}
+.colhead b{font-family:Cinzel,serif;font-size:20px;color:#e2c27a}
+.colhead span{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#b8a888}
+.lane{left:24px;width:150px;display:flex;flex-direction:column;gap:8px}
+.lane .nm{font-family:Cinzel,serif;font-size:19px}
+.lane .st{font-size:14px;color:#b8a888;line-height:1.3}
+.link{height:4px}
+.card{width:260px;height:160px;box-sizing:border-box;padding:10px 14px;text-align:left;display:flex;flex-direction:column;background:#261d12;border:2px solid #5a4629;border-radius:8px}
+.card .top{display:flex;align-items:center;gap:10px}
+.card .body{all:unset;display:flex;flex-direction:column;flex-grow:1}
+.ring{width:40px;height:40px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#17120c;border:2px solid #5a4629}
+.card .nm{font-family:Cinzel,serif;font-weight:700;font-size:16px;color:#eadfc8}
+.card .stt{font-size:12px;letter-spacing:1px;text-transform:uppercase}
+.fx{display:flex;flex-direction:column;gap:1px;margin-top:6px;font-size:14px;color:#d6c8aa;flex-grow:1}
+.lawrow{border-top:1px solid #4d3c24;padding-top:5px;display:flex;gap:6px;align-items:center;min-height:36px}
+.lawrow .lb{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#b8a888}
+.lawrow .ln{font-size:14px;color:#e2c27a;flex-grow:1}
+#laws{left:24px;top:658px;width:1392px;height:88px;box-sizing:border-box;padding:8px 16px;background:#1d160e;border:1px solid #5a4629;border-radius:8px;display:flex;align-items:center;gap:16px}
+#laws .lt{width:150px;display:flex;flex-direction:column;gap:2px}
+#laws .lt b{font-family:Cinzel,serif;font-size:18px;color:#e2c27a}
+.slot{flex:1;height:70px;box-sizing:border-box;border:1px dashed #5a4629;border-radius:6px;padding:6px 12px;display:flex;align-items:center;gap:10px;color:#b8a888;font-size:14px}
+.slot.on{border:1px solid #e2c27a;background:#3b2d18;color:#eadfc8}
+.slot .t{flex-grow:1;display:flex;flex-direction:column}
+.slot .t b{font-family:Cinzel,serif;font-size:15px;color:#e2c27a}
+#foot{left:0;bottom:0;width:1440px;height:56px;box-sizing:border-box;padding:0 32px;display:flex;align-items:center;gap:24px;background:#221a11;border-top:2px solid #6b5432;font-size:15px;color:#b8a888}
+#foot .msg{flex-grow:1;color:#eadfc8}
+</style>
+</head>
+<body>
+<div id="board">
+  <div id="head" class="abs">
+    <h1>Charters of the Realm</h1>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:150px">
+      <span class="cap">Tech picks</span>
+      <span class="val" id="picks" aria-live="polite"></span>
+    </div>
+    <button type="button" class="btn" id="spring" aria-label="Demo: next spring gives one tech pick">Next spring +1</button>
+    <button type="button" class="btn" id="reset" aria-label="Demo: reset the window">Reset</button>
+    <button type="button" class="btn" id="close" aria-label="Close the tech tree window">Close</button>
+  </div>
+  <div id="layer"></div>
+  <div id="laws" class="abs"></div>
+  <div id="foot" class="abs">
+    <span class="msg" id="msg" aria-live="polite"></span>
+    <span>One tech pick each spring. The path you swear to is final.</span>
+  </div>
+</div>
+<script>
+(function () {
+  var COL_X = [200, 510, 820, 1130];
+  var ROW_Y = { oppression: 116, prosperity: 296, common: 476 };
+  var CARD_W = 260;
+  var COLOR = { oppression: '#d0835a', prosperity: '#9cc07a', common: '#d6c8aa' };
+  var ICON = {
+    oppression: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M12 8v8M9 11h6"/></svg>',
+    prosperity: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V8"/><path d="M12 8c-3 0-4-2-4-5 3 0 4 2 4 5zM12 8c3 0 4-2 4-5-3 0-4 2-4 5z"/><path d="M12 13c-3 0-4-2-4-4 3 0 4 1.5 4 4zM12 13c3 0 4-2 4-4-3 0-4 1.5-4 4z"/></svg>',
+    common: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>'
+  };
+  var PATHS = {
+    oppression: { name: 'Oppression', text: 'Rule by fear, order and levies' },
+    prosperity: { name: 'Prosperity', text: 'Rule by law, trade and goodwill' },
+    common: { name: 'Common', text: 'For both paths, in any order' }
+  };
+  var MAX_LAWS = 2, INITIAL_PICKS = 1;
+  // Effects come from the change update-tech-tree-yearly-picks (tree.json and its design).
+  var NODES = [
+    { id: 'martial_law', path: 'oppression', name: 'Martial Law', col: 0, req: null, fx: ['+10 public order'], law: 'conscription' },
+    { id: 'iron_hand', path: 'oppression', name: 'Iron Hand', col: 1, req: 'martial_law', fx: ['+15 public order', '+25% bandit buy-back price', '+200 manor storage'], law: 'forced_labor_walls' },
+    { id: 'veteran_levies', path: 'oppression', name: 'Veteran Levies', col: 2, req: 'iron_hand', fx: ['+10% militia defence', '+12 retinue capacity'], law: 'scorched_earth' },
+    { id: 'fear_of_the_lord', path: 'oppression', name: 'Fear of the Lord', col: 3, req: 'veteran_levies', fx: ['+25 public order (needs 4 garrison squads)'], law: null },
+    { id: 'fair_courts', path: 'prosperity', name: 'Fair Courts', col: 0, req: null, fx: ['+5 approval'], law: 'militia_charter' },
+    { id: 'amnesty', path: 'prosperity', name: 'Amnesty', col: 1, req: 'fair_courts', fx: ['-50% bandit buy-back price', '+200 manor storage'], law: 'trade_pacts' },
+    { id: 'militia_rights', path: 'prosperity', name: 'Militia Rights', col: 2, req: 'amnesty', fx: ['+10% militia attack', '+12 retinue capacity'], law: 'pay_off_warbands' },
+    { id: 'golden_age', path: 'prosperity', name: 'Golden Age', col: 3, req: 'militia_rights', fx: ['+15 approval'], law: null },
+    { id: 'corpse_robbing', path: 'common', name: 'Corpse Robbing', col: 0, req: null, fx: ['No standing effect', 'Opens a law'], law: 'strip_the_dead' },
+    { id: 'armory_census', path: 'common', name: 'Armory Census', col: 1, req: null, fx: ['No standing effect', 'Opens a law'], law: 'disarm_the_peasantry' },
+    { id: 'night_watch', path: 'common', name: 'Night Watch', col: 2, req: null, fx: ['No standing effect', 'Opens a law'], law: 'curfew' }
+  ];
+  var LAWS = {
+    conscription: { name: 'Conscription', fx: '+10% militia attack, -5 approval' },
+    forced_labor_walls: { name: 'Forced Labor on Walls', fx: '+5 public order, -3 approval' },
+    scorched_earth: { name: 'Scorched Earth', fx: '+10% militia defence, -25% tribute share' },
+    militia_charter: { name: 'Militia Charter', fx: '+5% militia attack, +2 approval' },
+    trade_pacts: { name: 'Trade Pacts', fx: '+25% tribute share' },
+    pay_off_warbands: { name: 'Pay Off Warbands', fx: '-25% bandit buy-back price' },
+    strip_the_dead: { name: 'Strip the Dead', fx: 'Corpse loot at the pit, -1 public order per corpse' },
+    disarm_the_peasantry: { name: 'Disarm the Peasantry', fx: 'Home weapons go to the storehouse, -3 approval' },
+    curfew: { name: 'Curfew', fx: 'Banditry order loss halved, -4 approval' }
+  };
+  var S;
+  function fresh() { return { path: null, earned: INITIAL_PICKS, unlocked: [], laws: [], msg: 'Pick a tech, or swear to a path.' }; }
+  S = fresh();
+  function node(id) { return NODES.filter(function (n) { return n.id === id; })[0]; }
+  function free() { return S.earned - S.unlocked.length; }
+  function status(n) {
+    if (S.unlocked.indexOf(n.id) >= 0) return 'unlocked';
+    if (n.path !== 'common') {
+      if (!S.path) return 'nopath';
+      if (S.path !== n.path) return 'other';
+      if (n.req && S.unlocked.indexOf(n.req) < 0) return 'locked';
+    }
+    if (free() < 1) return 'nopick';
+    return 'available';
+  }
+  var STT = { unlocked: 'Unlocked', available: 'Available', locked: 'Needs earlier tech', nopick: 'No free pick', other: 'Other path', nopath: 'Choose a path' };
+  var STC = { unlocked: '#e2c27a', available: '#9cc07a', locked: '#b8a888', nopick: '#b8a888', other: '#a89878', nopath: '#b8a888' };
+  var WHY = {
+    unlocked: ' is already unlocked.', nopath: ' needs a path. Swear to a path first.', other: ' belongs to the other path.',
+    locked: ' needs the tech before it.', nopick: ': no free pick. Wait for spring.'
+  };
+  function set(msg) { S.msg = msg; render(); }
+  function pickNode(id) {
+    var n = node(id), st = status(n);
+    if (st !== 'available') { set(n.name + WHY[st]); return; }
+    S.unlocked.push(id);
+    set(n.name + ' unlocked. 1 pick used.');
+  }
+  function choosePath(p) {
+    if (S.path) { set('The path is final.'); return; }
+    S.path = p;
+    set('You swore to ' + PATHS[p].name + '. This is final.');
+  }
+  function enact(id) {
+    var l = LAWS[id];
+    if (S.laws.indexOf(id) >= 0) return;
+    if (S.laws.length >= MAX_LAWS) { set(l.name + ' refused: ' + MAX_LAWS + ' of ' + MAX_LAWS + ' laws are in force. Repeal one first.'); return; }
+    S.laws.push(id);
+    set(l.name + ' enacted.');
+  }
+  function repeal(id) {
+    S.laws = S.laws.filter(function (x) { return x !== id; });
+    set(LAWS[id].name + ' repealed.');
+  }
+  function render() {
+    var layer = document.getElementById('layer');
+    var h = '';
+    var i;
+    for (i = 0; i < 4; i++) {
+      h += '<div class="abs band" style="left:' + (COL_X[i] - 25) + 'px;background:' + (i === 0 ? 'rgba(226,194,122,0.05)' : 'rgba(0,0,0,0.2)') + '"></div>';
+      h += '<div class="abs colhead" style="left:' + COL_X[i] + 'px"><b>' + ['I', 'II', 'III', 'IV'][i] + '</b><span>' + ['First', 'Second', 'Third', 'Fourth'][i] + ' tech</span></div>';
+    }
+    ['oppression', 'prosperity', 'common'].forEach(function (p) {
+      var st = p === 'common' ? PATHS[p].text : (S.path === p ? 'Sworn path' : (S.path ? 'Closed' : PATHS[p].text));
+      h += '<div class="abs lane" style="top:' + ROW_Y[p] + 'px"><span class="nm" style="color:' + COLOR[p] + '">' + PATHS[p].name + '</span><span class="st">' + st + '</span>';
+      if (p !== 'common' && !S.path) h += '<button type="button" class="btn small" data-act="path" data-id="' + p + '" style="border-color:' + COLOR[p] + '" aria-label="Swear to the path ' + PATHS[p].name + '. This is final.">Swear to this path</button>';
+      h += '</div>';
+    });
+    NODES.forEach(function (n) {
+      if (!n.req) return;
+      var prev = node(n.req), lit = S.unlocked.indexOf(prev.id) >= 0;
+      var x = COL_X[prev.col] + CARD_W;
+      h += '<div class="abs link" style="left:' + x + 'px;top:' + (ROW_Y[n.path] + 34) + 'px;width:' + (COL_X[n.col] - x) + 'px;background:' + (lit ? '#e2c27a' : '#4d3c24') + ';' + (S.path && S.path !== n.path ? 'opacity:.35' : '') + '"></div>';
+    });
+    NODES.forEach(function (n) {
+      var st = status(n), done = st === 'unlocked', open = st === 'available';
+      var border = done ? '#e2c27a' : (open ? COLOR[n.path] : '#5a4629');
+      var faded = st === 'other' ? 'opacity:.4;' : (done || open ? '' : 'opacity:.8;');
+      var glow = open ? 'box-shadow:0 0 0 1px ' + COLOR[n.path] + ',0 0 16px rgba(156,192,122,.25);' : (done ? 'box-shadow:0 0 14px rgba(226,194,122,.25);' : '');
+      var l = n.law ? LAWS[n.law] : null;
+      var inForce = n.law && S.laws.indexOf(n.law) >= 0;
+      h += '<div class="abs card" style="left:' + COL_X[n.col] + 'px;top:' + ROW_Y[n.path] + 'px;border-color:' + border + ';background:' + (done ? '#3b2d18' : '#261d12') + ';' + glow + faded + '">';
+      h += '<button type="button" class="body" data-act="node" data-id="' + n.id + '" aria-label="' + n.name + ', ' + STT[st] + '" style="cursor:' + (open ? 'pointer' : 'default') + '">';
+      h += '<div class="top"><div class="ring" style="color:' + (done ? '#17120c' : COLOR[n.path]) + ';background:' + (done ? '#e2c27a' : '#17120c') + ';border-color:' + border + '">' + ICON[n.path] + '</div>';
+      h += '<div style="display:flex;flex-direction:column;gap:1px"><span class="nm">' + n.name + '</span><span class="stt" style="color:' + STC[st] + '">' + STT[st] + '</span></div></div>';
+      h += '<div class="fx">' + n.fx.map(function (f) { return '<span>' + f + '</span>'; }).join('') + '</div></button>';
+      if (l) {
+        h += '<div class="lawrow"><span class="lb">Law</span><span class="ln" title="' + l.fx + '">' + l.name + '</span>';
+        if (done) h += '<button type="button" class="btn small" data-act="' + (inForce ? 'repeal' : 'enact') + '" data-id="' + n.law + '" aria-label="' + (inForce ? 'Repeal ' : 'Enact ') + l.name + '">' + (inForce ? 'Repeal' : 'Enact') + '</button>';
+        h += '</div>';
+      } else {
+        h += '<div class="lawrow"><span class="lb">No law</span></div>';
+      }
+      h += '</div>';
+    });
+    layer.innerHTML = h;
+    var lw = '<div class="lt"><b>Laws in force</b><span class="cap">' + S.laws.length + ' of ' + MAX_LAWS + ' max</span></div>';
+    for (i = 0; i < MAX_LAWS; i++) {
+      var id = S.laws[i];
+      if (id) {
+        lw += '<div class="slot on"><div class="t"><b>' + LAWS[id].name + '</b><span>' + LAWS[id].fx + '</span></div><button type="button" class="btn small" data-act="repeal" data-id="' + id + '" aria-label="Repeal ' + LAWS[id].name + '">Repeal</button></div>';
+      } else {
+        lw += '<div class="slot">Empty law place. Unlock a tech, then enact its law.</div>';
+      }
+    }
+    document.getElementById('laws').innerHTML = lw;
+    document.getElementById('picks').textContent = free() + ' free (' + S.unlocked.length + ' of ' + S.earned + ' used)';
+    document.getElementById('msg').textContent = S.msg;
+  }
+  document.getElementById('board').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    var a = b.getAttribute('data-act'), id = b.getAttribute('data-id');
+    if (a === 'node') pickNode(id);
+    else if (a === 'path') choosePath(id);
+    else if (a === 'enact') enact(id);
+    else if (a === 'repeal') repeal(id);
+  });
+  document.getElementById('spring').addEventListener('click', function () { S.earned += 1; set('A new spring. +1 tech pick.'); });
+  document.getElementById('reset').addEventListener('click', function () { S = fresh(); render(); });
+  document.getElementById('close').addEventListener('click', function () { set('Demo only: the real window closes here.'); });
+  render();
+})();
+</script>
+</body>
+</html>
