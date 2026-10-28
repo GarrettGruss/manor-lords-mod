@@ -34,7 +34,7 @@ local blocked_tick = nil  -- the tick count (bandits_ticks) at the last blocked 
 local last_blocked = nil  -- the last blocked rebellion: { day, valid, needed, reason }
 local outlaws_watch = { pawn = nil, polls = 0, tries = 0, done = false, last = nil } -- ensure_outlaw_pawn at game start and after each load
 -- Set by the tech tree: order_bonus is added to the manor term of each tick. buy_back_multiplier is a price factor.
-local modifiers = { order_bonus = 0, buy_back_multiplier = 1 }
+local modifiers = { order_bonus = 0, buy_back_multiplier = 1, banditry_gain_multiplier = 1 }
 
 -- Every set writes the Tags of the player pawn, so write only a change.
 local function set_if_changed(key, value)
@@ -74,7 +74,7 @@ end
 local function run_tick(today)
     local region = world.region()
     if region == nil then return core.log.warn(TAG, "BANDITS tick skipped: no region") end
-    local record = rules.tick_order(mod_order(), world.homeless(region) or 0, modifiers.order_bonus, config)
+    local record = rules.tick_order(mod_order(), world.homeless(region) or 0, modifiers.order_bonus, config, modifiers.banditry_gain_multiplier)
     record.day = today
     last_tick = record
     leave_gain = nil
@@ -406,9 +406,18 @@ end
 
 -- Called by the tech tree. Takes effect at once. approval_bonus has no use now and is ignored.
 local function set_modifiers(values)
-    modifiers = { order_bonus = values.order_bonus or 0, buy_back_multiplier = values.buy_back_multiplier or 1 }
-    core.log.info(TAG, string.format("BANDITS modifiers order_bonus=%s buy_back_multiplier=%s",
-        tostring(modifiers.order_bonus), tostring(modifiers.buy_back_multiplier)))
+    modifiers = { order_bonus = values.order_bonus or 0, buy_back_multiplier = values.buy_back_multiplier or 1,
+        banditry_gain_multiplier = values.banditry_gain_multiplier or 1 }
+    core.log.info(TAG, string.format("BANDITS modifiers order_bonus=%s buy_back_multiplier=%s banditry_gain_multiplier=%s",
+        tostring(modifiers.order_bonus), tostring(modifiers.buy_back_multiplier), tostring(modifiers.banditry_gain_multiplier)))
+end
+
+-- Called by the tech tree (Strip the Dead): change the mod order by `delta` in one clamped write.
+local function adjust_order(delta)
+    if not state.loaded or delta == 0 then return end
+    local before = mod_order()
+    set_mod_order(before + delta)
+    core.log.info(TAG, string.format("BANDITS order adjusted delta=%d order_before=%d order_after=%d", delta, before, mod_order()))
 end
 
 -- Read-only: the mod order and the terms of the last tick, for the order tooltip. Terms are nil before the first tick.
@@ -422,4 +431,4 @@ local function order_terms()
 end
 
 core.log.info(TAG, "feature bandits loaded")
-return { state = state, set_modifiers = set_modifiers, order_terms = order_terms }
+return { state = state, set_modifiers = set_modifiers, adjust_order = adjust_order, order_terms = order_terms }

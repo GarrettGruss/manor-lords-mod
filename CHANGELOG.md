@@ -5,7 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Vassal tribute payouts (#517): the tribute feature called `raid_world.deposit`, which commit 189251d removed, so no goods were paid. Tribute now deposits through its own helper (`addToInventory` on a store, read back from the inventory).
+
 ### Changed
+- Tech tree picks (change `update-tech-tree-yearly-picks`, #499): the settlement level no longer opens node slots. The player gets one pick at the start and one pick at each start of spring, banked when unused; every unlock costs one pick. Config `slots_per_level` is removed; new `initial_picks`, `picks_per_year`, `spring_season`. Three common techs (Corpse Robbing, Armory Census, Night Watch) and three common laws (Strip the Dead, Disarm the Peasantry, Curfew) are new. Corpse pit loot is now opt-in: the pit pays only while Strip the Dead is in force. See `mod/InvasionMod/CHANGELOG.md`.
 - Invasion Mod pak (change `update-single-mod-pak`, #471): one pak `InvasionMod_P.pak` holds all widgets and data rows; `raidmenu_P.pak` and `techmenu_P.pak` are gone; use `--pak InvasionMod`. The release check no longer counts a `require` of a Lua file of the mod itself as a shared module.
 - Villager banditry (change `update-banditry-bandit-camp`, #453): when families leave for banditry, the mod spawns one bandit camp (`spawnBanditCamp`, 18 Brigands) instead of squads at their homes. The camp call makes the bandit pawn when the game has none, so banditry works with bandit camps 0. The rule "one squad per 5 families" is removed. See `mod/InvasionMod/CHANGELOG.md`.
 - Banditry is now an armed rebellion (change `update-banditry-rebellion-raid`, #480): the timer is 60 game days. Only families that hold weapons or armor at home can rebel. The mod picks 6 of them at random (config `rebellion_families`), takes all weapon and armor goods of their homes, kills the families (bodies hidden) and spawns one Brigands squad (18 units) of the bandit pawn "Outlaws" at the first home. The native AI raids the village and leaves. With fewer armed families the rebellion is blocked and tried again after the next order tick (`rebellion_blocked` in the log). The camp of the old outcome is gone. See `mod/InvasionMod/CHANGELOG.md`.

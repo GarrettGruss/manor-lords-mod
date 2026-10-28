@@ -25,6 +25,12 @@ class RulesTests(unittest.TestCase):
         step = self.rules.timer_step(order, start, today, self.order_cfg())
         return step.action, step.days_left, step.warn
 
+    def test_curfew_halves_the_homeless_term_and_rounds_half_up(self):
+        self.assertEqual(self.rules.tick_order(50, 4, 0, self.order_cfg(), 0.5).homeless_term, 10)
+        self.assertEqual(self.rules.tick_order(50, 1, 0, self.order_cfg(), 0.5).homeless_term, 3)  # 2.5 rounds up
+        self.assertEqual(self.rules.tick_order(50, 4, 0, self.order_cfg(), 1).homeless_term, 20)
+        self.assertEqual(self.rules.tick_order(50, 4, 0, self.order_cfg()).homeless_term, 20)
+
     def test_order_is_clamped(self):
         self.assertEqual([self.rules.clamp_order(v) for v in (-5, 0, 50, 100, 130)], [0, 0, 50, 100, 100])
 

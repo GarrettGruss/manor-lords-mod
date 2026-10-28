@@ -15,6 +15,7 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-21-spike-new-game-difficulty-setting/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/salt-mine-deposit.md
   - resource: repo://openspec/changes/archive/2026-10-23-spike-public-order-factor/notes/tick-write.md
+  - resource: repo://openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/implementation-notes/siege-camp-and-bm.md
 ---
 # Engine limits found by spikes
 
@@ -39,6 +40,7 @@ Do not plan a feature that needs buildings inside the bailey.
 - Owner decision 2026-10-21: hiding the banner is enough; the letter may stay in the inbox. Notes: `openspec/changes/archive/2026-10-21-spike-bandit-message-toggle/notes/`.
 
 ## Mod menus: bottom bar button and click blocking (#308)
+- The catalog of game widgets is [Native UI elements of the game](native-ui-elements.md). The guide for a new menu is [Building mod UI](../workflows/building-mod-ui.md).
 - A mod can add a button to the game's bottom bar from Lua: `WidgetBlueprintLibrary:Create` of `/Game/UI/HUD/mainTabButton.mainTabButton_C`, then `AddChildToHorizontalBox` on `main_tabs_HB` of the HUD widget `MainUICPP_C`. The clone has the game's frame, size and hover glow. Its click and hover are seen with `RegisterHook` on `HandleClicked` and `HandleHovered` of that class (match the widget by name). The default icon is a map, the tooltip shows `mainTab_0`.
 - A game widget class can go into the viewport (`AddToViewport`, `SetAnchorsInViewport` and `SetAlignmentInViewport` for a place without the viewport size): the base menu uses the game's `menuButton_C` as its Close button, bottom middle. Do not call `SetPositionInViewport` after the anchor: the widget then went to the top left (run 20261024-000819-9d15). Set the text with the property `TextKey` and `updateText`, and the `TextBlock` child.
 - Esc: `RegisterKeyBind(Key.ESCAPE)` fires but does not swallow the key. The game opens its Esc menu (`mainMenu_widget_C`, made on the first Esc, collapsed when closed) and hides the HUD. `widget:continue()` closes it and gives the HUD back; `DoCloseAndHideSelf` leaves the HUD hidden. A hook cannot cancel the open. Notes: `openspec/changes/archive/2026-10-24-update-mod-menu-close-and-pause/notes/esc-key.md`.
@@ -102,7 +104,8 @@ Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the note
 - `pit:addToInventory({Type=<good>, amt=<n>})` counts in the region stock at once. Villagers haul the goods to a store in 3 to 5 game days. No goods pile actor exists and nothing shows on the ground.
 - A dead raider keeps `ItemsLooted`, and the same object stays in `Region.corpses` until a worker picks it up.
 - Reading `unit.currAnim`, `unit.dropsTo:GetFName()` or `unit.Speed` (one of them) crashed the game (access violation 0x18).
-- Owner decision 2026-10-22: the pit replaces the direct store add; loot give-back is for Hussite raids only (change `add-corpse-pit-loot`). Notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.
+- A body at the pit has no identity: the only signal is the corpse count (`Type 233`). A mod can pay a body only when it tracked the dead unit before (a raider of a raid it knows). Villager and militia bodies cannot be told from raider bodies at the pit (change `update-tech-tree-yearly-picks`).
+- Owner decision 2026-10-22: the pit replaces the direct store add; loot give-back is for Hussite raids only (change `add-corpse-pit-loot`). Since 2026-10-27 the pay-out needs the law Strip the Dead (change `update-tech-tree-yearly-picks`). Notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.
 
 ## Public order factors (spike #403)
 
@@ -188,3 +191,14 @@ Fixture `playtest-noai` (AI opponents 0, Off map adversary Absent, Raider freque
 - **Spawn in a paused game:** the rebel squad can spawn while the game is paused; the clock then ran again only after a warm-up run of game seconds with retries at the start of the scenario (the intro holds the clock after a load).
 - **Rebels that raid:** in `playtest-noai` the squad burns a building 20 to 30 game s after the spawn, the AI logs "enough looted" after 40 to 50 game s, and the 18 units were still counted 770 game s later (they stay on the map). The stock fell by about 110 to 120 goods.
 - **`family_add` plus `building_assign_worker` crashed the game** in three runs of `bandits-rebellion-loot` (access violation 0x3c1 within about 3 game days), also with visible bodies. Without the added family the same run was stable.
+
+## Data for new buildings and goods (assessment `assess-endgame-buildings`, #521)
+
+Desk research on 2026-10-28, no game run. Notes: `openspec/changes/archive/*-assess-endgame-buildings/notes/`.
+
+- **Recipes are item rows.** `DT_Items` holds `Resources`, `craftingOutput`, `craftingTool`, `upgradesRequiredToCraft`, `techsRequiredToCraft`, `ExpertiseOnCraft`, `requirementLevel`, `Value`, `ItemCategory`, `Subcategory`. Which building runs a recipe is not a column. It follows the building `job` and the tool, and native code. A new building with an existing job making a new item is not tested.
+- **Native enums close three doors.** `EBuildingFunction` (23 values), `job` and the item categories are native. A pak row picks an existing value. Roads are native too: no data column or enum gives a road surface, so a cobblestone road needs native code.
+- **Unused vanilla data.** Row 59 "Fisherman's Hut" (`BM_SG_FishermansHut`, `Resource_Fish`, fish items 30 and 32) exists in `buildingStats`. The fish recipe names item rows 319 and 315, which are missing from the `DT_Items` extract. Whether the hut can be placed or works is not tested. A herbs garden asset and `DT_Upgrades` row 15 `herbs_garden` exist. The files hold no cobblestone, fountain, sewer, bath-house, town hall, dock or boat asset.
+- **Gates of a building row.** The columns `settlementLevel`, `maxInRegion`, `requiredPerks`, `requiredTech`, `placedWithin` and `bVisibleInUi` exist. `HarnessHousing` reads and writes the numbers live (new placements only). A card for a new id and a run-time card hide are not tested.
+- **Happiness effect from a mod.** A single `Region.Approval` write is recalculated in 1 to 3 game days. A per-tick public order write holds (spike #403). A per-tick approval write is not tested.
+- **Trade.** Merchants are native squads (`ESquadType` Merchants). `RTSMultiEngineCPP` has `tradepoints`, `ForeignMarketSupply` and `tradeLog`. A visit rate field was not looked for.

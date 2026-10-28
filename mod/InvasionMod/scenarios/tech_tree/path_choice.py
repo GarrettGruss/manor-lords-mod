@@ -1,12 +1,12 @@
-"""M12 iterations 01 and 03: the path choice, the node slots and the node effects.
+"""M12 iterations 01 and 03: the path choice, the picks and the node effects.
 
-Steps: choose Oppression (the choice is final), unlock Martial Law with settlement level 1 (Public Order +10),
-raise the level and unlock Iron Hand (Public Order +15 more, buy-back price x1.25), pay a buy-back at the new price.
+Steps: choose Oppression (the choice is final), unlock Martial Law with the start pick (Public Order +10),
+add a pick and unlock Iron Hand (Public Order +15 more, buy-back price x1.25), pay a buy-back at the new price.
 It saves nothing. The path choice lives in the pawn tags of this run only.
 """
 
 NAME = "tech-tree-path-choice"
-DESCRIPTION = "The player picks a path, unlocks nodes by settlement level, and the effects reach Public Order and the buy-back price."
+DESCRIPTION = "The player picks a path, unlocks nodes with picks, and the effects reach Public Order and the buy-back price."
 LIMIT_S = 600
 SPEED = 2
 LONG_REASON = "A buy-back waits for game seconds, plus the start."
@@ -44,10 +44,9 @@ def check_path(ctx) -> None:
 
 
 def check_first_node(ctx) -> None:
-    ctx.actions.set_settlement_level(1)
-    ctx.run_until(lambda: tree(ctx)["settlement_level"] == 1, 15, what="settlement level 1")
+    ctx.run_until(lambda: tree(ctx)["picks_earned"] >= 1, 30, what="the start pick")
     state = tree(ctx)
-    ctx.check("T5 one slot at level 1", state["slots"] == 1 and state["free_slots"] == 1, state)
+    ctx.check("T5 one pick at the start", state["picks_earned"] == 1 and state["free_picks"] == 1, state)
     skipped = ctx.mod.refusal("InvasionMod.tech_tree_unlock", node="iron_hand")
     ctx.check("T6 a node needs its required node", skipped is not None and "needs 'martial_law'" in skipped, skipped)
     before = bandits(ctx)
@@ -56,12 +55,11 @@ def check_first_node(ctx) -> None:
     after = bandits(ctx)
     ctx.check("T7 the manor term of a tick is 10 + 10", manor_term(ctx) == 20, [before["modifiers"], after["modifiers"]])
     full = ctx.mod.refusal("InvasionMod.tech_tree_unlock", node="iron_hand")
-    ctx.check("T8 no free slot at level 1 after one node", full is not None and "no free node slot" in full, full)
+    ctx.check("T8 no free pick after one node", full is not None and "no free pick" in full, full)
 
 
 def check_second_node(ctx) -> None:
-    ctx.actions.set_settlement_level(2)
-    ctx.run_until(lambda: tree(ctx)["slots"] == 2, 15, what="settlement level 2")
+    ctx.mod.command("InvasionMod.tech_tree_test_grant_picks", count=1)
     ctx.mod.command("InvasionMod.tech_tree_unlock", node="iron_hand")
     ctx.run_until(lambda: bandits(ctx)["modifiers"]["order_bonus"] == 25, 15, what="the second Public Order bonus")
     after = bandits(ctx)

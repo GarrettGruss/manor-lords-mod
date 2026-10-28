@@ -47,8 +47,11 @@ class TooltipTests(unittest.TestCase):
         self.assertNotIn("Opens vassal policy heavy", self.text_of(self.tree.by_id["iron_hand"]))
 
     def test_every_node_and_law_has_one_line_per_effect(self):
+        # The window shows path nodes and path laws only; the common techs and laws have flag effects (no number).
         for group, by_id in (("nodes", self.tree.by_id), ("laws", self.tree.laws_by_id)):
             for raw in self.doc[group]:
+                if raw.get("path") == "common":
+                    continue
                 text = self.text_of(by_id[raw["id"]])
                 numeric = [line for line in text if not line.startswith("Opens")]
                 self.assertEqual(len(numeric), len(raw["effect"]), raw["id"])

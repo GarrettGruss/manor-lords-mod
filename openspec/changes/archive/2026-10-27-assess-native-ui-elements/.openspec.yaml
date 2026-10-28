@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-10-27
+x-issue: 504
+skip_specs: true

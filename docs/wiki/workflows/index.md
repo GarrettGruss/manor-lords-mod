@@ -1,5 +1,6 @@
 # Pages
 
+* [Building mod UI](building-mod-ui.md) - How to build a new mod menu or other UI in the Invasion Mod - register with core/menu.lua, choose between a native game widget, a cooked pak widget and a run-time UMG widget, catch clicks safely, style it like the game, avoid the known crashes, and test it with screenshots.
 * [Dev loop and fixtures](dev-loop-and-fixtures.md) - How to reload Lua mods in a running game without a restart (HarnessReload, reload_mods.py) and how fixture saves are stored, installed into a free slot, loaded and cleaned up (fixtures.py, load_save.py, saveslots).
 * [Meshy models](meshy-models.md) - Pipeline that makes a 3D model for the game - Gemini reference images, Meshy generation, headless UE import, game material instance, cook and pak - with costs, caps and the grey material cause.
 * [Pak mods](pak-mods.md) - How the harness changes game data through a repacked pak (extract, patch rows, build, install, run with --pak, build the Invasion Mod pak) and the AES key rule.

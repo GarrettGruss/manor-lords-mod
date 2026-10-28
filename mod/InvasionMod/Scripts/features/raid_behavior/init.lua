@@ -264,17 +264,18 @@ local function raid_records()
     return list
 end
 
-local function has_hussite_raid()
-    for _, id in ipairs(order) do
-        if raids[id].raid.lord ~= nil then return true end
-    end
-    return false
+-- Strip the Dead (tech tree) turns the pay-out on. Without the law a body is still counted as received but pays nothing.
+local corpse_loot_on = false
+local bodies_consumed, bodies_looted = 0, 0 -- tracked bodies that reached a pit, and those that were looted (law on); for the test state
+local looted_watchers = {}  -- functions called with the number of bodies looted in one pit look (tech tree: order loss)
+
+local function merge_goods(into, from)
+    for good, amount in pairs(from) do into[good] = (into[good] or 0) + amount end
 end
 
 -- Bodies with a loot override are paid first: their goods replace the config loot. The other bodies follow the raid rules.
 local function pit_poll()
-    local overriding = state.loaded and overrides.count() > 0
-    if not has_hussite_raid() and not overriding then return end
+    if #order == 0 and not (state.loaded and overrides.count() > 0) then return end
     local pits = world.pits()
     if pits == nil then return end
     for _, pit in ipairs(pits) do
@@ -282,16 +283,30 @@ local function pit_poll()
         pit_baseline[pit.key] = pit.corpses
         if before ~= nil and pit.corpses > before then
             local bodies = pit.corpses - before
-            local goods, paid_here = {}, 0
-            if state.loaded then goods, paid_here = overrides.pay(bodies) end
+            -- Loot order: the loot override of a dead brigand first (the law "Strip the Dead" does not gate it: it is how the player
+            -- recovers the goods that the rebels took), then the Hussite share of the raid record, then body_loot for other tracked dead.
+            local goods, paid_override = {}, 0
+            if state.loaded then goods, paid_override = overrides.pay(bodies) end
             for _, amount in pairs(goods) do override_paid.goods = override_paid.goods + amount end
-            override_paid.bodies = override_paid.bodies + paid_here
-            local raid_goods, raid_paid = rules.pay_bodies(raid_records(), bodies - paid_here)
-            for good, amount in pairs(raid_goods) do goods[good] = (goods[good] or 0) + amount end
-            if paid_here + raid_paid > 0 then
-                local ok, problem = world.pit_add(pit, goods)
-                if not ok then core.log.error(TAG, "pit give-back failed: " .. tostring(problem)) end
-                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d paid=%d override_paid=%d unpaid=%d", bodies, paid_here + raid_paid, paid_here, rules.unpaid_total(raid_records())))
+            override_paid.bodies = override_paid.bodies + paid_override
+            local raid_goods, paid = rules.pay_bodies(raid_records(), bodies - paid_override)
+            local other_goods, other_paid = rules.pay_other_bodies(raid_records(), bodies - paid_override - paid, config.body_loot, "bandit", math.random)
+            merge_goods(raid_goods, other_goods)
+            paid = paid + other_paid
+            bodies_consumed = bodies_consumed + paid
+            if paid > 0 and corpse_loot_on then
+                bodies_looted = bodies_looted + paid
+                merge_goods(goods, raid_goods)
+                for _, watcher in ipairs(looted_watchers) do core.log.try(TAG, watcher, paid) end
+            elseif paid > 0 then
+                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d not looted (no law)", paid))
+            end
+            if paid_override > 0 or (paid > 0 and corpse_loot_on) then
+                if next(goods) ~= nil then
+                    local ok, problem = world.pit_add(pit, goods)
+                    if not ok then core.log.error(TAG, "pit give-back failed: " .. tostring(problem)) end
+                end
+                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d paid=%d override_paid=%d other=%d unpaid=%d", bodies, paid_override + paid, paid_override, other_paid, rules.unpaid_total(raid_records())))
             end
         end
     end
@@ -395,9 +410,9 @@ if has_commands then
             local goods = {}
             for good, amount in pairs(raids[id].raid.plunder_goods) do goods[#goods + 1] = { good = good, amount = amount } end
             table.sort(goods, function(a, b) return a.good < b.good end)
-            record[#record + 1] = { id = id, goods = goods, unpaid = raids[id].raid.unpaid }
+            record[#record + 1] = { id = id, goods = goods, unpaid = raids[id].raid.unpaid, unpaid_other = raids[id].raid.unpaid_other }
         end
-        return { pits = pits, raids = record }
+        return { pits = pits, raids = record, consumed = bodies_consumed, looted = bodies_looted }
     end, {})
     -- Test commands. They change the leave rules for this session only (not saved) and act on the raid of this session.
     commands.register("InvasionMod.raid_behavior_test_set_leave", function(args)
@@ -487,4 +502,13 @@ local function active_role_raid()
     return nil
 end
 
-return { state = state, loot_override = overrides, watch_leave = watch_leave, watch_end = watch_end, active_raids = active_raids, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }
+-- Called by the tech tree (Strip the Dead): `on` turns the pit pay-out on or off.
+local function set_corpse_loot(on)
+    local value = on == true
+    if value ~= corpse_loot_on then core.log.info(TAG, "RAID_BEHAVIOR corpse loot " .. (value and "on" or "off")) end
+    corpse_loot_on = value
+end
+
+local function watch_looted(fn) looted_watchers[#looted_watchers + 1] = fn end
+
+return { state = state, loot_override = overrides, set_corpse_loot = set_corpse_loot, watch_looted = watch_looted, watch_leave = watch_leave, watch_end = watch_end, active_raids = active_raids, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }

@@ -41,8 +41,7 @@ def run(ctx) -> dict:
     ctx.expect.equals("the widget opened", ctx.mod.command(PREFIX + "tech_tree_widget_open").get("ok"), True)
     time.sleep(SETTLE_S)
     ctx.mod.command(PREFIX + "tech_tree_widget_press", kind="path", index=2)  # the laws need a path and two unlocked nodes
-    ctx.actions.set_settlement_level(2)
-    ctx.run_until(lambda: ctx.mod.command(PREFIX + "tech_tree_state")["slots"] >= 2, 15, what="two node slots")
+    ensure_picks(ctx, 2)
     for node in ("fair_courts", "amnesty"):
         ctx.mod.command(PREFIX + "tech_tree_unlock", node=node)
     time.sleep(SETTLE_S)
@@ -60,3 +59,11 @@ def run(ctx) -> dict:
     ctx.expect.equals("each real click was counted exactly once", counted, CLICKS)
     ctx.mod.command(PREFIX + "tech_tree_widget_close")
     return ctx.result()
+
+
+def ensure_picks(ctx, wanted: int) -> None:
+    """Wait for the start pick, then add picks (a test command) until `wanted` picks are earned."""
+    ctx.run_until(lambda: ctx.mod.command(PREFIX + "tech_tree_state")["picks_earned"] >= 1, 30, what="the start pick")
+    missing = wanted - ctx.mod.command(PREFIX + "tech_tree_state")["picks_earned"]
+    if missing > 0:
+        ctx.mod.command(PREFIX + "tech_tree_test_grant_picks", count=missing)

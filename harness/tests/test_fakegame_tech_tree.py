@@ -52,9 +52,11 @@ class LoaderTests(unittest.TestCase):
             self.build(document)
         self.assertIn(text, str(caught.exception))
 
-    def test_the_shipped_file_loads_with_two_paths_and_eight_nodes(self):
+    def test_the_shipped_file_loads_with_two_paths_eight_nodes_and_three_common_techs(self):
         tree = self.build(tree_document())
         self.assertEqual(len(tree.nodes), 8)
+        self.assertEqual(len(tree.common_nodes), 3)
+        self.assertEqual(len(tree.laws), 9)
         self.assertEqual([tree.paths[i].id for i in (1, 2)], ["oppression", "prosperity"])
 
     def test_an_unknown_required_id_is_refused(self):
@@ -85,6 +87,14 @@ class LoaderTests(unittest.TestCase):
         document["nodes"][0]["effect"][0]["kind"] = "magic"
         self.assert_refused(document, "unknown kind")
 
+    def test_a_common_tech_may_not_require_a_node_and_needs_a_known_id(self):
+        document = tree_document()
+        document["common_nodes"][0]["requires"] = ["martial_law"]
+        self.assert_refused(document, "may not require")
+        document = tree_document()
+        document["common_nodes"][0]["id"] = "martial_law"
+        self.assert_refused(document, "duplicate node id")
+
     def test_a_missing_layout_gets_a_default(self):
         document = tree_document()
         for node in document["nodes"]:
@@ -95,6 +105,8 @@ class LoaderTests(unittest.TestCase):
 
 
 class TechTreeTestCase(unittest.TestCase):
+    START_SEASON = 1  # the season of the calendar when the game starts (spring is 0 in these tests)
+
     def setUp(self):
         self.game = FakeGame()
         self.game.start()
@@ -102,11 +114,12 @@ class TechTreeTestCase(unittest.TestCase):
         self.mod_name = PACK.name
         self.game.exec(f'package.path = "{(PACK / "Scripts").as_posix()}/?.lua;" .. package.path')
         self.game.exec(FNAME + HELPERS + STUB)
+        self.game.exec('require("config").tech_tree.spring_season = 0')  # the tests use spring = 0; the real value is in notes/spring-season.md
         self.pawn = self.game.obj("PawnCPP", Tags=self.game.array([]), commandedSquads=self.game.array([]))
         self.game.method(self.pawn, "playEventMessage", lambda _self, _kind, _text, _sub: None)
         self.game.method(self.pawn, "K2_GetActorLocation", lambda _self: self.game.struct(X=0.0, Y=0.0, Z=0.0))
         self.game.method(self.pawn, "GetAddress", lambda _self: 1)
-        self.calendar = self.game.obj("TemporalComponent", daysTotal=61, daysUntilNextRaid=730, Season=1)
+        self.calendar = self.game.obj("TemporalComponent", daysTotal=61, daysUntilNextRaid=730, Season=self.START_SEASON)
         self.region = self.game.obj("Region", ownerPawn=self.pawn, publicOrder=100, Approval=65, settlementLevel=1)
         self.game.method(self.region, "getTotalNumFamilies", lambda _self: 10)
         self.game.method(self.region, "getAvailableLivingSpace", lambda _self: self.game.struct(constructed=4, unconstructed=0))
@@ -139,12 +152,24 @@ class TechTreeTestCase(unittest.TestCase):
     def unlock(self, node):
         return self.ask("tech_tree_unlock", node=node)
 
+    def grant(self, count):
+        """Add picks at once (the start already gave one)."""
+        if count > 0:
+            self.assertTrue(self.ask("tech_tree_test_grant_picks", count=count)["ok"])
+
+    def new_season(self, season):
+        """The calendar enters a new season; the invasion feature counts it."""
+        self.calendar.daysTotal = self.calendar.daysTotal + 91
+        self.calendar.Season = season
+        self.game.advance(4)
+
 
 class PathAndSlotTests(TechTreeTestCase):
-    def test_the_start_has_no_path_and_one_slot_at_level_one(self):
+    def test_the_start_has_no_path_and_the_initial_pick(self):
         state = self.state()
-        self.assertEqual((state["path"], state["slots"], state["free_slots"]), ("none", 1, 1))
+        self.assertEqual((state["path"], state["picks_earned"], state["free_picks"]), ("none", 1, 1))
         self.assertEqual(len(state["nodes"]), 8)
+        self.assertEqual([row["id"] for row in state["common_nodes"]], ["corpse_robbing", "armory_census", "night_watch"])
 
     def test_a_node_needs_a_path(self):
         answer = self.unlock("martial_law")
@@ -166,19 +191,19 @@ class PathAndSlotTests(TechTreeTestCase):
         answer = self.unlock("fair_courts")
         self.assertIn("other path", answer["error"])
 
-    def test_one_slot_per_level_and_the_requirement_order(self):
+    def test_one_pick_per_unlock_and_the_requirement_order(self):
         self.choose("oppression")
         self.assertIn("needs 'martial_law'", self.unlock("iron_hand")["error"])
         self.assertTrue(self.unlock("martial_law")["ok"])
-        self.assertIn("no free node slot", self.unlock("iron_hand")["error"])
-        self.region.settlementLevel = 2
+        self.assertIn("no free pick", self.unlock("iron_hand")["error"])
+        self.grant(1)
         self.assertTrue(self.unlock("iron_hand")["ok"])
         self.assertEqual(self.state()["unlocked"], ["martial_law", "iron_hand"])
 
     def test_a_node_cannot_be_unlocked_twice(self):
         self.choose("prosperity")
         self.unlock("fair_courts")
-        self.region.settlementLevel = 3
+        self.grant(2)
         self.assertIn("already unlocked", self.unlock("fair_courts")["error"])
 
     def test_the_choice_is_kept_in_the_pawn_tags(self):
@@ -192,7 +217,7 @@ class PathAndSlotTests(TechTreeTestCase):
 class EffectTests(TechTreeTestCase):
     def unlock_chain(self, path, nodes):
         self.choose(path)
-        self.region.settlementLevel = len(nodes)
+        self.grant(len(nodes) - 1)
         for node in nodes:
             answer = self.unlock(node)
             self.assertTrue(answer["ok"], answer)
@@ -257,7 +282,7 @@ class MilitiaFactorTests(TechTreeTestCase):
 
     def unlock_militia_rights(self):
         self.choose("prosperity")
-        self.region.settlementLevel = 3
+        self.grant(2)
         for node in ("fair_courts", "amnesty", "militia_rights"):
             self.assertTrue(self.unlock(node)["ok"])
         self.game.advance(8)
@@ -299,3 +324,102 @@ class WidgetFeatureTests(TechTreeTestCase):
             "return require('features.tech_tree.rules').describe_totals({ order_bonus = 25, approval_bonus = 0, buy_back_multiplier = 1.25,"
             " militia_attack_multiplier = 1, militia_defence_multiplier = 1.1 })")
         self.assertEqual(text, "Public Order +25, Buy-back price x1.25, Militia defence x1.10")
+
+
+class PicksTests(TechTreeTestCase):
+    """Change update-tech-tree-yearly-picks: one pick at the start and one at each start of spring."""
+
+    START_SEASON = 2  # autumn
+
+    def picks(self):
+        state = self.state()
+        return state["picks_earned"], state["free_picks"]
+
+    def test_the_start_gives_the_initial_pick_in_every_season(self):
+        self.assertEqual(self.picks(), (1, 1))
+
+    def test_only_spring_gives_a_pick_and_an_autumn_start_gets_it_at_the_next_spring(self):
+        self.new_season(3)  # winter
+        self.assertEqual(self.picks(), (1, 1))
+        self.new_season(0)  # spring
+        self.assertEqual(self.picks(), (2, 2))
+        for season in (1, 2, 3):  # summer, autumn, winter
+            self.new_season(season)
+        self.assertEqual(self.picks(), (2, 2))
+
+    def test_the_same_spring_gives_one_pick_only(self):
+        self.new_season(0)
+        self.game.advance(20)
+        self.assertEqual(self.picks(), (2, 2))
+
+    def test_unused_picks_are_banked(self):
+        for _ in range(3):
+            self.new_season(1)
+            self.new_season(0)
+        self.assertEqual(self.picks(), (4, 4))
+
+    def test_the_picks_are_kept_in_the_pawn_tags(self):
+        self.new_season(0)
+        tags = list(self.game.lua.eval("tag_names")(self.pawn).values())
+        self.assertIn("invasion:tech_picks_earned=2", tags)
+        self.assertTrue(any(tag.startswith("invasion:tech_spring_no=") and tag != "invasion:tech_spring_no=-1" for tag in tags), tags)
+
+    def test_a_pick_is_spent_on_each_unlock_and_the_level_does_not_matter(self):
+        self.choose("oppression")
+        self.assertTrue(self.unlock("martial_law")["ok"])
+        self.assertEqual(self.picks(), (1, 0))
+        self.assertIn("no free pick", self.unlock("iron_hand")["error"])
+        self.new_season(0)
+        self.assertTrue(self.unlock("iron_hand")["ok"])
+        self.assertEqual(self.region.settlementLevel, 1)
+
+    def test_three_free_picks_buy_three_unlocks_at_level_one(self):
+        self.grant(2)
+        self.choose("prosperity")
+        for node in ("fair_courts", "amnesty", "militia_rights"):
+            self.assertTrue(self.unlock(node)["ok"], node)
+        self.assertEqual(self.picks(), (3, 0))
+
+
+class SpringStartTests(TechTreeTestCase):
+    START_SEASON = 0  # the game starts in spring
+
+    def test_a_spring_start_gives_the_initial_pick_only(self):
+        state = self.state()
+        self.assertEqual((state["picks_earned"], state["free_picks"]), (1, 1))
+        self.game.advance(10)
+        self.assertEqual(self.state()["picks_earned"], 1)
+        for season in (1, 2, 3):
+            self.new_season(season)
+        self.assertEqual(self.state()["picks_earned"], 1)
+        self.new_season(0)
+        self.assertEqual(self.state()["picks_earned"], 2)
+
+
+class CommonTechTests(TechTreeTestCase):
+    def test_a_common_tech_needs_no_path(self):
+        answer = self.unlock("night_watch")
+        self.assertTrue(answer["ok"], answer)
+        state = self.state()
+        self.assertEqual((state["path"], state["unlocked"], state["free_picks"]), ("none", ["night_watch"], 0))
+        self.assertEqual([row["status"] for row in state["common_nodes"]], ["locked", "locked", "unlocked"])
+
+    def test_a_path_node_with_no_path_costs_no_pick(self):
+        self.assertIn("no path is chosen", self.unlock("martial_law")["error"])
+        self.assertEqual(self.state()["free_picks"], 1)
+
+    def test_a_taken_common_tech_is_refused_and_costs_nothing(self):
+        self.grant(1)
+        self.unlock("armory_census")
+        self.assertIn("already unlocked", self.unlock("armory_census")["error"])
+        self.assertEqual(self.state()["free_picks"], 1)
+
+    def test_the_oppression_path_unlocks_a_common_tech_out_of_order(self):
+        self.choose("oppression")
+        self.assertTrue(self.unlock("armory_census")["ok"])
+        self.assertEqual(self.state()["unlocked"], ["armory_census"])
+
+    def test_a_common_tech_after_the_other_path_choice_still_works(self):
+        self.choose("prosperity")
+        self.assertTrue(self.unlock("corpse_robbing")["ok"])
+        self.assertEqual(self.state()["free_picks"], 0)

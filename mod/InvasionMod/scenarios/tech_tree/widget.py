@@ -80,8 +80,7 @@ def check_clicks(ctx) -> None:
     ctx.click_with_mouse(fx, fy)
     ctx.run_until(lambda: tree(ctx)["path"] != "none", 8, what="the click chooses the path", poll_s=0.5)
     expect.equals("U5 a path click chose the path of the button", tree(ctx)["path"], "oppression" if row["index"] == 1 else "prosperity")
-    ctx.actions.set_settlement_level(1)
-    ctx.run_until(lambda: tree(ctx)["slots"] == 1, 15, what="one node slot")
+    ensure_picks(ctx, 1)
     time.sleep(SETTLE_S)
     first = tree(ctx)["nodes"]
     first_id = next(node["id"] for node in first if node["path"] == tree(ctx)["path"] and not node["requires"])
@@ -101,3 +100,11 @@ def run(ctx) -> dict:
     check_clicks(ctx)
     ctx.mod.command(PREFIX + "tech_tree_widget_close")
     return ctx.result()
+
+
+def ensure_picks(ctx, wanted: int) -> None:
+    """Wait for the start pick, then add picks (a test command) until `wanted` picks are earned."""
+    ctx.run_until(lambda: ctx.mod.command(PREFIX + "tech_tree_state")["picks_earned"] >= 1, 30, what="the start pick")
+    missing = wanted - ctx.mod.command(PREFIX + "tech_tree_state")["picks_earned"]
+    if missing > 0:
+        ctx.mod.command(PREFIX + "tech_tree_test_grant_picks", count=missing)

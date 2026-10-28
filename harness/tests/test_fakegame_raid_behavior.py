@@ -496,6 +496,117 @@ class CorpsePitLootTests(RaidBehaviorTestCase):
         result = self.game.lua.eval("(function() local taken, by_good = require('features.raid_behavior.world').plunder(20, require('config').raid_behavior.store_tiers); return taken .. ',' .. by_good[16] end)")()
         self.assertEqual(result, "16,10")
 
+class StripTheDeadRulesTests(RaidBehaviorTestCase):
+    "Change update-tech-tree-yearly-picks: loot variants for bodies that are not Hussite raiders."
+
+    def run_lua(self, code):
+        return self.game.lua.eval(f"(function() local rules = require('features.raid_behavior.rules'); {code} end)")()
+
+    LOOT = "{ bandit = { { goods = { [177] = 1, [270] = 1 } }, { weight = 1, goods = { [177] = 1, [270] = 1, [273] = 1 } } }, soldier = {} }"
+
+    def test_the_variant_follows_the_roll_and_the_weights(self):
+        result = self.run_lua("""
+            local list = { { goods = { [1] = 1 } }, { weight = 3, goods = { [2] = 1 } } }
+            local function which(roll) for good in pairs(rules.pick_variant(list, roll)) do return good end end
+            return which(0) .. ',' .. which(0.24) .. ',' .. which(0.25) .. ',' .. which(0.99)""")
+        self.assertEqual(result, "1,1,2,2")
+
+    def test_an_empty_list_or_a_missing_kind_pays_nothing(self):
+        result = self.run_lua("return tostring(next(rules.pick_variant({}, 0.5))) .. ',' .. tostring(next(rules.pick_variant(nil, 0.5)))")
+        self.assertEqual(result, "nil,nil")
+
+    def test_a_native_death_is_counted_apart_from_a_hussite_one(self):
+        result = self.run_lua("""
+            local native = rules.new_raid(1, 10, 1, { 1, 2 }, false, nil)
+            local hussite = rules.new_raid(2, 10, 1, { 1, 2 }, true, { anchor = { x = 0, y = 0 }, kind = 'plunder' })
+            rules.note_deaths(native, { { key = 1 }, { key = 2 } }); rules.note_deaths(hussite, { { key = 1 } })
+            return native.unpaid_other .. ',' .. native.unpaid .. ',' .. hussite.unpaid_other .. ',' .. hussite.unpaid""")
+        self.assertEqual(result, "2,0,0,1")
+
+    def test_each_body_draws_its_own_variant_and_is_paid_once(self):
+        result = self.run_lua("""
+            local native = rules.new_raid(1, 10, 1, { 1, 2, 3 }, false, nil)
+            rules.note_deaths(native, { { key = 1 }, { key = 2 }, { key = 3 } })
+            local rolls, index = { 0.1, 0.9, 0.1 }, 0
+            local goods, paid = rules.pay_other_bodies({ native }, 2, %s, 'bandit', function() index = index + 1; return rolls[index] end)
+            local again, more = rules.pay_other_bodies({ native }, 5, %s, 'bandit', function() return 0 end)
+            return goods[177] .. ',' .. goods[270] .. ',' .. goods[273] .. ',' .. paid .. ',' .. more .. ',' .. native.unpaid_other""" % (self.LOOT, self.LOOT))
+        self.assertEqual(result, "2,2,1,2,1,0")
+
+    def test_a_soldier_or_unknown_kind_pays_no_goods_but_the_body_is_consumed(self):
+        result = self.run_lua("""
+            local native = rules.new_raid(1, 10, 1, { 1 }, false, nil)
+            rules.note_deaths(native, { { key = 1 } })
+            local goods, paid = rules.pay_other_bodies({ native }, 1, %s, 'soldier', function() return 0 end)
+            return tostring(next(goods)) .. ',' .. paid""" % self.LOOT)
+        self.assertEqual(result, "nil,1")
+
+    def test_the_shipped_config_has_the_two_owner_variants(self):
+        result = self.run_lua("""
+            local loot = require('config').raid_behavior.body_loot
+            local function size(goods) local n = 0 for _ in pairs(goods) do n = n + 1 end return n end
+            return #loot.bandit .. ',' .. size(loot.bandit[1].goods) .. ',' .. size(loot.bandit[2].goods) .. ',' .. loot.bandit[2].goods[273] .. ',' .. #loot.soldier""")
+        self.assertEqual(result, "2,2,3,1,0")
+
+
+class StripTheDeadPitTests(RaidBehaviorTestCase):
+    "Change update-tech-tree-yearly-picks: the pit pays only while the law is in force."
+
+    def setUp(self):
+        super().setUp()
+        self.calendar.Season = 1  # the tech tree needs a season for its start pick
+        self.game.advance(4)
+        self.pit = self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 0)], btype=113)
+        self.start_raid("small")
+        self.game.advance(3)
+
+    def enact_law(self):
+        self.assertTrue(self.ask("tech_tree_unlock", node="corpse_robbing")["ok"])
+        self.assertTrue(self.ask("tech_tree_enact_law", law="strip_the_dead")["ok"])
+        self.game.advance(3)
+
+    def kill_and_deliver(self, bodies):
+        for unit in self.units[:bodies]:
+            unit.dead = True
+        self.game.advance(3)  # the tracker sees the deaths
+        self.pit["goods"][0] = (233, self.pit["goods"][0][1] + bodies)
+        self.pit["object"].Inventory = self.game.array([self.game.struct(Type=t, amt=a) for t, a in self.pit["goods"]])
+        self.game.advance(3)
+
+    def goods(self, good):
+        return sum(amount for kind, amount in self.pit["goods"] if kind == good)
+
+    def order(self):
+        return self.ask("bandits_state")["result"]["mod_order"]
+
+    def test_without_the_law_nothing_is_paid_and_the_order_stays(self):
+        before = self.order()
+        self.kill_and_deliver(2)
+        self.assertEqual((self.goods(177), self.goods(270), self.goods(273)), (0, 0, 0))
+        self.assertEqual(self.order(), before)
+
+    def test_with_the_law_each_native_body_pays_a_variant_and_costs_one_order(self):
+        self.enact_law()
+        before = self.order()
+        self.kill_and_deliver(2)
+        self.assertEqual((self.goods(177), self.goods(270)), (2, 2))
+        self.assertIn(self.goods(273), (0, 1, 2))
+        self.assertEqual(self.order(), before - 2)
+
+    def test_bodies_that_arrive_before_the_law_are_not_paid_later(self):
+        self.kill_and_deliver(2)
+        self.enact_law()
+        self.game.advance(5)
+        self.assertEqual(self.goods(177), 0)
+
+    def test_the_law_repealed_stops_the_pay_out(self):
+        self.enact_law()
+        self.ask("tech_tree_repeal_law", law="strip_the_dead")
+        self.game.advance(3)
+        self.kill_and_deliver(1)
+        self.assertEqual(self.goods(177), 0)
+
+
 class LordRaidRulesTests(RaidBehaviorTestCase):
     def run_lua(self, code):
         return self.game.lua.eval(f"(function() local rules = require('features.raid_behavior.rules'); {code} end)")()

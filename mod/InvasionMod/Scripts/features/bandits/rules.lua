@@ -12,11 +12,12 @@ function M.tick_due(today, last, tick_days)
     return last >= 0 and today - last >= tick_days
 end
 
--- One order tick. cfg: manor_term, homeless_term. order_bonus (tech tree) is added to the manor term.
+-- One order tick. cfg: manor_term, homeless_term. order_bonus (tech tree) is added to the manor term. gain_multiplier (Curfew) scales the homeless term.
 -- Returns the record the telemetry and the log use.
-function M.tick_order(order, homeless_count, order_bonus, cfg)
+function M.tick_order(order, homeless_count, order_bonus, cfg, gain_multiplier)
     local manor_term = cfg.manor_term + (order_bonus or 0)
-    local homeless_term = cfg.homeless_term * homeless_count
+    -- Curfew (tech tree) scales the order loss; the result rounds half up.
+    local homeless_term = math.floor(cfg.homeless_term * homeless_count * (gain_multiplier or 1) + 0.5)
     return {
         order_before = order, manor_term = manor_term, homeless_count = homeless_count,
         homeless_term = homeless_term, order_after = M.clamp_order(order + manor_term - homeless_term),
