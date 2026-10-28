@@ -120,9 +120,9 @@ function M.kit_due(is_new_game, given)
     return is_new_game == true and given ~= 1
 end
 
--- How many people must go so that the village has `target` people. A village with fewer people loses none.
-function M.people_to_remove(population, target)
-    return math.max(0, population - target)
+-- How many settleRegion calls add the missing families (each call adds `per_call` families). Zero when none are missing.
+function M.settle_calls(families, target, per_call)
+    return math.max(0, math.ceil((target - families) / per_call))
 end
 
 return M

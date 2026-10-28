@@ -10,6 +10,7 @@ local menu = require("core.menu")
 local clickhooks = require("HarnessClickHooks")
 local invasion = require("features.invasion.init")
 local rules = require("features.scenario_settings.rules")
+local refugee_world = require("features.refugees.world")
 local config = require("config").scenario_settings
 
 local TAG = "InvasionMod.scenario_settings"
@@ -135,7 +136,7 @@ local function current_settings()
 end
 
 ---------------------------------------------------------------------------------------------
--- The start kit (change add-scenario-start-kit, #425): 10 people and 300 silver, once, in a new game only.
+-- The start kit (change add-scenario-start-kit, #425): 10 families and 300 silver, once, in a new game only.
 ---------------------------------------------------------------------------------------------
 
 local function player_region()
@@ -149,31 +150,46 @@ local function population(region)
     return type(value) == "number" and value or nil
 end
 
--- Kills living people, the last family first, until the population is `target`. Returns the population after, or nil and a message.
--- More people cannot be added by a safe call (notes/villager-call.md): a village with fewer people keeps them.
-local function set_population(target)
-    local region, problem = player_region()
-    if not region then return nil, problem end
-    local before = population(region)
-    if before == nil then return nil, "the population is not known" end
-    local remove = rules.people_to_remove(before, target)
-    if remove == 0 then
-        if before < target then core.log.warn(TAG, string.format("start kit: the village has %d people, fewer than %d; none are added", before, target)) end
-        return before
-    end
+local function family_count(region)
+    local value = read(function() return region:getTotalNumFamilies() end)
+    return type(value) == "number" and value or nil
+end
+
+-- Removes the last families (just_die on each living member, never K2_DestroyActor on a unit).
+local function remove_last_families(region, remove)
     local families = core.listOf(read(function() return region.workerFamilies end))
+    local removed = 0
     for family_index = #families, 1, -1 do
+        if removed >= remove then break end
         local members = core.listOf(read(function() return families[family_index].familyMembers end))
         for member_index = #members, 1, -1 do
-            if remove == 0 then break end
             local member = members[member_index]
-            if isValid(member) and read(function() return member.dead end) ~= true and pcall(function() member:just_die() end) then
-                remove = remove - 1
-            end
+            if isValid(member) and read(function() return member.dead end) ~= true then pcall(function() member:just_die() end) end
         end
-        if remove == 0 then break end
+        removed = removed + 1
     end
-    return population(region) or target, remove > 0 and (remove .. " people could not be removed") or nil
+end
+
+-- Makes the player region have `target` families. More families are added with settleRegion (the refugees code: homeless families
+-- in a tent camp, config.families_per_call a call). Fewer are removed, the last family first.
+-- Returns the family count after, the people count after, and a message when the target was not reached.
+local function set_families(target)
+    local region, problem = player_region()
+    if not region then return nil, nil, problem end
+    local before = family_count(region)
+    if before == nil then return nil, nil, "the family count is not known" end
+    local message
+    if before < target then
+        local calls = rules.settle_calls(before, target, config.families_per_call)
+        local done, detail = refugee_world.send_settlers(core.shortName(region), calls)
+        if not done then message = "settleRegion failed: " .. tostring(detail) end
+    end
+    -- A call adds whole groups of families, so the count can pass the target: the last families go.
+    local now = family_count(region) or before
+    if now > target then remove_last_families(region, now - target) end
+    local after = family_count(region)
+    if after ~= target and message == nil then message = string.format("the village has %s families, not %d", tostring(after), target) end
+    return after, population(region), message
 end
 
 local function set_silver(amount)
@@ -191,11 +207,11 @@ end
 local function give_kit()
     if not rules.kit_due(S.new_game, state:get("start_kit_given")) then return end
     local kit = config.start_kit
-    local people, people_problem = set_population(kit.villagers)
+    local families, people, families_problem = set_families(kit.families)
     local silver, silver_problem = set_silver(kit.silver)
     state:set("start_kit_given", 1)
-    S.kit = { people = people, silver = silver, problems = { people_problem, silver_problem } }
-    core.log.info(TAG, string.format("start kit given: people=%s silver=%s %s%s", tostring(people), tostring(silver),
+    S.kit = { families = families, people = people, silver = silver, problems = { families_problem, silver_problem } }
+    core.log.info(TAG, string.format("start kit given: families=%s people=%s silver=%s %s%s", tostring(families), tostring(people), tostring(silver),
         tostring(people_problem or ""), tostring(silver_problem or "")))
 end
 
@@ -573,7 +589,7 @@ if has_commands then
         local region = player_region()
         local pawn = player()
         return { given = state:get("start_kit_given") == 1, kit = S.kit, config = config.start_kit,
-            people = region and population(region) or nil, silver = pawn and read(function() return pawn.silver end) or nil }
+            families = region and family_count(region) or nil, people = region and population(region) or nil, silver = pawn and read(function() return pawn.silver end) or nil }
     end, {})
     commands.register("InvasionMod.scenario_settings_skip", command_skip, {})
     commands.register("InvasionMod.scenario_settings_open", command_open, {})

@@ -595,11 +595,42 @@ function(fg, pawn, engine, sizes)
         families[#families + 1] = fg.object("Family", { familyMembers = fg.array(members, { wrap = false }) })
     end
     local region = fg.object("Region", { ownerPawn = pawn, workerFamilies = fg.array(families, { wrap = false }) })
+    local function alive(unit) return not unit.dead end
     fg.set_method(region, "getNumTotalPopulation", function()
         local n = 0
-        for _, unit in ipairs(units) do if not unit.dead then n = n + 1 end end
+        for _, unit in ipairs(units) do if alive(unit) then n = n + 1 end end
         return n
     end)
+    fg.set_method(region, "getTotalNumFamilies", function()
+        local n = 0
+        for _, family in ipairs(families) do
+            local living = false
+            for _, member in ipairs(require("ManorCore").listOf(family.familyMembers)) do if alive(member) then living = true end end
+            if living then n = n + 1 end
+        end
+        return n
+    end)
+    -- settleRegion stand-in: each call adds 5 homeless families of 2 people (the refugees feature uses the same call).
+    SETTLE_CALLS = 0
+    local core = require("ManorCore")
+    core.regions_state = function() return { regions = { { region = core.shortName(region), settlement_type = 1 } } } end
+    core.forest_spot = function() return { ok = false } end
+    core.tent_find_spot = function() return { ok = false } end
+    core.settle_region = function()
+        SETTLE_CALLS = SETTLE_CALLS + 1
+        for _ = 1, 5 do
+            local members = {}
+            for _ = 1, 2 do
+                local unit = fg.object("SMUnit", { dead = false })
+                fg.set_method(unit, "just_die", function(self) self.dead = true end)
+                members[#members + 1] = unit
+                units[#units + 1] = unit
+            end
+            families[#families + 1] = fg.object("Family", { familyMembers = fg.array(members, { wrap = false }) })
+        end
+        region.workerFamilies = fg.array(families, { wrap = false })
+        return { ok = true }
+    end
     fg.set_method(pawn, "GetAddress", function() return 1 end)
     engine.regions = fg.array({ region }, { wrap = false })
 end
@@ -621,26 +652,29 @@ class StartKitTests(SettingsTestCase):
         self.start_game("", 1)
         self.ask("scenario_settings_click", action="begin")
 
-    def test_a_new_game_gets_10_people_and_300_silver_at_begin(self):
+    def test_a_new_game_gets_10_families_and_300_silver_at_begin(self):
         self.village(2, 2, 2, 2, 2)
         self.stand_in_menu()
         self.start_game("", 1)
         self.assertEqual((self.kit()["given"], self.pawn.silver), (False, 0), "nothing before Begin")
         self.ask("scenario_settings_click", action="begin")
         kit = self.kit()
-        self.assertEqual((kit["given"], kit["people"], kit["silver"]), (True, 10, 300))
+        self.assertEqual((kit["given"], kit["families"], kit["people"], kit["silver"]), (True, 10, 20, 300))
         self.assertEqual(self.pawn.silver, 300)
+        self.assertEqual(self.game.exec("return SETTLE_CALLS"), 1, "5 missing families: one settleRegion call")
 
-    def test_a_village_with_more_people_is_cut_to_10(self):
-        self.village(3, 3, 3, 3, 3)
-        self.begin()
-        self.assertEqual(self.kit()["people"], 10)
-
-    def test_a_village_with_fewer_people_keeps_them(self):
-        self.village(2, 2, 2)
+    def test_a_village_with_more_families_is_cut_to_10(self):
+        self.village(*([3] * 12))
         self.begin()
         kit = self.kit()
-        self.assertEqual((kit["people"], kit["silver"]), (6, 300))
+        self.assertEqual((kit["families"], kit["people"]), (10, 30))
+        self.assertEqual(self.game.exec("return SETTLE_CALLS"), 0)
+
+    def test_a_village_with_8_families_gets_one_call_and_the_extra_families_go(self):
+        self.village(*([2] * 8))
+        self.begin()
+        self.assertEqual(self.kit()["families"], 10, "a call adds 5 families (13): the last 3 go")
+        self.assertEqual(self.game.exec("return SETTLE_CALLS"), 1)
 
     def test_the_kit_is_given_once(self):
         self.village(2, 2, 2, 2, 2)
@@ -656,7 +690,7 @@ class StartKitTests(SettingsTestCase):
         self.pawn.silver = 12
         self.assertTrue(self.ask("scenario_settings_set", yearly=1)["ok"])
         kit = self.kit()
-        self.assertEqual((kit["given"], kit["people"], self.pawn.silver), (False, 15, 12))
+        self.assertEqual((kit["given"], kit["families"], self.pawn.silver), (False, 5, 12))
 
     def test_a_save_with_the_flag_gets_no_kit_either(self):
         self.village(3, 3, 3, 3, 3)
@@ -668,11 +702,11 @@ class StartKitTests(SettingsTestCase):
         self.assertEqual(self.pawn.silver, 12)
 
     def test_the_amounts_come_from_the_config(self):
-        self.game.exec('require("config").scenario_settings.start_kit = { villagers = 4, silver = 77 }')
+        self.game.exec('require("config").scenario_settings.start_kit = { families = 4, silver = 77 }')
         self.village(2, 2, 2, 2, 2)
         self.begin()
         kit = self.kit()
-        self.assertEqual((kit["people"], kit["silver"]), (4, 77))
+        self.assertEqual((kit["families"], kit["silver"]), (4, 77))
 
     def test_a_command_in_a_new_game_gives_the_kit(self):
         self.village(2, 2, 2, 2, 2)
