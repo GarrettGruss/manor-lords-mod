@@ -23,9 +23,9 @@ When the player clicks "Begin the game" in a new game (or the settings are appli
 ### Requirement: The villagers replace the start population
 The 10 families SHALL be the family count of the top bar. The mod SHALL make the family count of the player region exactly the configured value. When the region has fewer families, the mod SHALL add the missing families with `settleRegion` (homeless families in a tent camp). When it has more, the mod SHALL remove the last families by `just_die` on their members, and SHALL NOT call `K2_DestroyActor` on a unit. The 300 silver SHALL set the silver of the player pawn to 300.
 
-#### Scenario: Ten families in total
+#### Scenario: Ten people in total
 - **WHEN** a new game begins
-- **THEN** the player region has exactly 10 families
+- **THEN** the player region has exactly 10 families (the number of people follows from the families; it is reported, not asserted)
 - **AND** the test reports the number of people
 - Not checked yet.
 
