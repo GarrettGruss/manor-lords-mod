@@ -41,7 +41,7 @@ The project is a uv project: `pyproject.toml`, `uv.lock`, Python 3.12 or newer, 
 
 ## deploy.ps1
 
-`harness/deploy.ps1 [-GameDir] [-DryRun] [-Clean]` copies `mod/` into `ue4ss\Mods\`, verifies SHA-256 of the copies, enables the mods in `mods.txt` (a backup `mods.txt.harness.bak` is kept) and writes `Mods\.harness-manifest.json`. Do not copy files by hand. The run launcher calls it before each run, for the slot's game folder. See [Scenario run](../workflows/scenario-run.md).
+`harness/deploy.ps1 [-GameDir] [-DryRun] [-Clean] [-NoPak]` copies `mod/` into `ue4ss\Mods\`, verifies SHA-256 of the copies, enables the mods in `mods.txt` (a backup `mods.txt.harness.bak` is kept) and writes `Mods\.harness-manifest.json`. It also copies each mod's own pak (`mod/<name>/paks/<name>_P.pak`) to `Content\Paks\~mods\` and lists it in the run pak manifest `~mods\.harness-paks.json`; `-NoPak` skips this. The run launcher passes `-NoPak`, so a test run gets a pak only through `--pak`. Do not copy files by hand. The run launcher calls it before each run, for the slot's game folder. See [Scenario run](../workflows/scenario-run.md).
 
 ## install.ps1 and uninstall.ps1
 

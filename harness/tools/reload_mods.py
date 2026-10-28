@@ -132,7 +132,7 @@ def judge(mod: str, expected: str | None, result: dict, seconds: float) -> dict:
 
 
 def run_deploy(game_dir: str | None) -> str:
-    command = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPO_ROOT / "harness" / "deploy.ps1")]
+    command = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPO_ROOT / "harness" / "deploy.ps1"), "-NoPak"]
     if game_dir:
         command += ["-GameDir", game_dir]
     try:
