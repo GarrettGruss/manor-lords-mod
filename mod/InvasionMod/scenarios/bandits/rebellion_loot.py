@@ -58,7 +58,7 @@ def run(ctx) -> dict:
     warm_up(ctx)
     ctx.run_until(lambda: ctx.mod.command("InvasionMod.bandits_state")["bandit_pawn"] is True, 90, what="the Outlaws pawn")
     ctx.check("the fixture has one corpse pit", len(pit_state(ctx)["pits"]) == 1, pit_state(ctx))
-    assigned = ctx.actions._command("building_assign_worker", type=PIT_TYPE)
+    assigned = ctx.actions._command("building_assign_worker", type=PIT_TYPE)  # before the rebellion: later no family is free
     ctx.check("a family works at the pit", assigned.get("ok") is True, assigned)
     homes = ctx.mod.command("InvasionMod.bandits_homes")
     ctx.check("the fixture has armed families", homes["valid"] >= 6, homes["valid"])
@@ -70,23 +70,29 @@ def run(ctx) -> dict:
     ctx.metric("override_goods", goods_before)
     ctx.check("the taken goods are overrides", goods_before == leave["taken"] and goods_before > 0, [goods_before, leave["taken"]])
     base_pit = pit_goods(ctx)
-    killed = ctx.actions.kill_units(side="bandit", count=KILLS)
-    ctx.metric("killed", KILLS)
+    killed = ctx.mod.command("InvasionMod.raid_behavior_test_kill_override_units", count=KILLS)
+    ctx.check("units with an entry were killed", killed["killed"] == KILLS, killed)
+    ctx.metric("killed", killed["killed"])
     ctx.run_until(lambda: any(entry.get("dead_day") is not None for entry in overrides(ctx)["entries"]), 30, what="a dead entry")
     dead_entries = sum(1 for entry in overrides(ctx)["entries"] if entry.get("dead_day") is not None)
     ctx.metric("dead_entries", dead_entries)
     ctx.check("killed units are marked dead in the override state", dead_entries >= 1, dead_entries)
+    # The worker family may be among the families that left (6 of 10). Then no body reaches the pit and the check below fails: run again.
+    # Adding a family with family_add and assigning it crashed the game in three runs (rb-loot-6 to 8), so the test does not do it.
     ctx.screenshot("loot_before_pit")
     days = 0
-    while days < DAY_LIMIT and overrides(ctx)["count"] >= before["count"]:
+    while days < DAY_LIMIT and overrides(ctx)["paid_bodies"] < 1:
         run_day(ctx)
         days += 1
     after = overrides(ctx)
     ctx.metric("days_to_pay", days)
-    paid_entries = before["count"] - after["count"]
-    ctx.check("at least one body was paid at the pit", paid_entries >= 1, [before["count"], after["count"]])
+    ctx.metric("pit_corpses", pit_state(ctx)["pits"][0]["corpses"])
+    ctx.metric("paid_bodies", after["paid_bodies"])
+    ctx.metric("paid_goods", after["paid_goods"])
+    ctx.check("at least one body was paid at the pit", after["paid_bodies"] >= 1, after["paid_bodies"])
     gained = sum(amount - base_pit.get(good, 0) for good, amount in pit_goods(ctx).items() if good in (133, 271, 163, 164, 177, 178, 205, 206, 270, 273, 288, 289))
     ctx.metric("pit_gain_weapon_goods", gained)
-    ctx.check("the pit gained exactly the goods of the paid entries", gained == goods_before - entry_goods(after), [gained, goods_before, entry_goods(after)])
+    ctx.check("the pit gained exactly the paid override goods", gained == after["paid_goods"], [gained, after["paid_goods"]])
+    ctx.check("each paid body ended one entry", after["count"] <= before["count"] - after["paid_bodies"], [before["count"], after["count"], after["paid_bodies"]])
     ctx.screenshot("loot_after_pit")
     return ctx.result()

@@ -143,6 +143,7 @@ return {
         timer_days = 60,                 -- game days from the timer start to the rebellion (was 90)
         warn_days = 30,                  -- the warning banner shows when this many game days are left
         rebellion_families = 6,          -- families that leave in a rebellion (each home must hold a weapon or armor item)
+        hide_bodies = true,               -- hide the bodies of the killed families and camp Brigands (SetActorHiddenInGame)
         rebellion_squads = 1,            -- Brigands squads (18 units each) of the pawn Outlaws that spawn at the first home
         rebellion_weapon_ids = {         -- DT_Items ids: a home with one of them makes a family valid, and the rebels take all of them
             133,       -- spears

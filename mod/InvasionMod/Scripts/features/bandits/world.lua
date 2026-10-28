@@ -162,7 +162,7 @@ function M.kill_and_hide(units)
         if isValid(unit) and read(function() return unit.dead end) ~= true then
             if pcall(function() unit:just_die() end) then
                 killed = killed + 1
-                pcall(function() unit:SetActorHiddenInGame(true) end)
+                if require("config").bandits.hide_bodies ~= false then pcall(function() unit:SetActorHiddenInGame(true) end) end
             end
         end
     end

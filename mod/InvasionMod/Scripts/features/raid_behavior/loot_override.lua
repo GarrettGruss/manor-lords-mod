@@ -202,7 +202,10 @@ function M.new(store, log)
         local dropped = 0
         for address, entry in pairs(self.by_address) do
             local now = seen[address]
-            if entry.dead_day == nil and now ~= nil and now.dead then entry.dead_day = today end
+            if entry.dead_day == nil and now ~= nil and now.dead then
+                entry.dead_day = today
+                self.log.info(self.tag, string.format("LOOT_OVERRIDE dead slot=%d squad=%d unit=%d day=%s", entry.slot, entry.squad, entry.index, tostring(today)))
+            end
             if entry.dead_day == nil and now == nil then
                 self.drop(address, "unit left the map")
                 dropped = dropped + 1

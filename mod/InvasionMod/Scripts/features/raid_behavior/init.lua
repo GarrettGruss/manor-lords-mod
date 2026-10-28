@@ -29,6 +29,7 @@ state:register("raid_plunder_record", "none", "string")
 
 -- Loot override (change update-banditry-rebellion-raid): saved in ModState slots, read at the corpse pit.
 local loot_override = require("features.raid_behavior.loot_override")
+local override_paid = { bodies = 0, goods = 0 }  -- paid at a pit in this session, for the state command
 local overrides = loot_override.new(loot_override.state_store(state, require("config").bandits.loot_override_slots), core.log)
 
 local end_watchers = {}    -- functions called with the raid summary when a raid is no longer active (M08 protection)
@@ -281,14 +282,16 @@ local function pit_poll()
         pit_baseline[pit.key] = pit.corpses
         if before ~= nil and pit.corpses > before then
             local bodies = pit.corpses - before
-            local goods, override_paid = {}, 0
-            if state.loaded then goods, override_paid = overrides.pay(bodies) end
-            local raid_goods, raid_paid = rules.pay_bodies(raid_records(), bodies - override_paid)
+            local goods, paid_here = {}, 0
+            if state.loaded then goods, paid_here = overrides.pay(bodies) end
+            for _, amount in pairs(goods) do override_paid.goods = override_paid.goods + amount end
+            override_paid.bodies = override_paid.bodies + paid_here
+            local raid_goods, raid_paid = rules.pay_bodies(raid_records(), bodies - paid_here)
             for good, amount in pairs(raid_goods) do goods[good] = (goods[good] or 0) + amount end
-            if override_paid + raid_paid > 0 then
+            if paid_here + raid_paid > 0 then
                 local ok, problem = world.pit_add(pit, goods)
                 if not ok then core.log.error(TAG, "pit give-back failed: " .. tostring(problem)) end
-                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d paid=%d override_paid=%d unpaid=%d", bodies, override_paid + raid_paid, override_paid, rules.unpaid_total(raid_records())))
+                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d paid=%d override_paid=%d unpaid=%d", bodies, paid_here + raid_paid, paid_here, rules.unpaid_total(raid_records())))
             end
         end
     end
@@ -351,8 +354,33 @@ if has_commands then
     commands.register("InvasionMod.raid_behavior_state", command_state, {})
     -- Test: the loot override entries (slot, squad, unit index, goods, linked) and the pit goods.
     commands.register("InvasionMod.raid_behavior_override_state", function()
-        return { entries = state.loaded and overrides.list() or {}, count = state.loaded and overrides.count() or 0, relinking = relink ~= nil, slots = require("config").bandits.loot_override_slots }
+        local alive, dead, missing = 0, 0, 0
+        if state.loaded and overrides.count() > 0 then
+            local seen = world.override_units(overrides.addresses())
+            for address in pairs(overrides.addresses()) do
+                if seen[address] == nil then missing = missing + 1 elseif seen[address].dead then dead = dead + 1 else alive = alive + 1 end
+            end
+        end
+        return { entries = state.loaded and overrides.list() or {}, count = state.loaded and overrides.count() or 0, relinking = relink ~= nil,
+                 slots = require("config").bandits.loot_override_slots, units_alive = alive, units_dead = dead, units_missing = missing,
+                 paid_bodies = override_paid.bodies, paid_goods = override_paid.goods }
     end, {})
+    -- Test: kill the units of the first `count` override entries (just_die, no hiding). Returns the number killed.
+    commands.register("InvasionMod.raid_behavior_test_kill_override_units", function(args)
+        local wanted, slots = {}, {}
+        for _, row in ipairs(overrides.list()) do
+            if #slots < args.count then slots[#slots + 1] = row.slot end
+        end
+        for address, entry in pairs(overrides.addresses()) do
+            for _, slot in ipairs(slots) do if entry.slot == slot then wanted[address] = true end end
+        end
+        local killed = 0
+        for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+            local address = core.isValid(unit) and core.read(function() return unit:GetAddress() end) or nil
+            if address ~= nil and wanted[address] and world.remove_unit(unit) then killed = killed + 1 end
+        end
+        return { killed = killed, slots = slots }
+    end, { count = { type = "integer", required = true, min = 1, max = 100 } })
     -- Test: the corpse pits (corpse count and goods) and the dead raiders that no pit delivery has paid yet.
     commands.register("InvasionMod.raid_behavior_pit_state", function()
         local pits = {}
