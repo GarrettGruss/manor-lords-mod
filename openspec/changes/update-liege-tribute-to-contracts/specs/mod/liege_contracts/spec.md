@@ -6,9 +6,10 @@ The mod SHALL read all contracts from the data file `mod/InvasionMod/data/liege_
 
 #### Scenario: The table fields
 - **WHEN** the table loads
-- **THEN** it holds `version`, `offer_size` (default 3), `envoy` (name and quote) and `contracts`
-- **AND** each contract has `id` (unique), `name`, `quote`, `weight` (above 0), `objectives` (1 or 2), `rewards` (1 to 3), `duration` and `penalty`
-- **AND** `duration` is `next_spring` or a number of game days, and `penalty` is `{ type = "influence", amount = N }`
+- **THEN** it holds `version`, `offer_size` (default 3), and `contracts`
+- **AND** each contract has `id` (unique), `name`, `quote` (flavor text, may be empty), `weight` (above 0), `objectives` (1 or 2), `rewards` (1 to 3) and `duration`
+- **AND** `duration` is `winter_start` or a number of game days
+- **AND** the table has no envoy and no penalty field (the penalty is the config value `liege_contracts.fail_penalty`)
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 #### Scenario: The starter table loads
@@ -39,15 +40,14 @@ The mod SHALL support five objective types. The poll reads the progress of each 
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 ### Requirement: Reward types
-The mod SHALL support six reward types, paid once when the player completes a contract. A reward that cannot be paid SHALL be logged and counted in `failed_rewards`, SHALL NOT block the other rewards and SHALL NOT be retried. No reward SHALL use regional wealth.
+The mod SHALL support five reward types, paid once when the player completes a contract. A reward that cannot be paid SHALL be logged and counted in `failed_rewards`, SHALL NOT block the other rewards and SHALL NOT be retried. No reward SHALL use regional wealth.
 
 #### Scenario: The types and their effect
 - **WHEN** a contract pays a reward type
 - **THEN** `influence` raises the influence, and `silver` raises the silver of the lord's treasury
 - **AND** `goods` (`good`, `amount`) adds the goods to a storehouse
 - **AND** `public_order` raises the mod order once, clamped to 0..100
-- **AND** `retinue_squad` spawns retinue squads (the call of `manor_stronghold`)
-- **AND** `tech_pick` adds free tech picks, and is allowed only when `update-tech-tree-yearly-picks` is built
+- **AND** `tech_pick` adds tech picks (ModState `tech_picks_earned`) that the player spends in the tech tree, and is allowed only when `update-tech-tree-yearly-picks` is built
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py` and `mod/InvasionMod/scenarios/liege_contracts/complete.py`).
 
 #### Scenario: A completed contract pays every reward
@@ -62,7 +62,7 @@ The mod SHALL support six reward types, paid once when the player completes a co
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 ### Requirement: The mod offers three contracts each spring
-At each start of spring the mod SHALL draw `offer_size` different contracts at random, with a chance in proportion to `weight`, and offer them. The new offer SHALL replace the old one. The first poll of a new game, or of a save without contract state, SHALL also make an offer. The offer SHALL be saved before it is logged.
+At each start of spring, and only then, the mod SHALL draw `offer_size` different contracts at random, with a chance in proportion to `weight`, and offer them. The new offer SHALL replace the old one. The mod SHALL NOT make an offer at the first poll of a new game or of a save. The offer SHALL be saved before it is logged.
 
 #### Scenario: A spring draw
 - **WHEN** the season counter shows a new spring (read as in `mod/tech_tree`)
@@ -81,8 +81,8 @@ At each start of spring the mod SHALL draw `offer_size` different contracts at r
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`; a real load needs the guarded `save_game`: `mod/InvasionMod/scenarios/liege_contracts/roundtrip.py`).
 
 #### Scenario: A game that starts in another season
-- **WHEN** a new game starts in summer
-- **THEN** the first poll makes an offer at once and the next offer comes at the next spring
+- **WHEN** a new game starts in summer, or a save that is not in spring loads without contract state
+- **THEN** no offer is made, the window shows that the liege sends contracts at the next spring, and the first offer comes at the next start of spring
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 ### Requirement: The player picks exactly one contract
@@ -100,12 +100,12 @@ The command `InvasionMod.liege_contract_pick` (argument: the contract id) SHALL 
 
 #### Scenario: An unpicked offer
 - **WHEN** the player picks nothing for a year
-- **THEN** the offer stays open until the next spring and then 3 new contracts replace it
-- **AND** the influence is unchanged
+- **THEN** nothing happens: the offer stays open until the next spring and then 3 new contracts replace it
+- **AND** the influence is unchanged (no penalty)
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 ### Requirement: Completion, deadline and penalty
-The command `InvasionMod.liege_contract_complete` SHALL complete the active contract when all objectives reach their target, take the goods of the `deliver_goods` objectives and pay the rewards. A contract that is not complete at its end SHALL fail and apply its penalty (influence, never below 0). Completion SHALL NOT start a new offer.
+The command `InvasionMod.liege_contract_complete` SHALL complete the active contract when all objectives reach their target, take the goods of the `deliver_goods` objectives at that moment and pay the rewards at once. Early completion SHALL give no extra reward. A contract that is not complete when winter begins SHALL fail and take the config value `liege_contracts.fail_penalty` (default 500) from the influence, never below 0. Completion SHALL NOT start a new offer.
 
 #### Scenario: Completion
 - **WHEN** all objectives of the active contract reach their target and the player completes it
@@ -118,13 +118,14 @@ The command `InvasionMod.liege_contract_complete` SHALL complete the active cont
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 #### Scenario: The deadline passes
-- **WHEN** the next spring arrives and the active contract (`next_spring`) is not complete
-- **THEN** the influence falls by the penalty (to 0 at the lowest), `contracts_failed` rises and the new offer replaces the old contract
+- **WHEN** winter begins and the active contract (`winter_start`) is not complete
+- **THEN** the influence falls by `fail_penalty` (500; to 0 at the lowest), `contracts_failed` rises and the contract is closed
+- **AND** a changed config value changes the penalty
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 #### Scenario: A day count
 - **WHEN** a contract has `duration` 120 and 120 game days pass after the pick
-- **THEN** it fails with the penalty at day 120, not at the next spring
+- **THEN** it fails with the penalty at day 120, not at the start of winter
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 ### Requirement: Contract state is saved
@@ -142,7 +143,7 @@ The mod SHALL keep the contract state in ModState and restore it after a load: t
 
 #### Scenario: An old save
 - **WHEN** a save made before this change loads
-- **THEN** the influence and the arms cooldown are unchanged and the first poll makes an offer
+- **THEN** the influence and the arms cooldown are unchanged and the first offer comes at the next start of spring
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 #### Scenario: A removed contract id
@@ -151,11 +152,11 @@ The mod SHALL keep the contract state in ModState and restore it after a load: t
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 ### Requirement: The liege window shows three contract cards
-The liege window (menu id `liege`, a pak widget) SHALL follow the layout of the mockup `openspec/specs/mod/liege_contracts/mockups/liege-contracts-layout.html`: a title, the envoy with a portrait box and quote, the influence and the silver, and three cards side by side. A click on PICK SHALL call the same code as `liege_contract_pick`. The window SHALL use only controls of the pak (fixed pools) and hide the unused ones.
+The liege window (menu id `liege`, a pak widget) SHALL follow the layout of the mockup `openspec/specs/mod/liege_contracts/mockups/liege-contracts-layout.html`: a title, the influence and the silver, and three cards side by side. The window has no envoy and no portrait. A click on PICK SHALL call the same code as `liege_contract_pick`. The window SHALL use only controls of the pak (fixed pools) and hide the unused ones.
 
 #### Scenario: The cards
 - **WHEN** an offer exists and the player opens the window
-- **THEN** three cards show, each with the contract name, an OBJECTIVE section (1 or 2 items), a REWARDS section (up to 3 items), a penalty badge and a PICK button
+- **THEN** three cards show, each with the contract name, its flavor text (when the table has one), an OBJECTIVE section (1 or 2 items), a REWARDS section (up to 3 items), a penalty badge and a PICK button
 - **AND** each item shows an icon box and an amount
 - Checked by picture evidence in `openspec/changes/archive/<date>-update-liege-tribute-to-contracts/evidence/` and `mod/InvasionMod/scenarios/liege_contracts/window.py`.
 
@@ -171,8 +172,8 @@ The liege window (menu id `liege`, a pak widget) SHALL follow the layout of the 
 - Not checked yet (planned: `mod/InvasionMod/scenarios/liege_contracts/window.py`, picture evidence).
 
 #### Scenario: The window has no offer
-- **WHEN** no offer exists (for example before the first poll)
-- **THEN** the cards are hidden and the window says that the envoy comes at the next spring
+- **WHEN** no offer exists (for example in a game that did not start in spring)
+- **THEN** the cards are hidden and the window says that the liege sends contracts at the next spring
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 #### Scenario: The arms shipment stays
