@@ -4,6 +4,9 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Fixed
+- Feature `tribute` (#517): vassal tribute pays goods again. It called `raid_world.deposit`, which was removed from `raid_behavior`. It now deposits with its own helper (`addToInventory`, read back from the store inventory). No change to the rules.
+
 ### Changed
 - **Tech tree (window):** the tech window has a new layout: a header with the title, the tech picks counter ("1 free (0 of 1 used)") and a Close button; column heads I to IV (first to fourth tech); the rows Oppression, Prosperity and Common, with a card for each tech (name, status, effects, its law and an Enact or Repeal button) and links between the techs of a path; a laws strip ("N of 2 max") with a Repeal button for each law in force; and a footer with the last result (for example "Martial Law refused: no free pick.") and "One tech pick each spring. The path you swear to is final." The three text lines at the top are gone. Common techs can be clicked before a path is chosen.
 - **Tech tree (picks):** one pick at the start and one pick at each start of spring (banked when unused) replace the node slots of the settlement level. Every unlock of a path node or a common tech costs one pick. The pick state is saved with the game.

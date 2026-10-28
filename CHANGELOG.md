@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Vassal tribute payouts (#517): the tribute feature called `raid_world.deposit`, which commit 189251d removed, so no goods were paid. Tribute now deposits through its own helper (`addToInventory` on a store, read back from the inventory).
+
 ### Changed
 - Tech tree window (change `update-tech-tree-widget-layout`, #502): the F9 window follows the layout of the mockup `openspec/specs/mod/tech_tree_widget/mockups/tech-tree-layout.html`: header with the picks counter and a close button, column heads I to IV, rows Oppression, Prosperity and Common with node cards and links, a laws strip "N of 2 max" and a footer. Common techs can be clicked before a path is chosen. The pak `InvasionMod_P.pak` has the new widget. New test scenarios `tech-tree-widget-picks` and `tech-tree-widget-layout`.
 - Tech tree picks (change `update-tech-tree-yearly-picks`, #499): the settlement level no longer opens node slots. The player gets one pick at the start and one pick at each start of spring, banked when unused; every unlock costs one pick. Config `slots_per_level` is removed; new `initial_picks`, `picks_per_year`, `spring_season`. Three common techs (Corpse Robbing, Armory Census, Night Watch) and three common laws (Strip the Dead, Disarm the Peasantry, Curfew) are new. Corpse pit loot is now opt-in: the pit pays only while Strip the Dead is in force. See `mod/InvasionMod/CHANGELOG.md`.

@@ -1,6 +1,6 @@
 """Tests for the feature tribute of the pack mod (mod feature M08, iteration 01) in the fake game.
 
-They run the real Lua files. The stores of the village are a stub (raid_behavior.world.stores and deposit).
+They run the real Lua files. The stores of the village are a stub (raid_behavior.world.stores; the building is a stub with addToInventory).
 They do not prove how the real game behaves (see the real-game runs in the iteration file).
 """
 
@@ -13,13 +13,16 @@ STORE_STUB = """
 HELD = {}
 DEPOSITS = {}
 local rw = require("features.raid_behavior.world")
-rw.stores = function() return { { by_good = { [30] = 100 }, id = 1 } } end
-rw.deposit = function(_, good, amount)
-    if REFUSE then return false, "store full" end
-    HELD[good] = (HELD[good] or 0) + amount
-    DEPOSITS[#DEPOSITS + 1] = good .. ":" .. amount
-    return true
-end
+STORE_BUILDING = {
+    Inventory = {},
+    addToInventory = function(self, item)
+        if REFUSE then return end
+        self.Inventory[#self.Inventory + 1] = { Type = item.Type, amt = item.amt }
+        HELD[item.Type] = (HELD[item.Type] or 0) + item.amt
+        DEPOSITS[#DEPOSITS + 1] = item.Type .. ":" .. item.amt
+    end,
+}
+rw.stores = function() return { { by_good = { [30] = 100 }, id = 1, building = STORE_BUILDING } } end
 """
 
 
