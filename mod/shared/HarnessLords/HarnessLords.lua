@@ -15,6 +15,7 @@ local M = {}
 
 M.MAX_GROUPS = 6
 M.MAX_OFFSET = 60000
+M.MAX_ARRIVAL_DAYS = 10
 M.MAX_INFLUENCE = 10000
 M.MAX_LOG_LINES = 40
 M.MAX_NAME_CHARS = 40
@@ -338,7 +339,7 @@ function M.lord_claim(request)
              open_claims = read(function() return engineObject.openClaims:GetArrayNum() end) }
 end
 
--- spawnArmy with the lord as owner, dx, dy from the player pawn. One squad for each count.
+-- spawnArmy with the lord as owner, dx, dy from the player pawn. One squad for each count. days = arrival days (0 = at once).
 function M.lord_spawn_army(request)
     local engineObject = engine()
     if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
@@ -351,13 +352,15 @@ function M.lord_spawn_army(request)
     local count = request.count or 1
     if count < 1 or count > M.MAX_GROUPS then return { ok = false, error = "count must be 1 to " .. M.MAX_GROUPS } end
     local dx, dy = request.dx or 0, request.dy or 0
+    local days = request.days or 0
+    if days < 0 or days > M.MAX_ARRIVAL_DAYS then return { ok = false, error = "days must be 0 to " .. M.MAX_ARRIVAL_DAYS } end
     if math.abs(dx) > M.MAX_OFFSET or math.abs(dy) > M.MAX_OFFSET then return { ok = false, error = "dx and dy must be within " .. M.MAX_OFFSET } end
     local home = player(engineObject) and location(player(engineObject))
     if not home then return { ok = false, error = "no player position" } end
     local names = {}
     for i = 1, count do names[i] = FName(template) end
     local ok, returned = pcall(function()
-        return engineObject:spawnArmy({ X = home.X + dx, Y = home.Y + dy, Z = home.Z }, names, lord, 0, 0)
+        return engineObject:spawnArmy({ X = home.X + dx, Y = home.Y + dy, Z = home.Z }, names, lord, 0, days)
     end)
     if not ok then return { ok = false, error = "spawnArmy: " .. tostring(returned) } end
     local ids = {}
