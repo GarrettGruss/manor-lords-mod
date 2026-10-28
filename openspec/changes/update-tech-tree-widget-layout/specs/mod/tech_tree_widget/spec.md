@@ -1,0 +1,96 @@
+## REMOVED Requirements
+<!-- Issue: #502 -->
+
+### Requirement: Three header lines
+**Reason**: The window gets the layout of the mockup. The path shows in the row labels, the effects on the cards, and the settlement level no longer limits techs (change `update-tech-tree-yearly-picks`).
+**Migration**: See the ADDED requirements "The header shows the title and the tech picks" and "The window follows the layout mockup".
+
+## MODIFIED Requirements
+
+### Requirement: The tree is drawn from the data
+The menu SHALL show one button for each node of the tree data, path nodes and common techs together (at most 16), and hide the other buttons. It SHALL place each button at the `layout` x (the order column) and y (the row) of the node times `step_x` and `step_y`. Row 0 holds the Oppression nodes, row 1 the Prosperity nodes and row 2 the common techs. It SHALL colour a button by status: unlocked, available, locked, other path or no free pick. An unlocked node has the mark "[x]". A tree with more than 16 nodes SHALL fail loudly when the menu opens.
+
+#### Scenario: Buttons follow the nodes
+- **WHEN** the menu is open with the shipped tree
+- **THEN** 11 node buttons are visible (8 path nodes and 3 common techs)
+- **AND** each stands at its layout position
+- Checked by `mod/InvasionMod/scenarios/tech_tree/widget.py` (the count is updated from 8 to 11 in gate 2).
+
+#### Scenario: A common tech needs no path
+- **WHEN** no path is chosen and the player has a free pick and clicks a common tech
+- **THEN** the tech is unlocked with the mark "[x]"
+- **AND** a click on a path node is refused with the reason "no path is chosen"
+- Not checked yet (planned: `mod/InvasionMod/scenarios/tech_tree/widget_picks.py`).
+
+#### Scenario: A click without a free pick
+- **WHEN** the player has no free pick and clicks an available node
+- **THEN** the click is refused with "no free pick", and the message shows in the footer
+- Not checked yet (planned: `mod/InvasionMod/scenarios/tech_tree/widget_picks.py`).
+
+### Requirement: Two path buttons until a path is chosen
+The menu SHALL show a "Swear to this path" button in the row of each path while no path is chosen, and SHALL hide them after the choice. The row of the chosen path SHALL say "Sworn path" and the other row SHALL say "Closed". A click on a path button SHALL call the same function as the command `tech_tree_choose_path`.
+
+#### Scenario: A press chooses a path
+- **WHEN** the harness presses the path button of Prosperity through `InvasionMod.tech_tree_widget_press`
+- **THEN** the path of the tech tree is Prosperity
+- **AND** the path buttons are hidden, and the Prosperity row says "Sworn path"
+- Checked by `mod/InvasionMod/scenarios/tech_tree/widget_laws.py`.
+
+### Requirement: The menu lists the laws
+Each node card whose tech opens a law SHALL show the law name. When the tech is unlocked, the card SHALL show an "Enact" button, or a "Repeal" button while the law is in force. The laws strip SHALL show "N of 2 max" (the `max_active_laws`) and one place for each allowed law, each with the name, the effects and a "Repeal" button, or an empty place. A click SHALL enact or repeal the law through the same functions as the commands. A refused click is logged, shown in `last_error` and shown in the footer.
+
+#### Scenario: Presses enact, repeal and refuse
+- **WHEN** the harness presses the law buttons through the command
+- **THEN** the strip count and the button labels equal the tech tree state before and after each press
+- **AND** a press on a law of a locked tech is refused, and a third enact is refused as a third law
+- Checked by `mod/InvasionMod/scenarios/tech_tree/widget_laws.py` (the scenario is extended for the strip and the common laws in gate 2).
+
+#### Scenario: Labels say what a click does
+- **WHEN** a law is in force, open or not yet unlocked
+- **THEN** its button says Repeal, says Enact, or is hidden
+- Checked by `harness/tests/test_fakegame_laws.py`.
+
+## ADDED Requirements
+
+### Requirement: The header shows the title and the tech picks
+The menu SHALL show a header at the top with the title, the tech picks counter and a close button. The counter SHALL show the free picks and the picks used of the picks earned ("1 free (0 of 1 used)"), taken from the tech tree state of change `update-tech-tree-yearly-picks`. The menu SHALL NOT show the settlement level or a node slot count. The chosen path and the effects of the unlocked techs and laws SHALL show on the rows and the cards (see the layout requirement), not as header lines.
+
+#### Scenario: The counter follows the picks
+- **WHEN** the menu is open with 1 pick earned and no tech unlocked, and then a common tech is unlocked
+- **THEN** the counter reads "1 free (0 of 1 used)", and then "0 free (1 of 1 used)"
+- Not checked yet (planned: `harness/tests/test_fakegame_tech_tree.py`, updated, and `mod/InvasionMod/scenarios/tech_tree/widget.py`).
+
+#### Scenario: A new spring raises the counter
+- **WHEN** a new spring gives one pick while the menu is open
+- **THEN** the counter shows one more free pick on the next refresh
+- Not checked yet (planned: `mod/InvasionMod/scenarios/tech_tree/widget.py`).
+
+### Requirement: The window follows the layout mockup
+The tech tree window SHALL follow the layout of `openspec/specs/mod/tech_tree_widget/mockups/tech-tree-layout.html`: a header, column heads by order, one row for each path (Oppression above Prosperity) and a Common row below, node cards with links, a laws strip and a footer. The fonts, textures and exact sizes of the game MAY differ.
+
+#### Scenario: The parts and their order
+- **WHEN** the menu is open
+- **THEN** from top to bottom: the header (title at the left, picks counter, close button at the right end); the column heads I to IV ("First tech" to "Fourth tech", not settlement levels); the rows; the laws strip; the footer
+- **AND** each row has a label at its left edge (path name and status line, and "Swear to this path" while no path is chosen, not on the Common row)
+- **AND** the cards stand in the order columns from left to right, a link joins each path node to the node it requires (lit when that node is unlocked), and the common techs have no links
+- **AND** the footer has the last message at the left and "One tech pick each spring. The path you swear to is final." at the right
+- Checked by: picture evidence (owner review). Planned: `mod/InvasionMod/scenarios/tech_tree/widget_layout.py` (`ctx.screenshot`).
+
+#### Scenario: The rows and the cards
+- **WHEN** the menu is open
+- **THEN** the Oppression row is above the Prosperity row, and the Common row is below both
+- **AND** a node card shows the name, the status, the numerical effects ("No standing effect" when none) and the law of the tech with its Enact or Repeal button ("No law" when none)
+- Checked by: picture evidence (owner review). Planned: `mod/InvasionMod/scenarios/tech_tree/widget_layout.py`.
+
+#### Scenario: The states of the window
+- **WHEN** screenshots are taken with no path chosen, with a path and two unlocked techs, and with two laws in force
+- **THEN** each one matches the matching state of the mockup: the path buttons, the lit links and the two filled law places
+- Checked by: picture evidence (owner review). Planned: `mod/InvasionMod/scenarios/tech_tree/widget_layout.py`.
+
+### Requirement: The footer shows the last result
+The footer SHALL show the message of the last click: the name of the tech or law and what happened, or the reason of a refusal ("no free pick", "no path is chosen", "2 of 2 laws are in force"). It SHALL also show the fixed text "One tech pick each spring. The path you swear to is final."
+
+#### Scenario: A refusal shows in the footer
+- **WHEN** the player clicks a tech with no free pick
+- **THEN** the footer message names the tech and says "no free pick"
+- Not checked yet (planned: `mod/InvasionMod/scenarios/tech_tree/widget_picks.py`).
