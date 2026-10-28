@@ -1,6 +1,6 @@
 """M03 iteration 02, A1 to A4 and A6: a Hussite role raid (spawnArmy squads) leaves by itself.
 
-Options (run.py --env): INVASION_DIFFICULTY (1 to 3, default 1). The raid is a small forced role raid. The scenario adds no steering.
+Options (run.py --env): INVASION_DIFFICULTY (1 to 3, default 2: one Brigands squad walks in from the map border and often dies or wanders before the plunder tick). The raid is a small forced role raid. The scenario adds no steering.
 It runs game days until the raid leaves, and checks the reason, the time and that no raider stays. It saves nothing.
 """
 
@@ -32,7 +32,7 @@ def run_day(ctx) -> None:
 
 
 def run(ctx) -> dict:
-    difficulty = int(ctx.variant_option("INVASION_DIFFICULTY", "1"))
+    difficulty = int(ctx.variant_option("INVASION_DIFFICULTY", "2"))
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=difficulty)
     ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     ctx.mod.command("InvasionMod.invasion_set_size", size="small")

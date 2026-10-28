@@ -1273,9 +1273,11 @@ class Actions:
         """PawnCPP:layClaim on the target's current region. Not run in the real game yet."""
         return self._command("lord_claim", lord=lord, target=target)
 
-    def lord_spawn_army(self, lord: int, template: str, count: int = 1, dx: float = 0, dy: float = 0) -> dict:
+    def lord_spawn_army(self, lord: int, template: str, count: int = 1, dx: float = 0, dy: float = 0, days: float = 0,
+                       x: float | None = None, y: float | None = None) -> dict:
         """spawnArmy with the lord as owner, dx and dy from the player pawn. The lord's AI commands the squads."""
-        return self._command("lord_spawn_army", lord=lord, template=template, count=count, dx=dx, dy=dy)
+        extra = {} if x is None or y is None else {"x": x, "y": y}
+        return self._command("lord_spawn_army", lord=lord, template=template, count=count, dx=dx, dy=dy, days=days, **extra)
 
     def spawn_ai_lord(self, name: str, can_build: bool = False) -> dict:
         """RTSMultiEngineCPP:spawnNewAILord (no portrait). Returns `lord`, the number of the new lord.

@@ -486,6 +486,9 @@ class VassalProviderTests(InvasionTestCase):
 
 
 
+LEAD = 5  # config.invasion.border.march_lead_days: a lord army spawns this many days before the plan day
+
+
 class RaidBannerTests(InvasionTestCase):
     """update-raid-banners: no banner for a minor raid; one banner 30 days before a subjugation raid or a large plunder raid."""
 
@@ -525,7 +528,7 @@ class RaidBannerTests(InvasionTestCase):
         plan = self.ask("invasion_set_raid_days", days=10)["result"]
         self.game.advance(2)  # the daily step of the plan day (day 61)
         self.assertEqual([text for text in self.banners if text.startswith("Raid in")], [f"Raid in 10 days: you, about {plan['raiders']} raiders"])
-        self.assertEqual(self.run_days_collecting(62, plan["raid_day"] - 1), {})
+        self.assertEqual(self.run_days_collecting(62, plan["raid_day"] - LEAD - 1), {})
 
     def test_a_subjugation_raid_stand_in_names_you(self):
         self.after_first_raid()

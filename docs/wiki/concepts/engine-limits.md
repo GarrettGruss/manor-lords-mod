@@ -5,6 +5,8 @@ description: Things the game does not allow from Lua or data, found by spikes, w
 tags: [engine, limits, bailey, manor, spike]
 generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-19T00:00:00Z }
 sources:
+  - resource: repo://openspec/changes/archive/2026-10-28-update-spawn-from-map-border/notes/map-border.md
+  - resource: repo://openspec/changes/archive/2026-10-28-update-spawn-from-map-border/notes/march-order.md
   - resource: repo://openspec/changes/archive/2026-10-24-spike-militia-weapon-rebellion/notes/q3-homes-stock-weapons.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/README.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/implementation-notes/bailey-buildings.md
@@ -206,3 +208,14 @@ Desk research on 2026-10-28, no game run. Notes: `openspec/changes/archive/*-ass
 - **Raider kill count.** `raid_behavior` sees the deaths of tracked raids (9 killed, 9 counted) but not the deaths of units of a bandit camp made by `spawnBanditCamp` (5 killed, 0 counted). The count restarts at 0 in a new session.
 - **Pak widget visibility and tooltips.** A cooked widget Border keeps `SetVisibility(Collapsed)` for item Borders, but the collapse of the card Borders and a panel did not hold when it was set in the first refresh after the open (`GetVisibility` read 4): write it again 1.5 s later. `SetToolTipText` on a Border sets the property but the game draws no hover box over a mod widget; read `IsHovered` and show the text in a line instead. `TextBlock` font size is set from editor Python with `font.set_editor_property("size", n)`.
 - **Calendar action days.** `set_day` takes the day number of the calendar action (270 at the start of the new game fixture), which is 61 more than `TemporalComponent.daysTotal` (209): it does not move `daysTotal`. Use `ctx.time.run_game_days` to count contract days.
+
+
+## Map border, arrival days and friendly armies (change `update-spawn-from-map-border`, #434)
+
+- **`spawnArmy` honors the position, not the arrival days.** The fifth argument (days) did nothing for a lord army: squads for 0, 1, 2 and 3 days all stood at the given point 10 game seconds after the call and all walked at once (run `20261028-023053-69cf`). An army may start outside the playable square: the map has landscape about 100000 units beyond it.
+- **The playable square comes from the map edge actor.** Class `Medium_Map_Bounds_C` (map Jagged_Cliffs), splines `Spline1` to `Spline6`. `SplineComponent:GetLocationAtSplinePoint(i, 1)` (1 = world space) gives x -89459 to 84174 and y -89040 to 84593. Space 0 gives local points. Other map sizes probably have other class names.
+- **No navmesh.** The level has only `AbstractNavData`: no `RecastNavMesh`, no `NavMeshBoundsVolume`. No walkable test exists in Lua. Instead 8 squads, one at each compass place 3000 units outside the edge, all walked in to the manor when their AI lord had a challenge there (run `20261028-020728-5a13`). The army needs 3 to 8 game days from the edge to the manor.
+- **A lord army with a challenge walks in by itself.** No march order is needed. A player squad still cannot be moved from Lua.
+- **Two AI lords at war crash the game.** An ally lord with `lord_declare_war` against the raid lord crashed the game twice (EXCEPTION_ACCESS_VIOLATION reading 0x00000001e3010360, 120 to 180 game seconds later). Without the war the squads of both lords left the army list after 20 game seconds. So the relief army of the great raid cannot come from the border (see `DANGEROUS_ACTIONS.md`).
+- **`battlefield_anchor` refuses a second call within `delay_ms` (500 ms)**: "an anchor is still active". A challenge against a lord (`target` = lord number) failed with "the target has no current region".
+- **The pawn follows the camera.** After `centre_camera_on`, `distance_to_player` in `lords_state` is the distance to the camera.

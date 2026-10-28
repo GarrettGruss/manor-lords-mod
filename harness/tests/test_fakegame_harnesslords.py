@@ -192,6 +192,16 @@ class SteeringTests(LordsTestCase):
         self.assertEqual((squads[0]["target_x"], squads[0]["target_y"]), (100, 200))
         self.assertEqual(squads[0]["distance_to_player"], 502)
 
+    def test_an_army_can_start_at_an_absolute_point(self):
+        answer = self.send("lord_spawn_army", lord=1, template="spearMilitia", count=1, x=-92459, y=-63097)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["at"], {"x": -92459, "y": -63097})
+
+    def test_a_bad_absolute_point_or_arrival_time_is_refused(self):
+        self.assertIn("x and y must be", self.send("lord_spawn_army", lord=1, template="spearMilitia", x=999999, y=0)["error"])
+        self.assertIn("x and y must be", self.send("lord_spawn_army", lord=1, template="spearMilitia", x=5)["error"])
+        self.assertIn("days must be", self.send("lord_spawn_army", lord=1, template="spearMilitia", days=99)["error"])
+
     def test_a_new_lord_can_be_made_and_started(self):
         answer = self.send("spawn_ai_lord", name="Norse Warlord")
         self.assertEqual((answer["lords_before"], answer["lords_after"], answer["lord"]), (2, 3, 3))

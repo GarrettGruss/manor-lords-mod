@@ -41,6 +41,24 @@ Default: the raid starts at arrival. The 30-day banner counts to arrival. If the
 - Other mod code must not treat a marching army as missing.
 - Two UE4SS Lua crashes happened right after large spawns (a great wave of 448 raiders). A spawn at the border with an arrival time may spread the load over game time. This is a possible side benefit, not a requirement. If wave spawns still crash, that is a separate change.
 
+## Results of the spikes (2026-10-28)
+
+| Question | Result | Notes |
+|---|---|---|
+| A: arrival days greater than 0 | Ignored for a lord army. The army appears at once at the given position and walks. | `notes/arrival-days.md` |
+| B: map bounds, walkable land | The map edge actor has splines with the playable square. No navmesh exists. 8 of 8 border points 3000 units outside the edge worked in the real game. | `notes/map-border.md` |
+| C: march order | Not needed for hostile armies (lord AI with a challenge). Not possible for the relief army. | `notes/march-order.md` |
+
+## Built design
+
+- `features/invasion/border.lua`: pure rules (`pick`, `direction`, `bounds_of`, `is_outside`) and `read_bounds` (the map edge actor, class `Medium_Map_Bounds_C`).
+- `lord_raid.plan_border(options)` picks the point for the player manor. `lord_raid.start(templates, settings, point)` spawns each squad at the point (`HarnessLords.lord_spawn_army` with absolute `x`, `y`).
+- `invasion/init.lua` spawns `march_lead_days` before the raid day, shows the direction banner at the spawn and "Raiders are here" at arrival, and moves the wave gap to the arrival (`on_arrival`).
+- `raid_behavior`: a raid with `lord.marching` has no leave, plunder or steal rule and is not listed as active until `check_arrival` finds a fifth of its raiders within 12000 units of the manor (or after 12 game days). The start day becomes the arrival day.
+- Config: `invasion.border` (`rule`, `margin`, `inset`, `min_spawn_distance`, `march_lead_days`, `arrival_radius`, `arrival_share`, `max_march_days`, `north_axis`). The key `arrival_days` of the first draft is gone: the game has no such call.
+- Fallback: when the edge actor is not found, the log says so and the army starts at `start_dy` from the player pawn as before.
+- The relief army and the test spawns of `HarnessBattle` are unchanged.
+
 ## Spikes and open questions
 
 | Question | Spike |

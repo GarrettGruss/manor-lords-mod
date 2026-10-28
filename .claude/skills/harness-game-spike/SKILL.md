@@ -48,6 +48,8 @@ A spike answers one question about the engine with evidence. Write the question 
 - Placing a building with the real mouse (`activateBuildingMode(type)` + `ctx.click_with_mouse`): a valid ghost is WHITE; a red ghost or an error text means invalid. Click on open grass next to a road, away from plots and buildings, or the game refuses it (for example "no road access" on a burgage plot). Check the ghost in a screenshot before the click.
 - The bridge `call` passes only JSON values. A call that needs an object (a pawn, a region) needs a named mod command.
 - The AI lords write their decisions to `RTSMultiEngineCPP.debugLog_AI_general`, `_tactics` and `_construction` (command `lords_state`).
+- A new field of a HarnessActions command must also be added to the field parser in `mod/HarnessActions/Scripts/main.lua` (a list of `raw:match` patterns). A field that is missing there is dropped without an error: the spike for `days` of `spawnArmy` ran with 0 in its first run (change `update-spawn-from-map-border`). Check the answer echoes the value.
+- `centre_camera_on` moves the player pawn, so `distance_to_player` in `lords_state` is then the distance to the camera.
 - Time-box each primitive. If it does not work after a reasonable try, record what was tried. "Not possible from Lua, because ..." is a valid result.
 
 ## Turn it into a test

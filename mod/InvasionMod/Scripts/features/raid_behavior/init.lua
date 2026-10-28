@@ -60,8 +60,10 @@ local function register_raid(before, info)
     order[#order + 1] = id
     if state.loaded then
         state:set("raid_count", id)
-        state:set("raid_start_day", info.day)
-        state:set("raid_state", STATE_CODES.active)
+        if not raid.marching then
+            state:set("raid_start_day", info.day)
+            state:set("raid_state", STATE_CODES.active)
+        end
     end
     core.log.info(TAG, string.format("RAID_BEHAVIOR start id=%d day=%d squads=%d raiders=%d roles=%s", id, info.day, info.squads, #keys, tostring(info.roles == true)))
 end
@@ -182,6 +184,21 @@ local function start_leave(raid, reason, today)
     for _, watcher in ipairs(leave_watchers) do core.log.try(TAG, watcher, rules.summary(raid)) end
 end
 
+-- The arrival of a marching lord army (change update-spawn-from-map-border): the raid starts today.
+local function check_arrival(entry, today)
+    if not entry.raid.marching then return end
+    local border = require("config").invasion.border
+    local arrival = { radius = border.arrival_radius, share = border.arrival_share, max_days = border.max_march_days }
+    if not rules.check_arrival(entry.raid, arrival, today) then return end
+    local summary = rules.summary(entry.raid)
+    core.log.info(TAG, string.format("RAID_BEHAVIOR arrived id=%d day=%s spawn_day=%s living=%d", entry.raid.id, tostring(today), tostring(entry.raid.spawn_day), entry.raid.living))
+    if state.loaded then
+        state:set("raid_start_day", today)
+        state:set("raid_state", STATE_CODES.active)
+    end
+    core.log.try(TAG, invasion.on_arrival, summary)
+end
+
 local function check_leave(entry, today)
     local raid = entry.raid
     if not leave.enabled or raid.leave_reason ~= nil then return end
@@ -199,6 +216,7 @@ local function step_raid(entry, seen, today, slow_look)
     raiders_died = raiders_died + #deaths
     rules.note_deaths(raid, deaths)
     write_caps(seen)
+    check_arrival(entry, today)
     check_plunder(entry, seen, today)
     check_steal(entry, seen, today)
     check_region(entry, slow_look)
@@ -482,7 +500,7 @@ end
 local function force_leave(reason)
     for _, id in ipairs(order) do
         local raid = raids[id].raid
-        if raid.roles and raid.state == "active" and raid.leave_reason == nil then
+        if raid.roles and raid.state == "active" and not raid.marching and raid.leave_reason == nil then
             start_leave(raid, reason, world.current_day())
             return true
         end
@@ -494,7 +512,7 @@ end
 local function active_raids()
     local list = {}
     for _, id in ipairs(order) do
-        if raids[id].raid.state == "active" then list[#list + 1] = rules.summary(raids[id].raid) end
+        if raids[id].raid.state == "active" and not raids[id].raid.marching then list[#list + 1] = rules.summary(raids[id].raid) end
     end
     return list
 end
@@ -502,7 +520,7 @@ end
 local function active_role_raid()
     for _, id in ipairs(order) do
         local raid = raids[id].raid
-        if raid.roles and raid.state == "active" and raid.leave_reason == nil then return rules.summary(raid) end
+        if raid.roles and raid.state == "active" and not raid.marching and raid.leave_reason == nil then return rules.summary(raid) end
     end
     return nil
 end

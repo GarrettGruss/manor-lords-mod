@@ -11,7 +11,7 @@ function M.new_raid(id, start_day, squads, unit_keys, roles, lord)
     return {
         id = id, start_day = start_day, squads = squads, units = units, initial = living, living = living,
         deaths = 0, departures = 0, carried_out = 0, returned = 0, lost = 0, capped = 0, peak_loot = 0,
-        burned = 0, leaving = false, roles = roles == true, lord = lord, plundered = 0, plunder_goods = {}, unpaid = 0, unpaid_other = 0, last_plunder_day = nil, stolen = 0, last_steal_day = nil, leave_reason = nil, state = living > 0 and "active" or "empty", end_day = nil,
+        burned = 0, leaving = false, roles = roles == true, lord = lord, marching = lord ~= nil and lord.marching == true, spawn_day = start_day, arrival_day = nil, plundered = 0, plunder_goods = {}, unpaid = 0, unpaid_other = 0, last_plunder_day = nil, stolen = 0, last_steal_day = nil, leave_reason = nil, state = living > 0 and "active" or "empty", end_day = nil,
     }
 end
 
@@ -100,12 +100,31 @@ function M.is_subjugation(raid)
 end
 
 function M.leave_reason(raid, day, leave, carry_cap)
+    if raid.marching then return nil end -- the raid starts at arrival (change update-spawn-from-map-border)
     if not raid.roles or raid.state ~= "active" or raid.leave_reason ~= nil or raid.leaving or raid.initial < 1 then return nil end
     if M.is_subjugation(raid) then return nil end -- a subjugation raid stays until it is beaten or wins (M02.03)
     if M.looted_total(raid) >= M.loot_goal(raid, leave, carry_cap) * raid.initial then return "loot" end
     if raid.deaths / raid.initial >= leave.loss_share then return "losses" end
     if day ~= nil and day - raid.start_day >= leave.max_days then return "time" end
     return nil
+end
+
+-- A marching lord army has arrived when `share` of its living raiders stand within `radius` of the lord anchor (the manor), or when
+-- it marched `max_days` game days (a stuck army). The raid then starts: its start day is today. Returns true on the day of arrival.
+function M.check_arrival(raid, arrival, day)
+    if not raid.marching then return false end
+    if raid.state ~= "active" then raid.marching = false return false end -- the army died on the way
+    local near = 0
+    for _, unit in pairs(raid.units) do
+        if unit.x ~= nil and unit.y ~= nil and (unit.x - raid.lord.anchor.x) ^ 2 + (unit.y - raid.lord.anchor.y) ^ 2 <= arrival.radius ^ 2 then near = near + 1 end
+    end
+    local arrived = raid.living > 0 and near >= math.max(1, math.ceil(raid.living * arrival.share))
+    if not arrived and not (day ~= nil and day - raid.spawn_day >= arrival.max_days) then return false end
+    raid.marching, raid.arrival_day = false, day
+    if day ~= nil then raid.start_day = day end
+    -- The raid starts at arrival: the loss share and the loot goal count from the army that arrived, not from the army that left the edge.
+    raid.deaths_on_march, raid.initial, raid.deaths = raid.deaths, raid.living, 0
+    return true
 end
 
 -- The raid must leave. A lord army is removed by the game after peace.
@@ -122,7 +141,7 @@ end
 -- Goods the plunder tick takes today: `per_unit_day` for each living raider that stands within `battle_radius` of the anchor
 -- (the player manor). Once a day. At most what is missing to the loot goal of the leave rule. A lord raid only.
 function M.plunder_amount(raid, seen, plunder, leave, day, carry_cap)
-    if raid.lord == nil or M.is_subjugation(raid) or raid.state ~= "active" or raid.leave_reason ~= nil or day == nil or raid.last_plunder_day == day then return 0 end
+    if raid.marching or raid.lord == nil or M.is_subjugation(raid) or raid.state ~= "active" or raid.leave_reason ~= nil or day == nil or raid.last_plunder_day == day then return 0 end
     raid.last_plunder_day = day
     local inside = 0
     for key in pairs(raid.units) do
@@ -228,7 +247,7 @@ end
 -- battle marker (the lord anchor). Once a day, at most what is missing to the steal goal. The game steers a game raid, so it has no steal.
 function M.steal_amount(raid, seen, steal, day)
     local goal = M.steal_goal(raid, steal)
-    if goal == nil or raid.state ~= "active" or day == nil or raid.last_steal_day == day then return 0 end
+    if goal == nil or raid.marching or raid.state ~= "active" or day == nil or raid.last_steal_day == day then return 0 end
     raid.last_steal_day = day
     local far = 0
     for key in pairs(raid.units) do
@@ -255,7 +274,7 @@ function M.summary(raid)
         id = raid.id, start_day = raid.start_day, end_day = raid.end_day, squads = raid.squads, state = raid.state,
         initial = raid.initial, living = raid.living, deaths = raid.deaths, departures = raid.departures,
         loot = M.total_loot(raid), looted_total = M.looted_total(raid), carried_out = raid.carried_out, peak_loot = raid.peak_loot, returned = raid.returned, lost = raid.lost,
-        capped = raid.capped, carry_cap = raid.carry_cap, raid_type = M.raid_type(raid), burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, unpaid = raid.unpaid, stolen = raid.stolen, lord_raid = raid.lord ~= nil, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
+        capped = raid.capped, carry_cap = raid.carry_cap, raid_type = M.raid_type(raid), burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, unpaid = raid.unpaid, stolen = raid.stolen, lord_raid = raid.lord ~= nil, marching = raid.marching, deaths_on_march = raid.deaths_on_march or 0, spawn_day = raid.spawn_day, arrival_day = raid.arrival_day, final = raid.lord ~= nil and raid.lord.final == true, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
     }
 end
 

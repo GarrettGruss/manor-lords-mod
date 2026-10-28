@@ -24,6 +24,18 @@ return {
         squad_units = 18,                                    -- units in one squad of spawnRaiders
         base_timer_floor = 300,                              -- the mod lifts the base game raid timer when it falls under this
         base_timer_refill = 700,
+        border = {                                           -- update-spawn-from-map-border: hostile armies come in from the map edge
+            enabled = true,                                  -- false: the armies start `start_dy` from the player pawn as before
+            rule = "nearest",                                -- the edge point nearest to the target; a side nearer than min_spawn_distance is skipped
+            margin = 3000,                                   -- the army spawns this far outside the playable square (spike B: 8 of 8 points walked in)
+            inset = 5000,                                    -- keep the point this far from the corners of the square
+            min_spawn_distance = 30000,                      -- no squad starts closer than this to the target
+            march_lead_days = 5,                             -- spawn this many game days before the planned raid day: the march takes about 5 days (spike B)
+            arrival_radius = 12000,                          -- a raid has arrived when a fifth of its living raiders stand this near the manor (a fight starts at this range)
+            arrival_share = 0.2,
+            max_march_days = 12,                             -- a raid counts as arrived after this many days, also when it is stuck
+            north_axis = "-y",                               -- compass for the direction notice: "-y" (north is -y, east is +x) or "+y"
+        },
         raid_banner_days = 30,                               -- update-raid-banners: the one banner of a subjugation or player raid shows this many game days before the raid
         great_raid = {                                       -- the great raid starts at the first day of a game year (4 season changes a year)
             start_year = 10,                                 -- game year of the first wave (owner decision 2026-10-22)

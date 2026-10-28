@@ -16,6 +16,8 @@ MEASURE_DAYS = 3
 WAVE = re.compile(r"INVASION great wave (\d+) day=\d+ squads=(\d+)")
 RELIEF = re.compile(r"INVASION great relief day=\d+ squads=(\d+) spawned=(\w+)")
 FINAL = re.compile(r"INVASION great final day=\d+ squads=(\d+)")
+BORDER = re.compile(r"INVASION great (wave \d+|final) border side=(\w+) at=(-?\d+),(-?\d+) distance=(\d+) direction=([\w-]+)")
+MIN_SPAWN_DISTANCE = 30000
 
 
 def log_text(ctx) -> str:
@@ -28,13 +30,16 @@ def great(ctx) -> dict:
 
 
 def run_day(ctx) -> None:
-    ctx.popups()
-    try:
-        ctx.time.run_game_days(1, speed=SPEED)
-    except Exception as error:  # TimeControlError: the clock did not move
-        ctx.log.info(f"day failed ({error}); closing pop-ups and trying again")
+    # A spotted army drops the game to speed 1 (change update-spawn-from-map-border: the armies now walk in and are spotted on the way).
+    for attempt in range(1, 6):
         ctx.popups()
-        ctx.time.run_game_days(1, speed=SPEED)
+        try:
+            ctx.time.run_game_days(1, speed=SPEED)
+            return
+        except Exception as error:  # TimeControlError: the clock did not move
+            ctx.log.info(f"day failed ({error}); attempt {attempt} of 5, closing pop-ups and trying again")
+    ctx.popups()
+    ctx.time.run_game_days(1, speed=SPEED)
 
 
 def measure(ctx, label: str) -> float:
@@ -74,6 +79,10 @@ def run(ctx) -> dict:
     ctx.check("G2 relief squads match the difficulty", relief and int(relief[0][0]) == expected, relief)
     ctx.check("G2 the relief army spawned", relief and relief[0][1] == "true", relief)
     ctx.check("G3 the final army has the configured 25 squads", final == [25], final)
+    borders = [(m.group(1), int(m.group(5)), m.group(6)) for m in map(BORDER.search, text.splitlines()) if m]
+    ctx.log.info(f"border points: {borders}")
+    ctx.check("G6 every wave and the final army has a border point", len(borders) == difficulty + 1, borders)
+    ctx.check("G6 no army starts within 30000 units of the manor", all(distance >= MIN_SPAWN_DISTANCE for _, distance, _ in borders), borders)
     measure(ctx, "wave_relief_final")
     ctx.check("G5 the game still answers with all squads on the map", great(ctx)["phase"] in (2, 3), great(ctx))
     ctx.metric("phase_end", great(ctx)["phase"])
