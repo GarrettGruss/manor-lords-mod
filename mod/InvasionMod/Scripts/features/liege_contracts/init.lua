@@ -636,7 +636,7 @@ local function menu_state()
     return { open = is_open(), in_viewport = is_open() and read(function() return W.widget:IsInViewport() end) or false,
              texts = shown, view = model, wanted_texts = { InfluenceText = model.influence_text, SilverText = model.silver_text, ArmsInfoText = arms_info(status) },
              arms_label = "Request arms shipment", arms_disabled = not status.enabled, buttons = buttons, shipments = W.shipments or 0,
-             last_error = W.last_error, picks = S.picks, completes = S.completes }
+             last_error = W.last_error, picks = S.picks, completes = S.completes, tooltips = W.tooltips, visible = W.visible }
 end
 
 require("scheduler").every(TAG .. ".window", math.max(100, menu_config.poll_ms), tick_window)
