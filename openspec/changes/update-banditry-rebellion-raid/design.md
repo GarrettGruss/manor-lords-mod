@@ -35,7 +35,7 @@ The config holds the list `rebellion_weapon_ids`. Default: all known ids from th
 
 - Where: a module in `features/raid_behavior` (generic: it knows units and goods, not rebellions). API: `set(unit, goods)`, `get(unit)`, `take(unit)` (get and clear), `clear_all()`, `relink()` (after a load).
 - Session key: `unit:GetAddress()`. A body in `Region.corpses` is the same SMUnit object as the live unit (spike-corpse-pit-loot), so the key stays valid when the unit dies. `GetAddress` changes after a load, so it is only the in-memory index.
-- Read: the corpse pit pay-out path. When the pit receives a body whose key has an override, the mod adds the override goods to the pit (`addToInventory`) and clears the entry (`take`). Without an override the existing rules apply. The pit storage-limit rules stay.
+- Read: the corpse pit pay-out path. When the pit receives a body whose key has an override, the mod adds the override goods to the pit (`addToInventory`) and clears the entry (`take`). Without an override the existing rules apply. The pit storage-limit rules stay. The tech tree law "Strip the Dead" (pit pay-out on or off for the Hussite share) does not gate the override: the override is how the player recovers the goods that the rebels took.
 - The game's own plunder (`ItemsLooted`, carried goods) is not changed.
 - An override on a body ends when the body is paid out or disappears (about 30 game days). Owner accepted.
 
