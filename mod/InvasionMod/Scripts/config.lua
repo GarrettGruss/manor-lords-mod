@@ -81,6 +81,9 @@ return {
         enabled = true,
         poll_ms = 1000,         -- real time between two looks at the raiders
         pit_poll_ms = 1000,     -- real time between two looks at the corpse pit (change add-corpse-pit-loot)
+        override_poll_ms = 1000, -- real time between two looks at the units that have a loot override
+        relink_window_s = 10,   -- game seconds after a load in which a saved loot override finds its unit; later it is dropped
+        relink_max_polls = 120, -- real polls after a load before the window ends, also when the game is paused
         slow_every = 5,         -- the building scan and the AI log scan run every Nth look (they read many objects)
         carry_cap = 10,         -- most goods a Hussite raid plunders for each raider at its start (M00: Hussite grain 10). It is also the loot goal of a Hussite raid. Other raids are not capped.
         exit_y = -85000,       -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
@@ -148,9 +151,27 @@ return {
         manor_term = 10,                 -- order gain for each tick (plus the tech tree order_bonus)
         homeless_term = 5,               -- order loss for each tick and each homeless family
         threshold = 25,                  -- order below this value starts the banditry timer
-        timer_days = 90,                 -- game days from the timer start to the leave
+        timer_days = 60,                 -- game days from the timer start to the rebellion (was 90)
         warn_days = 30,                  -- the warning banner shows when this many game days are left
-        leavers = 18,                    -- families that leave when the timer expires
+        rebellion_families = 6,          -- families that leave in a rebellion (each home must hold a weapon or armor item)
+        hide_bodies = true,               -- hide the bodies of the killed families and camp Brigands (SetActorHiddenInGame)
+        rebellion_squads = 1,            -- Brigands squads (18 units each) of the pawn Outlaws that spawn at the first home
+        rebellion_weapon_ids = {         -- DT_Items ids: a home with one of them makes a family valid, and the rebels take all of them
+            133,       -- spears
+            178,       -- polearms
+            177,       -- sidearms
+            205,       -- warbows
+            206,       -- crossbows
+            271,       -- large shields
+            270,       -- small shields
+            163,       -- gambesons
+            164,       -- mail armor
+            273,       -- militia helmets
+            288, 289,  -- mercenary helmets
+        },
+        loot_override_slots = 200,       -- ModState slots of the loot override map (one slot holds one unit, under 1024 characters)
+        outlaws_start_polls = 5,         -- polls (one second each) to wait after a load before the Outlaws pawn is checked
+        outlaws_max_tries = 5,           -- tries of ensure_outlaw_pawn after a load before the mod gives up
         order_gain = 25,                 -- order gain when the families leave
         min_families_left = 1,           -- the village never loses its last family to this feature
         buy_back = {                     -- iteration 03. Starting values, tuned in playtests.

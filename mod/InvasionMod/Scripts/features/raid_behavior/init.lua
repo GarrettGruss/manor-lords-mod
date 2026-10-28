@@ -27,6 +27,11 @@ state:register("raid_lost", 0, "integer")
 state:register("raid_burned", 0, "integer")
 state:register("raid_plunder_record", "none", "string")
 
+-- Loot override (change update-banditry-rebellion-raid): saved in ModState slots, read at the corpse pit.
+local loot_override = require("features.raid_behavior.loot_override")
+local override_paid = { bodies = 0, goods = 0 }  -- paid at a pit in this session, for the state command
+local overrides = loot_override.new(loot_override.state_store(state, require("config").bandits.loot_override_slots), core.log)
+
 local end_watchers = {}    -- functions called with the raid summary when a raid is no longer active (M08 protection)
 local leave_watchers = {}  -- functions called with the raid summary when a role raid begins to leave (M06 sack)
 local raids = {}            -- raid id -> { raid, burned_base, leave_base }
@@ -268,37 +273,79 @@ local function merge_goods(into, from)
     for good, amount in pairs(from) do into[good] = (into[good] or 0) + amount end
 end
 
+-- Bodies with a loot override are paid first: their goods replace the config loot. The other bodies follow the raid rules.
 local function pit_poll()
-    if #order == 0 then return end
+    if #order == 0 and not (state.loaded and overrides.count() > 0) then return end
     local pits = world.pits()
     if pits == nil then return end
     for _, pit in ipairs(pits) do
         local before = pit_baseline[pit.key]
         pit_baseline[pit.key] = pit.corpses
         if before ~= nil and pit.corpses > before then
-            -- Loot order: the Hussite share of the raid record, then body_loot for other tracked dead. (The loot override of change
-            -- update-banditry-rebellion-raid comes first when that change is merged.)
-            local goods, paid = rules.pay_bodies(raid_records(), pit.corpses - before)
-            local other_goods, other_paid = rules.pay_other_bodies(raid_records(), pit.corpses - before - paid, config.body_loot, "bandit", math.random)
-            merge_goods(goods, other_goods)
+            local bodies = pit.corpses - before
+            -- Loot order: the loot override of a dead brigand first (the law "Strip the Dead" does not gate it: it is how the player
+            -- recovers the goods that the rebels took), then the Hussite share of the raid record, then body_loot for other tracked dead.
+            local goods, paid_override = {}, 0
+            if state.loaded then goods, paid_override = overrides.pay(bodies) end
+            for _, amount in pairs(goods) do override_paid.goods = override_paid.goods + amount end
+            override_paid.bodies = override_paid.bodies + paid_override
+            local raid_goods, paid = rules.pay_bodies(raid_records(), bodies - paid_override)
+            local other_goods, other_paid = rules.pay_other_bodies(raid_records(), bodies - paid_override - paid, config.body_loot, "bandit", math.random)
+            merge_goods(raid_goods, other_goods)
             paid = paid + other_paid
             bodies_consumed = bodies_consumed + paid
             if paid > 0 and corpse_loot_on then
                 bodies_looted = bodies_looted + paid
+                merge_goods(goods, raid_goods)
+                for _, watcher in ipairs(looted_watchers) do core.log.try(TAG, watcher, paid) end
+            elseif paid > 0 then
+                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d not looted (no law)", paid))
+            end
+            if paid_override > 0 or (paid > 0 and corpse_loot_on) then
                 if next(goods) ~= nil then
                     local ok, problem = world.pit_add(pit, goods)
                     if not ok then core.log.error(TAG, "pit give-back failed: " .. tostring(problem)) end
                 end
-                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d paid=%d other=%d unpaid=%d", pit.corpses - before, paid, other_paid, rules.unpaid_total(raid_records())))
-                for _, watcher in ipairs(looted_watchers) do core.log.try(TAG, watcher, paid) end
-            elseif paid > 0 then
-                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d not looted (no law)", paid))
+                core.log.info(TAG, string.format("RAID_BEHAVIOR pit bodies=%d paid=%d override_paid=%d other=%d unpaid=%d", bodies, paid_override + paid, paid_override, other_paid, rules.unpaid_total(raid_records())))
             end
         end
     end
 end
 
 require("scheduler").every(TAG .. ".pit", config.pit_poll_ms, pit_poll)
+
+-- The loot override poll. After a load it reads the saved slots and links them to the new units; later it ends the entries of units
+-- that left the map or whose body expired.
+local known_pawn = nil        -- the player pawn address of the game the entries belong to
+local relink = nil            -- { until_s, polls } while a load waits for its units
+
+local function relink_step()
+    local seconds = world.game_seconds() or 0
+    relink.polls = relink.polls + 1
+    local wanted = {}
+    for _, row in ipairs(overrides.list()) do wanted[row.squad] = true end
+    local _, unlinked = overrides.relink(world.units_by_squad(wanted))
+    if unlinked > 0 and seconds < relink.until_s and relink.polls < config.relink_max_polls then return end
+    local lost = overrides.drop_unlinked()
+    core.log.info(TAG, string.format("LOOT_OVERRIDE relink done entries=%d lost=%d polls=%d", overrides.count(), lost, relink.polls))
+    relink = nil
+end
+
+local function override_poll()
+    if not state.loaded then return end
+    local pawn = world.player_address()
+    if pawn == nil then return end
+    if pawn ~= known_pawn then
+        known_pawn = pawn
+        local saved = overrides.load_saved()
+        core.log.info(TAG, string.format("LOOT_OVERRIDE load saved=%d", saved))
+        relink = saved > 0 and { until_s = (world.game_seconds() or 0) + config.relink_window_s, polls = 0 } or nil
+    end
+    if relink ~= nil then return relink_step() end
+    if overrides.count() > 0 then overrides.poll(world.override_units(overrides.addresses()), world.current_day()) end
+end
+
+require("scheduler").every(TAG .. ".override", config.override_poll_ms, override_poll)
 
 require("scheduler").every(TAG, config.poll_ms, tick)
 
@@ -320,6 +367,35 @@ end
 
 if has_commands then
     commands.register("InvasionMod.raid_behavior_state", command_state, {})
+    -- Test: the loot override entries (slot, squad, unit index, goods, linked) and the pit goods.
+    commands.register("InvasionMod.raid_behavior_override_state", function()
+        local alive, dead, missing = 0, 0, 0
+        if state.loaded and overrides.count() > 0 then
+            local seen = world.override_units(overrides.addresses())
+            for address in pairs(overrides.addresses()) do
+                if seen[address] == nil then missing = missing + 1 elseif seen[address].dead then dead = dead + 1 else alive = alive + 1 end
+            end
+        end
+        return { entries = state.loaded and overrides.list() or {}, count = state.loaded and overrides.count() or 0, relinking = relink ~= nil,
+                 slots = require("config").bandits.loot_override_slots, units_alive = alive, units_dead = dead, units_missing = missing,
+                 paid_bodies = override_paid.bodies, paid_goods = override_paid.goods }
+    end, {})
+    -- Test: kill the units of the first `count` override entries (just_die, no hiding). Returns the number killed.
+    commands.register("InvasionMod.raid_behavior_test_kill_override_units", function(args)
+        local wanted, slots = {}, {}
+        for _, row in ipairs(overrides.list()) do
+            if #slots < args.count then slots[#slots + 1] = row.slot end
+        end
+        for address, entry in pairs(overrides.addresses()) do
+            for _, slot in ipairs(slots) do if entry.slot == slot then wanted[address] = true end end
+        end
+        local killed = 0
+        for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+            local address = core.isValid(unit) and core.read(function() return unit:GetAddress() end) or nil
+            if address ~= nil and wanted[address] and world.remove_unit(unit) then killed = killed + 1 end
+        end
+        return { killed = killed, slots = slots }
+    end, { count = { type = "integer", required = true, min = 1, max = 100 } })
     -- Test: the corpse pits (corpse count and goods) and the dead raiders that no pit delivery has paid yet.
     commands.register("InvasionMod.raid_behavior_pit_state", function()
         local pits = {}
@@ -435,4 +511,4 @@ end
 
 local function watch_looted(fn) looted_watchers[#looted_watchers + 1] = fn end
 
-return { state = state, set_corpse_loot = set_corpse_loot, watch_looted = watch_looted, watch_leave = watch_leave, watch_end = watch_end, active_raids = active_raids, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }
+return { state = state, loot_override = overrides, set_corpse_loot = set_corpse_loot, watch_looted = watch_looted, watch_leave = watch_leave, watch_end = watch_end, active_raids = active_raids, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }

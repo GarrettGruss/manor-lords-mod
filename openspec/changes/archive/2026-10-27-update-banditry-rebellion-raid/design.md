@@ -21,11 +21,11 @@ A separate module `features/bandits/outlaws.lua` with an idempotent `ensure_outl
 
 1. If the Outlaws pawn exists, do nothing and return true.
 2. Else call `spawnBanditCamp()` (no arguments). The game picks the place: the mod cannot choose the region. Then `addPawnRelations(pawn)`.
-3. `just_die` the 18 camp Brigands and hide their bodies (`SetActorHiddenInGame(true)`, `Region.corpses:Empty()` if needed). Both are safe in the spike.
-4. Demolish the camp: `SMBuildingMaster:demolish(true)` on the camp (encampment, bType 100). `demolish()` without the argument is refused, and `canBeDemolished()` is false. Spike result: parts went 17 to 0, the master was gone in about 10 game s, the pawn survived, and the game did not respawn the camp in 28 game days.
+3. The pawn exists now, so `ensure_outlaw_pawn()` returns true at once and a rebellion may go on. The camp cleanup runs on the next polls (`finish_camp_removal`, game time needed). Real-game fact (runs `rb-init-4` and `rb-init-5`, bridge spike): a camp is built by its 18 Brigands. If they die in the same tick, the camp stays unbuilt (`IsConstructed` false) and `demolish(true)` does nothing for good. So the cleanup waits until every new camp is built (`IsConstructed` true, one poll in run `rb-init-6`; after 120 polls it goes on anyway), then `just_die` the 18 camp Brigands (found by the addresses that were new after `spawnBanditCamp`, so rebels are never touched) and hides their bodies (`SetActorHiddenInGame(true)`). Both are safe in the spike.
+4. Then demolish the camp: `SMBuildingMaster:demolish(true)` on the camp (encampment, bType 100), called on each poll until the camp is gone (up to 120 polls, then an error is logged). `demolish()` without the argument is refused, and `canBeDemolished()` is false. Real result (run `rb-init-6`): the camp was gone about 80 game s after the pawn was made. Do not read a property of a camp master after the demolish (a bridge read of the destroyed master crashed the game in the spike).
 5. Log each step. Fail loudly if a step fails.
 
-It is called (a) at game start and after each load, (b) as a guard before each rebellion. Not verified: pawn survival over save and load (task 2.10), a second `spawnBanditCamp` after a removal, and later bandit raid behavior with a pawn that has no camp.
+It is called (a) at game start and after each load, (b) as a guard before each rebellion. Pawn survival over save and load is verified (run `rb-rt-r1`: the pawn existed after the load and the init did nothing). Not verified: a second `spawnBanditCamp` after a removal, and later bandit raid behavior with a pawn that has no camp.
 
 ## Weapon item ids
 
@@ -35,7 +35,7 @@ The config holds the list `rebellion_weapon_ids`. Default: all known ids from th
 
 - Where: a module in `features/raid_behavior` (generic: it knows units and goods, not rebellions). API: `set(unit, goods)`, `get(unit)`, `take(unit)` (get and clear), `clear_all()`, `relink()` (after a load).
 - Session key: `unit:GetAddress()`. A body in `Region.corpses` is the same SMUnit object as the live unit (spike-corpse-pit-loot), so the key stays valid when the unit dies. `GetAddress` changes after a load, so it is only the in-memory index.
-- Read: the corpse pit pay-out path. When the pit receives a body whose key has an override, the mod adds the override goods to the pit (`addToInventory`) and clears the entry (`take`). Without an override the existing rules apply. The pit storage-limit rules stay.
+- Read: the corpse pit pay-out path. When the pit receives a body whose key has an override, the mod adds the override goods to the pit (`addToInventory`) and clears the entry (`take`). Without an override the existing rules apply. The pit storage-limit rules stay. The tech tree law "Strip the Dead" (pit pay-out on or off for the Hussite share) does not gate the override: the override is how the player recovers the goods that the rebels took.
 - The game's own plunder (`ItemsLooted`, carried goods) is not changed.
 - An override on a body ends when the body is paid out or disappears (about 30 game days). Owner accepted.
 
@@ -46,11 +46,9 @@ The config holds the list `rebellion_weapon_ids`. Default: all known ids from th
 
 ### Stable unit key (spike task 2.8)
 
-After a load the game builds new SMUnit objects. The entry needs a key that is the same before and after. Candidates, in order of preference ("Not checked yet"):
+After a load the game builds new SMUnit objects. The entry needs a key that is the same before and after. Decision (verified, run `rb-rt-r1`): the saved key is the squad id plus the index of the unit in its squad at the spawn, and the relink gives the entries of a squad, ordered by index, to the units of that squad in the order of the game (the fallback 3 of the old list). The squad ids stayed the same over the harness save and load (squad 20 before and after), and 15 of 15 entries were linked to units again. The units of a squad are equal, so the match by position is enough. A unit name or id property that the game saves was not needed.
 
-1. Squad id plus unit index in the squad.
-2. A unit name or id property that the game saves.
-3. Re-match by squad: save the squad key and the goods per squad. After a load, give the goods to the living units of that squad in squad order. This is the fallback.
+The unit key in memory is the address. A dead unit has `assignedSquadID` 0, so a body is found only by its address, and an entry of a dead unit is kept (marked with the death day) until the pit pays it or 30 game days passed. The pit cannot tell whose body arrived (its count only rises), so a rise of the corpse count by N pays the N dead entries with the oldest death (one body, one entry). A body of a villager can therefore pay the entry of a killed brigand. This is an implementation limit (the game gives no hook on a delivered body). It is listed under "Spec changes" of the pull request for owner review.
 
 ### Re-link on load
 

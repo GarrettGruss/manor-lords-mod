@@ -16,7 +16,7 @@
     { "name": "invasion", "requires": ["mod_state"], "ids": {} },
     { "name": "raid_behavior", "requires": ["invasion"], "ids": {} },
     { "name": "unit_balance", "requires": [], "ids": {} },
-    { "name": "bandits", "requires": ["invasion"], "ids": {} },
+    { "name": "bandits", "requires": ["invasion", "raid_behavior"], "ids": {} },
     { "name": "sack_and_terms", "requires": ["raid_behavior", "vassals"], "ids": {} },
     { "name": "vassals", "requires": ["mod_state"], "ids": {} },
     { "name": "tribute", "requires": ["vassals", "raid_behavior"], "ids": {} },
