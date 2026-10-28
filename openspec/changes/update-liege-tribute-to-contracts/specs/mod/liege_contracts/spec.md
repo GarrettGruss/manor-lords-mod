@@ -133,7 +133,7 @@ The mod SHALL keep the contract state in ModState and restore it after a load: t
 
 #### Scenario: The keys
 - **WHEN** the state is written
-- **THEN** the keys are `contracts_spring_no` (integer, -1: no offer yet), `contracts_offer` (ids, dot separated), `contracts_active` (id, empty for none), `contracts_start_day`, `contracts_baseline`, `contracts_progress` (text, `key=value` pairs separated by semicolons), `contracts_done` and `contracts_failed`
+- **THEN** the keys are `contracts_spring_no` (integer, -1: no offer yet), `contracts_offer` (ids, dot separated), `contracts_active` (id, empty for none), `contracts_start_day`, `contracts_baseline` (same text form), `contracts_progress` (text, entries `o<index>-<value>` separated by dots), `contracts_done` and `contracts_failed`
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_contracts.py`).
 
 #### Scenario: State round trip

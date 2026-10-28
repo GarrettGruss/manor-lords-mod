@@ -43,9 +43,14 @@ Answers to the open questions (owner, 2026-10-28):
 - In the game, items show a letter box (accepted). In the mockup, each objective and reward type has an original icon (`mockups/icons/*.png`, sources in `mockups/icons/src/*.svg`).
 - The envoy (portrait and quote) is removed from the spec, the layout and the mockup. The `quote` of a contract stays only as flavor text on its card.
 
-## Open questions (with defaults)
+## Spec changes (decided in gate 2)
 
-1. Scope of "tribute". Not answered yet. Default: only the liege tribute (silver for influence, on the liege screen) is removed. The vassal goods tribute, the vassal policies and the two tribute law effects stay, because they supply iron and salt (`mod/finite_resources`) and are not on the liege screen. Alternative: remove the vassal tribute and policies too, and map Scorched Earth and Trade Pacts to a -25 percent and +25 percent contract reward factor. That alternative is a larger change and needs its own spec change for `mod/tribute`, `mod/vassals`, `mod/tech_tree` and `mod/finite_resources`.
+Open question 1 (scope of "tribute") is decided: option A (owner, issue #505 comment, 2026-10-28). Only the liege tribute (silver for influence, on the liege screen) is removed. The vassal goods tribute, the vassal policies heavy, light and fair, and the law effects Scorched Earth and Trade Pacts stay. No change to `mod/tribute`, `mod/vassals`, `mod/tech_tree` or `mod/finite_resources`.
+
+Findings of gate 2 that change a decision (details in `notes/`):
+
+- Goods ids (`notes/goods-ids.md`): id 15 is Rubble, not bread. The reward of `feed_the_city` is bread (id 172). Ids 14 (iron ore), 16 (wood), 17 (planks), 30 (carp), 145 (salt) and 133 (spears) are as in the starter set.
+- Saved text (`notes/state-encoding.md`): ModState strings allow only letters, digits, `_`, `.` and `-`. The progress and baseline text use `o<index>-<value>` entries separated by dots (for example `o0-12.o1-40`), not `key=value;` pairs.
 
 ## Impact
 
