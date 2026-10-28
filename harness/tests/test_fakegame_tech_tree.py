@@ -309,15 +309,55 @@ class WidgetFeatureTests(TechTreeTestCase):
         self.assertFalse(answer["result"]["ok"])
         self.assertTrue(answer["result"]["error"])
 
-    def test_the_wanted_lines_follow_the_tree(self):
-        wanted = self.ask("tech_tree_widget_state")["result"]["wanted_lines"]
-        self.assertEqual(wanted[0], "Path: not chosen yet")
-        self.assertEqual(wanted[1], "Node slots: 1 free of 1 (settlement level 1)")
-        self.assertEqual(wanted[2], "Effects: none")
+    def lua_text(self, expression):
+        return self.game.exec("local lines = require('features.tech_tree_widget.lines'); local view = require('features.tech_tree.init').view(); return " + expression)
+
+    def test_the_picks_counter_follows_the_picks(self):
+        self.assertEqual(self.lua_text("lines.picks_text(view)"), "1 free (0 of 1 used)")
+        self.assertEqual(self.ask("tech_tree_widget_state")["result"]["wanted_picks"], "Tech picks: 1 free (0 of 1 used)")
+        self.unlock("corpse_robbing")
+        self.assertEqual(self.ask("tech_tree_widget_state")["result"]["wanted_picks"], "Tech picks: 0 free (1 of 1 used)")
+        self.grant(1)
+        self.assertEqual(self.ask("tech_tree_widget_state")["result"]["wanted_picks"], "Tech picks: 1 free (1 of 2 used)")
+
+    def test_the_cards_are_eleven_in_three_rows(self):
+        rows = self.lua_text("(function() local out = {}; for _, c in ipairs(lines.cards(view)) do out[#out + 1] = c.layout.y end; return table.concat(out, ',') end)()")
+        self.assertEqual(rows, "0,0,0,0,1,1,1,1,2,2,2")
+
+    def test_a_common_tech_card_has_no_standing_effect(self):
+        text = self.lua_text("lines.card_text(view.common_nodes[1], require('features.tech_tree.init').tree.by_id.corpse_robbing, require('features.tech_tree.init').tree)")
+        self.assertEqual(text, "Corpse Robbing\nAvailable\nNo standing effect")
+
+    def test_the_status_text_names_the_reason(self):
+        self.assertEqual(self.lua_text("lines.status_text(view.nodes[1])"), "Choose a path")
+        self.choose("oppression")
+        self.assertEqual(self.lua_text("lines.status_text(view.nodes[1])"), "Available")
+        self.assertEqual(self.lua_text("lines.status_text(view.nodes[2])"), "Needs earlier tech")
+        self.assertEqual(self.lua_text("lines.status_text(view.nodes[5])"), "Other path")
+        self.unlock("martial_law")
+        self.assertEqual(self.lua_text("lines.status_text(view.nodes[1])"), "Unlocked")
+        self.assertEqual(self.lua_text("lines.status_text(view.nodes[2])"), "No free pick")
+
+    def test_the_card_text_marks_an_unlocked_tech(self):
         self.choose("oppression")
         self.unlock("martial_law")
-        wanted = self.ask("tech_tree_widget_state")["result"]["wanted_lines"]
-        self.assertEqual(wanted, ["Path: Oppression (final)", "Node slots: 0 free of 1 (settlement level 1)", "Effects: Public Order +10"])
+        text = self.lua_text("lines.card_text(view.nodes[1], require('features.tech_tree.init').tree.by_id.martial_law, require('features.tech_tree.init').tree)")
+        self.assertTrue(text.startswith("[x] Martial Law\nUnlocked\nPublic Order +10"), text)
+
+    def test_the_footer_message_names_the_tech_and_the_reason(self):
+        self.assertEqual(self.lua_text("lines.result_message('unlock', 'Martial Law', false, 'no free pick')"), "Martial Law refused: no free pick.")
+        self.assertEqual(self.lua_text("lines.result_message('unlock', 'Martial Law', false, 'no path is chosen')"), "Martial Law refused: no path is chosen.")
+        self.assertEqual(self.lua_text("lines.result_message('unlock', 'Night Watch', true)"), "Night Watch unlocked. 1 pick used.")
+        self.assertEqual(self.lua_text("lines.result_message('enact', 'Curfew', false, 'no free law place (2 in force of 2)')"), "Curfew refused: 2 of 2 laws are in force.")
+
+    def test_the_column_heads_are_by_order(self):
+        self.assertEqual(self.lua_text("lines.column_head(1) .. '|' .. lines.column_head(4)"), "I  First tech|IV  Fourth tech")
+
+    def test_the_rows_say_the_path_state(self):
+        self.assertEqual(self.lua_text("lines.row_status_text('oppression', view)"), "Rule by fear, order and levies")
+        self.choose("oppression")
+        self.assertEqual(self.lua_text("lines.row_status_text('oppression', view)"), "Sworn path")
+        self.assertEqual(self.lua_text("lines.row_status_text('prosperity', view)"), "Closed")
 
     def test_effect_text_lists_every_change(self):
         text = self.game.exec(

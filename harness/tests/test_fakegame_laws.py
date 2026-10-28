@@ -293,24 +293,51 @@ if __name__ == "__main__":
 
 
 class WidgetLawTests(LawTestCase):
-    def wanted_line(self):
-        return self.ask("tech_tree_widget_state")["result"]["wanted_laws_line"]
+    def lua_text(self, expression):
+        return self.game.exec("local lines = require('features.tech_tree_widget.lines'); local view = require('features.tech_tree.init').view(); return " + expression)
 
-    def test_the_laws_line_follows_the_laws_in_force(self):
-        self.assertEqual(self.wanted_line(), "Laws: choose a path first")
-        self.prosperity(["fair_courts", "amnesty"])
-        self.assertEqual(self.wanted_line(), "Laws: 0 of 2 in force")
-        self.enact("trade_pacts")
-        self.assertEqual(self.wanted_line(), "Laws: 1 of 2 in force")
-
-    def test_the_law_labels_say_what_a_click_does(self):
+    def test_the_strip_count_follows_the_laws_in_force(self):
+        self.assertEqual(self.lua_text("lines.strip_count_text(view)"), "0 of 2 max")
         self.prosperity(["fair_courts", "amnesty"])
         self.enact("trade_pacts")
-        labels = self.game.exec(
-            "local lines = require('features.tech_tree_widget.lines'); local out = {};"
-            " for _, law in ipairs(require('features.tech_tree.init').view().laws) do out[#out + 1] = lines.law_label(law) end;"
-            " return table.concat(out, '|')")
-        self.assertEqual(labels, "Enact Militia Charter|[in force] Trade Pacts (repeal)|Pay Off Warbands (closed)")
+        self.assertEqual(self.lua_text("lines.strip_count_text(view)"), "1 of 2 max")
+
+    def test_the_strip_counts_a_common_law(self):
+        self.grant(3)
+        self.unlock("night_watch")
+        self.enact("curfew")
+        self.assertEqual(self.lua_text("lines.strip_count_text(view)"), "1 of 2 max")
+
+    def test_the_law_button_says_what_a_click_does(self):
+        self.prosperity(["fair_courts", "amnesty"])
+        self.enact("trade_pacts")
+        labels = self.lua_text(
+            "(function() local by_id = lines.law_rows_by_id(view); local out = {};"
+            " for _, id in ipairs({ 'militia_charter', 'trade_pacts', 'pay_off_warbands', 'conscription' }) do out[#out + 1] = tostring(lines.law_button_label(by_id[id])) end;"
+            " return table.concat(out, '|') end)()")
+        self.assertEqual(labels, "Enact|Repeal|nil|nil")
+
+    def test_a_law_with_no_free_place_keeps_its_enact_button(self):
+        self.grant(3)
+        self.prosperity(["fair_courts", "amnesty"])
+        self.unlock("night_watch")
+        self.enact("trade_pacts")
+        self.enact("militia_charter")
+        labels = self.lua_text(
+            "(function() local by_id = lines.law_rows_by_id(view); local out = {};"
+            " for _, id in ipairs({ 'curfew', 'pay_off_warbands' }) do out[#out + 1] = tostring(lines.law_button_label(by_id[id])) end;"
+            " return table.concat(out, '|') end)()")
+        self.assertEqual(labels, "Enact|nil")  # Curfew: tech unlocked, no free place. Pay Off Warbands: tech not unlocked.
+
+    def test_a_card_names_the_law_of_its_tech(self):
+        text = self.lua_text("lines.card_law_text(lines.law_of_node('amnesty', require('features.tech_tree.init').tree)) .. '|' .. lines.card_law_text(lines.law_of_node('golden_age', require('features.tech_tree.init').tree))")
+        self.assertEqual(text, "Trade Pacts|No law")
+
+    def test_the_strip_place_shows_name_and_effects(self):
+        self.prosperity(["fair_courts", "amnesty"])
+        self.enact("trade_pacts")
+        text = self.lua_text("lines.strip_place_text(lines.enacted_laws(view)[1], require('features.tech_tree.init').tree) .. '|' .. lines.strip_place_text(nil, nil)")
+        self.assertEqual(text, "Trade Pacts\nTribute share +25%|Empty place")
 
     def test_press_needs_an_open_widget(self):
         answer = self.ask("tech_tree_widget_press", kind="law", index=1)
