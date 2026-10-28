@@ -4,6 +4,16 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed
+- **Tech tree (picks):** one pick at the start and one pick at each start of spring (banked when unused) replace the node slots of the settlement level. Every unlock of a path node or a common tech costs one pick. The pick state is saved with the game.
+- **Corpse pit (loot is now opt-in):** the pit pays loot only while the law Strip the Dead is in force. Before, it always paid the share of Hussite raiders.
+
+### Added
+- **Tech tree (common techs and laws):** Corpse Robbing, Armory Census and Night Watch need no path and can be unlocked before a path is chosen. They open three laws that count toward the limit of two laws:
+  - Strip the Dead: bodies of bandits at the corpse pit pay loot (a sword and a small shield, and in half of the bodies a helmet) and each looted body costs 1 Public Order.
+  - Disarm the Peasantry (approval -3): each game day the weapons of the homes go to the storehouse.
+  - Curfew (approval -4): banditry costs half as much Public Order for each homeless family.
+
 ## [0.1.0] - 2026-10-24
 First release for play testers. The mod turns Manor Lords into "The Hussites Are Coming": a growth game where Hussite armies raid you and your vassals.
 

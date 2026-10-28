@@ -53,8 +53,7 @@ def run(ctx) -> dict:
     make_vassal(ctx)
 
     ctx.mod.command("InvasionMod.tech_tree_choose_path", path="prosperity")
-    ctx.actions.set_settlement_level(2)
-    ctx.run_until(lambda: ctx.mod.command("InvasionMod.tech_tree_state")["slots"] >= 2, 20, what="2 node slots")
+    ensure_picks(ctx, 2)
     refused = ctx.mod.refusal("InvasionMod.tech_tree_set_vassal_policy", slot=1, policy="light")
     ctx.check("L1 light is refused before Fair Courts", refused is not None and "fair_courts" in refused, refused)
     ctx.mod.command("InvasionMod.tech_tree_unlock", node="fair_courts")
@@ -75,3 +74,11 @@ def run(ctx) -> dict:
     ctx.metric("tribute_light", light_only)
     ctx.metric("tribute_light_pacts", with_pacts)
     return ctx.result()
+
+
+def ensure_picks(ctx, wanted: int) -> None:
+    """Wait for the start pick, then add picks (a test command) until `wanted` picks are earned."""
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod." + "tech_tree_state")["picks_earned"] >= 1, 30, what="the start pick")
+    missing = wanted - ctx.mod.command("InvasionMod." + "tech_tree_state")["picks_earned"]
+    if missing > 0:
+        ctx.mod.command("InvasionMod." + "tech_tree_test_grant_picks", count=missing)

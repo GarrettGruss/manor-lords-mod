@@ -103,7 +103,8 @@ Real game runs on 2026-10-20 and 2026-10-21. Details and run ids are in the note
 - `pit:addToInventory({Type=<good>, amt=<n>})` counts in the region stock at once. Villagers haul the goods to a store in 3 to 5 game days. No goods pile actor exists and nothing shows on the ground.
 - A dead raider keeps `ItemsLooted`, and the same object stays in `Region.corpses` until a worker picks it up.
 - Reading `unit.currAnim`, `unit.dropsTo:GetFName()` or `unit.Speed` (one of them) crashed the game (access violation 0x18).
-- Owner decision 2026-10-22: the pit replaces the direct store add; loot give-back is for Hussite raids only (change `add-corpse-pit-loot`). Notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.
+- A body at the pit has no identity: the only signal is the corpse count (`Type 233`). A mod can pay a body only when it tracked the dead unit before (a raider of a raid it knows). Villager and militia bodies cannot be told from raider bodies at the pit (change `update-tech-tree-yearly-picks`).
+- Owner decision 2026-10-22: the pit replaces the direct store add; loot give-back is for Hussite raids only (change `add-corpse-pit-loot`). Since 2026-10-27 the pay-out needs the law Strip the Dead (change `update-tech-tree-yearly-picks`). Notes: `openspec/changes/archive/*-spike-corpse-pit-loot/notes/`.
 
 ## Public order factors (spike #403)
 

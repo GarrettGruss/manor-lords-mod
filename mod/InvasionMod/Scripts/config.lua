@@ -96,6 +96,17 @@ return {
             rate = 10,              -- goods for each stealing raider, each game day
             goals = { plunder = 100, great = 300 }, -- most goods one raid steals, by raid kind (small and large raid; no scaling by difficulty yet)
         },
+        -- Change update-tech-tree-yearly-picks: loot of a looted body (law Strip the Dead) that is not a Hussite raider.
+        -- One list of variants for each body kind; a body draws one variant at random by weight (weight is optional, default 1).
+        -- A kind with no variants pays nothing. Good ids (DT_Items): 177 sidearms, 270 small shields, 273 militia helmets.
+        -- The kind "soldier" has no values yet (the owner has not given any); soldier bodies are not told apart from other dead today.
+        body_loot = {
+            bandit = {                             -- Brigands (owner, 2026-10-28)
+                { weight = 1, goods = { [177] = 1, [270] = 1 } },
+                { weight = 1, goods = { [177] = 1, [270] = 1, [273] = 1 } },
+            },
+            soldier = {},
+        },
         leave = {
             enabled = true,
             loot_per_raider = 4,   -- leaves when the loot taken is this much for each raider of the start (native raiders carry 4 to 5)
@@ -299,7 +310,15 @@ return {
         enabled = true,
         poll_ms = 2000,              -- real time between two looks at the settlement level and the garrison
         max_active_laws = 2,         -- M12.04: laws in force at the same time (TBD)
-        slots_per_level = 1,         -- decision 24: one node slot for each settlement level
+        -- Change update-tech-tree-yearly-picks (owner, 2026-10-27): one pick for each game year, earned at the start of spring.
+        initial_picks = 1,           -- picks at the start of a game
+        picks_per_year = 1,          -- picks at each start of spring (banked when unused)
+        spring_season = 1,           -- value of the spring season in the calendar enum (winter 0, spring 1, summer 2, autumn 3; checked in the real game, see notes/spring-season.md)
+        strip_the_dead = { order_loss = 1 },  -- mod order lost for each corpse looted at the pit
+        disarm = {                   -- Disarm the Peasantry
+            tick_days = 1,           -- game days between two home sweeps
+            weapon_ids = { 133, 271 }, -- fallback when bandits.rebellion_weapon_ids does not exist: spears and large shields (the goods seen in homes)
+        },
         tree_file = "data/tech_tree/tree.json", -- relative to the mod folder
     },
     -- M12 iteration 02: the tech tree menu. Needs the pak InvasionMod_P.pak.
