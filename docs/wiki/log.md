@@ -3,6 +3,9 @@
 ## 2026-10-28
 * **Update**: [Invasion features](architecture/invasion-features.md) describes the tech tree picks (one at the start, one at each start of spring), the three common techs and laws, and the corpse pit loot that now needs Strip the Dead; [Engine limits](concepts/engine-limits.md) notes that a pit body has no identity (change `update-tech-tree-yearly-picks`, #499).
 
+## 2026-10-27
+* **Update**: Added [Native UI elements of the game](concepts/native-ui-elements.md) and [Building mod UI](workflows/building-mod-ui.md) (change `assess-native-ui-elements`, #504). [Engine limits found by spikes](concepts/engine-limits.md) links to them.
+
 ## 2026-10-25
 * **Update**: Added [Native modding and why the harness does not use it](concepts/native-modding.md): how native mods reach unlisted game code, the cost per game build, the decision to stay with reflection and paks, and the facts taken from AI Tweaks.
 
