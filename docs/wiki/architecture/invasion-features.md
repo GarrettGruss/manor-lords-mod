@@ -5,6 +5,7 @@ description: The features of mod/InvasionMod - what each one implements now, its
 tags: [invasion-mod, features, commands, dependencies]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-10-18T16:15:30Z }
 sources:
+  - resource: repo://openspec/changes/archive/2026-10-28-update-spawn-from-map-border/design.md
   - resource: repo://mod/InvasionMod/Scripts/features/
   - resource: repo://mod/InvasionMod/Scripts/feature_list.lua
   - resource: repo://mod/InvasionMod/Scripts/config.lua

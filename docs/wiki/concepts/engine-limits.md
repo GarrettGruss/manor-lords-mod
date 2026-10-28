@@ -5,6 +5,8 @@ description: Things the game does not allow from Lua or data, found by spikes, w
 tags: [engine, limits, bailey, manor, spike]
 generated: { by: claude-code/claude-sonnet-5-5, at: 2026-10-19T00:00:00Z }
 sources:
+  - resource: repo://openspec/changes/archive/2026-10-28-update-spawn-from-map-border/notes/map-border.md
+  - resource: repo://openspec/changes/archive/2026-10-28-update-spawn-from-map-border/notes/march-order.md
   - resource: repo://openspec/changes/archive/2026-10-24-spike-militia-weapon-rebellion/notes/q3-homes-stock-weapons.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/README.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-17-bailey-buildings/implementation-notes/bailey-buildings.md
