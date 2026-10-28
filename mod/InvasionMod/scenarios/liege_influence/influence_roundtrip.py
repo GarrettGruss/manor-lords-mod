@@ -1,7 +1,7 @@
 """add-liege-influence: the influence value survives a harness save and a load.
 
 Two runs make one round trip, because a run cannot load a save by itself (as mod-state-roundtrip):
-  1. phase write (default): send a tribute, save with save_game(keep=True). The result holds the slot.
+  1. phase write (default): complete a contract (influence 20), save with save_game(keep=True). The result holds the slot.
      uv run python harness/run.py --scenario liege-influence-roundtrip --new-game
   2. phase read: load the kept slot and read the influence.
      uv run python harness/run.py --scenario liege-influence-roundtrip --save <SaveGames>/<slot>.sav --env LIEGE_PHASE=read
@@ -9,11 +9,10 @@ The kept slot stays in the user's save folder. Delete it after the check (the ha
 """
 
 NAME = "liege-influence-roundtrip"
-DESCRIPTION = "Send 300 silver of tribute (30 influence), save, load the save in a second run, and read 30 influence."
+DESCRIPTION = "Complete a contract (20 influence), save, load the save in a second run, and read 20 influence."
 LIMIT_S = 240
 PREFIX = "InvasionMod."
-AMOUNT = 300
-EXPECTED = 30.0
+EXPECTED = 20.0
 
 
 def liege(ctx) -> dict:
@@ -21,10 +20,12 @@ def liege(ctx) -> dict:
 
 
 def write_phase(ctx) -> dict:
-    ctx.actions.set_silver(1000)
-    ctx.mod.command(PREFIX + "liege_send_tribute", amount=AMOUNT)
+    ctx.mod.command(PREFIX + "liege_contracts_offer_now", ids="raise_the_levy.clear_the_roads.keep_the_peace")
+    ctx.mod.command(PREFIX + "liege_contract_pick", id="raise_the_levy")
+    ctx.mod.command(PREFIX + "liege_contracts_test_progress", index=1, value=2)
+    ctx.mod.command(PREFIX + "liege_contract_complete")
     state = liege(ctx)
-    ctx.check("the influence is 30 before the save", abs(state["influence"] - EXPECTED) < 0.01, state)
+    ctx.check("the influence is 20 before the save", abs(state["influence"] - EXPECTED) < 0.01, state)
     record = ctx.actions.save_game("liege influence roundtrip", keep=True)
     ctx.log.info(f"ROUNDTRIP saved slot {record['slot']}")
     result = ctx.result()

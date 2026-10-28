@@ -158,7 +158,7 @@ class MenuTests(InvasionTestCase):
 
     def test_the_real_menus_are_registered_in_a_fixed_order(self):
         registered = self.lua("local r = T.menu.state().registered; return table.concat({ r[1], r[2], r[3], r[4] }, ',')")
-        self.assertEqual(registered, "raid,tech,tribute,a")
+        self.assertEqual(registered, "raid,tech,liege,a")
 
     def test_the_buttons_are_added_after_the_games_buttons_with_a_label(self):
         self.make_hud_and_wait()

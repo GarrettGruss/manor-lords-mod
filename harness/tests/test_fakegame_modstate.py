@@ -254,7 +254,8 @@ class FeatureTests(unittest.TestCase):
         self.assertTrue(self.command(3, "mod_state_set", key="selftest_text", value="abc_1")["ok"])
         dump = self.command(4, "mod_state_dump")["result"]
         self.assertEqual(dump["values"], {"selftest_int": 41, "selftest_flag": True, "selftest_text": "abc_1"})
-        expected = ["strength_Salt", "invasion:selftest_int=41", "invasion:selftest_flag=true", "invasion:selftest_text=abc_1", "invasion:v=1"]
+        # The version entry is the version of the feature that opened the state last: liege_contracts (2) since change update-liege-tribute-to-contracts.
+        expected = ["strength_Salt", "invasion:selftest_int=41", "invasion:selftest_flag=true", "invasion:selftest_text=abc_1", "invasion:v=2"]
         self.assertEqual(sorted(dump["tags"]), sorted(expected))
         typo = self.command(5, "mod_state_set", key="selftest_itn", value="1")
         self.assertFalse(typo["ok"])

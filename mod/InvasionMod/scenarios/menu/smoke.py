@@ -20,14 +20,14 @@ LONG_REASON = "Hover sweep over the bottom bar and real mouse clicks."
 PREFIX = "InvasionMod."
 SETTLE_S = 1.2
 HOVER_WAIT_S = 0.2
-MENUS = ("raid", "tech", "tribute")
-SILVER = 1000
+MENUS = ("raid", "tech", "liege")
+
 # The bottom bar stands at the bottom centre. The geometry calls return zero, so a button is found by the hover hook.
 BAR_X = tuple(round(0.30 + 0.01 * step, 3) for step in range(41))
 BAR_Y = (0.945, 0.96)
 # The Close button of the base menu stands at the bottom middle (95 percent down). The hover hook names it "__close".
-TRIBUTE_X = (0.34, 0.30, 0.38, 0.26, 0.42)
-TRIBUTE_Y = (0.622, 0.60, 0.64, 0.58, 0.66)
+PICK_X = tuple(round(0.17 + 0.01 * step, 3) for step in range(7))  # PickButton1 of the contracts window (offer shown)
+PICK_Y = tuple(round(0.66 + 0.01 * step, 3) for step in range(7))
 CLOSE_X = (0.50, 0.48, 0.52, 0.46, 0.54)
 CLOSE_Y = (0.95, 0.94, 0.96, 0.93, 0.97)
 GAME_SPEED = 2          # speed index 2 = game speed factor 4
@@ -96,21 +96,21 @@ def speed_after(ctx, wait_s: float = 1.5) -> float:
     return ctx.bridge.read_game_speed()
 
 
-def click_tribute_button(ctx) -> None:
+def click_pick_button(ctx) -> None:
     """A click on a button of the menu content must still act on the menu (the content stands above the backdrop)."""
-    for fy in TRIBUTE_Y:
-        for fx in TRIBUTE_X:
+    for fy in PICK_Y:
+        for fx in PICK_X:
             ctx.hover_with_mouse(fx, fy)
             time.sleep(HOVER_WAIT_S)
-            if any(b["name"] == "TributeButton" and b.get("hovered") for b in content_state(ctx, "tribute")["buttons"]):
-                ctx.log.info(f"TributeButton found at ({fx:.3f}, {fy:.3f})")
+            if any(b["name"] == "PickButton1" and b.get("hovered") for b in content_state(ctx, "liege")["buttons"]):
+                ctx.log.info(f"PickButton1 found at ({fx:.3f}, {fy:.3f})")
                 ctx.click_with_mouse(fx, fy)
                 return
-    raise AssertionError("the mouse never hovered TributeButton")
+    raise AssertionError("the mouse never hovered PickButton1")
 
 
 def content_state(ctx, menu_id: str) -> dict:
-    command = {"raid": "raid_widget_state", "tech": "tech_tree_widget_state", "tribute": "liege_menu_state"}[menu_id]
+    command = {"raid": "raid_widget_state", "tech": "tech_tree_widget_state", "liege": "liege_menu_state"}[menu_id]
     return ctx.mod.command(PREFIX + command)
 
 
@@ -152,14 +152,15 @@ def run(ctx) -> dict:
         expect.equals(f"S3 {menu_id}: the Close button exists", now["close_button"], True)
         expect.equals(f"S6 {menu_id}: the menu paused the game", ctx.bridge.read_game_speed(), 0)
         expect.equals(f"S6 {menu_id}: the speed before the open is stored", now["saved_speed"], GAME_SPEED_FACTOR)
-        if menu_id == "tribute":
-            ctx.actions.set_silver(SILVER)
-            click_tribute_button(ctx)
-            ctx.run_until(lambda: content_state(ctx, "tribute")["tributes"] >= 1, 8, what="a click on a content button acts", poll_s=0.5)
-            expect.equals("S5 tribute: one click on the content button sent one tribute", content_state(ctx, "tribute")["tributes"], 1)
-            expect.equals("S5 tribute: the menu stays open", state(ctx)["open_id"], "tribute")
+        if menu_id == "liege":
+            ctx.mod.command(PREFIX + "liege_contracts_offer_now", ids="timber_for_the_walls.clear_the_roads.keep_the_peace")
+            time.sleep(SETTLE_S + 1.5)
+            click_pick_button(ctx)
+            ctx.run_until(lambda: content_state(ctx, "liege")["picks"] >= 1, 8, what="a click on a content button acts", poll_s=0.5)
+            expect.equals("S5 liege: one click on the content button picked one contract", content_state(ctx, "liege")["picks"], 1)
+            expect.equals("S5 liege: the menu stays open", state(ctx)["open_id"], "liege")
             front(ctx)
-            ctx.screenshot("menu-tribute-after-click")
+            ctx.screenshot("menu-liege-after-click")
         ctx.click_with_mouse(*find_close(ctx))
         ctx.run_until(lambda: not state(ctx)["open"], 8, what=f"the Close button closes the {menu_id} menu", poll_s=0.5)
         expect.equals(f"S4 {menu_id}: the Close click closed the menu", state(ctx)["open"], False)

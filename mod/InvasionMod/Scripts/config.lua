@@ -302,10 +302,9 @@ return {
         finite_goods = { { id = 14, name = "iron", units_per_family = 10 }, { id = 145, name = "salt", units_per_family = 6 } },
     },
     -- liege_influence (change add-liege-influence). Values are owner decisions of 2026-10-19 and 2026-10-20.
+    -- Influence changes only by contracts (liege_contracts). The liege window values (poll, refresh, z_order, position) are used by that feature.
     liege_influence = {
         enabled = true,
-        influence_per_unit = 0.1,        -- influence for 1 silver of tribute (10 silver give 1 influence)
-        tribute_button_amount = 200,     -- silver sent by one click of the menu button
         -- Arms shipment (change add-scenario-start-kit, #425): the button "Request arms shipment" of the liege screen.
         arms_shipment = {
             cost = 200,                  -- silver
@@ -315,7 +314,16 @@ return {
         poll_ms = 100,                   -- real time between two looks at the click queue of the menu (never faster)
         refresh_ms = 500,                -- real time between two refreshes of the menu labels
         z_order = 500,
-        position = { X = 300, Y = 150 },
+        position = { X = 50, Y = 25 },   -- the contracts window is wide: it starts near the top left corner
+    },
+    -- liege_contracts (change update-liege-tribute-to-contracts, #505). The contracts themselves are in data/liege_contracts/contracts.json.
+    liege_contracts = {
+        enabled = true,
+        poll_ms = 2000,       -- real time between two looks at the season, the progress and the deadline
+        fail_penalty = 500,   -- influence taken when a contract is not complete at its deadline (never below 0); the same for all contracts
+        data_file = "data/liege_contracts/contracts.json", -- relative to the mod folder
+        spring_season = 1,    -- TemporalComponent.Season values (notes/season-values.md): winter 0, spring 1, summer 2, autumn 3
+        winter_season = 0,
     },
     -- M13 manor_stronghold. Values are TBD for playtests.
     manor_stronghold = {
