@@ -25,7 +25,7 @@ While the law Strip the Dead (`mod/tech_tree`) is in force, the mod SHALL poll t
 - Checked by `harness/tests/test_fakegame_raid_behavior.py`.
 
 ### Requirement: Native raids and a missing pit give nothing back
-The mod SHALL NOT add goods to the pit for the body of a raider of a native raid, except while Strip the Dead is in force (see `mod/tech_tree`). If no corpse pit exists, the mod SHALL add no goods and SHALL NOT add them to a store. The mod SHALL NOT start the give-back for bodies left on the ground.
+The mod SHALL NOT add goods to the pit for the body of a raider of a native raid, except while Strip the Dead is in force (see `mod/tech_tree`). Then the goods come from the loot override of the body when it has one, else from the table `raid_behavior.body_loot` (one entry per unit type). If no corpse pit exists, the mod SHALL add no goods and SHALL NOT add them to a store. The mod SHALL NOT start the give-back for bodies left on the ground.
 
 #### Scenario: A native raider body reaches the pit
 - **WHEN** Strip the Dead is not in force and the body of a native Brigand raider reaches the pit
@@ -34,7 +34,7 @@ The mod SHALL NOT add goods to the pit for the body of a raider of a native raid
 
 #### Scenario: A native raider body under Strip the Dead
 - **WHEN** Strip the Dead is in force and the body of a native Brigand reaches the pit
-- **THEN** the pit gains the `strip_the_dead.body_goods`
+- **THEN** the pit gains the goods of the entry for its unit type in `raid_behavior.body_loot`, or the goods of its loot override when it has one
 - Not checked yet (planned: `harness/tests/test_fakegame_raid_behavior.py`, updated).
 
 #### Scenario: No pit
