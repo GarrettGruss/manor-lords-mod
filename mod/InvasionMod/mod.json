@@ -28,7 +28,8 @@
     { "name": "refugees", "requires": ["vassals", "bandits"], "ids": {} },
     { "name": "tech_tree_widget", "requires": ["tech_tree"], "ids": {} },
     { "name": "order_tooltip", "requires": ["bandits"], "ids": {} },
-    { "name": "liege_influence", "requires": ["mod_state", "tribute"], "ids": {} }
+    { "name": "liege_influence", "requires": ["mod_state", "tribute"], "ids": {} },
+    { "name": "liege_contracts", "requires": ["mod_state", "invasion", "raid_behavior", "bandits", "liege_influence"], "ids": {} }
   ],
   "gate_scenarios": ["scenario-settings-new-game-menu", "invasion-first-raid"]
 }

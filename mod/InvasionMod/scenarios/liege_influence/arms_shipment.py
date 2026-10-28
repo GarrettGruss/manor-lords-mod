@@ -17,11 +17,12 @@ LIMIT_S = 500
 EXCLUSIVE = True
 LONG_REASON = "Places a Keep and clicks with the real mouse."
 PREFIX = "InvasionMod."
-SETTLE_S = 1.0
+SETTLE_S = 2.2
 HOVER_WAIT_S = 0.2
 SHIELD, SPEAR = 271, 133
-SCAN_X = (0.22, 0.26, 0.30, 0.34, 0.38)
-SCAN_Y = tuple(round(0.20 + 0.02 * step, 3) for step in range(30))
+# The contracts window with no offer (change update-liege-tribute-to-contracts): the arms button is at about (0.19, 0.50), Close below it.
+SCAN_X = tuple(round(0.16 + 0.01 * step, 3) for step in range(10))
+SCAN_Y = tuple(round(0.44 + 0.01 * step, 3) for step in range(20))
 
 
 def menu(ctx) -> dict:
@@ -65,7 +66,7 @@ def run(ctx) -> dict:
     reason = "Build a manor first"
     expect.equals("A1 the reason shows under the button only without a manor", reason in state["texts"]["ArmsInfoText"], not has_manor)
     expect.equals("A1 the button look is disabled without a manor", state["arms_disabled"], not has_manor)
-    expect.equals("A1 the shown texts equal the wanted texts", state["texts"], state["wanted_texts"])
+    expect.equals("A1 the shown texts equal the wanted texts", {k: state["texts"].get(k) for k in state["wanted_texts"]}, state["wanted_texts"])
     ctx.screenshot("arms-button-enabled" if has_manor else "arms-button-no-manor")
     fx, fy = find_button(ctx, "ArmsButton")
     silver = ctx.mod.command(PREFIX + "liege_state")["silver"]

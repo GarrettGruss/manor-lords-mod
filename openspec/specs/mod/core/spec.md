@@ -166,7 +166,7 @@ Every mod menu SHALL be built on one shared base menu module in the Invasion Mod
 - Checked by `mod/InvasionMod/scenarios/menu/smoke.py` (test scenario `menu-smoke`).
 
 ### Requirement: Mod menus pause the game while open
-Every mod menu on the base menu (raid, tech, liege and tribute, scenario settings) SHALL pause the game when it opens. When the menu closes, the game SHALL return to the speed that was active before the menu opened. If the game was already paused, it SHALL stay paused after the close. Every way to close SHALL restore the speed. The Begin button of the settings menu keeps `config.begin_speed`.
+Every mod menu on the base menu (raid, tech, liege, scenario settings) SHALL pause the game when it opens. When the menu closes, the game SHALL return to the speed that was active before the menu opened. If the game was already paused, it SHALL stay paused after the close. Every way to close SHALL restore the speed. The Begin button of the settings menu keeps `config.begin_speed`.
 
 #### Scenario: Opening a menu pauses the game
 - **WHEN** the game runs at a normal speed and a mod menu opens
