@@ -264,8 +264,9 @@ local function spawn_raid(today, kind)
     core.log.info(TAG, string.format("INVASION spawn day=%d planned_day=%d squads=%d raiders=%d composition=%s roles=%s kind=%s target=%s stand_in=%s",
         today, planned_day, squads, planned_units(kind), plan_rules.join(composition_list(kind)), tostring(use_roles), kind, tostring(target.region), tostring(target.stand_in)))
     if point ~= nil and lord_info ~= nil then
-        core.show_banner((kind == "subjugation" and "The subjugation raid approaches" or "Raiders approach") .. approach_text(point),
-            string.format("About %d raiders. They arrive in a few days", planned_units(kind)))
+        local title = (kind == "subjugation" and "The subjugation raid approaches" or "Raiders approach") .. approach_text(point)
+        core.log.info(TAG, "INVASION approach banner: " .. title)
+        core.show_banner(title, string.format("About %d raiders. They arrive in a few days", planned_units(kind)))
     else
         core.show_banner(kind == "subjugation" and "The subjugation raid is here" or "Raiders are here", string.format("About %d raiders", planned_units(kind)))
     end
