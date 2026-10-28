@@ -261,6 +261,7 @@ end
 
 -- Strip the Dead (tech tree) turns the pay-out on. Without the law a body is still counted as received but pays nothing.
 local corpse_loot_on = false
+local bodies_consumed, bodies_looted = 0, 0 -- tracked bodies that reached a pit, and those that were looted (law on); for the test state
 local looted_watchers = {}  -- functions called with the number of bodies looted in one pit look (tech tree: order loss)
 
 local function merge_goods(into, from)
@@ -281,7 +282,9 @@ local function pit_poll()
             local other_goods, other_paid = rules.pay_other_bodies(raid_records(), pit.corpses - before - paid, config.body_loot, "bandit", math.random)
             merge_goods(goods, other_goods)
             paid = paid + other_paid
+            bodies_consumed = bodies_consumed + paid
             if paid > 0 and corpse_loot_on then
+                bodies_looted = bodies_looted + paid
                 if next(goods) ~= nil then
                     local ok, problem = world.pit_add(pit, goods)
                     if not ok then core.log.error(TAG, "pit give-back failed: " .. tostring(problem)) end
@@ -333,7 +336,7 @@ if has_commands then
             table.sort(goods, function(a, b) return a.good < b.good end)
             record[#record + 1] = { id = id, goods = goods, unpaid = raids[id].raid.unpaid, unpaid_other = raids[id].raid.unpaid_other }
         end
-        return { pits = pits, raids = record }
+        return { pits = pits, raids = record, consumed = bodies_consumed, looted = bodies_looted }
     end, {})
     -- Test commands. They change the leave rules for this session only (not saved) and act on the raid of this session.
     commands.register("InvasionMod.raid_behavior_test_set_leave", function(args)

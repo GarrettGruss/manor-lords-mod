@@ -80,6 +80,7 @@ end
 
 -- Disarm the Peasantry: every `disarm.tick_days` game days the weapons of the homes go to the storehouse.
 local last_disarm_day = nil
+local disarm_ticks, disarm_moved, disarm_stored = 0, 0, 0 -- for the test state
 
 local function disarm_step()
     if not totals().disarm_homes then last_disarm_day = nil; return end
@@ -88,9 +89,11 @@ local function disarm_step()
     last_disarm_day = today
     local result, why = world.disarm_homes(DISARM_IDS)
     if result == nil then return core.log.warn(TAG, "TECH_TREE disarm skipped: " .. tostring(why)) end
-    local count = 0
+    local count, kept = 0, 0
     for _, amount in pairs(result.moved) do count = count + amount end
-    core.log.info(TAG, string.format("TECH_TREE disarm day=%d moved=%d", today, count))
+    for _, amount in pairs(result.gained) do kept = kept + amount end
+    disarm_ticks, disarm_moved, disarm_stored = disarm_ticks + 1, disarm_moved + count, disarm_stored + kept
+    core.log.info(TAG, string.format("TECH_TREE disarm day=%d moved=%d stored=%d", today, count, kept))
     if result.missed > 0 then core.log.warn(TAG, string.format("TECH_TREE disarm_homes_missed=%d", result.missed)) end
 end
 
@@ -228,6 +231,7 @@ local function command_state()
     return {
         path = state:get("tech_path"), unlocked = unlocked, laws = enacted_ids(), settlement_level = last_level,
         picks_earned = math.max(0, state:get("tech_picks_earned")), free_picks = free_picks(), spring_no = state:get("tech_spring_no"),
+        disarm_ticks = disarm_ticks, disarm_moved = disarm_moved, disarm_stored = disarm_stored,
         garrison_squads = last_garrison, totals = totals(), nodes = node_rows(), common_nodes = common_rows(unlocked),
         militia = unit_balance.militia_summary(),
     }

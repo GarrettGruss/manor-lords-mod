@@ -41,20 +41,20 @@ def run_day(ctx) -> None:
         ctx.time.run_game_days(1, speed=SPEED)
 
 
-def wait_for_bodies(ctx, unpaid_start: int) -> int:
-    """Run game days until a tracked body was consumed at the pit. Returns the number of bodies consumed."""
+def wait_for_bodies(ctx, key: str, start: int) -> int:
+    """Run game days until the counter `key` ("consumed" or "looted") of the pit state rose. Returns the rise."""
     for _ in range(DAY_LIMIT):
-        if pit_state(ctx)["raids"][0]["unpaid_other"] < unpaid_start:
+        if pit_state(ctx)[key] > start:
             break
         run_day(ctx)
-    return unpaid_start - pit_state(ctx)["raids"][0]["unpaid_other"]
+    return pit_state(ctx)[key] - start
 
 
 def kill(ctx, share: float) -> int:
     before = pit_state(ctx)["raids"][0]["unpaid_other"]
     killed = ctx.mod.command(PREFIX + "raid_behavior_test_kill_raiders", share=share)["killed"]
     ctx.run_until(lambda: pit_state(ctx)["raids"][0]["unpaid_other"] >= before + killed, 30, what="the deaths noted")
-    return pit_state(ctx)["raids"][0]["unpaid_other"]
+    return killed
 
 
 def run(ctx) -> dict:
@@ -76,10 +76,13 @@ def run(ctx) -> dict:
     pit_before = pit_state(ctx)["pits"][0]
     ctx.mod.command(PREFIX + "bandits_set_order", value=60)
     order_before = order(ctx)
-    unpaid = kill(ctx, 0.5)
-    ctx.metric("bodies_without_law", unpaid)
-    consumed = wait_for_bodies(ctx, unpaid)
+    consumed_start = pit_state(ctx)["consumed"]
+    killed = kill(ctx, 0.5)
+    ctx.metric("killed_without_law", killed)
+    consumed = wait_for_bodies(ctx, "consumed", consumed_start)
+    ctx.metric("bodies_without_law", consumed)
     ctx.check("S3 bodies reached the pit without the law", consumed >= 1, consumed)
+    ctx.check("S3 no body was looted without the law", pit_state(ctx)["looted"] == 0, pit_state(ctx)["looted"])
     pit_mid = pit_state(ctx)["pits"][0]
     for good in (SWORD, SMALL_SHIELD, HELMET):
         ctx.check(f"S4 no good {good} was paid without the law", amount(pit_mid["goods"], good) == amount(pit_before["goods"], good),
@@ -95,14 +98,17 @@ def run(ctx) -> dict:
     ctx.check("S6 the law is in force", "strip_the_dead" in enacted["laws"], enacted)
     ctx.mod.command(PREFIX + "bandits_set_order", value=60)
     ticks_start = order(ctx)["ticks"]
-    pit_start = pit_state(ctx)["pits"][0]
-    unpaid = kill(ctx, 1.0)
-    ctx.metric("bodies_with_law", unpaid)
+    start = pit_state(ctx)
+    pit_start = start["pits"][0]
+    killed = kill(ctx, 1.0)
+    ctx.metric("killed_with_law", killed)
     ctx.screenshot("strip_pit_before")
-    paid = wait_for_bodies(ctx, unpaid)
+    wait_for_bodies(ctx, "looted", start["looted"])
+    final = pit_state(ctx)
+    paid = final["looted"] - start["looted"]
     ctx.metric("bodies_looted", paid)
     ctx.check("S7 bodies were looted under the law", paid >= 1, paid)
-    after = pit_state(ctx)["pits"][0]
+    after = final["pits"][0]
     gain = {good: amount(after["goods"], good) - amount(pit_start["goods"], good) for good in (SWORD, SMALL_SHIELD, HELMET)}
     ctx.metric("gain_sword", gain[SWORD])
     ctx.metric("gain_small_shield", gain[SMALL_SHIELD])

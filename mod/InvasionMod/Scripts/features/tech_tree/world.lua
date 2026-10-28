@@ -95,11 +95,20 @@ function M.disarm_homes(weapon_ids)
             end
         end
     end
+    local gained = {}
     for kind, amount in pairs(moved) do
+        local before = amount_of(storehouse, kind)
         local ok = pcall(function() storehouse:addToInventory({ Type = kind, amt = amount }) end)
-        if not ok then missed = missed + amount; moved[kind] = nil end
+        if not ok then
+            missed = missed + amount
+            moved[kind] = nil
+        else
+            -- A store that kept less than it was given is a lost good: report it (disarm_homes_missed).
+            gained[kind] = amount_of(storehouse, kind) - before
+            if gained[kind] < amount then missed = missed + (amount - gained[kind]) end
+        end
     end
-    return { moved = moved, missed = missed }
+    return { moved = moved, gained = gained, missed = missed }
 end
 
 -- The data folder lies next to the Scripts folder of the mod. UE4SS puts that Scripts folder on package.path.
