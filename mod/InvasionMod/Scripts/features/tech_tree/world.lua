@@ -29,24 +29,58 @@ function M.current_day()
 end
 
 local HOME_TYPE = 3        -- EBuildingType of a burgage plot (spike militia-weapon-rebellion, q3)
-local STOREHOUSE_TYPE = 6
+local STOREHOUSE_TYPES = { 6, 72 } -- storehouse first, then granary (the tier 1 stores of raid_behavior; the spike fixture had type 72)
+
+-- The homes and the first tier 1 store of the player region. Returns homes (list) and storehouse (or nil), or nil and a message.
+local function homes_and_store()
+    local region = core.player_region()
+    if region == nil then return nil, "no player region" end
+    local homes, stores = {}, {}
+    for _, building in ipairs(core.listOf(region:GetBuildings())) do
+        if core.isValid(building) and core.read(function() return building:IsRubble() end) ~= true then
+            local kind = core.read(function() return building.Data.bType end)
+            if kind == HOME_TYPE then homes[#homes + 1] = building else stores[kind] = stores[kind] or building end
+        end
+    end
+    for _, kind in ipairs(STOREHOUSE_TYPES) do
+        if stores[kind] then return homes, stores[kind] end
+    end
+    return homes, nil
+end
+
+local function amount_of(building, good)
+    local total = 0
+    for _, row in ipairs(core.listOf(building.Inventory)) do
+        if core.read(function() return row.Type end) == good then total = total + (core.read(function() return row.amt end) or 0) end
+    end
+    return total
+end
+
+-- Test: how much of one good the homes and the store hold, and put goods into the first home.
+function M.home_goods(good)
+    local homes, store = homes_and_store()
+    if homes == nil then return nil, store end
+    local in_homes = 0
+    for _, home in ipairs(homes) do in_homes = in_homes + amount_of(home, good) end
+    return { homes = in_homes, store = store and amount_of(store, good) or nil, home_count = #homes }
+end
+
+function M.fill_home(good, amount)
+    local homes = homes_and_store()
+    if homes == nil or homes[1] == nil then return nil, "no home" end
+    local ok, why = pcall(function() homes[1]:addToInventory({ Type = good, amt = amount }) end)
+    if not ok then return nil, tostring(why) end
+    return true
+end
 
 -- Disarm the Peasantry: move every good with an id in `weapon_ids` from the homes to the first storehouse
 -- (consumeGoodNoCheck removes one unit, addToInventory adds to the storehouse; both proven in the rebellion spike).
 -- Returns { moved = { [good] = amount }, missed = n } or nil and a message.
 function M.disarm_homes(weapon_ids)
-    local region = core.player_region()
-    if region == nil then return nil, "no player region" end
     local wanted = {}
     for _, id in ipairs(weapon_ids) do wanted[id] = true end
-    local homes, storehouse = {}, nil
-    for _, building in ipairs(core.listOf(region:GetBuildings())) do
-        if core.isValid(building) and core.read(function() return building:IsRubble() end) ~= true then
-            local kind = core.read(function() return building.Data.bType end)
-            if kind == HOME_TYPE then homes[#homes + 1] = building
-            elseif kind == STOREHOUSE_TYPE and storehouse == nil then storehouse = building end
-        end
-    end
+    local homes, storehouse = homes_and_store()
+    if homes == nil then return nil, storehouse end
     if storehouse == nil then return nil, "no storehouse" end
     local moved, missed = {}, 0
     for _, home in ipairs(homes) do

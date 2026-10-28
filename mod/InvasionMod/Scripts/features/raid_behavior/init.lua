@@ -331,7 +331,7 @@ if has_commands then
             local goods = {}
             for good, amount in pairs(raids[id].raid.plunder_goods) do goods[#goods + 1] = { good = good, amount = amount } end
             table.sort(goods, function(a, b) return a.good < b.good end)
-            record[#record + 1] = { id = id, goods = goods, unpaid = raids[id].raid.unpaid }
+            record[#record + 1] = { id = id, goods = goods, unpaid = raids[id].raid.unpaid, unpaid_other = raids[id].raid.unpaid_other }
         end
         return { pits = pits, raids = record }
     end, {})

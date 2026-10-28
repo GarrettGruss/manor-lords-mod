@@ -270,10 +270,22 @@ local function command_grant_picks(args)
     return command_state()
 end
 
+-- Test: put goods into the first home, and read the goods of the homes and the store (Disarm the Peasantry).
+local function command_fill_home(args)
+    local ok, why = world.fill_home(args.good, args.amount)
+    if not ok then return nil, why end
+    return world.home_goods(args.good)
+end
+
+local function command_home_goods(args) return world.home_goods(args.good) end
+
 local has_commands, commands = pcall(require, "HarnessCommands")
 if has_commands then
     commands.register("InvasionMod.tech_tree_state", command_state, {})
     commands.register("InvasionMod.tech_tree_test_grant_picks", command_grant_picks, { count = { type = "integer", required = true, min = 1, max = 20 } })
+    commands.register("InvasionMod.tech_tree_test_fill_home", command_fill_home,
+        { good = { type = "integer", required = true, min = 1, max = 400 }, amount = { type = "integer", required = true, min = 1, max = 50 } })
+    commands.register("InvasionMod.tech_tree_test_home_goods", command_home_goods, { good = { type = "integer", required = true, min = 1, max = 400 } })
     commands.register("InvasionMod.tech_tree_choose_path", command_choose_path, { path = { type = "string", required = true } })
     commands.register("InvasionMod.tech_tree_unlock", command_unlock, { node = { type = "string", required = true } })
     commands.register("InvasionMod.tech_tree_enact_law", command_enact_law, { law = { type = "string", required = true } })

@@ -5,6 +5,7 @@ Steps: assign a family to the pit (building_assign_worker type=113), force a sma
 tick has recorded goods, kill the raiders (just_die), then wait until the workers deliver bodies. Each delivered body of the raid
 must add floor(record / raiders at the start) of each recorded good to the pit.
 Nothing may be lost when the pit is full: the gain must equal the paid shares, and the storage limit of the pit must cover the stored goods. A body of an animal or a villager is ignored.
+Since the change update-tech-tree-yearly-picks the pit pays only while the law Strip the Dead is in force, so the scenario unlocks Corpse Robbing and enacts the law first.
 It saves nothing.
 """
 
@@ -45,6 +46,10 @@ def run(ctx) -> dict:
     ctx.check("the fixture has one corpse pit", len(pit_state(ctx)["pits"]) == 1, pit_state(ctx))
     assigned = ctx.actions._command("building_assign_worker", type=PIT_TYPE)
     ctx.check("a family works at the pit", assigned.get("ok") is True, assigned)
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod.tech_tree_state")["picks_earned"] >= 1, 30, what="the start pick")
+    ctx.mod.command("InvasionMod.tech_tree_unlock", node="corpse_robbing")
+    enacted = ctx.mod.command("InvasionMod.tech_tree_enact_law", law="strip_the_dead")
+    ctx.check("Strip the Dead is in force", "strip_the_dead" in enacted["laws"], enacted)
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=int(ctx.variant_option("INVASION_DIFFICULTY", "1")))
     ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
     ctx.mod.command("InvasionMod.invasion_set_size", size="small")

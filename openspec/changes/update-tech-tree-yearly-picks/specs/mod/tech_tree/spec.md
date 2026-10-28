@@ -124,27 +124,27 @@ The mod SHALL offer three common techs: Corpse Robbing, Armory Census and Night 
 - Not checked yet (planned: `harness/tests/test_fakegame_tech_tree.py`, updated).
 
 ### Requirement: Strip the Dead gives loot from bodies at the corpse pit
-While the law Strip the Dead is in force, the mod SHALL pay goods to the corpse pit for each body of a bandit or a soldier that the pit receives, and SHALL lower the mod order by `strip_the_dead.order_loss` (default 1) for each corpse looted, inside the limits 0 to 100. The goods of a body SHALL come from the existing loot rules (see the scenarios). A body with no loot entry pays nothing. Without the law, no body pays (see `mod/raid_behavior`).
+While the law Strip the Dead is in force, the mod SHALL pay goods to the corpse pit for each body of a dead raider that the mod tracked (a Hussite raider, or a Brigand of a native or bandit raid) that the pit receives, and SHALL lower the mod order by `strip_the_dead.order_loss` (default 1) for each corpse looted, inside the limits 0 to 100. The goods of a body SHALL come from the existing loot rules (see the scenarios). A body with no loot entry pays nothing. A pit body has no identity, so a body that the mod did not track (a villager, a militia man, a soldier) pays nothing and costs no order. Without the law, no body pays (see `mod/raid_behavior`).
 
 #### Scenario: A body is looted
-- **WHEN** Strip the Dead is in force and the body of a bandit with a `body_loot` entry reaches the pit
-- **THEN** the pit gains the goods of the entry and the mod order falls by 1
-- Not checked yet (planned: `mod/InvasionMod/scenarios/tech_tree/strip_the_dead.py`).
+- **WHEN** Strip the Dead is in force and the body of a Brigand of a native raid reaches the pit
+- **THEN** the pit gains one loot variant of the Brigands (1 sword and 1 small shield, and in half of the bodies 1 helmet) and the mod order falls by 1
+- Checked by `mod/InvasionMod/scenarios/tech_tree/strip_the_dead.py` and `harness/tests/test_fakegame_raid_behavior.py`.
 
 #### Scenario: A rebel body with an override
 - **WHEN** Strip the Dead is in force and the body of a rebel with an override of 3 spears reaches the pit
 - **THEN** the pit gains 3 spears and the entry is cleared
-- Not checked yet (planned: `harness/tests/test_fakegame_laws.py`, updated; needs `update-banditry-rebellion-raid`).
+- Not checked yet (needs the loot override of `update-banditry-rebellion-raid`; that change is not merged).
 
 #### Scenario: Loot sources
 - **WHEN** Strip the Dead is in force and a body reaches the pit
-- **THEN** the pit gets, in this order, the loot override of the body (change `update-banditry-rebellion-raid`), else the raid share of a Hussite body, else the entry for its unit type in `raid_behavior.body_loot`
-- Not checked yet (planned: `harness/tests/test_fakegame_raid_behavior.py`, updated).
+- **THEN** the pit gets, in this order, the loot override of the body (change `update-banditry-rebellion-raid`), else the raid share of a Hussite body, else one variant of the entry for its kind in `raid_behavior.body_loot`
+- Checked by `harness/tests/test_fakegame_raid_behavior.py` (the override part waits for `update-banditry-rebellion-raid`).
 
 #### Scenario: The law is not in force
 - **WHEN** the law is not enacted and a body reaches the pit
 - **THEN** the pit gains no goods and the order does not change
-- Not checked yet (planned: `harness/tests/test_fakegame_laws.py`, updated).
+- Checked by `harness/tests/test_fakegame_raid_behavior.py` and `mod/InvasionMod/scenarios/tech_tree/strip_the_dead.py`.
 
 ### Requirement: Disarm the Peasantry moves home weapons to the storehouse
 While the law Disarm the Peasantry is in force, the mod SHALL, every `disarm.tick_days` game days (default 1), move each good with an id in `bandits.rebellion_weapon_ids` from every home to the storehouse (`consumeGoodNoCheck`, then `addToInventory`). No family then holds such a good, so the rebellion is blocked. The militia must re-arm when called. The law lowers approval by 3. A missed good is logged (`disarm_homes_missed`) and does not stop the tick.

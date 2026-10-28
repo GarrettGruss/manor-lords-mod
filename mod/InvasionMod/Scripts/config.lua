@@ -313,7 +313,7 @@ return {
         -- Change update-tech-tree-yearly-picks (owner, 2026-10-27): one pick for each game year, earned at the start of spring.
         initial_picks = 1,           -- picks at the start of a game
         picks_per_year = 1,          -- picks at each start of spring (banked when unused)
-        spring_season = 0,           -- value of the spring season in the calendar enum (read in the real game, see notes/spring-season.md)
+        spring_season = 1,           -- value of the spring season in the calendar enum (winter 0, spring 1, summer 2, autumn 3; checked in the real game, see notes/spring-season.md)
         strip_the_dead = { order_loss = 1 },  -- mod order lost for each corpse looted at the pit
         disarm = {                   -- Disarm the Peasantry
             tick_days = 1,           -- game days between two home sweeps
