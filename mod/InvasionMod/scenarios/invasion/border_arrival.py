@@ -112,5 +112,15 @@ def run(ctx) -> dict:
     near = [q for lord in mine for q in lord["squads"] if q.get("distance_to_player") is not None and q["distance_to_player"] <= 15000]
     ctx.check("squads stand near the manor after arrival", len(near) >= 1, [q.get("distance_to_player") for lord in mine for q in lord["squads"]])
     shot(ctx, "army-at-the-manor", 0.5)
+    # Where does the army stand in the days after the arrival? (a record for the notes, not an assertion)
+    for day in range(1, 7):
+        run_day(ctx)
+        squads = [q for lord in ctx.actions.lords_state(log=0).get("lords", []) if lord.get("name") == "Hussite Raiders"
+                  for q in lord["squads"] if q.get("alive") and q.get("x") is not None]
+        if squads:
+            centre = (sum(q["x"] for q in squads) / len(squads), sum(q["y"] for q in squads) / len(squads))
+            gap = ((centre[0] + 43956) ** 2 + (centre[1] + 63097) ** 2) ** 0.5
+            ctx.log.info(f"after arrival day {day}: army centre {centre[0]:.0f},{centre[1]:.0f} gap to the manor {gap:.0f}, squads {len(squads)}")
+            ctx.metric(f"army_gap_day_{day}", round(gap))
     ctx.ensure_alive("border arrival")
     return ctx.result()

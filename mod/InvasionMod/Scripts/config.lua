@@ -25,6 +25,7 @@ return {
         base_timer_floor = 300,                              -- the mod lifts the base game raid timer when it falls under this
         base_timer_refill = 700,
         border = {                                           -- update-spawn-from-map-border: hostile armies come in from the map edge
+            enabled = true,                                  -- false: the armies start `start_dy` from the player pawn as before
             rule = "nearest",                                -- the edge point nearest to the target; a side nearer than min_spawn_distance is skipped
             margin = 3000,                                   -- the army spawns this far outside the playable square (spike B: 8 of 8 points walked in)
             inset = 5000,                                    -- keep the point this far from the corners of the square

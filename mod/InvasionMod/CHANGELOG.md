@@ -4,6 +4,9 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed
+- **Raids (invasion):** Hussite armies now walk in from the map edge instead of appearing next to your village. A banner tells you the direction ("Raiders approach from the west"). The army needs a few game days to arrive, so it spawns 5 days before the planned raid day, and the raid starts when it arrives. The relief army of the great raid still appears next to the manor.
+
 ## [0.1.0] - 2026-10-24
 First release for play testers. The mod turns Manor Lords into "The Hussites Are Coming": a growth game where Hussite armies raid you and your vassals.
 

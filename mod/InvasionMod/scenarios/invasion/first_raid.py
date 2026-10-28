@@ -21,6 +21,7 @@ MULTIPLIERS = {"small": 1, "medium": 2, "large": 3}
 BANNER_DAYS = 30
 RAID_BANNER = re.compile(r"INVASION raid banner kind=(\w+) day=(\d+) days_left=(\d+) target=(.*?) raiders=(\d+) shown=(\w+)")
 OLD_BANNER = re.compile(r"INVASION banner day=")
+LEAD_DAYS = 5  # config invasion.border.march_lead_days: the army spawns this many days before the raid day (change update-spawn-from-map-border)
 SPAWN = re.compile(r"INVASION spawn day=(\d+) planned_day=(\d+) squads=(\d+) raiders=(\d+)")
 
 
@@ -65,11 +66,12 @@ def run(ctx) -> dict:
     spawns = [tuple(int(v) for v in m.groups()) for m in map(SPAWN.search, lines) if m]
     ctx.check("A4 one spawn in the log", len(spawns) == 1, spawns)
     spawn_day, _, _, spawn_raiders = spawns[0] if spawns else (0, 0, 0, 0)
-    ctx.check("A3 the raid spawned on the planned day, plus or minus 1", abs(spawn_day - plan["raid_day"]) <= 1, [spawn_day, plan["raid_day"]])
+    ctx.check("A3 the raid spawned 5 days (march lead) before the planned day, plus or minus 1", abs(spawn_day - (plan["raid_day"] - LEAD_DAYS)) <= 1, [spawn_day, plan["raid_day"]])
     ctx.check("A2 no daily countdown banner", not any(OLD_BANNER.search(line) for line in lines), "an INVASION banner line was found")
 
     # The raid is a lord army (not the bandit side), so the census of bandits does not see it. The raid tracker counts its units at the start.
-    spawned_units = ctx.mod.command("InvasionMod.raid_behavior_state")["raids"][0]["initial"]
+    raid_row = ctx.mod.command("InvasionMod.raid_behavior_state")["raids"][0]
+    spawned_units = raid_row["initial"] + raid_row.get("deaths_on_march", 0)  # the raid counts from the army that arrived
     ctx.check("A3 spawned unit count = planned units (a few raiders may die at once)", 0.9 * planned_units <= spawned_units <= planned_units,
               [spawned_units, planned_units])
     if size == "large":

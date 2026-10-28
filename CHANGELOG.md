@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- Armies come in from the map border (change `update-spawn-from-map-border`, #434): a yearly or subjugation raid, a great raid wave and the final army spawn 3000 units outside the playable square, at the side nearest to the manor (at least 30000 units away), and walk in. The game tells the player the direction in a banner ("Raiders approach from the west"). The raid spawns 5 game days before its raid day and starts at arrival (the leave, plunder and steal rules, the wave gap and the loss share count from arrival). The arrival days argument of `spawnArmy` does nothing for a lord army (spike A), and a friendly army cannot walk in (spike C): the relief army stays next to the manor. Config: `invasion.border`. Harness: `lord_spawn_army` takes `days` and an absolute `x`, `y`.
 - Invasion Mod pak (change `update-single-mod-pak`, #471): one pak `InvasionMod_P.pak` holds all widgets and data rows; `raidmenu_P.pak` and `techmenu_P.pak` are gone; use `--pak InvasionMod`. The release check no longer counts a `require` of a Lua file of the mod itself as a shared module.
 - Villager banditry (change `update-banditry-bandit-camp`, #453): when families leave for banditry, the mod spawns one bandit camp (`spawnBanditCamp`, 18 Brigands) instead of squads at their homes. The camp call makes the bandit pawn when the game has none, so banditry works with bandit camps 0. The rule "one squad per 5 families" is removed. See `mod/InvasionMod/CHANGELOG.md`.
 

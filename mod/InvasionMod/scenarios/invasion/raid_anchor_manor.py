@@ -79,7 +79,7 @@ def run(ctx) -> dict:
     ctx.check("the raid army is on the map", centre is not None, centre)
     if centre:
         ctx.metric("army_gap", gaps[-1])
-        ctx.check("the army came closer to the manor", gaps[-1] < gaps[0] or gaps[-1] <= ARRIVED, gaps)
+        ctx.check("the army came to the manor", min(gaps) <= ARRIVED, gaps)  # it walks in from the map border and can leave again as it dies
         ctx.check("the army ends nearer to the manor than to the camera region", gaps[-1] < distance(centre, camera["would_anchor"]), gaps)
 
     ctx.bridge.centre_camera_on(anchor["x"], anchor["y"])

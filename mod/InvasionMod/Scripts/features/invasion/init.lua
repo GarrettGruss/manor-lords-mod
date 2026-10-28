@@ -200,6 +200,7 @@ end
 -- The border point of a new army (change update-spawn-from-map-border), or nil when the map edge cannot be read:
 -- then the army starts near the manor as before and the log says so.
 local function border_point(label)
+    if not config.border.enabled then return nil end
     local point, why = lord_raid.plan_border(config.border)
     if point == nil then
         core.log.error(TAG, string.format("INVASION %s has no border point (%s): the army starts near the manor", label, tostring(why)))
@@ -430,7 +431,7 @@ end
 -- A lord army marches about `march_lead_days` from the edge, so it spawns that many days before the planned raid day and
 -- arrives on the planned day (requirement "The raid spawns on the planned day"). Bandit squads spawn at the manor: no lead.
 local function spawn_lead()
-    if use_roles and roles.lord_army.enabled then return config.border.march_lead_days end
+    if use_roles and roles.lord_army.enabled and config.border.enabled then return config.border.march_lead_days end
     return 0
 end
 

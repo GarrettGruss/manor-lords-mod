@@ -242,7 +242,7 @@ function M.summary(raid)
         id = raid.id, start_day = raid.start_day, end_day = raid.end_day, squads = raid.squads, state = raid.state,
         initial = raid.initial, living = raid.living, deaths = raid.deaths, departures = raid.departures,
         loot = M.total_loot(raid), looted_total = M.looted_total(raid), carried_out = raid.carried_out, peak_loot = raid.peak_loot, returned = raid.returned, lost = raid.lost,
-        capped = raid.capped, carry_cap = raid.carry_cap, raid_type = M.raid_type(raid), burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, unpaid = raid.unpaid, stolen = raid.stolen, lord_raid = raid.lord ~= nil, marching = raid.marching, spawn_day = raid.spawn_day, arrival_day = raid.arrival_day, final = raid.lord ~= nil and raid.lord.final == true, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
+        capped = raid.capped, carry_cap = raid.carry_cap, raid_type = M.raid_type(raid), burned = raid.burned, leaving = raid.leaving, roles = raid.roles, plundered = raid.plundered, unpaid = raid.unpaid, stolen = raid.stolen, lord_raid = raid.lord ~= nil, marching = raid.marching, deaths_on_march = raid.deaths_on_march or 0, spawn_day = raid.spawn_day, arrival_day = raid.arrival_day, final = raid.lord ~= nil and raid.lord.final == true, leave_reason = raid.leave_reason, target = raid.target, kind = (raid.lord and raid.lord.kind) or "plunder",
     }
 end
 
