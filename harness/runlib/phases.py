@@ -185,7 +185,7 @@ def _deploy(install: GameInstall):
     def run(ctx: PhaseContext) -> str | None:
         command = [
             "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-            str(REPO_ROOT / "harness" / "deploy.ps1"), "-GameDir", str(install.root),
+            str(REPO_ROOT / "harness" / "deploy.ps1"), "-GameDir", str(install.root), "-NoPak",  # run.py --pak installs paks
         ]
         try:
             result = subprocess.run(command, capture_output=True, text=True, timeout=DEPLOY_TIMEOUT_S)

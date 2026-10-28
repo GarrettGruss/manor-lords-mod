@@ -47,7 +47,7 @@ try {
             $entries.Add($entry)
             Write-SlotsState $SlotsDir $entries $GameDir  # after each slot, so a failed install can still be removed
             if (-not $SkipDeploy) {
-                & (Join-Path $PSScriptRoot 'deploy.ps1') -GameDir $entry.root 6>&1 | Select-Object -Last 1  # only the summary line
+                & (Join-Path $PSScriptRoot 'deploy.ps1') -GameDir $entry.root -NoPak 6>&1 | Select-Object -Last 1  # only the summary line
             }
         }
     }

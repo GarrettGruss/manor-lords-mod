@@ -134,11 +134,16 @@ Copies `mod/` into the UE4SS `Mods` folder (PowerShell 5.1):
   (inserted above the `; Built-in keybinds` block; the first change backs up to `mods.txt.harness.bak`).
 - Only changed files (SHA256) are copied; every deployed file is re-hashed afterwards and the script exits 1 on mismatch.
 - `Mods\.harness-manifest.json` records what was deployed; `-Clean` only removes files listed there.
+- A mod's own pak `mod/<name>/paks/<name>_P.pak` is copied to `Content\Paks\~mods\` and listed in the run pak manifest
+  (`~mods\.harness-paks.json`), so `run.py --pak` may replace it and `pakmod.py remove` deletes it. Other paks in that
+  folder are test paks and are not copied. A pak that exists but is not in the manifest is refused (exit 1).
+  `-NoPak` skips this step. The run launcher, `install.ps1` and `reload_mods.py` pass `-NoPak`, so test runs install paks only through `--pak`.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File harness\deploy.ps1 -DryRun   # preview, changes nothing
 powershell -ExecutionPolicy Bypass -File harness\deploy.ps1           # deploy
 powershell -ExecutionPolicy Bypass -File harness\deploy.ps1 -Clean    # also remove manifest-listed files no longer in mod/
+powershell -ExecutionPolicy Bypass -File harness\deploy.ps1 -NoPak    # Lua only, no mod pak
 powershell -ExecutionPolicy Bypass -File harness\deploy.ps1 -GameDir 'D:\Games\Manor Lords'
 ```
 
