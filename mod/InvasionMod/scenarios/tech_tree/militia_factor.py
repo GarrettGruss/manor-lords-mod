@@ -16,8 +16,7 @@ def tree(ctx) -> dict:
 
 def unlock_militia_rights(ctx) -> None:
     ctx.mod.command("InvasionMod.tech_tree_choose_path", path="prosperity")
-    ctx.actions.set_settlement_level(3)
-    ctx.run_until(lambda: tree(ctx)["slots"] >= 3, 15, what="3 node slots")
+    ensure_picks(ctx, 3)
     for node in ("fair_courts", "amnesty", "militia_rights"):
         ctx.mod.command("InvasionMod.tech_tree_unlock", node=node)
 
@@ -40,3 +39,11 @@ def run(ctx) -> dict:
     ctx.metric("att_base", militia["sample"]["base_att"])
     ctx.metric("att_now", militia["sample"]["att"])
     return ctx.result()
+
+
+def ensure_picks(ctx, wanted: int) -> None:
+    """Wait for the start pick, then add picks (a test command) until `wanted` picks are earned."""
+    ctx.run_until(lambda: ctx.mod.command("InvasionMod." + "tech_tree_state")["picks_earned"] >= 1, 30, what="the start pick")
+    missing = wanted - ctx.mod.command("InvasionMod." + "tech_tree_state")["picks_earned"]
+    if missing > 0:
+        ctx.mod.command("InvasionMod." + "tech_tree_test_grant_picks", count=missing)
