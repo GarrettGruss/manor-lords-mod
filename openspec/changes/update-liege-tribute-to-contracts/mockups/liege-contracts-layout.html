@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Liege contracts layout mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&amp;family=Alegreya+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0d0a06}
+#board{width:1440px;height:810px;position:relative;overflow:hidden;background:#17120c;color:#eadfc8;font-family:'Alegreya Sans',sans-serif}
+.abs{position:absolute}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,.item:focus-visible{outline:2px solid #f3dca4;outline-offset:2px}
+#head{left:0;top:0;width:1440px;height:72px;box-sizing:border-box;padding:0 32px;display:flex;align-items:center;gap:28px;background:#221a11;border-bottom:2px solid #6b5432}
+#head h1{margin:0;font-family:Cinzel,serif;font-weight:700;font-size:30px;letter-spacing:2px;color:#e2c27a;flex-grow:1}
+.cap{font-size:13px;color:#b8a888;letter-spacing:1px;text-transform:uppercase}
+.val{font-family:Cinzel,serif;font-size:24px;color:#eadfc8}
+.stat{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:110px}
+.btn{height:44px;padding:0 18px;background:#3a2c1a;color:#eadfc8;border:1px solid #8a6d3e;border-radius:4px;font-family:Cinzel,serif;font-size:15px}
+.btn:hover{background:#4a3822}
+.btn:disabled{background:#2a2118;color:#9c8f78;border-color:#4d3c24;cursor:not-allowed}
+.btn.small{height:36px;padding:0 12px;font-size:13px}
+#envoy{left:32px;top:88px;width:1376px;height:112px;box-sizing:border-box;display:flex;align-items:center;gap:20px;padding:0 20px;background:#1d160e;border:1px solid #5a4629;border-radius:8px}
+#portrait{width:84px;height:84px;flex-shrink:0;border-radius:50%;border:2px solid #8a6d3e;background:#2c2114;display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:30px;color:#e2c27a}
+#envoy .nm{font-family:Cinzel,serif;font-size:18px;color:#e2c27a}
+#envoy .q{font-size:20px;font-style:italic;color:#eadfc8;margin-top:4px}
+#cards{left:32px;top:216px;width:1376px;display:flex;gap:24px}
+.card{flex:1;height:440px;box-sizing:border-box;padding:16px 18px;display:flex;flex-direction:column;gap:10px;background:#261d12;border:2px solid #5a4629;border-radius:8px}
+.card.picked{border-color:#e2c27a;background:#3b2d18}
+.card.gone{opacity:1;background:#1b150d;border-color:#3a2d1b;color:#9c8f78}
+.card h2{margin:0;font-family:Cinzel,serif;font-size:21px;color:#e2c27a;text-align:center}
+.card.gone h2{color:#9c8f78}
+.card .quote{font-size:14px;font-style:italic;color:#b8a888;text-align:center;min-height:36px}
+.sec{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#b8a888;border-bottom:1px solid #4d3c24;padding-bottom:3px}
+.items{display:flex;gap:12px;min-height:84px;align-items:flex-start;flex-wrap:wrap}
+.item{all:unset;box-sizing:border-box;width:84px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:help;position:relative}
+.item .box{width:54px;height:54px;border-radius:8px;border:2px solid #8a6d3e;background:#17120c;display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:17px;color:#e2c27a}
+.item .amt{font-size:16px;font-weight:700;color:#eadfc8}
+.item .tip{display:none;position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:200px;padding:8px 10px;background:#0d0a06;border:1px solid #e2c27a;border-radius:6px;z-index:5;text-align:left}
+.item .tip b{display:block;font-family:Cinzel,serif;font-size:14px;color:#e2c27a}
+.item .tip span{font-size:14px;color:#eadfc8}
+.item:hover .tip,.item:focus-visible .tip{display:block}
+.grow{flex-grow:1}
+.seal{align-self:center;padding:5px 14px;border:1px solid #8a6d3e;border-radius:14px;font-size:14px;color:#eadfc8;background:#17120c}
+.card.gone .seal{color:#9c8f78;border-color:#4d3c24}
+.state{text-align:center;font-size:14px;color:#b8a888;min-height:20px}
+#active{left:32px;top:672px;width:1376px;height:72px;box-sizing:border-box;display:flex;align-items:center;gap:24px;padding:0 20px;background:#1d160e;border:1px solid #5a4629;border-radius:8px}
+#active .t{flex-grow:1;display:flex;flex-direction:column}
+#active .t b{font-family:Cinzel,serif;font-size:17px;color:#e2c27a}
+#foot{left:0;bottom:0;width:1440px;height:56px;box-sizing:border-box;padding:0 32px;display:flex;align-items:center;gap:24px;background:#221a11;border-top:2px solid #6b5432;font-size:15px;color:#b8a888}
+#foot .msg{flex-grow:1;color:#eadfc8}
+</style>
+</head>
+<body>
+<div id="board">
+  <div id="head" class="abs">
+    <h1>Contracts of the Liege</h1>
+    <div class="stat"><span class="cap">Influence</span><span class="val" id="inf" aria-live="polite">25</span></div>
+    <div class="stat"><span class="cap">Silver</span><span class="val" id="sil">480</span></div>
+    <button type="button" class="btn small" id="reset" aria-label="Demo: show a new yearly offer">Demo: new spring</button>
+    <button type="button" class="btn" id="close" aria-label="Close the liege window">Close</button>
+  </div>
+  <div id="envoy" class="abs">
+    <div id="portrait" aria-hidden="true">E</div>
+    <div><div class="nm">The Liege Envoy</div><div class="q">"My lord sends word. Choose one task for this year, and choose well."</div></div>
+  </div>
+  <div id="cards" class="abs"></div>
+  <div id="active" class="abs">
+    <div class="t"><b id="atitle"></b><span id="aprog"></span></div>
+    <button type="button" class="btn" id="complete">Complete</button>
+  </div>
+  <div id="foot" class="abs">
+    <span class="msg" id="msg" role="status">Pick one contract. The others are discarded. A new offer comes each spring.</span>
+    <span id="arms" style="color:#b8a888">Arms shipment: need 200 silver</span>
+    <button type="button" class="btn small" id="armsbtn">Request arms shipment</button>
+  </div>
+</div>
+<script>
+var OFFER = [
+  {name:"Timber for the Walls", quote:"The city palisade needs logs before the frost.",
+   obj:[{c:"Lg",a:"60",n:"Deliver logs",d:"Hand over 60 logs from your storehouses."}],
+   rew:[{c:"In",a:"+15",n:"Influence",d:"Raises your standing with the liege."},{c:"Ag",a:"+100",n:"Silver",d:"Paid into the lord treasury."}],
+   pen:"Fail: -10 influence"},
+  {name:"Clear the Roads", quote:"Raiders on my roads shame us both.",
+   obj:[{c:"Rd",a:"15",n:"Defeat raiders",d:"Raiders killed after you accept the task."}],
+   rew:[{c:"In",a:"+25",n:"Influence",d:"Raises your standing with the liege."},{c:"Ag",a:"+150",n:"Silver",d:"Paid into the lord treasury."}],
+   pen:"Fail: -15 influence"},
+  {name:"A Retinue for the Road", quote:"Prove you can hold both town and road.",
+   obj:[{c:"Rd",a:"25",n:"Defeat raiders",d:"Raiders killed after you accept the task."},{c:"Po",a:"50",n:"Hold public order",d:"Keep public order at 50 or more for 60 days."}],
+   rew:[{c:"In",a:"+40",n:"Influence",d:"Raises your standing with the liege."},{c:"Rt",a:"+1",n:"Retinue squad",d:"A retinue squad joins you."},{c:"Ag",a:"+200",n:"Silver",d:"Paid into the lord treasury."}],
+   pen:"Fail: -25 influence"}
+];
+var picked = -1, done = false;
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
+function item(i){
+  var b=el("button","item");b.type="button";
+  b.setAttribute("aria-label",i.n+" "+i.a+". "+i.d);
+  b.appendChild(el("span","box",i.c));b.appendChild(el("span","amt",i.a));
+  var t=el("span","tip");t.appendChild(el("b","",i.n));t.appendChild(el("span","",i.d));b.appendChild(t);
+  return b;
+}
+function render(){
+  var host=document.getElementById("cards");host.textContent="";
+  OFFER.forEach(function(o,idx){
+    var c=el("div","card"+(picked===idx?" picked":"")+(picked>=0&&picked!==idx?" gone":""));
+    c.appendChild(el("h2","",o.name));c.appendChild(el("div","quote",'"'+o.quote+'"'));
+    c.appendChild(el("div","sec","Objective"));
+    var a=el("div","items");o.obj.forEach(function(i){a.appendChild(item(i))});c.appendChild(a);
+    c.appendChild(el("div","sec","Rewards"));
+    var r=el("div","items");o.rew.forEach(function(i){r.appendChild(item(i))});c.appendChild(r);
+    c.appendChild(el("div","grow"));
+    c.appendChild(el("div","seal",o.pen));
+    var p=el("button","btn",picked===idx?"Picked":"Pick");p.type="button";
+    p.disabled=picked>=0;
+    p.setAttribute("aria-label","Pick contract "+o.name);
+    p.addEventListener("click",function(){picked=idx;done=false;msg("Picked: "+o.name+". The other contracts are discarded.");render()});
+    c.appendChild(p);
+    c.appendChild(el("div","state",picked<0?"":(picked===idx?"Active":"Discarded")));
+    host.appendChild(c);
+  });
+  var act=document.getElementById("active");
+  act.style.display=picked>=0?"flex":"none";
+  if(picked>=0){
+    var o=OFFER[picked];
+    document.getElementById("atitle").textContent="Active: "+o.name;
+    document.getElementById("aprog").textContent=done?"All objectives are complete.":"Progress: "+o.obj.map(function(i){return i.n+" 0 of "+i.a}).join("; ")+". 210 days left.";
+    var cb=document.getElementById("complete");cb.disabled=false;cb.textContent=done?"Completed":"Complete (demo: objectives done)";cb.disabled=done;
+  }
+}
+function msg(t){document.getElementById("msg").textContent=t}
+document.getElementById("complete").addEventListener("click",function(){
+  var o=OFFER[picked];done=true;
+  var inf=document.getElementById("inf");inf.textContent=String(parseInt(inf.textContent,10)+parseInt(o.rew[0].a,10));
+  msg("Contract complete: "+o.name+". Rewards paid. The next offer comes in spring.");render();
+});
+document.getElementById("reset").addEventListener("click",function(){picked=-1;done=false;msg("Pick one contract. The others are discarded. A new offer comes each spring.");render()});
+document.getElementById("close").addEventListener("click",function(){msg("Close: the game returns to its speed.")});
+document.getElementById("armsbtn").addEventListener("click",function(){msg("Arms shipment: 200 silver, 30 large shields and 30 spears (same rules as today).")});
+render();
+</script>
+</body>
+</html>
