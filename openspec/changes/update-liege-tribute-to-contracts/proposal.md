@@ -2,26 +2,26 @@
 
 Issue: #505. Owner request 2026-10-28: "Change the liege screen from tribute to contracts. This is a fundamental change. The player is given 3 random contracts each year. They pick one. The spec will require a contracts table to store the data."
 
-Today the liege screen has one tribute button: the player pays silver and gets influence. Influence has no use yet, and the player makes no choice. The owner wants the liege relation to be a yearly decision: the liege envoy offers three tasks, the player picks one, and the task pays rewards or costs influence if it fails.
+Today the liege screen has one tribute button: the player pays silver and gets influence. Influence has no use yet, and the player makes no choice. The owner wants the liege relation to be a yearly decision: the liege offers three tasks, the player picks one, and the task pays rewards or costs influence if it fails.
 
 ## What Changes
 
 - New capability `mod/liege_contracts`:
-  - a contracts table `data/liege_contracts/contracts.json` (id, name, quote, weight, objectives, rewards, duration, penalty);
-  - at each start of spring, 3 different contracts are drawn at random (weighted) and offered; the player picks exactly one, the others are discarded;
-  - 5 objective types and 6 reward types (all from proven mechanics, see `design.md`);
-  - deadline (default: the next spring) and a penalty of lost influence if the contract is not complete;
+  - a contracts table `data/liege_contracts/contracts.json` (id, name, quote as card flavor text, weight, objectives, rewards, duration);
+  - at each start of spring (and only then), 3 different contracts are drawn at random (weighted) and offered; the player picks exactly one, the others are discarded; an offer that is not picked is replaced at the next spring with no penalty;
+  - 5 objective types and 5 reward types (all from proven mechanics, see `design.md`), among them a tech point for the tech tree;
+  - deadline: a contract ends when winter begins; a contract that is not complete then costs 500 influence (config value `fail_penalty`);
   - saved state, named commands, telemetry metrics;
-  - the liege window shows three contract cards (mockup `mockups/liege-contracts-layout.html`; gate 2 copies it to `openspec/specs/mod/liege_contracts/mockups/`).
+  - the liege window shows three contract cards (mockup `mockups/liege-contracts-layout.html` with its icons in `mockups/icons/`; gate 2 copies both to `openspec/specs/mod/liege_contracts/mockups/`).
 - `mod/liege_influence`: REMOVED the requirements "Tribute is silver from the lord's treasury", "The tribute ratio is configurable", "The command name", "Tribute menu" and "One tribute button". MODIFIED "Influence is a saved value" (only contracts change it; a penalty stops at 0). The arms shipment requirements do not change.
 - `mod/core`: MODIFIED "Mod menus pause the game while open" (the menu name "liege and tribute" becomes "liege").
 - Behavior changes against today:
   - The player can no longer buy influence with silver. The command `liege_send_tribute`, the config values `influence_per_unit` and `tribute_button_amount`, and the `TributeButton` of the pak widget are removed.
   - Influence rises only by contract rewards and falls by contract penalties.
   - The liege window is a new pak widget (`WBP_LiegeContracts`); the old `WBP_LiegeTribute` asset is removed from the pak.
-  - A save from before the change loads. Its influence and arms cooldown stay. The first poll makes an offer.
-- Not changed: the vassal tribute (goods from handed-over vassals, `mod/tribute`), the vassal policies heavy, light and fair, the law effects Scorched Earth (-25 percent tribute share) and Trade Pacts (+25 percent tribute share), and the yearly tribute of vassalage terms (`mod/sack_and_terms`). They are not on the liege screen (see open question 1).
-- Out of scope: spending influence (design: call for aid, request villagers or weapons); a contract reward of regional wealth (no safe write is proven); contract art (icons are letter boxes, see `design.md`).
+  - A save from before the change loads. Its influence and arms cooldown stay. The first offer comes at the next start of spring (no offer at the first poll).
+- Not changed: the vassal tribute (goods from handed-over vassals, `mod/tribute`), the vassal policies heavy, light and fair, the law effects Scorched Earth (-25 percent tribute share) and Trade Pacts (+25 percent tribute share), and the yearly tribute of vassalage terms (`mod/sack_and_terms`). They are not on the liege screen (see the open question).
+- Out of scope: spending influence (design: call for aid, request villagers or weapons); a contract reward of regional wealth (no safe write is proven); game art for contracts (in the game the items are letter boxes, see `design.md`; the mockup has original icons).
 
 ## Decisions (owner, 2026-10-28)
 
@@ -29,20 +29,23 @@ Today the liege screen has one tribute button: the player pays silver and gets i
 - 3 random contracts each year; the player picks one.
 - A contracts table stores the data.
 
+Answers to the open questions (owner, 2026-10-28):
+
+- The offer is made at the start of spring only. A new game, or a save that is not in spring, waits for the next spring (no offer at the first poll).
+- An offer that is not picked: nothing happens, no penalty. The next spring replaces it.
+- A contract ends when winter begins. The season counter and enum are those of `features/invasion`. Gate 2 reads the spring value (task of `update-tech-tree-yearly-picks`) and the winter value.
+- The penalty for a failed contract is 500 influence, never below 0. It is the config value `liege_contracts.fail_penalty`, one value for all contracts.
+- A completed contract pays at once. No bonus for early completion. No second offer in the same year.
+- Goods of `deliver_goods` are taken at completion, not at the pick.
+- A contract can pay a tech point (one tech pick for the tech tree). The reward `tech_pick` depends on `update-tech-tree-yearly-picks` (ModState `tech_picks_earned`). At least one starter contract uses it.
+- The reward `retinue_squad` is removed, and so is every starter contract that used it.
+- The starter values (weights, amounts) are placeholders for owner tuning. Note: influence rewards in the starter set (10 to 40) are small against the penalty of 500; tune them together.
+- In the game, items show a letter box (accepted). In the mockup, each objective and reward type has an original icon (`mockups/icons/*.png`, sources in `mockups/icons/src/*.svg`).
+- The envoy (portrait and quote) is removed from the spec, the layout and the mockup. The `quote` of a contract stays only as flavor text on its card.
+
 ## Open questions (with defaults)
 
-1. Scope of "tribute". Default: only the liege tribute (silver for influence, on the liege screen) is removed. The vassal goods tribute, the vassal policies and the two tribute law effects stay, because they supply iron and salt (`mod/finite_resources`) and are not on the liege screen. Alternative: remove the vassal tribute and policies too, and map Scorched Earth and Trade Pacts to a -25 percent and +25 percent contract reward factor. That alternative is a larger change and needs its own spec change for `mod/tribute`, `mod/vassals`, `mod/tech_tree` and `mod/finite_resources`.
-2. The first offer. Default: a new game, and a save without contract state, gets an offer at the first poll (like `initial_picks` of the tech tree), then one at each spring.
-3. An offer that the player does not pick. Default: it stays open until the next spring, then it is replaced, with no penalty.
-4. The deadline. Default: every starter contract runs until the next spring (`duration` `next_spring`). A day count is possible in the data.
-5. The penalty. Default: the contract fails at the deadline and the influence falls by the penalty, never below 0. Influence is the only liege score today. Alternative: also a public order or silver penalty.
-6. A contract that is completed early. Default: it pays at once; no second offer until the next spring.
-7. Delivery of goods. Default: `deliver_goods` takes the goods from the storehouses when the player completes the contract (not before). Gate 2 must prove the take from a storehouse with `consumeGoodNoCheck` (task 1.2); the fallback is the manor store (`HarnessManor.manor_take`, proven), which needs a built manor.
-8. The reward `tech_pick`. Default: allowed in the data only after `update-tech-tree-yearly-picks` (#499) is built; the starter set does not use it.
-9. The reward `retinue_squad`. Default: in the starter set for one hard contract. Cost to tune: the squad is free to the player.
-10. All numbers in the starter set (weights, amounts, penalties) are placeholders for owner tuning.
-11. Icons. Default: the game has no icon for these items in the pak widget pool, so an item shows a letter box and the name in the tooltip. Gate 2 may use game textures if the owner picks some.
-12. The envoy portrait. Default: a plain portrait box with the envoy name; no model or texture.
+1. Scope of "tribute". Not answered yet. Default: only the liege tribute (silver for influence, on the liege screen) is removed. The vassal goods tribute, the vassal policies and the two tribute law effects stay, because they supply iron and salt (`mod/finite_resources`) and are not on the liege screen. Alternative: remove the vassal tribute and policies too, and map Scorched Earth and Trade Pacts to a -25 percent and +25 percent contract reward factor. That alternative is a larger change and needs its own spec change for `mod/tribute`, `mod/vassals`, `mod/tech_tree` and `mod/finite_resources`.
 
 ## Impact
 

@@ -47,6 +47,6 @@ The mod SHALL keep an influence value for the player in ModState. The value SHAL
 - Checked by `harness/tests/test_fakegame_liege_influence.py` (updated).
 
 #### Scenario: A penalty stops at 0
-- **WHEN** the influence is 5 and a contract penalty of 10 applies
+- **WHEN** the influence is 5 and a contract penalty of 500 applies
 - **THEN** the influence is 0
 - Not checked yet (planned: `harness/tests/test_fakegame_liege_influence.py`).

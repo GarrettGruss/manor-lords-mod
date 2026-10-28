@@ -20,11 +20,7 @@ button:focus-visible,.item:focus-visible{outline:2px solid #f3dca4;outline-offse
 .btn:hover{background:#4a3822}
 .btn:disabled{background:#2a2118;color:#9c8f78;border-color:#4d3c24;cursor:not-allowed}
 .btn.small{height:36px;padding:0 12px;font-size:13px}
-#envoy{left:32px;top:88px;width:1376px;height:112px;box-sizing:border-box;display:flex;align-items:center;gap:20px;padding:0 20px;background:#1d160e;border:1px solid #5a4629;border-radius:8px}
-#portrait{width:84px;height:84px;flex-shrink:0;border-radius:50%;border:2px solid #8a6d3e;background:#2c2114;display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:30px;color:#e2c27a}
-#envoy .nm{font-family:Cinzel,serif;font-size:18px;color:#e2c27a}
-#envoy .q{font-size:20px;font-style:italic;color:#eadfc8;margin-top:4px}
-#cards{left:32px;top:216px;width:1376px;display:flex;gap:24px}
+#cards{left:32px;top:96px;width:1376px;display:flex;gap:24px}
 .card{flex:1;height:440px;box-sizing:border-box;padding:16px 18px;display:flex;flex-direction:column;gap:10px;background:#261d12;border:2px solid #5a4629;border-radius:8px}
 .card.picked{border-color:#e2c27a;background:#3b2d18}
 .card.gone{opacity:1;background:#1b150d;border-color:#3a2d1b;color:#9c8f78}
@@ -34,7 +30,8 @@ button:focus-visible,.item:focus-visible{outline:2px solid #f3dca4;outline-offse
 .sec{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#b8a888;border-bottom:1px solid #4d3c24;padding-bottom:3px}
 .items{display:flex;gap:12px;min-height:84px;align-items:flex-start;flex-wrap:wrap}
 .item{all:unset;box-sizing:border-box;width:84px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:help;position:relative}
-.item .box{width:54px;height:54px;border-radius:8px;border:2px solid #8a6d3e;background:#17120c;display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:17px;color:#e2c27a}
+.item .box{width:54px;height:54px;border-radius:8px;border:2px solid #8a6d3e;background:#17120c;display:flex;align-items:center;justify-content:center}
+.item .box img{width:44px;height:44px;display:block}
 .item .amt{font-size:16px;font-weight:700;color:#eadfc8}
 .item .tip{display:none;position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:200px;padding:8px 10px;background:#0d0a06;border:1px solid #e2c27a;border-radius:6px;z-index:5;text-align:left}
 .item .tip b{display:block;font-family:Cinzel,serif;font-size:14px;color:#e2c27a}
@@ -44,7 +41,7 @@ button:focus-visible,.item:focus-visible{outline:2px solid #f3dca4;outline-offse
 .seal{align-self:center;padding:5px 14px;border:1px solid #8a6d3e;border-radius:14px;font-size:14px;color:#eadfc8;background:#17120c}
 .card.gone .seal{color:#9c8f78;border-color:#4d3c24}
 .state{text-align:center;font-size:14px;color:#b8a888;min-height:20px}
-#active{left:32px;top:672px;width:1376px;height:72px;box-sizing:border-box;display:flex;align-items:center;gap:24px;padding:0 20px;background:#1d160e;border:1px solid #5a4629;border-radius:8px}
+#active{left:32px;top:560px;width:1376px;height:72px;box-sizing:border-box;display:flex;align-items:center;gap:24px;padding:0 20px;background:#1d160e;border:1px solid #5a4629;border-radius:8px}
 #active .t{flex-grow:1;display:flex;flex-direction:column}
 #active .t b{font-family:Cinzel,serif;font-size:17px;color:#e2c27a}
 #foot{left:0;bottom:0;width:1440px;height:56px;box-sizing:border-box;padding:0 32px;display:flex;align-items:center;gap:24px;background:#221a11;border-top:2px solid #6b5432;font-size:15px;color:#b8a888}
@@ -55,14 +52,10 @@ button:focus-visible,.item:focus-visible{outline:2px solid #f3dca4;outline-offse
 <div id="board">
   <div id="head" class="abs">
     <h1>Contracts of the Liege</h1>
-    <div class="stat"><span class="cap">Influence</span><span class="val" id="inf" aria-live="polite">25</span></div>
+    <div class="stat"><span class="cap">Influence</span><span class="val" id="inf" aria-live="polite">600</span></div>
     <div class="stat"><span class="cap">Silver</span><span class="val" id="sil">480</span></div>
     <button type="button" class="btn small" id="reset" aria-label="Demo: show a new yearly offer">Demo: new spring</button>
     <button type="button" class="btn" id="close" aria-label="Close the liege window">Close</button>
-  </div>
-  <div id="envoy" class="abs">
-    <div id="portrait" aria-hidden="true">E</div>
-    <div><div class="nm">The Liege Envoy</div><div class="q">"My lord sends word. Choose one task for this year, and choose well."</div></div>
   </div>
   <div id="cards" class="abs"></div>
   <div id="active" class="abs">
@@ -70,7 +63,7 @@ button:focus-visible,.item:focus-visible{outline:2px solid #f3dca4;outline-offse
     <button type="button" class="btn" id="complete">Complete</button>
   </div>
   <div id="foot" class="abs">
-    <span class="msg" id="msg" role="status">Pick one contract. The others are discarded. A new offer comes each spring.</span>
+    <span class="msg" id="msg" role="status">Pick one contract. The others are discarded. A new offer comes each spring. A contract ends when winter begins.</span>
     <span id="arms" style="color:#b8a888">Arms shipment: need 200 silver</span>
     <button type="button" class="btn small" id="armsbtn">Request arms shipment</button>
   </div>
@@ -80,22 +73,23 @@ var OFFER = [
   {name:"Timber for the Walls", quote:"The city palisade needs logs before the frost.",
    obj:[{c:"Lg",a:"60",n:"Deliver logs",d:"Hand over 60 logs from your storehouses."}],
    rew:[{c:"In",a:"+15",n:"Influence",d:"Raises your standing with the liege."},{c:"Ag",a:"+100",n:"Silver",d:"Paid into the lord treasury."}],
-   pen:"Fail: -10 influence"},
+   pen:"Fail: -500 influence"},
   {name:"Clear the Roads", quote:"Raiders on my roads shame us both.",
    obj:[{c:"Rd",a:"15",n:"Defeat raiders",d:"Raiders killed after you accept the task."}],
    rew:[{c:"In",a:"+25",n:"Influence",d:"Raises your standing with the liege."},{c:"Ag",a:"+150",n:"Silver",d:"Paid into the lord treasury."}],
-   pen:"Fail: -15 influence"},
-  {name:"A Retinue for the Road", quote:"Prove you can hold both town and road.",
+   pen:"Fail: -500 influence"},
+  {name:"Hold Town and Road", quote:"Prove you can hold both town and road.",
    obj:[{c:"Rd",a:"25",n:"Defeat raiders",d:"Raiders killed after you accept the task."},{c:"Po",a:"50",n:"Hold public order",d:"Keep public order at 50 or more for 60 days."}],
-   rew:[{c:"In",a:"+40",n:"Influence",d:"Raises your standing with the liege."},{c:"Rt",a:"+1",n:"Retinue squad",d:"A retinue squad joins you."},{c:"Ag",a:"+200",n:"Silver",d:"Paid into the lord treasury."}],
-   pen:"Fail: -25 influence"}
+   rew:[{c:"In",a:"+40",n:"Influence",d:"Raises your standing with the liege."},{c:"Rt",a:"+1",n:"Tech point",d:"One tech pick that you can spend in the tech tree."},{c:"Ag",a:"+200",n:"Silver",d:"Paid into the lord treasury."}],
+   pen:"Fail: -500 influence"}
 ];
+var ICON = {"Lg": "good-timber", "In": "reward-influence", "Ag": "reward-silver", "Rd": "objective-kill-raiders", "Po": "objective-hold-order", "Rt": "reward-tech-point"};
 var picked = -1, done = false;
 function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
 function item(i){
   var b=el("button","item");b.type="button";
   b.setAttribute("aria-label",i.n+" "+i.a+". "+i.d);
-  b.appendChild(el("span","box",i.c));b.appendChild(el("span","amt",i.a));
+  var bx=el("span","box"),im=el("img");im.src="icons/"+ICON[i.c]+".png";im.alt=i.n;bx.appendChild(im);b.appendChild(bx);b.appendChild(el("span","amt",i.a));
   var t=el("span","tip");t.appendChild(el("b","",i.n));t.appendChild(el("span","",i.d));b.appendChild(t);
   return b;
 }
@@ -123,7 +117,7 @@ function render(){
   if(picked>=0){
     var o=OFFER[picked];
     document.getElementById("atitle").textContent="Active: "+o.name;
-    document.getElementById("aprog").textContent=done?"All objectives are complete.":"Progress: "+o.obj.map(function(i){return i.n+" 0 of "+i.a}).join("; ")+". 210 days left.";
+    document.getElementById("aprog").textContent=done?"All objectives are complete.":"Progress: "+o.obj.map(function(i){return i.n+" 0 of "+i.a}).join("; ")+". Ends when winter begins: 210 days left.";
     var cb=document.getElementById("complete");cb.disabled=false;cb.textContent=done?"Completed":"Complete (demo: objectives done)";cb.disabled=done;
   }
 }
@@ -133,7 +127,7 @@ document.getElementById("complete").addEventListener("click",function(){
   var inf=document.getElementById("inf");inf.textContent=String(parseInt(inf.textContent,10)+parseInt(o.rew[0].a,10));
   msg("Contract complete: "+o.name+". Rewards paid. The next offer comes in spring.");render();
 });
-document.getElementById("reset").addEventListener("click",function(){picked=-1;done=false;msg("Pick one contract. The others are discarded. A new offer comes each spring.");render()});
+document.getElementById("reset").addEventListener("click",function(){picked=-1;done=false;msg("Pick one contract. The others are discarded. A new offer comes each spring. A contract ends when winter begins.");render()});
 document.getElementById("close").addEventListener("click",function(){msg("Close: the game returns to its speed.")});
 document.getElementById("armsbtn").addEventListener("click",function(){msg("Arms shipment: 200 silver, 30 large shields and 30 spears (same rules as today).")});
 render();
