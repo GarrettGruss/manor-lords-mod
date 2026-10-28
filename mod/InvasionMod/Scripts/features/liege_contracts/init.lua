@@ -36,7 +36,7 @@ state:register("contracts_failed", 0, "integer")
 local table_path = world.data_path(config.data_file)
 local contracts = loader.load_file(table_path, json.decode)
 
-local S = { failed_rewards = 0, override = {}, last_message = nil, picks = 0, completes = 0, last_result = nil }
+local S = { failed_rewards = 0, override = {}, last_message = nil, picks = 0, completes = 0, last_offer = nil }
 
 ---------------------------------------------------------------------------------------------
 -- State access
@@ -146,7 +146,8 @@ local function pick(id)
     local info = invasion.season_info()
     local reading = read_world(contract)
     local day = reading.day or world.current_day() or 0
-    -- Saved before the log. The offer is gone: the other contracts are discarded.
+    -- Saved before the log. The offer is gone: the other contracts are discarded. The window of this session still shows them as discarded.
+    S.last_offer = offer_ids()
     state:set("contracts_active", id)
     state:set("contracts_start_day", day)
     state:set("contracts_baseline", rules.encode_numbers(make_baseline(contract, reading, info and info.no), { "s" }))
@@ -321,6 +322,21 @@ local function window_view()
         local lines = view.active_lines(contract, current)
         result.active = { id = contract.id, name = contract.name, lines = lines, days_text = view.days_text(deadline_view(contract)),
                           complete = rules.is_complete(contract.objectives, current) }
+        -- The cards of the pick stay on the window as "Active" and "Discarded" (only in the session of the pick).
+        local picked_here = false
+        for _, id in ipairs(S.last_offer or {}) do
+            if id == contract.id then picked_here = true end
+        end
+        if picked_here then
+            for _, id in ipairs(S.last_offer) do
+                local offered = contracts.by_id[id]
+                if offered then
+                    local card = view.card(offered, contracts.items, config.fail_penalty)
+                    card.state = id == contract.id and "Active" or "Discarded"
+                    result.cards[#result.cards + 1] = card
+                end
+            end
+        end
     else
         for _, id in ipairs(offer_ids()) do
             local offered = contracts.by_id[id]
@@ -370,7 +386,7 @@ local NAMES = {
     buttons = { "PickButton0", "PickButton1", "PickButton2", "CompleteButton", "ArmsButton", "CloseButton" },
 }
 for card = 0, CARDS - 1 do
-    for _, prefix in ipairs({ "CardName", "CardQuote", "CardPenalty" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. card end
+    for _, prefix in ipairs({ "CardName", "CardQuote", "CardPenalty", "CardState" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. card end
     NAMES.borders[#NAMES.borders + 1] = "Card" .. card
     for item = 0, OBJ_ITEMS - 1 do
         for _, prefix in ipairs({ "ObjIcon", "ObjText" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. card .. "_" .. item end
@@ -440,7 +456,8 @@ end
 local function fill_card(index, card)
     local c = index - 1
     set_visible("Card" .. c, card ~= nil)
-    set_button_visible("PickButton" .. c, card ~= nil)
+    set_button_visible("PickButton" .. c, card ~= nil and card.state == nil)
+    set_text("CardState" .. c, card and card.state or "")
     if card == nil then return end
     set_text("CardName" .. c, card.name)
     set_text("CardQuote" .. c, card.quote ~= "" and ('"' .. card.quote .. '"') or "")
