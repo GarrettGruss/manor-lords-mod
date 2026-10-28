@@ -36,9 +36,9 @@ function M.timer_step(order, timer_start, today, cfg)
     return { action = "wait", days_left = left, warn = left <= cfg.warn_days }
 end
 
--- Families that leave: at most `leavers`, and the village keeps `min_left`.
+-- Families that leave: at most `rebellion_families`, and the village keeps `min_families_left`.
 function M.leavers_for(families, cfg)
-    return math.max(0, math.min(cfg.leavers, families - cfg.min_families_left))
+    return math.max(0, math.min(cfg.rebellion_families, families - cfg.min_families_left))
 end
 
 -- Order after the leave.
@@ -70,6 +70,64 @@ end
 -- When no family came back, the mod gives back what the game took, at most the price.
 function M.refund_amount(silver_before, silver_now, price)
     return math.max(0, math.min(price, silver_before - silver_now))
+end
+
+---------------------------------------------------------------------------------------------
+-- Rebellion (change update-banditry-rebellion-raid)
+---------------------------------------------------------------------------------------------
+
+-- A set of item ids from the config list.
+function M.id_set(ids)
+    local set = {}
+    for _, id in ipairs(ids) do set[id] = true end
+    return set
+end
+
+-- The weapon and armor goods of a home: `inventory` is a list of { id, amount }. Returns a list of ids, one entry per item.
+function M.armed_goods(inventory, id_set)
+    local goods = {}
+    for _, row in ipairs(inventory) do
+        if id_set[row.id] then
+            for _ = 1, row.amount do goods[#goods + 1] = row.id end
+        end
+    end
+    return goods
+end
+
+-- Pick `count` entries of `valid` at random (not the best armed). `random(n)` returns an integer from 1 to n. The input stays as it is.
+function M.pick_families(valid, count, random)
+    local pool = {}
+    for index, family in ipairs(valid) do pool[index] = family end
+    local picked = {}
+    for _ = 1, math.min(count, #pool) do
+        picked[#picked + 1] = table.remove(pool, random(#pool))
+    end
+    return picked
+end
+
+-- Nil when the rebellion may start, or the reason for the block. A block removes nothing.
+function M.rebellion_block(valid_count, needed)
+    if valid_count < needed then
+        return string.format("%d valid families found, %d needed", valid_count, needed)
+    end
+    return nil
+end
+
+-- Spread a list of goods over `unit_count` units, round robin. Returns one list for each unit. No good is in two lists.
+function M.spread_goods(goods, unit_count)
+    local per_unit = {}
+    for index = 1, unit_count do per_unit[index] = {} end
+    if unit_count < 1 then return per_unit end
+    for index, good in ipairs(goods) do
+        local unit = (index - 1) % unit_count + 1
+        per_unit[unit][#per_unit[unit] + 1] = good
+    end
+    return per_unit
+end
+
+-- A blocked rebellion retries only after a new order tick.
+function M.retry_due(blocked_tick_day, last_tick_day)
+    return blocked_tick_day == nil or blocked_tick_day ~= last_tick_day
 end
 
 return M

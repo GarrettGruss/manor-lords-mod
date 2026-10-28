@@ -21,6 +21,7 @@ state:register("bandits_timer_start", -1, "integer")
 state:register("bandits_warned", 0, "integer") -- 1 when the 30 day warning showed for this timer
 state:register("bandits_ticks", 0, "integer")
 state:register("bandits_leaves", 0, "integer")
+state:register("bandits_blocks", 0, "integer") -- rebellions that were blocked (too few valid families)
 
 local last_tick = nil     -- the last tick record, for the state command and the telemetry
 local last_leave = nil    -- the last leave record
@@ -29,6 +30,9 @@ local overwrites = 0      -- how often the game replaced the mod's value
 local written = nil       -- the last value the mod wrote
 local pending = nil       -- a sent buy-back that is not finished
 local buy_backs = {}      -- the results, for the state command
+local blocked_tick = nil  -- bandits_last_tick_day at the last blocked rebellion; a blocked rebellion retries after the next tick
+local last_blocked = nil  -- the last blocked rebellion: { day, valid, needed, reason }
+local outlaws_watch = { pawn = nil, polls = 0, tries = 0, done = false, last = nil } -- ensure_outlaw_pawn at game start and after each load
 -- Set by the tech tree: order_bonus is added to the manor term of each tick. buy_back_multiplier is a price factor.
 local modifiers = { order_bonus = 0, buy_back_multiplier = 1 }
 
@@ -98,23 +102,35 @@ local function stop_timer(today)
     core.log.info(TAG, string.format("BANDITS timer reset day=%d order=%d", today, mod_order()))
 end
 
--- The villagers leave and one bandit camp spawns. The camp call makes the bandit pawn when none exists.
+-- The rebellion (see rebellion.lua): armed families leave and an Outlaws squad spawns at the first home.
+-- A blocked rebellion (too few valid families, no Outlaws pawn) removes nothing, changes no order and returns result.blocked.
 local function leave(today, count)
     local region = world.region()
     local families = region and world.families(region) or 0
     local wanted = count or rules.leavers_for(families, config)
-    local result = { removed = 0, camps = 0, squads = 0, bandit_units = 0, spawned = false }
+    local result = { removed = 0, squads = 0, bandit_units = 0, spawned = false, taken = 0, returned = 0, overrides = 0 }
     if region ~= nil and wanted > 0 then
         local answer, problem = world.leave(region, wanted)
         if answer == nil then core.log.error(TAG, "BANDITS leave failed: " .. tostring(problem)) else result = answer end
     end
-    last_leave = { day = today, wanted = wanted, removed = result.removed, spawned = result.spawned, camps = result.camps, squads = result.squads, bandit_units = result.bandit_units, pawn_created = result.pawn_created, camp_at = result.at, camp_distance = result.distance }
+    last_leave = { day = today, wanted = wanted, removed = result.removed, spawned = result.spawned, squads = result.squads, bandit_units = result.bandit_units,
+        pawn_created = result.pawn_created, camp_at = result.at, camp_distance = result.distance, valid = result.valid, taken = result.taken,
+        returned = result.returned, overrides = result.overrides, blocked = result.blocked, error = result.error }
+    if result.blocked ~= nil then
+        blocked_tick = state:get("bandits_last_tick_day")
+        last_blocked = { day = today, valid = result.valid, needed = wanted, reason = result.blocked }
+        state:set("bandits_blocks", state:get("bandits_blocks") + 1)
+        core.log.info(TAG, string.format("BANDITS rebellion_blocked day=%d valid=%s needed=%d reason=%s", today, tostring(result.valid), wanted, result.blocked))
+        return result
+    end
+    blocked_tick = nil
     state:set("bandits_leaves", state:get("bandits_leaves") + 1)
     state:set("bandits_converted_families", state:get("bandits_converted_families") + result.removed)
     state:set("bandits_outstanding_families", state:get("bandits_outstanding_families") + result.removed)
-    core.log.info(TAG, string.format("BANDITS leave day=%d wanted=%d families_left=%d bandits_spawned=%s camps=%d bandit_units=%d pawn_created=%s camp_at=%s camp_distance=%s",
-        today, wanted, result.removed, tostring(result.spawned), result.camps, result.bandit_units, tostring(result.pawn_created), result.at and (result.at.x .. "," .. result.at.y) or "unknown", tostring(result.distance)))
-    if not result.spawned and result.removed > 0 then core.log.info(TAG, "BANDITS camp spawn failed: no bandits spawned") end
+    core.log.info(TAG, string.format("BANDITS leave day=%d wanted=%d valid=%s families_left=%d goods_taken=%d goods_returned=%d bandits_spawned=%s squads=%d bandit_units=%d overrides=%d pawn_created=%s at=%s distance=%s",
+        today, wanted, tostring(result.valid), result.removed, result.taken, result.returned, tostring(result.spawned), result.squads, result.bandit_units, result.overrides, tostring(result.pawn_created),
+        result.at and (result.at.x .. "," .. result.at.y) or "unknown", tostring(result.distance)))
+    if not result.spawned and result.removed > 0 then core.log.error(TAG, "BANDITS rebellion spawn failed: no bandits spawned") end
     set_mod_order(rules.order_after_leave(mod_order(), config))
     leave_gain = config.order_gain
     core.show_banner("Families have turned to banditry", string.format("%d families left their homes", result.removed))
@@ -131,8 +147,11 @@ local function check_timer(today)
         return core.show_banner("Villagers are about to leave", string.format("They leave in %d days unless order rises", step.days_left))
     end
     if step.action == "leave" then
+        -- A blocked rebellion keeps the expired timer and tries again after the next order tick.
+        if not rules.retry_due(blocked_tick, state:get("bandits_last_tick_day")) then return end
+        local result = leave(today)
+        if result.blocked ~= nil then return end
         state:set("bandits_timer_start", -1)
-        leave(today)
         if rules.timer_step(mod_order(), -1, today, config).action == "start" then start_timer(today) end
     end
 end
@@ -226,8 +245,28 @@ local function check_buy_back()
     end
 end
 
+-- ensure_outlaw_pawn at game start and after each load (the pawn address changes with each game). It waits a few polls until the
+-- village is ready, and gives up after outlaws_max_tries failed tries. The same call guards each rebellion.
+local function check_outlaws(region)
+    local pawn = world.player_address()
+    if pawn == nil then return end
+    if pawn ~= outlaws_watch.pawn then outlaws_watch = { pawn = pawn, polls = 0, tries = 0, done = false, last = nil } end
+    if outlaws_watch.done then return end
+    outlaws_watch.polls = outlaws_watch.polls + 1
+    if region == nil or outlaws_watch.polls <= config.outlaws_start_polls then return end
+    outlaws_watch.tries = outlaws_watch.tries + 1
+    local ok, info = require("features.bandits.outlaws").ensure()
+    if ok then
+        outlaws_watch.done, outlaws_watch.last = true, info
+    elseif outlaws_watch.tries >= config.outlaws_max_tries then
+        outlaws_watch.done = true
+        core.log.error(TAG, "OUTLAWS gave up after " .. outlaws_watch.tries .. " tries: " .. tostring(info))
+    end
+end
+
 local function poll()
     if not state.loaded then return end
+    check_outlaws(world.region())
     check_buy_back()
     write_order()
     local today = world.current_day()
@@ -244,7 +283,7 @@ if has_telemetry then
     telemetry.register("bandits_order", function()
         return {
             mod_order = state.loaded and mod_order() or nil, last_tick = last_tick,
-            timer_start = state.loaded and state:get("bandits_timer_start") or nil, last_leave = last_leave,
+            timer_start = state.loaded and state:get("bandits_timer_start") or nil, last_leave = last_leave, last_blocked = last_blocked,
         }
     end)
 end
@@ -269,6 +308,8 @@ local function command_state()
         timer = timer, warned = state:get("bandits_warned") == 1, last_leave = last_leave, leaves = state:get("bandits_leaves"),
         families = region and world.families(region), converted_families = state:get("bandits_converted_families"),
         outstanding_families = state:get("bandits_outstanding_families"), returned_families = state:get("bandits_returned_families"),
+        outlaws = { ready = outlaws_watch.done and outlaws_watch.last ~= nil, tries = outlaws_watch.tries, last = outlaws_watch.last },
+        blocked = last_blocked, blocks = state:get("bandits_blocks"),
         buy_back_pending = pending ~= nil, buy_backs = buy_backs, modifiers = modifiers, buy_back_multiplier = modifiers.buy_back_multiplier,
         free_slots = region and world.free_slots(region), silver = world.silver(), bandit_pawn = world.bandit_pawn_exists(),
     }
