@@ -1,5 +1,8 @@
 # Wiki update log
 
+## 2026-10-28
+* **Update**: Armies come in from the map border (change `update-spawn-from-map-border`, #434). Added a section to [Engine limits found by spikes](concepts/engine-limits.md) (arrival days, map edge actor, no navmesh, two lords at war crash) and the map border paragraph to [Invasion Mod features](architecture/invasion-features.md).
+
 ## 2026-10-27
 * **Update**: Added [Native UI elements of the game](concepts/native-ui-elements.md) and [Building mod UI](workflows/building-mod-ui.md) (change `assess-native-ui-elements`, #504). [Engine limits found by spikes](concepts/engine-limits.md) links to them.
 
