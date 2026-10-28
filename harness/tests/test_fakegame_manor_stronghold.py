@@ -50,7 +50,7 @@ class ManorStorageTestCase(TechTreeTestCase):
 
     def prosperity_upgrade(self):
         self.choose("prosperity")
-        self.region.settlementLevel = 2
+        self.grant(1)
         self.assertTrue(self.unlock("fair_courts")["ok"])
         self.assertTrue(self.unlock("amnesty")["ok"])
         self.game.advance(4)
@@ -76,7 +76,7 @@ class CapacityTests(ManorStorageTestCase):
 
     def test_an_oppression_node_raises_the_capacity_too(self):
         self.choose("oppression")
-        self.region.settlementLevel = 2
+        self.grant(1)
         self.unlock("martial_law")
         self.assertTrue(self.unlock("iron_hand")["ok"])
         self.game.advance(4)
@@ -120,7 +120,7 @@ class PutAndTakeTests(ManorStorageTestCase):
 class RetinueTests(ManorStorageTestCase):
     def unlock_militia_rights(self, path, nodes):
         self.choose(path)
-        self.region.settlementLevel = 3
+        self.grant(len(nodes) - 1)
         for node in nodes:
             self.assertTrue(self.unlock(node)["ok"], node)
         self.game.advance(4)

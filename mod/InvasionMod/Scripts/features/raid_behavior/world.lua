@@ -311,4 +311,56 @@ function M.current_day()
     return math.floor(value)
 end
 
+---------------------------------------------------------------------------------------------
+-- Units for the loot override (change update-banditry-rebellion-raid)
+---------------------------------------------------------------------------------------------
+
+function M.game_seconds()
+    local found = engine()
+    local value = found and read(function() return found:getGameTimeAdjusted() end)
+    if type(value) == "number" then return value end
+    return nil
+end
+
+-- The units of the squads in `wanted` (a set of squad ids): squad id -> list of { address, dead }, in the order of the game.
+-- Used to give the loot override its unit key at the spawn and after a load. A dead unit is included (its body keeps the squad).
+function M.units_by_squad(wanted)
+    local out = {}
+    for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+        if isValid(unit) then
+            local squad = read(function() return unit.assignedSquadID.Value end)
+            if type(squad) == "number" and (wanted == nil or wanted[squad]) then
+                local address = unit_key(unit)
+                if address ~= nil then
+                    out[squad] = out[squad] or {}
+                    table.insert(out[squad], { address = address, dead = read(function() return unit.dead end) == true })
+                end
+            end
+        end
+    end
+    return out
+end
+
+-- The units that carry an entry now: address -> { dead }. A unit that is not listed is not in the map.
+function M.override_units(addresses)
+    local out = {}
+    for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+        if isValid(unit) then
+            local address = unit_key(unit)
+            if address ~= nil and addresses[address] then
+                out[address] = { dead = read(function() return unit.dead end) == true }
+            end
+        end
+    end
+    return out
+end
+
+-- The address of the player pawn: it changes with each load.
+function M.player_address()
+    local found = engine()
+    local pawn = found and read(function() return found.playerRef end)
+    if not isValid(pawn) then return nil end
+    return read(function() return pawn:GetAddress() end)
+end
+
 return M

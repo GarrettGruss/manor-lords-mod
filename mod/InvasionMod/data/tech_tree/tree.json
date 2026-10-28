@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "paths": [
     { "id": "oppression", "name": "Oppression" },
     { "id": "prosperity", "name": "Prosperity" }
@@ -23,6 +23,11 @@
     { "id": "golden_age", "path": "prosperity", "name": "Golden Age", "requires": ["militia_rights"],
       "effect": [{ "kind": "approval", "value": 15 }], "layout": { "x": 3, "y": 1 } }
   ],
+  "common_nodes": [
+    { "id": "corpse_robbing", "name": "Corpse Robbing", "effect": [] },
+    { "id": "armory_census", "name": "Armory Census", "effect": [] },
+    { "id": "night_watch", "name": "Night Watch", "effect": [] }
+  ],
   "laws": [
     { "id": "conscription", "path": "oppression", "name": "Conscription", "requires": ["martial_law"],
       "effect": [{ "kind": "militia_attack", "value": 0.10 }, { "kind": "approval", "value": -5 }] },
@@ -35,7 +40,13 @@
     { "id": "trade_pacts", "path": "prosperity", "name": "Trade Pacts", "requires": ["amnesty"],
       "effect": [{ "kind": "tribute_share", "value": 0.25 }] },
     { "id": "pay_off_warbands", "path": "prosperity", "name": "Pay Off Warbands", "requires": ["militia_rights"],
-      "effect": [{ "kind": "buy_back_price", "value": -0.25 }] }
+      "effect": [{ "kind": "buy_back_price", "value": -0.25 }] },
+    { "id": "strip_the_dead", "path": "common", "name": "Strip the Dead", "requires": ["corpse_robbing"],
+      "effect": [{ "kind": "law_corpse_loot", "value": 0 }] },
+    { "id": "disarm_the_peasantry", "path": "common", "name": "Disarm the Peasantry", "requires": ["armory_census"],
+      "effect": [{ "kind": "law_disarm_homes", "value": 0 }, { "kind": "approval", "value": -3 }] },
+    { "id": "curfew", "path": "common", "name": "Curfew", "requires": ["night_watch"],
+      "effect": [{ "kind": "law_banditry_gain", "value": 0.5 }, { "kind": "approval", "value": -4 }] }
   ],
   "vassal_policies": [
     { "policy": "heavy", "path": "oppression", "requires": ["martial_law"] },

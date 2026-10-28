@@ -93,6 +93,9 @@ return {
         enabled = true,
         poll_ms = 1000,         -- real time between two looks at the raiders
         pit_poll_ms = 1000,     -- real time between two looks at the corpse pit (change add-corpse-pit-loot)
+        override_poll_ms = 1000, -- real time between two looks at the units that have a loot override
+        relink_window_s = 10,   -- game seconds after a load in which a saved loot override finds its unit; later it is dropped
+        relink_max_polls = 120, -- real polls after a load before the window ends, also when the game is paused
         slow_every = 5,         -- the building scan and the AI log scan run every Nth look (they read many objects)
         carry_cap = 10,         -- most goods a Hussite raid plunders for each raider at its start (M00: Hussite grain 10). It is also the loot goal of a Hussite raid. Other raids are not capped.
         exit_y = -85000,       -- a raider that vanishes at or below this y walked off the map. It keeps its loot.
@@ -107,6 +110,17 @@ return {
             threshold = 20000,      -- game units (1 unit = 1 cm, so 200 m; owner 2026-10-20). The army fights about 14000 from the marker.
             rate = 10,              -- goods for each stealing raider, each game day
             goals = { plunder = 100, great = 300 }, -- most goods one raid steals, by raid kind (small and large raid; no scaling by difficulty yet)
+        },
+        -- Change update-tech-tree-yearly-picks: loot of a looted body (law Strip the Dead) that is not a Hussite raider.
+        -- One list of variants for each body kind; a body draws one variant at random by weight (weight is optional, default 1).
+        -- A kind with no variants pays nothing. Good ids (DT_Items): 177 sidearms, 270 small shields, 273 militia helmets.
+        -- The kind "soldier" has no values yet (the owner has not given any); soldier bodies are not told apart from other dead today.
+        body_loot = {
+            bandit = {                             -- Brigands (owner, 2026-10-28)
+                { weight = 1, goods = { [177] = 1, [270] = 1 } },
+                { weight = 1, goods = { [177] = 1, [270] = 1, [273] = 1 } },
+            },
+            soldier = {},
         },
         leave = {
             enabled = true,
@@ -149,9 +163,27 @@ return {
         manor_term = 10,                 -- order gain for each tick (plus the tech tree order_bonus)
         homeless_term = 5,               -- order loss for each tick and each homeless family
         threshold = 25,                  -- order below this value starts the banditry timer
-        timer_days = 90,                 -- game days from the timer start to the leave
+        timer_days = 60,                 -- game days from the timer start to the rebellion (was 90)
         warn_days = 30,                  -- the warning banner shows when this many game days are left
-        leavers = 18,                    -- families that leave when the timer expires
+        rebellion_families = 6,          -- families that leave in a rebellion (each home must hold a weapon or armor item)
+        hide_bodies = true,               -- hide the bodies of the killed families and camp Brigands (SetActorHiddenInGame)
+        rebellion_squads = 1,            -- Brigands squads (18 units each) of the pawn Outlaws that spawn at the first home
+        rebellion_weapon_ids = {         -- DT_Items ids: a home with one of them makes a family valid, and the rebels take all of them
+            133,       -- spears
+            178,       -- polearms
+            177,       -- sidearms
+            205,       -- warbows
+            206,       -- crossbows
+            271,       -- large shields
+            270,       -- small shields
+            163,       -- gambesons
+            164,       -- mail armor
+            273,       -- militia helmets
+            288, 289,  -- mercenary helmets
+        },
+        loot_override_slots = 200,       -- ModState slots of the loot override map (one slot holds one unit, under 1024 characters)
+        outlaws_start_polls = 5,         -- polls (one second each) to wait after a load before the Outlaws pawn is checked
+        outlaws_max_tries = 5,           -- tries of ensure_outlaw_pawn after a load before the mod gives up
         order_gain = 25,                 -- order gain when the families leave
         min_families_left = 1,           -- the village never loses its last family to this feature
         buy_back = {                     -- iteration 03. Starting values, tuned in playtests.
@@ -311,7 +343,15 @@ return {
         enabled = true,
         poll_ms = 2000,              -- real time between two looks at the settlement level and the garrison
         max_active_laws = 2,         -- M12.04: laws in force at the same time (TBD)
-        slots_per_level = 1,         -- decision 24: one node slot for each settlement level
+        -- Change update-tech-tree-yearly-picks (owner, 2026-10-27): one pick for each game year, earned at the start of spring.
+        initial_picks = 1,           -- picks at the start of a game
+        picks_per_year = 1,          -- picks at each start of spring (banked when unused)
+        spring_season = 1,           -- value of the spring season in the calendar enum (winter 0, spring 1, summer 2, autumn 3; checked in the real game, see notes/spring-season.md)
+        strip_the_dead = { order_loss = 1 },  -- mod order lost for each corpse looted at the pit
+        disarm = {                   -- Disarm the Peasantry
+            tick_days = 1,           -- game days between two home sweeps
+            weapon_ids = { 133, 271 }, -- fallback when bandits.rebellion_weapon_ids does not exist: spears and large shields (the goods seen in homes)
+        },
         tree_file = "data/tech_tree/tree.json", -- relative to the mod folder
     },
     -- M12 iteration 02: the tech tree menu. Needs the pak InvasionMod_P.pak.
@@ -321,8 +361,14 @@ return {
         poll_ms = 100,                       -- real time between two looks at the click queue (clicks are hook events, spec 34)
         refresh_ms = 500,                    -- real time between two refreshes of the labels
         z_order = 500,
-        position = { X = 300, Y = 150 },
-        step_x = 180, step_y = 60,           -- pixels for one layout unit of a node
+        -- No position: the pak widget centres its window (the seed slot has centre anchors).
+        -- Layout in pixels of the window canvas (the mockup scaled to 0.8: a canvas of 1152 x 704). A card stands at origin + layout * step.
+        origin_x = 160, origin_y = 100,      -- top left of the first card
+        step_x = 248, step_y = 160,          -- pixels for one layout unit of a card
+        card_w = 216, card_h = 150,
+        law_row_h = 48,                      -- the bottom of a card: the law name and its button (the click area of the card is above)
+        lane_x = 20,                         -- left edge of the row labels
+        colhead_y = 72, band_top = 67, band_h = 453, -- column heads and bands
     },
     -- M09 refugees. Values are TBD for playtests (owner, 2026-10-20: 50 percent of the vassal population).
     refugees = {

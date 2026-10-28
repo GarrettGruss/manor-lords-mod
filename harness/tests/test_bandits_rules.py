@@ -17,13 +17,19 @@ class RulesTests(unittest.TestCase):
 
     def order_cfg(self):
         return self.lua.table_from({
-            "manor_term": 10, "homeless_term": 5, "threshold": 25, "timer_days": 90, "warn_days": 30,
-            "leavers": 18, "order_gain": 25, "min_families_left": 1,
+            "manor_term": 10, "homeless_term": 5, "threshold": 25, "timer_days": 60, "warn_days": 30,
+            "rebellion_families": 6, "order_gain": 25, "min_families_left": 1,
         })
 
     def timer(self, order, start, today):
         step = self.rules.timer_step(order, start, today, self.order_cfg())
         return step.action, step.days_left, step.warn
+
+    def test_curfew_halves_the_homeless_term_and_rounds_half_up(self):
+        self.assertEqual(self.rules.tick_order(50, 4, 0, self.order_cfg(), 0.5).homeless_term, 10)
+        self.assertEqual(self.rules.tick_order(50, 1, 0, self.order_cfg(), 0.5).homeless_term, 3)  # 2.5 rounds up
+        self.assertEqual(self.rules.tick_order(50, 4, 0, self.order_cfg(), 1).homeless_term, 20)
+        self.assertEqual(self.rules.tick_order(50, 4, 0, self.order_cfg()).homeless_term, 20)
 
     def test_order_is_clamped(self):
         self.assertEqual([self.rules.clamp_order(v) for v in (-5, 0, 50, 100, 130)], [0, 0, 50, 100, 100])
@@ -53,9 +59,10 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(self.timer(25, -1, 200)[0], "none")
 
     def test_timer_waits_warns_and_expires(self):
-        self.assertEqual(self.timer(20, 200, 230), ("wait", 60, False))
-        self.assertEqual(self.timer(20, 200, 260), ("wait", 30, True))
-        self.assertEqual(self.timer(20, 200, 290)[0], "leave")
+        self.assertEqual(self.timer(20, 200, 230), ("wait", 30, True))
+        self.assertEqual(self.timer(20, 200, 250), ("wait", 10, True))
+        self.assertEqual(self.timer(20, 200, 260)[0], "leave")
+        self.assertEqual(self.timer(20, 200, 220), ("wait", 40, False))
 
     def test_timer_resets_when_order_reaches_the_threshold(self):
         self.assertEqual(self.timer(25, 200, 230)[0], "reset")
@@ -63,7 +70,8 @@ class RulesTests(unittest.TestCase):
 
     def test_leavers_keep_one_family(self):
         cfg = self.order_cfg()
-        self.assertEqual([self.rules.leavers_for(n, cfg) for n in (40, 19, 10, 1, 0)], [18, 18, 9, 0, 0])
+        self.assertEqual([self.rules.leavers_for(n, cfg) for n in (40, 19, 10, 1, 0)], [6, 6, 6, 0, 0])
+        self.assertEqual([self.rules.leavers_for(n, cfg) for n in (7, 6, 3)], [6, 5, 2])
 
     def test_order_after_the_leave(self):
         cfg = self.order_cfg()
@@ -106,6 +114,54 @@ class RulesTests(unittest.TestCase):
     def test_the_price_follows_the_slots_not_the_outstanding_families(self):
         self.assertIn("silver", self.rules.buy_back_refusal(self.facts(outstanding=6, free_slots=3, silver=29), self.cfg()))
         self.assertIsNone(self.rules.buy_back_refusal(self.facts(outstanding=6, free_slots=3, silver=30), self.cfg()))
+
+    # -- rebellion (change update-banditry-rebellion-raid) --------------------------------------
+
+    def test_the_default_config_values(self):
+        self.lua.execute("Key = setmetatable({}, { __index = function(_, name) return name end })")
+        config = self.lua.execute((find_pack_mod() / "Scripts" / "config.lua").read_text(encoding="utf-8"))
+        bandits = config.bandits
+        self.assertEqual((bandits.threshold, bandits.timer_days, bandits.order_gain, bandits.tick_days), (25, 60, 25, 30))
+        self.assertEqual((bandits.rebellion_families, bandits.rebellion_squads, bandits.loot_override_slots), (6, 1, 200))
+        self.assertEqual(sorted(bandits.rebellion_weapon_ids.values()), [133, 163, 164, 177, 178, 205, 206, 270, 271, 273, 288, 289])
+        self.assertIsNone(bandits.leavers)
+
+    def inventory(self, *rows):
+        return self.lua.table_from([self.lua.table_from({"id": i, "amount": a}) for i, a in rows])
+
+    def test_a_home_is_valid_with_one_weapon_or_armor_item(self):
+        ids = self.rules.id_set(self.lua.table_from([133, 271]))
+        self.assertEqual(list(self.rules.armed_goods(self.inventory((133, 2), (15, 9), (271, 1)), ids).values()), [133, 133, 271])
+        self.assertEqual(list(self.rules.armed_goods(self.inventory((15, 9), (3, 2)), ids).values()), [])
+        self.assertEqual(list(self.rules.armed_goods(self.inventory(), ids).values()), [])
+
+    def test_the_pick_takes_the_wanted_number_without_repeats(self):
+        valid = self.lua.table_from(list(range(1, 10)))
+        picked = list(self.rules.pick_families(valid, 6, lambda n: 1).values())  # always the first of the rest
+        self.assertEqual(picked, [1, 2, 3, 4, 5, 6])
+        picked = list(self.rules.pick_families(valid, 6, lambda n: n).values())  # always the last of the rest
+        self.assertEqual(picked, [9, 8, 7, 6, 5, 4])
+        self.assertEqual(len(list(valid.values())), 9)  # the input stays
+        self.assertEqual(len(list(self.rules.pick_families(valid, 20, lambda n: 1).values())), 9)
+
+    def test_the_rebellion_is_blocked_with_too_few_valid_families(self):
+        self.assertIsNone(self.rules.rebellion_block(6, 6))
+        self.assertIsNone(self.rules.rebellion_block(9, 6))
+        self.assertEqual(self.rules.rebellion_block(5, 6), "5 valid families found, 6 needed")
+        self.assertIn("0 valid", self.rules.rebellion_block(0, 6))
+
+    def test_goods_spread_round_robin_over_the_units(self):
+        spread = self.rules.spread_goods(self.lua.table_from(list(range(100, 130))), 18)
+        lists = [list(spread[i].values()) for i in range(1, 19)]
+        self.assertEqual(sorted(g for row in lists for g in row), list(range(100, 130)))  # 30 goods, none twice
+        self.assertEqual(sorted(len(row) for row in lists), [1] * 6 + [2] * 12)
+        few = self.rules.spread_goods(self.lua.table_from([1, 2, 3]), 18)
+        self.assertEqual([len(list(few[i].values())) for i in range(1, 19)], [1, 1, 1] + [0] * 15)
+
+    def test_a_blocked_rebellion_retries_only_after_a_new_tick(self):
+        self.assertTrue(self.rules.retry_due(None, 100))
+        self.assertFalse(self.rules.retry_due(100, 100))
+        self.assertTrue(self.rules.retry_due(100, 130))
 
 
 if __name__ == "__main__":

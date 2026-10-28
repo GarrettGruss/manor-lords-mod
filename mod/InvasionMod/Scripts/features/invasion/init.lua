@@ -850,6 +850,13 @@ local function set_vassal_provider(fn)
     vassal_provider = fn
 end
 
-return { state = state, on_arrival = on_arrival, set_vassal_provider = set_vassal_provider, watch_spawn = watch_spawn, raid_info = raid_info, pick_difficulty = pick_difficulty,
+-- Read-only, for the tech tree picks: the season value of the calendar and the season counter (season changes since the mod started). nil until a season is seen.
+local function season_info()
+    local season, no = current_season(), state.loaded and state:get("yearly_season_no") or -1
+    if season == nil or no < 0 then return nil end
+    return { season = season, no = no }
+end
+
+return { state = state, on_arrival = on_arrival, set_vassal_provider = set_vassal_provider, season_info = season_info, watch_spawn = watch_spawn, raid_info = raid_info, pick_difficulty = pick_difficulty,
          level = level, difficulty = general_difficulty, set_levels = set_levels, settings_changed = settings_changed, command_state = command_state,
          set_hold_gate = function(gate) hold_gate = gate end }

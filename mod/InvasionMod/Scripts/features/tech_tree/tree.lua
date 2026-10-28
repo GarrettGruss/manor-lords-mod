@@ -11,7 +11,13 @@ M.EFFECT_KINDS = {
     retinue_capacity = "add",      -- value is added to the retinue limit of the manor (men)
     tribute_share = "percent",     -- value is a change of the tribute share of all vassals (0.25 is +25%)
     manor_storage = "add",         -- value is added to the capacity of a manor module (units of goods)
+    law_corpse_loot = "flag",      -- Strip the Dead: the corpse pit pays loot (value is ignored)
+    law_disarm_homes = "flag",     -- Disarm the Peasantry: the tick moves home weapons to the storehouse
+    law_banditry_gain = "factor",  -- Curfew: value multiplies the order loss of banditry (0.5 halves it)
 }
+
+-- The "path" of a common tech and a common law (no path needed).
+M.COMMON = "common"
 
 local function fail(message) error("tech tree data: " .. message, 0) end
 
@@ -43,17 +49,21 @@ local function read_effect(effect, node_id)
     return { kind = effect.kind, value = effect.value, min_garrison_squads = effect.min_garrison_squads }
 end
 
-local function read_node(raw, path_ids)
+local function read_node(raw, path_ids, common)
     require_type(raw, "table", "a node")
     require_type(raw.id, "string", "node id")
     local id = raw.id
     -- ModState keeps the unlocked ids in one text with dots between them.
     if id:find("[^%w_%-]") then fail("node id '" .. id .. "' may hold only letters, digits, _ and -") end
     require_type(raw.name, "string", "name of node '" .. id .. "'")
-    if not path_ids[raw.path] then fail("node '" .. id .. "' has unknown path '" .. tostring(raw.path) .. "'") end
+    if common then
+        raw.path, raw.requires = M.COMMON, raw.requires or {}
+    elseif not path_ids[raw.path] then
+        fail("node '" .. id .. "' has unknown path '" .. tostring(raw.path) .. "'")
+    end
     require_type(raw.requires, "table", "'requires' of node '" .. id .. "'")
     require_type(raw.effect, "table", "'effect' of node '" .. id .. "'")
-    if #raw.effect < 1 then fail("node '" .. id .. "' has no effect") end
+    if #raw.effect < 1 and not common then fail("node '" .. id .. "' has no effect") end
     local node = { id = id, path = raw.path, name = raw.name, requires = {}, effects = {} }
     for _, required in ipairs(raw.requires) do
         node.requires[#node.requires + 1] = require_type(required, "string", "a 'requires' entry of node '" .. id .. "'")
@@ -124,7 +134,7 @@ local function read_laws(doc, by_id, path_ids)
         require_type(raw, "table", "a law")
         local id = require_type(raw.id, "string", "law id")
         if by_id[id] or laws_by_id[id] then fail("law id '" .. id .. "' is not unique") end
-        if not path_ids[raw.path] then fail("law '" .. id .. "' has unknown path '" .. tostring(raw.path) .. "'") end
+        if not path_ids[raw.path] and raw.path ~= M.COMMON then fail("law '" .. id .. "' has unknown path '" .. tostring(raw.path) .. "'") end
         require_type(raw.name, "string", "name of law '" .. id .. "'")
         require_type(raw.requires, "table", "'requires' of law '" .. id .. "'")
         require_type(raw.effect, "table", "'effect' of law '" .. id .. "'")
@@ -160,10 +170,10 @@ local function read_policy_gates(doc, by_id, path_ids)
     return gates
 end
 
--- Build the tree from a decoded document. Returns { paths, path_ids, nodes (in file order), by_id, laws, laws_by_id, policy_gates }.
+-- Build the tree from a decoded document. Returns { paths, path_ids, nodes (path nodes, in file order), common_nodes, by_id (both), laws, laws_by_id, policy_gates }.
 function M.build(doc)
     require_type(doc, "table", "the document")
-    if doc.version ~= 1 then fail("unsupported version " .. tostring(doc.version)) end
+    if doc.version ~= 2 then fail("unsupported version " .. tostring(doc.version)) end
     local paths, path_ids = read_paths(doc)
     require_type(doc.nodes, "table", "'nodes'")
     local nodes, by_id = {}, {}
@@ -174,11 +184,20 @@ function M.build(doc)
         nodes[#nodes + 1] = node
     end
     if #nodes == 0 then fail("no nodes") end
+    -- Common techs are listed apart (the window draws the path nodes only) but share by_id with the path nodes.
+    local common_nodes = {}
+    for _, raw in ipairs(doc.common_nodes or {}) do
+        local node = read_node(raw, path_ids, true)
+        if by_id[node.id] then fail("duplicate node id '" .. node.id .. "'") end
+        if #node.requires > 0 then fail("common tech '" .. node.id .. "' may not require another node") end
+        by_id[node.id] = node
+        common_nodes[#common_nodes + 1] = node
+    end
     check_requires(nodes, by_id)
     check_cycles(nodes, by_id)
     fill_default_layout(nodes, by_id, paths)
     local laws, laws_by_id = read_laws(doc, by_id, path_ids)
-    return { paths = paths, path_ids = path_ids, nodes = nodes, by_id = by_id, laws = laws, laws_by_id = laws_by_id,
+    return { paths = paths, path_ids = path_ids, nodes = nodes, common_nodes = common_nodes, by_id = by_id, laws = laws, laws_by_id = laws_by_id,
              policy_gates = read_policy_gates(doc, by_id, path_ids) }
 end
 
