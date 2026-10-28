@@ -4,6 +4,9 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Fixed
+- Feature `tribute` (#517): vassal tribute pays goods again. It called `raid_world.deposit`, which was removed from `raid_behavior`. It now deposits with its own helper (`addToInventory`, read back from the store inventory). No change to the rules.
+
 ### Changed
 - **Tech tree (picks):** one pick at the start and one pick at each start of spring (banked when unused) replace the node slots of the settlement level. Every unlock of a path node or a common tech costs one pick. The pick state is saved with the game.
 - **Corpse pit (loot is now opt-in):** the pit pays loot only while the law Strip the Dead is in force. Before, it always paid the share of Hussite raiders.
