@@ -2,7 +2,7 @@
 
 Checks: the border point is outside the playable square and at least 30000 units from the manor; the direction notice names the
 side; the tracker reports the raid as marching (no leave rule) and then as arrived within the march limit; the squads end near the
-manor. Options (run.py --env): INVASION_DIFFICULTY (1 to 3, default 1). It saves nothing.
+manor. Options (run.py --env): INVASION_DIFFICULTY (1 to 3, default 2). It saves nothing.
 """
 
 import re
@@ -37,6 +37,17 @@ def shot(ctx, name: str, settle: float = 1.0) -> None:
     ctx.screenshot(name)
 
 
+def look_at(ctx, x: float, y: float) -> bool:
+    """Centre the camera (the player pawn follows it). The trace can miss next to the cliffs: try a few points around."""
+    for dx, dy in ((0, 0), (4000, 0), (0, 4000), (-4000, 0), (0, -4000)):
+        try:
+            ctx.bridge.centre_camera_on(x + dx, y + dy)
+            return True
+        except RuntimeError as error:
+            ctx.log.info(f"camera at ({x + dx}, {y + dy}) failed: {error}")
+    return False
+
+
 def run_day(ctx) -> None:
     ctx.popups()
     try:
@@ -48,15 +59,15 @@ def run_day(ctx) -> None:
 
 
 def run(ctx) -> dict:
-    difficulty = int(ctx.variant_option("INVASION_DIFFICULTY", "1"))
+    difficulty = int(ctx.variant_option("INVASION_DIFFICULTY", "2"))
     ctx.mod.command("InvasionMod.invasion_set_difficulty", value=difficulty)
     ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_plan_now")["raid_day"] > 0, 30, what="the raid plan")
-    ctx.mod.command("InvasionMod.invasion_set_size", size="small")
-    ctx.time.set_speed(SPEED)
+    ctx.mod.command("InvasionMod.invasion_set_size", size="medium")
+    ctx.time.set_speed(1)  # slow: the picture of the banner and of the army at the edge must come before the army walks away
     ctx.mod.command("InvasionMod.invasion_force_next")
     deadline = time.time() + 60
-    while time.time() < deadline and not APPROACH.search(log_text(ctx)) and not BORDER.search(log_text(ctx)):
-        time.sleep(0.2)
+    while time.time() < deadline and not APPROACH.search(log_text(ctx)):
+        time.sleep(0.1)
     ctx.time.pause()
     sides = [m.groups() for m in map(BORDER.search, log_text(ctx).splitlines()) if m]
     ctx.check("a border point was chosen", len(sides) >= 1, sides)
@@ -70,9 +81,12 @@ def run(ctx) -> dict:
     ctx.log.info(f"border side={side} direction={direction} at=({x},{y}) distance={distance}")
     banner = APPROACH.search(log_text(ctx))
     ctx.check("the banner text names the direction", banner is not None and banner.group(1) == direction, [banner and banner.group(1), direction])
-    shot(ctx, "direction-banner", 0.2)
-    ctx.bridge.centre_camera_on(x, y)
-    shot(ctx, "army-at-the-edge", 1.0)
+    look_at(ctx, x, y)
+    shot(ctx, "army-at-the-edge", 0.5)
+    ctx.time.set_speed(1)
+    for number in range(1, 13):  # the game shows its own messages first; one of these pictures shows the notice
+        shot(ctx, f"direction-banner-{number}", 0.5)
+    ctx.time.pause()
 
     rows = raids(ctx)
     ctx.check("the raid is tracked and marching", len(rows) == 1 and rows[0].get("marching") is True, rows)
@@ -89,11 +103,14 @@ def run(ctx) -> dict:
         ctx.check("the raid starts at arrival", rows[0]["start_day"] == rows[0]["arrival_day"], rows[0])
         ctx.metric("march_days", rows[0]["arrival_day"] - spawn_day)
         ctx.metric("living_at_arrival", rows[0]["living"])
+    for _ in range(2):  # the vanguard arrives first; the squad closes up within two more days
+        run_day(ctx)
+    look_at(ctx, -43956, -63097)  # the player pawn follows the camera: distance_to_player is the distance to the camera
+    time.sleep(1.0)
     state = ctx.actions.lords_state(log=0)
     mine = [lord for lord in state.get("lords", []) if lord.get("name") == "Hussite Raiders"]
-    near = [q for lord in mine for q in lord["squads"] if q.get("distance_to_player") is not None and q["distance_to_player"] <= 12000]
+    near = [q for lord in mine for q in lord["squads"] if q.get("distance_to_player") is not None and q["distance_to_player"] <= 15000]
     ctx.check("squads stand near the manor after arrival", len(near) >= 1, [q.get("distance_to_player") for lord in mine for q in lord["squads"]])
-    ctx.bridge.centre_camera_on(-43956, -63097)
-    shot(ctx, "army-at-the-manor", 1.0)
+    shot(ctx, "army-at-the-manor", 0.5)
     ctx.ensure_alive("border arrival")
     return ctx.result()

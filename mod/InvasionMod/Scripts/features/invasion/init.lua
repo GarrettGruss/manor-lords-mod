@@ -205,7 +205,7 @@ local function border_point(label)
         core.log.error(TAG, string.format("INVASION %s has no border point (%s): the army starts near the manor", label, tostring(why)))
         return nil
     end
-    core.log.info(TAG, string.format("INVASION %s border side=%s at=%d,%d distance=%d direction=%s", label, point.side, point.x, point.y, point.distance, point.direction))
+    core.log.info(TAG, string.format("INVASION %s border side=%s at=%d,%d distance=%d direction=%s", label, point.side, math.floor(point.x + 0.5), math.floor(point.y + 0.5), math.floor(point.distance + 0.5), point.direction))
     return point
 end
 

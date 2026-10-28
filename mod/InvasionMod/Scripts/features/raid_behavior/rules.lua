@@ -113,6 +113,7 @@ end
 -- it marched `max_days` game days (a stuck army). The raid then starts: its start day is today. Returns true on the day of arrival.
 function M.check_arrival(raid, arrival, day)
     if not raid.marching then return false end
+    if raid.state ~= "active" then raid.marching = false return false end -- the army died on the way
     local near = 0
     for _, unit in pairs(raid.units) do
         if unit.x ~= nil and unit.y ~= nil and (unit.x - raid.lord.anchor.x) ^ 2 + (unit.y - raid.lord.anchor.y) ^ 2 <= arrival.radius ^ 2 then near = near + 1 end

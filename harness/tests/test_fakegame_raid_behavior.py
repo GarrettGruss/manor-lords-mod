@@ -578,7 +578,7 @@ class MarchingRaidTests(RaidBehaviorTestCase):
     def run_lua(self, code):
         return self.game.lua.eval(f"(function() local rules = require('features.raid_behavior.rules'); {code} end)")()
 
-    MARCH = "local arrival = { radius = 8000, share = 0.25, max_days = 12 }; "
+    MARCH = "local arrival = { radius = 12000, share = 0.2, max_days = 12 }; "
 
     def test_a_marching_raid_has_no_leave_plunder_or_steal(self):
         result = self.run_lua(self.MARCH + """

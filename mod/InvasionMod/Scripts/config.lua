@@ -30,8 +30,8 @@ return {
             inset = 5000,                                    -- keep the point this far from the corners of the square
             min_spawn_distance = 30000,                      -- no squad starts closer than this to the target
             march_lead_days = 5,                             -- spawn this many game days before the planned raid day: the march takes about 5 days (spike B)
-            arrival_radius = 8000,                           -- a raid has arrived when a quarter of its living raiders stand this near the manor
-            arrival_share = 0.25,
+            arrival_radius = 12000,                          -- a raid has arrived when a fifth of its living raiders stand this near the manor (a fight starts at this range)
+            arrival_share = 0.2,
             max_march_days = 12,                             -- a raid counts as arrived after this many days, also when it is stuck
             north_axis = "-y",                               -- compass for the direction notice: "-y" (north is -y, east is +x) or "+y"
         },
