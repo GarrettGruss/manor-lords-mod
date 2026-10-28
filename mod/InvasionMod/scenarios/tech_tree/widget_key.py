@@ -28,7 +28,7 @@ def run(ctx) -> dict:
     after_open = state(ctx)  # a hung game thread makes this command time out
     expect.equals("K1 F9 opens the menu", after_open["open"], True)
     expect.equals("K1 the menu is in the viewport", after_open["in_viewport"], True)
-    expect.equals("K2 the shown lines equal the wanted lines", after_open["lines"], after_open["wanted_lines"])
+    expect.equals("K2 the shown picks counter equals the wanted counter", after_open["picks"], after_open["wanted_picks"])
     ctx.screenshot("tech-menu-key-open")
     ctx.press_key(VK_F9)
     time.sleep(SETTLE_S)
