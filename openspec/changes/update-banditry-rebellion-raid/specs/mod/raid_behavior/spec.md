@@ -7,7 +7,7 @@ The mod SHALL keep a loot override state: a map from a unit key (`GetAddress` of
 #### Scenario: A body with an override reaches the pit
 - **WHEN** the body of a unit with the override `{spear}` reaches the pit
 - **THEN** the pit gains one spear and the entry is cleared
-- Checked by `harness/tests/test_fakegame_raid_behavior.py`. Real check: `mod/InvasionMod/scenarios/bandits/rebellion_loot.py` (the delivery of a body is random: 3 of 5 runs got a body to the pit within 14 game days).
+- Checked by `harness/tests/test_fakegame_raid_behavior.py`. Real check: `mod/InvasionMod/scenarios/bandits/rebellion_loot.py` (the delivery of a body is random: 5 of 7 runs got a body to the pit within 14 game days).
 
 #### Scenario: A body without an override
 - **WHEN** the body of a unit without an entry reaches the pit
