@@ -10,7 +10,7 @@ sources:
   - resource: repo://mod/InvasionMod/ue/
   - resource: repo://mod/InvasionMod/Scripts/features/order_tooltip/widget.lua
   - resource: repo://docs/wiki/concepts/engine-limits.md
-  - resource: repo://openspec/changes/assess-native-ui-elements/notes/report.md
+  - resource: repo://openspec/changes/archive/2026-10-27-assess-native-ui-elements/notes/report.md
 ---
 # Building mod UI
 
