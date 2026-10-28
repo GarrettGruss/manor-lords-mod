@@ -184,10 +184,15 @@ local function check_leave(entry, today)
     if reason ~= nil then start_leave(raid, reason, today) end
 end
 
+-- Raiders that died in this session, all raids (read by the contract objective kill_raiders; a count only, not saved).
+local raiders_died = 0
+
 local function step_raid(entry, seen, today, slow_look)
     local raid = entry.raid
     local was_active = raid.state == "active"
-    rules.note_deaths(raid, rules.update(raid, seen, config, today))
+    local deaths = rules.update(raid, seen, config, today)
+    raiders_died = raiders_died + #deaths
+    rules.note_deaths(raid, deaths)
     write_caps(seen)
     check_plunder(entry, seen, today)
     check_steal(entry, seen, today)
@@ -412,4 +417,6 @@ local function active_role_raid()
     return nil
 end
 
-return { state = state, watch_leave = watch_leave, watch_end = watch_end, active_raids = active_raids, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }
+local function raiders_killed() return raiders_died end
+
+return { state = state, raiders_killed = raiders_killed, watch_leave = watch_leave, watch_end = watch_end, active_raids = active_raids, force_leave = force_leave, active_role_raid = active_role_raid, final_raid_ended = final_raid_ended }

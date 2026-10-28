@@ -336,4 +336,7 @@ local function order_terms()
 end
 
 core.log.info(TAG, "feature bandits loaded")
-return { state = state, set_modifiers = set_modifiers, order_terms = order_terms }
+-- For the contract rewards: the mod order and its setter (clamped 0..100, written to the region at once).
+local function raise_mod_order(delta) set_mod_order(mod_order() + delta) return mod_order() end
+
+return { state = state, set_modifiers = set_modifiers, order_terms = order_terms, raise_mod_order = raise_mod_order }
