@@ -122,6 +122,8 @@ function M.check_arrival(raid, arrival, day)
     if not arrived and not (day ~= nil and day - raid.spawn_day >= arrival.max_days) then return false end
     raid.marching, raid.arrival_day = false, day
     if day ~= nil then raid.start_day = day end
+    -- The raid starts at arrival: the loss share and the loot goal count from the army that arrived, not from the army that left the edge.
+    raid.deaths_on_march, raid.initial, raid.deaths = raid.deaths, raid.living, 0
     return true
 end
 

@@ -67,7 +67,10 @@ def run(ctx) -> dict:
     gaps, centre = [], None
     for _ in range(ARMY_STEPS):
         ctx.time.run_game_seconds(ARMY_STEP_S, speed=SPEED)
-        centre = army_centre(ctx.actions.lords_state(log=0))
+        seen = army_centre(ctx.actions.lords_state(log=0))
+        if seen is None:
+            break  # the army fought at the manor and is gone (it now walks in from the map border, so it can die before the last step)
+        centre = seen
         if centre:
             gaps.append(round(distance(centre, anchor)))
             ctx.log.info(f"army {centre} gap to the manor {gaps[-1]}")

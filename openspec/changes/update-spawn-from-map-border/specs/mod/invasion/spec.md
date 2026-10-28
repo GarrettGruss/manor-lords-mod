@@ -3,50 +3,57 @@
 <!-- Issue: #434 -->
 
 ### Requirement: Spawned armies arrive from the map border
-When the mod spawns a hostile or arriving army, the army SHALL come in from the map border and SHALL NOT appear next to the target. The mod SHALL first try the game arrival time (`spawnArmy` with more than 0 days). Else it SHALL spawn the squads on a valid border point and order a march. Each squad SHALL start at least `min_spawn_distance` (default 30000 game units) from the target. The raid SHALL start at arrival.
+When the mod spawns a hostile army (a role raid, a great raid wave, the final army), the army SHALL come in from the map border and SHALL NOT appear next to the target. The mod SHALL spawn the squads at a valid border point (requirement `A border point is valid and near the target`). The AI lord of the army SHALL have a challenge at the target, so the army walks in on its own. Each squad SHALL start at least `min_spawn_distance` (default 30000 game units) from the target. The raid SHALL start at arrival: the army has arrived when a share (`arrival_share`, default 0.2) of its living raiders stand within `arrival_radius` (default 12000 game units) of the target, or after `max_march_days` (default 12) game days. If the map border cannot be read, the mod SHALL log the problem and spawn the army as before.
+
+The game call `spawnArmy` has an arrival time argument. It does not delay a lord army (spike A), so the mod does not use it.
 
 #### Scenario: A lord raid enters at the border
 - **WHEN** a role raid spawns
-- **THEN** the first squad stands at a map border point or is off the map
-- **AND** its distance from the player manor is at least 30000 game units
-- **AND** between 1 and 3 game days later the squads are within 5000 game units of the target region
-- Checked by `mod/InvasionMod/scenarios/invasion/border_arrival.py`.
+- **THEN** the first squad stands outside the playable square, at a border point that is at least 30000 game units from the player manor
+- **AND** the squads walk to the manor and the raid has arrived within `max_march_days` game days
+- Checked by `mod/InvasionMod/scenarios/invasion/border_arrival.py` and `harness/tests/test_fakegame_border.py`.
 
 #### Scenario: A great raid wave enters at the border
-- **WHEN** a great raid wave spawns
-- **THEN** all squads of the wave start at the border and none starts within 30000 game units of the manor
+- **WHEN** a great raid wave or the final army spawns
+- **THEN** each army has a border point and none starts within 30000 game units of the manor
 - Checked by `mod/InvasionMod/scenarios/invasion/great_raid_waves.py`.
-
-#### Scenario: The relief army enters at the border
-- **WHEN** the relief army spawns
-- **THEN** it starts at a border point and none of its squads starts within 30000 game units of the manor centre
-- **AND** the army walks to the manor
-- Checked by `mod/InvasionMod/scenarios/invasion/great_raid_waves.py`.
-
-#### Scenario: A raid stand-in enters at the border
-- **WHEN** a test spawns a raid stand-in (no AI lord)
-- **THEN** it starts at a border point
-- Checked by `harness/tests/test_fakegame_invasion.py`.
 
 #### Scenario: The raid starts at arrival
 - **WHEN** a raid is marching and has not arrived
-- **THEN** the raid tracker reports no active raid and no leave rule fires
-- **AND** after arrival the tracker reports the raid
-- Checked by `harness/tests/test_fakegame_raid_behavior.py`.
+- **THEN** no leave rule, no plunder and no steal acts, and the tracker lists no active raid (`active_raids`, `active_role_raid`)
+- **AND** after arrival the start day of the raid is the arrival day, the loss share and the loot goal count from the raiders that arrived (not from the army that left the edge), and the rules act as before
+- Checked by `harness/tests/test_fakegame_raid_behavior.py` (`MarchingRaidTests`).
+
+#### Scenario: The map border cannot be read
+- **WHEN** the map edge actor is not found
+- **THEN** the log names the problem and the army starts near the manor as before
+- Checked by `harness/tests/test_fakegame_border.py`.
 
 ### Requirement: A border point is valid and near the target
-A border point SHALL be the point of the map border nearest to the target region (`border_rule`, default `nearest`). The point SHALL be on walkable land, inside the playable area and not in water. If the nearest point is not valid, the mod SHALL use the next valid point along the border.
+A border point SHALL be a point 3000 game units (`margin`) outside the playable square of the map (the map edge actor of the game), on the side that is nearest to the target (`rule`, default `nearest`) among the sides at least `min_spawn_distance` from the target, and at least 5000 game units (`inset`) from the corners. If no side is far enough, the farthest side SHALL be used. The game has no navigation mesh, so the point is not tested for walkable land by a query. Instead the points of all 8 compass places were run in the real game and every army walked in (spike B).
 
 #### Scenario: The border point is valid
-- **WHEN** the mod picks a border point for a target region
-- **THEN** the point is on walkable land inside the playable area, not in water
-- **AND** it is the nearest valid point to the region, or the next valid one along the border
-- Checked by `harness/tests/test_fakegame_invasion.py`.
+- **WHEN** the mod picks a border point for a target
+- **THEN** the point is outside the playable square, on the nearest side that is far enough from the target, and away from the corners
+- Checked by `harness/tests/test_fakegame_border.py`.
+
+### Requirement: The game tells the player from which direction the raid comes
+When a lord army is spawned at the border, the mod SHALL show a banner that names the direction in 8 compass words (north, north-east, east, south-east, south, south-west, west, north-west). The word SHALL come from the border point seen from the target. The banner of a yearly or subjugation raid SHALL read "Raiders approach from the <direction>" (or "The subjugation raid approaches from the <direction>") with the raider estimate. The banner of a great raid wave SHALL name the direction in its title. The banner of the relief army and the final army SHALL name the direction of the final army. When the army has arrived, a yearly or subjugation raid SHALL show "Raiders are here". The compass SHALL be set by `north_axis` (default `-y`: north is -y and east is +x).
+
+#### Scenario: The direction notice
+- **WHEN** a role raid spawns at the west border point
+- **THEN** a banner reads "Raiders approach from the west"
+- Checked by `mod/InvasionMod/scenarios/invasion/border_arrival.py` and `harness/tests/test_fakegame_border.py`.
+
+#### Scenario: The direction words
+- **WHEN** the direction is computed from the target to a point in each of the 8 sectors
+- **THEN** the words are east, south-east, south, south-west, west, north-west, north and north-east for `north_axis` -y
+- Checked by `harness/tests/test_fakegame_border.py`.
 
 ## MODIFIED Requirements
 
 ### Requirement: The raid spawns on the planned day
-The mod SHALL spawn the planned yearly raid on the raid day, plus or minus 1 game day. The army SHALL arrive from the map border (requirement `Spawned armies arrive from the map border`), so the raid starts at arrival, on the raid day, plus or minus 1 game day. The raid size SHALL be the size multiplier of the size class times the Yearly player raid level, in squads. The size class SHALL be picked at random between small, medium and large with the multipliers 1, 2 and 3 (`size_multipliers`), unless the settings menu fixed it. At level 0 the mod SHALL plan and spawn no yearly raid.
+The mod SHALL plan the yearly raid for the raid day and SHALL spawn the army `march_lead_days` (default 5) game days before it, so the army arrives at the raid day, plus or minus 2 game days. The army SHALL come in from the map border (requirement `Spawned armies arrive from the map border`). Bandit squads (no lord army) spawn on the raid day. The raid size SHALL be the size multiplier of the size class times the Yearly player raid level, in squads. The size class SHALL be picked at random between small, medium and large with the multipliers 1, 2 and 3 (`size_multipliers`), unless the settings menu fixed it. At level 0 the mod SHALL plan and spawn no yearly raid. The banner days (`raid_banner_days`) count to the raid day.
 
 #### Scenario: A medium raid at difficulty 2
 - **WHEN** the raid day arrives for a medium raid at the yearly level 2
@@ -100,7 +107,7 @@ When the clock ends, the mod SHALL spawn one wave for each difficulty point. Eac
 - Checked by `mod/InvasionMod/scenarios/invasion/great_raid_waves.py`.
 
 ### Requirement: A relief army and a final battle end the great raid
-`relief_delay_days` (default 10) game days after the last wave, the mod SHALL spawn the relief army on the player side (15, 8 or 0 squads at difficulty 1, 2 or 3) and a hostile final army of `final_squads` (default 25) squads, not scaled by difficulty. Both armies SHALL arrive from the map border (requirement `Spawned armies arrive from the map border`). The relief army SHALL NOT appear at `relief_offset` from the manor centre. When the final army is dead, the phase SHALL become `won`.
+`relief_delay_days` (default 10) game days after the arrival of the last wave, the mod SHALL spawn the relief army on the player side (15, 8 or 0 squads at difficulty 1, 2 or 3) and a hostile final army of `final_squads` (default 25) squads, not scaled by difficulty. The final army SHALL arrive from the map border (requirement `Spawned armies arrive from the map border`). The relief army SHALL appear at `relief_offset` from the player pawn, as before: a player squad cannot be moved from Lua and a friendly lord army crashed the game, so the relief army cannot walk in from the border (change `update-spawn-from-map-border`, notes `march-order.md`). When the final army is dead, the phase SHALL become `won`.
 
 #### Scenario: The relief army and the final army at difficulty 1
 - **WHEN** the wait after the last wave is over

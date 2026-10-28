@@ -611,6 +611,20 @@ class MarchingRaidTests(RaidBehaviorTestCase):
             return tostring(far) .. ',' .. tostring(near) .. ',' .. summary.start_day .. ',' .. summary.spawn_day .. ',' .. tostring(summary.marching)""")
         self.assertEqual(result, "false,true,14,10,false")
 
+    def test_the_raid_counts_from_the_army_that_arrived(self):
+        result = self.run_lua(self.MARCH + """
+            local units = {}
+            for i = 1, 10 do units[i] = i end
+            local raid = rules.new_raid(1, 10, 1, units, true, { anchor = { x = 0, y = 0 }, marching = true })
+            local config = { carry_cap = 10, exit_y = -85000 }
+            local seen = {}
+            for i = 1, 6 do seen[i] = { loot = 0, x = 100, y = 0 } end  -- 4 units died on the march
+            rules.update(raid, seen, config, 12)
+            rules.check_arrival(raid, arrival, 12)
+            local s = rules.summary(raid)
+            return s.initial .. ',' .. s.deaths .. ',' .. s.living .. ',' .. raid.deaths_on_march""")
+        self.assertEqual(result, "6,0,6,4")
+
     def test_a_stuck_raid_counts_as_arrived_after_the_march_limit(self):
         result = self.run_lua(self.MARCH + """
             local raid = rules.new_raid(1, 10, 1, { 1 }, true, { anchor = { x = 0, y = 0 }, marching = true })

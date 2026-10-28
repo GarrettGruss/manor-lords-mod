@@ -30,13 +30,16 @@ def great(ctx) -> dict:
 
 
 def run_day(ctx) -> None:
-    ctx.popups()
-    try:
-        ctx.time.run_game_days(1, speed=SPEED)
-    except Exception as error:  # TimeControlError: the clock did not move
-        ctx.log.info(f"day failed ({error}); closing pop-ups and trying again")
+    # A spotted army drops the game to speed 1 (change update-spawn-from-map-border: the armies now walk in and are spotted on the way).
+    for attempt in range(1, 6):
         ctx.popups()
-        ctx.time.run_game_days(1, speed=SPEED)
+        try:
+            ctx.time.run_game_days(1, speed=SPEED)
+            return
+        except Exception as error:  # TimeControlError: the clock did not move
+            ctx.log.info(f"day failed ({error}); attempt {attempt} of 5, closing pop-ups and trying again")
+    ctx.popups()
+    ctx.time.run_game_days(1, speed=SPEED)
 
 
 def measure(ctx, label: str) -> float:

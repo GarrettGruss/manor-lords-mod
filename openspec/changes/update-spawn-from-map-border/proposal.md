@@ -19,7 +19,7 @@ Design reference: `design/mod/invasion-mod.md`, pillar 4 (dread from knowing: ra
 
 - New requirement `Spawned armies arrive from the map border` in `mod/invasion`. It covers every hostile or arriving army of the mod: role raids (lord raid), great raid waves, the final army, the relief army, and raid stand-ins.
 - `mod/invasion` requirements that say where or when an army spawns are modified: `The raid spawns on the planned day`, `A role raid is the army of an AI lord`, `The great raid starts with waves`, `A relief army and a final battle end the great raid`.
-- First choice of method: pass an arrival time greater than 0 days to `spawnArmy` and test whether the game brings the army in from off the map. Fallback: spawn at a border point and order a march.
+- Method (after the spikes): spawn the squads of the AI lord at a border point 3000 units outside the map edge. The lord has a challenge at the manor, so the army walks in. The arrival time argument of `spawnArmy` does not work (spike A). The relief army cannot walk in (spike C).
 
 ## Which spawns
 
@@ -40,12 +40,12 @@ Not in this list: squads that the player pays for (`manor_stronghold/squads.lua`
 - No change of squads that the player hires.
 - No performance fix. Less load at the spawn instant is only a possible side benefit (see design).
 
-## Open questions (defaults apply until the owner answers)
+## Decisions of the owner (2026-10-28)
 
-1. Which border? Default: the border point nearest to the target region. Alternative: a fixed edge for each raid type.
-2. How long may the march take? Default: the arrival time is in game days, between 1 and 3 (`arrival_days`, to tune in play tests).
-3. Do banners and timers count from spawn or from arrival? Default: the raid "starts" at arrival. The 30-day banner counts to arrival. The raid tracker and the leave rules (`raid_behavior`) start at arrival.
-4. (Closed 2026-10-24.) Bandits of a family conversion are no longer part of this change: change `update-banditry-bandit-camp` replaced the village squads with one bandit camp per leave event (`spawnBanditCamp`), at a place the game picks. The owner accepts a random bandit location.
-5. Does the relief army come from the same border as the enemy, or from the liege side? Default: the border point nearest to the manor, away from the enemy border point when more than one is possible.
+1. Which border: the border point nearest to the target is sufficient. DECIDED. New wish: the game tells the player from which direction the raid comes (8 compass words). Built as the requirement `The game tells the player from which direction the raid comes`.
+2. Arrival 1 to 3 game days (`arrival_days`): DECIDED, but the game call cannot do it. The arrival days argument of `spawnArmy` is ignored for a lord army (spike A). The army walks in from the border. The march takes 3 to 8 game days. The mod spawns `march_lead_days` (5) days before the raid day. See `notes/arrival-days.md` and `notes/map-border.md`.
+3. The raid starts at arrival (the banner counts to the raid day, the raid tracker and the leave rules start at arrival): DECIDED and built.
+4. (Closed 2026-10-24.) Bandits of a family conversion are not part of this change (change `update-banditry-bandit-camp`).
+5. The relief army comes from the border nearest the manor, away from the enemy border point: DECIDED, but NOT POSSIBLE with the known calls. A player squad cannot be moved from Lua. A friendly AI lord army crashed the game twice (notes `march-order.md`). The relief army stays at `relief_offset` next to the manor until the owner decides. Options for the owner: accept the relief army at the manor; or give a spike more time (a vassal lord of the game, a squad order); or remove the relief army from the great raid.
 
-Each question is answered by the spikes in `tasks.md`.
+Each question was answered by the spikes in `tasks.md`.
