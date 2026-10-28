@@ -28,12 +28,15 @@ class RaidBehaviorTestCase(unittest.TestCase):
         self.pawn = self.game.obj("PawnCPP", Tags=self.game.array([]))
         self.game.method(self.pawn, "playEventMessage", lambda _self, _kind, _text, _sub: None)
         self.game.method(self.pawn, "K2_GetActorLocation", lambda _self: self.game.struct(X=0.0, Y=0.0, Z=0.0))
-        self.game.method(self.pawn, "GetAddress", lambda _self: 1)
+        self.pawn_address = 1
+        self.game.method(self.pawn, "GetAddress", lambda _self: self.pawn_address)
         self.calendar = self.game.obj("TemporalComponent", daysTotal=61, daysUntilNextRaid=730)
         self.region = self.game.obj("Region", ownerPawn=self.pawn)
         self.game.method(self.region, "GetBuildings", lambda _self: self.game.lua.table_from([s["object"] for s in self.stores]))
         self.engine = self.game.obj("RTSMultiEngineCPP", playerRef=self.pawn, TemporalComponent=self.calendar,
                                     regions=self.game.array([self.region]), debugLog_AI_general=self.game.array([]))
+        self.clock = 1000.0
+        self.game.method(self.engine, "getGameTimeAdjusted", lambda _self: self.clock)
         self.game.method(self.engine, "spawnRaiders", lambda _self, squads, _centre: self.make_raiders(squads))
         self.bandit = self.game.obj("PawnCPP", isMainPlayer=False, isBandit=True, isAI=True,
                                     commandedSquads=self.game.array([self.game.struct(Value=7)]))  # the squad of the raiders (census)
@@ -571,6 +574,209 @@ class LordRaidRulesTests(RaidBehaviorTestCase):
             rules.update(native, seen_n, config, 11)
             return tostring(seen_h[1].new_loot) .. ',' .. tostring(seen_n[1].new_loot) .. ',' .. hussite.capped .. ',' .. native.capped""")
         self.assertEqual(result, "10,nil,1,0")
+
+class LootOverrideModuleTests(unittest.TestCase):
+    """The loot override module (features/raid_behavior/loot_override.lua) alone, with a plain Lua slot store."""
+
+    def setUp(self):
+        from lupa import LuaRuntime
+        self.lua = LuaRuntime()
+        path = find_pack_mod() / "Scripts" / "features" / "raid_behavior" / "loot_override.lua"
+        self.lua.execute("LOG = {}")
+        self.module = self.lua.execute(path.read_text(encoding="utf-8"))
+        self.lua.globals().MODULE = self.module
+        self.lua.execute("""
+            SLOTS = {}
+            STORE = { slots = 3, get = function(i) return SLOTS[i] or '' end, set = function(i, text) SLOTS[i] = text end }
+            local function add(level) return function(_, message) LOG[#LOG + 1] = level .. ': ' .. message end end
+            LO = MODULE.new(STORE, { info = add('info'), warn = add('warn'), error = add('error') })
+        """)
+
+    def run_lua(self, code):
+        return self.lua.eval(f"(function() {code} end)")()
+
+    def test_a_slot_text_round_trips(self):
+        text = self.module.encode(31, 4, self.lua.table_from([271, 133, 133]))
+        self.assertEqual(text, "31_4_133x2-271x1")
+        self.assertEqual(self.run_lua("local s, i, g = MODULE.decode('31_4_133x2-271x1'); return s .. ',' .. i .. ',' .. #g .. ',' .. g[1] .. g[3]"), "31,4,3,133271")
+        self.assertIsNone(self.module.decode("garbage")[0])
+
+    def test_a_slot_text_uses_only_characters_that_modstate_allows(self):
+        self.assertRegex(self.module.encode(31, 4, self.lua.table_from([271, 133, 133])), r"^[A-Za-z0-9_.\-]*$")
+
+    def test_set_get_and_take(self):
+        self.assertEqual(self.run_lua("return LO.set({ address = 5, squad = 31, index = 1 }, { 133 })"), True)
+        self.assertEqual(self.run_lua("return LO.get(5)[1]"), 133)
+        self.assertEqual(self.run_lua("return SLOTS[1]"), "31_1_133x1")
+        self.assertEqual(self.run_lua("return LO.take(5)[1]"), 133)
+        self.assertEqual(self.run_lua("return tostring(LO.get(5)) .. ',' .. SLOTS[1] .. ',' .. LO.count()"), "nil,,0")
+
+    def test_a_unit_without_goods_gets_no_entry(self):
+        self.run_lua("LO.set({ address = 5, squad = 31, index = 1 }, {})")
+        self.assertEqual(self.run_lua("return LO.count()"), 0)
+
+    def test_all_slots_full_logs_an_error_and_drops_the_new_entry(self):
+        for number in range(1, 4):
+            self.run_lua(f"LO.set({{ address = {number}, squad = 31, index = {number} }}, {{ 133 }})")
+        answer = self.run_lua("local ok, why = LO.set({ address = 9, squad = 31, index = 9 }, { 133 }); return tostring(ok) .. ':' .. why")
+        self.assertEqual(answer, "nil:slots full")
+        self.assertEqual(self.run_lua("return LO.count() .. ',' .. tostring(LO.get(9))"), "3,nil")
+        self.assertIn("error: ", self.run_lua("return LOG[#LOG]"))
+
+    def test_a_freed_slot_is_used_again(self):
+        for number in range(1, 4):
+            self.run_lua(f"LO.set({{ address = {number}, squad = 31, index = {number} }}, {{ 133 }})")
+        self.run_lua("LO.take(2)")
+        self.run_lua("LO.set({ address = 9, squad = 32, index = 1 }, { 271 })")
+        self.assertEqual(self.run_lua("return SLOTS[2]"), "32_1_271x1")
+
+    def test_a_living_unit_that_is_not_listed_left_the_map(self):
+        self.run_lua("LO.set({ address = 5, squad = 31, index = 1 }, { 133 })")
+        self.assertEqual(self.run_lua("return LO.poll({}, 100)"), 1)
+        self.assertEqual(self.run_lua("return LO.count() .. ',' .. SLOTS[1]"), "0,")
+
+    def test_a_dead_unit_keeps_its_entry_until_the_body_expires(self):
+        self.run_lua("LO.set({ address = 5, squad = 31, index = 1 }, { 133 })")
+        self.run_lua("LO.poll({ [5] = { dead = true } }, 100)")
+        self.assertEqual(self.run_lua("return LO.poll({}, 129)"), 0)  # the body is gone from the list, the entry stays
+        self.assertEqual(self.run_lua("return LO.count()"), 1)
+        self.assertEqual(self.run_lua("return LO.poll({}, 131)"), 1)  # more than 30 game days after the death
+        self.assertEqual(self.run_lua("return LO.count()"), 0)
+
+    def test_pay_takes_dead_units_oldest_first_and_only_as_many_as_bodies(self):
+        self.run_lua("LO.set({ address = 1, squad = 31, index = 1 }, { 133 }); LO.set({ address = 2, squad = 31, index = 2 }, { 271, 271 }); LO.set({ address = 3, squad = 31, index = 3 }, { 163 })")
+        self.run_lua("LO.poll({ [2] = { dead = true }, [1] = { dead = false }, [3] = { dead = false } }, 100); LO.poll({ [1] = { dead = false }, [3] = { dead = true } }, 101)")
+        self.assertEqual(self.run_lua("local goods, paid = LO.pay(1); return paid .. ',' .. tostring(goods[271]) .. ',' .. tostring(goods[163])"), "1,2,nil")
+        self.assertEqual(self.run_lua("local goods, paid = LO.pay(5); return paid .. ',' .. tostring(goods[163]) .. ',' .. LO.count()"), "1,1,1")  # the living unit stays
+        self.assertEqual(self.run_lua("local goods, paid = LO.pay(5); return paid"), 0)
+
+    def test_load_saved_reads_the_slots_and_clears_an_unreadable_one(self):
+        self.run_lua("SLOTS[1] = '31_1_133x1'; SLOTS[2] = 'broken'; SLOTS[3] = '31_2_271x2'")
+        self.assertEqual(self.run_lua("return LO.load_saved()"), 2)
+        self.assertEqual(self.run_lua("return SLOTS[2]"), "")
+
+    def test_relink_gives_the_entries_of_a_squad_to_its_units_in_order(self):
+        self.run_lua("SLOTS[1] = '31_2_271x1'; SLOTS[2] = '31_1_133x1'; SLOTS[3] = '40_1_163x1'; LO.load_saved()")
+        answer = self.run_lua("""
+            local linked, unlinked = LO.relink({ [31] = { { address = 70 }, { address = 71 } } })
+            return linked .. ',' .. unlinked .. ',' .. LO.get(70)[1] .. ',' .. LO.get(71)[1] .. ',' .. tostring(LO.get(72))""")
+        self.assertEqual(answer, "2,1,133,271,nil")  # index 1 -> first unit, index 2 -> second unit; squad 40 has no unit yet
+
+    def test_a_lost_entry_is_dropped_logged_and_its_slot_is_empty(self):
+        self.run_lua("SLOTS[1] = '40_1_163x1'; LO.load_saved(); LO.relink({})")
+        self.assertEqual(self.run_lua("return LO.drop_unlinked()"), 1)
+        self.assertEqual(self.run_lua("return SLOTS[1] .. '|' .. LO.count()"), "|0")
+        self.assertIn("lost slot=1 squad=40", self.run_lua("return LOG[#LOG]"))
+
+    def test_clear_all_empties_every_slot(self):
+        self.run_lua("LO.set({ address = 1, squad = 31, index = 1 }, { 133 }); LO.set({ address = 2, squad = 31, index = 2 }, { 133 }); LO.clear_all()")
+        self.assertEqual(self.run_lua("return LO.count() .. ',' .. (SLOTS[1] or 'x') .. ',' .. (SLOTS[2] or 'x')"), "0,,")
+
+
+class LootOverridePitTests(RaidBehaviorTestCase):
+    """The override at the corpse pit and after a load, with the whole mod in the fake game."""
+
+    def overrides(self, code):
+        return self.game.lua.eval(f"(function() local lo = require('features.raid_behavior.init').loot_override; {code} end)")()
+
+    def with_entry(self, goods="{ 133 }"):
+        unit = self.make_unit()
+        address = 1000 + len(self.units) - 1
+        self.overrides(f"lo.set({{ address = {address}, squad = 7, index = 1 }}, {goods})")
+        return unit, address
+
+    def deliver(self, pit, bodies=1):
+        for index, (kind, amount) in enumerate(pit["goods"]):
+            if kind == 233:
+                pit["goods"][index] = (kind, amount + bodies)
+        pit["object"].Inventory = self.game.array([self.game.struct(Type=t, amt=a) for t, a in pit["goods"]])
+        self.game.advance(3)
+
+    def test_a_body_with_an_override_gives_its_goods_at_the_pit_and_the_entry_ends(self):
+        unit, _ = self.with_entry("{ 133, 133, 271 }")
+        pit = self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 0)], btype=113)
+        self.game.advance(3)
+        unit.dead = True
+        self.game.advance(3)
+        self.deliver(pit)
+        goods = dict(pit["goods"])
+        self.assertEqual((goods.get(133), goods.get(271)), (2, 1))
+        self.assertEqual(self.overrides("return lo.count()"), 0)
+        self.assertTrue(any("override_paid=1" in line for line in self.game.log_lines()))
+
+    def test_a_body_without_an_override_gives_the_same_as_before(self):
+        unit = self.make_unit()
+        pit = self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 0)], btype=113)
+        self.game.advance(3)
+        unit.dead = True
+        self.game.advance(3)
+        self.deliver(pit)
+        self.assertEqual(pit["goods"], [(233, 1)])
+
+    def test_a_living_unit_with_an_entry_is_not_paid_when_some_other_body_arrives(self):
+        self.with_entry()
+        pit = self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 0)], btype=113)
+        self.game.advance(3)
+        self.deliver(pit)
+        self.assertEqual(pit["goods"], [(233, 1)])
+        self.assertEqual(self.overrides("return lo.count()"), 1)
+
+    def test_units_that_leave_the_map_lose_their_entries_and_pay_nothing(self):
+        units = [self.with_entry()[0] for _ in range(3)]
+        pit = self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 0)], btype=113)
+        self.game.advance(3)
+        for unit in units:
+            self.game.invalidate(unit)
+        self.game.advance(3)
+        self.assertEqual(self.overrides("return lo.count()"), 0)
+        self.deliver(pit)
+        self.assertEqual(pit["goods"], [(233, 1)])
+
+    def test_the_override_does_not_change_the_loot_the_unit_carries(self):
+        unit = self.make_unit(loot=7)
+        self.overrides(f"lo.set({{ address = {1000 + len(self.units) - 1}, squad = 7, index = 1 }}, {{ 133 }})")
+        self.game.advance(5)
+        self.assertEqual(unit.ItemsLooted, 7)
+
+    def test_the_state_command_lists_the_entries(self):
+        self.with_entry("{ 133, 271 }")
+        entries = self.ask("raid_behavior_override_state")["result"]["entries"]
+        self.assertEqual([(e["squad"], e["index"], e["goods"], e["linked"]) for e in entries], [(7, 1, [133, 271], True)])
+
+    def test_after_a_load_the_saved_entries_are_linked_to_the_new_units(self):
+        self.with_entry("{ 133 }")
+        self.game.advance(3)
+        for unit in self.units:
+            self.game.invalidate(unit)
+        self.units.clear()
+        self.pawn_address = 2  # the load: a new player pawn address and new unit objects
+        new = self.make_unit()
+        self.game.advance(4)
+        entries = self.ask("raid_behavior_override_state")["result"]["entries"]
+        self.assertEqual([(e["squad"], e["index"], e["goods"], e["linked"]) for e in entries], [(7, 1, [133], True)])
+        self.assertTrue(any("LOOT_OVERRIDE relink done entries=1 lost=0" in line for line in self.game.log_lines()))
+        new.dead = True
+        self.game.advance(3)
+        pit = self.add_store("Pit_7", x=0.0, y=0.0, goods=[(233, 0)], btype=113)
+        self.game.advance(3)
+        self.deliver(pit)
+        self.assertEqual(dict(pit["goods"]).get(133), 1)
+
+    def test_an_entry_whose_unit_is_not_found_is_dropped_after_the_window(self):
+        self.with_entry("{ 133 }")
+        for unit in self.units:
+            self.game.invalidate(unit)
+        self.units.clear()
+        self.pawn_address = 2
+        self.game.advance(3)
+        self.assertEqual(self.ask("raid_behavior_override_state")["result"]["relinking"], True)
+        self.clock += 11  # the window of 10 game seconds ends
+        self.game.advance(4)
+        answer = self.ask("raid_behavior_override_state")["result"]
+        self.assertEqual((answer["count"], answer["relinking"]), (0, False))
+        self.assertTrue(any("LOOT_OVERRIDE lost slot=" in line for line in self.game.log_lines()))
+        self.assertTrue(any("relink done entries=0 lost=1" in line for line in self.game.log_lines()))
+
 
 if __name__ == "__main__":
     unittest.main()
