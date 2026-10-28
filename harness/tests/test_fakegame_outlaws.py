@@ -2,7 +2,7 @@
 
 ensure_outlaw_pawn() makes the bandit pawn "Outlaws" with spawnBanditCamp, kills the 18 camp Brigands, hides their bodies and
 demolishes the camp. The fake game plays the camp call (see BanditsTestCase). It does not prove the real game; the real check
-is the test scenario mod/InvasionMod/scenarios/bandits/outlaws_init.py.
+is the test scenario bandits-outlaws-init.
 """
 
 import unittest
