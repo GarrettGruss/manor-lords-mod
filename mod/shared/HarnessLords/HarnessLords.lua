@@ -16,6 +16,7 @@ local M = {}
 M.MAX_GROUPS = 6
 M.MAX_OFFSET = 60000
 M.MAX_ARRIVAL_DAYS = 10
+M.MAX_COORD = 250000 -- absolute x, y of a spawn (the map is about 450000 wide)
 M.MAX_INFLUENCE = 10000
 M.MAX_LOG_LINES = 40
 M.MAX_NAME_CHARS = 40
@@ -339,7 +340,7 @@ function M.lord_claim(request)
              open_claims = read(function() return engineObject.openClaims:GetArrayNum() end) }
 end
 
--- spawnArmy with the lord as owner, dx, dy from the player pawn. One squad for each count. days = arrival days (0 = at once).
+-- spawnArmy with the lord as owner, dx, dy from the player pawn. One squad for each count. days = arrival days (0 = at once). Optional absolute x, y replace the offset.
 function M.lord_spawn_army(request)
     local engineObject = engine()
     if not engineObject then return { ok = false, error = "no RTSMultiEngineCPP" } end
@@ -357,15 +358,22 @@ function M.lord_spawn_army(request)
     if math.abs(dx) > M.MAX_OFFSET or math.abs(dy) > M.MAX_OFFSET then return { ok = false, error = "dx and dy must be within " .. M.MAX_OFFSET } end
     local home = player(engineObject) and location(player(engineObject))
     if not home then return { ok = false, error = "no player position" } end
+    local atX, atY = home.X + dx, home.Y + dy
+    if request.x ~= nil or request.y ~= nil then
+        if type(request.x) ~= "number" or type(request.y) ~= "number" or math.abs(request.x) > M.MAX_COORD or math.abs(request.y) > M.MAX_COORD then
+            return { ok = false, error = "x and y must be numbers within " .. M.MAX_COORD }
+        end
+        atX, atY = request.x, request.y
+    end
     local names = {}
     for i = 1, count do names[i] = FName(template) end
     local ok, returned = pcall(function()
-        return engineObject:spawnArmy({ X = home.X + dx, Y = home.Y + dy, Z = home.Z }, names, lord, 0, days)
+        return engineObject:spawnArmy({ X = atX, Y = atY, Z = home.Z }, names, lord, 0, days)
     end)
     if not ok then return { ok = false, error = "spawnArmy: " .. tostring(returned) } end
     local ids = {}
     for i = 1, #returned do ids[#ids + 1] = read(function() return unwrap(returned[i]).Value end) end
-    return { ok = true, squads = ids, at = { x = math.floor(home.X + dx), y = math.floor(home.Y + dy) },
+    return { ok = true, squads = ids, at = { x = math.floor(atX), y = math.floor(atY) },
              commanded = squadHandles(read(function() return lord.commandedSquads end)) }
 end
 

@@ -78,7 +78,7 @@
 --   {"command":"battlefield_anchor","lord":1,"target":0,"x":0,"y":0,"home":true,"delay_ms":500}   move all battlefield_BP_C to the anchor (x,y, "home" = the player manor or the average of the home-region buildings, or the manor of "region" / the target region), challenge when "lord" is set, restore after delay_ms
 --   {"command":"battlefield_state"}                          where the battlefield actors are now (read only)
 --   {"command":"lord_claim","lord":1,"target":0}            layClaim on the target's current region
---   {"command":"lord_spawn_army","lord":1,"template":"spearMilitia","count":2,"dx":0,"dy":0}   spawnArmy with the lord as owner
+--   {"command":"lord_spawn_army","lord":1,"template":"spearMilitia","count":2,"dx":0,"dy":0,"days":0,"x":-92459,"y":-63097}   spawnArmy with the lord as owner; days = arrival days, x and y = absolute point instead of dx, dy
 --   {"command":"spawn_ai_lord","name":"Norse Warlord","build":1}   spawnNewAILord ("build":1 = can build)
 --   {"command":"lord_start_ai","lord":5,"value":1,"build":1}       startAI
 --   Dynamic lords (spike S13): {"command":"regions_state"}   every region: owner, settled, type, level, buildings, families (read only)
@@ -294,6 +294,7 @@ local function parseRequest(raw)
         type = tonumber(raw:match('"type"%s*:%s*(%d+)')),
         text = raw:match('"text"%s*:%s*"([^"]*)"'),
         subtext = raw:match('"subtext"%s*:%s*"([^"]*)"'),
+        days = tonumber(raw:match('"days"%s*:%s*(-?[%d%.]+)')), -- lord_spawn_army: arrival days (change update-spawn-from-map-border)
         dx = tonumber(raw:match('"dx"%s*:%s*(-?[%d%.]+)')),
         dy = tonumber(raw:match('"dy"%s*:%s*(-?[%d%.]+)')),
         delay_ms = tonumber(raw:match('"delay_ms"%s*:%s*(-?%d+)')),

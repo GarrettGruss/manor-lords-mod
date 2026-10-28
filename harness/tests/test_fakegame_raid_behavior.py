@@ -572,5 +572,60 @@ class LordRaidRulesTests(RaidBehaviorTestCase):
             return tostring(seen_h[1].new_loot) .. ',' .. tostring(seen_n[1].new_loot) .. ',' .. hussite.capped .. ',' .. native.capped""")
         self.assertEqual(result, "10,nil,1,0")
 
+class MarchingRaidTests(RaidBehaviorTestCase):
+    """Change update-spawn-from-map-border: the raid starts at arrival."""
+
+    def run_lua(self, code):
+        return self.game.lua.eval(f"(function() local rules = require('features.raid_behavior.rules'); {code} end)")()
+
+    MARCH = "local arrival = { radius = 8000, share = 0.25, max_days = 12 }; "
+
+    def test_a_marching_raid_has_no_leave_plunder_or_steal(self):
+        result = self.run_lua(self.MARCH + """
+            local units = {}
+            for i = 1, 12 do units[i] = i end
+            local raid = rules.new_raid(1, 10, 1, units, true, { anchor = { x = 0, y = 0 }, marching = true })
+            local leave = { loot_per_raider = 4, loss_share = 0.5, max_days = 0 }
+            raid.plundered = 500
+            local seen = {}
+            for i = 1, 12 do seen[i] = { loot = 0, x = 10, y = 10 } end
+            local plunder = { battle_radius = 4000, per_unit_day = 1 }
+            return tostring(rules.leave_reason(raid, 40, leave, 10)) .. ',' .. rules.plunder_amount(raid, seen, plunder, leave, 40, 10)
+                .. ',' .. rules.steal_amount(raid, seen, { goals = { plunder = 5 }, threshold = 1, rate = 1 }, 40)""")
+        self.assertEqual(result, "nil,0,0")
+
+    def test_the_raid_arrives_when_a_quarter_stands_near_the_manor(self):
+        result = self.run_lua(self.MARCH + """
+            local units = {}
+            for i = 1, 8 do units[i] = i end
+            local raid = rules.new_raid(1, 10, 1, units, true, { anchor = { x = 0, y = 0 }, marching = true })
+            local config = { carry_cap = 10, exit_y = -85000 }
+            local seen = {}
+            for i = 1, 8 do seen[i] = { loot = 0, x = 50000, y = 0 } end
+            rules.update(raid, seen, config, 12)
+            local far = rules.check_arrival(raid, arrival, 12)
+            seen[1].x, seen[2].x = 100, 200
+            rules.update(raid, seen, config, 14)
+            local near = rules.check_arrival(raid, arrival, 14)
+            local summary = rules.summary(raid)
+            return tostring(far) .. ',' .. tostring(near) .. ',' .. summary.start_day .. ',' .. summary.spawn_day .. ',' .. tostring(summary.marching)""")
+        self.assertEqual(result, "false,true,14,10,false")
+
+    def test_a_stuck_raid_counts_as_arrived_after_the_march_limit(self):
+        result = self.run_lua(self.MARCH + """
+            local raid = rules.new_raid(1, 10, 1, { 1 }, true, { anchor = { x = 0, y = 0 }, marching = true })
+            local early = rules.check_arrival(raid, arrival, 21)
+            return tostring(early) .. ',' .. tostring(rules.check_arrival(raid, arrival, 22)) .. ',' .. raid.start_day""")
+        self.assertEqual(result, "false,true,22")
+
+    def test_a_raid_after_arrival_leaves_by_time_from_its_arrival_day(self):
+        result = self.run_lua(self.MARCH + """
+            local raid = rules.new_raid(1, 10, 1, { 1 }, true, { anchor = { x = 0, y = 0 }, marching = true })
+            rules.check_arrival(raid, arrival, 22)
+            local leave = { loot_per_raider = 4, loss_share = 0.5, max_days = 25 }
+            return tostring(rules.leave_reason(raid, 40, leave, 10)) .. ',' .. tostring(rules.leave_reason(raid, 47, leave, 10))""")
+        self.assertEqual(result, "nil,time")
+
+
 if __name__ == "__main__":
     unittest.main()

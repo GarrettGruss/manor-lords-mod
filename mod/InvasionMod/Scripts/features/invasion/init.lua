@@ -54,6 +54,7 @@ state:register("settings_applied", 0, "integer")  -- 1 after the settings menu c
 if config.seed then math.randomseed(config.seed) else math.randomseed(os.time()) end
 
 local last_handled_day = nil -- the day of the last daily step in this Lua state
+local raid_direction = nil -- the border point of the last great army (for its banner)
 local raid_squads = {} -- { id, template } of the squads of the last raid made by spawnArmy
 local use_roles = roles.enabled -- the command invasion_set_roles changes it for one session
 local vassal_provider = function() return {} end -- returns the target regions of the vassals (M08 registers it)
@@ -196,6 +197,23 @@ local function raid_target(kind)
     return target_rules.pick(kind, home and core.region_row(home).region or "home", vassal_provider(), random)
 end
 
+-- The border point of a new army (change update-spawn-from-map-border), or nil when the map edge cannot be read:
+-- then the army starts near the manor as before and the log says so.
+local function border_point(label)
+    local point, why = lord_raid.plan_border(config.border)
+    if point == nil then
+        core.log.error(TAG, string.format("INVASION %s has no border point (%s): the army starts near the manor", label, tostring(why)))
+        return nil
+    end
+    core.log.info(TAG, string.format("INVASION %s border side=%s at=%d,%d distance=%d direction=%s", label, point.side, point.x, point.y, point.distance, point.direction))
+    return point
+end
+
+-- The notice of a coming army: the direction of the border point seen from the manor.
+local function approach_text(point)
+    return point and (" from the " .. point.direction) or ""
+end
+
 local function spawn_raid(today, kind)
     kind = kind or "plunder"
     local squads = state:get(KEYS[kind].squads)
@@ -205,15 +223,18 @@ local function spawn_raid(today, kind)
     for index, watcher in ipairs(spawn_watchers) do tokens[index] = watcher.before() end
     local ok, problem
     local lord_info = nil
+    local point = nil
     if use_roles then
         local list = composition_list(kind)
         raid_squads = {}
         if roles.lord_army.enabled then
             local partial
-            ok, problem, partial = lord_raid.start(list, roles.lord_army)
+            point = border_point(kind)
+            ok, problem, partial = lord_raid.start(list, roles.lord_army, point)
             if ok then
                 raid_squads, lord_info = problem.squads, problem
                 lord_info.kind = kind
+                lord_info.marching = point ~= nil
             elseif partial then
                 -- Armies exist already. Bandit squads on top would make a double raid. The next daily step tries again.
                 return core.log.error(TAG, "lord raid failed after a partial spawn, no fallback squads: " .. tostring(problem))
@@ -242,7 +263,12 @@ local function spawn_raid(today, kind)
     local planned_day = kind == "subjugation" and state:get("sub_day") or state:get("raid_day")
     core.log.info(TAG, string.format("INVASION spawn day=%d planned_day=%d squads=%d raiders=%d composition=%s roles=%s kind=%s target=%s stand_in=%s",
         today, planned_day, squads, planned_units(kind), plan_rules.join(composition_list(kind)), tostring(use_roles), kind, tostring(target.region), tostring(target.stand_in)))
-    core.show_banner(kind == "subjugation" and "The subjugation raid is here" or "Raiders are here", string.format("About %d raiders", planned_units(kind)))
+    if point ~= nil and lord_info ~= nil then
+        core.show_banner((kind == "subjugation" and "The subjugation raid approaches" or "Raiders approach") .. approach_text(point),
+            string.format("About %d raiders. They arrive in a few days", planned_units(kind)))
+    else
+        core.show_banner(kind == "subjugation" and "The subjugation raid is here" or "Raiders are here", string.format("About %d raiders", planned_units(kind)))
+    end
 end
 
 -- One army group of the great raid (a wave or the final army): a lord army of the template list, watched like a raid.
@@ -250,7 +276,8 @@ end
 local function spawn_great_army(today, list, label, final)
     local tokens = {}
     for index, watcher in ipairs(spawn_watchers) do tokens[index] = watcher.before() end
-    local ok, problem, partial = lord_raid.start(list, roles.lord_army)
+    local point = border_point("great " .. label)
+    local ok, problem, partial = lord_raid.start(list, roles.lord_army, point)
     if not ok then
         -- Armies exist already (a partial spawn): bandit squads on top would make a double army. The caller must not retry.
         if partial then return false, tostring(problem), true end
@@ -264,7 +291,10 @@ local function spawn_great_army(today, list, label, final)
     end
     problem.kind = "great"
     problem.final = final == true
+    problem.marching = point ~= nil and not problem.fallback
+    problem.direction = point and point.direction or nil
     raid_squads = problem.squads
+    raid_direction = point
     state:set("raids_spawned", state:get("raids_spawned") + 1)
     for index, watcher in ipairs(spawn_watchers) do
         core.log.try(TAG, watcher.after, tokens[index], { day = today, squads = #list, roles = true, lord_raid = problem, kind = "great" })
@@ -288,7 +318,8 @@ local function spawn_great_wave(today)
     state:set("gr_wave", wave)
     state:set("gr_last_day", today)
     state:set("gr_phase", great_raid.PHASE.waves)
-    core.show_banner(string.format("Great raid: wave %d of %d", wave, difficulty_rules.wave_count(level("great"))), "Hold the village until the relief army comes")
+    core.show_banner(string.format("Great raid: wave %d of %d%s", wave, difficulty_rules.wave_count(level("great")), approach_text(raid_direction)),
+        "Hold the village until the relief army comes")
 end
 
 local function spawn_relief_and_final(today)
@@ -304,7 +335,7 @@ local function spawn_relief_and_final(today)
     local spot = { x = centre.x + clock_config.relief_offset.x, y = centre.y + clock_config.relief_offset.y, z = centre.z }
     local sent, why = relief.spawn(great_raid.relief_templates(count, clock_config.relief_templates), spot)
     core.log.info(TAG, string.format("INVASION great relief day=%d squads=%d spawned=%s%s", today, count, tostring(sent), sent and "" or (" problem=" .. tostring(why))))
-    core.show_banner("The relief army has come", string.format("%d squads of the liege. The final battle begins", count))
+    core.show_banner("The relief army has come", string.format("%d squads of the liege. The final army approaches%s", count, approach_text(raid_direction)))
 end
 
 local function check_great_win(today)
@@ -395,10 +426,17 @@ local function raid_banner_step(kind, today, days_left)
         planned_units(kind), tostring(ok), ok and "" or (" problem=" .. tostring(problem))))
 end
 
+-- A lord army marches about `march_lead_days` from the edge, so it spawns that many days before the planned raid day and
+-- arrives on the planned day (requirement "The raid spawns on the planned day"). Bandit squads spawn at the manor: no lead.
+local function spawn_lead()
+    if use_roles and roles.lord_army.enabled then return config.border.march_lead_days end
+    return 0
+end
+
 local function minor_raid_step(today)
     if level("yearly") == 0 or state:get("raid_day") == 0 or state:get("plunder_spawned") == 1 then return end
     local days_left = state:get("raid_day") - today
-    if days_left <= 0 then return spawn_raid(today) end
+    if days_left <= spawn_lead() then return spawn_raid(today) end
     raid_banner_step("plunder", today, days_left)
 end
 
@@ -406,7 +444,7 @@ end
 local function subjugation_step(today)
     if not config.subjugation.enabled or level("vassal") == 0 or state:get("sub_day") == 0 or state:get("sub_spawned") == 1 then return end
     local days_left = state:get("sub_day") - today
-    if days_left <= 0 then return spawn_raid(today, "subjugation") end
+    if days_left <= spawn_lead() then return spawn_raid(today, "subjugation") end
     raid_banner_step("subjugation", today, days_left)
 end
 
@@ -793,11 +831,23 @@ local function watch_spawn(before, after)
     spawn_watchers[#spawn_watchers + 1] = { before = before, after = after }
 end
 
+-- raid_behavior calls this when a marching lord army has arrived at the manor (`summary` is the raid summary).
+-- The wave gap and the relief delay count from here. A yearly or subjugation raid shows its "is here" banner.
+local function on_arrival(summary)
+    local today = current_day()
+    if summary.kind == "great" then
+        if today ~= nil and state:get("gr_phase") == great_raid.PHASE.waves then state:set("gr_last_day", today) end
+        core.log.info(TAG, string.format("INVASION great army arrived day=%s final=%s", tostring(today), tostring(summary.final == true)))
+        return
+    end
+    core.show_banner(summary.kind == "subjugation" and "The subjugation raid is here" or "Raiders are here", "")
+end
+
 -- Another feature registers fn(). It returns a list of vassal region names that a subjugation raid may target.
 local function set_vassal_provider(fn)
     vassal_provider = fn
 end
 
-return { state = state, set_vassal_provider = set_vassal_provider, watch_spawn = watch_spawn, raid_info = raid_info, pick_difficulty = pick_difficulty,
+return { state = state, on_arrival = on_arrival, set_vassal_provider = set_vassal_provider, watch_spawn = watch_spawn, raid_info = raid_info, pick_difficulty = pick_difficulty,
          level = level, difficulty = general_difficulty, set_levels = set_levels, settings_changed = settings_changed, command_state = command_state,
          set_hold_gate = function(gate) hold_gate = gate end }

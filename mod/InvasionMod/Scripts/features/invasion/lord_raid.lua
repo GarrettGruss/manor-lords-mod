@@ -4,6 +4,7 @@
 -- (run 20261018-015705-ee48). The plunder is done by the mod (raid_behavior), not by the army.
 -- The helper modules are the proven harness ones (HarnessLords, HarnessBattlefield). Call only on the game thread.
 local core = require("ManorCore")
+local border = require("features.invasion.border")
 
 local TAG = "InvasionMod.lord_raid"
 local M = {}
@@ -38,12 +39,30 @@ local function ensure_lord(lords, name)
     return true
 end
 
+-- The spawn point on the map border for a raid on the player manor: { x, y, side, distance, direction, anchor }, or nil and a message.
+-- `options` is config.invasion.border. `avoid` (optional { x, y }) is the point of another army that this one should not share.
+function M.plan_border(options, avoid)
+    local _, battlefield = modules()
+    if battlefield == nil or battlefield.battlefield_state == nil then return nil, "HarnessBattlefield is not available" end
+    local ok_state, state = pcall(battlefield.battlefield_state, { home = true })
+    local anchor = ok_state and state and state.would_anchor or nil
+    if anchor == nil then return nil, "no anchor for the border point" end
+    local bounds, why = border.read_bounds()
+    if bounds == nil then return nil, why end
+    local point = border.pick(bounds, anchor, { margin = options.margin, inset = options.inset, min_distance = options.min_spawn_distance,
+                                                avoid = avoid, avoid_distance = options.min_spawn_distance })
+    point.anchor = { x = anchor.x, y = anchor.y }
+    point.direction = border.direction(point.anchor, point, options.north_axis)
+    return point
+end
+
 -- Squads of the templates (one spawnArmy call each), war, and a challenge whose battlefield stands at the player manor.
--- Returns true and { lord, anchor = {x, y}, squads = {{ id, template }}, home_region } or false and a message.
+-- `at` (optional { x, y }) is the spawn point on the map border; without it the squads start `settings.start_dy` from the player pawn.
+-- Returns true and { lord, anchor = {x, y}, squads = {{ id, template }}, home_region, at } or false and a message.
 -- A failure after some squads were spawned returns a third value, true: armies are on the map, so the caller must not add
 -- bandit squads on top. The partial army is sent away with peace.
-function M.start(templates, settings)
-    local ok, problem, spawned = M.start_checked(templates, settings)
+function M.start(templates, settings, at)
+    local ok, problem, spawned = M.start_checked(templates, settings, at)
     if not ok and spawned then
         local peace_ok, peace_problem = M.peace()
         core.log.error(TAG, string.format("lord raid failed after a partial spawn (%s); peace=%s%s", tostring(problem), tostring(peace_ok),
@@ -52,7 +71,7 @@ function M.start(templates, settings)
     return ok, problem, spawned
 end
 
-function M.start_checked(templates, settings)
+function M.start_checked(templates, settings, at)
     local lords, battlefield = modules()
     if lords == nil then return false, battlefield end
     local ok, problem = ensure_lord(lords, settings.lord_name)
@@ -61,7 +80,9 @@ function M.start_checked(templates, settings)
     if not ok then return false, problem end
     local squads = {}
     for _, template in ipairs(templates) do
-        local answer = lords.lord_spawn_army({ lord = lord_number, template = template, count = 1, dx = 0, dy = settings.start_dy })
+        local request = { lord = lord_number, template = template, count = 1, dx = 0, dy = settings.start_dy }
+        if at ~= nil then request.x, request.y = at.x, at.y end
+        local answer = lords.lord_spawn_army(request)
         ok, problem = step("lord_spawn_army " .. template, answer)
         if not ok then return false, problem, #squads > 0 end
         squads[#squads + 1] = { id = answer.squads and answer.squads[1] or false, template = template }
@@ -73,7 +94,7 @@ function M.start_checked(templates, settings)
     ok, problem = step("challenge", anchored.challenge)
     if not ok then return false, problem, #squads > 0 end
     return true, { lord = lord_number, anchor = anchored.anchor, squads = squads,
-                   home_region = home and core.region_row(home).region or nil }
+                   home_region = home and core.region_row(home).region or nil, at = at }
 end
 
 -- The pawn of the raid lord (a test command writes the region owner with it), or nil.
