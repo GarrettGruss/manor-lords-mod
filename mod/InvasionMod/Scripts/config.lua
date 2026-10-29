@@ -226,7 +226,8 @@ return {
         intro_wait_s = 60,                   -- real seconds to wait for the intro cinematic to end before the menu opens anyway
         begin_speed = 1,                     -- the game speed after "Begin the game" (a new game starts at speed 0)
         disable_autosave = true,             -- send disable_autosave after the intro and after Begin (spike #358: the first call after a new game is undone)
-        start_kit = { villagers = 10, silver = 300 }, -- given once at "Begin the game" of a new game (change add-scenario-start-kit, #425)
+        start_kit = { families = 10, silver = 300 }, -- given once at "Begin the game" of a new game (changes add-scenario-start-kit, #425; update-start-kit-ten-families, #530)
+        families_per_call = 5,               -- one settleRegion call adds 5 families (as in refugees)
         poll_ms = 100,
         pause_guard_epsilon = 0.01,          -- game clock change between two looks that counts as "the game runs" while the menu is open (#418)
         z_order = 500, position = { X = 300, Y = 120 },
