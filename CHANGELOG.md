@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `harness\deploy.ps1` also installs each mod's own pak (`mod/<name>/paks/<name>_P.pak`, today `InvasionMod_P.pak`) into `Content\Paks\~mods\`, so a manual deploy is ready to play. The pak is listed in the run pak manifest, so `run.py --pak` and `pakmod.py remove` can replace or remove it. `-NoPak` skips it; the run launcher, `install.ps1` and `reload_mods.py` pass `-NoPak`.
+
 ### Fixed
 - Vassal tribute payouts (#517): the tribute feature called `raid_world.deposit`, which commit 189251d removed, so no goods were paid. Tribute now deposits through its own helper (`addToInventory` on a store, read back from the inventory).
 

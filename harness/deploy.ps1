@@ -7,12 +7,15 @@
   Report what would happen; change nothing.
 .PARAMETER Clean
   Remove previously harness-deployed files (per manifest) that no longer exist in mod\.
+.PARAMETER NoPak
+  Do not install mod paks (mod\<Name>\paks\<Name>_P.pak) into Content\Paks\~mods.
 #>
 [CmdletBinding()]
 param(
     [string]$GameDir = 'C:\Program Files (x86)\Steam\steamapps\common\Manor Lords',
     [switch]$DryRun,
-    [switch]$Clean
+    [switch]$Clean,
+    [switch]$NoPak
 )
 $ErrorActionPreference = 'Stop'
 
@@ -178,6 +181,48 @@ if (-not $DryRun -and $errors -eq 0) {
     if ($old -ne $json) { [IO.File]::WriteAllText($manifestPath, $json, (New-Object Text.UTF8Encoding($false))) }
 }
 
-Write-Host ("{0}Summary: {1} copied, {2} unchanged, {3} removed, mods.txt changes: {4}, verified: {5}, errors: {6}" -f $tag, $copied, $unchanged, $removed, $txtChanges, $verified, $errors)
+# ---- Mod paks ----
+# A mod's own pak is mod\<Name>\paks\<Name>_P.pak. Other paks in that folder are test paks for run.py --pak.
+# The pak is listed in the run.py pak manifest, so a run may replace it and its teardown removes it.
+$pakCount = 0
+if (-not $NoPak) {
+    $pakModsDir = Join-Path $GameDir 'ManorLords\Content\Paks\~mods'
+    $pakManifestPath = Join-Path $pakModsDir '.harness-paks.json'
+    $pakManifest = [ordered]@{ version = 1; created_dir = $false; files = [ordered]@{} }
+    if (Test-Path -LiteralPath $pakManifestPath) {
+        $pm = Get-Content -LiteralPath $pakManifestPath -Raw | ConvertFrom-Json
+        $pakManifest.created_dir = [bool]$pm.created_dir
+        foreach ($p in $pm.files.PSObject.Properties) { $pakManifest.files[$p.Name] = $p.Value }
+    }
+    foreach ($name in $mods) {
+        $src = Join-Path $modSrc "$name\paks\${name}_P.pak"
+        if (-not (Test-Path -LiteralPath $src)) { continue }
+        $pakName = "${name}_P.pak"
+        $dst = Join-Path $pakModsDir $pakName
+        if ((Test-Path -LiteralPath $dst) -and -not $pakManifest.files.Contains($pakName)) {
+            Write-Host "PAK REFUSED: $dst exists and is not in the harness pak manifest; remove it by hand" -ForegroundColor Red
+            $errors++; continue
+        }
+        $srcHash = (Get-FileHash -LiteralPath $src -Algorithm SHA256).Hash
+        Write-Host ("{0}pak        {1}" -f $tag, $pakName)
+        if (-not $DryRun) {
+            if (-not (Test-Path -LiteralPath $pakModsDir)) {
+                New-Item -ItemType Directory -Path $pakModsDir -Force | Out-Null
+                $pakManifest.created_dir = $true
+            }
+            Copy-Item -LiteralPath $src -Destination $dst -Force
+            if ((Get-FileHash -LiteralPath $dst -Algorithm SHA256).Hash -ne $srcHash) {
+                Write-Host "VERIFY FAILED: $pakName" -ForegroundColor Red; $errors++; continue
+            }
+            $pakManifest.files[$pakName] = $srcHash
+            $tmp = "$pakManifestPath.tmp"
+            [IO.File]::WriteAllText($tmp, ($pakManifest | ConvertTo-Json -Depth 5), (New-Object Text.UTF8Encoding($false)))
+            Move-Item -LiteralPath $tmp -Destination $pakManifestPath -Force
+        }
+        $pakCount++
+    }
+}
+
+Write-Host ("{0}Summary: {1} copied, {2} unchanged, {3} removed, mods.txt changes: {4}, verified: {5}, paks: {6}, errors: {7}" -f $tag, $copied, $unchanged, $removed, $txtChanges, $verified, $pakCount, $errors)
 if ($errors -gt 0) { exit 1 }
 exit 0
