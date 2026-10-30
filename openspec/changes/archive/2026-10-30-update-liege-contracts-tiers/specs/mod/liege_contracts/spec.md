@@ -87,14 +87,14 @@ The player SHALL open the root of the liege window from the game UI with the mou
 - Checked by `mod/InvasionMod/scenarios/liege_contracts/window.py`.
 
 ### Requirement: The feature offers named commands
-The mod SHALL register the commands `InvasionMod.liege_contracts_state`, `liege_contract_fulfil` (argument: the contract id) and `liege_contracts_offer_now`. The test command `liege_menu_press` (argument: the button name) runs the code of a click. Tests and the window SHALL use them, not eval. The commands `liege_contract_pick`, `liege_contract_complete`, `liege_contracts_test_progress` and `liege_send_tribute` SHALL NOT exist. The state SHALL go to the telemetry metrics `liege_contracts_done` and `liege_contracts_offered`.
+The mod SHALL register the commands `InvasionMod.liege_contracts_state`, `liege_contract_fulfil` (argument: the contract id) and `liege_contracts_offer_now`. Tests and the window SHALL use them, not eval. The commands `liege_contract_pick`, `liege_contract_complete`, `liege_contracts_test_progress` and `liege_send_tribute` SHALL NOT exist. The state SHALL go to the telemetry metrics `liege_contracts_done` and `liege_contracts_offered`.
 
 #### Scenario: State is readable
 - **WHEN** a scenario sends `InvasionMod.liege_contracts_state`
 - **THEN** the answer holds the 9 contracts, the fulfilled count and limit of each tier, the days to the start of winter, the days to the next spring, `failed_rewards` and the spring counter
 - Checked by `harness/tests/test_fakegame_liege_contracts.py`.
 
-#### Scenario: Test commands
+#### Scenario: Test commands (also `liege_menu_press`, argument: the button name, runs the code of a click)
 - **WHEN** a scenario sends `liege_contracts_offer_now` (optional argument `ids` names the offer in the saved text form of `contracts_offer`)
 - **THEN** the offer changes at once, with no wait for a spring
 - Checked by `harness/tests/test_fakegame_liege_contracts.py`.
