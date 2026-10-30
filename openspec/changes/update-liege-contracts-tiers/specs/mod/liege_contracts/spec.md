@@ -1,5 +1,5 @@
 ## MODIFIED Requirements
-<!-- Issue: #TBD -->
+<!-- Issue: #533 -->
 
 ### Requirement: Contracts live in a data table
 The mod SHALL read all contracts from the data file `mod/InvasionMod/data/liege_contracts/contracts.json`. No contract id, amount or text SHALL be in Lua code. The table holds, for each tier (`small`, `medium`, `large`), a pool of requests and a pool of rewards. The pools are in the tables of `design.md` of the change `update-liege-contracts-tiers` (proposed defaults; the owner tunes them). A bad table SHALL stop the load with a clear message.

@@ -1,5 +1,5 @@
 ## REMOVED Requirements
-<!-- Issue: #TBD -->
+<!-- Issue: #533 -->
 
 ### Requirement: The liege screen has a button to request an arms shipment
 **Reason**: The owner removed the arms shipment (decision 2026-10-30). The liege contracts replace it as the way to get weapons: a Medium contract can pay weapons.

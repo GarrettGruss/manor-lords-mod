@@ -2,7 +2,7 @@
 
 The owner (decision of 2026-10-30) wants simpler and more regular liege contracts. Today the liege offers 3 contracts a year, the player picks one, and a missed deadline costs 500 influence. The new design offers 9 contracts a year in three tiers. All of them are deliveries of goods. The player fulfils them at will and no contract has a penalty.
 
-Issue: #TBD (the issue `Change: update-liege-contracts-tiers` is made after the owner reviews this draft).
+Issue: #533
 
 This change serves the pillar "the liege expects duty" and pillar 3 "scarcity forces expansion" of `design/mod/invasion-mod.md`: the goods the liege asks for compete with the needs of the town. It does not break a pillar. It continues the archived change `update-liege-tribute-to-contracts` (#505). It does not continue a legacy doc folder.
 
