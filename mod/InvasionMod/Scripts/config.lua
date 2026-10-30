@@ -318,25 +318,27 @@ return {
     -- Influence changes only by contracts (liege_contracts). The liege window values (poll, refresh, z_order, position) are used by that feature.
     liege_influence = {
         enabled = true,
-        -- Arms shipment (change add-scenario-start-kit, #425): the button "Request arms shipment" of the liege screen.
-        arms_shipment = {
-            cost = 200,                  -- silver
-            cooldown_days = 180,         -- game days between two shipments
-            goods = { { id = 271, amount = 30, name = "large shield" }, { id = 133, amount = 30, name = "spear" } }, -- item ids from DT_Items (notes/item-ids.md)
-        },
         poll_ms = 100,                   -- real time between two looks at the click queue of the menu (never faster)
         refresh_ms = 500,                -- real time between two refreshes of the menu labels
         z_order = 500,
         position = { X = 50, Y = 25 },   -- the contracts window is wide: it starts near the top left corner
     },
-    -- liege_contracts (change update-liege-tribute-to-contracts, #505). The contracts themselves are in data/liege_contracts/contracts.json.
+    -- liege_contracts (changes update-liege-tribute-to-contracts, #505, and update-liege-contracts-tiers, #533).
+    -- The request and reward pools are in data/liege_contracts/contracts.json. Every number below is a proposed default; the owner tunes it.
     liege_contracts = {
         enabled = true,
-        poll_ms = 2000,       -- real time between two looks at the season, the progress and the deadline
-        fail_penalty = 500,   -- influence taken when a contract is not complete at its deadline (never below 0); the same for all contracts
+        poll_ms = 2000,       -- real time between two looks at the season and the offer
         data_file = "data/liege_contracts/contracts.json", -- relative to the mod folder
         spring_season = 1,    -- TemporalComponent.Season values (notes/season-values.md): winter 0, spring 1, summer 2, autumn 3
         winter_season = 0,
+        tier_limits = { small = 1, medium = 1, large = 1 }, -- contracts the player may fulfil in each tier in one year
+        base = { small = 50, medium = 30, large = 15 },     -- request amount = max(1, round(base * weight * difficulty))
+        weight = {},          -- optional override of the weight of a good by item id; the default weights are in contracts.json
+        -- Difficulty by the yearly raid level of the scenario settings: 0 (off), 1 (easy), 2 (medium), 3 (hard). Open question of the owner.
+        difficulty = { [0] = 1.0, [1] = 0.75, [2] = 1.0, [3] = 1.25 },
+        -- Day of the calendar year (TemporalComponent.day) on which a season starts, for the countdowns of the window (notes/season-days.md).
+        year_days = 365, spring_start_day = 60, winter_start_day = 335,
+        manor_recheck_s = 2,  -- real seconds between two looks for a built manor while the window is open
     },
     -- M13 manor_stronghold. Values are TBD for playtests.
     manor_stronghold = {

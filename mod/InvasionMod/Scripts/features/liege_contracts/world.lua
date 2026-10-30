@@ -17,6 +17,41 @@ function M.current_day()
     return type(day) == "number" and math.floor(day) or nil
 end
 
+-- The day of the calendar year (TemporalComponent.day), used for the days to the next season start.
+function M.day_of_year()
+    local engine = FindFirstOf("RTSMultiEngineCPP")
+    if not isValid(engine) then return nil end
+    local day = read(function() return engine.TemporalComponent.day end)
+    return type(day) == "number" and math.floor(day) or nil
+end
+
+-- Is a manor built? Returns true, or nil and a reason. The first built module of HarnessManor.manor_state() counts
+-- (the same rule as the old arms shipment had).
+function M.manor_built()
+    local manor = require("HarnessManor")
+    local listed = manor.manor_state()
+    if not listed.ok then return nil, tostring(listed.error) end
+    for _, module in ipairs(listed.modules) do
+        if module.built then return true end
+    end
+    return nil, "no manor is built"
+end
+
+-- Raise the regional wealth of the player region (change update-liege-contracts-tiers, spike notes/regional-wealth.md).
+-- Returns true, or nil and a message. The value is read back; a value that did not rise is a failure.
+function M.add_regional_wealth(amount)
+    local region, problem = core.player_region()
+    if region == nil then return nil, problem end
+    local before = read(function() return region.regionalWealth end)
+    local ok, why = pcall(function() region:addRegionalWealth(amount) end)
+    if not ok then return nil, "addRegionalWealth: " .. tostring(why) end
+    local after = read(function() return region.regionalWealth end)
+    if type(before) == "number" and type(after) == "number" and after < before + amount then
+        return nil, string.format("the regional wealth went from %s to %s, not up by %d", tostring(before), tostring(after), amount)
+    end
+    return true
+end
+
 local function built_buildings(region)
     local list = {}
     for _, building in ipairs(listOf(region:GetBuildings())) do
@@ -43,25 +78,6 @@ function M.stock(good)
     if region == nil then return nil end
     local value = read(function() return region:getStockOfGood(good, false, false) end)
     return type(value) == "number" and math.floor(value) or nil
-end
-
--- Finished buildings of one type in the player region.
-function M.building_count(kind)
-    local region = core.player_region()
-    if region == nil then return nil end
-    local count = 0
-    for _, building in ipairs(built_buildings(region)) do
-        if building_type(building) == kind and read(function() return building.Data.constructed end) ~= false then count = count + 1 end
-    end
-    return count
-end
-
--- The squads the player commands (the militia squads of spike #482 are in this list).
-function M.squad_count()
-    local engine = FindFirstOf("RTSMultiEngineCPP")
-    if not isValid(engine) then return nil end
-    local count = read(function() return engine.playerRef.commandedSquads:GetArrayNum() end)
-    return type(count) == "number" and count or nil
 end
 
 -- Take `amount` units of a good from the stores of the player region (tier 1 stores first, then tier 2).
