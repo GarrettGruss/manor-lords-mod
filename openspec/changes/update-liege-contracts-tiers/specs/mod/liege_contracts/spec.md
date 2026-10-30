@@ -50,7 +50,7 @@ The mod SHALL support six reward kinds, paid once when the player fulfils a cont
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
 ### Requirement: Contract state is saved
-The mod SHALL keep the contract state in ModState and restore it after a load: the spring counter (it names the year of the offer), the offer, the fulfilled count of each tier and the count of done contracts. Old saves with no contract keys SHALL load with defaults. The saved keys `liege_influence` and `arms_last_day` SHALL stay.
+The mod SHALL keep the contract state in ModState and restore it after a load: the spring counter (it names the year of the offer), the offer, the fulfilled count of each tier and the count of done contracts. Old saves with no contract keys SHALL load with defaults. The saved key `liege_influence` SHALL stay. The key `arms_last_day` is no longer written (the arms shipment is removed).
 
 #### Scenario: The keys
 - **WHEN** the state is written
@@ -65,7 +65,7 @@ The mod SHALL keep the contract state in ModState and restore it after a load: t
 
 #### Scenario: An old save
 - **WHEN** a save made before this change loads
-- **THEN** the influence and the arms cooldown are unchanged, the old offer and the old active contract are dropped without penalty, and the first new offer comes at the next start of spring
+- **THEN** the influence is unchanged, the old offer and the old active contract are dropped without penalty, and the first new offer comes at the next start of spring
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
 #### Scenario: A removed contract id
@@ -151,7 +151,7 @@ The amount SHALL be `max(1, round(base(tier) * weight(good) * difficulty))`, rou
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
 ### Requirement: The mod offers nine contracts each spring
-At each start of spring, and only then, the mod SHALL draw `offer_per_tier` different contracts (default 3) at random from each of the tiers Small, Medium and Large, and offer them. The new offer SHALL replace the old one and SHALL reset the fulfilled counts. The mod SHALL NOT make an offer at the first poll of a new game or of a save. The offer SHALL be saved before it is logged.
+At each start of spring with a built manor, the mod SHALL draw `offer_per_tier` different contracts (default 3) at random from each tier and offer them. The new offer SHALL replace the old one and reset the fulfilled counts. The mod SHALL NOT make an offer at the first poll of a new game or of a save. The offer SHALL be saved before it is logged.
 
 #### Scenario: A spring draw
 - **WHEN** the season counter shows a new spring (read as in `mod/tech_tree`)
@@ -240,5 +240,30 @@ The liege window (menu id `liege`, a pak widget) SHALL follow the layout of the 
 
 #### Scenario: No arms shipment button
 - **WHEN** the window is open
-- **THEN** it shows no "Request arms shipment" button (it is in the manor; see the delta of `mod/liege_influence`)
+- **THEN** it shows no "Request arms shipment" button (the arms shipment is removed; see the delta of `mod/liege_influence`)
 - Not checked yet. Planned: `mod/InvasionMod/scenarios/liege_contracts/window.py`.
+
+### Requirement: Contracts need a built manor
+The mod SHALL deal contracts only when the player's manor is built. A built manor is a `HarnessManor.manor_state()` module with `built == true`. Without a built manor the mod SHALL deal no offer, and the liege window SHALL show only the text "Build a manor to receive contracts from the liege." and the Close button. When a manor is built and no offer exists, the mod SHALL deal the offer at once (lead's choice, see `design.md`), unless it is winter. A lost manor SHALL NOT remove an offer.
+
+#### Scenario: No manor
+- **WHEN** no manor is built and the start of spring comes
+- **THEN** no offer is dealt, the offer stays empty and no spring draw is counted
+- **AND** the window shows only "Build a manor to receive contracts from the liege." and the Close button, with no top bar, rows or cards
+- Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py` and `mod/InvasionMod/scenarios/liege_contracts/window.py`.
+
+#### Scenario: A manor is built mid-year
+- **WHEN** a manor becomes built in spring, summer or autumn and no offer exists
+- **THEN** the offer of 9 contracts is dealt at once and every fulfilled count is 0
+- **AND** the contracts expire when winter begins, as for any offer
+- Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
+
+#### Scenario: A manor is built in winter
+- **WHEN** a manor becomes built in winter
+- **THEN** no offer is dealt, and the first offer comes at the next start of spring
+- Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
+
+#### Scenario: The manor is lost
+- **WHEN** an offer exists and the manor is no longer built
+- **THEN** the offer stays and can be fulfilled
+- Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.

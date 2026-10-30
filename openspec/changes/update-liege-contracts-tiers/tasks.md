@@ -14,16 +14,31 @@
 - [ ] 2.6 Remove the pick, complete, progress and penalty code and the objective kinds. Verified by the fake game test.
 - [ ] 2.7 ModState keys and the load of old saves. Verified by the fake game test.
 
+- [ ] 2.8 Manor gate: deal no offer without a built manor; deal at once when a manor is built outside winter; move the manor check from `liege_influence` into `liege_contracts`. Verified by the fake game test.
+
 ## 3. Window and commands
 
 - [ ] 3.1 New liege window as in the mockup. Verified by `mod/InvasionMod/scenarios/liege_contracts/window.py`.
 - [ ] 3.2 Commands: `liege_contract_fulfil`; remove `liege_contract_pick` and `liege_contract_complete`; update `liege_contracts_state` and the test commands. Verified by the fake game test.
 - [ ] 3.3 Capture picture evidence of the window into `evidence/` with `ctx.screenshot(name)` and list it in `evidence/README.md`.
-- [ ] 3.4 Move the arms shipment button to the manor: check the manor UI hook and the pak controls, write `notes/manor-button.md`, remove the button from the contracts window, and update `mod/InvasionMod/scenarios/liege_influence/arms_shipment.py`. Verified by that test scenario.
 
-## 4. Close
+## 4. Remove the arms shipment
 
-- [ ] 4.1 Update the real game test scenarios (`window.py`, `complete.py`, `pick.py`, `roundtrip.py`). Verified by real game runs (`roundtrip.py` needs the guarded `save_game`).
-- [ ] 4.2 Update the wiki, the skills and `CHANGELOG.md`. Verified by `wiki.py check`.
-- [ ] 4.3 Run the full test set and `openspec validate update-liege-contracts-tiers --strict`.
-- [ ] 4.4 Write the test results table of the implementation pull request.
+Found by grep (2026-10-30). Nothing outside these files uses the arms shipment code.
+
+- [ ] 4.1 Delete the arms code in `mod/InvasionMod/Scripts/features/liege_influence/init.lua` (the manor helpers, `shipment_status`, `request_arms_shipment`, the commands `InvasionMod.liege_request_arms` and `InvasionMod.liege_test_set_arms_day`, the ModState key `arms_last_day`, the arms fields of `liege_state`) and `shipment_status` in `rules.lua` (delete `rules.lua` if it is then empty). Update the file header.
+- [ ] 4.2 Delete the config `liege_influence.arms_shipment` in `mod/InvasionMod/Scripts/config.lua`.
+- [ ] 4.3 In `mod/InvasionMod/Scripts/features/liege_contracts/init.lua` delete `arms_info`, the `ArmsInfoText` and `ArmsButton` code, the use of `liege.shipment_status`, `liege.request_arms_shipment` and `liege.arms_config`, and the arms fields of the view (`arms_label`, `arms_disabled`, `shipments`).
+- [ ] 4.4 Delete the test scenario `mod/InvasionMod/scenarios/liege_influence/arms_shipment.py`. Update `mod/InvasionMod/scenarios/liege_contracts/window.py` (it names the arms button).
+- [ ] 4.5 Delete the arms tests in `harness/tests/test_fakegame_liege_influence.py` and in `harness/tests/test_fakegame_liege_contracts.py` (`test_the_arms_text_stays` and the `arms_last_day` checks of the old save test).
+- [ ] 4.6 Remove the arms button and its info text from the pak widget: `mod/InvasionMod/ue/make_liege_widget.py` (`ArmsInfoText` and the arms button), rebuild `WBP_LiegeContracts` in `mod/InvasionMod/data/liege_contracts/assets/` and the pak `mod/InvasionMod/paks/InvasionMod_P.pak`. Search the diff for the AES key before the commit.
+- [ ] 4.7 Update `docs/wiki/architecture/invasion-features.md` (the `liege_influence` paragraph), the skills that name the arms shipment (grep `.claude/skills`), `CHANGELOG.md` under Removed ("the arms shipment") and `mod/InvasionMod/CHANGELOG.md`.
+
+Left alone: the archived changes, and the old mockup `openspec/specs/mod/liege_contracts/mockups/liege-contracts-layout.html` (replaced at the archive of this change). The scenario start kit (`add-scenario-start-kit`) stays; only its arms shipment part is removed.
+
+## 5. Close
+
+- [ ] 5.1 Update the real game test scenarios (`window.py`, `complete.py`, `pick.py`, `roundtrip.py`). Verified by real game runs (`roundtrip.py` needs the guarded `save_game`).
+- [ ] 5.2 Update the wiki, the skills and `CHANGELOG.md`. Verified by `wiki.py check`.
+- [ ] 5.3 Run the full test set and `openspec validate update-liege-contracts-tiers --strict`.
+- [ ] 5.4 Write the test results table of the implementation pull request.

@@ -8,6 +8,8 @@ This change serves the pillar "the liege expects duty" and pillar 3 "scarcity fo
 
 ## What changes
 
+- The arms shipment (button, command, cooldown, config) is removed. A Medium contract can pay weapons instead.
+- Contracts need a built manor. With no manor, no offer is dealt and the window shows only "Build a manor to receive contracts from the liege." and the Close button. A manor built later deals the offer at once.
 - Each spring the liege offers 9 contracts: 3 random contracts from each of the tiers Small, Medium and Large.
 - The player may fulfil at most N contracts per tier per year. N is a config value per tier (default 1).
 - Contracts expire when winter begins. There is NO penalty (the config value `fail_penalty` and the -500 influence rule are removed). New contracts come in spring.
@@ -28,18 +30,19 @@ This change serves the pillar "the liege expects duty" and pillar 3 "scarcity fo
 
 ## Decided by the owner (2026-10-30)
 
-- The arms shipment button moves to the manor (the manor building's menu or panel). It leaves the contracts window.
+- The arms shipment is removed entirely. The contracts replace it.
+- Contracts are available only when the player's manor is built.
 - A delivery may take goods from any storehouse of the player region (as today).
 - 1000 influence for a Large contract is intended.
+- The goods tiers, the request tiers (Small asks for tier 1 goods, Medium for tier 2, Large for tier 3), the base values and the weights of `design.md` are approved.
 
 ## Open questions (for the owner; not decided here)
 
 1. Regional wealth: no safe write path is proven for our mod (see design, risks). A spike is needed, or the Small reward drops to goods only.
 2. Difficulty: the lead assumes it comes from the yearly raid level in the scenario settings (1 easy 0.75, 2 medium 1.0, 3 hard 1.25, 0 off 1.0). Is that the right source and are those values right?
-3. The assumption that a Small contract asks for tier 1 goods, Medium for tier 2 and Large for tier 3. Is that right?
 
 ## Impact
 
-- Spec: `mod/liege_contracts` (delta in this change). `mod/liege_influence` has a delta in this change (the arms shipment button moves to the manor).
+- Spec: `mod/liege_contracts` (delta in this change). `mod/liege_influence` has a delta in this change that removes the arms shipment (two requirements).
 - Code (later, gate 2): `mod/InvasionMod/Scripts/features/liege_contracts/*.lua`, `data/liege_contracts/contracts.json`, the liege menu pak widget, `Scripts/config.lua`, the tests and test scenarios of the feature.
 - Old saves: the keys `contracts_active`, `contracts_start_day`, `contracts_baseline` and `contracts_progress` are dropped. An old offer is dropped.

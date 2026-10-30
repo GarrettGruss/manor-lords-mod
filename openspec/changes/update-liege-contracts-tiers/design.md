@@ -92,15 +92,22 @@ One reward for each contract, drawn from the pool of its tier. The tiers of the 
 
 A reward good is never the same as the request good of its contract. Rewards are paid as today: goods go to the first storehouse, silver to `playerRef.silver`, a tech point to `tech_picks_earned`, influence to the mod influence. The Large tech point reward is allowed only when `update-tech-tree-yearly-picks` is built (as today).
 
+## Manor needed (owner decision 2026-10-30)
+
+Contracts exist only when a manor is built. The code that detects a built manor today is `manor_module()` in `Scripts/features/liege_influence/init.lua`: it calls `HarnessManor.manor_state()` and looks for a module with `built == true`. It has a cached form for the menu refresh (`manor_module_cached`, rechecked every few seconds, because a high poll rate can crash the game after such reads). The removal of the arms shipment deletes the use of it in `liege_influence`, so the detection moves into `liege_contracts` (task 2.8). Use the cached form for the window and the fresh form at the draw.
+
+- No manor: no offer is dealt, and the window opens and shows only the text "Build a manor to receive contracts from the liege." and the Close button.
+- LEAD'S CHOICE (the owner may change it): a manor built mid-year deals the offer at once, with the fulfilled counts at 0. The alternative is to wait for the next spring. If the manor is built in winter, no offer is dealt (contracts expire in winter) and the first offer comes at the next spring.
+- A manor that is lost later does not remove an existing offer. A save and a load keep the offer.
+
 ## Risks
 
 - Regional wealth has no proven write path for OUR mod. A third-party mod writes `Region.regionalWealth` directly (`openspec/changes/archive/2026-10-15-legacy-13-mod-inspection/implementation-notes/battlefield-loot.md`), and the harness action that sets region values reads it back (`harness/scenarios/winter_region.py`). Whether the game keeps the value, and how the HUD shows it, is not checked for the mod. The old spec says "no safe read is proven" for regional wealth. Spike task 1.1 answers this. If the spike fails, the Small reward pool drops the regional wealth row.
 - The pak widget may not have enough controls for 9 cards plus 3 tier boxes. Task 1.3 checks it. A pak change would be needed.
-- The arms shipment button moves to the manor (owner decision 2026-10-30). The exact manor UI hook (the manor menu or panel, and whether the pak has a control for it) is not checked. Task 3.4 checks it. The change has a delta spec for `mod/liege_influence`.
 
 ## Open questions
 
-Same list as the proposal (regional wealth, difficulty source, request tiers). Spikes: regional wealth (task 1.1), item ids (task 1.2), pak controls (task 1.3).
+Same list as the proposal (regional wealth, difficulty source). Spikes: regional wealth (task 1.1), item ids (task 1.2), pak controls (task 1.3).
 
 ## Save state
 
