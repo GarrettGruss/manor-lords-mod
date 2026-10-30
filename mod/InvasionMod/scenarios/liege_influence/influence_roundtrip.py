@@ -1,7 +1,7 @@
 """add-liege-influence: the influence value survives a harness save and a load.
 
 Two runs make one round trip, because a run cannot load a save by itself (as mod-state-roundtrip):
-  1. phase write (default): complete a contract (influence 20), save with save_game(keep=True). The result holds the slot.
+  1. phase write (default): fulfil a contract (influence 1000), save with save_game(keep=True). The result holds the slot.
      uv run python harness/run.py --scenario liege-influence-roundtrip --new-game
   2. phase read: load the kept slot and read the influence.
      uv run python harness/run.py --scenario liege-influence-roundtrip --save <SaveGames>/<slot>.sav --env LIEGE_PHASE=read
@@ -9,10 +9,10 @@ The kept slot stays in the user's save folder. Delete it after the check (the ha
 """
 
 NAME = "liege-influence-roundtrip"
-DESCRIPTION = "Complete a contract (20 influence), save, load the save in a second run, and read 20 influence."
+DESCRIPTION = "Fulfil a contract (1000 influence), save, load the save in a second run, and read 1000 influence."
 LIMIT_S = 240
 PREFIX = "InvasionMod."
-EXPECTED = 20.0
+EXPECTED = 1000.0
 
 
 def liege(ctx) -> dict:
@@ -20,12 +20,11 @@ def liege(ctx) -> dict:
 
 
 def write_phase(ctx) -> dict:
-    ctx.mod.command(PREFIX + "liege_contracts_offer_now", ids="raise_the_levy.clear_the_roads.keep_the_peace")
-    ctx.mod.command(PREFIX + "liege_contract_pick", id="raise_the_levy")
-    ctx.mod.command(PREFIX + "liege_contracts_test_progress", index=1, value=2)
-    ctx.mod.command(PREFIX + "liege_contract_complete")
+    ctx.mod.command(PREFIX + "liege_contracts_offer_now", ids="l-293-5-i-0-1000-0.l-273-9-t-0-1-0.l-320-18-t-0-1-0.s-17-50-g-146-30-0.s-145-30-g-17-25-0.s-171-70-g-17-25-0")
+    ctx.actions.give_item(293, 5)
+    ctx.mod.command(PREFIX + "liege_contract_fulfil", id="large-1")
     state = liege(ctx)
-    ctx.check("the influence is 20 before the save", abs(state["influence"] - EXPECTED) < 0.01, state)
+    ctx.check("the influence is 1000 before the save", abs(state["influence"] - EXPECTED) < 0.01, state)
     record = ctx.actions.save_game("liege influence roundtrip", keep=True)
     ctx.log.info(f"ROUNDTRIP saved slot {record['slot']}")
     result = ctx.result()

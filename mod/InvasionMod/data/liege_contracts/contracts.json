@@ -1,294 +1,264 @@
 {
- "version": 1,
- "offer_size": 3,
- "contracts": [
-  {
-   "id": "timber_for_the_walls",
-   "name": "Timber for the Walls",
-   "quote": "The city palisade needs logs before the frost.",
-   "weight": 10,
-   "objectives": [
+ "version": 2,
+ "offer_per_tier": 3,
+ "tiers": {
+  "small": {
+   "requests": [
     {
-     "type": "deliver_goods",
-     "good": 16,
-     "amount": 60
-    }
-   ],
-   "rewards": [
-    {
-     "type": "influence",
-     "amount": 15
-    },
-    {
-     "type": "silver",
-     "amount": 100
-    }
-   ],
-   "duration": "winter_start"
-  },
-  {
-   "id": "salt_for_the_garrison",
-   "name": "Salt for the Garrison",
-   "quote": "Salt keeps an army fed through the winter.",
-   "weight": 8,
-   "objectives": [
-    {
-     "type": "deliver_goods",
-     "good": 145,
-     "amount": 30
-    }
-   ],
-   "rewards": [
-    {
-     "type": "influence",
-     "amount": 20
-    },
-    {
-     "type": "goods",
-     "good": 14,
-     "amount": 20
-    }
-   ],
-   "duration": "winter_start"
-  },
-  {
-   "id": "raise_the_levy",
-   "name": "Raise the Levy",
-   "quote": "Show me spears at your gate.",
-   "weight": 8,
-   "objectives": [
-    {
-     "type": "raise_militia_squads",
-     "amount": 2
-    }
-   ],
-   "rewards": [
-    {
-     "type": "influence",
-     "amount": 20
-    },
-    {
-     "type": "goods",
-     "good": 133,
-     "amount": 20
-    }
-   ],
-   "duration": "winter_start"
-  },
-  {
-   "id": "build_a_storehouse",
-   "name": "Build a Storehouse",
-   "quote": "Goods that sit on the road feed the thieves.",
-   "weight": 8,
-   "objectives": [
-    {
-     "type": "build_count",
-     "building_type": 72,
-     "amount": 1
-    }
-   ],
-   "rewards": [
-    {
-     "type": "influence",
-     "amount": 10
-    },
-    {
-     "type": "goods",
      "good": 17,
-     "amount": 50
+     "weight": 1.0
     },
     {
-     "type": "public_order",
-     "amount": 5
-    }
-   ],
-   "duration": "winter_start"
-  },
-  {
-   "id": "clear_the_roads",
-   "name": "Clear the Roads",
-   "quote": "Raiders on my roads shame us both.",
-   "weight": 10,
-   "objectives": [
-    {
-     "type": "kill_raiders",
-     "amount": 15
-    }
-   ],
-   "rewards": [
-    {
-     "type": "influence",
-     "amount": 25
+     "good": 171,
+     "weight": 1.4
     },
     {
-     "type": "silver",
-     "amount": 150
-    }
-   ],
-   "duration": "winter_start"
-  },
-  {
-   "id": "keep_the_peace",
-   "name": "Keep the Peace",
-   "quote": "A quiet town is a loyal town.",
-   "weight": 6,
-   "objectives": [
-    {
-     "type": "hold_public_order",
-     "min": 60,
-     "days": 90
-    }
-   ],
-   "rewards": [
-    {
-     "type": "influence",
-     "amount": 25
+     "good": 279,
+     "weight": 1.2
     },
     {
-     "type": "public_order",
-     "amount": 10
+     "good": 330,
+     "weight": 1.0
     },
     {
-     "type": "tech_pick",
-     "amount": 1
-    }
-   ],
-   "duration": "winter_start"
-  },
-  {
-   "id": "feed_the_city",
-   "name": "Feed the City",
-   "quote": "The city granaries are low. Send fish.",
-   "weight": 8,
-   "objectives": [
+     "good": 3,
+     "weight": 0.8
+    },
     {
-     "type": "deliver_goods",
+     "good": 15,
+     "weight": 1.6
+    },
+    {
+     "good": 146,
+     "weight": 1.4
+    },
+    {
+     "good": 337,
+     "weight": 1.2
+    },
+    {
+     "good": 339,
+     "weight": 1.2
+    },
+    {
+     "good": 338,
+     "weight": 1.2
+    },
+    {
+     "good": 145,
+     "weight": 0.6
+    },
+    {
+     "good": 205,
+     "weight": 0.4
+    },
+    {
      "good": 30,
-     "amount": 80
+     "weight": 1.0
     }
    ],
    "rewards": [
     {
-     "type": "influence",
-     "amount": 15
+     "kind": "goods",
+     "goods": "tier1",
+     "min": 20,
+     "max": 40
     },
     {
-     "type": "silver",
-     "amount": 120
-    },
-    {
-     "type": "goods",
-     "good": 172,
-     "amount": 30
+     "kind": "regional_wealth",
+     "min": 40,
+     "max": 80
     }
-   ],
-   "duration": "winter_start"
+   ]
   },
-  {
-   "id": "hold_town_and_road",
-   "name": "Hold Town and Road",
-   "quote": "Prove you can hold both town and road.",
-   "weight": 4,
-   "objectives": [
+  "medium": {
+   "requests": [
     {
-     "type": "kill_raiders",
-     "amount": 25
+     "good": 283,
+     "weight": 1.0
     },
     {
-     "type": "hold_public_order",
-     "min": 50,
-     "days": 60
+     "good": 296,
+     "weight": 1.2
+    },
+    {
+     "good": 46,
+     "weight": 1.0
+    },
+    {
+     "good": 45,
+     "weight": 1.2
+    },
+    {
+     "good": 6,
+     "weight": 0.5
+    },
+    {
+     "good": 35,
+     "weight": 0.8
+    },
+    {
+     "good": 7,
+     "weight": 0.8
+    },
+    {
+     "good": 32,
+     "weight": 1.0
     }
    ],
    "rewards": [
     {
-     "type": "influence",
-     "amount": 40
+     "kind": "weapons",
+     "goods": "weapons",
+     "min": 10,
+     "max": 20
     },
     {
-     "type": "silver",
-     "amount": 200
+     "kind": "goods",
+     "goods": "tier2",
+     "min": 15,
+     "max": 30
     },
     {
-     "type": "tech_pick",
-     "amount": 1
+     "kind": "silver",
+     "min": 150,
+     "max": 300
+    }
+   ]
+  },
+  "large": {
+   "requests": [
+    {
+     "good": 177,
+     "weight": 1.0
+    },
+    {
+     "good": 270,
+     "weight": 1.0
+    },
+    {
+     "good": 178,
+     "weight": 1.0
+    },
+    {
+     "good": 133,
+     "weight": 1.2
+    },
+    {
+     "good": 271,
+     "weight": 1.0
+    },
+    {
+     "good": 273,
+     "weight": 0.6
+    },
+    {
+     "good": 163,
+     "weight": 0.6
+    },
+    {
+     "good": 164,
+     "weight": 0.4
+    },
+    {
+     "good": 293,
+     "weight": 0.35
+    },
+    {
+     "good": 206,
+     "weight": 0.8
+    },
+    {
+     "good": 323,
+     "weight": 1.2
+    },
+    {
+     "good": 320,
+     "weight": 1.2
     }
    ],
-   "duration": "winter_start"
+   "rewards": [
+    {
+     "kind": "tech_point",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "kind": "influence",
+     "min": 1000,
+     "max": 1000
+    }
+   ]
   }
- ],
- "items": {
-  "good:16": {
-   "name": "Wood",
-   "description": "Logs from your woodcutters."
-  },
-  "good:17": {
-   "name": "Planks",
-   "description": "Sawn timber."
-  },
-  "good:14": {
-   "name": "Iron ore",
-   "description": "Ore from your mines."
-  },
-  "good:30": {
-   "name": "Carp",
-   "description": "Fish from your fishermen."
-  },
-  "good:145": {
-   "name": "Salt",
-   "description": "Salt from your salt makers."
-  },
-  "good:133": {
-   "name": "Spears",
-   "description": "Weapons for your militia."
-  },
-  "good:172": {
-   "name": "Bread",
-   "description": "Baked bread."
-  },
-  "building:72": {
-   "name": "Storehouse",
-   "description": "A building that stores goods."
-  },
-  "objective:deliver_goods": {
-   "name": "Deliver goods",
-   "description": "Hold this stock in your region. The goods are taken when you complete the contract."
-  },
-  "objective:build_count": {
-   "name": "Build",
-   "description": "Build this building after you pick the contract."
-  },
-  "objective:kill_raiders": {
-   "name": "Kill raiders",
-   "description": "Raiders that die after you pick the contract."
-  },
-  "objective:hold_public_order": {
-   "name": "Hold public order",
-   "description": "Keep the public order at or above the minimum for the days."
-  },
-  "objective:raise_militia_squads": {
-   "name": "Raise militia",
-   "description": "Have this number of militia squads."
-  },
-  "reward:influence": {
-   "name": "Influence",
-   "description": "Standing with your liege."
-  },
-  "reward:silver": {
-   "name": "Silver",
-   "description": "Silver for your treasury."
-  },
-  "reward:goods": {
-   "name": "Goods",
-   "description": "Goods for your storehouse."
-  },
-  "reward:public_order": {
-   "name": "Public order",
-   "description": "A one time rise of the public order."
-  },
-  "reward:tech_pick": {
-   "name": "Tech point",
-   "description": "One tech pick for the tech tree."
-  }
+ },
+ "good_lists": {
+  "tier1": [
+   17,
+   171,
+   279,
+   330,
+   3,
+   15,
+   146,
+   337,
+   339,
+   338,
+   145,
+   205,
+   30
+  ],
+  "tier2": [
+   283,
+   296,
+   46,
+   45,
+   6,
+   35,
+   7,
+   32
+  ],
+  "weapons": [
+   177,
+   270,
+   178,
+   133,
+   271,
+   206
+  ]
+ },
+ "names": {
+  "17": "planks",
+  "171": "berries",
+  "279": "mushrooms",
+  "330": "small game",
+  "3": "hides",
+  "15": "rubble stone",
+  "146": "clay",
+  "337": "carrots",
+  "339": "beets",
+  "338": "cabbage",
+  "145": "salt",
+  "205": "bows",
+  "30": "carp",
+  "283": "cut stone",
+  "296": "apples",
+  "46": "quinces",
+  "45": "pears",
+  "6": "tools",
+  "35": "metal bars",
+  "7": "wooden parts",
+  "32": "eel",
+  "177": "swords",
+  "270": "shields",
+  "178": "polearms",
+  "133": "spears",
+  "271": "large shields",
+  "273": "helmets",
+  "163": "gambesons",
+  "164": "mail armor",
+  "293": "plate armor",
+  "206": "crossbows",
+  "323": "smoked fish",
+  "320": "sausages"
  }
 }

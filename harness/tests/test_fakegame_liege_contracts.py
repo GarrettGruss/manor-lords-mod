@@ -1,4 +1,4 @@
-"""Tests for the feature liege_contracts of the pack mod in the fake game.
+"""Tests for the feature liege_contracts of the pack mod in the fake game (change update-liege-contracts-tiers, #533).
 
 They run the real Lua files. They do not prove how the real game behaves (see the test scenarios of the feature).
 """
@@ -11,14 +11,16 @@ from test_fakegame_modstate import find_pack_mod
 from test_fakegame_tech_tree import TechTreeTestCase
 from test_fakegame_vassals import VassalsTestCase
 
-STOREHOUSE = """
+# Two storehouses (types 72 and 6) and a manor module (type 98). Goods are counted for the whole region, as getStockOfGood does.
+WORLD = """
 function(fg, region)
-    local world = { stock = {}, buildings = {} }
+    local world = { stock = {}, buildings = {}, wealth = 0 }
     local function add_stock(kind, amount) world.stock[kind] = (world.stock[kind] or 0) + amount end
     local function make(btype, constructed, number)
         local b = fg.object("SMBuildingMaster", { Data = { bType = btype, constructed = constructed }, Inventory = fg.array({}, { wrap = false }) },
                             "/Game/Fake/Map.Map:PersistentLevel.SMBuildingMaster_" .. number)
         fg.set_method(b, "IsRubble", function() return false end)
+        fg.set_method(b, "IsConstructed", function(self) return self.Data.constructed end)
         fg.set_method(b, "addToInventory", function(self, good)
             local found
             for i = 1, #self.Inventory do if self.Inventory[i].Type == good.Type then found = self.Inventory[i] end end
@@ -35,11 +37,14 @@ function(fg, region)
         return b
     end
     world.store = make(72, true, 72)
-    world.buildings[1] = world.store
+    world.store2 = make(6, true, 6)
+    world.manor = make(98, true, 98)
+    world.buildings = { world.store, world.store2, world.manor }
+    region.regionalWealth = 100
     fg.set_method(region, "GetBuildings", function() return world.buildings end)
     fg.set_method(region, "getStockOfGood", function(self, kind) return world.stock[kind] or 0 end)
-    world.add_building = function(btype, constructed) world.buildings[#world.buildings + 1] = make(btype, constructed, 100 + #world.buildings) end
-    world.remove_store = function() world.buildings = {} end
+    fg.set_method(region, "addRegionalWealth", function(self, amount) self.regionalWealth = self.regionalWealth + amount end)
+    world.remove_store = function() world.buildings = { world.manor } end
     world.hide_goods = function(kind, amount)
         for i = 1, #world.store.Inventory do
             local entry = world.store.Inventory[i]
@@ -51,20 +56,43 @@ end
 """
 
 WINTER, SPRING, SUMMER, AUTUMN = 0, 1, 2, 3
-TIMBER = 16
+# Goods of the tests (item ids of notes/item-ids.md)
+PLANKS, BERRIES, CLAY, SALT, BOWS = 17, 171, 146, 145, 205
+CUT_STONE, TOOLS, METAL_BARS = 283, 6, 35
+PLATE, SWORDS, HELMETS, SAUSAGES = 293, 177, 273, 320
 FEATURE = 'require("features.liege_contracts.init")'
-THREE = "{}.clear_the_roads.keep_the_peace"
+SMALL, MEDIUM, LARGE = "small", "medium", "large"
+LETTER = {"small": "s", "medium": "m", "large": "l"}
 
 
-def with_two(first):
-    return THREE.format(first) if first != "clear_the_roads" else "clear_the_roads.keep_the_peace.feed_the_city"
+def contract(tier, good, amount, kind, reward_good, reward_amount, done=0):
+    """One contract in the saved text form: s-17-50-g-146-30-0."""
+    return f"{LETTER[tier]}-{good}-{amount}-{kind}-{reward_good}-{reward_amount}-{done}"
+
+
+def offer_of(*contracts):
+    return ".".join(contracts)
+
+
+# Nine contracts: three for each tier. Rewards: s = silver, g = goods, i = influence, t = tech point, r = regional wealth, w = weapons.
+NINE = offer_of(
+    contract(SMALL, PLANKS, 50, "g", CLAY, 30), contract(SMALL, BERRIES, 70, "r", 0, 60), contract(SMALL, SALT, 30, "g", PLANKS, 25),
+    contract(MEDIUM, METAL_BARS, 24, "w", SWORDS, 15), contract(MEDIUM, CUT_STONE, 30, "s", 0, 200), contract(MEDIUM, TOOLS, 15, "g", METAL_BARS, 20),
+    contract(LARGE, HELMETS, 9, "t", 0, 1), contract(LARGE, PLATE, 5, "i", 0, 1000), contract(LARGE, SAUSAGES, 18, "t", 0, 1),
+)
+
+
+def load_data():
+    return json.loads((find_pack_mod() / "data" / "liege_contracts" / "contracts.json").read_text(encoding="utf-8"))
 
 
 class ContractsTestCase(TechTreeTestCase):
     def setUp(self):
         super().setUp()
-        self.world = self.game.lua.eval(STOREHOUSE)(self.game.fg, self.region)
+        self.world = self.game.lua.eval(WORLD)(self.game.fg, self.region)
         self.pawn.silver = 1000
+        self.calendar.day = 100
+        self.ask("invasion_set_level", kind="yearly", value=2)  # difficulty 1.0 (the base class sets level 1)
 
     def contracts(self):
         answer = self.ask("liege_contracts_state")
@@ -76,19 +104,14 @@ class ContractsTestCase(TechTreeTestCase):
         self.assertTrue(answer["ok"], answer)
         return answer["result"]
 
-    def pick(self, contract_id):
-        return self.ask("liege_contract_pick", id=contract_id)
+    def fulfil(self, contract_id):
+        return self.ask("liege_contract_fulfil", id=contract_id)
 
-    def complete(self):
-        return self.ask("liege_contract_complete")
+    def card(self, contract_id):
+        return next(card for card in self.contracts()["contracts"] if card["id"] == contract_id)
 
-    def start(self, contract_id):
-        self.offer_now(with_two(contract_id))
-        answer = self.pick(contract_id)
-        self.assertTrue(answer["ok"], answer)
-
-    def set_stock(self, good, amount):
-        self.game.lua.eval("function(world, good, amount) world.store:addToInventory({ Type = good, amt = amount }) end")(self.world, good, amount)
+    def set_stock(self, good, amount, store=None):
+        self.game.lua.eval("function(store, good, amount) store:addToInventory({ Type = good, amt = amount }) end")(store or self.world.store, good, amount)
 
     def stock(self, good):
         return self.world.stock[good] or 0
@@ -99,418 +122,529 @@ class ContractsTestCase(TechTreeTestCase):
         self.calendar.Season = value
         self.game.advance(6)
 
+    def go_to_spring(self):
+        for value in (SUMMER, AUTUMN, WINTER, SPRING):
+            self.season(value)
+
     def influence(self):
         return self.ask("liege_state")["result"]["influence"]
 
     def set_influence(self, value):
         self.game.exec(f"{FEATURE}; require('features.liege_influence.init').state:set('liege_influence', {value})")
 
+    def tech_picks(self):
+        return self.game.exec(f'return {FEATURE}.state:get("tech_picks_earned")')
+
 
 class SmokeTests(ContractsTestCase):
     def test_the_feature_loads_with_the_starter_table(self):
         state = self.contracts()
-        self.assertGreaterEqual(state["contract_count"], 8)
         self.assertEqual(state["offer"], [])
-        self.assertIsNone(state.get("active"))
+        self.assertEqual(state["contracts"], [])
+        self.assertEqual(state["tiers"], {"small": {"used": 0, "limit": 1}, "medium": {"used": 0, "limit": 1}, "large": {"used": 0, "limit": 1}})
 
 
 class LoaderTests(ContractsTestCase):
-    GOOD = ('{ id = "a", name = "A", weight = 1, duration = "winter_start", '
-            'objectives = { { type = "kill_raiders", amount = 3 } }, rewards = { { type = "influence", amount = 5 } } }')
+    GOOD_TIER = '{ requests = { { good = 1, weight = 1 } }, rewards = { { kind = "silver", min = 5, max = 6 } } }'
 
-    def build(self, contracts_lua, extra="offer_size = 1"):
+    def build(self, small=None, extra="offer_per_tier = 1", version="2"):
+        tier = small or self.GOOD_TIER
         return self.game.exec(f"""
             local loader = require("features.liege_contracts.loader")
-            local ok, err = pcall(loader.build, {{ version = 1, {extra}, contracts = {{ {contracts_lua} }} }})
+            local tier = {tier}
+            local ok, err = pcall(loader.build, {{ version = {version}, {extra}, tiers = {{ small = tier, medium = tier, large = tier }} }})
             return ok and "ok" or tostring(err)
         """)
 
-    def test_the_starter_table_holds_8_contracts_with_known_types(self):
-        loaded = self.game.exec(f"""
-            local contracts = {FEATURE}.contracts
-            local loader = require("features.liege_contracts.loader")
-            local bad = 0
-            for _, c in ipairs(contracts.contracts) do
-                for _, o in ipairs(c.objectives) do if loader.OBJECTIVE_TYPES[o.type] == nil then bad = bad + 1 end end
-                for _, r in ipairs(c.rewards) do if loader.REWARD_TYPES[r.type] == nil then bad = bad + 1 end end
-            end
-            return #contracts.contracts .. ":" .. bad .. ":" .. contracts.offer_size
+    def data(self):
+        return load_data()
+
+    def test_the_table_fields(self):
+        data = self.data()
+        self.assertEqual((data["version"], data["offer_per_tier"]), (2, 3))
+        self.assertEqual(sorted(data["tiers"]), ["large", "medium", "small"])
+        text = json.dumps(data)
+        for word in ("duration", "penalty", "objectives", "envoy"):
+            self.assertNotIn(word, text)
+
+    def test_the_starter_table_loads_with_the_pools_of_the_design(self):
+        sizes = self.game.exec(f"""
+            local c = {FEATURE}.contracts
+            return #c.tiers.small.requests .. ":" .. #c.tiers.medium.requests .. ":" .. #c.tiers.large.requests .. ":" .. c.offer_per_tier
         """)
-        self.assertEqual(loaded, "8:0:3")
+        self.assertEqual(sizes, "13:8:12:3")
 
-    def test_the_table_has_no_envoy_and_no_penalty_field(self):
-        text = (find_pack_mod() / "data" / "liege_contracts" / "contracts.json").read_text(encoding="utf-8")
-        data = json.loads(text)
-        self.assertNotIn("envoy", text)
-        for contract in data["contracts"]:
-            self.assertNotIn("penalty", contract)
-            self.assertNotIn("fail_penalty", contract)
+    def test_every_good_of_the_starter_table_has_a_name(self):
+        data = self.data()
+        goods = set()
+        for tier in data["tiers"].values():
+            goods.update(request["good"] for request in tier["requests"])
+            for reward in tier["rewards"]:
+                goods.update(data["good_lists"].get(reward.get("goods"), []))
+        self.assertEqual(sorted(goods - {int(key) for key in data["names"]}), [])
+        for tier in data["tiers"].values():
+            for request in tier["requests"]:
+                self.assertGreater(request["weight"], 0)
 
-    def test_at_least_one_starter_contract_pays_a_tech_pick(self):
-        data = json.loads((find_pack_mod() / "data" / "liege_contracts" / "contracts.json").read_text(encoding="utf-8"))
-        kinds = {reward["type"] for contract in data["contracts"] for reward in contract["rewards"]}
-        self.assertIn("tech_pick", kinds)
-        self.assertNotIn("retinue_squad", kinds)
+    def test_the_reward_pools_follow_table_2(self):
+        data = self.data()
+        kinds = {name: {reward["kind"] for reward in tier["rewards"]} for name, tier in data["tiers"].items()}
+        self.assertEqual(kinds, {"small": {"goods", "regional_wealth"}, "medium": {"weapons", "goods", "silver"}, "large": {"tech_point", "influence"}})
+        weapons = next(r for r in data["tiers"]["medium"]["rewards"] if r["kind"] == "weapons")
+        self.assertEqual(sorted(data["good_lists"][weapons["goods"]]), sorted([177, 270, 178, 133, 271, 206]))
+        large = {r["kind"]: r for r in data["tiers"]["large"]["rewards"]}
+        self.assertEqual((large["tech_point"]["min"], large["tech_point"]["max"]), (1, 1))
+        self.assertEqual((large["influence"]["min"], large["influence"]["max"]), (1000, 1000))
 
     def test_a_good_table_loads(self):
-        self.assertEqual(self.build(self.GOOD), "ok")
+        self.assertEqual(self.build(), "ok")
 
-    def test_a_duplicate_id_names_the_contract(self):
-        self.assertIn("duplicate contract id 'a'", self.build(self.GOOD + ", " + self.GOOD))
+    def test_an_unknown_kind_names_the_tier_and_the_kind(self):
+        answer = self.build(self.GOOD_TIER.replace("silver", "dance"))
+        self.assertIn("tier 'small' reward 1", answer)
+        self.assertIn("unknown kind 'dance'", answer)
 
-    def test_an_unknown_type_names_the_contract(self):
-        answer = self.build(self.GOOD.replace("kill_raiders", "dance"))
-        self.assertIn("contract 'a'", answer)
-        self.assertIn("unknown type 'dance'", answer)
+    def test_a_missing_field_names_the_tier_and_the_field(self):
+        answer = self.build(self.GOOD_TIER.replace("min = 5, ", ""))
+        self.assertIn("tier 'small'", answer)
+        self.assertIn("'min'", answer)
 
-    def test_a_missing_field_names_the_contract_and_the_field(self):
-        answer = self.build(self.GOOD.replace("amount = 3", ""))
-        self.assertIn("contract 'a'", answer)
-        self.assertIn("'amount'", answer)
+    def test_a_weight_of_0_stops_the_load(self):
+        answer = self.build(self.GOOD_TIER.replace("weight = 1", "weight = 0"))
+        self.assertIn("tier 'small'", answer)
+        self.assertIn("'weight'", answer)
 
-    def test_fewer_contracts_than_the_offer_size_stop_the_load(self):
-        self.assertIn("offer_size is 3", self.build(self.GOOD, "offer_size = 3"))
+    def test_fewer_requests_than_the_offer_per_tier_stop_the_load(self):
+        self.assertIn("tier 'small' has 1 requests, but offer_per_tier is 3", self.build(extra="offer_per_tier = 3"))
 
-    def test_a_bad_duration_stops_the_load(self):
-        self.assertIn("'duration'", self.build(self.GOOD.replace('"winter_start"', '"never"')))
+    def test_a_goods_reward_without_goods_stops_the_load(self):
+        answer = self.build(self.GOOD_TIER.replace('"silver"', '"goods"'))
+        self.assertIn("needs the field 'goods'", answer)
 
-    def test_an_id_with_a_dot_is_refused(self):
-        self.assertIn("may hold only", self.build(self.GOOD.replace('id = "a"', 'id = "a.b"')))
+    def test_the_old_version_is_refused(self):
+        self.assertIn("'version' must be 2", self.build(version="1"))
 
-    def test_three_objectives_are_refused(self):
-        item = '{ type = "kill_raiders", amount = 3 }'
-        three = self.GOOD.replace(item, ", ".join([item] * 3))
-        self.assertIn("at most 2", self.build(three))
+
+class FormulaTests(ContractsTestCase):
+    def amount(self, base, weight, difficulty):
+        return self.game.exec(f'return require("features.liege_contracts.rules").request_amount({base}, {weight}, {difficulty})')
+
+    def test_plate_armor_at_two_difficulties(self):
+        self.assertEqual(self.amount(15, 0.35, 1.25), 7)  # 6.56
+        self.assertEqual(self.amount(15, 0.35, 1.0), 5)   # 5.25
+
+    def test_the_amount_is_at_least_1(self):
+        self.assertEqual(self.amount(1, 0.1, 0.75), 1)
+
+    def test_a_half_rounds_up(self):
+        self.assertEqual(self.amount(10, 0.25, 1.0), 3)   # 2.5
+        self.assertEqual(self.amount(50, 1.4, 1.0), 70)
+
+    def test_the_difficulty_comes_from_the_yearly_raid_level(self):
+        for level, wanted in ((0, 1.0), (1, 0.75), (2, 1.0), (3, 1.25)):
+            self.ask("invasion_set_level", kind="yearly", value=level)
+            self.assertEqual(self.contracts()["difficulty"], wanted, level)
+
+    def test_a_drawn_amount_follows_base_weight_and_difficulty(self):
+        self.ask("invasion_set_level", kind="yearly", value=3)
+        self.go_to_spring()
+        for card in self.contracts()["contracts"]:
+            self.assertEqual(card["amount"], self.expected(card), card)
+
+    def expected(self, card):
+        data = load_data()
+        weight = next(r["weight"] for r in data["tiers"][card["tier"]]["requests"] if r["good"] == card["good"])
+        base = {"small": 50, "medium": 30, "large": 15}[card["tier"]]
+        return max(1, int(base * weight * 1.25 + 0.5 + 1e-9))
+
+    def test_a_changed_config_value_changes_the_amount(self):
+        self.game.exec('local c = require("config").liege_contracts; c.base.small = 100; c.base.medium = 1; c.base.large = 1; c.weight[17] = 2')
+        self.go_to_spring()
+        for card in self.contracts()["contracts"]:
+            if card["tier"] == SMALL and card["good"] == PLANKS:
+                self.assertEqual(card["amount"], 200)
+            if card["tier"] == MEDIUM:
+                self.assertLessEqual(card["amount"], 2)
 
 
 class DrawTests(ContractsTestCase):
-    LCG = """
-        local seed = SEED
-        local function rng() seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648 end
-    """
+    def draw(self, seed):
+        self.game.exec(f"math.randomseed({seed})")
+        self.go_to_spring()
+        return self.contracts()["contracts"]
 
-    def test_the_draw_gives_different_ids(self):
-        bad = self.game.exec(self.LCG.replace("SEED", "7") + f"""
-            local rules = require("features.liege_contracts.rules")
-            local contracts = {FEATURE}.contracts
-            local bad = 0
-            for _ = 1, 200 do
-                local ids = rules.draw(contracts.contracts, 3, rng)
-                if #ids ~= 3 or ids[1] == ids[2] or ids[1] == ids[3] or ids[2] == ids[3] then bad = bad + 1 end
-            end
-            return bad
-        """)
-        self.assertEqual(bad, 0)
+    def test_a_spring_draw_holds_three_different_contracts_in_each_tier(self):
+        for seed in (1, 2, 3, 4, 5):
+            self.setUp()
+            cards = self.draw(seed)
+            self.assertEqual(len(cards), 9)
+            for tier in (SMALL, MEDIUM, LARGE):
+                goods = [card["good"] for card in cards if card["tier"] == tier]
+                self.assertEqual(len(goods), 3)
+                self.assertEqual(len(set(goods)), 3)
 
-    def test_weights_set_the_chance_of_a_contract(self):
-        counts = self.game.exec(self.LCG.replace("SEED", "11") + """
+    def test_a_request_good_belongs_to_the_pool_of_its_tier(self):
+        data = load_data()
+        for card in self.draw(7):
+            self.assertIn(card["good"], [r["good"] for r in data["tiers"][card["tier"]]["requests"]])
+
+    def test_rewards_follow_the_tier_and_never_repeat_the_request_good(self):
+        allowed = {SMALL: {"goods", "regional_wealth"}, MEDIUM: {"weapons", "goods", "silver"}, LARGE: {"tech_point", "influence"}}
+        ranges = {"goods": {SMALL: (20, 40), MEDIUM: (15, 30)}, "weapons": {MEDIUM: (10, 20)}, "regional_wealth": {SMALL: (40, 80)},
+                  "silver": {MEDIUM: (150, 300)}, "tech_point": {LARGE: (1, 1)}, "influence": {LARGE: (1000, 1000)}}
+        for seed in range(1, 25):
+            self.setUp()
+            for card in self.draw(seed):
+                reward = card["reward"]
+                self.assertIn(reward["kind"], allowed[card["tier"]])
+                low, high = ranges[reward["kind"]][card["tier"]]
+                self.assertTrue(low <= reward["amount"] <= high, card)
+                if reward["kind"] in ("goods", "weapons"):
+                    self.assertNotEqual(reward["good"], card["good"])
+
+    def test_small_goods_rewards_are_tier_1_goods_and_medium_goods_rewards_are_tier_2_goods(self):
+        data = load_data()
+        pools = {tier: {r["good"] for r in data["tiers"][tier]["requests"]} for tier in data["tiers"]}
+        for seed in range(1, 25):
+            self.setUp()
+            for card in self.draw(seed):
+                if card["reward"]["kind"] == "goods":
+                    self.assertIn(card["reward"]["good"], pools[card["tier"]])
+
+    def test_the_draw_gives_different_offers(self):
+        first = [card["good"] for card in self.draw(1)]
+        self.setUp()
+        second = [card["good"] for card in self.draw(99)]
+        self.assertNotEqual(first, second)
+
+    def test_the_tech_point_reward_is_drawn_only_when_the_picks_exist(self):
+        self.game.exec(f"""
             local rules = require("features.liege_contracts.rules")
-            local list = { { id = "ten", weight = 10 }, { id = "five", weight = 5 }, { id = "x", weight = 5 }, { id = "y", weight = 5 } }
-            local ten, five = 0, 0
-            for _ = 1, 2000 do
-                local ids = rules.draw(list, 1, rng)
-                if ids[1] == "ten" then ten = ten + 1 elseif ids[1] == "five" then five = five + 1 end
+            local data = {FEATURE}.contracts
+            seen_tech = false
+            math.randomseed(5)
+            for _ = 1, 40 do
+                local offer = rules.draw_offer({{ tiers = data.tiers, base = {{ small = 1, medium = 1, large = 1 }}, difficulty = 1,
+                    allowed = function(kind) return kind ~= "tech_point" end }}, 3, math.random)
+                for _, c in ipairs(offer) do if c.reward.kind == "tech_point" then seen_tech = true end end
             end
-            return ten .. ":" .. five
         """)
-        ten, five = (int(part) for part in counts.split(":"))
-        self.assertAlmostEqual(ten / five, 2.0, delta=0.3)
+        self.assertFalse(self.game.exec("return seen_tech"))
 
     def test_a_draw_of_more_than_the_pool_fails(self):
-        self.assertEqual(self.game.exec("""
-            local ids, why = require("features.liege_contracts.rules").draw({ { id = "a", weight = 1 } }, 3, math.random)
-            return ids == nil and why or "drawn"
-        """), "only 1 contracts, 3 wanted")
+        self.assertIn("fewer than", self.game.exec(f"""
+            local rules = require("features.liege_contracts.rules")
+            local data = {FEATURE}.contracts
+            local offer, why = rules.draw_offer({{ tiers = data.tiers, base = {{ small = 1, medium = 1, large = 1 }}, difficulty = 1 }}, 20, math.random)
+            return offer == nil and why or "drawn"
+        """))
 
 
 class SpringTests(ContractsTestCase):
-    def go_to_spring(self):
-        for value in (SUMMER, AUTUMN, WINTER, SPRING):
-            self.season(value)
-
     def test_a_new_game_makes_no_offer_at_the_first_poll(self):
         self.game.advance(5)
         state = self.contracts()
         self.assertEqual(state["offer"], [])
         self.assertEqual(state["spring_no"], 0)  # the first look only takes the counter
 
-    def test_the_next_spring_makes_an_offer_of_3_different_ids(self):
+    def test_the_next_spring_makes_nine_contracts_and_resets_the_counts(self):
         self.go_to_spring()
         state = self.contracts()
-        self.assertEqual(len(state["offer"]), 3)
-        self.assertEqual(len(set(state["offer"])), 3)
+        self.assertEqual(len(state["offer"]), 9)
+        self.assertEqual(state["offer"], [f"{tier}-{n}" for tier in (SMALL, MEDIUM, LARGE) for n in (1, 2, 3)])
         self.assertEqual(state["spring_no"], state["season_no"])
+        self.assertTrue(all(row["used"] == 0 for row in state["tiers"].values()))
 
     def test_one_offer_for_each_spring_counter_value(self):
         self.go_to_spring()
-        first = self.contracts()["offer"]
+        first = self.contracts()["offer_text"]
         self.game.advance(20)
-        self.assertEqual(self.contracts()["offer"], first)
+        self.assertEqual(self.contracts()["offer_text"], first)
 
     def test_no_offer_in_the_other_seasons(self):
         for value in (SUMMER, AUTUMN, WINTER):
             self.season(value)
             self.assertEqual(self.contracts()["offer"], [])
 
-    def test_an_unpicked_offer_is_replaced_next_spring_with_no_penalty(self):
-        self.set_influence(300)
+    def test_the_offer_is_made_with_or_without_a_manor(self):
+        self.world.manor.Data.constructed = False
         self.go_to_spring()
-        first = self.contracts()["offer"]
-        for value in (SUMMER, AUTUMN, WINTER):
-            self.season(value)
-        self.assertEqual(self.contracts()["offer"], first)  # stays open until the next spring
-        self.season(SPRING)
-        second = self.contracts()
-        self.assertEqual(len(second["offer"]), 3)
-        self.assertEqual(self.influence(), 300)
-        self.assertEqual(second["failed"], 0)
+        self.assertEqual(len(self.contracts()["offer"]), 9)
 
-    def test_offer_now_names_the_offer_without_a_spring(self):
-        state = self.offer_now("clear_the_roads.keep_the_peace")
-        self.assertEqual(state["offer"], ["clear_the_roads", "keep_the_peace"])
-
-    def test_offer_now_refuses_an_unknown_id(self):
-        answer = self.ask("liege_contracts_offer_now", ids="nope")
-        self.assertFalse(answer["ok"])
-        self.assertIn("unknown contract id", answer["error"])
-
-
-class PickTests(ContractsTestCase):
-    IDS = "timber_for_the_walls.clear_the_roads.keep_the_peace"
-
-    def test_a_pick_activates_one_and_discards_the_others(self):
-        self.offer_now(self.IDS)
-        answer = self.pick("clear_the_roads")
-        self.assertTrue(answer["ok"], answer)
+    def test_a_game_that_starts_in_summer_makes_no_offer_until_spring(self):
+        self.season(SUMMER)
+        self.game.advance(10)
         state = self.contracts()
         self.assertEqual(state["offer"], [])
-        self.assertEqual(state["active"]["id"], "clear_the_roads")
+        self.assertIn("start of spring", state["notice_text"])
+        for value in (AUTUMN, WINTER):
+            self.season(value)
+            self.assertEqual(self.contracts()["offer"], [])
+        self.season(SPRING)
+        self.assertEqual(len(self.contracts()["offer"]), 9)
 
-    def test_a_pick_with_an_active_contract_is_refused(self):
-        self.offer_now(self.IDS)
-        self.pick("clear_the_roads")
-        self.offer_now(self.IDS)
-        answer = self.pick("keep_the_peace")
+    def test_offer_now_names_the_offer_without_a_spring(self):
+        state = self.offer_now(NINE)
+        self.assertEqual(len(state["offer"]), 9)
+        self.assertEqual(state["contracts"][0]["requirement"], "Deliver 50 planks")
+
+    def test_offer_now_without_ids_draws(self):
+        self.assertEqual(len(self.offer_now()["offer"]), 9)
+
+    def test_offer_now_refuses_an_unknown_good(self):
+        answer = self.ask("liege_contracts_offer_now", ids=contract(SMALL, 999, 5, "s", 0, 5))
         self.assertFalse(answer["ok"])
-        self.assertIn("already active", answer["error"])
-        self.assertEqual(self.contracts()["active"]["id"], "clear_the_roads")
+        self.assertIn("unknown contract", answer["error"])
 
-    def test_a_pick_outside_the_offer_is_refused(self):
-        self.offer_now(self.IDS)
-        answer = self.pick("feed_the_city")
+
+class FulfilTests(ContractsTestCase):
+    def setUp(self):
+        super().setUp()
+        self.offer_now(NINE)
+
+    def test_a_fulfilment_takes_the_goods_and_pays_the_reward(self):
+        self.set_stock(PLANKS, 60)
+        before = self.stock(CLAY)
+        answer = self.fulfil("small-1")
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(self.stock(PLANKS), 10)
+        self.assertEqual(self.stock(CLAY) - before, 30)
+        state = self.contracts()
+        self.assertEqual((state["done"], state["tiers"]["small"]["used"], state["failed_rewards"]), (1, 1, 0))
+        self.assertTrue(self.card("small-1")["done"])
+
+    def test_a_silver_reward_raises_the_treasury(self):
+        self.set_stock(CUT_STONE, 30)
+        silver = self.pawn.silver
+        self.assertTrue(self.fulfil("medium-2")["ok"])
+        self.assertEqual(self.pawn.silver, silver + 200)
+        self.assertEqual(self.stock(CUT_STONE), 0)
+
+    def test_a_weapons_reward_adds_the_weapons(self):
+        self.set_stock(METAL_BARS, 24)
+        self.assertTrue(self.fulfil("medium-1")["ok"])
+        self.assertEqual(self.stock(SWORDS), 15)
+
+    def test_a_regional_wealth_reward_raises_the_wealth(self):
+        self.set_stock(BERRIES, 70)
+        self.assertTrue(self.fulfil("small-2")["ok"])
+        self.assertEqual(self.region.regionalWealth, 160)
+
+    def test_an_influence_reward_raises_the_influence(self):
+        self.set_stock(PLATE, 5)
+        self.assertTrue(self.fulfil("large-2")["ok"])
+        self.assertEqual(self.influence(), 1000)
+
+    def test_a_tech_point_reward_pays_or_is_counted(self):
+        self.set_stock(HELMETS, 9)
+        before = self.tech_picks()
+        self.assertTrue(self.fulfil("large-1")["ok"])
+        self.assertEqual(self.tech_picks(), max(0, before) + 1)
+        self.assertEqual(self.contracts()["failed_rewards"], 0)
+
+    def test_goods_are_taken_from_any_storehouse(self):
+        self.set_stock(PLANKS, 20)
+        self.set_stock(PLANKS, 40, self.world.store2)
+        self.assertTrue(self.fulfil("small-1")["ok"])
+        self.assertEqual(self.stock(PLANKS), 10)
+
+    def test_not_enough_goods_is_refused_with_the_missing_amount_and_nothing_moves(self):
+        self.set_stock(PLANKS, 45)
+        silver = self.pawn.silver
+        answer = self.fulfil("small-1")
+        self.assertFalse(answer["ok"])
+        self.assertIn("5 more needed", answer["error"])
+        self.assertEqual((self.stock(PLANKS), self.stock(CLAY), self.pawn.silver), (45, 0, silver))
+        self.assertEqual(self.contracts()["done"], 0)
+
+    def test_the_tier_limit_stops_a_second_contract_of_the_tier(self):
+        self.set_stock(PLANKS, 50)
+        self.set_stock(SALT, 30)
+        self.assertTrue(self.fulfil("small-1")["ok"])
+        answer = self.fulfil("small-3")
+        self.assertFalse(answer["ok"])
+        self.assertIn("limit of 1", answer["error"])
+        self.assertEqual(self.stock(SALT), 30)
+
+    def test_the_other_tiers_are_not_affected_by_a_full_tier(self):
+        self.set_stock(PLANKS, 50)
+        self.set_stock(CUT_STONE, 30)
+        self.assertTrue(self.fulfil("small-1")["ok"])
+        self.assertTrue(self.fulfil("medium-2")["ok"])
+        state = self.contracts()
+        self.assertEqual((state["tiers"]["small"]["used"], state["tiers"]["medium"]["used"], state["tiers"]["large"]["used"]), (1, 1, 0))
+
+    def test_a_changed_limit_in_the_config_allows_more(self):
+        self.game.exec('require("config").liege_contracts.tier_limits.small = 2')
+        self.set_stock(PLANKS, 50)
+        self.set_stock(SALT, 30)
+        self.assertTrue(self.fulfil("small-1")["ok"])
+        self.assertTrue(self.fulfil("small-3")["ok"])
+        self.assertEqual(self.contracts()["tiers"]["small"], {"used": 2, "limit": 2})
+
+    def test_a_fulfilled_contract_cannot_be_fulfilled_again(self):
+        self.set_stock(PLANKS, 120)
+        self.game.exec('require("config").liege_contracts.tier_limits.small = 3')
+        self.assertTrue(self.fulfil("small-1")["ok"])
+        answer = self.fulfil("small-1")
+        self.assertFalse(answer["ok"])
+        self.assertIn("already fulfilled", answer["error"])
+
+    def test_a_contract_that_is_not_in_the_offer_is_refused(self):
+        answer = self.fulfil("small-9")
         self.assertFalse(answer["ok"])
         self.assertIn("not in the offer", answer["error"])
-        self.assertEqual(len(self.contracts()["offer"]), 3)
-
-    def test_a_pick_with_no_offer_is_refused(self):
-        answer = self.pick("clear_the_roads")
-        self.assertFalse(answer["ok"])
-        self.assertIn("no contracts", answer["error"])
-
-    def test_the_tribute_command_is_gone(self):
-        answer = self.ask("liege_send_tribute", amount=100)
-        self.assertFalse(answer["ok"])
-        self.assertIn("unknown", answer["error"].lower())
-
-
-class CompleteTests(ContractsTestCase):
-    def test_goods_are_taken_and_every_reward_is_paid(self):
-        self.set_stock(TIMBER, 70)
-        self.start("timber_for_the_walls")
-        self.set_influence(10)
-        silver = self.pawn.silver
-        answer = self.complete()
-        self.assertTrue(answer["ok"], answer)
-        self.assertEqual(self.stock(TIMBER), 10)
-        self.assertEqual(self.pawn.silver, silver + 100)
-        self.assertEqual(self.influence(), 25)
-        state = self.contracts()
-        self.assertEqual((state["done"], state["failed"]), (1, 0))
-        self.assertIsNone(state.get("active"))
-
-    def test_an_incomplete_contract_is_refused_and_nothing_moves(self):
-        self.set_stock(TIMBER, 59)
-        self.start("timber_for_the_walls")
-        silver = self.pawn.silver
-        answer = self.complete()
-        self.assertFalse(answer["ok"])
-        self.assertIn("short by 1", answer["error"])
-        self.assertEqual((self.stock(TIMBER), self.pawn.silver, self.influence()), (59, silver, 0))
-        self.assertEqual(self.contracts()["active"]["id"], "timber_for_the_walls")
-
-    def test_the_progress_follows_the_stock(self):
-        self.set_stock(TIMBER, 20)
-        self.start("timber_for_the_walls")
-        self.assertEqual(self.contracts()["active"]["objectives"][0]["progress"], 20)
-        self.set_stock(TIMBER, 45)
-        self.assertEqual(self.contracts()["active"]["objectives"][0]["progress"], 65)
-        self.assertTrue(self.contracts()["active"]["complete"])
 
     def test_a_shortage_at_the_take_refuses_and_changes_nothing_else(self):
-        self.set_stock(TIMBER, 60)
-        self.start("timber_for_the_walls")
-        # The stock number says 60 but the store holds 40: the take finds 40 and puts them back.
-        self.world.hide_goods(TIMBER, 20)
-        answer = self.complete()
+        self.set_stock(PLANKS, 50)
+        # The stock number says 50 but the store holds 30: the take finds 30 and puts them back.
+        self.world.hide_goods(PLANKS, 20)
+        self.world.stock[PLANKS] = 50
+        answer = self.fulfil("small-1")
         self.assertFalse(answer["ok"])
         self.assertIn("could be taken", answer["error"])
-        self.assertEqual(self.contracts()["active"]["id"], "timber_for_the_walls")
         self.assertEqual(self.contracts()["done"], 0)
         self.assertEqual(self.influence(), 0)
 
-    def test_build_count_counts_finished_buildings_after_the_pick(self):
-        self.start("build_a_storehouse")
-        self.assertEqual(self.contracts()["active"]["objectives"][0]["progress"], 0)
-        self.world.add_building(72, False)
-        self.assertEqual(self.contracts()["active"]["objectives"][0]["progress"], 0)
-        self.world.add_building(72, True)
-        self.assertEqual(self.contracts()["active"]["objectives"][0]["progress"], 1)
-        order = self.ask("bandits_state")["result"]["mod_order"]
-        answer = self.complete()
-        self.assertTrue(answer["ok"], answer)
-        self.assertEqual(self.stock(17), 50)
-        self.assertEqual(self.influence(), 10)
-        self.assertEqual(self.ask("bandits_state")["result"]["mod_order"], min(100, order + 5))
-
-    def test_a_goods_reward_without_a_storehouse_is_counted_and_the_others_are_paid(self):
-        self.start("raise_the_levy")
-        self.ask("liege_contracts_test_progress", index=1, value=2)
-        self.world.remove_store()
-        answer = self.complete()
+    def test_a_goods_reward_without_a_storehouse_is_counted_and_the_contract_still_counts(self):
+        self.set_stock(PLANKS, 50)
+        self.game.exec('require("features.liege_contracts.world").add_goods = function() return nil, "no storehouse" end')
+        answer = self.fulfil("small-1")
         self.assertTrue(answer["ok"], answer)
         state = self.contracts()
-        self.assertEqual(state["failed_rewards"], 1)
-        self.assertEqual(self.influence(), 20)
-        self.assertEqual(state["done"], 1)
+        self.assertEqual((state["failed_rewards"], state["done"]), (1, 1))
 
-    def test_a_tech_pick_reward_pays_or_is_counted(self):
-        read = f"""
-            local s = {FEATURE}.state
-            local ok, value = pcall(function() return s:get("tech_picks_earned") end)
-            return ok and value or -99
-        """
-        before = self.game.exec(read)
-        self.start("keep_the_peace")
-        self.ask("liege_contracts_test_progress", index=1, value=90)
-        self.assertTrue(self.complete()["ok"])
-        if before != -99:  # the tech tree has the pick state (change update-tech-tree-yearly-picks)
-            self.assertEqual(self.game.exec(read), max(0, before) + 1)
-            self.assertEqual(self.contracts()["failed_rewards"], 0)
-        else:
-            self.assertEqual(self.contracts()["failed_rewards"], 1)
+    def test_a_failed_reward_is_not_retried(self):
+        self.set_stock(PLANKS, 50)
+        self.game.exec('require("features.liege_contracts.world").add_goods = function() return nil, "no storehouse" end')
+        self.fulfil("small-1")
+        self.game.advance(10)
+        self.assertEqual(self.contracts()["failed_rewards"], 1)
 
 
-class ProgressTests(ContractsTestCase):
-    def test_hold_public_order_counts_days_and_resets(self):
-        self.ask("bandits_set_order", value=80)
-        self.start("keep_the_peace")
-        self.calendar.daysTotal = self.calendar.daysTotal + 40
-        self.game.advance(4)
-        self.assertEqual(self.contracts()["active"]["objectives"][0]["progress"], 40)
-        self.ask("bandits_set_order", value=30)
-        self.calendar.daysTotal = self.calendar.daysTotal + 1
-        self.game.advance(4)
-        self.assertEqual(self.contracts()["active"]["objectives"][0]["progress"], 0)
-        self.ask("bandits_set_order", value=80)
-        self.calendar.daysTotal = self.calendar.daysTotal + 5
-        self.game.advance(4)
-        self.assertEqual(self.contracts()["active"]["objectives"][0]["progress"], 5)
+class ManorTests(ContractsTestCase):
+    def setUp(self):
+        super().setUp()
+        self.offer_now(NINE)
+        self.set_stock(PLANKS, 60)
 
-    def test_kill_raiders_is_complete_at_the_target(self):
-        self.start("clear_the_roads")
-        self.ask("liege_contracts_test_progress", index=1, value=14)
-        self.assertFalse(self.contracts()["active"]["complete"])
-        self.ask("liege_contracts_test_progress", index=1, value=15)
-        self.assertTrue(self.contracts()["active"]["complete"])
-
-    def test_raiders_killed_counts_the_dead_of_tracked_raids(self):
-        self.assertEqual(self.game.exec('return require("features.raid_behavior.init").raiders_killed()'), 0)
-
-    def test_kills_are_a_running_total_over_a_session_restart(self):
-        result = self.game.exec("""
-            local rules = require("features.liege_contracts.rules")
-            local p, seen = 7, nil
-            p, seen = rules.add_kills(p, seen, 0)   -- first look after a load: nothing is added
-            local a = p
-            p, seen = rules.add_kills(p, seen, 3)   -- 3 new deaths
-            local b = p
-            p, seen = rules.add_kills(p, seen, 1)   -- the counter fell: a restart, nothing is added
-            return a .. ":" .. b .. ":" .. p .. ":" .. seen
-        """)
-        self.assertEqual(result, "7:10:10:1")
-
-    def test_militia_squads_start_at_0(self):
-        self.start("raise_the_levy")
-        self.assertEqual(self.contracts()["active"]["objectives"][0]["progress"], 0)
-
-    def test_the_test_progress_command_needs_an_active_contract(self):
-        answer = self.ask("liege_contracts_test_progress", index=1, value=3)
+    def test_without_a_manor_the_command_refuses_even_with_enough_goods(self):
+        self.world.manor.Data.constructed = False
+        answer = self.fulfil("small-1")
         self.assertFalse(answer["ok"])
-        self.assertIn("no contract is active", answer["error"])
+        self.assertIn("Build a manor to fulfil contracts.", answer["error"])
+        self.assertEqual((self.stock(PLANKS), self.stock(CLAY)), (60, 0))
+        self.assertEqual(self.contracts()["done"], 0)
+
+    def test_without_a_manor_the_window_greys_every_button_and_shows_the_line(self):
+        self.world.manor.Data.constructed = False
+        state = self.contracts()
+        self.assertEqual(len(state["contracts"]), 9)
+        self.assertFalse(any(card["enabled"] for card in state["contracts"]))
+        self.assertEqual(state["notice_text"], "Build a manor to fulfil contracts.")
+        view = self.ask("liege_menu_state")["result"]
+        self.assertEqual(view["wanted_texts"]["NoticeText"], "Build a manor to fulfil contracts.")
+
+    def test_with_a_manor_the_button_is_enabled_when_goods_and_limit_allow(self):
+        self.assertTrue(self.card("small-1")["enabled"])
+        self.assertFalse(self.card("small-3")["enabled"])  # no salt
+        self.assertEqual(self.contracts()["notice_text"], "")
+
+    def test_a_lost_manor_greys_the_buttons_again_and_the_offer_stays(self):
+        self.assertTrue(self.card("small-1")["enabled"])
+        self.world.manor.Data.constructed = False
+        self.assertFalse(self.card("small-1")["enabled"])
+        self.assertEqual(len(self.contracts()["offer"]), 9)
+        self.world.manor.Data.constructed = True
+        self.assertTrue(self.card("small-1")["enabled"])
+
+    def test_an_unfinished_manor_site_does_not_count(self):
+        self.world.manor.Data.constructed = False
+        self.assertFalse(self.contracts()["manor"])
 
 
-class DeadlineTests(ContractsTestCase):
-    def test_the_start_of_winter_fails_an_incomplete_contract(self):
-        self.set_influence(700)
-        self.start("raise_the_levy")
+class ExpiryTests(ContractsTestCase):
+    def test_winter_clears_the_offer_with_no_penalty(self):
+        self.set_influence(300)
+        self.go_to_spring()
+        silver = self.pawn.silver
         for value in (SUMMER, AUTUMN):
             self.season(value)
-            self.assertEqual(self.contracts()["active"]["id"], "raise_the_levy")
+            self.assertEqual(len(self.contracts()["offer"]), 9)
         self.season(WINTER)
         state = self.contracts()
-        self.assertIsNone(state.get("active"))
-        self.assertEqual((state["failed"], state["done"]), (1, 0))
-        self.assertEqual(self.influence(), 200)
+        self.assertEqual(state["offer"], [])
+        self.assertEqual(self.influence(), 300)
+        self.assertEqual((self.pawn.silver, state["done"], state["failed_rewards"]), (silver, 0, 0))
 
-    def test_the_penalty_never_takes_the_influence_below_0(self):
-        self.set_influence(100)
-        self.start("raise_the_levy")
+    def test_winter_resets_the_counts_and_the_next_spring_deals_a_new_offer(self):
+        self.go_to_spring()
+        first = self.contracts()["offer_text"]
+        self.set_stock(PLANKS, 500)
+        self.game.exec('require("config").liege_contracts.tier_limits.small = 3')
+        for card in self.contracts()["contracts"]:
+            if card["tier"] == SMALL:
+                self.fulfil(card["id"])
         for value in (SUMMER, AUTUMN, WINTER):
             self.season(value)
-        self.assertEqual(self.influence(), 0)
-        self.assertEqual(self.contracts()["failed"], 1)
+        self.assertEqual(self.contracts()["tiers"]["small"]["used"], 0)
+        self.season(SPRING)
+        second = self.contracts()
+        self.assertEqual(len(second["offer"]), 9)
+        self.assertNotEqual(second["offer_text"], first)
 
-    def test_a_changed_config_value_changes_the_penalty(self):
-        self.game.exec('require("config").liege_contracts.fail_penalty = 120')
-        self.set_influence(700)
-        self.start("raise_the_levy")
+    def test_the_window_in_winter_shows_no_cards_and_the_time_to_spring(self):
+        self.go_to_spring()
         for value in (SUMMER, AUTUMN, WINTER):
             self.season(value)
-        self.assertEqual(self.influence(), 580)
+        self.calendar.day = 335
+        view = self.ask("liege_menu_state")["result"]["view"]
+        self.assertEqual(view["cards"], [])
+        self.assertEqual(view["remaining_text"], "Time to fulfil contracts: no contracts now")
+        self.assertEqual(view["refresh_text"], "Contracts refresh: In spring, in 90 days")
+        self.assertIn("start of spring", view["notice_text"])
 
-    def test_a_contract_with_met_objectives_at_the_deadline_pays(self):
-        self.start("raise_the_levy")
-        self.ask("liege_contracts_test_progress", index=1, value=2)
-        for value in (SUMMER, AUTUMN, WINTER):
-            self.season(value)
-        state = self.contracts()
-        self.assertEqual((state["done"], state["failed"]), (1, 0))
-        self.assertEqual(self.influence(), 20)
-
-    def test_a_contract_picked_in_winter_is_not_due_at_once(self):
+    def test_a_contract_is_not_fulfilled_in_winter(self):
+        self.offer_now(NINE)
+        self.set_stock(PLANKS, 60)
         self.season(WINTER)
-        self.start("raise_the_levy")
-        self.game.advance(10)
-        self.assertEqual(self.contracts()["active"]["id"], "raise_the_levy")
+        self.assertEqual(self.contracts()["offer"], [])
+        self.assertFalse(self.fulfil("small-1")["ok"])
 
-    def test_a_day_count_fails_at_the_day_not_at_winter(self):
-        self.game.exec(f"""
-            local contracts = {FEATURE}.contracts
-            contracts.by_id.test_days = {{ id = "test_days", name = "Days", quote = "", weight = 1, duration = 120,
-                objectives = {{ {{ type = "kill_raiders", amount = 99 }} }}, rewards = {{ {{ type = "influence", amount = 1 }} }} }}
-        """)
-        self.set_influence(900)
-        self.offer_now("test_days")
-        self.assertTrue(self.pick("test_days")["ok"])
-        self.calendar.daysTotal = self.calendar.daysTotal + 119
-        self.game.advance(4)
-        self.assertEqual(self.contracts()["active"]["id"], "test_days")
-        self.calendar.daysTotal = self.calendar.daysTotal + 1
-        self.game.advance(4)
+
+class CountdownTests(ContractsTestCase):
+    def test_the_days_to_winter_and_to_spring(self):
+        self.calendar.day = 125
         state = self.contracts()
-        self.assertIsNone(state.get("active"))
-        self.assertEqual(state["failed"], 1)
-        self.assertEqual(self.influence(), 400)
+        self.assertEqual((state["days_to_winter"], state["days_to_spring"]), (210, 300))
+        self.calendar.day = 60
+        state = self.contracts()
+        self.assertEqual((state["days_to_winter"], state["days_to_spring"]), (275, 0))
+
+    def test_the_window_texts(self):
+        self.calendar.day = 125
+        self.offer_now(NINE)
+        view = self.ask("liege_menu_state")["result"]["view"]
+        self.assertEqual(view["remaining_text"], "Time to fulfil contracts: 210 days remaining")
+        self.assertEqual(view["refresh_text"], "Contracts refresh: In spring, in 300 days")
+
+
+class RemovedCommandsTests(ContractsTestCase):
+    def test_the_old_commands_are_gone(self):
+        for name, args in (("liege_contract_pick", {"id": "x"}), ("liege_contract_complete", {}), ("liege_contracts_test_progress", {"index": 1, "value": 1}),
+                           ("liege_send_tribute", {"amount": 100}), ("liege_request_arms", {}), ("liege_test_set_arms_day", {"day": 1})):
+            answer = self.ask(name, **args)
+            self.assertFalse(answer["ok"], name)
+            self.assertIn("unknown", answer["error"].lower(), name)
+
+    def test_the_penalty_config_and_the_arms_config_are_gone(self):
+        values = self.game.exec('local c = require("config"); return tostring(c.liege_contracts.fail_penalty) .. ":" .. tostring(c.liege_influence.arms_shipment)')
+        self.assertEqual(values, "nil:nil")
+
+    def test_the_liege_state_has_no_arms_fields(self):
+        state = self.ask("liege_state")["result"]
+        for key in ("arms_last_day", "arms_enabled", "arms_reason", "arms_days_left"):
+            self.assertNotIn(key, state)
 
 
 class StateTests(ContractsTestCase):
@@ -518,64 +652,74 @@ class StateTests(ContractsTestCase):
         self.game.exec(f"{FEATURE}.state:load()")
 
     def test_the_keys_are_written(self):
-        self.start("raise_the_levy")
+        self.offer_now(NINE)
+        self.set_stock(PLANKS, 50)
+        self.fulfil("small-1")
         keys = self.game.exec(f"""
             local state = {FEATURE}.state
             local out = {{}}
-            for _, key in ipairs({{ "contracts_spring_no", "contracts_offer", "contracts_active", "contracts_start_day", "contracts_baseline",
-                                   "contracts_progress", "contracts_done", "contracts_failed" }}) do out[#out + 1] = key .. "=" .. tostring(state:get(key)) end
+            for _, key in ipairs({{ "contracts_spring_no", "contracts_offer", "contracts_used", "contracts_done" }}) do out[#out + 1] = key .. "=" .. tostring(state:get(key)) end
             return table.concat(out, ";")
         """)
-        self.assertIn("contracts_active=raise_the_levy", keys)
-        self.assertIn("contracts_offer=;", keys)
-        self.assertIn("contracts_baseline=o0-0.s-0", keys)
-        self.assertIn("contracts_progress=o0-0", keys)
+        self.assertIn("contracts_used=s-1.m-0.l-0", keys)
+        self.assertIn("contracts_done=1", keys)
+        self.assertIn(contract(SMALL, PLANKS, 50, "g", CLAY, 30, 1), keys)
+        for gone in ("contracts_active", "contracts_start_day", "contracts_baseline", "contracts_progress", "contracts_failed"):
+            self.assertNotIn(gone, keys)
 
-    def test_an_active_contract_survives_a_load(self):
-        self.set_stock(TIMBER, 33)
-        self.start("timber_for_the_walls")
+    def test_the_round_trip_keeps_the_nine_contracts_and_the_counts(self):
+        self.offer_now(NINE)
+        self.set_stock(PLANKS, 50)
+        self.fulfil("small-1")
         before = self.contracts()
         self.reload_state()
         self.game.advance(4)
         after = self.contracts()
-        self.assertEqual(after["active"]["id"], "timber_for_the_walls")
-        self.assertEqual(after["active"]["objectives"], before["active"]["objectives"])
-        self.assertEqual(after["active"]["start_day"], before["active"]["start_day"])
+        self.assertEqual(after["offer_text"], before["offer_text"])
+        self.assertEqual(after["tiers"], before["tiers"])
+        self.assertEqual([(c["id"], c["amount"], c["reward"], c["done"]) for c in after["contracts"]],
+                         [(c["id"], c["amount"], c["reward"], c["done"]) for c in before["contracts"]])
+        self.assertEqual(after["done"], 1)
+        self.assertTrue(self.card("small-1")["done"])
 
     def test_an_offer_survives_a_load_and_is_not_drawn_again(self):
-        for value in (SUMMER, AUTUMN, WINTER, SPRING):
-            self.season(value)
-        offer = self.contracts()["offer"]
+        self.go_to_spring()
+        offer = self.contracts()["offer_text"]
         self.reload_state()
         self.game.advance(10)
-        self.assertEqual(self.contracts()["offer"], offer)
+        self.assertEqual(self.contracts()["offer_text"], offer)
 
-    def test_a_removed_contract_id_is_dropped_with_no_penalty(self):
+    def test_a_removed_good_is_dropped_with_no_penalty(self):
         self.set_influence(300)
-        self.game.exec(f'{FEATURE}.state:set("contracts_active", "gone_id")')
+        self.game.exec(f'{FEATURE}.state:set("contracts_offer", "{offer_of(contract(SMALL, 999, 5, "s", 0, 5), contract(SMALL, PLANKS, 50, "g", CLAY, 30))}")')
         self.game.advance(5)
         state = self.contracts()
-        self.assertIsNone(state.get("active"))
+        self.assertEqual(len(state["offer"]), 1)
         self.assertEqual(self.influence(), 300)
-        self.assertEqual(state["failed"], 0)
-
-    def test_the_progress_text_uses_only_characters_that_modstate_allows(self):
-        self.start("raise_the_levy")
-        self.ask("liege_contracts_test_progress", index=1, value=2)
-        self.assertEqual(self.game.exec(f'return {FEATURE}.state:get("contracts_progress")'), "o0-2")
+        self.assertEqual(state["failed_rewards"], 0)
+        self.assertIn("s-999-5-s-0-5-0", self.game.read_text("mod.log"))
 
 
 class OldSaveTests(VassalsTestCase):
-    """A save from before the change has only liege_influence and arms_last_day."""
+    """A save from before the change has liege_influence, arms_last_day and the keys of the active contract."""
 
-    SAVED_TAGS = ("invasion:v=1", "invasion:liege_influence=40", "invasion:arms_last_day=12")
+    SAVED_TAGS = ("invasion:v=2", "invasion:liege_influence=40", "invasion:arms_last_day=12", "invasion:contracts_spring_no=3",
+                  "invasion:contracts_offer=timber_for_the_walls.clear_the_roads.keep_the_peace", "invasion:contracts_active=raise_the_levy",
+                  "invasion:contracts_start_day=5", "invasion:contracts_baseline=o0-0.s-3", "invasion:contracts_progress=o0-1", "invasion:contracts_failed=2")
 
-    def test_an_old_save_keeps_its_values_and_waits_for_the_next_spring(self):
+    def test_an_old_save_keeps_its_influence_and_drops_the_old_offer_and_contract(self):
+        self.game.advance(5)
         answer = self.ask("liege_contracts_state")["result"]
-        self.assertEqual((answer["influence"], answer["offer"]), (40, []))
-        self.assertEqual(self.ask("liege_state")["result"]["arms_last_day"], 12)
+        self.assertEqual((answer["influence"], answer["offer"], answer["contracts"]), (40, [], []))
+        self.assertEqual(self.ask("liege_state")["result"]["influence"], 40)
         self.game.advance(5)
         self.assertEqual(self.ask("liege_contracts_state")["result"]["offer"], [])
+
+    def test_the_old_keys_are_kept_but_ignored(self):
+        self.game.advance(5)
+        state = self.ask("liege_contracts_state")["result"]
+        self.assertEqual(state["failed_rewards"], 0)
+        self.assertEqual(state["done"], 0)
 
 
 class WindowViewTests(ContractsTestCase):
@@ -587,41 +731,45 @@ class WindowViewTests(ContractsTestCase):
     def test_with_no_offer_the_window_says_the_liege_sends_contracts_at_spring(self):
         view = self.view()["view"]
         self.assertEqual(view["cards"], [])
-        self.assertIn("start of spring", view["empty_text"])
+        self.assertIn("start of spring", view["notice_text"])
 
-    def test_the_cards_show_name_items_and_penalty(self):
-        self.offer_now("timber_for_the_walls.clear_the_roads.keep_the_peace")
+    def test_the_tier_boxes_show_the_name_and_the_count_only(self):
+        tiers = self.view()["view"]["tiers"]
+        self.assertEqual([tiers[t]["name"] for t in (SMALL, MEDIUM, LARGE)], ["Small", "Medium", "Large"])
+        self.assertEqual([tiers[t]["count_text"] for t in (SMALL, MEDIUM, LARGE)], ["0 / 1", "0 / 1", "0 / 1"])
+
+    def test_a_card_shows_requirement_storage_and_reward(self):
+        self.offer_now(NINE)
+        self.set_stock(PLANKS, 52)
         cards = self.view()["view"]["cards"]
-        self.assertEqual([card["id"] for card in cards], ["timber_for_the_walls", "clear_the_roads", "keep_the_peace"])
+        self.assertEqual(len(cards), 9)
         first = cards[0]
-        self.assertEqual(first["name"], "Timber for the Walls")
-        self.assertEqual(first["objectives"][0]["text"], "60 Wood")
-        self.assertEqual([row["text"] for row in first["rewards"]], ["+15 influence", "+100 silver"])
-        self.assertEqual(first["penalty"], "Fail: -500 influence")
-        self.assertIn("Wood", first["objectives"][0]["tooltip"])
-        self.assertEqual(len(cards[2]["rewards"]), 3)
+        self.assertEqual((first["requirement"], first["have"], first["reward_text"], first["label"]), ("Deliver 50 planks", "In storage: 52 / 50", "+30 clay", "Fulfil"))
+        texts = [card["reward_text"] for card in cards]
+        self.assertIn("+60 regional wealth", texts)
+        self.assertIn("+200 treasury silver", texts)
+        self.assertIn("+1 tech point", texts)
+        self.assertIn("+1000 influence", texts)
+        self.assertIn("+15 swords", texts)
+        for card in cards:
+            self.assertNotIn("name", card)
+            self.assertNotIn("quote", card)
+            self.assertNotIn("penalty", card)
 
-    def test_the_active_panel_shows_progress_and_the_other_cards_as_discarded(self):
-        self.set_stock(TIMBER, 12)
-        self.start("timber_for_the_walls")
+    def test_after_a_fulfilment_the_label_and_the_count_change(self):
+        self.offer_now(NINE)
+        self.set_stock(PLANKS, 60)
+        self.fulfil("small-1")
         view = self.view()["view"]
-        self.assertEqual([(card["id"], card["state"]) for card in view["cards"]],
-                         [("timber_for_the_walls", "Active"), ("clear_the_roads", "Discarded"), ("keep_the_peace", "Discarded")])
-        self.assertEqual(view["active"]["lines"], ["Deliver: 12 / 60"])
-        self.assertFalse(view["active"]["complete"])
-        self.assertEqual(view["active"]["days_text"], "Ends when winter begins")
+        self.assertEqual(view["tiers"][SMALL]["count_text"], "1 / 1")
+        self.assertEqual(view["cards"][0]["label"], "Fulfilled")
+        self.assertEqual(view["cards"][0]["have"], "In storage: 10 / 50")
+        self.assertFalse(view["cards"][0]["enabled"])
 
-    def test_the_arms_text_stays(self):
-        self.assertIn("Arms shipment: 200 silver", self.view()["wanted_texts"]["ArmsInfoText"])
-
-    def test_the_influence_and_silver_texts_follow_the_values(self):
-        self.set_stock(TIMBER, 60)
-        self.start("timber_for_the_walls")
-        silver = self.pawn.silver
-        self.complete()
+    def test_the_top_bar_has_no_influence_and_no_silver_text_and_there_is_no_arms_text(self):
         wanted = self.view()["wanted_texts"]
-        self.assertEqual(wanted["InfluenceText"], "Influence: 15")
-        self.assertEqual(wanted["SilverText"], f"Silver: {silver + 100}")
+        for key in ("InfluenceText", "SilverText", "ArmsInfoText", "FooterText"):
+            self.assertNotIn(key, wanted)
 
     def test_open_menu_without_the_pak_gives_a_clear_message(self):
         answer = self.ask("liege_menu_open")
@@ -635,6 +783,15 @@ class WindowViewTests(ContractsTestCase):
     def test_the_window_tick_is_not_faster_than_100_ms(self):
         source = (find_pack_mod() / "Scripts" / "features" / "liege_contracts" / "init.lua").read_text(encoding="utf-8")
         self.assertIn("math.max(100, menu_config.poll_ms)", source)
+
+
+class NoArmsLeftTests(unittest.TestCase):
+    def test_no_lua_file_names_the_arms_shipment(self):
+        pack = find_pack_mod() / "Scripts"
+        for path in pack.rglob("*.lua"):
+            text = path.read_text(encoding="utf-8")
+            for word in ("shipment_status", "request_arms_shipment", "arms_shipment", "ArmsButton", "ArmsInfoText", "arms_last_day"):
+                self.assertNotIn(word, text, f"{path} still names {word}")
 
 
 if __name__ == "__main__":

@@ -219,3 +219,12 @@ Desk research on 2026-10-28, no game run. Notes: `openspec/changes/archive/*-ass
 - **Two AI lords at war crash the game.** An ally lord with `lord_declare_war` against the raid lord crashed the game twice (EXCEPTION_ACCESS_VIOLATION reading 0x00000001e3010360, 120 to 180 game seconds later). Without the war the squads of both lords left the army list after 20 game seconds. So the relief army of the great raid cannot come from the border (see `DANGEROUS_ACTIONS.md`).
 - **`battlefield_anchor` refuses a second call within `delay_ms` (500 ms)**: "an anchor is still active". A challenge against a lord (`target` = lord number) failed with "the target has no current region".
 - **The pawn follows the camera.** After `centre_camera_on`, `distance_to_player` in `lords_state` is the distance to the camera.
+
+## Liege contracts facts (change `update-liege-contracts-tiers`, #533)
+
+- **Regional wealth write.** `Region:addRegionalWealth(n)` called from a mod raised `regionalWealth` by n (91 to 151) and the value held after one game day (runs 20261030-183650-7d2b, 20261030-184053-c309).
+- **Calendar.** `TemporalComponent.day` is the day of the year (365 days). Day 60 is the first day of spring (Season 1), day 335 the first day of winter (Season 0); a new game starts on day 61.
+- **Where goods lie.** `getStockOfGood` counts food that lies in a building of type 80 (berries), not only in types 6 and 72. Take goods from every building that holds them. The stock number can count a unit that no store holds (helmets: 8 found of 9).
+- **No mouse.** A PC with `SM_MOUSEPRESENT = 0` stops every real mouse scenario with an InputError. Use the press command of the window.
+- **Pak install path.** `run.py --pak <name>` installs `<work_dir>/out/<name>_P.pak` of the pak config; use `--pak-config` with a private `work_dir` to test a pak that is not built in the shared folder.
+- **JSON depth.** `HarnessJson` reads at most 6 levels; a data file with a list inside an object inside a list inside an object fails to load.

@@ -4,9 +4,13 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 ### Changed
+- **liege_contracts (update-liege-contracts-tiers):** nine contracts each spring, three in each tier Small, Medium and Large. All ask for goods. You fulfil them at will (one for each tier and year) with a built manor; there is no pick step and no penalty. Contracts end when winter begins. New window layout.
 - **scenario_settings (update-start-kit-ten-families):** the start kit gives 10 families (was 10 people, which the new game already had). Missing families arrive as homeless families in a tent camp.
 - **bandits (update-banditry-rebellion-raid):** banditry ends in an armed rebellion. Timer 60 game days (was 90). Valid families hold at least one weapon or armor item (config `rebellion_weapon_ids`) at home; 6 are picked at random (`rebellion_families`, was `leavers` 18); fewer valid families block the rebellion (retry after the next tick). The rebels take the goods of their homes. One Brigands squad (`rebellion_squads`) of the pawn Outlaws spawns at the first home and raids. No camp spawns for the leave event.
 - **Raids (invasion):** Hussite armies now walk in from the map edge instead of appearing next to your village. A banner tells you the direction ("Raiders approach from the west"). The army needs a few game days to arrive, so it spawns 5 days before the planned raid day, and the raid starts when it arrives. The relief army of the great raid still appears next to the manor.
+
+### Removed
+- **liege_influence (update-liege-contracts-tiers):** the arms shipment button and its cooldown. A Medium contract can pay weapons instead.
 
 ### Added
 - **bandits:** `features/bandits/outlaws.lua` with `ensure_outlaw_pawn()`: makes the Outlaws pawn (camp call, brigands killed and hidden, camp demolished) at game start, after each load and before each rebellion.

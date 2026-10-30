@@ -1,7 +1,8 @@
--- Feature liege_contracts (change update-liege-tribute-to-contracts, #505): the liege offers three contracts at each start of spring.
--- The player picks one. The contracts are data (data/liege_contracts/contracts.json). A completed contract pays rewards at once; a
--- contract that is not complete when winter begins costs influence (config fail_penalty). The state is saved with ModState.
--- The liege window is a pak widget (mod/InvasionMod/ue/make_liege_widget.py) built on the base menu (core/menu.lua).
+-- Feature liege_contracts (changes update-liege-tribute-to-contracts, #505, and update-liege-contracts-tiers, #533): each spring the
+-- liege offers 9 contracts, 3 for each tier Small, Medium and Large. A contract asks for a delivery of one good and pays one reward.
+-- The player fulfils contracts at will, up to a limit for each tier and year, and only with a built manor. The offer ends when
+-- winter begins; there is no penalty. The pools are data (data/liege_contracts/contracts.json); the numbers are in config.
+-- The state is saved with ModState. The liege window is a pak widget (mod/InvasionMod/ue/make_liege_widget.py) on the base menu (core/menu.lua).
 -- Rules: game objects are touched on the game thread only (the scheduler runs the jobs there).
 local core = require("ManorCore")
 local ModState = require("ModState")
@@ -12,8 +13,6 @@ local view = require("features.liege_contracts.view")
 local world = require("features.liege_contracts.world")
 local liege = require("features.liege_influence.init")
 local invasion = require("features.invasion.init")
-local raid_behavior = require("features.raid_behavior.init")
-local bandits = require("features.bandits.init")
 local all_config = require("config")
 local config = all_config.liege_contracts
 local menu_config = all_config.liege_influence
@@ -25,168 +24,115 @@ local WINTER = config.winter_season
 
 local state = ModState.open("invasion", "pawn", STATE_VERSION)
 state:register("contracts_spring_no", -1, "integer") -- season counter of the last spring that was seen (-1: no look yet)
-state:register("contracts_offer", "", "string")      -- ids of the offered contracts, dot separated
-state:register("contracts_active", "", "string")     -- id of the active contract, empty for none
-state:register("contracts_start_day", -1, "integer") -- game day of the pick
-state:register("contracts_baseline", "", "string")   -- numbers taken at the pick: o<index>-<value>, and s-<season counter>
-state:register("contracts_progress", "", "string")   -- progress of each objective: o<index>-<value>
+state:register("contracts_offer", "", "string")      -- the offered contracts in text form (rules.encode_offer)
+state:register("contracts_used", "", "string")       -- contracts fulfilled in each tier, "s-1.m-0.l-0"
 state:register("contracts_done", 0, "integer")
-state:register("contracts_failed", 0, "integer")
 
 local table_path = world.data_path(config.data_file)
 local contracts = loader.load_file(table_path, json.decode)
 
-local S = { failed_rewards = 0, override = {}, last_message = nil, picks = 0, completes = 0, last_offer = nil }
+local S = { failed_rewards = 0, fulfils = 0 }
 
 ---------------------------------------------------------------------------------------------
 -- State access
 ---------------------------------------------------------------------------------------------
 
-local function offer_ids() return rules.split_ids(state:get("contracts_offer")) end
-
-local function active_contract()
-    local id = state:get("contracts_active")
-    if id == "" then return nil end
-    return contracts.by_id[id], id
-end
-
-local function baseline() return rules.decode_numbers(state:get("contracts_baseline")) end
-local function progress() return rules.decode_numbers(state:get("contracts_progress")) end
-
--- Write only a change: a Tags write at each poll was a crash risk in real runs.
-local function set_if_changed(key, value)
-    if state:get(key) ~= value then state:set(key, value) end
-end
-
-local function reset_active()
-    state:set("contracts_active", "")
-    state:set("contracts_start_day", -1)
-    state:set("contracts_baseline", "")
-    state:set("contracts_progress", "")
-    S.override = {}
-end
-
----------------------------------------------------------------------------------------------
--- Progress
----------------------------------------------------------------------------------------------
-
--- One reading of the world for the objectives of a contract.
-local function read_world(contract)
-    local reading = { stock = {}, buildings = {} }
-    for _, objective in ipairs(contract.objectives) do
-        if objective.type == "deliver_goods" then reading.stock[objective.good] = world.stock(objective.good)
-        elseif objective.type == "build_count" then reading.buildings[objective.building_type] = world.building_count(objective.building_type)
-        elseif objective.type == "kill_raiders" then reading.kills = raid_behavior.raiders_killed()
-        elseif objective.type == "raise_militia_squads" then reading.squads = world.squad_count()
-        elseif objective.type == "hold_public_order" then
-            local terms = bandits.order_terms()
-            reading.order = terms and terms.order
-        end
+-- A saved contract is known when the table still has its request good.
+local function is_known(contract)
+    local pool = contracts.tiers[contract.tier]
+    if pool == nil then return false end
+    for _, request in ipairs(pool.requests) do
+        if request.good == contract.good then return true end
     end
-    reading.day = world.current_day()
-    return reading
+    return false
 end
 
--- The baseline numbers for a new pick.
-local function make_baseline(contract, reading, season_no)
-    local values = {}
-    for index, objective in ipairs(contract.objectives) do
-        if objective.type == "build_count" then values[index] = reading.buildings[objective.building_type] or 0
-        elseif objective.type == "kill_raiders" then values[index] = reading.kills or 0
-        elseif objective.type == "hold_public_order" then values[index] = reading.day or 0 -- the last day that was counted
-        else values[index] = 0 end
+local function offer()
+    return (rules.decode_offer(state:get("contracts_offer"), is_known))
+end
+
+local function used() return rules.decode_used(state:get("contracts_used")) end
+
+local function save_offer(list)
+    state:set("contracts_offer", rules.encode_offer(list))
+end
+
+local function find_contract(list, id)
+    for _, contract in ipairs(list) do
+        if contract.id == id then return contract end
     end
-    values.s = season_no
-    return values
+    return nil
 end
 
--- Compute the progress of the active contract, save a change and return the progress table (1-based).
-local function update_progress(contract)
-    local reading = read_world(contract)
-    local base, old, new = baseline(), progress(), {}
-    for index, objective in ipairs(contract.objectives) do
-        local value
-        if S.override[index] ~= nil then
-            value = S.override[index]
-        elseif objective.type == "kill_raiders" then
-            value, S.kill_seen = rules.add_kills(old[index] or 0, S.kill_seen, reading.kills)
-        elseif objective.type == "hold_public_order" then
-            local last_day = base[index] or reading.day
-            value, base[index] = rules.hold_step(old[index] or 0, last_day, reading.day, reading.order, objective.min)
-        else
-            value = rules.measure(objective, reading, base[index]) or old[index] or 0
-        end
-        new[index] = value
-    end
-    set_if_changed("contracts_baseline", rules.encode_numbers(base, { "s" }))
-    set_if_changed("contracts_progress", rules.encode_numbers(new))
-    return new
-end
-
----------------------------------------------------------------------------------------------
--- Offer, pick, reward, complete, fail
----------------------------------------------------------------------------------------------
-
-local function make_offer(ids)
-    local chosen = ids
-    if chosen == nil then
-        local drawn, why = rules.draw(contracts.contracts, contracts.offer_size, math.random)
-        if drawn == nil then return nil, why end
-        chosen = drawn
-    end
-    state:set("contracts_offer", rules.join_ids(chosen))
-    return chosen
-end
-
-local function pick(id)
-    local refusal = rules.pick_refusal(offer_ids(), state:get("contracts_active"), id)
-    if refusal then
-        core.log.warn(TAG, "LIEGE_CONTRACTS pick refused: " .. refusal)
-        return nil, refusal
-    end
-    local contract = contracts.by_id[id]
-    local info = invasion.season_info()
-    local reading = read_world(contract)
-    local day = reading.day or world.current_day() or 0
-    -- Saved before the log. The offer is gone: the other contracts are discarded. The window of this session still shows them as discarded.
-    S.last_offer = offer_ids()
-    S.kill_seen = reading.kills
-    state:set("contracts_active", id)
-    state:set("contracts_start_day", day)
-    state:set("contracts_baseline", rules.encode_numbers(make_baseline(contract, reading, info and info.no), { "s" }))
-    state:set("contracts_progress", "")
-    state:set("contracts_offer", "")
-    S.override = {}
-    S.picks = S.picks + 1
-    core.log.info(TAG, string.format("LIEGE_CONTRACTS picked %s on day %d", id, day))
-    update_progress(contract)
-    return { id = id, name = contract.name, start_day = day }
-end
-
-local function fail_reward(reward, why)
-    S.failed_rewards = S.failed_rewards + 1
-    core.log.warn(TAG, string.format("LIEGE_CONTRACTS reward %s failed: %s", reward.type, tostring(why)))
-end
+local function limit_of(tier) return config.tier_limits[tier] or 1 end
 
 local function tech_picks_state_exists()
     return (pcall(function() return state:get("tech_picks_earned") end))
 end
 
--- Pays one reward. A failure is logged and counted; it does not stop the other rewards.
+-- The tech point reward is allowed only when the tech tree has its pick state (change update-tech-tree-yearly-picks, #499).
+local function reward_allowed(kind)
+    if kind == "tech_point" then return tech_picks_state_exists() end
+    return true
+end
+
+---------------------------------------------------------------------------------------------
+-- The manor check. The window asks for a cached answer: a built manor stays built while the window is open, and a missing manor is
+-- looked for again after `manor_recheck_s`. Without this the building list was read twice a second (two real runs crashed the
+-- game after such reads, change fix-arms-button-manor, #455). A click and the commands read the manor fresh.
+---------------------------------------------------------------------------------------------
+local manor_cache = { built = false, checked = nil }
+
+local function reset_manor_cache() manor_cache = { built = false, checked = nil } end
+
+local function manor_built_cached()
+    if manor_cache.built then return true end
+    local now = os.clock()
+    if manor_cache.checked == nil or now - manor_cache.checked >= config.manor_recheck_s then
+        manor_cache = { built = world.manor_built() == true, checked = now }
+    end
+    return manor_cache.built
+end
+
+---------------------------------------------------------------------------------------------
+-- Offer, fulfil, expiry
+---------------------------------------------------------------------------------------------
+
+local function difficulty()
+    local level = invasion.level and invasion.level("yearly")
+    return rules.difficulty_for(level, config.difficulty)
+end
+
+local function make_offer()
+    local setup = { tiers = contracts.tiers, base = config.base, weight = config.weight, difficulty = difficulty(), allowed = reward_allowed }
+    local list, why = rules.draw_offer(setup, contracts.offer_per_tier, math.random)
+    if list == nil then return nil, why end
+    -- Saved before any log line, with the fulfilled counts set to 0.
+    state:set("contracts_used", rules.encode_used({}))
+    save_offer(list)
+    return list
+end
+
+local function fail_reward(reward, why)
+    S.failed_rewards = S.failed_rewards + 1
+    core.log.warn(TAG, string.format("LIEGE_CONTRACTS reward %s failed: %s", reward.kind, tostring(why)))
+end
+
+-- Pays one reward. A failure is logged and counted; it is not retried.
 local function pay_reward(reward)
-    local kind = reward.type
+    local kind = reward.kind
     if kind == "influence" then
         liege.change_influence(reward.amount)
     elseif kind == "silver" then
         local ok, why = liege.add_silver(reward.amount)
         if not ok then return fail_reward(reward, why) end
-    elseif kind == "goods" then
+    elseif kind == "goods" or kind == "weapons" then
         local ok, why = world.add_goods(reward.good, reward.amount)
         if not ok then return fail_reward(reward, why) end
-    elseif kind == "public_order" then
-        local ok, why = pcall(bandits.adjust_order, reward.amount)
+    elseif kind == "regional_wealth" then
+        local ok, why = world.add_regional_wealth(reward.amount)
         if not ok then return fail_reward(reward, why) end
-    elseif kind == "tech_pick" then
+    elseif kind == "tech_point" then
         -- The picks belong to the tech tree (change update-tech-tree-yearly-picks, #499).
         if not tech_picks_state_exists() then return fail_reward(reward, "the tech tree has no pick state (change update-tech-tree-yearly-picks is not built)") end
         -- -1 means the start pick was not given yet: keep it (the tech tree gives it when the picks start).
@@ -196,62 +142,55 @@ local function pay_reward(reward)
     end
 end
 
--- Take the goods of the deliver_goods objectives. On a shortage the units taken are put back and the call is refused.
-local function take_goods(contract)
-    local taken = {}
-    for _, objective in ipairs(contract.objectives) do
-        if objective.type == "deliver_goods" then
-            local got, why = world.take_goods(objective.good, objective.amount)
-            if got ~= nil and got > 0 then taken[#taken + 1] = { good = objective.good, amount = got } end
-            if got == nil or got < objective.amount then
-                for _, row in ipairs(taken) do world.add_goods(row.good, row.amount) end
-                return nil, string.format("only %d of %d units of goods %d could be taken from the stores%s", got or 0, objective.amount, objective.good,
-                    why and (": " .. tostring(why)) or "")
-            end
-        end
-    end
-    return true
+-- Why the contract cannot be fulfilled now, or nil. `fresh_manor`: read the manor now (a click, a command) instead of the cache.
+local function refusal_for(contract, fresh_manor)
+    if contract == nil then return rules.refusal(nil, {}) end
+    local manor
+    if fresh_manor then manor = world.manor_built() == true else manor = manor_built_cached() end
+    return rules.refusal(contract, { manor = manor, used = used()[contract.tier], limit = limit_of(contract.tier), stock = world.stock(contract.good) })
 end
 
--- Completes the active contract. `automatic`: the deadline came and the objectives were met (no click).
-local function complete(automatic)
-    local contract, id = active_contract()
-    if contract == nil then return nil, "no contract is active" end
-    local current = update_progress(contract)
-    local short = rules.missing(contract.objectives, current)
-    if short then
-        local reason = string.format("objective %d is short by %d", short.index, short.missing)
-        core.log.warn(TAG, "LIEGE_CONTRACTS complete refused: " .. reason)
-        return nil, reason, short
-    end
-    local ok, why = take_goods(contract)
-    if not ok then
-        core.log.warn(TAG, "LIEGE_CONTRACTS complete refused: " .. why)
+-- The click and the command call this. Returns a result table, or nil and a reason. A refused call changes nothing.
+local function fulfil(id)
+    local list = offer()
+    local contract = find_contract(list, id)
+    local why = refusal_for(contract, true)
+    if why then
+        core.log.warn(TAG, string.format("LIEGE_CONTRACTS fulfil %s refused: %s", tostring(id), why))
         return nil, why
     end
-    local failed_before = S.failed_rewards
-    for _, reward in ipairs(contract.rewards) do core.log.try(TAG, pay_reward, reward) end
+    local got, problem = world.take_goods(contract.good, contract.amount)
+    if got == nil or got < contract.amount then
+        if got ~= nil and got > 0 then world.add_goods(contract.good, got) end -- put the units back
+        local reason = string.format("only %d of %d units of goods %d could be taken from the stores (the goods lie %s)%s", got or 0, contract.amount, contract.good,
+            world.holders(contract.good), problem and (": " .. tostring(problem)) or "")
+        core.log.warn(TAG, "LIEGE_CONTRACTS fulfil refused: " .. reason)
+        return nil, reason
+    end
+    -- Saved before the reward and the log, so a crash after the take never lets the contract be fulfilled twice.
+    contract.done = true
+    save_offer(list)
+    local counts = used()
+    counts[contract.tier] = counts[contract.tier] + 1
+    state:set("contracts_used", rules.encode_used(counts))
     state:set("contracts_done", state:get("contracts_done") + 1)
-    reset_active()
-    S.completes = S.completes + 1
-    local result = { id = id, name = contract.name, failed_rewards = S.failed_rewards - failed_before, automatic = automatic == true }
-    core.log.info(TAG, string.format("LIEGE_CONTRACTS completed %s failed_rewards=%d", id, result.failed_rewards))
+    local failed_before = S.failed_rewards
+    core.log.try(TAG, pay_reward, contract.reward)
+    S.fulfils = S.fulfils + 1
+    local result = { id = id, tier = contract.tier, good = contract.good, amount = contract.amount, reward = contract.reward,
+                     failed_rewards = S.failed_rewards - failed_before }
+    core.log.info(TAG, string.format("LIEGE_CONTRACTS fulfilled %s: %d of goods %d for %s failed_rewards=%d", id, contract.amount, contract.good,
+        view.reward_text(contract.reward, contracts.names), result.failed_rewards))
     return result
 end
 
-local function fail_active(why)
-    local contract, id = active_contract()
-    if contract == nil then return end
-    local before = state:get("liege_influence")
-    local after = liege.change_influence(rules.after_penalty(before, config.fail_penalty) - before)
-    state:set("contracts_failed", state:get("contracts_failed") + 1)
-    reset_active()
-    core.log.info(TAG, string.format("LIEGE_CONTRACTS failed %s (%s): influence %s -> %s", id, why, tostring(before), tostring(after)))
+local function expire(info)
+    local list = offer()
+    if #list == 0 and state:get("contracts_offer") == "" then return end
+    state:set("contracts_offer", "")
+    state:set("contracts_used", rules.encode_used({}))
+    core.log.info(TAG, string.format("LIEGE_CONTRACTS winter begins no=%d: the offer ended with %d contracts, no penalty", info.no, #list))
 end
-
----------------------------------------------------------------------------------------------
--- The tick
----------------------------------------------------------------------------------------------
 
 -- Spring: one offer for each spring counter value. The first look only takes the counter, so a new game or a save makes no offer.
 local function yearly_step(info)
@@ -260,45 +199,27 @@ local function yearly_step(info)
         state:set("contracts_spring_no", info.no)
         return
     end
+    if info.season == WINTER then return expire(info) end
     if info.season ~= SPRING or info.no <= seen then return end
     state:set("contracts_spring_no", info.no) -- saved before the draw and the log, so a load never draws twice
-    local dropped = offer_ids()
-    local ids, why = make_offer(nil)
-    if ids == nil then return core.log.error(TAG, "LIEGE_CONTRACTS draw failed: " .. tostring(why)) end
-    core.log.info(TAG, string.format("LIEGE_CONTRACTS spring offer no=%d ids=%s dropped=%s", info.no, table.concat(ids, ","), table.concat(dropped, ",")))
+    local list, why = make_offer()
+    if list == nil then return core.log.error(TAG, "LIEGE_CONTRACTS draw failed: " .. tostring(why)) end
+    core.log.info(TAG, string.format("LIEGE_CONTRACTS spring offer no=%d contracts=%s", info.no, state:get("contracts_offer")))
 end
 
-local function deadline_step(info)
-    local contract, id = active_contract()
-    if state:get("contracts_active") ~= "" and contract == nil then
-        core.log.warn(TAG, "LIEGE_CONTRACTS the active contract '" .. state:get("contracts_active") .. "' is not in the table: dropped without a penalty")
-        reset_active()
-        return
-    end
-    if contract == nil then return end
-    local current = update_progress(contract)
-    local picked = { day = state:get("contracts_start_day"), season_no = baseline().s }
-    local now = { day = world.current_day(), season = info and info.season, season_no = info and info.no }
-    if not rules.is_due(contract.duration, picked, now, WINTER) then return end
-    if rules.is_complete(contract.objectives, current) then
-        local result, why = complete(true)
-        if result == nil then fail_active("deadline, objectives met but " .. tostring(why)) end
-        return
-    end
-    fail_active("deadline")
+-- A saved contract that the table does not know (or an offer of the old format) is dropped with no penalty; the log names it.
+local function drop_unknown()
+    local list, dropped = rules.decode_offer(state:get("contracts_offer"), is_known)
+    if #dropped == 0 then return end
+    save_offer(list)
+    core.log.warn(TAG, "LIEGE_CONTRACTS dropped contracts that the table does not know (no penalty): " .. table.concat(dropped, ","))
 end
 
 local function tick()
+    if not state.loaded then return end
+    drop_unknown()
     local info = invasion.season_info()
     if info ~= nil then yearly_step(info) end
-    deadline_step(info)
-end
-
--- A catch-up call for the window and the commands: no new tick, only the progress.
-local function refresh_progress()
-    local contract = active_contract()
-    if contract then return update_progress(contract) end
-    return {}
 end
 
 require("scheduler").every(TAG, math.max(100, config.poll_ms), tick)
@@ -307,71 +228,51 @@ require("scheduler").every(TAG, math.max(100, config.poll_ms), tick)
 -- Views (the window and the state command)
 ---------------------------------------------------------------------------------------------
 
-local function deadline_view(contract)
-    if contract.duration == "winter_start" then return { kind = "winter_start" } end
-    local start = state:get("contracts_start_day")
-    local day = world.current_day()
-    local left = (day and start >= 0) and (start + contract.duration - day) or contract.duration
-    return { kind = "days", left = left, day = start + contract.duration }
+local function days_to_winter() return rules.days_until(world.day_of_year(), config.winter_start_day, config.year_days) end
+local function days_to_spring() return rules.days_until(world.day_of_year(), config.spring_start_day, config.year_days) end
+
+-- One card for the window and the state command. `manor`: is the manor built (cached or fresh as the caller decides).
+local function card_of(contract, manor)
+    local stock = world.stock(contract.good)
+    local facts = { manor = manor, used = used()[contract.tier], limit = limit_of(contract.tier), stock = stock }
+    local reason = rules.refusal(contract, facts)
+    return { id = contract.id, tier = contract.tier, number = contract.number, good = contract.good, amount = contract.amount, done = contract.done,
+             requirement = view.requirement_text(contract, contracts.names), have = view.have_text(stock, contract.amount), stock = stock,
+             reward_text = view.reward_text(contract.reward, contracts.names), reward = contract.reward,
+             enabled = reason == nil, reason = reason, label = contract.done and "Fulfilled" or "Fulfil" }
 end
 
-local function window_view()
-    local influence = math.floor((state:get("liege_influence") or 0) * 100 + 0.5) / 100
-    local result = {
-        influence_text = string.format("Influence: %g", influence),
-        silver_text = string.format("Silver: %d", liege.silver() or 0),
-        cards = {}, active = nil, empty_text = nil,
-    }
-    local contract = active_contract()
-    if contract then
-        local current = progress()
-        local lines = view.active_lines(contract, current)
-        result.active = { id = contract.id, name = contract.name, lines = lines, days_text = view.days_text(deadline_view(contract)),
-                          complete = rules.is_complete(contract.objectives, current) }
-        -- The cards of the pick stay on the window as "Active" and "Discarded" (only in the session of the pick).
-        local picked_here = false
-        for _, id in ipairs(S.last_offer or {}) do
-            if id == contract.id then picked_here = true end
-        end
-        if picked_here then
-            for _, id in ipairs(S.last_offer) do
-                local offered = contracts.by_id[id]
-                if offered then
-                    local card = view.card(offered, contracts.items, config.fail_penalty)
-                    card.state = id == contract.id and "Active" or "Discarded"
-                    result.cards[#result.cards + 1] = card
-                end
-            end
-        end
-    else
-        for _, id in ipairs(offer_ids()) do
-            local offered = contracts.by_id[id]
-            if offered then result.cards[#result.cards + 1] = view.card(offered, contracts.items, config.fail_penalty) end
-        end
-        if #result.cards == 0 then
-            result.empty_text = "The liege sends new contracts at the start of spring."
-        end
+local function window_view(manor)
+    local list = offer()
+    local info = invasion.season_info()
+    local in_winter = info ~= nil and info.season == WINTER
+    local counts = used()
+    local result = { tiers = {}, cards = {}, offered = #list, manor = manor }
+    for _, tier in ipairs(rules.TIERS) do
+        result.tiers[tier] = { name = view.TIER_NAMES[tier], count_text = view.tier_count_text(counts[tier], limit_of(tier)), used = counts[tier], limit = limit_of(tier) }
     end
+    for _, contract in ipairs(list) do result.cards[#result.cards + 1] = card_of(contract, manor) end
+    result.remaining_text = in_winter and view.no_contracts_remaining_text() or view.remaining_text(days_to_winter())
+    result.refresh_text = view.refresh_text(days_to_spring())
+    if #list == 0 then result.notice_text = view.NO_OFFER_TEXT
+    elseif not manor then result.notice_text = rules.NO_MANOR
+    else result.notice_text = "" end
     return result
 end
 
 local function command_state()
-    local contract, id = active_contract()
-    local active
-    if contract then
-        local current = progress()
-        local rows = {}
-        for index, objective in ipairs(contract.objectives) do
-            rows[#rows + 1] = { index = index, type = objective.type, progress = current[index] or 0, target = rules.target(objective) }
-        end
-        active = { id = id, name = contract.name, start_day = state:get("contracts_start_day"), objectives = rows,
-                   complete = rules.is_complete(contract.objectives, current), deadline = deadline_view(contract) }
-    end
     local info = invasion.season_info()
-    return { offer = offer_ids(), active = active, done = state:get("contracts_done"), failed = state:get("contracts_failed"),
-             failed_rewards = S.failed_rewards, spring_no = state:get("contracts_spring_no"), season = info and info.season, season_no = info and info.no,
-             influence = state:get("liege_influence"), silver = liege.silver(), picks = S.picks, completes = S.completes,
-             fail_penalty = config.fail_penalty, contract_count = #contracts.contracts }
+    local manor = world.manor_built() == true
+    local model = window_view(manor)
+    local tiers = {}
+    for _, tier in ipairs(rules.TIERS) do tiers[tier] = { used = model.tiers[tier].used, limit = model.tiers[tier].limit } end
+    local ids = {}
+    for _, card in ipairs(model.cards) do ids[#ids + 1] = card.id end
+    return { contracts = model.cards, offer = ids, tiers = tiers, manor = manor, done = state:get("contracts_done"), failed_rewards = S.failed_rewards,
+             spring_no = state:get("contracts_spring_no"), season = info and info.season, season_no = info and info.no,
+             days_to_winter = days_to_winter(), days_to_spring = days_to_spring(), influence = state:get("liege_influence"), silver = liege.silver(),
+             fulfils = S.fulfils, difficulty = difficulty(), offer_text = state:get("contracts_offer"), used_text = state:get("contracts_used"),
+             notice_text = model.notice_text, remaining_text = model.remaining_text, refresh_text = model.refresh_text }
 end
 
 ---------------------------------------------------------------------------------------------
@@ -384,27 +285,25 @@ local clickhooks = require("HarnessClickHooks")
 local isValid, read = core.isValid, core.read
 
 local MENU_ID = "liege"
-local CARDS, OBJ_ITEMS, REW_ITEMS = 3, 2, 3
+local ROWS, PER_ROW = 3, 3
 local COLLAPSED, VISIBLE = 1, 0 -- ESlateVisibility
+local NOTICE_S = 6              -- real seconds that a refused click shows its reason
 local NAMES = {
-    texts = { "TitleText", "InfluenceText", "SilverText", "EmptyText", "FooterText", "ArmsInfoText", "ActiveName", "ActiveLine0", "ActiveLine1", "ActiveDays" },
-    borders = { "ActivePanel" },
-    buttons = { "PickButton0", "PickButton1", "PickButton2", "CompleteButton", "ArmsButton", "CloseButton" },
+    texts = { "TitleText", "RemainText", "RefreshText", "NoticeText" },
+    borders = {},
+    buttons = { "CloseButton" },
 }
-for card = 0, CARDS - 1 do
-    for _, prefix in ipairs({ "CardName", "CardQuote", "CardPenalty", "CardState" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. card end
-    NAMES.borders[#NAMES.borders + 1] = "Card" .. card
-    for item = 0, OBJ_ITEMS - 1 do
-        for _, prefix in ipairs({ "ObjIcon", "ObjText" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. card .. "_" .. item end
-        NAMES.borders[#NAMES.borders + 1] = "ObjItem" .. card .. "_" .. item
-    end
-    for item = 0, REW_ITEMS - 1 do
-        for _, prefix in ipairs({ "RewIcon", "RewText" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. card .. "_" .. item end
-        NAMES.borders[#NAMES.borders + 1] = "RewItem" .. card .. "_" .. item
+for row = 0, ROWS - 1 do
+    for _, prefix in ipairs({ "TierName", "TierCount" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. row end
+    for card = 0, PER_ROW - 1 do
+        local key = row .. "_" .. card
+        for _, prefix in ipairs({ "ReqLabel", "ReqText", "HaveText", "RewLabel", "RewText" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. key end
+        NAMES.borders[#NAMES.borders + 1] = "Card" .. key
+        NAMES.buttons[#NAMES.buttons + 1] = "FulfilButton" .. key
     end
 end
 
-local W = { widget = nil, texts = {}, borders = {}, buttons = {}, shown = {}, visible = {}, tooltips = {}, last_refresh = 0, last_error = nil, arms_label = nil, arms_disabled = nil }
+local W = { widget = nil, texts = {}, borders = {}, buttons = {}, shown = {}, visible = {}, labels = {}, last_refresh = 0, notice = nil, notice_until = 0, presses = 0 }
 
 local function is_open() return menu.is_open(MENU_ID) end
 
@@ -422,18 +321,19 @@ local function set_visible(name, shown)
     border:SetVisibility(shown and VISIBLE or COLLAPSED)
 end
 
-local function set_tooltip(name, text)
-    local border = W.borders[name]
-    if border == nil or W.tooltips[name] == text then return end
-    local ok = pcall(function() border:SetToolTipText(FText(text)) end)
-    if ok then W.tooltips[name] = text end
-end
-
 local function set_button_visible(name, shown)
     local slot = W.buttons[name]
     if slot == nil or W.visible[name] == shown then return end
     W.visible[name] = shown
     pcall(clickhooks.set_visible, slot.handle, shown)
+end
+
+-- The label is written only when it changes: a rewrite at each refresh was a crash risk (spec 34).
+local function set_button_label(name, text)
+    local slot = W.buttons[name]
+    if slot == nil or W.labels[name] == text then return end
+    W.labels[name] = text
+    clickhooks.set_text(slot.handle, text)
 end
 
 -- Disabled look: a grey tint of the click button (SetColorAndOpacity, as the tech tree widget does). Clicks are ignored in press()
@@ -450,70 +350,46 @@ local function set_disabled(name, disabled)
     end
 end
 
-local function arms_info(status)
-    local cfg = liege.arms_config
-    local parts = {}
-    for _, good in ipairs(cfg.goods) do parts[#parts + 1] = good.amount .. " " .. good.name .. "s" end
-    local info = string.format("Arms shipment: %d silver for %s", cfg.cost, table.concat(parts, " and "))
-    if not status.enabled then info = info .. "\n" .. tostring(status.reason) end
-    return info
+local function key_of(card) return (rules.TIERS_INDEX[card.tier] - 1) .. "_" .. (card.number - 1) end
+
+local function current_view() return window_view(manor_built_cached()) end
+
+local function fill_card(row, number, card)
+    local key = row .. "_" .. number
+    set_visible("Card" .. key, card ~= nil)
+    set_button_visible("FulfilButton" .. key, card ~= nil)
+    if card == nil then
+        for _, prefix in ipairs({ "ReqLabel", "ReqText", "HaveText", "RewLabel", "RewText" }) do set_text(prefix .. key, "") end
+        return
+    end
+    set_text("ReqLabel" .. key, "REQUIREMENT")
+    set_text("RewLabel" .. key, "REWARD")
+    set_text("ReqText" .. key, card.requirement)
+    set_text("HaveText" .. key, card.have)
+    set_text("RewText" .. key, card.reward_text)
+    set_button_label("FulfilButton" .. key, card.label)
+    set_disabled("FulfilButton" .. key, not card.enabled)
 end
 
-local function fill_card(index, card)
-    local c = index - 1
-    set_visible("Card" .. c, card ~= nil)
-    set_button_visible("PickButton" .. c, card ~= nil and card.state == nil)
-    set_text("CardState" .. c, card and card.state or "")
-    if card == nil then return end
-    set_text("CardName" .. c, card.name)
-    set_text("CardQuote" .. c, card.quote ~= "" and ('"' .. card.quote .. '"') or "")
-    set_text("CardPenalty" .. c, card.penalty)
-    for item = 0, OBJ_ITEMS - 1 do
-        local row = card.objectives[item + 1]
-        local key = c .. "_" .. item
-        set_visible("ObjItem" .. key, row ~= nil)
-        if row then
-            set_text("ObjIcon" .. key, row.letter)
-            set_text("ObjText" .. key, row.text)
-            set_tooltip("ObjItem" .. key, row.tooltip)
-        end
-    end
-    for item = 0, REW_ITEMS - 1 do
-        local row = card.rewards[item + 1]
-        local key = c .. "_" .. item
-        set_visible("RewItem" .. key, row ~= nil)
-        if row then
-            set_text("RewIcon" .. key, row.letter)
-            set_text("RewText" .. key, row.text)
-            set_tooltip("RewItem" .. key, row.tooltip)
-        end
-    end
+local function notice_line(model)
+    if W.notice and os.clock() < W.notice_until then return W.notice end
+    return model.notice_text
 end
 
 local function refresh()
     if not isValid(W.widget) then return false end
-    local model = window_view()
-    set_text("TitleText", "Liege")
-    set_text("InfluenceText", model.influence_text)
-    set_text("SilverText", model.silver_text)
-    for index = 1, CARDS do fill_card(index, model.cards[index]) end
-    set_text("EmptyText", model.empty_text or "")
-    local active = model.active
-    set_visible("ActivePanel", active ~= nil)
-    set_button_visible("CompleteButton", active ~= nil)
-    if not active then
-        set_text("ActiveName", "")
-    else
-        set_text("ActiveName", active.name)
-        set_text("ActiveLine0", active.lines[1] or "")
-        set_text("ActiveLine1", active.lines[2] or "")
-        set_text("ActiveDays", active.days_text)
-        set_disabled("CompleteButton", not active.complete)
+    local model = current_view()
+    set_text("TitleText", "Contracts of the Liege")
+    set_text("RemainText", model.remaining_text)
+    set_text("RefreshText", model.refresh_text)
+    set_text("NoticeText", notice_line(model))
+    local by_slot = {}
+    for _, card in ipairs(model.cards) do by_slot[key_of(card)] = card end
+    for row, tier in ipairs(rules.TIERS) do
+        set_text("TierName" .. (row - 1), model.tiers[tier].name)
+        set_text("TierCount" .. (row - 1), model.tiers[tier].count_text)
+        for number = 0, PER_ROW - 1 do fill_card(row - 1, number, by_slot[(row - 1) .. "_" .. number]) end
     end
-    set_text("FooterText", W.last_error or W.hover_text or S.last_message or "")
-    local status = liege.shipment_status(true)
-    set_text("ArmsInfoText", arms_info(status))
-    set_disabled("ArmsButton", not status.enabled)
     return true
 end
 
@@ -525,17 +401,16 @@ end
 
 local function reset_window()
     release_buttons()
-    W.widget, W.texts, W.borders, W.buttons, W.shown, W.visible, W.tooltips = nil, {}, {}, {}, {}, {}, {}
+    W.widget, W.texts, W.borders, W.buttons, W.shown, W.visible, W.labels = nil, {}, {}, {}, {}, {}, {}
 end
 
 local function on_open(made)
     W.widget = made
-    W.opened_at, W.reapplied = os.clock(), false
+    W.opened_at, W.reapplied, W.notice = os.clock(), false, nil
     W.texts = menu.find_named(made, "TextBlock", NAMES.texts)
-    local borders = menu.find_named(made, "Border", NAMES.borders)
+    W.borders = menu.find_named(made, "Border", NAMES.borders)
     local button_borders = menu.find_named(made, "Border", NAMES.buttons)
-    W.borders = borders
-    if W.texts.InfluenceText == nil then
+    if W.texts.RemainText == nil then
         reset_window()
         return nil, "the text lines were not found in the widget"
     end
@@ -560,11 +435,8 @@ local function on_open(made)
         reset_window()
         return nil, bind_problem
     end
-    for index = 0, CARDS - 1 do clickhooks.set_text(W.buttons["PickButton" .. index].handle, "PICK") end
-    clickhooks.set_text(W.buttons.CompleteButton.handle, "Complete")
-    clickhooks.set_text(W.buttons.ArmsButton.handle, "Request arms shipment")
     clickhooks.set_text(W.buttons.CloseButton.handle, "Close")
-    liege.reset_manor_cache()
+    reset_manor_cache()
     refresh()
     return true
 end
@@ -572,14 +444,12 @@ end
 menu.register({
     id = MENU_ID, label = "Liege",
     class_path = "/Game/HarnessMod/WBP_LiegeContracts.WBP_LiegeContracts_C", package_path = "/Game/HarnessMod", asset_name = "WBP_LiegeContracts",
-    z_order = menu_config.z_order, position = menu_config.position,
+    z_order = menu_config.z_order, -- the widget is centred by its own anchors (make_liege_widget.py), so there is no position
     on_open = on_open, on_close = reset_window,
 })
 
-local function remember(result, reason)
-    W.last_error = nil
-    S.last_message = nil
-    if result == nil then W.last_error = reason end
+local function say(text)
+    W.notice, W.notice_until = text, os.clock() + NOTICE_S
 end
 
 local function press(name)
@@ -587,46 +457,15 @@ local function press(name)
         menu.close()
         return
     end
-    if name == "ArmsButton" then
-        if not liege.shipment_status().enabled then
-            refresh() -- a disabled button ignores the click
-            return
-        end
-        local result, reason = liege.request_arms_shipment()
-        remember(result, reason)
-        if result then W.shipments = (W.shipments or 0) + 1 end
-    elseif name == "CompleteButton" then
-        local contract = active_contract()
-        if contract == nil or not rules.is_complete(contract.objectives, refresh_progress()) then
-            refresh() -- a disabled button ignores the click
-            return
-        end
-        local result, reason = complete(false)
-        remember(result, reason)
-        if result then S.last_message = "Completed: " .. result.name end
-    else
-        local card = tonumber(name:match("^PickButton(%d)$"))
-        local id = card and offer_ids()[card + 1]
-        if id == nil then return refresh() end
-        local result, reason = pick(id)
-        remember(result, reason)
-        if result then S.last_message = "Picked: " .. result.name end
-    end
+    local row, number = name:match("^FulfilButton(%d)_(%d)$")
+    local tier = row and rules.TIERS[tonumber(row) + 1]
+    local contract = tier and find_contract(offer(), tier .. "-" .. (tonumber(number) + 1))
+    -- A disabled button ignores the click (the rule is the same as the command's, read from the cached manor answer).
+    if contract == nil or refusal_for(contract, false) ~= nil then return refresh() end
+    W.presses = W.presses + 1
+    local result, reason = fulfil(contract.id)
+    if result == nil then say(reason) else W.notice = nil end
     refresh()
-end
-
--- A hover tooltip (SetToolTipText on the item Border) does not show in the real game (notes/tooltip-hover.md). The text of the item
--- under the mouse shows in the footer line instead. Reads IsHovered of the visible items only.
-local function look_for_hover()
-    local found
-    for name, tip in pairs(W.tooltips) do
-        local border = W.borders[name]
-        if W.visible[name] and tip ~= "" and border ~= nil and read(function() return border:IsHovered() end) == true then
-            found = (tip:gsub("\n", " - "))
-            break
-        end
-    end
-    W.hover_text = found
 end
 
 local function tick_window()
@@ -647,8 +486,6 @@ local function tick_window()
     end
     if now - W.last_refresh >= menu_config.refresh_ms / 1000 then
         W.last_refresh = now
-        refresh_progress()
-        look_for_hover()
         refresh()
     end
 end
@@ -659,17 +496,22 @@ local function menu_state()
     local buttons = {}
     for name, slot in pairs(W.buttons) do
         buttons[#buttons + 1] = { name = name, visibility = read(function() return slot.handle.widget:GetVisibility() end),
-            hovered = read(function() return slot.handle.widget:IsHovered() end), disabled = slot.disabled }
+            hovered = read(function() return slot.handle.widget:IsHovered() end), disabled = slot.disabled, label = W.labels[name] }
     end
-    local model = window_view()
-    local status = liege.shipment_status()
+    local model = window_view(manor_built_cached())
+    local wanted = { RemainText = model.remaining_text, RefreshText = model.refresh_text, NoticeText = notice_line(model) }
+    for row, tier in ipairs(rules.TIERS) do
+        wanted["TierName" .. (row - 1)] = model.tiers[tier].name
+        wanted["TierCount" .. (row - 1)] = model.tiers[tier].count_text
+    end
+    for _, card in ipairs(model.cards) do
+        local key = key_of(card)
+        wanted["ReqText" .. key], wanted["HaveText" .. key], wanted["RewText" .. key] = card.requirement, card.have, card.reward_text
+    end
     return { open = is_open(), in_viewport = is_open() and read(function() return W.widget:IsInViewport() end) or false,
-             texts = shown, view = model, wanted_texts = { InfluenceText = model.influence_text, SilverText = model.silver_text, ArmsInfoText = arms_info(status) },
-             arms_label = "Request arms shipment", arms_disabled = not status.enabled, buttons = buttons, shipments = W.shipments or 0,
-             last_error = W.last_error, picks = S.picks, completes = S.completes, tooltips = W.tooltips, visible = W.visible, hover_text = W.hover_text,
-             panel_visibility = W.borders.ActivePanel and read(function() return W.borders.ActivePanel:GetVisibility() end),
-             card_visibility = W.borders.Card0 and read(function() return W.borders.Card0:GetVisibility() end),
-             panel_name = W.borders.ActivePanel and read(function() return W.borders.ActivePanel:GetFullName() end) }
+             texts = shown, view = model, wanted_texts = wanted, buttons = buttons, presses = W.presses, fulfils = S.fulfils,
+             visible = W.visible, notice = W.notice,
+             card_visibility = W.borders.Card0_0 and read(function() return W.borders.Card0_0:GetVisibility() end) }
 end
 
 require("scheduler").every(TAG .. ".window", math.max(100, menu_config.poll_ms), tick_window)
@@ -677,11 +519,6 @@ require("scheduler").every(TAG .. ".window", math.max(100, menu_config.poll_ms),
 ---------------------------------------------------------------------------------------------
 -- Named commands and telemetry
 ---------------------------------------------------------------------------------------------
-
-local function answer(result, reason, detail)
-    if result == nil then return nil, reason, detail end
-    return result
-end
 
 local has_commands, commands = pcall(require, "HarnessCommands")
 if has_commands then
@@ -691,47 +528,42 @@ if has_commands then
         return { ok = true }
     end, {})
     commands.register("InvasionMod.liege_menu_state", menu_state, {})
-    commands.register("InvasionMod.liege_contracts_state", function()
-        refresh_progress()
-        return command_state()
-    end, {})
-    commands.register("InvasionMod.liege_contract_pick", function(args) return answer(pick(args.id)) end, { id = { type = "string", required = true } })
-    commands.register("InvasionMod.liege_contract_complete", function()
-        local result, reason = complete(false)
-        return answer(result, reason)
-    end, {})
-    -- Test command: make an offer now, with no wait for a spring. `ids` (dot separated) names the offer; without it the draw runs.
+    -- Test command: the same code as a click on a window button (`button` is a button name such as FulfilButton0_0 or CloseButton).
+    -- A real mouse click needs a mouse device; this PC may have none.
+    commands.register("InvasionMod.liege_menu_press", function(args)
+        if not is_open() then return nil, "the window is not open" end
+        press(args.button)
+        return { ok = true, presses = W.presses, fulfils = S.fulfils }
+    end, { button = { type = "string", required = true } })
+    commands.register("InvasionMod.liege_contracts_state", command_state, {})
+    commands.register("InvasionMod.liege_contract_fulfil", function(args)
+        local result, reason = fulfil(args.id)
+        if result == nil then return nil, reason end
+        return result
+    end, { id = { type = "string", required = true } })
+    -- Test command: make an offer now, with no wait for a spring. `ids` names the offer in the saved text form (rules.encode_offer);
+    -- without it the draw runs.
     commands.register("InvasionMod.liege_contracts_offer_now", function(args)
-        local ids
         if args.ids ~= nil and args.ids ~= "" then
-            ids = rules.split_ids(args.ids)
-            if #ids > contracts.offer_size then return nil, "at most " .. contracts.offer_size .. " ids" end
-            for _, id in ipairs(ids) do
-                if contracts.by_id[id] == nil then return nil, "unknown contract id: " .. id end
-            end
+            local list, dropped = rules.decode_offer(args.ids, is_known)
+            if #dropped > 0 then return nil, "unknown contract: " .. table.concat(dropped, ",") end
+            if #list > contracts.offer_per_tier * #rules.TIERS then return nil, "too many contracts" end
+            state:set("contracts_used", rules.encode_used({}))
+            save_offer(list)
+        else
+            local made, why = make_offer()
+            if made == nil then return nil, why end
         end
-        local made, why = make_offer(ids)
-        if made == nil then return nil, why end
         return command_state()
-    end, { ids = { type = "string" } })
-    -- Test command: set the progress of one objective of the active contract (1-based index) until the contract ends.
-    commands.register("InvasionMod.liege_contracts_test_progress", function(args)
-        local contract = active_contract()
-        if contract == nil then return nil, "no contract is active" end
-        if contract.objectives[args.index] == nil then return nil, "the contract has no objective " .. args.index end
-        S.override[args.index] = args.value
-        refresh_progress()
-        return command_state()
-    end, { index = { type = "integer", required = true, min = 1, max = 2 }, value = { type = "integer", required = true, min = 0, max = 1000000 } })
+    end, { ids = { type = "string", maxLength = 600 } })
 end
 
 local has_telemetry, telemetry = pcall(require, "HarnessTelemetry")
 if has_telemetry then
-    telemetry.register("liege_contract_active", function() return state.loaded and state:get("contracts_active") or nil end)
     telemetry.register("liege_contracts_done", function() return state.loaded and state:get("contracts_done") or nil end)
-    telemetry.register("liege_contracts_failed", function() return state.loaded and state:get("contracts_failed") or nil end)
+    telemetry.register("liege_contracts_offered", function() return state.loaded and #offer() or nil end)
 end
 
-core.log.info(TAG, string.format("feature liege_contracts loaded: %d contracts", #contracts.contracts))
-return { state = state, contracts = contracts, command_state = command_state, pick = pick, complete = complete,
+core.log.info(TAG, string.format("feature liege_contracts loaded: %d requests", #contracts.tiers.small.requests + #contracts.tiers.medium.requests + #contracts.tiers.large.requests))
+return { state = state, contracts = contracts, command_state = command_state, fulfil = fulfil,
          open = function() return menu.open(MENU_ID) end, close = menu.close }
