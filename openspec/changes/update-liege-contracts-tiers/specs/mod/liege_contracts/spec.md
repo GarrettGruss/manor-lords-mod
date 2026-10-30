@@ -151,7 +151,7 @@ The amount SHALL be `max(1, round(base(tier) * weight(good) * difficulty))`, rou
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
 ### Requirement: The mod offers nine contracts each spring
-At each start of spring with a built manor, the mod SHALL draw `offer_per_tier` different contracts (default 3) at random from each tier and offer them. The new offer SHALL replace the old one and reset the fulfilled counts. The mod SHALL NOT make an offer at the first poll of a new game or of a save. The offer SHALL be saved before it is logged.
+At each start of spring, with or without a built manor, the mod SHALL draw `offer_per_tier` different contracts (default 3) at random from each tier and offer them. The new offer SHALL replace the old one and reset the fulfilled counts. The mod SHALL NOT make an offer at the first poll of a new game or of a save. The offer SHALL be saved before it is logged.
 
 #### Scenario: A spring draw
 - **WHEN** the season counter shows a new spring (read as in `mod/tech_tree`)
@@ -222,7 +222,7 @@ The liege window (menu id `liege`, a pak widget) SHALL follow the layout of the 
 - Not checked yet. Planned: `mod/InvasionMod/scenarios/liege_contracts/window.py`, picture evidence.
 
 #### Scenario: The Fulfil button
-- **WHEN** the goods are in storage and the tier limit is not reached
+- **WHEN** the manor is built, the goods are in storage and the tier limit is not reached
 - **THEN** the Fulfil button is enabled and a click calls the same code as `liege_contract_fulfil`
 - **AND** otherwise the button is greyed out and clicks are ignored
 - **AND** after a fulfilment the label of that card is "Fulfilled"
@@ -243,27 +243,21 @@ The liege window (menu id `liege`, a pak widget) SHALL follow the layout of the 
 - **THEN** it shows no "Request arms shipment" button (the arms shipment is removed; see the delta of `mod/liege_influence`)
 - Not checked yet. Planned: `mod/InvasionMod/scenarios/liege_contracts/window.py`.
 
-### Requirement: Contracts need a built manor
-The mod SHALL deal contracts only when the player's manor is built. A built manor is a `HarnessManor.manor_state()` module with `built == true`. Without a built manor the mod SHALL deal no offer, and the liege window SHALL show only the text "Build a manor to receive contracts from the liege." and the Close button. When a manor is built and no offer exists, the mod SHALL deal the offer at once (lead's choice, see `design.md`), unless it is winter. A lost manor SHALL NOT remove an offer.
+### Requirement: Fulfilling needs a built manor
+The mod SHALL deal the offer whether or not a manor exists. A contract SHALL be fulfilled only when the player's manor is built (a `HarnessManor.manor_state()` module with `built == true`). The Fulfil button SHALL be enabled only when the manor is built, the goods are in storage and the tier limit is not reached. The command `liege_contract_fulfil` SHALL check the manor again at click time and refuse if it is not built.
 
 #### Scenario: No manor
-- **WHEN** no manor is built and the start of spring comes
-- **THEN** no offer is dealt, the offer stays empty and no spring draw is counted
-- **AND** the window shows only "Build a manor to receive contracts from the liege." and the Close button, with no top bar, rows or cards
+- **WHEN** no manor is built and an offer exists
+- **THEN** the window shows the 9 contracts, all Fulfil buttons are greyed, and the line "Build a manor to fulfil contracts." shows above the rows
+- **AND** the offer is dealt at spring as usual
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py` and `mod/InvasionMod/scenarios/liege_contracts/window.py`.
 
-#### Scenario: A manor is built mid-year
-- **WHEN** a manor becomes built in spring, summer or autumn and no offer exists
-- **THEN** the offer of 9 contracts is dealt at once and every fulfilled count is 0
-- **AND** the contracts expire when winter begins, as for any offer
-- Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
-
-#### Scenario: A manor is built in winter
-- **WHEN** a manor becomes built in winter
-- **THEN** no offer is dealt, and the first offer comes at the next start of spring
+#### Scenario: The command refuses without a manor
+- **WHEN** no manor is built and `liege_contract_fulfil` is sent, even with enough goods
+- **THEN** the call is refused with the reason "Build a manor to fulfil contracts." and nothing is taken or paid
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
 #### Scenario: The manor is lost
-- **WHEN** an offer exists and the manor is no longer built
-- **THEN** the offer stays and can be fulfilled
+- **WHEN** the manor is no longer built
+- **THEN** the Fulfil buttons are greyed again and the offer stays
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.

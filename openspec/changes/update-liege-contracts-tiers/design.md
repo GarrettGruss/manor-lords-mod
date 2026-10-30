@@ -92,13 +92,14 @@ One reward for each contract, drawn from the pool of its tier. The tiers of the 
 
 A reward good is never the same as the request good of its contract. Rewards are paid as today: goods go to the first storehouse, silver to `playerRef.silver`, a tech point to `tech_picks_earned`, influence to the mod influence. The Large tech point reward is allowed only when `update-tech-tree-yearly-picks` is built (as today).
 
-## Manor needed (owner decision 2026-10-30)
+## Manor needed to fulfil (owner decision 2026-10-30)
 
-Contracts exist only when a manor is built. The code that detects a built manor today is `manor_module()` in `Scripts/features/liege_influence/init.lua`: it calls `HarnessManor.manor_state()` and looks for a module with `built == true`. It has a cached form for the menu refresh (`manor_module_cached`, rechecked every few seconds, because a high poll rate can crash the game after such reads). The removal of the arms shipment deletes the use of it in `liege_influence`, so the detection moves into `liege_contracts` (task 2.8). Use the cached form for the window and the fresh form at the draw.
+The offer is dealt at spring whether or not a manor exists. A built manor is needed only to fulfil a contract. The code that detects a built manor today is `manor_module()` in `Scripts/features/liege_influence/init.lua`: it calls `HarnessManor.manor_state()` and looks for a module with `built == true`. It has a cached form for the menu refresh (`manor_module_cached`, rechecked every few seconds, because a high poll rate can crash the game after such reads). The removal of the arms shipment deletes its use in `liege_influence`, so the detection moves into `liege_contracts` (task 2.8). Use the cached form for the window and the fresh form in the Fulfil command.
 
-- No manor: no offer is dealt, and the window opens and shows only the text "Build a manor to receive contracts from the liege." and the Close button.
-- LEAD'S CHOICE (the owner may change it): a manor built mid-year deals the offer at once, with the fulfilled counts at 0. The alternative is to wait for the next spring. If the manor is built in winter, no offer is dealt (contracts expire in winter) and the first offer comes at the next spring.
-- A manor that is lost later does not remove an existing offer. A save and a load keep the offer.
+- The Fulfil button is enabled only when the manor is built, the goods are in storage and the tier limit is not reached.
+- The Fulfil command checks the manor again at click time and refuses if it is not built.
+- Without a manor the window shows the 9 contracts, all Fulfil buttons greyed, and the line "Build a manor to fulfil contracts." above the rows.
+- A lost manor greys the buttons again. The offer stays.
 
 ## Risks
 

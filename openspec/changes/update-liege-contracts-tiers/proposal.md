@@ -9,7 +9,7 @@ This change serves the pillar "the liege expects duty" and pillar 3 "scarcity fo
 ## What changes
 
 - The arms shipment (button, command, cooldown, config) is removed. A Medium contract can pay weapons instead.
-- Contracts need a built manor. With no manor, no offer is dealt and the window shows only "Build a manor to receive contracts from the liege." and the Close button. A manor built later deals the offer at once.
+- Contracts are dealt whether or not a manor exists. The Fulfil button is enabled only when the manor is built. Without a manor the window shows the contracts with greyed buttons and the line "Build a manor to fulfil contracts."
 - Each spring the liege offers 9 contracts: 3 random contracts from each of the tiers Small, Medium and Large.
 - The player may fulfil at most N contracts per tier per year. N is a config value per tier (default 1).
 - Contracts expire when winter begins. There is NO penalty (the config value `fail_penalty` and the -500 influence rule are removed). New contracts come in spring.
@@ -31,7 +31,7 @@ This change serves the pillar "the liege expects duty" and pillar 3 "scarcity fo
 ## Decided by the owner (2026-10-30)
 
 - The arms shipment is removed entirely. The contracts replace it.
-- Contracts are available only when the player's manor is built.
+- Contracts are dealt at spring whether or not a manor exists. A manor is needed only to fulfil them (the Fulfil button and command check it).
 - A delivery may take goods from any storehouse of the player region (as today).
 - 1000 influence for a Large contract is intended.
 - The goods tiers, the request tiers (Small asks for tier 1 goods, Medium for tier 2, Large for tier 3), the base values and the weights of `design.md` are approved.

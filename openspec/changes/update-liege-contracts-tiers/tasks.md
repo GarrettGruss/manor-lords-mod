@@ -14,7 +14,7 @@
 - [ ] 2.6 Remove the pick, complete, progress and penalty code and the objective kinds. Verified by the fake game test.
 - [ ] 2.7 ModState keys and the load of old saves. Verified by the fake game test.
 
-- [ ] 2.8 Manor gate: deal no offer without a built manor; deal at once when a manor is built outside winter; move the manor check from `liege_influence` into `liege_contracts`. Verified by the fake game test.
+- [ ] 2.8 Manor check at Fulfil: the button is enabled only with a built manor, and the Fulfil command checks the manor at click time. Move the manor check from `liege_influence` into `liege_contracts`. Show the line "Build a manor to fulfil contracts." without a manor. Verified by the fake game test.
 
 ## 3. Window and commands
 
