@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Liege contracts tiers mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&amp;family=Alegreya+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0d0a06}
+#board{width:1440px;height:810px;position:relative;overflow:hidden;background:#17120c;color:#eadfc8;font-family:'Alegreya Sans',sans-serif;display:flex;flex-direction:column}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed}
+button:focus-visible{outline:2px solid #f3dca4;outline-offset:2px}
+#head{height:72px;flex-shrink:0;box-sizing:border-box;padding:0 32px;display:flex;align-items:center;gap:32px;background:#221a11;border-bottom:2px solid #6b5432}
+#head h1{margin:0;font-family:Cinzel,serif;font-weight:700;font-size:30px;letter-spacing:2px;color:#e2c27a;flex-grow:1}
+.stat{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.cap{font-size:13px;color:#b8a888;letter-spacing:1px;text-transform:uppercase}
+.val{font-family:Cinzel,serif;font-size:24px}
+#demo{height:36px;padding:0 12px;background:#3a2c1a;border:1px solid #8a6d3e;border-radius:4px;font-family:Cinzel,serif;font-size:13px}
+#rows{flex-grow:1;box-sizing:border-box;padding:16px 32px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:16px;flex:1;min-height:0}
+.tier{width:180px;flex-shrink:0;box-sizing:border-box;padding:14px 16px;background:#1d160e;border:1px solid #5a4629;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.tier .name{font-family:Cinzel,serif;font-weight:700;font-size:24px;color:#e2c27a}
+.tier .cnt{font-family:Cinzel,serif;font-size:26px}
+.card{flex:1;min-width:0;box-sizing:border-box;padding:14px 18px;display:flex;flex-direction:column;gap:10px;border-radius:8px}
+.card.on{background:#261d12;border:2px solid #5a4629}
+.card.off{background:#1b150d;border:2px solid #3a2d1b}
+.card.done{background:#3b2d18;border:2px solid #e2c27a}
+.card .lab{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#b8a888}
+.card .req{font-size:17px}
+.card .have{font-size:14px}
+.card .rew{font-size:17px;font-weight:700}
+.grow{flex-grow:1}
+.fbtn{height:44px;border-radius:4px;font-family:Cinzel,serif;font-size:16px;background:#4a3822;color:#f3e6c8;border:1px solid #e2c27a}
+.fbtn:disabled{background:#2a2118;color:#8c8070;border-color:#4d3c24}
+#close{height:64px;flex-shrink:0;width:100%;background:#3a2c1a;border:none;border-top:2px solid #6b5432;font-family:Cinzel,serif;font-size:20px;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div id="board">
+  <div id="head">
+    <h1>Contracts of the Liege</h1>
+    <div class="stat"><span class="cap">Time to fulfil contracts</span><span class="val">210 days remaining</span></div>
+    <div class="stat"><span class="cap">Contracts refresh</span><span class="val">In spring, in 300 days</span></div>
+    <!-- DEMO ONLY: not part of the game window. Resets the fulfilled cards. -->
+    <button type="button" id="demo">Demo: new spring</button>
+  </div>
+  <div id="rows"></div>
+  <button type="button" id="close">Close</button>
+</div>
+<script>
+var LIMIT = 1;
+var TIERS = [
+  { id: 'small', name: 'Small', cards: [
+    { req: 'Deliver 50 planks', have: 52, need: 50, rew: '+30 clay' },
+    { req: 'Deliver 60 berries', have: 12, need: 60, rew: '+60 regional wealth' },
+    { req: 'Deliver 30 salt', have: 31, need: 30, rew: '+25 hides' } ] },
+  { id: 'medium', name: 'Medium', cards: [
+    { req: 'Deliver 24 metal bars', have: 34, need: 24, rew: '+15 swords' },
+    { req: 'Deliver 30 cut stone', have: 20, need: 30, rew: '+200 treasury silver' },
+    { req: 'Deliver 36 apples', have: 44, need: 36, rew: '+20 eel' } ] },
+  { id: 'large', name: 'Large', cards: [
+    { req: 'Deliver 9 helmets', have: 12, need: 9, rew: '+1 tech point' },
+    { req: 'Deliver 5 plate armor', have: 5, need: 5, rew: '+1000 influence' },
+    { req: 'Deliver 18 sausages', have: 8, need: 18, rew: '+1 tech point' } ] }
+];
+var done = {};
+function render() {
+  var rows = document.getElementById('rows');
+  rows.textContent = '';
+  TIERS.forEach(function (t) {
+    var used = (done[t.id] || []).length, full = used >= LIMIT;
+    var row = document.createElement('div'); row.className = 'row';
+    var box = document.createElement('div'); box.className = 'tier';
+    box.innerHTML = '<span class="name"></span><span class="cap">Fulfilled</span><span class="cnt"></span>';
+    box.children[0].textContent = t.name;
+    box.children[2].textContent = used + ' / ' + LIMIT;
+    box.children[2].style.color = full ? '#b8a888' : '#e2c27a';
+    row.appendChild(box);
+    t.cards.forEach(function (c, i) {
+      var isDone = (done[t.id] || []).indexOf(i) >= 0;
+      var can = c.have >= c.need && !full && !isDone;
+      var card = document.createElement('div');
+      card.className = 'card ' + (isDone ? 'done' : can ? 'on' : 'off');
+      card.innerHTML = '<div><div class="lab">Requirement</div><div class="req"></div><div class="have"></div></div>' +
+        '<div><div class="lab">Reward</div><div class="rew"></div></div><span class="grow"></span><button type="button" class="fbtn"></button>';
+      card.querySelector('.req').textContent = c.req;
+      var h = card.querySelector('.have');
+      h.textContent = 'In storage: ' + c.have + ' / ' + c.need;
+      h.style.color = c.have >= c.need ? '#cbb98f' : '#a89878';
+      card.querySelector('.rew').textContent = c.rew;
+      var b = card.querySelector('.fbtn');
+      b.textContent = isDone ? 'Fulfilled' : 'Fulfil';
+      b.disabled = !can;
+      b.setAttribute('aria-label', (isDone ? 'Fulfilled: ' : 'Fulfil: ') + c.req + ', reward ' + c.rew);
+      b.onclick = function () { done[t.id] = (done[t.id] || []).concat([i]); render(); };
+      row.appendChild(card);
+    });
+    rows.appendChild(row);
+  });
+}
+document.getElementById('demo').onclick = function () { done = {}; render(); };
+render();
+</script>
+</body>
+</html>
