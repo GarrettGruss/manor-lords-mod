@@ -7,8 +7,8 @@ The mod SHALL read all contracts from the data file `mod/InvasionMod/data/liege_
 #### Scenario: The table fields
 - **WHEN** the table loads
 - **THEN** it holds `version`, `offer_per_tier` (default 3) and the three tiers
-- **AND** each request has `good`, `min` and `max` (above 0, `min` not above `max`)
-- **AND** each reward has `kind` (`goods`, `weapons`, `regional_wealth`, `silver`, `tech_point` or `influence`), `good` where the kind needs one, `min` and `max`
+- **AND** each request has `good` and `weight` (above 0); the base of each tier and the difficulty values are config values
+- **AND** each reward has `kind` (`goods`, `weapons`, `regional_wealth`, `silver`, `tech_point` or `influence`), `good` where the kind needs one, `min` and `max` (the reward amount range)
 - **AND** the table has no objective type other than goods delivery, no `duration` and no penalty field
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
@@ -18,7 +18,7 @@ The mod SHALL read all contracts from the data file `mod/InvasionMod/data/liege_
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
 #### Scenario: A bad table stops the load
-- **WHEN** the table has an unknown kind, a missing field, `min` above `max` or fewer requests in a tier than `offer_per_tier`
+- **WHEN** the table has an unknown kind, a missing field, a weight of 0 or less or fewer requests in a tier than `offer_per_tier`
 - **THEN** the load fails and the message names the tier and the field
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
@@ -129,17 +129,26 @@ The mod SHALL register the commands `InvasionMod.liege_contracts_state`, `liege_
 ## ADDED Requirements
 
 ### Requirement: Requests are deliveries of goods
-Every contract SHALL ask for the delivery of one good in one amount. The amount is drawn in the range of the request table of the tier (table 1 in `design.md`). A contract SHALL have no other objective kind.
+Every contract SHALL ask for the delivery of one good in one amount. A Small contract asks for a tier 1 good, a Medium contract for a tier 2 good and a Large contract for a tier 3 good (the goods tiers of table 1 in `design.md`). A contract SHALL have no other objective kind.
 
 #### Scenario: The request is a delivery
 - **WHEN** a contract is drawn
-- **THEN** it holds one good id and one amount inside the table range of its tier
+- **THEN** it holds one good id of the goods tier of its contract tier and one amount
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
 #### Scenario: Stock is read from the player region
 - **WHEN** a card shows "In storage: <have> / <need>"
 - **THEN** `<have>` is the stock of the good in the player region (any store, as today)
 - Not checked yet. Planned: `mod/InvasionMod/scenarios/liege_contracts/window.py`.
+
+### Requirement: The request amount comes from a formula
+The amount SHALL be `max(1, round(base(tier) * weight(good) * difficulty))`, rounded half up. `base(tier)`, `weight(good)` and `difficulty` are config values. The difficulty comes from the yearly raid level of the scenario settings (proposed: level 1 gives 0.75, level 2 gives 1.0, level 3 gives 1.25, level 0 gives 1.0; an open question of the proposal).
+
+#### Scenario: The amount formula
+- **WHEN** a Large contract asks for plate armor (base 15, weight 0.35) at difficulty 1.25
+- **THEN** the amount is 7 (`15 * 0.35 * 1.25 = 6.56`), and at difficulty 1.0 it is 5
+- **AND** a result below 1 gives 1, and a changed base, weight or difficulty in config changes the amount
+- Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
 ### Requirement: The mod offers nine contracts each spring
 At each start of spring, and only then, the mod SHALL draw `offer_per_tier` different contracts (default 3) at random from each of the tiers Small, Medium and Large, and offer them. The new offer SHALL replace the old one and SHALL reset the fulfilled counts. The mod SHALL NOT make an offer at the first poll of a new game or of a save. The offer SHALL be saved before it is logged.
@@ -229,7 +238,7 @@ The liege window (menu id `liege`, a pak widget) SHALL follow the layout of the 
 - **THEN** the cards are hidden and the window shows the time to the next spring
 - Not checked yet. Planned: `harness/tests/test_fakegame_liege_contracts.py`.
 
-#### Scenario: The arms shipment
+#### Scenario: No arms shipment button
 - **WHEN** the window is open
-- **THEN** where the button "Request arms shipment" shows is an open question of the proposal (it was in the footer of the old window)
-- Not checked yet.
+- **THEN** it shows no "Request arms shipment" button (it is in the manor; see the delta of `mod/liege_influence`)
+- Not checked yet. Planned: `mod/InvasionMod/scenarios/liege_contracts/window.py`.

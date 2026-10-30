@@ -52,17 +52,17 @@ button:focus-visible{outline:2px solid #f3dca4;outline-offset:2px}
 var LIMIT = 1;
 var TIERS = [
   { id: 'small', name: 'Small', cards: [
-    { req: 'Deliver 40 firewood', have: 52, need: 40, rew: '+30 planks' },
-    { req: 'Deliver 30 bread', have: 12, need: 30, rew: '+60 regional wealth' },
-    { req: 'Deliver 25 stone', have: 31, need: 25, rew: '+40 timber' } ] },
+    { req: 'Deliver 50 planks', have: 52, need: 50, rew: '+30 clay' },
+    { req: 'Deliver 60 berries', have: 12, need: 60, rew: '+60 regional wealth' },
+    { req: 'Deliver 30 salt', have: 31, need: 30, rew: '+25 hides' } ] },
   { id: 'medium', name: 'Medium', cards: [
-    { req: 'Deliver 30 iron ore', have: 34, need: 30, rew: '+15 spears' },
-    { req: 'Deliver 50 planks', have: 20, need: 50, rew: '+200 treasury silver' },
-    { req: 'Deliver 40 ale', have: 44, need: 40, rew: '+30 bread' } ] },
+    { req: 'Deliver 24 metal bars', have: 34, need: 24, rew: '+15 swords' },
+    { req: 'Deliver 30 cut stone', have: 20, need: 30, rew: '+200 treasury silver' },
+    { req: 'Deliver 36 apples', have: 44, need: 36, rew: '+20 eel' } ] },
   { id: 'large', name: 'Large', cards: [
-    { req: 'Deliver 120 planks', have: 130, need: 120, rew: '+1 tech point' },
-    { req: 'Deliver 60 spears', have: 60, need: 60, rew: '+1000 influence' },
-    { req: 'Deliver 100 bread', have: 21, need: 100, rew: '+1 tech point' } ] }
+    { req: 'Deliver 9 helmets', have: 12, need: 9, rew: '+1 tech point' },
+    { req: 'Deliver 5 plate armor', have: 5, need: 5, rew: '+1000 influence' },
+    { req: 'Deliver 18 sausages', have: 8, need: 18, rew: '+1 tech point' } ] }
 ];
 var done = {};
 function render() {

@@ -15,7 +15,9 @@ This change serves the pillar "the liege expects duty" and pillar 3 "scarcity fo
 - There is no pick step and no active contract. Each card has a "Fulfil" button. It is enabled only when the goods are in the player's storage and the tier limit is not reached. A click takes the goods and pays the reward at once.
 - One reward for each contract, by tier: Small = tier 1 goods or regional wealth; Medium = weapons, tier 2 goods or treasury silver; Large = 1 tech point or 1000 influence.
 - New liege window, as in the mockup `mockups/liege-contracts-tiers.html`: three rows (one for each tier) of three cards, a top bar with two countdowns, and a full-width Close button at the bottom.
-- Two tables (requests and rewards by tier) are in `design.md`. All amounts are proposed defaults that the owner tunes in config.
+- A request asks for one good of the tier. The goods tiers are the owner's lists of 2026-10-30 (see `design.md`): Small asks for tier 1 goods, Medium for tier 2 goods, Large for tier 3 goods (the lead's default; the owner may change it).
+- The request amount is `round(base(tier) * weight(good) * difficulty)`, at least 1. Base, weight and difficulty are config values.
+- Two tables (requests and rewards by tier) are in `design.md`. All numbers are proposed defaults that the owner tunes in config.
 
 ## Non-goals
 
@@ -24,15 +26,20 @@ This change serves the pillar "the liege expects duty" and pillar 3 "scarcity fo
 - No change to `design/mod/`. The owner writes the game design.
 - No new art. The window uses the controls of the existing pak where possible (see design, risks).
 
+## Decided by the owner (2026-10-30)
+
+- The arms shipment button moves to the manor (the manor building's menu or panel). It leaves the contracts window.
+- A delivery may take goods from any storehouse of the player region (as today).
+- 1000 influence for a Large contract is intended.
+
 ## Open questions (for the owner; not decided here)
 
-1. The arms shipment button now sits in the footer of the contracts window. The new mockup has no footer text and a bottom bar with only a Close button. Where does the arms shipment button go (another window, the top bar, or removed)?
-2. Which goods count as "tier 1" and which as "tier 2"? Proposal: tier 1 = raw goods, tier 2 = produced goods (see design).
-3. May a delivery use goods from any store of the player region, or only the manor storage? Default in this draft: what the current feature does (any store of the player region, tier 1 stores first, then tier 2 stores).
-4. Regional wealth: no safe write path is proven for our mod (see design, risks). A spike is needed, or the Small reward drops to goods only.
+1. Regional wealth: no safe write path is proven for our mod (see design, risks). A spike is needed, or the Small reward drops to goods only.
+2. Difficulty: the lead assumes it comes from the yearly raid level in the scenario settings (1 easy 0.75, 2 medium 1.0, 3 hard 1.25, 0 off 1.0). Is that the right source and are those values right?
+3. The assumption that a Small contract asks for tier 1 goods, Medium for tier 2 and Large for tier 3. Is that right?
 
 ## Impact
 
-- Spec: `mod/liege_contracts` (delta in this change). `mod/liege_influence` needs a small delta once question 1 is answered (the arms shipment button).
+- Spec: `mod/liege_contracts` (delta in this change). `mod/liege_influence` has a delta in this change (the arms shipment button moves to the manor).
 - Code (later, gate 2): `mod/InvasionMod/Scripts/features/liege_contracts/*.lua`, `data/liege_contracts/contracts.json`, the liege menu pak widget, `Scripts/config.lua`, the tests and test scenarios of the feature.
 - Old saves: the keys `contracts_active`, `contracts_start_day`, `contracts_baseline` and `contracts_progress` are dropped. An old offer is dropped.
