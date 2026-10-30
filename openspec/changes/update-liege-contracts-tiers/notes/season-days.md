@@ -1,0 +1,3 @@
+# Season start days (countdowns of the window)
+
+`TemporalComponent.day` is the day of the calendar year (an `IntProperty`; also `month`, `dayOfTheMonth`, `Year`). The harness action `set_day` writes it. Test scenario `liege-contracts-fulfil` (runs 20261030-183650-7d2b, 20261030-184053-c309) set the day and read `Season`: day 334 is autumn (3), day 335 winter (0), day 59 winter (0), day 60 spring (1). So the year has 365 days, spring starts on day 60 and winter on day 335. A new game starts on day 61 (Mar 2): the window showed 274 days to winter and 364 days to spring. Config: `liege_contracts.year_days`, `spring_start_day`, `winter_start_day`.

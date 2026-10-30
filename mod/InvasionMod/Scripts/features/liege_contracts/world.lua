@@ -80,7 +80,20 @@ function M.stock(good)
     return type(value) == "number" and math.floor(value) or nil
 end
 
--- Take `amount` units of a good from the stores of the player region (tier 1 stores first, then tier 2).
+-- Where a good lies: a text such as "type 72: 40, type 50: 30" (for the message of a refused take).
+function M.holders(good)
+    local region = core.player_region()
+    if region == nil then return "no region" end
+    local parts = {}
+    for _, building in ipairs(built_buildings(region)) do
+        local held = amount_of(building, good)
+        if held > 0 then parts[#parts + 1] = string.format("type %s: %d", tostring(building_type(building)), held) end
+    end
+    return #parts > 0 and table.concat(parts, ", ") or "in no building"
+end
+
+-- Take `amount` units of a good from the buildings of the player region that hold it. The known stores come first (tier 1, then tier 2);
+-- then any other building that holds the good (food lies in a building of type 80, real run 20261030-183206-25f3), never a home.
 -- Returns the number of units taken (it can be less than `amount`), or nil and a message.
 function M.take_goods(good, amount)
     local region, problem = core.player_region()
@@ -90,7 +103,7 @@ function M.take_goods(good, amount)
     local stores = {}
     for _, building in ipairs(built_buildings(region)) do
         local kind = building_type(building)
-        if kind ~= nil and rank[kind] ~= nil and kind ~= HOME_TYPE then stores[#stores + 1] = { building = building, rank = rank[kind] } end
+        if kind ~= HOME_TYPE and amount_of(building, good) > 0 then stores[#stores + 1] = { building = building, rank = rank[kind] or 1000 } end
     end
     table.sort(stores, function(a, b) return a.rank < b.rank end)
     local taken = 0

@@ -162,8 +162,8 @@ local function fulfil(id)
     local got, problem = world.take_goods(contract.good, contract.amount)
     if got == nil or got < contract.amount then
         if got ~= nil and got > 0 then world.add_goods(contract.good, got) end -- put the units back
-        local reason = string.format("only %d of %d units of goods %d could be taken from the stores%s", got or 0, contract.amount, contract.good,
-            problem and (": " .. tostring(problem)) or "")
+        local reason = string.format("only %d of %d units of goods %d could be taken from the stores (the goods lie %s)%s", got or 0, contract.amount, contract.good,
+            world.holders(contract.good), problem and (": " .. tostring(problem)) or "")
         core.log.warn(TAG, "LIEGE_CONTRACTS fulfil refused: " .. reason)
         return nil, reason
     end
@@ -216,6 +216,7 @@ local function drop_unknown()
 end
 
 local function tick()
+    if not state.loaded then return end
     drop_unknown()
     local info = invasion.season_info()
     if info ~= nil then yearly_step(info) end
@@ -294,10 +295,9 @@ local NAMES = {
 }
 for row = 0, ROWS - 1 do
     for _, prefix in ipairs({ "TierName", "TierCount" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. row end
-    NAMES.borders[#NAMES.borders + 1] = "TierBox" .. row
     for card = 0, PER_ROW - 1 do
         local key = row .. "_" .. card
-        for _, prefix in ipairs({ "ReqText", "HaveText", "RewText" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. key end
+        for _, prefix in ipairs({ "ReqLabel", "ReqText", "HaveText", "RewLabel", "RewText" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. key end
         NAMES.borders[#NAMES.borders + 1] = "Card" .. key
         NAMES.buttons[#NAMES.buttons + 1] = "FulfilButton" .. key
     end
@@ -358,7 +358,12 @@ local function fill_card(row, number, card)
     local key = row .. "_" .. number
     set_visible("Card" .. key, card ~= nil)
     set_button_visible("FulfilButton" .. key, card ~= nil)
-    if card == nil then return end
+    if card == nil then
+        for _, prefix in ipairs({ "ReqLabel", "ReqText", "HaveText", "RewLabel", "RewText" }) do set_text(prefix .. key, "") end
+        return
+    end
+    set_text("ReqLabel" .. key, "REQUIREMENT")
+    set_text("RewLabel" .. key, "REWARD")
     set_text("ReqText" .. key, card.requirement)
     set_text("HaveText" .. key, card.have)
     set_text("RewText" .. key, card.reward_text)
@@ -439,7 +444,7 @@ end
 menu.register({
     id = MENU_ID, label = "Liege",
     class_path = "/Game/HarnessMod/WBP_LiegeContracts.WBP_LiegeContracts_C", package_path = "/Game/HarnessMod", asset_name = "WBP_LiegeContracts",
-    z_order = menu_config.z_order, position = menu_config.position,
+    z_order = menu_config.z_order, -- the widget is centred by its own anchors (make_liege_widget.py), so there is no position
     on_open = on_open, on_close = reset_window,
 })
 
@@ -523,6 +528,13 @@ if has_commands then
         return { ok = true }
     end, {})
     commands.register("InvasionMod.liege_menu_state", menu_state, {})
+    -- Test command: the same code as a click on a window button (`button` is a button name such as FulfilButton0_0 or CloseButton).
+    -- A real mouse click needs a mouse device; this PC may have none.
+    commands.register("InvasionMod.liege_menu_press", function(args)
+        if not is_open() then return nil, "the window is not open" end
+        press(args.button)
+        return { ok = true, presses = W.presses, fulfils = S.fulfils }
+    end, { button = { type = "string", required = true } })
     commands.register("InvasionMod.liege_contracts_state", command_state, {})
     commands.register("InvasionMod.liege_contract_fulfil", function(args)
         local result, reason = fulfil(args.id)

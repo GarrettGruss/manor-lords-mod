@@ -321,7 +321,6 @@ return {
         poll_ms = 100,                   -- real time between two looks at the click queue of the menu (never faster)
         refresh_ms = 500,                -- real time between two refreshes of the menu labels
         z_order = 500,
-        position = { X = 50, Y = 25 },   -- the contracts window is wide: it starts near the top left corner
     },
     -- liege_contracts (changes update-liege-tribute-to-contracts, #505, and update-liege-contracts-tiers, #533).
     -- The request and reward pools are in data/liege_contracts/contracts.json. Every number below is a proposed default; the owner tunes it.
