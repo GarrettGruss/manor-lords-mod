@@ -192,12 +192,17 @@ local function expire(info)
     core.log.info(TAG, string.format("LIEGE_CONTRACTS winter begins no=%d: the offer ended with %d contracts, no penalty", info.no, #list))
 end
 
--- Spring: one offer for each spring counter value. The first look only takes the counter, so a new game or a save makes no offer.
+-- Spring: one offer for each spring counter value. The first look of a game with no contract state takes the counter. A game that
+-- starts in spring is dealt its offer at once; a game in another season waits for the next spring. A save keeps its counter,
+-- so a load in the same spring never deals twice.
 local function yearly_step(info)
     local seen = state:get("contracts_spring_no")
     if seen < 0 then
-        state:set("contracts_spring_no", info.no)
-        return
+        if info.season ~= SPRING then
+            state:set("contracts_spring_no", info.no)
+            return
+        end
+        seen = info.no - 1
     end
     if info.season == WINTER then return expire(info) end
     if info.season ~= SPRING or info.no <= seen then return end
@@ -291,7 +296,7 @@ local NOTICE_S = 6              -- real seconds that a refused click shows its r
 local NAMES = {
     texts = { "TitleText", "RemainText", "RefreshText", "NoticeText" },
     borders = {},
-    buttons = { "CloseButton" },
+    buttons = {},
 }
 for row = 0, ROWS - 1 do
     for _, prefix in ipairs({ "TierName", "TierCount" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. row end
@@ -435,7 +440,6 @@ local function on_open(made)
         reset_window()
         return nil, bind_problem
     end
-    clickhooks.set_text(W.buttons.CloseButton.handle, "Close")
     reset_manor_cache()
     refresh()
     return true
@@ -453,10 +457,6 @@ local function say(text)
 end
 
 local function press(name)
-    if name == "CloseButton" then
-        menu.close()
-        return
-    end
     local row, number = name:match("^FulfilButton(%d)_(%d)$")
     local tier = row and rules.TIERS[tonumber(row) + 1]
     local contract = tier and find_contract(offer(), tier .. "-" .. (tonumber(number) + 1))
@@ -528,7 +528,7 @@ if has_commands then
         return { ok = true }
     end, {})
     commands.register("InvasionMod.liege_menu_state", menu_state, {})
-    -- Test command: the same code as a click on a window button (`button` is a button name such as FulfilButton0_0 or CloseButton).
+    -- Test command: the same code as a click on a window button (`button` is a button name such as FulfilButton0_0).
     -- A real mouse click needs a mouse device; this PC may have none.
     commands.register("InvasionMod.liege_menu_press", function(args)
         if not is_open() then return nil, "the window is not open" end

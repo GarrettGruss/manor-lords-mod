@@ -67,7 +67,7 @@ def check_layout(ctx, state: dict, has_manor: bool) -> None:
                   [("Small", "0 / 1"), ("Medium", "0 / 1"), ("Large", "0 / 1")])
     expect.equals("W9 the top bar has the two countdowns", ["days remaining" in texts["RemainText"], "In spring, in" in texts["RefreshText"]], [True, True])
     names = {b["name"] for b in state["buttons"]}
-    expect.equals("W10 nine Fulfil buttons and the Close button exist", len(names), 10)
+    expect.equals("W10 nine Fulfil buttons exist and the widget has no Close button", (len(names), [n for n in names if "Close" in n]), (9, []))
     expect.equals("W11 no arms button", [n for n in names if "Arms" in n or "Pick" in n or "Complete" in n], [])
     notice = texts.get("NoticeText")
     if has_manor:
@@ -88,9 +88,10 @@ def run(ctx) -> dict:
     time.sleep(SETTLE_S)
     state = menu(ctx)
     expect.equals("W2 the window is in the viewport", state["in_viewport"], True)
-    expect.equals("W3 no offer: the notice text shows", "start of spring" in state["texts"].get("NoticeText", ""), True)
-    expect.equals("W3b no offer: the cards are collapsed", state.get("card_visibility"), 1)
-    ctx.screenshot("window-empty" if has_manor else "window-empty-no-manor")
+    if not contracts(ctx)["offer"]:  # a game that starts in spring is dealt the offer at once (fix-liege-contracts-first-spring)
+        expect.equals("W3 no offer: the notice text shows", "start of spring" in state["texts"].get("NoticeText", ""), True)
+        expect.equals("W3b no offer: the cards are collapsed", state.get("card_visibility"), 1)
+        ctx.screenshot("window-empty" if has_manor else "window-empty-no-manor")
 
     ctx.mod.command(PREFIX + "liege_contracts_offer_now", ids=OFFER)
     for good, amount in ((PLANKS, 55), (CUT_STONE, 30), (PLATE, 5)):
@@ -105,7 +106,7 @@ def run(ctx) -> dict:
         click(ctx, "FulfilButton0_0")
         expect.equals("W14 without a manor a click on Fulfil does nothing", (menu(ctx)["presses"], stock(ctx, PLANKS)), (before, planks))
         expect.equals("W15 no contract was fulfilled", contracts(ctx)["done"], 0)
-        click(ctx, "CloseButton")
+        ctx.mod.command(PREFIX + "liege_menu_close")
         ctx.run_until(lambda: not menu(ctx)["open"], 8, what="the close button closes the window", poll_s=0.5)
         return ctx.result()
 
@@ -145,6 +146,6 @@ def run(ctx) -> dict:
     expect.equals("W24 three contracts are done and no reward failed", (contracts(ctx)["done"], contracts(ctx)["failed_rewards"]), (3, 0))
     ctx.screenshot("window-after-fulfil")
 
-    click(ctx, "CloseButton")
+    ctx.mod.command(PREFIX + "liege_menu_close")
     ctx.run_until(lambda: not menu(ctx)["open"], 8, what="the close button closes the window", poll_s=0.5)
     return ctx.result()

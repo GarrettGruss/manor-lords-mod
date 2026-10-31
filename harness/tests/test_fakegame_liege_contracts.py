@@ -87,6 +87,7 @@ def load_data():
 
 
 class ContractsTestCase(TechTreeTestCase):
+    START_SEASON = SUMMER  # a game that starts in summer makes no offer until spring
     def setUp(self):
         super().setUp()
         self.world = self.game.lua.eval(WORLD)(self.game.fg, self.region)
@@ -395,6 +396,29 @@ class SpringTests(ContractsTestCase):
         answer = self.ask("liege_contracts_offer_now", ids=contract(SMALL, 999, 5, "s", 0, 5))
         self.assertFalse(answer["ok"])
         self.assertIn("unknown contract", answer["error"])
+
+
+class FirstSpringTests(ContractsTestCase):
+    START_SEASON = SPRING  # a new game starts on day 61 in spring
+
+    def test_a_new_game_in_spring_is_dealt_the_offer_at_the_first_poll(self):
+        self.game.advance(5)
+        state = self.contracts()
+        self.assertEqual(len(state["offer"]), 9)
+        self.assertEqual(state["spring_no"], state["season_no"])
+
+    def test_a_load_in_the_same_spring_does_not_deal_again(self):
+        self.game.advance(5)
+        offer = self.contracts()["offer_text"]
+        self.game.exec(f"{FEATURE}.state:load()")
+        self.game.advance(10)
+        self.assertEqual(self.contracts()["offer_text"], offer)
+
+    def test_a_game_in_spring_with_no_state_is_dealt_once(self):
+        self.game.advance(5)
+        first = self.contracts()["offer_text"]
+        self.game.advance(30)
+        self.assertEqual(self.contracts()["offer_text"], first)
 
 
 class FulfilTests(ContractsTestCase):
