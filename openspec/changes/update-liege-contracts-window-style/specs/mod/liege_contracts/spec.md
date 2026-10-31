@@ -10,7 +10,7 @@ The liege window (menu id `liege`, a pak widget) SHALL follow the game-menu styl
 - **AND** card text is white serif, goods and rewards are gold capitals, and a missing amount is muted red
 - Checked by picture evidence and the test scenario `liege-contracts-window`.
 
-#### Scenario: The countdown line
+#### Scenario: The bars
 - **WHEN** the window is open
 - **THEN** one line under the title shows "Time to fulfil contracts: <n> days remaining" and "Contracts refresh: In spring, in <n> days", with the numbers in gold
 - **AND** there is no influence counter, no treasury counter and no status text
@@ -27,7 +27,7 @@ The liege window (menu id `liege`, a pak widget) SHALL follow the game-menu styl
 - **AND** a card has no name, no quote and no penalty
 - Checked by `mod/InvasionMod/scenarios/liege_contracts/window.py`, picture evidence.
 
-#### Scenario: The Fulfil text
+#### Scenario: The Fulfil button
 - **WHEN** the manor is built, the goods are in storage and the tier limit is not reached
 - **THEN** Fulfil is plain serif text with no box, and a click calls the same code as `liege_contract_fulfil`
 - **AND** otherwise the card is dimmed and clicks are ignored
