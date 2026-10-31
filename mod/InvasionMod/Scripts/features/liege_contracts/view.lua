@@ -47,6 +47,27 @@ function M.refresh_text(days)
     return string.format("Contracts refresh: In spring, in %d days", days)
 end
 
+-- The widget draws a white label and a gold value. "Time to fulfil contracts: 210 days remaining" -> "Time to fulfil contracts:", "210 days remaining"
+function M.split_label(text)
+    local label, value = text:match("^(.-:)%s*(.*)$")
+    if label == nil then return text, "" end
+    return label, value
+end
+
+-- "Deliver 50 planks" -> "Deliver", "50 PLANKS" (goods in gold capitals)
+function M.split_requirement(text)
+    local verb, rest = text:match("^(%S+)%s+(.+)$")
+    if verb == nil then return "", text:upper() end
+    return verb, rest:upper()
+end
+
+-- "+30 clay" -> "Reward:", "+30 CLAY"
+function M.split_reward(text)
+    return "Reward:", text:upper()
+end
+
+M.TITLE_TEXT = "CONTRACTS OF THE LIEGE"
+
 M.NO_OFFER_TEXT = "The liege sends new contracts at the start of spring."
 
 return M
