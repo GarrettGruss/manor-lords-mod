@@ -293,8 +293,10 @@ local MENU_ID = "liege"
 local ROWS, PER_ROW = 3, 3
 local COLLAPSED, VISIBLE = 1, 0 -- ESlateVisibility
 local NOTICE_S = 6              -- real seconds that a refused click shows its reason
+local CARD_TEXTS = { "ReqLabel", "ReqText", "HaveText", "HaveMiss", "RewLabel", "RewText", "FulfilledText" }
+local DIMMED_OPACITY = 0.45     -- render opacity of a card that cannot be fulfilled
 local NAMES = {
-    texts = { "TitleText", "RemainText", "RefreshText", "NoticeText" },
+    texts = { "TitleText", "RemainLabel", "RemainValue", "RefreshLabel", "RefreshValue", "NoticeText" },
     borders = {},
     buttons = {},
 }
@@ -302,13 +304,13 @@ for row = 0, ROWS - 1 do
     for _, prefix in ipairs({ "TierName", "TierCount" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. row end
     for card = 0, PER_ROW - 1 do
         local key = row .. "_" .. card
-        for _, prefix in ipairs({ "ReqLabel", "ReqText", "HaveText", "RewLabel", "RewText" }) do NAMES.texts[#NAMES.texts + 1] = prefix .. key end
+        for _, prefix in ipairs(CARD_TEXTS) do NAMES.texts[#NAMES.texts + 1] = prefix .. key end
         NAMES.borders[#NAMES.borders + 1] = "Card" .. key
         NAMES.buttons[#NAMES.buttons + 1] = "FulfilButton" .. key
     end
 end
 
-local W = { widget = nil, texts = {}, borders = {}, buttons = {}, shown = {}, visible = {}, labels = {}, last_refresh = 0, notice = nil, notice_until = 0, presses = 0 }
+local W = { widget = nil, texts = {}, borders = {}, buttons = {}, shown = {}, visible = {}, labels = {}, dim = {}, last_refresh = 0, notice = nil, notice_until = 0, presses = 0 }
 
 local function is_open() return menu.is_open(MENU_ID) end
 
@@ -324,6 +326,16 @@ local function set_visible(name, shown)
     if border == nil or W.visible[name] == shown then return end
     W.visible[name] = shown
     border:SetVisibility(shown and VISIBLE or COLLAPSED)
+end
+
+-- A card that cannot be fulfilled is dimmed (render opacity of its Border; a plain float call).
+local function set_dim(name, dimmed)
+    local border = W.borders[name]
+    if border == nil or W.dim[name] == dimmed then return end
+    if isValid(border) then
+        W.dim[name] = dimmed
+        border:SetRenderOpacity(dimmed and DIMMED_OPACITY or 1)
+    end
 end
 
 local function set_button_visible(name, shown)
@@ -362,18 +374,26 @@ local function current_view() return window_view(manor_built_cached()) end
 local function fill_card(row, number, card)
     local key = row .. "_" .. number
     set_visible("Card" .. key, card ~= nil)
-    set_button_visible("FulfilButton" .. key, card ~= nil)
     if card == nil then
-        for _, prefix in ipairs({ "ReqLabel", "ReqText", "HaveText", "RewLabel", "RewText" }) do set_text(prefix .. key, "") end
+        set_button_visible("FulfilButton" .. key, false)
+        for _, prefix in ipairs(CARD_TEXTS) do set_text(prefix .. key, "") end
         return
     end
-    set_text("ReqLabel" .. key, "REQUIREMENT")
-    set_text("RewLabel" .. key, "REWARD")
-    set_text("ReqText" .. key, card.requirement)
-    set_text("HaveText" .. key, card.have)
-    set_text("RewText" .. key, card.reward_text)
+    local verb, goods = view.split_requirement(card.requirement)
+    local reward_label, reward = view.split_reward(card.reward_text)
+    local short = (card.stock or 0) < card.amount
+    set_text("ReqLabel" .. key, verb)
+    set_text("ReqText" .. key, goods)
+    set_text("HaveText" .. key, short and "" or card.have)
+    set_text("HaveMiss" .. key, short and card.have or "")
+    set_text("RewLabel" .. key, reward_label)
+    set_text("RewText" .. key, reward)
+    set_text("FulfilledText" .. key, card.done and "Fulfilled" or "")
+    -- A fulfilled card shows the gold text and no button; a card that cannot be fulfilled is dimmed.
+    set_button_visible("FulfilButton" .. key, not card.done)
     set_button_label("FulfilButton" .. key, card.label)
     set_disabled("FulfilButton" .. key, not card.enabled)
+    set_dim("Card" .. key, not card.enabled and not card.done)
 end
 
 local function notice_line(model)
@@ -384,9 +404,11 @@ end
 local function refresh()
     if not isValid(W.widget) then return false end
     local model = current_view()
-    set_text("TitleText", "Contracts of the Liege")
-    set_text("RemainText", model.remaining_text)
-    set_text("RefreshText", model.refresh_text)
+    set_text("TitleText", view.TITLE_TEXT)
+    set_text("RemainLabel", select(1, view.split_label(model.remaining_text)))
+    set_text("RemainValue", select(2, view.split_label(model.remaining_text)))
+    set_text("RefreshLabel", select(1, view.split_label(model.refresh_text)))
+    set_text("RefreshValue", select(2, view.split_label(model.refresh_text)))
     set_text("NoticeText", notice_line(model))
     local by_slot = {}
     for _, card in ipairs(model.cards) do by_slot[key_of(card)] = card end
@@ -406,7 +428,7 @@ end
 
 local function reset_window()
     release_buttons()
-    W.widget, W.texts, W.borders, W.buttons, W.shown, W.visible, W.labels = nil, {}, {}, {}, {}, {}, {}
+    W.widget, W.texts, W.borders, W.buttons, W.shown, W.visible, W.labels, W.dim = nil, {}, {}, {}, {}, {}, {}, {}
 end
 
 local function on_open(made)
@@ -415,7 +437,7 @@ local function on_open(made)
     W.texts = menu.find_named(made, "TextBlock", NAMES.texts)
     W.borders = menu.find_named(made, "Border", NAMES.borders)
     local button_borders = menu.find_named(made, "Border", NAMES.buttons)
-    if W.texts.RemainText == nil then
+    if W.texts.RemainValue == nil then
         reset_window()
         return nil, "the text lines were not found in the widget"
     end
@@ -435,7 +457,19 @@ local function on_open(made)
     end
     local handles = {}
     for _, slot in pairs(W.buttons) do handles[#handles + 1] = slot.handle end
+    -- Fulfil is plain text: the click button keeps its label and loses its box (transparent background).
+    for _, handle in ipairs(handles) do
+        local ok, inner = pcall(function() return handle.widget.Button01 end)
+        if ok and isValid(inner) then inner:SetBackgroundColor({ R = 1, G = 1, B = 1, A = 0 }) end
+    end
     local bound, bind_problem = clickhooks.bind_texts(handles)
+    if bound then
+        -- The label sits in the TextBorder (child 1 of the content box, as bind_texts finds it): make its box transparent too.
+        for _, handle in ipairs(handles) do
+            local ok, text_border = pcall(function() return handle.widget.Button01:GetContent():GetChildAt(1) end)
+            if ok and isValid(text_border) then text_border:SetBrushColor({ R = 1, G = 1, B = 1, A = 0 }) end
+        end
+    end
     if not bound then
         reset_window()
         return nil, bind_problem
@@ -499,14 +533,20 @@ local function menu_state()
             hovered = read(function() return slot.handle.widget:IsHovered() end), disabled = slot.disabled, label = W.labels[name] }
     end
     local model = window_view(manor_built_cached())
-    local wanted = { RemainText = model.remaining_text, RefreshText = model.refresh_text, NoticeText = notice_line(model) }
+    local remain_label, remain_value = view.split_label(model.remaining_text)
+    local refresh_label, refresh_value = view.split_label(model.refresh_text)
+    local wanted = { RemainLabel = remain_label, RemainValue = remain_value, RefreshLabel = refresh_label, RefreshValue = refresh_value,
+                     NoticeText = notice_line(model) }
     for row, tier in ipairs(rules.TIERS) do
         wanted["TierName" .. (row - 1)] = model.tiers[tier].name
         wanted["TierCount" .. (row - 1)] = model.tiers[tier].count_text
     end
     for _, card in ipairs(model.cards) do
         local key = key_of(card)
-        wanted["ReqText" .. key], wanted["HaveText" .. key], wanted["RewText" .. key] = card.requirement, card.have, card.reward_text
+        local _, goods = view.split_requirement(card.requirement)
+        local _, reward = view.split_reward(card.reward_text)
+        wanted["ReqText" .. key], wanted["RewText" .. key] = goods, reward
+        wanted[((card.stock or 0) < card.amount and "HaveMiss" or "HaveText") .. key] = card.have
     end
     return { open = is_open(), in_viewport = is_open() and read(function() return W.widget:IsInViewport() end) or false,
              texts = shown, view = model, wanted_texts = wanted, buttons = buttons, presses = W.presses, fulfils = S.fulfils,

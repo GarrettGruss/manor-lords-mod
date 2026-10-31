@@ -61,11 +61,11 @@ def check_layout(ctx, state: dict, has_manor: bool) -> None:
     texts = state["texts"]
     expect.equals("W4 the shown texts equal the wanted texts", {k: texts.get(k) for k in state["wanted_texts"]}, state["wanted_texts"])
     expect.equals("W5 nine cards show their requirement", sum(1 for k, v in texts.items() if k.startswith("ReqText") and v), 9)
-    expect.equals("W6 the first card text", texts.get("ReqText0_0"), "Deliver 50 planks")
-    expect.equals("W7 the first reward text", texts.get("RewText0_0"), "+30 clay")
+    expect.equals("W6 the first card text (white verb, gold goods in capitals)", (texts.get("ReqLabel0_0"), texts.get("ReqText0_0")), ("Deliver", "50 PLANKS"))
+    expect.equals("W7 the first reward text", (texts.get("RewLabel0_0"), texts.get("RewText0_0")), ("Reward:", "+30 CLAY"))
     expect.equals("W8 the tier boxes show the name and the count", [(texts.get(f"TierName{i}"), texts.get(f"TierCount{i}")) for i in range(3)],
                   [("Small", "0 / 1"), ("Medium", "0 / 1"), ("Large", "0 / 1")])
-    expect.equals("W9 the top bar has the two countdowns", ["days remaining" in texts["RemainText"], "In spring, in" in texts["RefreshText"]], [True, True])
+    expect.equals("W9 the top bar has the two countdowns", ["days remaining" in texts["RemainValue"], "In spring, in" in texts["RefreshValue"]], [True, True])
     names = {b["name"] for b in state["buttons"]}
     expect.equals("W10 nine Fulfil buttons exist and the widget has no Close button", (len(names), [n for n in names if "Close" in n]), (9, []))
     expect.equals("W11 no arms button", [n for n in names if "Arms" in n or "Pick" in n or "Complete" in n], [])
@@ -122,6 +122,7 @@ def run(ctx) -> dict:
     state = menu(ctx)
     expect.equals("W17 the tier count and the card label changed", (state["texts"].get("TierCount0"), next(b["label"] for b in state["buttons"] if b["name"] == "FulfilButton0_0")),
                   ("1 / 1", "Fulfilled"))
+    expect.equals("W17b the fulfilled card shows the gold text", state["texts"].get("FulfilledText0_0"), "Fulfilled")
     expect.equals("W18 the other Small buttons are greyed by the tier limit", [disabled(state, f"FulfilButton0_{c}") for c in (1, 2)], [True, True])
 
     ctx.actions.give_item(BERRIES, 70)
