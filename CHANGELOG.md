@@ -9,6 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `harness\deploy.ps1` also installs each mod's own pak (`mod/<name>/paks/<name>_P.pak`, today `InvasionMod_P.pak`) into `Content\Paks\~mods\`, so a manual deploy is ready to play. The pak is listed in the run pak manifest, so `run.py --pak` and `pakmod.py remove` can replace or remove it. `-NoPak` skips it; the run launcher, `install.ps1` and `reload_mods.py` pass `-NoPak`.
 
 ### Fixed
+- Liege contracts (#536): a new game starts in spring but the window showed no contracts for a year, because the first look only took the spring counter. A game that starts in spring is now dealt its offer at once (a load in the same spring deals no second offer). The liege window had two Close buttons: the widget's own full-width Close is removed, and the menu framework's Close (the game's bottom-middle Close) is the only one.
 - Vassal tribute payouts (#517): the tribute feature called `raid_world.deposit`, which commit 189251d removed, so no goods were paid. Tribute now deposits through its own helper (`addToInventory` on a store, read back from the inventory).
 
 ### Changed

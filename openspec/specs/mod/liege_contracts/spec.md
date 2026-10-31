@@ -131,7 +131,7 @@ The amount SHALL be `max(1, round(base(tier) * weight(good) * difficulty))`, rou
 - Checked by `harness/tests/test_fakegame_liege_contracts.py`.
 
 ### Requirement: The mod offers nine contracts each spring
-At each start of spring, with or without a built manor, the mod SHALL draw `offer_per_tier` different contracts (default 3) at random from each tier and offer them. The new offer SHALL replace the old one and reset the fulfilled counts. The mod SHALL NOT make an offer at the first poll of a new game or of a save. The offer SHALL be saved before it is logged.
+At each start of spring, with or without a built manor, the mod SHALL draw `offer_per_tier` different contracts (default 3) at random from each tier and offer them. The new offer SHALL replace the old one and reset the fulfilled counts. A game that starts in spring (a new game starts on day 61 in spring) SHALL get its offer at the first poll. A game that starts in another season SHALL make no offer until the next spring. A load SHALL NOT deal a second offer for a spring that was already dealt. The offer SHALL be saved before it is logged.
 
 #### Scenario: A spring draw
 - **WHEN** the season counter shows a new spring (read as in `mod/tech_tree`)
@@ -148,6 +148,11 @@ At each start of spring, with or without a built manor, the mod SHALL draw `offe
 - **WHEN** a new game starts in summer, or a save that is not in spring loads without contract state
 - **THEN** no offer is made, the window shows the time to the next spring, and the first offer comes at the next start of spring
 - Checked by `harness/tests/test_fakegame_liege_contracts.py`.
+
+#### Scenario: A game that starts in spring
+- **WHEN** a new game starts in spring (day 61), with no contract state
+- **THEN** the offer holds 9 contracts at the first poll, with no test command, and a load in the same spring deals no second offer
+- Checked by `harness/tests/test_fakegame_liege_contracts.py` and `mod/InvasionMod/scenarios/liege_contracts/new_game_offer.py`.
 
 ### Requirement: The player fulfils contracts, up to a limit for each tier
 The command `InvasionMod.liege_contract_fulfil` (argument: the contract id, for example `small-1`) SHALL take the requested goods from the buildings of the player region that hold them (the known stores first; food lies in a building of type 80) and pay the reward at once. The player may fulfil at most N contracts of each tier in a year (config value `liege_contracts.tier_limits`, default 1). A refused call SHALL change nothing and SHALL give the reason.

@@ -1,14 +1,14 @@
 # Runs inside UnrealEditor-Cmd (-ExecutePythonScript).
 # Makes /Game/HarnessMod/WBP_LiegeContracts from a stock engine widget (same method as make_tech_widget.py).
 # Change update-liege-contracts-tiers (#533): the liege window follows the mockup liege-contracts-tiers.html: a top bar (title and two
-# countdowns), a notice line, three rows (Small, Medium, Large) with a tier box and three contract cards each, and a full-width Close button.
+# countdowns), a notice line, three rows (Small, Medium, Large) with a tier box and three contract cards each, and no Close button (the menu framework draws the game's Close at the bottom middle; fix-liege-contracts-first-spring).
 # The contracts are data (data/liege_contracts/contracts.json), but a pak asset is fixed, so the asset holds a POOL of 9 cards on ONE
 # canvas. Lua fills, shows and hides them. Lua finds widgets by name and puts a WBP_ClickButton into each button Border (HarnessClickHooks).
 # Names (row r = 0..2 for Small, Medium, Large; card c = 0..2):
 #   TextBlocks: TitleText, RemainText, RefreshText, NoticeText, TierName<r>, TierCount<r>,
 #               ReqLabel<r>_<c>, ReqText<r>_<c>, HaveText<r>_<c>, RewLabel<r>_<c>, RewText<r>_<c>
 #   Borders:    TierBox<r>, Card<r>_<c>
-#   Buttons (Borders): FulfilButton<r>_<c>, CloseButton
+#   Buttons (Borders): FulfilButton<r>_<c>
 # No arms shipment button (removed by this change).
 import unreal
 
@@ -18,13 +18,12 @@ NAME = "WBP_LiegeContracts"
 FULL = PATH + "/" + NAME
 SEED_WIDGET = "StackBox_51"
 ROWS, CARDS = 3, 3
-CANVAS_W, CANVAS_H = 1152, 704
+CANVAS_W, CANVAS_H = 1152, 632
 HEADER_H = 60
 NOTICE_Y = 64
 ROWS_Y, ROW_H, ROW_GAP = 96, 170, 8
 TIER_X, TIER_W = 16, 160
 CARD_X0, CARD_W, CARD_GAP = 192, 306, 12
-CLOSE_Y, CLOSE_H = 640, 56
 PAD = 14                      # inside a card
 LEFTOVER_FUNCTIONS = ["GatherInputInfo"]
 
@@ -135,10 +134,6 @@ def add_rows(tree, canvas):
             add_card(tree, canvas, r, c, y)
 
 
-def add_footer(tree, canvas):
-    make_button(tree, canvas, "CloseButton", 16, CLOSE_Y, CANVAS_W - 32, CLOSE_H)
-
-
 def center_seed(seed):
     # The stock widget puts the seed at 58 percent of the viewport height (anchors 0 / 0.583). Centre the window instead, at its own size.
     slot = seed.get_editor_property("slot")
@@ -162,7 +157,6 @@ def add_menu(tree, seed):
     box.set_content(canvas)
     add_header(tree, canvas)
     add_rows(tree, canvas)
-    add_footer(tree, canvas)
 
 
 def drop_graphs(bp):
