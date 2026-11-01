@@ -91,6 +91,6 @@ def run(ctx) -> dict:
     final = tribute(ctx)
     ctx.check("T7 no failed deposit", final["failed_deposits"] == 0, final["failed_deposits"])
     ctx.check("T8 the game still runs", vassals(ctx)["day"] is not None, final["day"])
-    ctx.metric("months_seen", months)
+    ctx.metric("distinct_months_seen", len(set(months)))
     ctx.metric("paid_total", final["paid_total"])
     return ctx.result()

@@ -147,7 +147,7 @@ Files: `init.lua` (sack), `terms.lua` (terms), each with a `*_rules.lua`. When a
 Commands: `sack_state`, `sack_now`, `sack_set_fatal`.
 
 ### tribute (M08)
-At each season change each handed-over vassal pays goods into the player stores, as a share of a production formula. No goods move between regions. The mod adds goods to a home store. A subjugation raid on a vassal region that holds 8 game days with at least half its units alive starts the sack of the houses of that vassal (see vassals). A restored vassal pays no tribute while it is rebuilding.
+At each game month change (`TemporalComponent.month`) each handed-over vassal pays goods into the player stores: `tribute.base` (100) x the policy factor x the tech factor of each of 2 goods. The goods are the rich resources of the vassal region (change `update-vassal-tribute-rich-resources`, #552). `features/tribute/world.lua` scans the `ResourceNode` objects once for each loaded game (the cache belongs to one `RTSMultiEngineCPP` object, so a load scans again), reads the decal material, the decal size and position and the clump class and capacity, and maps each node to a region with `getRegionByPos`. `rules.lua` (pure) decides which nodes are rich (`config.tribute.rich`: decal size 5000, clump capacity berries 130, fish and eel 385, mushrooms 122), cuts more than 2 goods by tier (ores iron, stone, salt; then clay, carp, eel; then berries, mushrooms) and fills missing goods with flax, the stand-in for rich soil (0 rich pays flax twice). Game is never rich. No goods move between regions. The mod adds goods to a home store. A subjugation raid on a vassal region that holds 8 game days with at least half its units alive starts the sack of the houses of that vassal (see vassals). A restored vassal pays no tribute while it is rebuilding.
 Commands: `tribute_state`, `tribute_tick_now`, `tribute_test_raid_result`.
 
 ### refugees (M09)
@@ -189,7 +189,7 @@ Change `add-mod-menu-access-rule` (#308), file `core/menu.lua`. All mod menus (`
 ## Shared patterns
 
 - Split of files: `rules.lua` is pure logic that fake-game tests run without the game. `world.lua` touches game objects. `init.lua` wires state, scheduler jobs and commands.
-- Season-change ticks (bandits, tribute) store the last handled season in ModState. A load must not repeat a tick.
+- Season-change ticks (bandits) and month-change ticks (tribute) store the last handled season or month in ModState. A load must not repeat a tick.
 - Both widget features obey the rule: game objects only on the game thread, no `LoopAsync` of their own.
 - Key binds: a `RegisterKeyBind` callback runs on the input thread, not the game thread. It only sets a flag (`menu.request_toggle`); the base menu tick on the game thread reads it and toggles the menu. Lua work in the callback raced with the game thread and crashed the game in `luaH_getint` (F9, issue #245, [f9-key-crash.md](../../../openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/implementation-notes/f9-key-crash.md)).
 - A feature that needs a game fact not yet known has a spike note: in `openspec/changes/<change-name>/notes/` (open or archived changes), or in the legacy `docs/mod/M<NN>-<feature>/implementation-notes/`. Read that note before you change the code.
