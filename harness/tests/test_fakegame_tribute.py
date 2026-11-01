@@ -2,7 +2,7 @@
 
 They run the real Lua files. The stores of the village are a stub (raid_behavior.world.stores; the building is a stub with addToInventory).
 The resource nodes are fake objects with a decal and clumps. They do not prove how the real game behaves
-(see the real-game test scenarios mod/InvasionMod/scenarios/tribute/).
+(see the real-game test scenarios of the tribute feature).
 """
 
 import unittest
