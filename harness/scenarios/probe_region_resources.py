@@ -57,6 +57,12 @@ def run(ctx) -> dict:
         hover(ctx, regions)
     if step == "decal":
         decal(ctx, regions)
+    if step == "food":
+        food(ctx, regions)
+    if step == "animals":
+        animals(ctx, regions)
+    if step == "foodhover":
+        foodhover(ctx, regions)
     if step == "deep":
         deep(ctx, regions)
     return ctx.result()
@@ -229,3 +235,143 @@ def sweep(ctx, regions) -> None:
                 if text and text not in seen:
                     seen.append(text)
         note(ctx, "sweep", node=path[-10:], mat=name, loc=[round(loc["X"]), round(loc["Y"])], texts=seen)
+
+
+def clump_class(clump) -> str:
+    import re
+    match = re.search(r"'(\w+) /", str(clump))
+    return match.group(1) if match else "?"
+
+
+def food_nodes(ctx):
+    from runlib.bridge_client import object_path
+    bridge = ctx.bridge
+    return [object_path(r) for r in bridge._result("objects", class_name="ResourceNode", limit=100)["objects"]]  # noqa: SLF001
+
+
+def region_name_at(ctx, loc) -> str:
+    bridge = ctx.bridge
+    try:
+        region = bridge.call_function(bridge.engine_path(), "getRegionByPos", [{"X": loc["X"], "Y": loc["Y"], "Z": loc["Z"]}, True])
+        return str(bridge.call_function(object_path_of(region), "getRegionName", []))
+    except Exception as error:  # noqa: BLE001
+        ctx.ensure_alive("region")
+        return "err " + str(error)[:60]
+
+
+def food(ctx, regions) -> None:
+    """One row per node with clump totals, decal data and region. Also the Resource and node properties once."""
+    bridge = ctx.bridge
+    res = bridge._result  # noqa: SLF001
+    nodes = food_nodes(ctx)
+    for name in ("Resource_Fish_C", "Resource_Berries_C"):
+        objs = res("objects", class_name=name, limit=1)["objects"]
+        if objs:
+            props = res("props", ref=object_path_of(objs[0]), include_super=True, read_soft=False)["properties"]
+            note(ctx, "resource props " + name, props={p["name"]: str(p.get("value"))[:100] for p in props})
+    for path in nodes:
+        clumps = bridge.read_property(path, "resourceClumps")
+        dec = object_path_of(bridge.read_property(path, "ResourceZoneDecal"))
+        mat = str(bridge.call_function(dec, "GetDecalMaterial", []))
+        size = bridge.read_property(dec, "DecalSize")
+        loc = bridge.call_function(dec, "K2_GetComponentLocation", [])
+        kinds = {}
+        for clump in clumps or []:
+            cpath = object_path_of(clump)
+            cls = clump_class(clump)
+            amt = capacity = -1
+            try:
+                amt = bridge.read_property(cpath, "amt")
+                capacity = bridge.read_property(cpath, "capacity")
+            except Exception:  # noqa: BLE001
+                ctx.ensure_alive("clump")
+            row = kinds.setdefault(cls, {"n": 0, "amt": 0, "cap": 0})
+            row["n"] += 1
+            row["amt"] += amt
+            row["cap"] += capacity
+        note(ctx, "food node", id=path[-10:], mat=mat.split("/")[-1][:30], size=size, loc=[round(loc["X"]), round(loc["Y"])], region=region_name_at(ctx, loc), kinds=kinds)
+    props = res("props", ref=nodes[0], include_super=False, read_soft=False)["properties"]
+    note(ctx, "node props", props={p["name"]: str(p.get("value"))[:80] for p in props})
+
+
+def animals(ctx, regions) -> None:
+    """Look for the object that holds the wild animal count and its maximum."""
+    bridge = ctx.bridge
+    res = bridge._result  # noqa: SLF001
+    for name in ("Deer", "Animal", "WildAnimal", "AnimalSpawner", "HuntingGround", "Wildlife", "DeerCPP", "BP_Deer_C", "HuntingZone", "AnimalHerd", "Herd"):
+        attempt(ctx, "class " + name, lambda n=name: len(res("objects", class_name=n, limit=100)["objects"]))
+    for path in food_nodes(ctx):
+        dec = object_path_of(bridge.read_property(path, "ResourceZoneDecal"))
+        if "deer" not in str(bridge.call_function(dec, "GetDecalMaterial", [])):
+            continue
+        props = res("props", ref=path, include_super=True, read_soft=False)["properties"]
+        note(ctx, "deer node", props={p["name"]: str(p.get("value"))[:120] for p in props if not p["name"].startswith("b") and not p["name"].startswith("On")})
+        for fn in ("getMaster", "GetOverlappingActors"):
+            attempt(ctx, "deer " + fn, lambda f=fn, p=path: str(bridge.call_function(p, f, []))[:300])
+        break
+    for path in food_nodes(ctx):
+        dec = object_path_of(bridge.read_property(path, "ResourceZoneDecal"))
+        if "deer" not in str(bridge.call_function(dec, "GetDecalMaterial", [])):
+            continue
+        row = {"loc": str(bridge.call_function(dec, "K2_GetComponentLocation", []))[:80]}
+        for fn in ("K2_GetComponentScale",):
+            attempt(ctx, "x", lambda: 0)
+            try:
+                row[fn] = str(bridge.call_function(dec, fn, []))[:120]
+            except Exception as error:  # noqa: BLE001
+                ctx.ensure_alive(fn)
+                row[fn] = "err"
+        for name in ("RelativeScale3D", "DecalSize", "FadeScreenSize", "SortOrder", "FadeStartDelay"):
+            try:
+                row[name] = str(bridge.read_property(dec, name))[:100]
+            except Exception:  # noqa: BLE001
+                ctx.ensure_alive(name)
+        try:
+            row["actor_scale"] = str(bridge.call_function(path, "GetActorScale3D", []))[:100]
+        except Exception:  # noqa: BLE001
+            ctx.ensure_alive("scale")
+        note(ctx, "deer decal", **row)
+    for fn in ("GetWildAnimals", "getWildAnimalCount", "GetAnimals"):
+        attempt(ctx, "engine " + fn, lambda f=fn: str(bridge.call_function(bridge.engine_path(), f, []))[:200])
+
+
+def foodhover(ctx, regions) -> None:
+    import time
+    bridge = ctx.bridge
+    attempt(ctx, "tooltip idle", lambda: tooltip_text(ctx))
+    for path in food_nodes(ctx):
+        clumps = bridge.read_property(path, "resourceClumps")
+        dec = object_path_of(bridge.read_property(path, "ResourceZoneDecal"))
+        mat = str(bridge.call_function(dec, "GetDecalMaterial", []))
+        deer = "deer" in mat
+        kinds = {clump_class(c) for c in clumps or []}
+        if not (deer or any(k in " ".join(kinds) for k in ("Berries", "Fish", "Eel", "Mushrooms"))):
+            continue
+        points = [bridge.call_function(dec, "K2_GetComponentLocation", [])]
+        only = os.environ.get("HARNESS_LOCS")
+        if only:
+            wanted = [tuple(int(v) for v in item.split(",")) for item in only.split(";")]
+            if not any(abs(points[0]["X"] - x) < 60 and abs(points[0]["Y"] - y) < 60 for x, y in wanted):
+                continue
+        for clump in (clumps or [])[:3]:
+            try:
+                points.append(bridge.call_function(object_path_of(clump), "K2_GetActorLocation", []))
+            except Exception:  # noqa: BLE001
+                ctx.ensure_alive("clumploc")
+        texts = []
+        for loc in points:
+            try:
+                bridge.centre_camera_on(loc["X"], loc["Y"])
+                time.sleep(1.2)
+                seen = []
+                for fx, fy in ((0.5, 0.5), (0.45, 0.5), (0.55, 0.5), (0.5, 0.45), (0.5, 0.55)):
+                    ctx.hover_with_mouse(fx, fy)
+                    time.sleep(0.5)
+                    text = tooltip_text(ctx)
+                    if text and text not in seen:
+                        seen.append(text)
+                texts.append({"loc": [round(loc["X"]), round(loc["Y"])], "texts": seen})
+            except Exception as error:  # noqa: BLE001
+                ctx.ensure_alive("hover")
+                texts.append("err " + str(error)[:80])
+        note(ctx, "foodhover", node=path[-10:], kinds=sorted(kinds), deer=deer, size=bridge.read_property(dec, "DecalSize"), hovers=texts)
