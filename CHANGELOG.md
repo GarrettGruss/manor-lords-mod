@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Spike finding: vassals work with AI opponents 0 (the "vassals are not enabled" warning is not needed). Test scenario `vassals-spike-noai`.
 - `harness\deploy.ps1` also installs each mod's own pak (`mod/<name>/paks/<name>_P.pak`, today `InvasionMod_P.pak`) into `Content\Paks\~mods\`, so a manual deploy is ready to play. The pak is listed in the run pak manifest, so `run.py --pak` and `pakmod.py remove` can replace or remove it. `-NoPak` skips it; the run launcher, `install.ps1` and `reload_mods.py` pass `-NoPak`.
 
 ### Changed
