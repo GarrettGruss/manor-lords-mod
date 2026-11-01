@@ -40,12 +40,24 @@ The menu SHALL show a background text of the scenario, from a configurable value
 - Checked by `harness/tests/test_fakegame_scenario_settings.py` and `mod/InvasionMod/scenarios/scenario_settings/new_game_menu.py` (real game run `levels-newgame-1` passed).
 
 ### Requirement: The menu follows the approved look
-The menu SHALL follow the approved mockup (illuminated manuscript style, as the raid menu of #340). It MAY load PNG images at run time. If the images or the widget class cannot be loaded, the mod SHALL log a clear message, SHALL NOT raise an error, and SHALL apply the defaults so the game does not stay paused.
+The menu SHALL follow the game-menu style of the mockup `scenario-settings-game-style.html` (in `openspec/changes/update-scenario-settings-window-style/mockups/`; after the archive, in `openspec/specs/mod/scenario_settings/mockups/`). The layout is: a dark full background with a soft centre light, a centred title "The Hussites Are Coming" in spaced small capitals with a thin gold rule, and one dark panel with rough edges in two columns. The left column has a "The Scenario" heading bar and the background text. The right column has a "Settings" heading bar and the five rows (Yearly player raid, Great raid, Vassal raids, First Hussite raid, Raid size) with their options and defaults. Options are plain serif text: the selected option is gold and underlined, the others are grey. The bottom has "Use defaults" and a large "Begin the game". The framework's bottom Close SHALL NOT show on this menu, and the Esc key SHALL NOT close it: "Begin the game" is the only way out. If the images, the font or the widget class cannot be loaded, the mod SHALL log a clear message, SHALL NOT raise an error, and SHALL apply the defaults so the game does not stay paused. The menu SHALL NOT show a warning box about vassals (the mockup shows one; it was removed by the owner on 2026-11-01, because vassals work with AI opponents 0). The behavior of the settings does not change.
 
 #### Scenario: The look matches the mockup
 - **WHEN** the menu is on screen
-- **THEN** a screenshot shows the title, the background text, the four settings and the two buttons in the mockup style
-- Checked by review of the picture evidence (`ctx.screenshot`).
+- **THEN** a screenshot shows the dark background, the title with the gold rule, the two columns, the five setting rows and the two buttons in the mockup style
+- **AND** the selected option of each row is gold and underlined, the others are grey, and no "> <" markers show
+- **AND** no warning box shows, also in a game started with AI opponents 0
+- Checked by review of the picture evidence (`ctx.screenshot`) in `mod/InvasionMod/scenarios/scenario_settings/new_game_menu.py`.
+
+#### Scenario: No Close on the start screen
+- **WHEN** the menu is open
+- **THEN** no framework Close shows, the Esc key does not close the menu, and "Begin the game" closes it
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (the menu is registered without a Close button; Esc does nothing), `mod/InvasionMod/scenarios/scenario_settings/new_game_menu.py` and picture evidence.
+
+#### Scenario: Other menus keep their Close
+- **WHEN** another menu (for example the liege window) opens
+- **THEN** the framework's bottom Close shows as before
+- Checked by the fake-game tests of `core/menu.lua`.
 
 #### Scenario: A missing asset
 - **WHEN** the widget class cannot be loaded
@@ -184,51 +196,22 @@ The mod SHALL decide again whether a game is new or loaded after each game start
 - **THEN** the mod start menu opens and pauses the game
 - Checked by `harness/tests/test_fakegame_scenario_settings.py` (`SecondGameInOneSessionTests`) and `mod/InvasionMod/scenarios/scenario_settings/hussite_template.py` with `HUSSITE_CONTINUE=1` (run `hussite-tpl-13`; the run started from a loaded fixture).
 
-### Requirement: The vassals guard value is a mod setting saved in ModState
-At new game start, the mod SHALL read the game setup once and SHALL save one mod setting in ModState: `vassals` (true/false: false when AI opponents (`numGenericAILords`) is 0, else true). The setting SHALL stay over save and load, and the menu SHALL read it. The mod SHALL NOT save a setting for the off-map adversary or for bandit camps: the mod makes the bandit pawn itself (change `update-banditry-bandit-camp`) and its Hussite raids are mod-made AI lord armies.
-
-#### Scenario: A new game stores the setting from the game setup
-- **WHEN** a new game starts with AI opponents 2
-- **THEN** ModState holds `vassals` true
-- Checked by `harness/tests/test_fakegame_game_settings_guard.py`.
-
-#### Scenario: AI opponents 0 disables vassals
-- **WHEN** a new game starts with AI opponents 0
-- **THEN** `vassals` is false
-- Checked by `harness/tests/test_fakegame_game_settings_guard.py`.
-
-#### Scenario: The setting stays over a load
-- **WHEN** a save with the setting is loaded
-- **THEN** the mod uses the saved value and does not read the game setup again
-- Checked by `harness/tests/test_fakegame_game_settings_guard.py` and the notes of the change (a real save and load was not run: `save_game` has not run in the real game yet).
-
-### Requirement: An old save without the setting uses the live check
-When a loaded save has no `vassals` setting, the mod SHALL use a live check and SHALL store the result in ModState. In the live check, `vassals` is false when no AI lord pawn exists.
-
-#### Scenario: An old save uses the live check and stores it
-- **WHEN** a save without the setting is loaded and no AI lord pawn exists
-- **THEN** ModState holds `vassals` false
-- **AND** the next load uses this stored value
-- Checked by `harness/tests/test_fakegame_game_settings_guard.py` and `mod/InvasionMod/scenarios/scenario_settings/game_settings_guard.py` on fixture `playtest-noai`.
-
-### Requirement: AI opponents 0 warns that vassals are not enabled
-When `vassals` is false, the menu SHALL show the warning "vassals are not enabled". The mod SHALL NOT lock a row for it.
-
-#### Scenario: AI opponents 0 warns only
-- **WHEN** the game was started with AI opponents 0 and the menu opens
-- **THEN** the menu shows "vassals are not enabled" and no row is locked
-- Checked by `harness/tests/test_fakegame_game_settings_guard.py` and `mod/InvasionMod/scenarios/scenario_settings/game_settings_guard.py` on fixture `playtest-noai`.
-
 ### Requirement: Other game settings lock nothing
-The mod SHALL NOT lock a menu row or refuse a command because of a game setting. This includes an absent off-map adversary: the Yearly player raid, Great raid and Vassal raids levels stay free.
+The mod SHALL NOT lock a menu row or refuse a command because of a game setting. This includes AI opponents 0 and an absent off-map adversary: the Yearly player raid, Great raid and Vassal raids levels stay free, and no warning shows.
+
+#### Scenario: AI opponents 0 locks nothing and shows no warning
+- **WHEN** the game was started with AI opponents 0 and the menu opens
+- **THEN** no row is locked and no warning shows
+- **AND** a command that sets all three raid levels to 3 is accepted
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`NoVassalsGuardTests`) and picture evidence.
 
 #### Scenario: Off-map adversary absent locks nothing
 - **WHEN** the game was started without the off-map adversary and the menu opens
 - **THEN** no row is locked and no warning shows
 - **AND** a command that sets Yearly player raid above 0 is accepted
-- Checked by `harness/tests/test_fakegame_game_settings_guard.py` and `mod/InvasionMod/scenarios/scenario_settings/game_settings_guard.py` on fixture `playtest-noai`.
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`NoVassalsGuardTests`).
 
 #### Scenario: Normal settings lock nothing
 - **WHEN** the game was started with AI opponents on
 - **THEN** no row is locked and no warning shows
-- Checked by `harness/tests/test_fakegame_game_settings_guard.py` and `mod/InvasionMod/scenarios/scenario_settings/game_settings_guard.py` on fixture `base`.
+- Checked by `harness/tests/test_fakegame_scenario_settings.py` (`NoVassalsGuardTests`).
