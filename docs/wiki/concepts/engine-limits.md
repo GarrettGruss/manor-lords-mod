@@ -16,6 +16,7 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-21-spike-playtest-telemetry/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-new-game-difficulty-setting/notes/recommendation.md
   - resource: repo://openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/salt-mine-deposit.md
+  - resource: repo://openspec/changes/archive/2026-11-01-spike-region-rich-resources/notes/region-rich-resources.md
   - resource: repo://openspec/changes/archive/2026-10-23-spike-public-order-factor/notes/tick-write.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/implementation-notes/siege-camp-and-bm.md
 ---
@@ -67,6 +68,18 @@ Do not plan a feature that needs buildings inside the bailey.
 - The Nexus mod "Rich Deposit" (mod 357) changes deposits with a native DLL patch, not through reflection.
 - The class `DepositDecal` (with `bRichDeposit`) still exists, but the game creates no object of it (2026-10-22); an older Nexus Lua mod that wrote it no longer has an effect.
 - Owner decision 2026-10-22: the mod does not manage resource state. Notes: `openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/`.
+
+## Rich deposits per region: readable through the decal (spike #546)
+
+The amount is still not reflected (see above), but the kind, the richness and the region of a deposit are readable:
+
+- Each deposit is a `ResourceNode`. Its `ResourceZoneDecal` (DecalComponent) gives the kind with `GetDecalMaterial()`: `depositMaterial` (iron ore), `depositMaterial_Clay`, `depositMaterial_Salt`, `depositMaterial_Stone`, `deerDecal_Mat` (game).
+- `ResourceZoneDecal.DecalSize.X` is 5000 for a rich deposit and 4000 for a poor ore deposit. The game tooltip confirmed it on iron, clay and stone ("Rich Resource" only on 5000). It is a rule found on one map, not a documented flag.
+- Region of a node: `RTSGameManager:getRegionByPos({X=, Y=, Z=}, true)` with the decal position (`K2_GetComponentLocation`). The region name is `getRegionName()`.
+- Gatherable patches (berries, fish, eels, mushrooms, fieldstone) are nodes with `resourceClumps` and have no rich flag. `Region:hasWeakFertility()` is true in every region of the test map, so there is no farmland richness flag.
+- Good ids: iron ore 14, clay 146, salt 145, rough stone 27, flax 11.
+- Hover test: `ctx.hover_with_mouse` after `centre_camera_on`; the tooltip is `MainUICPP_C.WhiteTooltipRT.Text`. A building over the node hides the deposit text.
+- Notes and the table of the test map: `openspec/changes/archive/2026-11-01-spike-region-rich-resources/notes/region-rich-resources.md`.
 
 ## Player logs, files and quit (spike #384)
 

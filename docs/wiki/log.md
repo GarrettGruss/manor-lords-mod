@@ -1,5 +1,8 @@
 # Wiki update log
 
+## 2026-11-01
+* **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds how to read the rich deposits of a region through the node decal (change `spike-region-rich-resources`, #546).
+
 ## 2026-10-28
 * **Update**: Armies come in from the map border (change `update-spawn-from-map-border`, #434). Added a section to [Engine limits found by spikes](concepts/engine-limits.md) (arrival days, map edge actor, no navmesh, two lords at war crash) and the map border paragraph to [Invasion Mod features](architecture/invasion-features.md).
 * **Update**: [Invasion features](architecture/invasion-features.md) describes the tech tree picks (one at the start, one at each start of spring), the three common techs and laws, and the corpse pit loot that now needs Strip the Dead; [Engine limits](concepts/engine-limits.md) notes that a pit body has no identity (change `update-tech-tree-yearly-picks`, #499).
