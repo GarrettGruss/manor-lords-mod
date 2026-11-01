@@ -1,7 +1,7 @@
 # mod/finite_resources Specification
 
 ## Purpose
-The finite resources feature makes home deposits of iron, salt and clay run out. Vassal tribute is the permanent supply of iron and salt.
+The finite resources feature makes home deposits of iron, salt and clay run out. Vassal tribute sends iron or salt only when it is rich in the vassal region.
 
 ## Requirements
 
@@ -54,21 +54,6 @@ The mod SHALL keep the mined units and the last production total of each deposit
 - **WHEN** units are mined
 - **THEN** the mod state keys `fin_<name>_mined` and `fin_<name>_last` hold the values
 - Checked by `harness/tests/test_fakegame_finite_resources.py`.
-
-### Requirement: Vassals pay iron and salt as the permanent supply
-The tribute of a vassal SHALL include iron and salt next to the main goods (config `tribute.finite_goods`: iron 10 and salt 6 units for each family at the fixed share). The share follows the vassal policy and laws like the main goods. Tribute goods are not production, so they do not reduce a home deposit.
-
-#### Scenario: One vassal pays at a season change
-- **WHEN** one vassal with 5 families pays at a season change
-- **THEN** the tribute paid is 10 iron and 6 salt
-- **AND** the home stores rise by at least 10 iron and 6 salt
-- **AND** the `mined` count of iron and salt stays 0
-- Checked by `mod/InvasionMod/scenarios/finite_resources/vassal_supply.py`.
-
-#### Scenario: A policy scales the finite goods
-- **WHEN** a vassal policy or a law changes the tribute share
-- **THEN** the paid iron and salt change with the share
-- Checked by `harness/tests/test_fakegame_tribute.py`.
 
 ### Requirement: Scenarios can read and change the deposits
 The mod SHALL register the named commands `InvasionMod.finite_resources_state`, `InvasionMod.finite_resources_test_set` and `InvasionMod.finite_resources_test_clear`. The state lists each deposit with `good`, `size`, `mined`, `remaining`, `empty` and `limit`. The two test commands change a deposit for the session only.
