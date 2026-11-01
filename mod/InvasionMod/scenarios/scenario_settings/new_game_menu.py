@@ -60,6 +60,11 @@ def run(ctx) -> dict:
     ctx.log.info(f"gameSpeed while the menu is open: {ctx.bridge.read_game_speed()}")
     front(ctx)
     ctx.screenshot("menu-defaults")
+    ctx.check("N8 the start screen has no Close button", ctx.mod.command(PREFIX + "menu_state")["close_button"] is False, None)
+    ctx.mod.command(PREFIX + "menu_press_esc")
+    time.sleep(SETTLE_S)
+    ctx.check("N8 the Esc key does not close the start screen", settings(ctx)["open"] is True, None)
+    ctx.check("N8 the game stays paused after Esc", ctx.read_clock()["paused"], None)
 
     for key, value in CHANGED.items():
         click(ctx, action="choose", key=key, value=value)

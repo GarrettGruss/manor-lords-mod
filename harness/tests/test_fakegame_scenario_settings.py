@@ -69,8 +69,9 @@ class RulesTests(unittest.TestCase):
             end
             return table.concat(out, ',')"""), ",".join(["true"] * 12))
 
-    def test_the_chosen_button_is_marked(self):
-        self.assertEqual(self.run_lua("return rules.choice_text(config, 'yearly', 3, true) .. '|' .. rules.choice_text(config, 'yearly', 1, false)"), "> Medium <|Off")
+    def test_a_choice_text_has_no_marker(self):
+        # The chosen choice is shown by colour and underline, not by "> <" in the text (change update-scenario-settings-window-style).
+        self.assertEqual(self.run_lua("return rules.choice_text(config, 'yearly', 3) .. '|' .. rules.choice_text(config, 'yearly', 1)"), "Medium|Off")
         self.assertEqual(self.run_lua("return rules.selected_index(rules.defaults(config), 'great')"), 3)
 
     def test_the_two_cases_of_a_new_game(self):
@@ -282,6 +283,36 @@ class SecondGameInOneSessionTests(SettingsTestCase):
         state = self.settings()
         self.assertEqual((state["kind"], state["open"], state["hussite_template"]), ("opened", True, True))
         self.assertEqual(self.menu_flag("opens"), 1)
+
+
+class NoVassalsGuardTests(SettingsTestCase):
+    """Change update-scenario-settings-window-style (#540): vassals work with AI opponents 0, so there is no guard and no warning.
+    The state shows no guard value, no row is locked, and the menu has no Close button."""
+
+    def test_the_state_has_no_guard_value_or_warning(self):
+        self.stand_in_menu()
+        self.start_game("", 1, HUSSITE_SETUP)
+        state = self.settings()
+        self.assertNotIn("vassals", state)
+        self.assertNotIn("warning", state)
+
+    def test_ai_opponents_0_locks_nothing(self):
+        self.stand_in_menu()
+        self.start_game("", 1, HUSSITE_SETUP)
+        answer = self.ask("scenario_settings_set", yearly=3, great=3, vassal=3)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual({k: self.settings()[k] for k in ("yearly", "great", "vassal")}, {"yearly": 3, "great": 3, "vassal": 3})
+
+    def test_the_off_map_adversary_absent_locks_nothing(self):
+        self.stand_in_menu()
+        self.start_game("", 1, {**GAME_SETUP, "numGenericAILords": 2, "adversary_baron": False})
+        answer = self.ask("scenario_settings_set", yearly=3)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(self.settings()["yearly"], 3)
+
+    def test_the_menu_is_registered_without_a_close_button(self):
+        source = (find_pack_mod() / "Scripts" / "features" / "scenario_settings" / "init.lua").read_text(encoding="utf-8")
+        self.assertIn("close_button = false", source)
 
 
 class LoadedGameTests(SettingsTestCase):

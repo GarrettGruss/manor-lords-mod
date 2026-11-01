@@ -32,7 +32,6 @@ local S = {
 }
 state:register("start_kit_given", 0, "integer") -- 1 after the start kit was given (saved with the game)
 state:register("hussite_template", 0, "integer") -- 1 when the new game started from the template "The Hussites Are Coming"
-state:register("vassals", -1, "integer") -- the guard value: 1 vassals work, 0 AI opponents were 0 (no vassals), -1 not known (change add-game-settings-guard, #438)
 
 ---------------------------------------------------------------------------------------------
 -- Game reads
@@ -248,13 +247,33 @@ local function set_text(block, text)
     if isValid(block) then block:SetText(FText(text)) end
 end
 
+-- The look (change update-scenario-settings-window-style, #540): the option and button texts are serif text blocks of the widget
+-- (OptText<row>_<choice>, DefaultsText, BeginText). The click buttons on top of them are invisible. The selected option is gold
+-- and underlined (Under<row>_<choice>), the others are grey. The colours are sRGB values of the mockup; a game colour is linear.
+local function linear(r, g, b) return { R = r ^ 2.2, G = g ^ 2.2, B = b ^ 2.2, A = 1 } end
+local GOLD, GREY = linear(0.91, 0.78, 0.48), linear(0.56, 0.53, 0.47)
+local CLEAR = { R = 0, G = 0, B = 0, A = 0 }
+
+local function paint(block, colour)
+    if isValid(block) then block:SetColorAndOpacity({ SpecifiedColor = colour, ColorUseRule = 0 }) end
+end
+
+-- Draws one choice. A slot remembers what it shows, so a tick does not make game calls for nothing.
+local function show_choice(slot, name, selected)
+    if slot.shown == selected then return end
+    slot.shown = selected
+    set_text(slot.text, name)
+    paint(slot.text, selected and GOLD or GREY)
+    if isValid(slot.under) then slot.under:SetBrushColor(selected and GOLD or CLEAR) end -- a colour change is safer than a visibility change
+end
+
 local function show_selection()
     if not isValid(S.widget) then return end
     for row_index, row in ipairs(rules.ROWS) do
         local selected = rules.selected_index(S.selection, row.key)
         for index = 1, #row.values do
             local slot = S.choices[row_index] and S.choices[row_index][index]
-            if slot then clickhooks.set_text(slot.handle, rules.choice_text(config, row.key, index, index == selected)) end
+            if slot then show_choice(slot, rules.choice_text(config, row.key, index), index == selected) end
         end
     end
 end
@@ -276,17 +295,36 @@ end
 local function border_names()
     local names = { "DefaultsButton", "BeginButton" }
     for row = 0, #rules.ROWS - 1 do
-        for choice = 0, MAX_CHOICES - 1 do names[#names + 1] = "Choice" .. row .. "_" .. choice end
+        for choice = 0, MAX_CHOICES - 1 do
+            names[#names + 1] = "Choice" .. row .. "_" .. choice
+            names[#names + 1] = "Under" .. row .. "_" .. choice
+        end
     end
     return names
+end
+
+local function text_names()
+    local names = { "SettingsTitle", "BackgroundText", "DefaultsText", "BeginText" }
+    for row = 0, #rules.ROWS - 1 do
+        names[#names + 1] = "RowLabel" .. row
+        for choice = 0, MAX_CHOICES - 1 do names[#names + 1] = "OptText" .. row .. "_" .. choice end
+    end
+    return names
+end
+
+-- The click button keeps its hookable click but not its look: no box and no label (the widget text shows instead).
+local function hide_button_look(handle)
+    local ok, inner = pcall(function() return handle.widget.Button01 end)
+    if ok and isValid(inner) then inner:SetBackgroundColor(CLEAR) end
+    local text_ok, text_border = pcall(function() return handle.widget.Button01:GetContent():GetChildAt(1) end)
+    if text_ok and isValid(text_border) then text_border:SetBrushColor(CLEAR) end
+    paint(handle.text, CLEAR)
 end
 
 -- The base menu calls this with the made widget. On a failure this function cleans up and returns nil and a message.
 local function on_open(made)
     S.widget = made
-    local label_names = { "SettingsTitle", "BackgroundText" }
-    for row = 0, #rules.ROWS - 1 do label_names[#label_names + 1] = "RowLabel" .. row end
-    local texts = menu.find_named(made, "TextBlock", label_names)
+    local texts = menu.find_named(made, "TextBlock", text_names())
     local borders = menu.find_named(made, "Border", border_names())
     local controller = FindFirstOf("PlayerController")
     local handles = {}
@@ -302,13 +340,18 @@ local function on_open(made)
     for row_index, row in ipairs(rules.ROWS) do
         S.choices[row_index] = {}
         for index, value in ipairs(row.values) do
-            local slot, problem = attach("Choice" .. (row_index - 1) .. "_" .. (index - 1), { owner = S, action = "choose", key = row.key, value = value })
+            local suffix = (row_index - 1) .. "_" .. (index - 1)
+            local slot, problem = attach("Choice" .. suffix, { owner = S, action = "choose", key = row.key, value = value })
             if not slot then reset_widget(); return nil, problem end
+            slot.text, slot.under = texts["OptText" .. suffix], borders["Under" .. suffix]
+            if slot.text == nil then reset_widget(); return nil, "the widget has no OptText" .. suffix end
             S.choices[row_index][index] = slot
         end
-        for index = #row.values + 1, MAX_CHOICES do -- a row with fewer choices: hide the unused border
-            local border = borders["Choice" .. (row_index - 1) .. "_" .. (index - 1)]
-            if border then border:SetVisibility(1) end -- Collapsed
+        for index = #row.values + 1, MAX_CHOICES do -- a row with fewer choices: hide the unused border, text and underline
+            local suffix = (row_index - 1) .. "_" .. (index - 1)
+            local text, under = texts["OptText" .. suffix], borders["Under" .. suffix]
+            if text then set_text(text, "") end
+            if under then under:SetBrushColor(CLEAR) end
         end
     end
     for _, name in ipairs({ "defaults", "begin" }) do
@@ -318,16 +361,17 @@ local function on_open(made)
     end
     local bound, bind_problem = clickhooks.bind_texts(handles)
     if not bound then reset_widget(); return nil, bind_problem end
+    for _, handle in ipairs(handles) do hide_button_look(handle) end
     S.title, S.background = texts.SettingsTitle, texts.BackgroundText
     if S.title == nil or S.background == nil then reset_widget(); return nil, "the title or the background text was not found in the widget" end
-    set_text(S.title, config.title)
-    set_text(S.background, rules.background_with_warning(config, state:get("vassals")))
+    set_text(S.title, string.upper(config.title)) -- the title is in spaced capitals
+    set_text(S.background, config.background_text)
+    set_text(texts.DefaultsText, config.defaults_label)
+    set_text(texts.BeginText, config.begin_label)
     for row_index, row in ipairs(rules.ROWS) do
         S.labels[row_index] = texts["RowLabel" .. (row_index - 1)]
         set_text(S.labels[row_index], config.labels[row.key])
     end
-    clickhooks.set_text(S.buttons.defaults.handle, config.defaults_label)
-    clickhooks.set_text(S.buttons.begin.handle, config.begin_label)
     show_selection()
     return true
 end
@@ -416,31 +460,6 @@ local function read_template_setup()
     }
 end
 
--- The live check for a save without the value: the number of AI lord pawns (FindAllOf gives nil when there is none).
-local function count_ai_lords()
-    local found = read(function() return FindAllOf("PawnCPP_AI") end) or {}
-    local count = 0
-    for _, pawn in ipairs(found) do
-        if isValid(pawn) and not pawn:GetFullName():find("Default__", 1, true) then count = count + 1 end
-    end
-    return count
-end
-
--- The guard value `vassals`: read once at a new game, kept by ModState over a load. A save without it uses the live check and stores the result.
-local function decide_vassals(kind)
-    local value
-    if kind == "new" then
-        local ok, setup_module = pcall(require, "HarnessGameSetup")
-        local setup = ok and setup_module.game_setup_state() or nil
-        value = rules.vassals_from_setup(setup and setup.ok and setup or nil)
-    elseif state:get("vassals") == -1 then
-        value = rules.vassals_from_lord_count(count_ai_lords())
-    end
-    if value == nil then return end
-    state:set("vassals", value)
-    core.log.info(TAG, string.format("vassals guard: %d (%s)", value, kind == "new" and "game setup" or "live check"))
-end
-
 -- The decision is per game, not per session: a player may load a save, go to the main menu and start a new game. Each
 -- ModState load (a new player pawn) makes a new values table, so a changed table means a new game or a load.
 local function forget_decision_of_an_earlier_game()
@@ -470,7 +489,6 @@ local function decide()
     S.new_game = kind == "new"
     core.log.info(TAG, string.format("game is %s (save_file=%q applied=%d day=%s)", kind, tostring(info.save_file), info.applied, tostring(info.day)))
     S.holding = kind == "new"
-    decide_vassals(kind)
     if kind == "new" then
         local setup = read_template_setup()
         state:set("hussite_template", rules.is_hussite_template(setup) and 1 or 0)
@@ -507,7 +525,7 @@ invasion.set_hold_gate(function()
 end)
 
 menu.register({
-    id = MENU_ID, label = "Scenario", bar = false,
+    id = MENU_ID, label = "Scenario", bar = false, close_button = false, -- "Begin the game" is the only way out (Esc does nothing)
     class_path = "/Game/HarnessMod/WBP_ScenarioSettings.WBP_ScenarioSettings_C", package_path = "/Game/HarnessMod", asset_name = "WBP_ScenarioSettings",
     z_order = config.z_order, position = config.position,
     on_open = on_open, on_close = on_close,
@@ -524,7 +542,6 @@ local function describe()
         yearly = settings.yearly, great = settings.great, vassal = settings.vassal,
         first_raid_years = settings.first_raid_years, size_class = settings.size_class, size_random = settings.size_random,
         settings_applied = state:get("settings_applied") == 1, difficulty_chosen = state:get("difficulty_chosen") == 1,
-        vassals = state:get("vassals"), warning = state:get("vassals") == 0 and config.vassals_warning or nil,
         hussite_template = state:get("hussite_template") == 1, kind = S.kind, decided = S.decided, open = is_open(), paused = S.paused, repauses = S.repauses, selection = S.selection, clicks = S.clicks,
         last_error = S.last_error, kit_given = state:get("start_kit_given") == 1, kit = S.kit, save_file = save_file_name(), day = current_day(), intro_playing = intro_playing(),
     }

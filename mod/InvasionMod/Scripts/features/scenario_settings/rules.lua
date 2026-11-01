@@ -59,11 +59,9 @@ function M.click(selection, config, action, key, value)
     return nil, "unknown action " .. tostring(action)
 end
 
--- The text of one choice button. The chosen one is marked, so a screenshot and the test show it.
-function M.choice_text(config, key, index, selected)
-    local name = config.choice_names[key][index]
-    if selected then return "> " .. name .. " <" end
-    return name
+-- The text of one choice. The chosen one is shown by colour and underline (init.lua), not by markers in the text.
+function M.choice_text(config, key, index)
+    return config.choice_names[key][index]
 end
 
 -- Which choice of a row is selected: the index (1 to 4), or nil.
@@ -94,25 +92,6 @@ function M.is_hussite_template(setup)
     return setup.royal_tax == 0 and setup.weather == 2 and setup.approval_loss == 0.5
         and setup.ai_lords == 0 and setup.adversary_baron == false
         and setup.max_bandit_camps == 0 and setup.initial_bandit_camps == 0
-end
-
--- The guard value `vassals` (change add-game-settings-guard, #438): 1 vassals work, 0 they do not, -1 not known yet.
--- AI opponents (numGenericAILords) 0 means no AI lord, so no vassals. A count that cannot be read gives nil (not known).
-function M.vassals_from_setup(setup)
-    if type(setup) ~= "table" or type(setup.ai_lords) ~= "number" then return nil end
-    return setup.ai_lords > 0 and 1 or 0
-end
-
--- The live check of a save without the value: no AI lord pawn means no vassals. A count that cannot be read gives nil.
-function M.vassals_from_lord_count(count)
-    if type(count) ~= "number" then return nil end
-    return count > 0 and 1 or 0
-end
-
--- The text of the background block. A warning is added below the background when vassals are not enabled.
-function M.background_with_warning(config, vassals)
-    if vassals ~= 0 then return config.background_text end
-    return config.background_text .. "\n\n" .. config.vassals_warning
 end
 
 -- The start kit is given once, in a new game only (a loaded save never gets it).
