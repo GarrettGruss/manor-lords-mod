@@ -115,6 +115,8 @@ for _, id in ipairs({ "a", "b" }) do
 end
 menu.register({ id = "m", label = "Own speed", class_path = "/Game/Test/WBP_A.WBP_A_C", package_path = "/Game/Test", asset_name = "WBP_A",
     on_open = function() return true end, on_close = function() end, manages_speed = true, bar = false })
+menu.register({ id = "n", label = "No close", class_path = "/Game/Test/WBP_A.WBP_A_C", package_path = "/Game/Test", asset_name = "WBP_A",
+    on_open = function() return true end, on_close = function() end, manages_speed = true, bar = false, close_button = false })
 menu.register({ id = "bad", label = "Bad", class_path = "/Game/Test/WBP_A.WBP_A_C", package_path = "/Game/Test", asset_name = "WBP_A",
     on_open = function() return nil, "no buttons" end, on_close = function() end })
 """
@@ -338,6 +340,24 @@ class MenuTests(InvasionTestCase):
         self.assertEqual(self.state_value("T.menu.state().esc_closes"), 1)
         self.assertFalse(self.state_value("T.widget_a.viewport"))
         self.assertEqual(self.lua("return table.concat(T.closed, ',')"), "a")
+
+    def test_a_menu_with_close_button_false_makes_no_close_button(self):
+        self.lua("return T.menu.open('n').ok")
+        self.assertTrue(self.state_value("T.menu.state().open"))
+        self.assertFalse(self.state_value("T.menu.state().close_button"))
+        self.assertIsNone(self.state_value("T.close_widget"))
+
+    def test_esc_does_not_close_a_menu_with_close_button_false(self):
+        self.lua("return T.menu.open('n').ok")
+        self.lua("T.esc_menu = T.new('mainMenu_widget_C_1'); T.esc_menu.vis = 1")
+        self.game.press("ESCAPE")
+        self.game.advance(1)
+        self.assertTrue(self.state_value("T.menu.state().open"))
+        self.assertEqual(self.state_value("T.menu.state().esc_closes"), 0)
+        self.lua("T.esc_menu.vis = 4")  # the game's own Esc menu shows itself on the same press
+        self.game.advance(1)
+        self.assertEqual(self.state_value("T.esc_menu.vis"), 1, "the game's Esc menu is closed again")
+        self.assertTrue(self.state_value("T.menu.state().open"))
 
     def test_esc_key_hands_the_request_to_the_game_thread(self):
         self.make_hud_and_wait()

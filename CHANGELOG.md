@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `harness\deploy.ps1` also installs each mod's own pak (`mod/<name>/paks/<name>_P.pak`, today `InvasionMod_P.pak`) into `Content\Paks\~mods\`, so a manual deploy is ready to play. The pak is listed in the run pak manifest, so `run.py --pak` and `pakmod.py remove` can replace or remove it. `-NoPak` skips it; the run launcher, `install.ps1` and `reload_mods.py` pass `-NoPak`.
 
 ### Changed
+- Start screen (#540): the scenario settings window follows the look of the game's own windows (game font, dark panel, two columns, gold underlined selected option, large "Begin the game"). It has no Close button and the Esc key does not close it. The menu framework has a new option `close_button = false`.
 - Liege contracts window (#538): restyled in the look of the game's Diplomacy window: near-black background, centred title with a gold rule, one countdown line with gold numbers, one dark grey panel with the three tier rows, game font (Mikadan), white text with goods and rewards in gold capitals, a missing amount in muted red, plain-text Fulfil, dimmed cards that cannot be fulfilled and a gold "Fulfilled". Behaviour is unchanged.
 
 ### Fixed
@@ -28,6 +29,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Banditry is now an armed rebellion (change `update-banditry-rebellion-raid`, #480): the timer is 60 game days. Only families that hold weapons or armor at home can rebel. The mod picks 6 of them at random (config `rebellion_families`), takes all weapon and armor goods of their homes, kills the families (bodies hidden) and spawns one Brigands squad (18 units) of the bandit pawn "Outlaws" at the first home. The native AI raids the village and leaves. With fewer armed families the rebellion is blocked and tried again after the next order tick (`rebellion_blocked` in the log). The camp of the old outcome is gone. See `mod/InvasionMod/CHANGELOG.md`.
 
 ### Removed
+- The vassals guard and the warning "vassals are not enabled" (#540, owner decision 2026-11-01): vassals work with AI opponents 0. Removed the mod state key `vassals`, its live check, `config.scenario_settings.vassals_warning` and the test scenario `scenario-settings-game-settings-guard`.
 - The arms shipment (change `update-liege-contracts-tiers`, #533): the button, the commands `liege_request_arms` and `liege_test_set_arms_day`, the config `liege_influence.arms_shipment` and the saved key `arms_last_day`. The contract objectives other than goods, the pick and complete commands and the 500 influence penalty (`fail_penalty`) are removed too.
 - The liege tribute (change `update-liege-tribute-to-contracts`, #505): the command `liege_send_tribute`, the config values `liege_influence.influence_per_unit` and `tribute_button_amount`, the Tribute button, and the pak widget `WBP_LiegeTribute`.
 

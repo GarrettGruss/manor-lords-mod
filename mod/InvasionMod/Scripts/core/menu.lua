@@ -57,6 +57,7 @@ local function library() return StaticFindObject("/Script/UMG.Default__WidgetBlu
 
 -- spec = { id, label, class_path, package_path, asset_name, position, z_order,
 --          bar = false (optional: no bottom bar button; the mod opens the menu itself),
+--          close_button = false (optional: no Close button, and the Esc key does not close the menu; the menu has its own way out),
 --          on_open(widget) -> true | nil, problem   (attach the buttons, show the first values; clean up on a failure),
 --          on_close() }
 function M.register(spec)
@@ -288,8 +289,8 @@ function M.open(id)
         return fail("menu " .. id .. " did not open: " .. tostring(ok_on_open and open_problem or opened))
     end
     local made, blocker = pcall(make_blocker)
-    local close_made, close_button
-    if made then close_made, close_button = pcall(make_close_button) end
+    local close_made, close_button = true, nil
+    if made and spec.close_button ~= false then close_made, close_button = pcall(make_close_button) end
     if not (made and close_made) then
         remove_widget(content)
         if made then remove_widget(blocker) end
@@ -541,6 +542,12 @@ local function handle_esc()
     if S.open_id == nil then return end
     local speed = S.saved_speed
     local spec = menus[S.open_id]
+    if spec ~= nil and spec.close_button == false then
+        -- The menu has no Close: Esc does nothing to it. The game's own Esc menu opens on the same press, so close that one again.
+        core.log.info(TAG, "Esc pressed: the menu " .. S.open_id .. " stays open")
+        S.esc_guard_until, S.esc_guard_speed = os.clock() + ESC_GUARD_S, nil
+        return
+    end
     S.esc_closes = S.esc_closes + 1
     core.log.info(TAG, "Esc pressed: closing the menu " .. S.open_id)
     M.close()
