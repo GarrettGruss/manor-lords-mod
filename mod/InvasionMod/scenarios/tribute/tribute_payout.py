@@ -1,18 +1,18 @@
-"""M08 iteration 01, T1 to T6: each season change pays goods for each handed-over vassal.
+"""M08 iteration 01 and change update-vassal-tribute-rich-resources: each month change pays goods for each handed-over vassal.
 
-The scenario makes one vassal like M07.02 (claim, settle, handover), then jumps the season with set_season.
-Run it with --new-game. Families of the vassal region: 5 after the settle call. Production = 5 x 20 = 100.
-It saves nothing.
+The scenario makes one vassal like M07.02 (claim, settle, handover), then jumps the season with set_season (a season jump is also a month change).
+The vassal pays 2 goods of 100 units (policy fair). Which goods depends on the rich resources of the claimed region; flax fills up.
+Run it with --new-game. It saves nothing.
 """
 
 NAME = "tribute-payout"
-DESCRIPTION = "A season change pays 20 percent of the vassal production into the home stores."
+DESCRIPTION = "A month change pays 100 units of each of 2 rich goods of the vassal region into the home stores."
 LIMIT_S = 500
 SPEED = 2
-LONG_REASON = "Claim, settle and handover (about 100 s), four season jumps, and 5 game days at speed 2."
+LONG_REASON = "Claim, settle and handover (about 100 s), two season jumps, and 2 game days at speed 2."
 INFLUENCE = 1000
 SEASONS = ["winter", "spring", "summer", "autumn"]
-FISH, TIMBER = "30", "16"
+BASE = 100
 
 
 def tribute(ctx) -> dict:
@@ -31,14 +31,10 @@ def free_region(ctx) -> str:
     return free[0]
 
 
-def next_season(ctx) -> str:
-    return SEASONS[(tribute(ctx)["last_season"] + 1) % 4]
-
-
 def jump_season(ctx) -> dict:
-    """Jump to the next season and wait for the tick of the mod. Returns the new state."""
+    """Jump to the next season (a new month) and wait for the tick of the mod. Returns the new state."""
     before = tribute(ctx)
-    ctx.actions.set_season(next_season(ctx))
+    ctx.actions.set_season(SEASONS[(before["season"] + 1) % 4])
     ctx.run_until(lambda: tribute(ctx)["ticks"] > before["ticks"], 30, what="the tribute tick")
     return tribute(ctx)
 
@@ -57,26 +53,25 @@ def stock_of(state: dict, good: str) -> int:
 
 
 def run(ctx) -> dict:
-    ctx.run_until(lambda: tribute(ctx)["last_season"] >= 0, 30, what="the saved season")
+    ctx.run_until(lambda: tribute(ctx)["last_month"] >= 0, 30, what="the saved month")
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     first = jump_season(ctx)
-    ctx.check("T2 a season change with no vassal pays nothing", first["ticks"] == 1 and first["paid_total"] == 0, first)
+    ctx.check("T2 a month change with no vassal pays nothing", first["ticks"] == 1 and first["paid_total"] == 0, first)
 
     make_vassal(ctx)
     before = tribute(ctx)
-    families = vassals(ctx)["vassals"][0]["families"]
     after = jump_season(ctx)
     paid = after["paid_total"] - before["paid_total"]
-    expected = round(families * 20 * 0.2)
-    ctx.check("T1 one vassal pays 20 percent of its production", paid == expected and families == 5, [paid, expected, families])
-    gain_fish = stock_of(after, FISH) - stock_of(before, FISH)
-    gain_timber = stock_of(after, TIMBER) - stock_of(before, TIMBER)
-    ctx.check("T1 the stores rose by the paid goods", gain_fish + gain_timber >= paid and gain_fish >= paid // 2, [gain_fish, gain_timber, paid])
+    payment = after["history"][-1]["payments"][0]
+    ctx.log.info(f"TRIBUTE payment {payment}")
+    ctx.check("T1 one fair vassal pays 2 goods of 100", paid == 2 * BASE and len(payment["goods"]) == 2 and payment["amount"] == BASE, [paid, payment])
+    gains = {good["name"] + str(index): stock_of(after, str(good["id"])) - stock_of(before, str(good["id"])) for index, good in enumerate(payment["goods"])}
+    ctx.check("T1 the stores rose by about the paid goods", sum(gains.values()) >= 0.9 * paid, gains)
     ctx.check("T5 no failed deposit", after["failed_deposits"] == 0, after)
 
     ctx.time.run_game_days(2, speed=SPEED)
     later = tribute(ctx)
-    ctx.check("T3 one payment for one season change", later["ticks"] == after["ticks"] and later["paid_total"] == after["paid_total"], later)
+    ctx.check("T3 one payment for one month change", later["ticks"] == after["ticks"] and later["paid_total"] == after["paid_total"], later)
 
     ctx.metric("paid_total", tribute(ctx)["paid_total"])
     ctx.metric("ticks", tribute(ctx)["ticks"])

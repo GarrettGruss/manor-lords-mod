@@ -1,5 +1,5 @@
--- Feature tribute (M08). Iteration 01: at each season change each handed-over vassal pays goods into the player stores.
--- No goods move between regions (M00 decision 21): the mod adds goods to a home store, as a share of a production formula.
+-- Feature tribute (M08). At each game month change each handed-over vassal pays goods into the player stores:
+-- the rich resources of its region (change update-vassal-tribute-rich-resources). No goods move between regions (M00 decision 21).
 local core = require("ManorCore")
 local ModState = require("ModState")
 local vassals = require("features.vassals.init")
@@ -7,18 +7,18 @@ local raid_world = require("features.raid_behavior.world")
 local raid_behavior = require("features.raid_behavior.init")
 local vassal_rules = require("features.vassals.rules")
 local rules = require("features.tribute.rules")
+local world = require("features.tribute.world")
 local config = require("config").tribute
 
 local TAG = "InvasionMod.tribute"
 local STATE_VERSION = 1
 
 local state = ModState.open("invasion", "pawn", STATE_VERSION)
-state:register("tribute_last_season", -1, "integer")
+state:register("tribute_last_month", -1, "integer") -- TemporalComponent.month of the last poll
 state:register("tribute_ticks", 0, "integer")
 state:register("tribute_paid_total", 0, "integer")
 
 local share_factor = 1     -- set by the tech tree laws (M12.04)
-local finite_paid_session = {} -- good name -> units of finite goods (iron, salt) paid in this session (M10.02)
 local history = {}          -- results of the ticks of this session
 local failed_deposits = 0
 
@@ -32,6 +32,11 @@ local function read_number(path_fn)
     local ok, value = pcall(path_fn)
     if ok and type(value) == "number" then return math.floor(value) end
     return nil
+end
+
+local function current_month()
+    local e = engine()
+    return e and read_number(function() return e.TemporalComponent.month end)
 end
 
 local function current_season()
@@ -75,25 +80,35 @@ local function pay_good(good, amount)
     return false
 end
 
+local function sorted_names(set)
+    local names = {}
+    for name in pairs(set) do names[#names + 1] = name end
+    table.sort(names)
+    return names
+end
+
+-- The vassal pays `base x policy factor x tech factor` units of each of the goods that rules.choose_goods picks for its region.
 local function pay_vassal(row)
-    local families = vassals.region_families(row.region) or 0
-    local production = rules.production(families, config.units_per_family)
+    local detected = world.rich_goods(row.region, config.rich)
+    if detected == nil then
+        core.log.error(TAG, string.format("TRIBUTE no resource nodes read for region %s: nothing paid", tostring(row.region)))
+        return { slot = row.slot, region = row.region, policy = row.policy, amount = 0, paid = 0, goods = {}, rich = {}, dropped = {} }
+    end
+    local chosen, dropped = rules.choose_goods(detected, config.rich)
     local factor = (require("config").vassals.policies[row.policy] or { tribute = 1.0 }).tribute -- vassal policy (M07.03)
-    local share = config.share * factor * share_factor
-    local amount = rules.amount(production, share)
-    local parts = rules.split(amount, #config.goods)
-    local paid = 0
-    for index, good in ipairs(config.goods) do
-        if pay_good(good.id, parts[index]) then paid = paid + parts[index] end
+    local amount = rules.amount(config.base, factor * share_factor)
+    local paid, goods = 0, {}
+    for _, name in ipairs(chosen) do
+        local id = config.rich.goods[name]
+        local ok = pay_good(id, amount)
+        goods[#goods + 1] = { name = name, id = id, paid = ok and amount or 0 }
+        if ok then paid = paid + amount end
     end
-    local finite = {}
-    for _, good in ipairs(config.finite_goods or {}) do
-        local units = rules.amount(rules.production(families, good.units_per_family), share)
-        if pay_good(good.id, units) then finite[good.name] = units else finite[good.name] = 0 end
-        finite_paid_session[good.name] = (finite_paid_session[good.name] or 0) + finite[good.name]
+    if #dropped > 0 then
+        core.log.info(TAG, string.format("TRIBUTE region %s has more rich goods than it pays: dropped %s", tostring(row.region), table.concat(dropped, ",")))
     end
-    return { slot = row.slot, region = row.region, families = families, production = production,
-        share = share, policy = row.policy, amount = amount, paid = paid, finite = finite }
+    return { slot = row.slot, region = row.region, policy = row.policy, amount = amount, paid = paid,
+        goods = goods, rich = sorted_names(detected), dropped = dropped }
 end
 
 local function run_tick()
@@ -153,16 +168,16 @@ end
 
 require("scheduler").every(TAG .. ".siege", config.siege.poll_ms, siege_poll)
 
--- The saved season is set before the tick, so an error in the tick cannot make it run twice.
+-- The saved month is set before the tick, so an error in the tick cannot make it run twice.
 local function poll()
     if not state.loaded then return end
-    local season = current_season()
-    if season == nil then return end
-    local last = state:get("tribute_last_season")
-    if last < 0 then return state:set("tribute_last_season", season) end
-    if not rules.season_changed(season, last) then return end
-    state:set("tribute_last_season", season)
-    core.log.info(TAG, string.format("TRIBUTE season change %d to %d", last, season))
+    local month = current_month()
+    if month == nil then return end
+    local last = state:get("tribute_last_month")
+    if last < 0 then return state:set("tribute_last_month", month) end
+    if not rules.month_changed(month, last) then return end
+    state:set("tribute_last_month", month)
+    core.log.info(TAG, string.format("TRIBUTE month change %d to %d", last, month))
     run_tick()
 end
 
@@ -177,9 +192,9 @@ local function stock()
 end
 
 local function command_state()
-    return { day = current_day(), season = current_season(), last_season = state:get("tribute_last_season"),
+    return { day = current_day(), season = current_season(), month = current_month(), last_month = state:get("tribute_last_month"),
         ticks = state:get("tribute_ticks"), paid_total = state:get("tribute_paid_total"), failed_deposits = failed_deposits,
-        history = history, stock = stock(), finite_paid = finite_paid_session,
+        history = history, stock = stock(),
         siege = siege_resolved }
 end
 

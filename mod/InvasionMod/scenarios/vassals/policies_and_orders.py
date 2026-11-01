@@ -44,7 +44,7 @@ def make_vassal(ctx) -> None:
 def jump_season(ctx) -> dict:
     """Jump to the next season and wait for the tribute tick. Returns the tribute state."""
     before = tribute(ctx)
-    ctx.actions.set_season(SEASONS[(before["last_season"] + 1) % 4])
+    ctx.actions.set_season(SEASONS[(before["season"] + 1) % 4])
     ctx.run_until(lambda: tribute(ctx)["ticks"] > before["ticks"], 30, what="the tribute tick")
     return tribute(ctx)
 
@@ -59,7 +59,7 @@ def run(ctx) -> dict:
         ctx.mod.command("InvasionMod.vassals_set_policy", slot=1, policy=policy)
         jump_season(ctx)
         payment = tribute(ctx)["history"][-1]["payments"][0]
-        ctx.check(f"P2 {policy} scales the tribute share by {factor}", payment["policy"] == policy and abs(payment["share"] - 0.20 * factor) < 1e-6, payment)
+        ctx.check(f"P2 {policy} scales the tribute amount by {factor}", payment["policy"] == policy and payment["amount"] == round(100 * factor), payment)
 
     refused = False
     try:
