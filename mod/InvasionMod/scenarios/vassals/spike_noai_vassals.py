@@ -83,7 +83,7 @@ def run(ctx) -> dict:
     tribute = ctx.mod.command("InvasionMod.tribute_state")
     before = tribute["ticks"]
     ctx.mod.command("InvasionMod.vassals_set_policy", slot=1, policy="heavy")
-    ctx.actions.set_season(SEASONS[(tribute["last_season"] + 1) % 4])
+    ctx.actions.set_season(SEASONS[(tribute["season"] + 1) % 4])
     ctx.run_until(lambda: ctx.mod.command("InvasionMod.tribute_state")["ticks"] > before, 30, what="the tribute tick")
     payments = ctx.mod.command("InvasionMod.tribute_state")["history"][-1]["payments"]
     ctx.log.info(f"SPIKE tribute payments: {payments}")

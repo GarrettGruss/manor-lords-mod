@@ -302,16 +302,27 @@ return {
             clay = { good = 146, size = 500 }, -- EItemType Clay (M10.02, TBD)
         },
     },
-    -- M08 tribute. Values are TBD for playtests (M00: 10 to 30 percent of the production).
+    -- M08 tribute (change update-vassal-tribute-rich-resources, owner decisions of 2026-11-01).
+    -- Each game month a vassal sends `base` x policy factor units of each of the rich resources of its region.
     tribute = {
         enabled = true,
-        poll_ms = 2000,           -- real time between two looks at the season
-        units_per_family = 20,    -- production units of one family in one season (TBD)
-        share = 0.20,             -- share of the production that a vassal sends (fixed; decision of 2026-10-20: no vassal loyalty)
+        poll_ms = 2000,           -- real time between two looks at the month
+        base = 100,               -- units of each good for a `fair` vassal (policy factors: vassals.policies)
         siege = { days = 8, min_living = 0.5, poll_ms = 2000 }, -- M02.07: a subjugation raid on a vassal takes it after days with min_living share of units (TBD)
-        goods = { { id = 30, name = "fish" }, { id = 16, name = "timber" } }, -- the tribute is split equally
-        -- M10.02: the permanent supply of the goods that run out at home. Paid next to `goods`, with the same share. Values are TBD.
-        finite_goods = { { id = 14, name = "iron", units_per_family = 10 }, { id = 145, name = "salt", units_per_family = 6 } },
+        rich = {
+            per_region = 2,       -- every region pays this many goods
+            fill_good = "flax",   -- stand-in for rich soil (not detectable): fills up to per_region
+            decal_size = 5000,    -- a depositMaterial decal with DecalSize.X >= this is rich (poor ore: 4000)
+            clump_capacity = { berries = 130, carp = 385, eel = 385, mushrooms = 122 }, -- sum of resourceClumps capacity of a node; rich at >= this
+            goods = { iron = 14, stone = 27, salt = 145, clay = 146, carp = 30, eel = 32, berries = 171, mushrooms = 279, flax = 11 }, -- EItemType ids
+            -- Which resource node class makes which good. Game (hunting area) is never rich (spike #551).
+            clump_goods = { Resource_Berries_C = "berries", Resource_Fish_C = "carp", Resource_Eel_C = "eel", Resource_Mushrooms_C = "mushrooms" },
+            -- Decal material name to good (ore decals).
+            deposit_goods = { depositMaterial = "iron", depositMaterial_Clay = "clay", depositMaterial_Salt = "salt", depositMaterial_Stone = "stone" },
+            -- More than per_region rich goods: keep the first ones by tier, then by list order. Owner 2026-11-01: ores first, then clay and fish, then the rest.
+            -- The ore tier (iron, stone, salt) is the lead's reading of "ores"; the owner may correct it.
+            priority = { { "iron", "stone", "salt" }, { "clay", "carp", "eel" }, { "berries", "mushrooms" } },
+        },
     },
     -- liege_influence (change add-liege-influence). Values are owner decisions of 2026-10-19 and 2026-10-20.
     -- Influence changes only by contracts (liege_contracts). The liege window values (poll, refresh, z_order, position) are used by that feature.

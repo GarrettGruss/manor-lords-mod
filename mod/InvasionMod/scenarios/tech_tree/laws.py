@@ -1,14 +1,14 @@
 """M12 iteration 04: a law and a vassal policy change the tribute.
 
 Run it with --new-game (like tribute-payout). It makes one vassal, picks Prosperity, unlocks Fair Courts and Amnesty,
-sets the vassal policy light (needs Fair Courts), enacts Trade Pacts (tribute x1.25) and jumps a season.
+sets the vassal policy light (needs Fair Courts), enacts Trade Pacts (tribute x1.25) and jumps a season (a season jump changes the month, so the monthly tribute ticks).
 It saves nothing.
 """
 
 from _new_game import begin_game
 
 NAME = "tech-tree-laws"
-DESCRIPTION = "A vassal policy and a law of the tech tree change the tribute (5 families: 13 with light and Trade Pacts)."
+DESCRIPTION = "A vassal policy and a law of the tech tree change the tribute (2 goods: 100 with light, 126 with light and Trade Pacts)."
 LIMIT_S = 500
 SPEED = 2
 LONG_REASON = "Claim, settle and handover (about 100 s), then season jumps."
@@ -44,14 +44,14 @@ def make_vassal(ctx) -> None:
 def jump_season(ctx) -> int:
     """Jump to the next season, wait for the tribute tick, return the goods paid by this tick."""
     before = tribute(ctx)
-    ctx.actions.set_season(SEASONS[(before["last_season"] + 1) % 4])
+    ctx.actions.set_season(SEASONS[(before["season"] + 1) % 4])
     ctx.run_until(lambda: tribute(ctx)["ticks"] > before["ticks"], 30, what="the tribute tick")
     return tribute(ctx)["paid_total"] - before["paid_total"]
 
 
 def run(ctx) -> dict:
     begin_game(ctx)  # a new game waits at the start screen
-    ctx.run_until(lambda: tribute(ctx)["last_season"] >= 0, 30, what="the saved season")
+    ctx.run_until(lambda: tribute(ctx)["last_month"] >= 0, 30, what="the saved month")
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     make_vassal(ctx)
 
@@ -66,14 +66,14 @@ def run(ctx) -> dict:
     ctx.check("L2 heavy is refused on the Prosperity path", heavy is not None and "oppression" in heavy, heavy)
 
     light_only = jump_season(ctx)
-    ctx.check("L3 light alone pays 10 (5 families x 20 x 0.2 x 0.5)", light_only == 10, light_only)
+    ctx.check("L3 light alone pays 100 (2 goods x 100 x 0.5)", light_only == 100, light_only)
 
     ctx.mod.command("InvasionMod.tech_tree_enact_law", law="trade_pacts")
     with_pacts = jump_season(ctx)
-    ctx.check("L4 Trade Pacts raise the tribute by 25 percent (12 to 14)", 12 <= with_pacts <= 14, with_pacts)
+    ctx.check("L4 Trade Pacts raise the tribute by 25 percent (126: 2 goods x 63)", 122 <= with_pacts <= 130, with_pacts)
     ctx.mod.command("InvasionMod.tech_tree_repeal_law", law="trade_pacts")
     repealed = jump_season(ctx)
-    ctx.check("L6 after the repeal the tribute is 10 again", repealed == 10, repealed)
+    ctx.check("L6 after the repeal the tribute is 100 again", repealed == 100, repealed)
     ctx.metric("tribute_light", light_only)
     ctx.metric("tribute_light_pacts", with_pacts)
     return ctx.result()

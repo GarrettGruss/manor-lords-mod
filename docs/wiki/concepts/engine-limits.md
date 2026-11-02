@@ -241,7 +241,7 @@ Desk research on 2026-10-28, no game run. Notes: `openspec/changes/archive/*-ass
 ## Liege contracts facts (change `update-liege-contracts-tiers`, #533)
 
 - **Regional wealth write.** `Region:addRegionalWealth(n)` called from a mod raised `regionalWealth` by n (91 to 151) and the value held after one game day (runs 20261030-183650-7d2b, 20261030-184053-c309).
-- **Calendar.** `TemporalComponent.day` is the day of the year (365 days). Day 60 is the first day of spring (Season 1), day 335 the first day of winter (Season 0); a new game starts on day 61.
+- **Calendar.** `TemporalComponent.day` is the day of the year (365 days). Day 60 is the first day of spring (Season 1), day 335 the first day of winter (Season 0); a new game starts on day 61. `TemporalComponent.month` is 1 based (January is 1) and follows `set_day`: days 15, 46 and 74 gave months 1, 2 and 3 (run `tr-rich-1`, change `update-vassal-tribute-rich-resources`). The tribute polls it for its monthly tick.
 - **Where goods lie.** `getStockOfGood` counts food that lies in a building of type 80 (berries), not only in types 6 and 72. Take goods from every building that holds them. The stock number can count a unit that no store holds (helmets: 8 found of 9).
 - **No mouse.** A PC with `SM_MOUSEPRESENT = 0` stops every real mouse scenario with an InputError. Use the press command of the window.
 - **Pak install path.** `run.py --pak <name>` installs `<work_dir>/out/<name>_P.pak` of the pak config; use `--pak-config` with a private `work_dir` to test a pak that is not built in the shared folder.
