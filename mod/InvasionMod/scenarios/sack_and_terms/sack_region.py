@@ -4,6 +4,8 @@ The scenario makes one vassal (M07.02), lets it settle, then calls sack_now. The
 Run it with --new-game. It saves nothing.
 """
 
+from _new_game import begin_game
+
 NAME = "sack-and-terms-sack-region"
 DESCRIPTION = "A manual sack takes buildings and families from the home region only, not from a vassal region."
 LIMIT_S = 600
@@ -39,6 +41,7 @@ def make_vassal(ctx) -> str:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     home = vassals(ctx)["home_region"]
     ctx.mod.command("InvasionMod.sack_set_fatal", enabled=False)

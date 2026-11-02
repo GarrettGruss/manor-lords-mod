@@ -8,6 +8,8 @@ Pictures: empty state, nine cards, after a fulfilment (or without a manor).
 
 import time
 
+from _new_game import begin_game
+
 NAME = "liege-contracts-window"
 DESCRIPTION = "Open the liege window, show nine contracts, fulfil with the press command (manor) or see greyed buttons (no manor), take pictures. Needs --pak InvasionMod."
 LIMIT_S = 300
@@ -79,6 +81,7 @@ def check_layout(ctx, state: dict, has_manor: bool) -> None:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen (a loaded save does not)
     expect = ctx.expect
     has_manor = has_built_manor(ctx)
     ctx.metric("manor_built", 1 if has_manor else 0)

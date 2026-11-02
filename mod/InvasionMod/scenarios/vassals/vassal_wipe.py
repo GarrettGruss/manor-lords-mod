@@ -10,6 +10,8 @@ Environment (run.py --env): REBUILD_DAYS (game days to watch after the restore, 
 
 import time
 
+from _new_game import begin_game
+
 NAME = "vassals-wipe"
 DESCRIPTION = "A sack wipes a vassal at 80 percent ruins; a paid restore gives 5 families and goods; the AI may rebuild."
 LIMIT_S = 1500
@@ -71,6 +73,7 @@ def look(ctx, label: str, spot: dict) -> None:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     rebuild_days = int(ctx.variant_option("REBUILD_DAYS", "20"))
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     region, _settled = make_vassal(ctx)

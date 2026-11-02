@@ -5,6 +5,8 @@ sets the vassal policy light (needs Fair Courts), enacts Trade Pacts (tribute x1
 It saves nothing.
 """
 
+from _new_game import begin_game
+
 NAME = "tech-tree-laws"
 DESCRIPTION = "A vassal policy and a law of the tech tree change the tribute (5 families: 13 with light and Trade Pacts)."
 LIMIT_S = 500
@@ -48,6 +50,7 @@ def jump_season(ctx) -> int:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     ctx.run_until(lambda: tribute(ctx)["last_season"] >= 0, 30, what="the saved season")
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     make_vassal(ctx)
