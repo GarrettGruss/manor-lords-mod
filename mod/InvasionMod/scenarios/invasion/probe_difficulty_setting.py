@@ -4,6 +4,8 @@ write one, and set the mod difficulty several times (also after a raid spawned).
 
 import json
 
+from _new_game import begin_game
+
 NAME = "probe-difficulty-setting"
 LIMIT_S = 240
 
@@ -17,6 +19,7 @@ def note(ctx, key, value) -> None:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     ctx.run_until(lambda: ctx.mod.command("InvasionMod.invasion_state")["raid_day"] > 0, 30, what="the raid plan")
     setup = ctx.actions.game_setup_state()
     note(ctx, "game_setup_loaded", setup)

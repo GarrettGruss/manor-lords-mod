@@ -4,6 +4,8 @@ Run it with --new-game (like tribute-payout). It makes one vassal (claim, settle
 Families of the vassal region: 5. The share is 20 percent: iron 5 x 10 x 0.2 = 10, salt 5 x 6 x 0.2 = 6. It saves nothing.
 """
 
+from _new_game import begin_game
+
 NAME = "finite-resources-vassal-supply"
 DESCRIPTION = "A vassal pays 10 iron and 6 salt at a season change; the iron deposit of the home region is not reduced by it."
 LIMIT_S = 500
@@ -50,6 +52,7 @@ def jump_season(ctx) -> None:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     ctx.run_until(lambda: tribute(ctx)["last_season"] >= 0, 30, what="the saved season")
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     ctx.check("V0 the three home deposits exist (clay, iron, salt)", sorted(deposits(ctx)) == ["clay", "iron", "salt"], deposits(ctx))

@@ -5,6 +5,8 @@ Run it with --new-game. Families of the vassal region: 5 after the settle call. 
 It saves nothing.
 """
 
+from _new_game import begin_game
+
 NAME = "tribute-payout"
 DESCRIPTION = "A season change pays 20 percent of the vassal production into the home stores."
 LIMIT_S = 500
@@ -57,6 +59,7 @@ def stock_of(state: dict, good: str) -> int:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     ctx.run_until(lambda: tribute(ctx)["last_season"] >= 0, 30, what="the saved season")
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     first = jump_season(ctx)

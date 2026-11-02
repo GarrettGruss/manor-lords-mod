@@ -8,6 +8,8 @@ Two runs make one round trip, because a run cannot load a save by itself (as mod
 The kept slot stays in the user's save folder. Delete it after the check (the harness does not).
 """
 
+from _new_game import begin_game
+
 NAME = "liege-influence-roundtrip"
 DESCRIPTION = "Fulfil a contract (1000 influence), save, load the save in a second run, and read 1000 influence."
 LIMIT_S = 240
@@ -20,6 +22,7 @@ def liege(ctx) -> dict:
 
 
 def write_phase(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     ctx.mod.command(PREFIX + "liege_contracts_offer_now", ids="l-293-5-i-0-1000-0.l-273-9-t-0-1-0.l-320-18-t-0-1-0.s-17-50-g-146-30-0.s-145-30-g-17-25-0.s-171-70-g-17-25-0")
     ctx.actions.give_item(293, 5)
     ctx.mod.command(PREFIX + "liege_contract_fulfil", id="large-1")
