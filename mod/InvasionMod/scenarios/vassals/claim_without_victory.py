@@ -4,6 +4,8 @@ Run it with --new-game for V3 (the Growth default of a new game ends the game on
 On a fixture the claim still works, and V3 only shows that the status stays 0. It saves nothing.
 """
 
+from _new_game import begin_game
+
 NAME = "vassals-claim-without-victory"
 DESCRIPTION = "The mod holds goals = Endless; a claimed region is registered as a vassal slot; no victory."
 LIMIT_S = 400
@@ -52,6 +54,7 @@ def check_claim(ctx) -> str:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     ctx.run_until(lambda: state(ctx).get("day") is not None, 30, what="the mod state")
     check_goal_is_held(ctx)
     check_claim(ctx)

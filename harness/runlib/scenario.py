@@ -138,6 +138,9 @@ def mod_scenario_files(mod_root: Path) -> list[Path]:
 
 def load_mod_scenarios(mod_root: Path = REPO_ROOT / "mod") -> None:
     """Import and register the scenarios that a mod keeps beside its own files."""
+    for scenarios_dir in sorted(mod_root.glob("*/scenarios")):
+        if str(scenarios_dir) not in sys.path:
+            sys.path.insert(0, str(scenarios_dir))  # a scenario can import the helper modules (_name.py) of its mod
     for path in mod_scenario_files(mod_root):
         relative = path.relative_to(mod_root).with_suffix("")
         module_name = "modscenario_" + "_".join(relative.parts)

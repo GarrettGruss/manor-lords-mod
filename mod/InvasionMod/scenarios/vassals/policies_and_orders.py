@@ -3,6 +3,8 @@
 The scenario makes one vassal (M07.02) and jumps seasons with set_season. Run it with --new-game. It saves nothing.
 """
 
+from _new_game import begin_game
+
 NAME = "vassals-policies-and-orders"
 DESCRIPTION = "Policy light/fair/heavy: the tribute factor; an unknown policy is refused."
 LIMIT_S = 500
@@ -50,6 +52,7 @@ def jump_season(ctx) -> dict:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     make_vassal(ctx)
     ctx.run_until(lambda: vassals(ctx).get("day") is not None, 10, what="the state")

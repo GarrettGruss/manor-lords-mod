@@ -5,6 +5,8 @@ The vassal pays 2 goods of 100 units (policy fair). Which goods depends on the r
 Run it with --new-game. It saves nothing.
 """
 
+from _new_game import begin_game
+
 NAME = "tribute-payout"
 DESCRIPTION = "A month change pays 100 units of each of 2 rich goods of the vassal region into the home stores."
 LIMIT_S = 500
@@ -53,6 +55,7 @@ def stock_of(state: dict, good: str) -> int:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     ctx.run_until(lambda: tribute(ctx)["last_month"] >= 0, 30, what="the saved month")
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     first = jump_season(ctx)

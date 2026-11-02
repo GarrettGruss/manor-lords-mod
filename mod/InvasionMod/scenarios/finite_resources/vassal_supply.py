@@ -5,6 +5,8 @@ and reads the home stores. The vassal pays 2 goods of 100 units of the rich reso
 The tribute is not production, so the `mined` count of the home deposits stays 0. It saves nothing.
 """
 
+from _new_game import begin_game
+
 NAME = "finite-resources-vassal-supply"
 DESCRIPTION = "A vassal pays 2 rich goods at a month change; the iron, salt and clay deposits of the home region are not reduced by it."
 LIMIT_S = 500
@@ -50,6 +52,7 @@ def jump_season(ctx) -> None:
 
 
 def run(ctx) -> dict:
+    begin_game(ctx)  # a new game waits at the start screen
     ctx.run_until(lambda: tribute(ctx)["last_month"] >= 0, 30, what="the saved month")
     ctx.run_until(lambda: vassals(ctx)["home_region"] != "none", 30, what="the home region")
     ctx.check("V0 the three home deposits exist (clay, iron, salt)", sorted(deposits(ctx)) == ["clay", "iron", "salt"], deposits(ctx))
