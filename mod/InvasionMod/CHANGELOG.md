@@ -4,6 +4,7 @@ Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
 ### Changed
+- **raid_widget (update-raid-menu-style):** the raid menu has the game-menu look: game font, flat dark panel, title RAIDS with a gold rule, rows with marker, label and gold value. A switched-off raid type shows no row. Texts and behavior are unchanged.
 - **tribute (update-vassal-tribute-rich-resources):** each game month a vassal sends 100 units of each of 2 goods, the rich resources of its region (policy light 50, fair 100, heavy 150). Fewer than 2 rich resources: flax fills up (none: flax twice). More than 2: ores first, then clay and fish, then berries and mushrooms. Game is never rich. The old fish, timber, iron and salt by family count is gone.
 - **liege_contracts (update-liege-contracts-tiers):** nine contracts each spring, three in each tier Small, Medium and Large. All ask for goods. You fulfil them at will (one for each tier and year) with a built manor; there is no pick step and no penalty. Contracts end when winter begins. New window layout.
 - **scenario_settings (update-start-kit-ten-families):** the start kit gives 10 families (was 10 people, which the new game already had). Missing families arrive as homeless families in a tent camp.
