@@ -27,6 +27,11 @@ def manor_term(ctx) -> int:
     return ctx.mod.command("InvasionMod.bandits_tick_now")["last_tick"]["manor_term"]
 
 
+def base_term(ctx) -> int:
+    """The part of the manor term that is not the tech bonus: 10 with a built manor, else 0."""
+    return 10 if any(m["built"] for m in ctx.actions.manor_state()["modules"]) else 0
+
+
 def check_start(ctx) -> None:
     ctx.run_until(lambda: tree(ctx).get("path") is not None, 30, what="the tech tree state")
     start = tree(ctx)
@@ -53,7 +58,7 @@ def check_first_node(ctx) -> None:
     ctx.mod.command("InvasionMod.tech_tree_unlock", node="martial_law")
     ctx.run_until(lambda: bandits(ctx)["modifiers"]["order_bonus"] == 10, 15, what="the Public Order bonus")
     after = bandits(ctx)
-    ctx.check("T7 the manor term of a tick is 10 + 10", manor_term(ctx) == 20, [before["modifiers"], after["modifiers"]])
+    ctx.check("T7 the manor term of a tick is the base term + 10", manor_term(ctx) == base_term(ctx) + 10, [before["modifiers"], after["modifiers"]])
     full = ctx.mod.refusal("InvasionMod.tech_tree_unlock", node="iron_hand")
     ctx.check("T8 no free pick after one node", full is not None and "no free pick" in full, full)
 
@@ -63,7 +68,7 @@ def check_second_node(ctx) -> None:
     ctx.mod.command("InvasionMod.tech_tree_unlock", node="iron_hand")
     ctx.run_until(lambda: bandits(ctx)["modifiers"]["order_bonus"] == 25, 15, what="the second Public Order bonus")
     after = bandits(ctx)
-    ctx.check("T9 the manor term of a tick is 10 + 25", manor_term(ctx) == 35, after["modifiers"])
+    ctx.check("T9 the manor term of a tick is the base term + 25", manor_term(ctx) == base_term(ctx) + 25, after["modifiers"])
     ctx.check("T10 the buy-back price factor is 1.25", abs(after["buy_back_multiplier"] - 1.25) < 1e-9, after["buy_back_multiplier"])
 
 

@@ -74,15 +74,17 @@ end
 local function run_tick(today)
     local region = world.region()
     if region == nil then return core.log.warn(TAG, "BANDITS tick skipped: no region") end
-    local record = rules.tick_order(mod_order(), world.homeless(region) or 0, modifiers.order_bonus, config, modifiers.banditry_gain_multiplier)
+    local manor_built, why = world.manor_built()
+    if why ~= nil then core.log.warn(TAG, "BANDITS manor check failed, counted as not built: " .. why) end
+    local record = rules.tick_order(mod_order(), world.homeless(region) or 0, modifiers.order_bonus, config, modifiers.banditry_gain_multiplier, manor_built)
     record.day = today
     last_tick = record
     leave_gain = nil
     state:set("bandits_last_tick_day", today)
     state:set("bandits_ticks", state:get("bandits_ticks") + 1)
     set_mod_order(record.order_after)
-    core.log.info(TAG, string.format("BANDITS tick day=%d order_before=%d manor_term=%d homeless=%d homeless_term=%d order_after=%d",
-        today, record.order_before, record.manor_term, record.homeless_count, record.homeless_term, record.order_after))
+    core.log.info(TAG, string.format("BANDITS tick day=%d order_before=%d manor_built=%s manor_term=%d homeless=%d homeless_term=%d order_after=%d",
+        today, record.order_before, tostring(record.manor_built), record.manor_term, record.homeless_count, record.homeless_term, record.order_after))
 end
 
 ---------------------------------------------------------------------------------------------

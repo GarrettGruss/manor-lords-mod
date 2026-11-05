@@ -13,8 +13,10 @@ LIMIT_S = 600
 EXCLUSIVE = True  # real mouse input
 LONG_REASON = "The tooltip opens about 1 s after the real cursor rests on the icon, and the scenario opens it several times."
 PREFIX = "InvasionMod."
-ICON = (0.718, 0.090)  # the order icon in the top right group, as a fraction of the window
+ICON = (0.711, 0.065)  # the order icon in the top right group, as a fraction of the window
 AWAY = (0.9, 0.6)
+KEEP = 57  # the manor
+WOOD, PLANKS, RUBBLE = 16, 17, 15  # the Keep costs 10 wood, 15 planks and 10 rubble
 
 
 def bandits(ctx) -> dict:
@@ -35,8 +37,43 @@ def open_tooltip(ctx, wanted_opens: int) -> dict:
     return tooltip(ctx)
 
 
+def manor_built(ctx) -> bool:
+    return any(module["built"] for module in ctx.actions.manor_state()["modules"])
+
+
+def place_manor_site(ctx) -> None:
+    """A Keep construction site, placed with the real mouse (the game must run for it)."""
+    for good in (WOOD, PLANKS, RUBBLE):
+        ctx.actions.give_item(good, 100)
+    ctx.actions.place_building(KEEP)
+
+
+def check_manor_rows(ctx) -> None:
+    """The manor term counts only for a built manor: no Manor row for no manor and for a site, a green row for a built manor."""
+    had_manor = manor_built(ctx)
+    ctx.metric("manor_at_start", int(had_manor))
+    if not had_manor:
+        place_manor_site(ctx)
+        ctx.time.pause()
+        ctx.check("the Keep is a construction site, not built", not manor_built(ctx), ctx.actions.manor_state())
+        ctx.mod.command(PREFIX + "bandits_set_order", value=50)
+        tick = ctx.mod.command(PREFIX + "bandits_tick_now")["last_tick"]
+        ctx.check("a site gives manor term 0", tick["manor_built"] is False and tick["manor_term"] == 0, tick)
+        seen = open_tooltip(ctx, tooltip(ctx)["applied"] + 1)
+        time.sleep(1.5)
+        ctx.screenshot("tooltip-no-manor")
+        ctx.check("no Manor row without a built manor", not any(row.startswith("Manor") for row in seen["rows"]), seen["rows"])
+        ctx.actions.finish_manor_site(KEEP)
+    ctx.check("the manor is built", manor_built(ctx), ctx.actions.manor_state())
+    ctx.mod.command(PREFIX + "bandits_set_order", value=50)
+    tick = ctx.mod.command(PREFIX + "bandits_tick_now")["last_tick"]
+    ctx.check("a built manor gives manor term 10", tick["manor_built"] is True and tick["manor_term"] == 10, tick)
+
+
 def run(ctx) -> dict:
     osinput.Win32Input().bring_to_front(ctx.game_window()["hwnd"])
+    ctx.time.set_speed(1)
+    check_manor_rows(ctx)
     ctx.time.pause()
     first = tooltip(ctx)
     ctx.check("the tooltip hook is set", first["hooked"], first)

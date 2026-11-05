@@ -26,6 +26,18 @@ function M.current_season()
     return nil
 end
 
+-- Is a manor built? The same rule as the contracts feature: the first manor module of HarnessManor.manor_state() with built = true.
+-- A construction site does not count. Returns true or false, and a reason when the state cannot be read.
+function M.manor_built()
+    local ok, listed = pcall(function() return require("HarnessManor").manor_state() end)
+    if not ok then return false, tostring(listed) end
+    if not listed.ok then return false, tostring(listed.error) end
+    for _, module in ipairs(listed.modules) do
+        if module.built then return true end
+    end
+    return false
+end
+
 function M.region()
     local region, problem = core.player_region()
     return region, problem

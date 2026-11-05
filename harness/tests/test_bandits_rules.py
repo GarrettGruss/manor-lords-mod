@@ -35,19 +35,28 @@ class RulesTests(unittest.TestCase):
         self.assertEqual([self.rules.clamp_order(v) for v in (-5, 0, 50, 100, 130)], [0, 0, 50, 100, 100])
 
     def test_tick_with_homeless_villagers(self):
-        record = self.rules.tick_order(50, 4, 0, self.order_cfg())
+        record = self.rules.tick_order(50, 4, 0, self.order_cfg(), None, True)
         self.assertEqual(
             (record.order_before, record.manor_term, record.homeless_count, record.homeless_term, record.order_after),
             (50, 10, 4, 20, 40),
         )
 
     def test_tick_is_clamped(self):
-        self.assertEqual(self.rules.tick_order(95, 0, 0, self.order_cfg()).order_after, 100)
-        self.assertEqual(self.rules.tick_order(10, 5, 0, self.order_cfg()).order_after, 0)
+        self.assertEqual(self.rules.tick_order(95, 0, 0, self.order_cfg(), None, True).order_after, 100)
+        self.assertEqual(self.rules.tick_order(10, 5, 0, self.order_cfg(), None, True).order_after, 0)
 
     def test_order_bonus_is_added_to_the_manor_term(self):
-        record = self.rules.tick_order(50, 0, 5, self.order_cfg())
+        record = self.rules.tick_order(50, 0, 5, self.order_cfg(), None, True)
         self.assertEqual((record.manor_term, record.order_after), (15, 65))
+
+    def test_no_manor_term_without_a_built_manor(self):
+        record = self.rules.tick_order(50, 0, 0, self.order_cfg(), None, False)
+        self.assertEqual((record.manor_built, record.manor_term, record.order_after), (False, 0, 50))
+        self.assertEqual(self.rules.tick_order(50, 0, 0, self.order_cfg()).manor_term, 0)
+
+    def test_the_tech_bonus_counts_without_a_manor(self):
+        record = self.rules.tick_order(50, 0, 10, self.order_cfg(), None, False)
+        self.assertEqual((record.manor_term, record.order_after), (10, 60))
 
     def test_tick_is_due_after_tick_days(self):
         self.assertFalse(self.rules.tick_due(100, -1, 30))  # nothing saved: store only

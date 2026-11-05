@@ -24,6 +24,12 @@ package.loaded["HarnessBandits"] = {
         return { ok = LETTER_OK ~= false }
     end,
 }
+package.loaded["HarnessManor"] = {
+    manor_state = function()
+        if MANOR_STATE_FAIL then return { ok = false, error = "no region" } end
+        return { ok = true, modules = { { built = MANOR_BUILT ~= false } } }
+    end,
+}
 TELEMETRY = {}
 package.loaded["HarnessTelemetry"] = { register = function(name, fn) TELEMETRY[name] = fn end }
 package.loaded["HarnessUnits"] = {
@@ -289,6 +295,27 @@ class TickTests(BanditsTestCase):
         self.game.exec('require("features.bandits.init").set_modifiers({ order_bonus = 5 })')
         self.ask("bandits_set_order", value=50)
         self.assertEqual(self.ask("bandits_tick_now")["result"]["last_tick"]["manor_term"], 15)
+
+    def test_no_manor_term_without_a_built_manor(self):
+        self.game.exec("MANOR_BUILT = false")
+        self.ask("bandits_set_order", value=50)
+        tick = self.ask("bandits_tick_now")["result"]["last_tick"]
+        self.assertEqual((tick["manor_built"], tick["manor_term"], tick["order_after"]), (False, 0, 50))
+        self.assertTrue(any("manor_built=false manor_term=0" in line for line in self.game.log_lines()))
+
+    def test_the_tech_bonus_still_counts_without_a_manor(self):
+        self.game.exec("MANOR_BUILT = false")
+        self.game.exec('require("features.bandits.init").set_modifiers({ order_bonus = 5 })')
+        self.assertEqual(self.ask("bandits_tick_now")["result"]["last_tick"]["manor_term"], 5)
+
+    def test_an_unreadable_manor_state_counts_as_not_built(self):
+        self.game.exec("MANOR_STATE_FAIL = true")
+        tick = self.ask("bandits_tick_now")["result"]["last_tick"]
+        self.assertEqual((tick["manor_built"], tick["manor_term"]), (False, 0))
+
+    def test_a_built_manor_gives_the_manor_term(self):
+        tick = self.ask("bandits_tick_now")["result"]["last_tick"]
+        self.assertEqual((tick["manor_built"], tick["manor_term"]), (True, 10))
 
     def test_the_telemetry_metric_holds_the_last_tick(self):
         self.ask("bandits_tick_now")
