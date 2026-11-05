@@ -15,8 +15,10 @@ from test_fakegame_modstate import FNAME, HELPERS, find_pack_mod
 PACK = find_pack_mod()
 TREE_FILE = PACK / "data" / "tech_tree" / "tree.json"
 
+MANOR_STUB = """package.loaded["HarnessManor"] = { manor_state = function() return { ok = true, modules = { { built = true } } } end } -- the manor term of a tick needs a built manor
+"""
+
 STUB = """
-package.loaded["HarnessManor"] = { manor_state = function() return { ok = true, modules = { { built = true } } } end } -- the manor term of a tick needs a built manor
 package.loaded["HarnessBandits"] = {
     homeless_rebel = function(request) return { ok = true, families_removed = request.count, squads = { {} }, bandit_units_spawned = 18 } end,
     bandit_tag = function() return { ok = true } end,
@@ -107,6 +109,7 @@ class LoaderTests(unittest.TestCase):
 
 class TechTreeTestCase(unittest.TestCase):
     START_SEASON = 1  # the season of the calendar when the game starts (spring is 0 in these tests)
+    STUB_BUILT_MANOR = True  # tests with their own manor world set False, so they use the real HarnessManor
 
     def setUp(self):
         self.game = FakeGame()
@@ -115,6 +118,8 @@ class TechTreeTestCase(unittest.TestCase):
         self.mod_name = PACK.name
         self.game.exec(f'package.path = "{(PACK / "Scripts").as_posix()}/?.lua;" .. package.path')
         self.game.exec(FNAME + HELPERS + STUB)
+        if self.STUB_BUILT_MANOR:
+            self.game.exec(MANOR_STUB)
         self.game.exec('require("config").tech_tree.spring_season = 0')  # the tests use spring = 0; the real value is in notes/spring-season.md
         self.pawn = self.game.obj("PawnCPP", Tags=self.game.array([]), commandedSquads=self.game.array([]))
         self.game.method(self.pawn, "playEventMessage", lambda _self, _kind, _text, _sub: None)
