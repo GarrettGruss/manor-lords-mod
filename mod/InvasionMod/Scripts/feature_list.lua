@@ -21,4 +21,5 @@ return {
     { name = "liege_influence", requires = { "mod_state", "tribute" } },
     { name = "liege_contracts", requires = { "mod_state", "invasion", "raid_behavior", "bandits", "liege_influence" } },
     { name = "laws_menu", requires = { "tech_tree", "invasion" } },
+    { name = "vassals_menu", requires = { "vassals", "tribute" } },
 }

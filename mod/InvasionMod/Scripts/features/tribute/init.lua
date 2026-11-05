@@ -207,5 +207,18 @@ if has_commands then
     end, {})
 end
 
+-- Read access for the Vassals menu (change add-vassals-menu, #564): the goods that a region pays and the units of each good,
+-- computed with the same rules as the tick. They pay nothing and change nothing.
+local function paid_goods(region)
+    local detected = world.rich_goods(region, config.rich)
+    if detected == nil then return nil end
+    return (rules.choose_goods(detected, config.rich))
+end
+
+local function amount_for(policy_factor)
+    return rules.amount(config.base, policy_factor * share_factor)
+end
+
 core.log.info(TAG, "feature tribute loaded")
-return { state = state, run_tick = run_tick, on_raid_end = on_raid_end, set_share_factor = function(value) share_factor = value end }
+return { state = state, run_tick = run_tick, on_raid_end = on_raid_end, set_share_factor = function(value) share_factor = value end,
+         paid_goods = paid_goods, amount_for = amount_for }
