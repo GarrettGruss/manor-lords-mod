@@ -332,6 +332,16 @@ return {
         refresh_ms = 500,                -- real time between two refreshes of the menu labels
         z_order = 500,
     },
+    -- vassals_menu (change add-vassals-menu, #564): the Vassals window values.
+    vassals_menu = {
+        enabled = true,
+        poll_ms = 100,        -- real time between two looks at the click queue of the menu (never faster)
+        refresh_ms = 500,     -- real time between two refreshes of the menu texts
+        stats_s = 5,          -- real seconds between two reads of the families, buildings and rich goods of a region
+        notice_s = 6,         -- real seconds that a refused click shows its reason in the note line of the card
+        z_order = 500,
+        dim_opacity = 0.45,   -- render opacity of a free slot card
+    },
     -- liege_contracts (changes update-liege-tribute-to-contracts, #505, and update-liege-contracts-tiers, #533).
     -- The request and reward pools are in data/liege_contracts/contracts.json. Every number below is a proposed default; the owner tunes it.
     liege_contracts = {

@@ -631,4 +631,4 @@ if has_commands then
 end
 
 core.log.info(TAG, "feature vassals loaded")
-return { state = state, on_lost = on_lost, lose_vassal = lose_vassal, start_sack = start_sack, end_sack = end_sack, sack_slot_of_region = function(region) for slot, run in pairs(sacks) do if run.region == region then return slot end end end, restore_vassal = restore_vassal, policy_of = policy_of, set_policy = set_policy, region_families = world.region_families, target_regions = target_regions, register_vassal = register_vassal, slot_rows = slot_rows, slot_regions = slot_regions }
+return { state = state, on_lost = on_lost, lose_vassal = lose_vassal, start_sack = start_sack, end_sack = end_sack, sack_slot_of_region = function(region) for slot, run in pairs(sacks) do if run.region == region then return slot end end end, restore_vassal = restore_vassal, policy_of = policy_of, set_policy = set_policy, region_families = world.region_families, target_regions = target_regions, register_vassal = register_vassal, slot_rows = slot_rows, slot_regions = slot_regions, wiped_rows = wiped_rows }

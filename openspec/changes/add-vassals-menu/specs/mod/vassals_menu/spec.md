@@ -28,7 +28,7 @@ The header SHALL show "Vassals: N / 3" (N is the number of registered vassals, t
 - Not checked yet (planned: `mod/InvasionMod/scenarios/vassals_menu/window.py`).
 
 ### Requirement: Each card shows one vassal
-The menu SHALL show 3 cards, one for each slot (`vassals.max_vassals`). A card for a registered vassal SHALL show the region, the lord, the status, the rich resources, the tribute each month, the families, the buildings, the days as vassal (from the handover), one note line and the policy buttons. The tribute SHALL be `tribute.base x policy factor` for each paid good, as the tribute tick computes it. A slot with no vassal is an open question (`design.md`).
+The menu SHALL show 3 cards, one for each slot (`vassals.max_vassals`). A card for a registered vassal SHALL show the region, the lord, the status, the rich resources, the tribute each month, the families, the buildings, the days as vassal (from the handover), one note line and the policy buttons. The tribute SHALL be `tribute.base x policy factor` for each paid good, as the tribute tick computes it. A slot that was never claimed SHALL show a dim card "Free slot" with the text "Claim and settle a region to gain a vassal." and no buttons. Wiped villages SHALL fill the free cards, oldest first, and the cards SHALL stay in slot order. The days as vassal SHALL count from the handover, also after a restore. The rich resources SHALL show the names of the paid goods (a region with rich soil shows "flax"). A vassal that is registered but not yet handed over to a lord SHALL show the status "Claimed" and no tribute.
 
 #### Scenario: A thriving vassal
 - **WHEN** a handed-over vassal with policy `fair` is shown
@@ -37,7 +37,7 @@ The menu SHALL show 3 cards, one for each slot (`vassals.max_vassals`). A card f
 
 #### Scenario: A rebuilding vassal
 - **WHEN** a restored vassal has the flag `rebuilding`
-- **THEN** the card shows the status "Rebuilding", the tribute "none", and a note that the tribute waits until the village is rebuilt
+- **THEN** the card shows the status "Rebuilding", the tribute "none", and a note that the tribute waits until the village is rebuilt (no progress numbers)
 - Not checked yet (planned: `harness/tests/test_fakegame_vassals_menu.py`).
 
 ### Requirement: The status comes from the vassal state
@@ -62,7 +62,7 @@ Each card of a registered vassal SHALL have the buttons Light, Fair and Heavy. T
 - Not checked yet (planned: `harness/tests/test_fakegame_vassals_menu.py`).
 
 ### Requirement: A wiped village can be restored from its card
-The card of a wiped village SHALL show the status "Wiped", "No lord", no policy buttons, and the button "Restore the village" with its cost (`vassals.restore.silver`, 100). The button SHALL be disabled, with the hint in muted red, when the silver is lower. A click SHALL call the existing `InvasionMod.vassals_restore` with the region and nothing else, and SHALL show a refusal reason. Cost and effect stay as in `mod/vassals`.
+The card of a wiped village SHALL show the status "Wiped", "No lord", no policy buttons, and the button "Restore the village" with its cost as the hint "Costs 100 silver." (`vassals.restore.silver`, 100; the hint does not describe the effect). The button SHALL be disabled, with the hint in muted red, when the silver is lower. A click SHALL call the existing `InvasionMod.vassals_restore` with the region and nothing else, and SHALL show a refusal reason. Cost and effect stay as in `mod/vassals`.
 
 #### Scenario: A restore click
 - **WHEN** the player clicks "Restore the village" with at least 100 silver

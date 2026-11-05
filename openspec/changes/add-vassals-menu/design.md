@@ -10,16 +10,23 @@
 - A click calls the existing named command. The menu has no path of its own to change state.
 - The tribute text of a card uses the tribute rules (`tribute.base`, policy factor, rich goods), not a copy of the numbers.
 
-## Open questions (the owner decides; not decided here)
+## Decisions of the owner (2026-11-04)
 
-1. A wiped village has no slot in the code (it is a record outside the slots). The mockup shows it as slot 3. Options: show wiped villages in the free cards, first; or in extra cards. Answered by a fake game test that reads `vassals_state`. Default: wiped villages fill free cards, oldest first.
-2. What does an empty slot (never claimed) show? The mockup has no such card. Default: a dim card "Free slot" with the text "Claim and settle a region to gain a vassal", no buttons.
-3. The code has no days counter after a restore (the slot starts again). Default: "Vassal for" counts from the new handover.
-4. Restore cost and effect: the menu shows the current 100 silver. Should the hint also show the effect (5 families, goods for the rebuild)? Default: the hint shows only the cost.
-5. The mockup note for "Rebuilding" shows progress "(0 of 22)". The code has `rebuilt_target` but no public progress value. Default: the note has no numbers.
-6. "Thriving" is a new word for "not stalled and not rebuilding". Is the word right?
-7. Card order when slot 1 is lost and slot 2 stays: keep slot numbers, or sort by the day of the handover? Default: slot numbers.
-8. The mockup shows the rich resource "farmland" and the paid good "flax". The code pays flax as the stand-in for rich soil. Should the card show "farmland" or "flax"? Default: the paid good name.
+The owner accepted all 8 defaults of the open questions.
+
+1. Wiped villages fill the free cards, oldest first. A wiped village has no slot in the code (it is a record outside the slots). A free card shows the oldest wiped record that is not shown yet. If there are more records than free cards, the oldest ones show.
+2. A slot that was never claimed shows a dim card "Free slot" with the text "Claim and settle a region to gain a vassal." and no buttons.
+3. "Vassal for" counts the days from the new handover after a restore (the slot starts again).
+4. The restore hint shows only the cost: "Costs 100 silver." (or "Needs 100 silver." when the silver is lower). It does not describe the effect.
+5. The note for "Rebuilding" has no progress numbers ("No tribute until the village is rebuilt.").
+6. "Thriving" means a handed-over vassal that is not stalled and not rebuilding.
+7. Cards stay in slot order. A lost slot does not move the other cards.
+8. A region with rich soil shows the paid good "flax" (the tribute rules use flax as the stand-in). The card shows the names of the paid goods in "Rich resources".
+
+Small additions of the build that the decisions do not cover (no new rule, only what the card must show):
+- A vassal that is registered but not yet handed over to a lord has the status "Claimed", "No lord yet" and the tribute "none" (the tribute tick also skips it). The status list of the spec has no word for it.
+- The widget has a note line for each card. A refused click shows the reason in this line for 6 s (`vassals_menu.notice_s`).
+- The click calls the command through the command layer (`HarnessCommands.dispatch`), so the menu and a test command run the same code.
 
 ## Risks
 

@@ -1,12 +1,12 @@
 ## 1. Spec
 
-- [ ] 1.1 The owner answers the open questions in `design.md` (or accepts the defaults). Verified by review of the spec pull request.
+- [x] 1.1 The owner answers the open questions in `design.md` (or accepts the defaults). Verified by review of the spec pull request.
 
 ## 2. View and commands (fake game)
 
-- [ ] 2.1 Add `features/vassals_menu/view.lua` (header, card model, status mapping, tribute text, hints) and `InvasionMod.vassals_menu_view`. Verified by `harness/tests/test_fakegame_vassals_menu.py`.
-- [ ] 2.2 Add the click handlers for policy and restore that call the existing commands, with refusal text. Verified by `harness/tests/test_fakegame_vassals_menu.py`.
-- [ ] 2.3 Register the menu `vassals` in the bottom bar (`core/menu.lua`). Verified by `harness/tests/test_fakegame_vassals_menu.py`.
+- [x] 2.1 Add `features/vassals_menu/view.lua` (header, card model, status mapping, tribute text, hints) and `InvasionMod.vassals_menu_view`. Verified by `harness/tests/test_fakegame_vassals_menu.py`.
+- [x] 2.2 Add the click handlers for policy and restore that call the existing commands, with refusal text. Verified by `harness/tests/test_fakegame_vassals_menu.py`.
+- [x] 2.3 Register the menu `vassals` in the bottom bar (`core/menu.lua`). Verified by `harness/tests/test_fakegame_vassals_menu.py`.
 
 ## 3. Widget
 
