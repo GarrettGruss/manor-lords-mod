@@ -192,6 +192,7 @@ local garrison = require("HarnessGarrison")
 local uiprobe = require("HarnessUiProbe")
 local gameSetup = require("HarnessGameSetup")
 local harnessSave = require("HarnessSave")
+local loanProbe = require("HarnessLoanProbe")
 local encampment = require("HarnessEncampment")
 local wagenburg = require("HarnessWagenburg")
 local leads = require("HarnessLeads")
@@ -488,6 +489,7 @@ local COMMANDS = {
     close_popups = closePopups,
     load_pak_blueprint = loadPakBlueprint,
     spawn_probe = spawnProbe,
+    loan_probe = loanProbe.loan_probe, -- spike spike-loan-units
     ping = function() return { ok = true, version = VERSION } end,
     send_letter = sendLetter,
     autosave_status = autosaveStatus,
