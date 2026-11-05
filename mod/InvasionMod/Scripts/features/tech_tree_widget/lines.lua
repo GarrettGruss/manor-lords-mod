@@ -4,6 +4,7 @@ local M = {}
 M.COMMON_ROW = 2 -- the row of the common techs (rows 0 and 1 are the paths)
 M.FIXED_TEXT = "One tech pick each spring. The path you swear to is final."
 M.START_MESSAGE = "Pick a tech, or swear to a path."
+M.LAWS_LINE = "Laws: open the Laws menu" -- change add-laws-menu: the tech window only unlocks; the Laws menu enacts and revokes
 
 local MARK = { unlocked = "[x] " }
 local COLOR = {
@@ -92,45 +93,6 @@ function M.law_of_node(node_id, tree)
 end
 
 function M.card_law_text(law) return law and law.name or "No law" end
-
--- The button of a law on a card: "Repeal" in force, "Enact" when open, nil (hidden) otherwise.
--- A law of an unlocked tech with no free law place keeps its Enact button: a click is refused and the footer says why.
-function M.law_button_label(law_row)
-    if law_row == nil then return nil end
-    if law_row.status == "enacted" then return "Repeal" end
-    if law_row.status == "available" then return "Enact" end
-    if law_row.reason and tostring(law_row.reason):find("^no free law place") then return "Enact" end
-    return nil
-end
-
--- The rows of the laws of the chosen path and the common laws, by id.
-function M.law_rows_by_id(view)
-    local by_id = {}
-    for _, group in ipairs({ view.laws or {}, view.common_laws or {} }) do
-        for _, law in ipairs(group) do by_id[law.id] = law end
-    end
-    return by_id
-end
-
-function M.enacted_laws(view)
-    local list = {}
-    for _, law in ipairs(view.laws or {}) do if law.status == "enacted" then list[#list + 1] = law end end
-    for _, law in ipairs(view.common_laws or {}) do if law.status == "enacted" then list[#list + 1] = law end end
-    return list
-end
-
--- The strip count: "1 of 2 max" (laws in force of the most allowed).
-function M.strip_count_text(view)
-    return string.format("%d of %d max", #M.enacted_laws(view), view.max_laws)
-end
-
--- Text of one place of the laws strip: name and effects of the law, or "Empty".
-function M.strip_place_text(law, tree)
-    if law == nil then return "Empty place" end
-    local source = tree.laws_by_id[law.id]
-    local effects = source and M.effect_lines(source, tree):gsub("\n", ", ") or ""
-    return law.name .. "\n" .. effects
-end
 
 -- A reason of a refusal in short words for the footer.
 function M.short_reason(reason)

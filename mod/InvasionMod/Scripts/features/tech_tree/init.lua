@@ -30,6 +30,11 @@ state:register("tech_nodes", "", "string")
 state:register("tech_laws", "", "string")
 state:register("tech_picks_earned", -1, "integer") -- -1: the picks did not start yet
 state:register("tech_spring_no", -1, "integer")    -- season counter of the last spring that gave a pick (or of the start)
+-- Change add-laws-menu (#563): extra law slots and the laws that a contract unlocked. The text of the source is encoded (rules.encode_text),
+-- because ModState keeps only a few characters. laws_sources is a list of pairs: law id, encoded text.
+state:register("law_extra_slots", 0, "integer")
+state:register("laws_unlocked", "", "string")
+state:register("laws_sources", "", "string")
 
 local last_applied = nil -- the last totals pushed to the other features, as text
 local last_level = 0
@@ -40,6 +45,10 @@ local function unlocked_ids() return rules.parse_ids(state:get("tech_nodes")) en
 local function free_picks() return rules.free_picks(state:get("tech_picks_earned"), unlocked_ids()) end
 
 local function enacted_ids() return rules.parse_ids(state:get("tech_laws")) end
+
+local function granted_ids() return rules.parse_ids(state:get("laws_unlocked")) end
+
+local function slot_total() return rules.slot_total(config.max_active_laws, state:get("law_extra_slots"), config.max_total_laws) end
 
 local function totals() return rules.totals(tree, unlocked_ids(), last_garrison, enacted_ids()) end
 
@@ -141,7 +150,7 @@ end
 ---------------------------------------------------------------------------------------------
 
 local function enact_law(law_id)
-    local reason = rules.enact_refusal(tree, state:get("tech_path"), unlocked_ids(), enacted_ids(), config.max_active_laws, law_id)
+    local reason = rules.enact_refusal(tree, state:get("tech_path"), unlocked_ids(), enacted_ids(), slot_total(), law_id, granted_ids())
     if reason ~= nil then return nil, reason end
     local enacted = enacted_ids()
     enacted[#enacted + 1] = law_id
@@ -161,6 +170,37 @@ local function repeal_law(law_id)
     apply_effects()
     core.log.info(TAG, "TECH_TREE law repealed " .. law_id)
     return true
+end
+
+-- A contract unlocks a law (change add-laws-menu). It needs no node and no path. A repeat call changes nothing.
+-- Returns { id, changed, source }, or nil and a reason.
+local function grant_law(law_id, source_text)
+    if tree.laws_by_id[law_id] == nil then return nil, "unknown law '" .. tostring(law_id) .. "'" end
+    local text = tostring(source_text or "")
+    if text == "" then text = "Contract" end
+    text = text:sub(1, require("config").laws_menu.source_max_chars)
+    local ids = granted_ids()
+    for _, id in ipairs(ids) do
+        if id == law_id then return { id = law_id, changed = false, source = rules.law_source(state:get("laws_sources"), law_id) } end
+    end
+    ids[#ids + 1] = law_id
+    -- Saved in this order: a crash between the two writes leaves an unlock with no text, shown as "Contract".
+    state:set("laws_unlocked", rules.join_ids(ids))
+    state:set("laws_sources", rules.add_law_source(state:get("laws_sources"), law_id, text))
+    core.log.info(TAG, "TECH_TREE law unlocked by a contract " .. law_id)
+    return { id = law_id, changed = true, source = text }
+end
+
+-- A contract adds one law slot. Nothing changes at the most (max_total_laws). Returns { slots, added, reason }.
+local function add_law_slot()
+    local before = slot_total()
+    if before >= config.max_total_laws then
+        return { slots = before, added = false, reason = string.format("the most law slots (%d) are reached", config.max_total_laws) }
+    end
+    state:set("law_extra_slots", state:get("law_extra_slots") + 1)
+    local after = slot_total()
+    core.log.info(TAG, "TECH_TREE law slot added, slots=" .. after)
+    return { slots = after, added = true }
 end
 
 local function set_vassal_policy(slot, policy)
@@ -200,7 +240,7 @@ local function law_rows(path, unlocked, law_path)
     for _, id in ipairs(enacted) do in_force[id] = true end
     for _, law in ipairs(tree.laws) do
         if law.path == (law_path or path) then
-            local reason = rules.enact_refusal(tree, path, unlocked, enacted, config.max_active_laws, law.id)
+            local reason = rules.enact_refusal(tree, path, unlocked, enacted, slot_total(), law.id, granted_ids())
             local status = in_force[law.id] and "enacted" or (reason == nil and "available" or "locked")
             rows[#rows + 1] = { id = law.id, name = law.name, status = status, reason = reason, requires = law.requires }
         end
@@ -221,7 +261,7 @@ local function view()
         -- slots and free_slots keep the old window working: they now show the picks earned and the picks free.
         path = path, path_name = path_name, level = last_level, slots = math.max(0, state:get("tech_picks_earned")), free_slots = free_picks(),
         picks_earned = math.max(0, state:get("tech_picks_earned")), free_picks = free_picks(), common_nodes = common_rows(unlocked),
-        effects = rules.describe_totals(totals()), nodes = rows, paths = tree.paths, laws = law_rows(path, unlocked), common_laws = law_rows(path, unlocked, tree_module.COMMON), max_laws = config.max_active_laws,
+        effects = rules.describe_totals(totals()), nodes = rows, paths = tree.paths, laws = law_rows(path, unlocked), common_laws = law_rows(path, unlocked, tree_module.COMMON), max_laws = slot_total(),
     }
 end
 
@@ -230,6 +270,7 @@ local function command_state()
     local unlocked = unlocked_ids()
     return {
         path = state:get("tech_path"), unlocked = unlocked, laws = enacted_ids(), settlement_level = last_level,
+        law_slots = slot_total(), law_extra_slots = state:get("law_extra_slots"), laws_unlocked_by_contract = granted_ids(),
         picks_earned = math.max(0, state:get("tech_picks_earned")), free_picks = free_picks(), spring_no = state:get("tech_spring_no"),
         disarm_ticks = disarm_ticks, disarm_moved = disarm_moved, disarm_stored = disarm_stored,
         garrison_squads = last_garrison, totals = totals(), nodes = node_rows(), common_nodes = common_rows(unlocked),
@@ -299,4 +340,6 @@ if has_commands then
 end
 
 core.log.info(TAG, string.format("feature tech_tree loaded: %d nodes, %d common techs", #tree.nodes, #tree.common_nodes))
-return { tree = tree, state = state, choose_path = choose_path, unlock = unlock, enact_law = enact_law, repeal_law = repeal_law, node_rows = node_rows, view = view }
+return { tree = tree, state = state, choose_path = choose_path, unlock = unlock, enact_law = enact_law, repeal_law = repeal_law, node_rows = node_rows, view = view,
+         grant_law = grant_law, add_law_slot = add_law_slot, law_slots = slot_total, granted_laws = granted_ids, enacted_laws = enacted_ids,
+         unlocked_nodes = unlocked_ids, path = function() return state:get("tech_path") end, law_source = function(law_id) return rules.law_source(state:get("laws_sources"), law_id) end }

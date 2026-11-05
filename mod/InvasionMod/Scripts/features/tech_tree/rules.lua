@@ -41,6 +41,32 @@ local function contains(list, value)
     return false
 end
 
+-- Free text in a ModState string (change add-laws-menu): a letter, a digit or "-" stays; any other byte becomes "_" and two hex digits.
+function M.encode_text(text)
+    return (tostring(text):gsub("[^A-Za-z0-9%-]", function(char) return string.format("_%02x", char:byte()) end))
+end
+
+function M.decode_text(encoded)
+    return (encoded:gsub("_(%x%x)", function(hex) return string.char(tonumber(hex, 16)) end))
+end
+
+-- The source texts of the contract laws are saved as a list with dots: law id, encoded text, law id, encoded text.
+-- Returns the text of a law, or nil.
+function M.law_source(saved, law_id)
+    local list = M.parse_ids(saved)
+    for i = 1, #list - 1, 2 do
+        if list[i] == law_id then return M.decode_text(list[i + 1]) end
+    end
+    return nil
+end
+
+function M.add_law_source(saved, law_id, text)
+    local list = M.parse_ids(saved)
+    list[#list + 1] = law_id
+    list[#list + 1] = M.encode_text(text)
+    return M.join_ids(list)
+end
+
 -- Returns nil when the path may be chosen, or the reason. The choice is final (decision 22).
 function M.path_refusal(tree, current_path, wanted)
     if current_path ~= M.NO_PATH then return "the path is already chosen: " .. current_path end
@@ -115,17 +141,27 @@ function M.describe_totals(totals)
     return table.concat(parts, ", ")
 end
 
--- Returns nil when the law may be enacted, or the reason. `max_active` limits the laws in force at the same time (TBD).
-function M.enact_refusal(tree, current_path, unlocked, enacted, max_active, law_id)
+-- The law slots: the base slots plus the extra slots of contracts, never more than `max_total` (change add-laws-menu).
+function M.slot_total(base, extra, max_total)
+    return math.min(max_total, base + math.max(0, extra))
+end
+
+-- Returns nil when the law may be enacted, or the reason. `max_active` limits the laws in force at the same time.
+-- `granted` lists the law ids that a contract unlocked: such a law needs no node and no path (owner decision 2026-11-04).
+-- A save with more laws in force than the slots (the base slots were lowered) keeps them; no new law is enacted until room is free.
+function M.enact_refusal(tree, current_path, unlocked, enacted, max_active, law_id, granted)
     local law = tree.laws_by_id[law_id]
     if law == nil then return "unknown law '" .. tostring(law_id) .. "'" end
-    if law.path ~= tree_module.COMMON then
+    local by_contract = granted ~= nil and contains(granted, law_id)
+    if law.path ~= tree_module.COMMON and not by_contract then
         if current_path == M.NO_PATH then return "no path is chosen" end
         if law.path ~= current_path then return "law '" .. law_id .. "' belongs to the other path" end
     end
     if contains(enacted, law_id) then return "law '" .. law_id .. "' is already in force" end
-    for _, required in ipairs(law.requires) do
-        if not contains(unlocked, required) then return "law '" .. law_id .. "' needs the node '" .. required .. "' first" end
+    if not by_contract then
+        for _, required in ipairs(law.requires) do
+            if not contains(unlocked, required) then return "law '" .. law_id .. "' needs the node '" .. required .. "' first" end
+        end
     end
     if #enacted >= max_active then return string.format("no free law place (%d in force of %d)", #enacted, max_active) end
     return nil

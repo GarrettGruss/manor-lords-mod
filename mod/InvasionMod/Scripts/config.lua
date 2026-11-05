@@ -349,6 +349,21 @@ return {
         year_days = 365, spring_start_day = 60, winter_start_day = 335,
         manor_recheck_s = 2,  -- real seconds between two looks for a built manor while the window is open
     },
+    -- laws_menu (change add-laws-menu, #563): the Laws menu, and the yearly enact and revoke actions (owner, 2026-11-04).
+    -- The actions refresh at the start of spring, with the same clock as the tech picks (tech_tree.spring_season).
+    laws_menu = {
+        enabled = true,
+        poll_ms = 100,                   -- real time between two looks at the click queue of the menu (never faster)
+        refresh_ms = 500,                -- real time between two refreshes of the menu labels
+        year_poll_ms = 2000,             -- real time between two looks at the season
+        z_order = 500,
+        enacts_per_year = 1,             -- laws the player may enact in one game year
+        revokes_per_year = 1,            -- laws the player may revoke in one game year
+        -- Day of the calendar year (TemporalComponent.day) on which spring starts, for the countdown (as liege_contracts).
+        year_days = 365, spring_start_day = 60,
+        notice_s = 6,                    -- real seconds that a refused click shows its reason
+        source_max_chars = 120,          -- longest "unlocked by" text of a contract that is kept
+    },
     -- M13 manor_stronghold. Values are TBD for playtests.
     manor_stronghold = {
         enabled = true,
@@ -362,7 +377,8 @@ return {
     tech_tree = {
         enabled = true,
         poll_ms = 2000,              -- real time between two looks at the settlement level and the garrison
-        max_active_laws = 2,         -- M12.04: laws in force at the same time (TBD)
+        max_active_laws = 1,         -- change add-laws-menu (owner, 2026-11-04): the base law slots; contracts add extra slots
+        max_total_laws = 5,          -- most law slots in total, with the extra slots of contracts
         -- Change update-tech-tree-yearly-picks (owner, 2026-10-27): one pick for each game year, earned at the start of spring.
         initial_picks = 1,           -- picks at the start of a game
         picks_per_year = 1,          -- picks at each start of spring (banked when unused)

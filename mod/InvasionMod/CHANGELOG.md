@@ -3,6 +3,8 @@
 Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
+### Added
+- **laws_menu (add-laws-menu):** a Laws menu in the bottom bar. You enact and revoke laws there, with a confirmation. You get 1 enact and 1 revoke for each game year (they come back at the start of spring). 1 law slot at the start, 5 at most. The tech window only unlocks now. Contracts will unlock laws and add slots.
 ### Changed
 - **raid_widget (update-raid-menu-style):** the raid menu has the game-menu look: game font, flat dark panel, title RAIDS with a gold rule, rows with marker, label and gold value. A switched-off raid type shows no row. Texts and behavior are unchanged.
 - **tribute (update-vassal-tribute-rich-resources):** each game month a vassal sends 100 units of each of 2 goods, the rich resources of its region (policy light 50, fair 100, heavy 150). Fewer than 2 rich resources: flax fills up (none: flax twice). More than 2: ores first, then clay and fish, then berries and mushrooms. Game is never rich. The old fish, timber, iron and salt by family count is gone.

@@ -134,7 +134,7 @@ local function card_position(card)
     return lines.position(card.layout, config.step_x, config.step_y, config.origin_x, config.origin_y)
 end
 
-local function refresh_card(i, card, view, law_rows)
+local function refresh_card(i, card, view)
     local slot = S.nodes[i]
     if not slot then return end
     slot.row = card
@@ -164,17 +164,10 @@ local function refresh_card(i, card, view, law_rows)
     move("claw" .. i, S.texts["CardLaw" .. (i - 1)], position.X + 8, position.Y + config.card_h - config.law_row_h)
     local law_slot = S.laws[i]
     if not law_slot then return end
-    local row = law and law_rows[law.id] or nil
-    local label = lines.law_button_label(row)
-    law_slot.row = label and row or nil
-    set_visible(law_slot, label ~= nil)
-    if label then
-        set_label(law_slot, label)
-        move("lawb" .. i, law_slot.border, position.X + 8, position.Y + config.card_h - config.law_row_h + 20)
-        set_tooltip(law_slot, tooltip_text(row, tech_tree.tree.laws_by_id))
-    else
-        set_tooltip(law_slot, "")
-    end
+    -- Change add-laws-menu: enact and revoke moved to the Laws menu. The law buttons of the pool stay hidden.
+    law_slot.row = nil
+    set_visible(law_slot, false)
+    set_tooltip(law_slot, "")
 end
 
 local function hide_card(i)
@@ -215,17 +208,17 @@ local function refresh_links(cards)
     for k = link + 1, LINK_COUNT do set_shown("link" .. k, S.flats["LinkBg" .. (k - 1)], false) end
 end
 
+-- Change add-laws-menu: the laws strip is gone. The strip band shows one line that names the Laws menu.
 local function refresh_strip(view)
-    set_text("StripCount", lines.strip_count_text(view))
-    local enacted = lines.enacted_laws(view)
+    set_text("StripTitle", "")
+    set_text("StripCount", "")
     for k = 1, STRIP_COUNT do
         local slot = S.strip[k]
-        local law = enacted[k]
-        set_text("StripName" .. (k - 1), lines.strip_place_text(law, tech_tree.tree))
+        set_text("StripName" .. (k - 1), k == 1 and lines.LAWS_LINE or "")
+        set_brush("stripbg" .. k, S.flats["StripPlaceBg" .. (k - 1)], { R = 0, G = 0, B = 0, A = 0 }) -- a colour change holds better than a collapse
         if slot then
-            slot.row = law
-            set_visible(slot, law ~= nil)
-            if law then set_label(slot, "Repeal") end
+            slot.row = nil
+            set_visible(slot, false)
         end
     end
 end
@@ -235,11 +228,10 @@ local function refresh()
     local view = tech_tree.view()
     S.last_view = view
     local cards = lines.cards(view)
-    local law_rows = lines.law_rows_by_id(view)
     refresh_header(view)
     refresh_paths(view)
     for i = 1, NODE_COUNT do
-        if cards[i] then refresh_card(i, cards[i], view, law_rows) else hide_card(i) end
+        if cards[i] then refresh_card(i, cards[i], view) else hide_card(i) end
     end
     refresh_links(cards)
     refresh_strip(view)
@@ -275,24 +267,13 @@ local function press_node(index)
     return result, problem
 end
 
--- A law in force is repealed, any other law is enacted. The law button of a card has the index of the card.
+-- Change add-laws-menu: the tech window has no law buttons. The player enacts and revokes laws in the Laws menu.
 local function press_law(index)
-    local slot = S.laws[index]
-    if not (slot and slot.row) then return nil, "no law button " .. tostring(index) end
-    local act = slot.row.status == "enacted" and tech_tree.repeal_law or tech_tree.enact_law
-    local kind = slot.row.status == "enacted" and "repeal" or "enact"
-    local result, problem = act(slot.row.id)
-    report(kind, slot.row.name, result, problem)
-    return result, problem
+    return nil, "laws are enacted and revoked in the Laws menu"
 end
 
--- A strip place repeals the law it shows.
 local function press_strip(index)
-    local slot = S.strip[index]
-    if not (slot and slot.row) then return nil, "no law in strip place " .. tostring(index) end
-    local result, problem = tech_tree.repeal_law(slot.row.id)
-    report("repeal", slot.row.name, result, problem)
-    return result, problem
+    return nil, "laws are enacted and revoked in the Laws menu"
 end
 
 local function is_open() return menu.is_open(MENU_ID) end
@@ -341,7 +322,7 @@ end
 ---------------------------------------------------------------------------------------------
 
 local TEXT_NAMES = { "TitleText", "PicksText", "FooterMsg", "FooterFixed", "StripTitle", "StripCount" }
-local FLAT_NAMES = {}
+local FLAT_NAMES = { "StripPlaceBg0", "StripPlaceBg1" }
 
 -- All names of the pools of one widget class, in one list (one scan of the class instead of one for each pool).
 local function pool_names()
@@ -402,9 +383,6 @@ local function on_open(made)
     if #tech_tree.tree.nodes + #tech_tree.tree.common_nodes > NODE_COUNT then
         return nil, string.format("the tree has %d nodes, the widget has %d buttons", #tech_tree.tree.nodes + #tech_tree.tree.common_nodes, NODE_COUNT)
     end
-    if require("config").tech_tree.max_active_laws > STRIP_COUNT then
-        return nil, string.format("max_active_laws is %d, the laws strip has %d places", require("config").tech_tree.max_active_laws, STRIP_COUNT)
-    end
     S.widget = made
     local text_names, flat_names = pool_names()
     S.texts = menu.find_named(made, "TextBlock", text_names)
@@ -440,7 +418,6 @@ local function on_open(made)
     S.message = lines.START_MESSAGE
     S.fresh = true
     set_text("TitleText", "Charters of the Realm")
-    set_text("StripTitle", "Laws in force")
     set_label(S.close, "Close")
     refresh()
     return true
@@ -490,7 +467,7 @@ local function describe()
     return { open = is_open(), in_viewport = is_open() and read(function() return S.widget:IsInViewport() end) or false,
         title = text_of("TitleText"), picks = text_of("PicksText"), wanted_picks = "Tech picks: " .. lines.picks_text(view),
         footer = text_of("FooterMsg"), footer_fixed = text_of("FooterFixed"), columns = columns, rows = rows,
-        strip_count = text_of("StripCount"), wanted_strip_count = lines.strip_count_text(view),
+        strip_count = text_of("StripCount"), strip_title = text_of("StripTitle"), laws_line = text_of("StripName0"), wanted_laws_line = lines.LAWS_LINE,
         paths = paths, nodes = nodes, laws = laws, strip = strip, clicks = S.clicks,
         last_error = S.last_error, tooltip_error = S.tooltip_error, position_error = S.position_error }
 end

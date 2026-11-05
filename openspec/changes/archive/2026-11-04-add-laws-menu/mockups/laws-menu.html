@@ -26,19 +26,21 @@ button:focus-visible{outline:2px solid #e8c87a;outline-offset:3px}
     <div style="width: 220px; height: 1px; background: linear-gradient(90deg, transparent, #9c8455 20%, #9c8455 80%, transparent);"></div>
   </div>
 
-  <div style="margin-top: 10px; display: flex; gap: 56px; font-size: 19px; color: #c9c1b0; align-items: baseline;">
-    <span>Laws in force: <span style="color: {{slotColor}};">{{active}} / {{slots}}</span></span>
-    <span>Law slots: <span style="color: #e8c87a;">2</span> base <span style="color: #e8c87a;">{{extraSlots}}</span></span>
+  <div style="margin-top: 10px; display: flex; gap: 44px; font-size: 19px; color: #c9c1b0; align-items: baseline;">
+    <span>Laws in force: <span style="color: {{slotColor}};">{{active}} / {{slots}}</span> <span style="font-size: 15px; color: #8f8878;">(max 5)</span></span>
+    <span>Enact this year: <span style="color: {{enactColor}};">{{enactLeft}} / 1</span></span>
+    <span>Revoke this year: <span style="color: {{revokeColor}};">{{revokeLeft}} / 1</span></span>
     <span>Unlocked: <span style="color: #e8c87a;">{{unlocked}} of {{total}}</span></span>
   </div>
+  <span style="margin-top: 2px; font-size: 14px; color: #8f8878;">Enact and revoke actions refresh in spring, in {{refreshDays}} days.</span>
 
-  <div style="margin-top: 8px; display: flex; gap: 28px;">
+  <div style="margin-top: 6px; display: flex; gap: 28px;">
     <sc-for list="{{filters}}" as="f">
       <button type="button" class="opt" onClick="{{f.onClick}}" aria-pressed="{{f.selected}}" style="{{f.style}}">{{f.text}}</button>
     </sc-for>
   </div>
 
-  <div style="margin-top: 10px; width: 1360px; flex-grow: 1; min-height: 0; box-sizing: border-box; padding: 16px 20px; display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: 12px; background: linear-gradient(180deg, rgba(58,55,49,0.92), rgba(40,38,34,0.92)); box-shadow: inset 0 0 60px rgba(0,0,0,0.55); clip-path: polygon(0 1%, 3% 0, 40% 0.6%, 70% 0, 97% 0.8%, 100% 0, 99.6% 50%, 100% 99%, 60% 100%, 30% 99.3%, 1% 100%, 0 97%);">
+  <div style="margin-top: 8px; width: 1360px; flex-grow: 1; min-height: 0; box-sizing: border-box; padding: 16px 20px; display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: 12px; background: linear-gradient(180deg, rgba(58,55,49,0.92), rgba(40,38,34,0.92)); box-shadow: inset 0 0 60px rgba(0,0,0,0.55); clip-path: polygon(0 1%, 3% 0, 40% 0.6%, 70% 0, 97% 0.8%, 100% 0, 99.6% 50%, 100% 99%, 60% 100%, 30% 99.3%, 1% 100%, 0 97%);">
     <sc-for list="{{laws}}" as="l" hint-placeholder-count="9">
       <div style="{{l.style}}">
         <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
@@ -64,8 +66,29 @@ button:focus-visible{outline:2px solid #e8c87a;outline-offset:3px}
     <span style="font-size: 20px; color: #c9c1b0;">&#10087;</span><span class="word">Close</span><span style="font-size: 20px; color: #c9c1b0; display: inline-block; transform: scaleX(-1);">&#10087;</span>
   </button>
   <span style="position: absolute; right: 120px; bottom: 6px; font-size: 13px; color: #6f6a60;">EARLY ACCESS (Version 0.8.117) MODDED</span>
-  <button type="button" onClick="{{reset}}" style="position: absolute; left: 20px; bottom: 14px; font-size: 13px; color: #6f6a60; border: 1px solid #3a3731; padding: 4px 10px;">Demo: reset</button>
-  <button type="button" onClick="{{toggleSlot}}" style="position: absolute; left: 130px; bottom: 14px; font-size: 13px; color: #6f6a60; border: 1px solid #3a3731; padding: 4px 10px;">Demo: {{slotDemo}}</button>
+  <div style="position: absolute; left: 20px; bottom: 14px; display: flex; gap: 8px;">
+    <button type="button" onClick="{{reset}}" style="font-size: 13px; color: #6f6a60; border: 1px solid #3a3731; padding: 4px 10px;">Demo: reset</button>
+    <button type="button" onClick="{{newYear}}" style="font-size: 13px; color: #6f6a60; border: 1px solid #3a3731; padding: 4px 10px;">Demo: new spring</button>
+    <button type="button" onClick="{{toggleSlot}}" style="font-size: 13px; color: #6f6a60; border: 1px solid #3a3731; padding: 4px 10px;">Demo: {{slotDemo}}</button>
+  </div>
+
+  <div style="display: {{dialogDisplay}}; position: absolute; inset: 0; background: rgba(5,5,4,0.72); align-items: center; justify-content: center;">
+    <div role="dialog" aria-modal="true" aria-label="{{dialogTitle}}" style="width: 560px; box-sizing: border-box; padding: 24px 32px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(180deg, rgba(58,55,49,0.98), rgba(40,38,34,0.98)); box-shadow: 0 0 0 1px #4a463e, 0 20px 60px rgba(0,0,0,0.7);">
+      <span style="font-family: 'Alegreya SC', serif; font-size: 22px; letter-spacing: 3px;">{{dialogTitle}}</span>
+      <div style="width: 200px; height: 1px; background: linear-gradient(90deg, transparent, #9c8455 20%, #9c8455 80%, transparent);"></div>
+      <span style="font-size: 20px; text-align: center;">{{dialogQuestion}}</span>
+      <div style="display: flex; flex-direction: column; gap: 3px; align-self: stretch; padding: 8px 12px; background: rgba(15,15,13,0.45);">
+        <sc-for list="{{dialogEffects}}" as="e">
+          <span style="font-size: 16px; color: {{e.color}};"><span style="color: #8f8878; font-size: 12px;">&#9671;</span> {{e.text}}</span>
+        </sc-for>
+      </div>
+      <span style="font-size: 15px; color: #d0a050; text-align: center;">{{dialogCost}}</span>
+      <div style="display: flex; gap: 64px; margin-top: 4px;">
+        <button type="button" class="act" onClick="{{cancel}}" style="font-size: 22px; color: #c9c1b0;"><span class="word">Cancel</span></button>
+        <button type="button" class="act" onClick="{{confirm}}" style="font-size: 22px; color: #f2ede2; border-bottom: 1px solid #e8c87a;"><span class="word">{{dialogConfirm}}</span></button>
+      </div>
+    </div>
+  </div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":810}}'>
@@ -74,11 +97,11 @@ class Component extends DCLogic {
     super(props);
     this.state = this.initial();
   }
-  // Laws and effects copied from mod/InvasionMod/data/tech_tree/tree.json. "Unlocked by" mixes tech tree and contract unlocks for the demo.
+  // Laws and effects from mod/InvasionMod/data/tech_tree/tree.json. Owner rules 2026-11-04: 1 base slot, max 5,
+  // 1 enact and 1 revoke per year, contract laws ignore the tech path, confirm each action.
   initial() {
     return {
-      filter: 'all',
-      extraSlot: false,
+      filter: 'all', extraSlots: 0, enactUsed: false, revokeUsed: false, pending: null,
       laws: [
         { id: 'strip', name: 'Strip the Dead', source: 'Tech tree: Corpse Robbing', unlocked: true, active: true,
           effects: [['Bandit bodies at the corpse pit pay loot', 1], ['-1 Public Order for each looted body', -1]] },
@@ -88,7 +111,7 @@ class Component extends DCLogic {
           effects: [['Each day the weapons of the homes go to the storehouse', 0], ['-3 Approval', -1]] },
         { id: 'trade', name: 'Trade Pacts', source: 'Tech tree: Prosperity, Amnesty', unlocked: true, active: false,
           effects: [['Vassal tribute +25%', 1]] },
-        { id: 'conscription', name: 'Conscription', source: 'Tech tree: Oppression, Martial Law', unlocked: false, active: false,
+        { id: 'conscription', name: 'Conscription', source: 'Reward of a Large contract (any path)', unlocked: true, active: false,
           effects: [['Militia attack +10%', 1], ['-5 Approval', -1]] },
         { id: 'walls', name: 'Forced Labor on Walls', source: 'Tech tree: Oppression, Iron Hand', unlocked: false, active: false,
           effects: [['+5 Public Order', 1], ['-3 Approval', -1]] },
@@ -101,41 +124,51 @@ class Component extends DCLogic {
       ]
     };
   }
-  toggle(id) {
-    const laws = this.state.laws.map((l) => (l.id === id ? Object.assign({}, l, { active: !l.active }) : l));
-    this.setState({ laws: laws });
+  effectRows(l) {
+    return l.effects.map((e) => ({ text: e[0], color: e[1] > 0 ? '#9fb37a' : e[1] < 0 ? '#c98a78' : '#c9c1b0' }));
+  }
+  confirmPending() {
+    const p = this.state.pending;
+    if (!p) return;
+    const laws = this.state.laws.map((l) => (l.id === p.id ? Object.assign({}, l, { active: p.kind === 'enact' }) : l));
+    const patch = { laws: laws, pending: null };
+    if (p.kind === 'enact') patch.enactUsed = true; else patch.revokeUsed = true;
+    this.setState(patch);
   }
   renderVals() {
     const s = this.state;
-    const slots = 2 + (s.extraSlot ? 1 : 0);
+    const slots = Math.min(5, 1 + s.extraSlots);
     const active = s.laws.filter((l) => l.active).length;
     const full = active >= slots;
     const base = 'box-sizing: border-box; min-height: 0; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; ';
     const shown = s.laws.filter((l) => s.filter === 'all' || (s.filter === 'unlocked' ? l.unlocked : !l.unlocked));
     const laws = shown.map((l) => {
-      let status, statusColor, style, btn, disabled, hint, hintColor, btnColor;
+      let status, statusColor, style, btn, disabled, hint, hintColor;
       if (l.active) {
         status = 'In force'; statusColor = '#9fb37a';
         style = base + 'background: rgba(60,50,30,0.55); border-top: 1px solid #e8c87a;';
-        btn = 'Revoke'; disabled = false; hint = 'Revoke frees a law slot.'; hintColor = '#a9a190'; btnColor = '#f2ede2';
+        btn = 'Revoke'; disabled = s.revokeUsed;
+        hint = s.revokeUsed ? 'No revoke action left this year.' : 'Uses the revoke action of this year.';
+        hintColor = s.revokeUsed ? '#b0705c' : '#a9a190';
       } else if (l.unlocked) {
         status = 'Unlocked'; statusColor = '#e8c87a';
         style = base + 'background: rgba(20,19,17,0.55); border-top: 1px solid #4a463e;';
-        btn = 'Enact'; disabled = full;
-        hint = full ? 'All law slots are used. Revoke a law first.' : 'Takes effect at once.';
-        hintColor = full ? '#b0705c' : '#a9a190'; btnColor = full ? '#77716a' : '#f2ede2';
+        btn = 'Enact'; disabled = full || s.enactUsed;
+        if (s.enactUsed) hint = 'No enact action left this year.';
+        else if (full) hint = 'All law slots are used. Revoke a law first.';
+        else hint = 'Uses the enact action of this year.';
+        hintColor = disabled ? '#b0705c' : '#a9a190';
       } else {
         status = 'Locked'; statusColor = '#8f8878';
         style = base + 'background: rgba(20,19,17,0.3); border-top: 1px solid #33302b; opacity: 0.62;';
-        btn = 'Locked'; disabled = true; hint = 'Unlock in the tech tree or win it from a Large contract.'; hintColor = '#8f8878'; btnColor = '#77716a';
+        btn = 'Locked'; disabled = true; hint = 'Unlock in the tech tree or win it from a Large contract.'; hintColor = '#8f8878';
       }
       return {
         name: l.name, source: 'Unlocked by: ' + l.source, status: status, statusColor: statusColor, style: style,
-        effects: l.effects.map((e) => ({ text: e[0], color: e[1] > 0 ? '#9fb37a' : e[1] < 0 ? '#c98a78' : '#c9c1b0' })),
-        hint: hint, hintColor: hintColor, btn: btn, disabled: disabled,
-        btnStyle: 'flex-shrink: 0; font-size: 21px; padding: 2px 4px; border-bottom: 1px solid #4a463e; color: ' + btnColor + ';',
+        effects: this.effectRows(l), hint: hint, hintColor: hintColor, btn: btn, disabled: disabled,
+        btnStyle: 'flex-shrink: 0; font-size: 21px; padding: 2px 4px; border-bottom: 1px solid #4a463e; color: ' + (disabled ? '#77716a' : '#f2ede2') + ';',
         aria: btn + ': ' + l.name,
-        onClick: () => this.toggle(l.id)
+        onClick: () => this.setState({ pending: { id: l.id, kind: l.active ? 'revoke' : 'enact' } })
       };
     });
     const filters = [['all', 'All'], ['unlocked', 'Unlocked'], ['locked', 'Locked']].map((f) => ({
@@ -143,13 +176,28 @@ class Component extends DCLogic {
       style: 'font-size: 18px; padding: 1px 0; ' + (s.filter === f[0] ? 'color: #e8c87a; border-bottom: 1px solid #e8c87a;' : 'color: #8f8878; border-bottom: 1px solid transparent;'),
       onClick: () => this.setState({ filter: f[0] })
     }));
+    const p = s.pending;
+    const pl = p ? s.laws.find((l) => l.id === p.id) : null;
     return {
       laws: laws, filters: filters, active: active, slots: slots,
       slotColor: full ? '#d0a050' : '#e8c87a',
-      extraSlots: s.extraSlot ? '+ 1 from a contract' : '',
+      enactLeft: s.enactUsed ? 0 : 1, revokeLeft: s.revokeUsed ? 0 : 1,
+      enactColor: s.enactUsed ? '#b0705c' : '#e8c87a', revokeColor: s.revokeUsed ? '#b0705c' : '#e8c87a',
+      refreshDays: 212,
       unlocked: s.laws.filter((l) => l.unlocked).length, total: s.laws.length,
-      slotDemo: s.extraSlot ? 'remove contract slot' : 'win extra law slot',
-      toggleSlot: () => this.setState({ extraSlot: !s.extraSlot }),
+      dialogDisplay: p ? 'flex' : 'none',
+      dialogTitle: p ? (p.kind === 'enact' ? 'Enact law' : 'Revoke law') : '',
+      dialogQuestion: pl ? (p.kind === 'enact' ? 'Enact ' + pl.name + '?' : 'Revoke ' + pl.name + '?') : '',
+      dialogEffects: pl ? this.effectRows(pl) : [],
+      dialogCost: p ? (p.kind === 'enact'
+        ? 'This uses your 1 enact action of this year. The law takes effect at once.'
+        : 'This uses your 1 revoke action of this year. The effects end at once.') : '',
+      dialogConfirm: p ? (p.kind === 'enact' ? 'Enact' : 'Revoke') : '',
+      cancel: () => this.setState({ pending: null }),
+      confirm: () => this.confirmPending(),
+      slotDemo: s.extraSlots >= 4 ? 'remove contract slots' : 'win extra law slot',
+      toggleSlot: () => this.setState({ extraSlots: s.extraSlots >= 4 ? 0 : s.extraSlots + 1 }),
+      newYear: () => this.setState({ enactUsed: false, revokeUsed: false }),
       reset: () => this.setState(this.initial())
     };
   }

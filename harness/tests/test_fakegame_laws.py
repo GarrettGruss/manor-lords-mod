@@ -46,6 +46,11 @@ del LoaderTests  # run the inherited loader tests only once, in test_fakegame_te
 
 
 class LawTestCase(TechTreeTestCase):
+    def setUp(self):
+        super().setUp()
+        # The shipped base is 1 slot (change add-laws-menu). These tests check the slot rule with 2 slots; test_fakegame_laws_menu checks the shipped value.
+        self.game.exec('require("config").tech_tree.max_active_laws = 2')
+
     def prosperity(self, nodes):
         self.choose("prosperity")
         self.grant(len(nodes) - 1)
@@ -296,48 +301,17 @@ class WidgetLawTests(LawTestCase):
     def lua_text(self, expression):
         return self.game.exec("local lines = require('features.tech_tree_widget.lines'); local view = require('features.tech_tree.init').view(); return " + expression)
 
-    def test_the_strip_count_follows_the_laws_in_force(self):
-        self.assertEqual(self.lua_text("lines.strip_count_text(view)"), "0 of 2 max")
-        self.prosperity(["fair_courts", "amnesty"])
-        self.enact("trade_pacts")
-        self.assertEqual(self.lua_text("lines.strip_count_text(view)"), "1 of 2 max")
-
-    def test_the_strip_counts_a_common_law(self):
-        self.grant(3)
-        self.unlock("night_watch")
-        self.enact("curfew")
-        self.assertEqual(self.lua_text("lines.strip_count_text(view)"), "1 of 2 max")
-
-    def test_the_law_button_says_what_a_click_does(self):
-        self.prosperity(["fair_courts", "amnesty"])
-        self.enact("trade_pacts")
-        labels = self.lua_text(
-            "(function() local by_id = lines.law_rows_by_id(view); local out = {};"
-            " for _, id in ipairs({ 'militia_charter', 'trade_pacts', 'pay_off_warbands', 'conscription' }) do out[#out + 1] = tostring(lines.law_button_label(by_id[id])) end;"
-            " return table.concat(out, '|') end)()")
-        self.assertEqual(labels, "Enact|Repeal|nil|nil")
-
-    def test_a_law_with_no_free_place_keeps_its_enact_button(self):
-        self.grant(3)
-        self.prosperity(["fair_courts", "amnesty"])
-        self.unlock("night_watch")
-        self.enact("trade_pacts")
-        self.enact("militia_charter")
-        labels = self.lua_text(
-            "(function() local by_id = lines.law_rows_by_id(view); local out = {};"
-            " for _, id in ipairs({ 'curfew', 'pay_off_warbands' }) do out[#out + 1] = tostring(lines.law_button_label(by_id[id])) end;"
-            " return table.concat(out, '|') end)()")
-        self.assertEqual(labels, "Enact|nil")  # Curfew: tech unlocked, no free place. Pay Off Warbands: tech not unlocked.
-
     def test_a_card_names_the_law_of_its_tech(self):
         text = self.lua_text("lines.card_law_text(lines.law_of_node('amnesty', require('features.tech_tree.init').tree)) .. '|' .. lines.card_law_text(lines.law_of_node('golden_age', require('features.tech_tree.init').tree))")
         self.assertEqual(text, "Trade Pacts|No law")
 
-    def test_the_strip_place_shows_name_and_effects(self):
-        self.prosperity(["fair_courts", "amnesty"])
-        self.enact("trade_pacts")
-        text = self.lua_text("lines.strip_place_text(lines.enacted_laws(view)[1], require('features.tech_tree.init').tree) .. '|' .. lines.strip_place_text(nil, nil)")
-        self.assertEqual(text, "Trade Pacts\nTribute share +25%|Empty place")
+    def test_the_tech_window_line_names_the_laws_menu(self):
+        self.assertEqual(self.lua_text("lines.LAWS_LINE"), "Laws: open the Laws menu")
+
+    def test_the_law_buttons_of_the_tech_window_refuse(self):
+        for kind in ("law", "strip"):
+            answer = self.ask("tech_tree_widget_press", kind=kind, index=1)
+            self.assertFalse(answer["ok"])
 
     def test_press_needs_an_open_widget(self):
         answer = self.ask("tech_tree_widget_press", kind="law", index=1)
