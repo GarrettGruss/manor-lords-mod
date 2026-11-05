@@ -87,6 +87,8 @@ def load_data():
 
 
 class ContractsTestCase(TechTreeTestCase):
+    STUB_BUILT_MANOR = False
+
     START_SEASON = SUMMER  # a game that starts in summer makes no offer until spring
     def setUp(self):
         super().setUp()
