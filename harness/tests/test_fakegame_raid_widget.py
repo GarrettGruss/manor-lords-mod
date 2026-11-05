@@ -49,6 +49,19 @@ class LinesTests(unittest.TestCase):
                          "Terms: offered, 200 silver or vassalage (60 a year)")
         self.assertEqual(self.run_lua("return #lines.all({ levels = { yearly = 1, great = 1, vassal = 1 } }, nil)"), 5)
 
+    def test_split_gives_label_and_value_and_an_empty_line_gives_nothing(self):
+        self.assertEqual(self.run_lua("local a, b = lines.split('Yearly raid: you, large about 54 raiders (3 squads), in 12 days'); return a .. '|' .. b"),
+                         "Yearly raid|you, large about 54 raiders (3 squads), in 12 days")
+        self.assertEqual(self.run_lua("local a, b = lines.split('Terms: offered, 200 silver or vassalage (60 a year)'); return a .. '|' .. b"),
+                         "Terms|offered, 200 silver or vassalage (60 a year)")
+        self.assertEqual(self.run_lua("local a, b = lines.split(''); return a .. '|' .. b"), "|")
+        self.assertEqual(self.run_lua("local a, b = lines.split('no label'); return a .. '|' .. b"), "|no label")
+
+    def test_every_line_of_all_splits_back_to_the_full_line(self):
+        self.assertEqual(self.run_lua("local t = lines.all({ levels = { yearly = 2, great = 0, vassal = 2 }, difficulty_chosen = true }, nil); "
+                                      "local out = {}; for i, l in ipairs(t) do local a, b = lines.split(l); out[i] = (a ~= '' and (a .. ': ' .. b) or b) == l and 'y' or 'n' end; "
+                                      "return table.concat(out)"), "yyyyy")
+
 
 class WidgetFeatureTests(InvasionTestCase):
     def test_open_without_the_pak_gives_a_clear_message(self):

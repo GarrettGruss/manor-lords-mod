@@ -58,6 +58,14 @@ function M.terms(terms)
     return "Terms: " .. text
 end
 
+-- Splits a line at the first ": " into label and value ("Yearly raid: in 3 days" -> "Yearly raid", "in 3 days").
+-- An empty line gives two empty strings. A line without ": " is all value.
+function M.split(line)
+    local label, value = line:match("^(.-): (.*)$")
+    if label == nil then return "", line end
+    return label, value
+end
+
 -- The lines of the widget, top to bottom.
 function M.all(info, terms)
     return { M.next_raid(info), M.subjugation_raid(info), M.great_raid(info), M.difficulty(info), M.terms(terms) }
