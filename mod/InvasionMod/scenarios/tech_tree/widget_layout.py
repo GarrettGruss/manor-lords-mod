@@ -11,7 +11,7 @@ from runlib import windows
 from runlib.game import find_game_processes
 
 NAME = "tech-tree-widget-layout"
-DESCRIPTION = "Open the tech tree window in three states (no path, a path with two techs, two laws in force), check the parts and take pictures. Needs --pak InvasionMod."
+DESCRIPTION = "Open the tech tree window in three states (no path, a path with two techs, a law in force), check the parts and take pictures. Needs --pak InvasionMod."
 LIMIT_S = 300
 PREFIX = "InvasionMod."
 SETTLE_S = 1.5
@@ -69,7 +69,8 @@ def check_parts(ctx, name: str) -> None:
     columns = [row["x"] for row in cards]
     ctx.check(f"{name} the cards stand in the order columns", columns == [160, 408, 656, 904] * 2 + [160, 408, 656], columns)
     ctx.check(f"{name} the fixed footer text", state["footer_fixed"] == FIXED_TEXT, state["footer_fixed"])
-    ctx.check(f"{name} the strip count follows the laws", state["strip_count"] == state["wanted_strip_count"], state["strip_count"])
+    ctx.check(f"{name} the laws band names the Laws menu", (state["laws_line"], state["strip_title"], state["strip_count"]) == (state["wanted_laws_line"], "", ""), state["laws_line"])
+    ctx.check(f"{name} no law button and no strip button shows", all(row["visibility"] != VISIBLE for row in state["laws"] + state["strip"]), state["laws"])
 
 
 def run(ctx) -> dict:
@@ -94,18 +95,15 @@ def run(ctx) -> dict:
     state = widget(ctx)
     ctx.check("L2 the path buttons are hidden", all(row["visibility"] != VISIBLE for row in state["paths"]), state["paths"])
     ctx.check("L2 the rows say Sworn path and Closed", [row["status"] for row in state["rows"]][:2] == ["Closed", "Sworn path"], state["rows"])
-    laws = {row["id"]: row for row in state["laws"] if row["visibility"] == VISIBLE}
-    ctx.check("L2 the laws of the two unlocked techs show Enact", sorted(laws) == ["militia_charter", "trade_pacts"], laws)
+    cards = {row["id"]: row for row in state["nodes"] if row["visibility"] == VISIBLE}
+    ctx.check("L2 the card of Amnesty names its law", cards["amnesty"]["card_law"] == "Trade Pacts", cards["amnesty"])
     picture(ctx, "layout-2-path-two-techs")
 
-    ctx.mod.command(PREFIX + "tech_tree_widget_press", kind="law", index=5)
-    ctx.mod.command(PREFIX + "tech_tree_widget_press", kind="law", index=6)
+    ctx.mod.command(PREFIX + "tech_tree_enact_law", law="trade_pacts")  # laws are enacted in the Laws menu; the tech window only names it
     time.sleep(SETTLE_S)
     check_parts(ctx, "L3")
     state = widget(ctx)
-    filled = [row for row in state["strip"] if row["visibility"] == VISIBLE]
-    ctx.check("L3 two filled places in the laws strip", len(filled) == 2 and state["strip_count"] == "2 of 2 max", state["strip"])
-    ctx.check("L3 the footer names the last law", state["footer"] == "Trade Pacts enacted.", state["footer"])
-    picture(ctx, "layout-3-two-laws")
+    ctx.check("L3 a law in force changes nothing in the tech window", (state["laws_line"], state["strip_count"]) == (state["wanted_laws_line"], ""), state["laws_line"])
+    picture(ctx, "layout-3-law-in-force")
     ctx.mod.command(PREFIX + "tech_tree_widget_close")
     return ctx.result()
