@@ -105,6 +105,7 @@ end
 
 local menu = require("core.menu")
 T.menu = menu
+T.real_menus = #menu.state().registered -- the menus of the features (raid, tech, liege, laws, ...): a new feature menu shifts the test menus
 for _, id in ipairs({ "a", "b" }) do
     menu.register({
         id = id, label = "Test " .. id, class_path = "/Game/Test/WBP_" .. id:upper() .. ".WBP_" .. id:upper() .. "_C",
@@ -117,6 +118,11 @@ menu.register({ id = "m", label = "Own speed", class_path = "/Game/Test/WBP_A.WB
     on_open = function() return true end, on_close = function() end, manages_speed = true, bar = false })
 menu.register({ id = "n", label = "No close", class_path = "/Game/Test/WBP_A.WBP_A_C", package_path = "/Game/Test", asset_name = "WBP_A",
     on_open = function() return true end, on_close = function() end, manages_speed = true, bar = false, close_button = false })
+-- A menu with a dialog (change add-laws-menu): the first Esc closes the dialog and the menu stays open; the second closes the menu.
+T.dialog_open = true
+menu.register({ id = "d", label = "Dialog", class_path = "/Game/Test/WBP_A.WBP_A_C", package_path = "/Game/Test", asset_name = "WBP_A",
+    on_open = function() return true end, on_close = function() end, manages_speed = true, bar = false,
+    on_esc = function() if T.dialog_open then T.dialog_open = false; return true end return false end })
 menu.register({ id = "bad", label = "Bad", class_path = "/Game/Test/WBP_A.WBP_A_C", package_path = "/Game/Test", asset_name = "WBP_A",
     on_open = function() return nil, "no buttons" end, on_close = function() end })
 """
@@ -127,6 +133,7 @@ class MenuTests(InvasionTestCase):
         super().setUp()
         self.game.exec(LUA_STUBS.replace("BAR_CLASS", BAR_CLASS).replace("CLOSE_CLASS", CLOSE_CLASS))
         self.speed_calls = []
+        self.a = self.state_value("T.real_menus") + 1  # the number of the bar button of the test menu "a" (1 = the first mod button)
         self.engine.gameSpeed = 4.0  # the player runs the game at speed 2 (factor 4)
         self.game.method(self.pawn, "pauseGame", lambda _self: self.set_speed("pause", 0.0))
         self.game.method(self.pawn, "unPauseGame", lambda _self: self.set_speed("unpause", 1.0))
@@ -159,26 +166,28 @@ class MenuTests(InvasionTestCase):
         self.game.advance(1)
 
     def test_the_real_menus_are_registered_in_a_fixed_order(self):
-        registered = self.lua("local r = T.menu.state().registered; return table.concat({ r[1], r[2], r[3], r[4] }, ',')")
-        self.assertEqual(registered, "raid,tech,liege,a")
+        registered = self.lua("return table.concat(T.menu.state().registered, ',')")
+        self.assertTrue(registered.startswith("raid,tech,liege,laws"), registered)
+        self.assertTrue(registered.endswith(",a,b,bad"), registered)
 
     def test_the_buttons_are_added_after_the_games_buttons_with_a_label(self):
         self.make_hud_and_wait()
-        self.assertEqual(self.bar_children(), 6 + 6)
+        self.assertEqual(self.bar_children(), 6 + self.a + 2)
         labels = self.lua("""local out = {}
-            for i = 7, 12 do local b = T.hud.main_tabs_HB.children[i]; out[#out + 1] = tostring(b.children[1].children[1].text) end
+            for i = 7, #T.hud.main_tabs_HB.children do local b = T.hud.main_tabs_HB.children[i]; out[#out + 1] = tostring(b.children[1].children[1].text) end
             return table.concat(out, ',')""")
-        self.assertEqual(labels, "Raid,Tech,Liege,Test a,Test b,Bad")
+        self.assertTrue(labels.startswith("Raid,Tech,Liege,Laws"), labels)
+        self.assertTrue(labels.endswith("Test a,Test b,Bad"), labels)
         self.assertIsNone(self.state_value("T.menu.state().bar_error"))
 
     def test_the_buttons_are_added_once(self):
         self.make_hud_and_wait()
         self.game.advance(5)
-        self.assertEqual(self.bar_children(), 12)
+        self.assertEqual(self.bar_children(), 6 + self.a + 2)
 
     def test_a_click_on_a_mod_button_opens_its_menu_in_one_click(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.assertEqual(self.state_value("T.menu.state().open_id"), "a")
         self.assertEqual(self.state_value("T.menu.state().press_count"), 1)
 
@@ -191,19 +200,19 @@ class MenuTests(InvasionTestCase):
 
     def test_a_second_click_on_the_button_closes_the_menu(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
+        self.click_bar_button(self.a)
         self.assertFalse(self.state_value("T.menu.state().open"))
         self.assertEqual(self.lua("return table.concat(T.closed, ',')"), "a")
 
     def test_the_hover_hook_records_the_hovered_menu(self):
         self.make_hud_and_wait()
-        self.game.fire_hook(BAR_CLASS + ":HandleHovered", self.lua("return T.hud.main_tabs_HB.children[T.game_buttons + 5]"))
+        self.game.fire_hook(BAR_CLASS + ":HandleHovered", self.lua(f"return T.hud.main_tabs_HB.children[T.game_buttons + {self.a + 1}]"))
         self.assertEqual(self.state_value("T.menu.state().hover_id"), "b")
 
     def test_an_open_menu_is_fullscreen_with_a_blocking_backdrop_under_the_content(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.assertTrue(self.state_value("T.menu.state().blocker"))
         self.assertEqual(self.state_value("T.menu.state().blocker_visibility"), 0)  # Visible
         self.assertEqual(self.state_value("T.widget_a.z"), 500)
@@ -216,12 +225,12 @@ class MenuTests(InvasionTestCase):
     def test_the_backdrop_button_has_no_click_callback(self):
         # OnClicked:Add on a Button made at run time crashed the real game (notes/menu-findings.md).
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.assertIsNone(self.state_value("T.blocker_button.click"))
 
     def test_the_close_button_closes_the_menu_and_leaves_no_widget(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.assertTrue(self.state_value("T.menu.state().close_button"))
         self.assertEqual(self.state_value("T.close_widget.z"), 510)
         self.game.fire_hook(CLOSE_CLASS + ":DoOnReleased", self.lua("return T.close_widget"))
@@ -234,7 +243,7 @@ class MenuTests(InvasionTestCase):
 
     def test_the_close_button_is_the_games_close_button_at_the_bottom_middle(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.assertEqual(self.state_value("T.close_widget.anchors.Minimum.X"), 0.5)
         self.assertEqual(self.state_value("T.close_widget.anchors.Minimum.Y"), 0.95)
         self.assertEqual(self.state_value("T.close_widget.anchors.Maximum.Y"), 0.95)
@@ -245,7 +254,7 @@ class MenuTests(InvasionTestCase):
 
     def test_the_hover_of_the_close_button_is_recorded(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.game.fire_hook(CLOSE_CLASS + ":OnMouseEnter", self.lua("return T.close_widget"))
         self.assertEqual(self.state_value("T.menu.state().hover_id"), "__close")
 
@@ -253,14 +262,14 @@ class MenuTests(InvasionTestCase):
 
     def test_opening_a_menu_pauses_the_game_and_stores_the_speed(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.assertEqual(self.game_speed(), 0.0)
         self.assertEqual(self.speed_calls, ["pause"])
         self.assertEqual(self.state_value("T.menu.state().saved_speed"), 4.0)
 
     def test_the_close_button_puts_back_the_speed(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.game.fire_hook(CLOSE_CLASS + ":DoOnReleased", self.lua("return T.close_widget"))
         self.game.advance(1)
         self.assertEqual(self.game_speed(), 4.0)
@@ -269,14 +278,14 @@ class MenuTests(InvasionTestCase):
 
     def test_the_shortcut_and_the_bar_button_put_back_the_speed(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
-        self.click_bar_button(4)  # the same bar button toggles: the shortcut path
+        self.click_bar_button(self.a)
+        self.click_bar_button(self.a)  # the same bar button toggles: the shortcut path
         self.assertEqual(self.game_speed(), 4.0)
         self.assertEqual(self.state_value("T.menu.state().restores"), 1)
 
     def test_a_menu_widget_that_the_game_removed_puts_back_the_speed(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.lua("T.widget_a.valid = false")
         self.game.advance(1)
         self.assertEqual(self.game_speed(), 4.0)
@@ -284,7 +293,7 @@ class MenuTests(InvasionTestCase):
 
     def test_the_restore_runs_once_for_one_close(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.lua("T.menu.close(); T.menu.close()")
         self.assertEqual(self.speed_calls.count("unpause"), 1)
 
@@ -306,8 +315,8 @@ class MenuTests(InvasionTestCase):
 
     def test_a_second_menu_keeps_the_speed_from_before_the_first(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
-        self.click_bar_button(5)
+        self.click_bar_button(self.a)
+        self.click_bar_button(self.a + 1)
         self.assertEqual(self.game_speed(), 0.0)
         self.assertEqual(self.state_value("T.menu.state().saved_speed"), 4.0)
         self.assertEqual(self.speed_calls.count("unpause"), 0, "no flicker between the two menus")
@@ -323,8 +332,8 @@ class MenuTests(InvasionTestCase):
 
     def test_a_menu_that_fails_to_open_puts_back_the_speed_of_the_closed_menu(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
-        self.click_bar_button(6)  # "bad": the first menu closes, then the open fails
+        self.click_bar_button(self.a)
+        self.click_bar_button(self.a + 2)  # "bad": the first menu closes, then the open fails
         self.assertFalse(self.state_value("T.menu.state().open"))
         self.assertEqual(self.game_speed(), 4.0)
 
@@ -332,7 +341,7 @@ class MenuTests(InvasionTestCase):
 
     def test_esc_closes_an_open_menu_and_puts_back_the_speed(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.game.press("ESCAPE")
         self.game.advance(1)
         self.assertFalse(self.state_value("T.menu.state().open"))
@@ -340,6 +349,18 @@ class MenuTests(InvasionTestCase):
         self.assertEqual(self.state_value("T.menu.state().esc_closes"), 1)
         self.assertFalse(self.state_value("T.widget_a.viewport"))
         self.assertEqual(self.lua("return table.concat(T.closed, ',')"), "a")
+
+    def test_esc_closes_a_dialog_first_and_the_menu_on_the_second_press(self):
+        self.lua("return T.menu.open('d').ok")
+        self.game.press("ESCAPE")
+        self.game.advance(1)
+        self.assertTrue(self.state_value("T.menu.state().open"), "the first Esc only closed the dialog")
+        self.assertFalse(self.state_value("T.dialog_open"))
+        self.assertEqual(self.state_value("T.menu.state().esc_closes"), 0)
+        self.game.press("ESCAPE")
+        self.game.advance(1)
+        self.assertFalse(self.state_value("T.menu.state().open"))
+        self.assertEqual(self.state_value("T.menu.state().esc_closes"), 1)
 
     def test_a_menu_with_close_button_false_makes_no_close_button(self):
         self.lua("return T.menu.open('n').ok")
@@ -361,7 +382,7 @@ class MenuTests(InvasionTestCase):
 
     def test_esc_key_hands_the_request_to_the_game_thread(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         queued_before = len(self.game.fg.queue)
         self.game.press("ESCAPE")
         self.assertEqual(len(self.game.fg.queue), queued_before + 1, "the key callback only queued work")
@@ -381,7 +402,7 @@ class MenuTests(InvasionTestCase):
     def test_the_games_esc_menu_that_opens_on_the_same_press_is_closed_and_the_speed_is_put_back(self):
         self.make_hud_and_wait()
         self.lua("T.esc_menu = T.new('mainMenu_widget_C_1'); T.esc_menu.vis = 1")  # made by the game, collapsed
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.game.press("ESCAPE")
         self.game.advance(0.1)
         self.set_speed("game pause", 0.0)  # the game's Esc menu pauses the game
@@ -398,7 +419,7 @@ class MenuTests(InvasionTestCase):
     def test_the_esc_guard_ends_when_the_games_menu_does_not_open(self):
         self.make_hud_and_wait()
         self.lua("T.esc_menu = T.new('mainMenu_widget_C_1'); T.esc_menu.vis = 1")
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.game.press("ESCAPE")
         self.game.advance(1)
         self.assertTrue(self.state_value("T.menu.state().esc_guard"))
@@ -431,7 +452,7 @@ class MenuTests(InvasionTestCase):
             T.game = T.new('Border_game')
             T.game.GetFullName = function() return 'Border /Game/MainUICPP_C_1.Border_game' end
             T.borders = { T.ours, T.game }""")
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.assertEqual(self.state_value("T.ours.vis"), 4)
         self.assertIsNone(self.state_value("T.game.vis"))
         self.assertEqual(self.state_value("T.widget_a.vis"), 4)
@@ -439,8 +460,8 @@ class MenuTests(InvasionTestCase):
 
     def test_opening_a_second_menu_closes_the_first(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
-        self.click_bar_button(5)
+        self.click_bar_button(self.a)
+        self.click_bar_button(self.a + 1)
         self.assertEqual(self.state_value("T.menu.state().open_id"), "b")
         self.assertEqual(self.lua("return table.concat(T.closed, ',')"), "a")
         self.assertFalse(self.state_value("T.widget_a.viewport"))
@@ -448,7 +469,7 @@ class MenuTests(InvasionTestCase):
 
     def test_a_menu_that_fails_to_open_leaves_no_widget_and_says_why(self):
         self.make_hud_and_wait()
-        self.click_bar_button(6)
+        self.click_bar_button(self.a + 2)
         self.assertFalse(self.state_value("T.menu.state().open"))
         self.assertFalse(self.state_value("T.menu.state().blocker"))
         self.assertIn("no buttons", self.state_value("T.menu.state().last_error"))
@@ -465,9 +486,9 @@ class MenuTests(InvasionTestCase):
 
     def test_a_new_hud_widget_after_a_game_load_gets_the_buttons_again(self):
         self.make_hud_and_wait()
-        self.assertEqual(self.bar_children(), 12)
+        self.assertEqual(self.bar_children(), 6 + self.a + 2)
         self.make_hud_and_wait()  # a load makes a new HUD with only the game's buttons
-        self.assertEqual(self.bar_children(), 12)
+        self.assertEqual(self.bar_children(), 6 + self.a + 2)
         self.assertNotEqual(self.state_value("T.hud.main_tabs_HB.children[7].name"), "gameButton7")
 
     def test_a_missing_bar_panel_is_reported_and_does_not_raise(self):
@@ -483,7 +504,7 @@ class MenuTests(InvasionTestCase):
 
     def test_a_menu_widget_that_the_game_removed_is_closed(self):
         self.make_hud_and_wait()
-        self.click_bar_button(4)
+        self.click_bar_button(self.a)
         self.lua("T.widget_a.valid = false")
         self.game.advance(1)
         self.assertFalse(self.state_value("T.menu.state().open"))
