@@ -122,6 +122,9 @@ menu.register({ id = "bad", label = "Bad", class_path = "/Game/Test/WBP_A.WBP_A_
 """
 
 
+EXTRA_MENUS = 1  # real menus after raid, tech and liege (vassals): click index 4 is the first test menu "a"
+
+
 class MenuTests(InvasionTestCase):
     def setUp(self):
         super().setUp()
@@ -154,27 +157,27 @@ class MenuTests(InvasionTestCase):
 
     def click_bar_button(self, index):
         """The hook of the game's button class fires for the clone at index (1 = first mod button)."""
-        self.lua(f"T.clicked = T.hud.main_tabs_HB.children[T.game_buttons + {index}]")
+        self.lua(f"T.clicked = T.hud.main_tabs_HB.children[T.game_buttons + {index + EXTRA_MENUS}]")
         self.game.fire_hook(BAR_CLASS + ":HandleClicked", self.lua("return T.clicked"))
         self.game.advance(1)
 
     def test_the_real_menus_are_registered_in_a_fixed_order(self):
-        registered = self.lua("local r = T.menu.state().registered; return table.concat({ r[1], r[2], r[3], r[4] }, ',')")
-        self.assertEqual(registered, "raid,tech,liege,a")
+        registered = self.lua("local r = T.menu.state().registered; return table.concat({ r[1], r[2], r[3], r[4], r[5] }, ',')")
+        self.assertEqual(registered, "raid,tech,liege,vassals,a")
 
     def test_the_buttons_are_added_after_the_games_buttons_with_a_label(self):
         self.make_hud_and_wait()
-        self.assertEqual(self.bar_children(), 6 + 6)
+        self.assertEqual(self.bar_children(), 6 + 7)
         labels = self.lua("""local out = {}
-            for i = 7, 12 do local b = T.hud.main_tabs_HB.children[i]; out[#out + 1] = tostring(b.children[1].children[1].text) end
+            for i = 7, 13 do local b = T.hud.main_tabs_HB.children[i]; out[#out + 1] = tostring(b.children[1].children[1].text) end
             return table.concat(out, ',')""")
-        self.assertEqual(labels, "Raid,Tech,Liege,Test a,Test b,Bad")
+        self.assertEqual(labels, "Raid,Tech,Liege,Vassals,Test a,Test b,Bad")
         self.assertIsNone(self.state_value("T.menu.state().bar_error"))
 
     def test_the_buttons_are_added_once(self):
         self.make_hud_and_wait()
         self.game.advance(5)
-        self.assertEqual(self.bar_children(), 12)
+        self.assertEqual(self.bar_children(), 13)
 
     def test_a_click_on_a_mod_button_opens_its_menu_in_one_click(self):
         self.make_hud_and_wait()
@@ -198,7 +201,7 @@ class MenuTests(InvasionTestCase):
 
     def test_the_hover_hook_records_the_hovered_menu(self):
         self.make_hud_and_wait()
-        self.game.fire_hook(BAR_CLASS + ":HandleHovered", self.lua("return T.hud.main_tabs_HB.children[T.game_buttons + 5]"))
+        self.game.fire_hook(BAR_CLASS + ":HandleHovered", self.lua("return T.hud.main_tabs_HB.children[T.game_buttons + 5 + 1]"))
         self.assertEqual(self.state_value("T.menu.state().hover_id"), "b")
 
     def test_an_open_menu_is_fullscreen_with_a_blocking_backdrop_under_the_content(self):
@@ -465,9 +468,9 @@ class MenuTests(InvasionTestCase):
 
     def test_a_new_hud_widget_after_a_game_load_gets_the_buttons_again(self):
         self.make_hud_and_wait()
-        self.assertEqual(self.bar_children(), 12)
+        self.assertEqual(self.bar_children(), 13)
         self.make_hud_and_wait()  # a load makes a new HUD with only the game's buttons
-        self.assertEqual(self.bar_children(), 12)
+        self.assertEqual(self.bar_children(), 13)
         self.assertNotEqual(self.state_value("T.hud.main_tabs_HB.children[7].name"), "gameButton7")
 
     def test_a_missing_bar_panel_is_reported_and_does_not_raise(self):

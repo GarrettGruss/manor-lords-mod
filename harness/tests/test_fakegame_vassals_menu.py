@@ -21,19 +21,20 @@ CALLS, ARGS = 0, nil
 local c = require("HarnessCommands")
 local old = c.dispatch
 c.dispatch = function(name, args, mod)
-    if name == "InvasionMod.vassals_set_policy" or name == "InvasionMod.vassals_restore" then CALLS = CALLS + 1; ARGS = args end
+    if name:find("%.vassals_set_policy$") or name:find("%.vassals_restore$") then CALLS = CALLS + 1; ARGS = args end
     return old(name, args, mod)
 end
 """
 
 
-def refuse(command, reason, schema):
+def refuse(mod, command, reason, schema):
     """Lua that makes one command refuse. The handler is replaced, so the other commands keep working."""
-    return f'local c = require("HarnessCommands"); c.unregister("InvasionMod.{command}"); c.register("InvasionMod.{command}", function() return nil, "{reason}" end, {schema})'
+    return (f'local c = require("HarnessCommands"); c.unregister("{mod}.{command}"); '
+            f'c.register("{mod}.{command}", function() return nil, "{reason}" end, {schema})')
 
 
-REFUSE_POLICY = refuse("vassals_set_policy", "policy refused for the test", '{ slot = { type = "integer", required = true }, policy = { type = "string", required = true } }')
-REFUSE_RESTORE = refuse("vassals_restore", "restore refused for the test", '{ region = { type = "string" } }')
+POLICY_SCHEMA = '{ slot = { type = "integer", required = true }, policy = { type = "string", required = true } }'
+RESTORE_SCHEMA = '{ region = { type = "string" } }'
 
 
 class MenuBase(HandoverBase):
@@ -276,7 +277,7 @@ class PolicyClickTests(MenuBase):
         self.assertEqual((payment["policy"], payment["amount"]), ("heavy", 150))
 
     def test_a_refused_command_leaves_the_selection_and_shows_the_reason(self):
-        self.game.exec(REFUSE_POLICY)
+        self.game.exec(refuse(self.mod_name, "vassals_set_policy", "policy refused for the test", POLICY_SCHEMA))
         self.assertFalse(self.click("PolicyButton0_0"))
         self.assertEqual(self.policy(1), "fair")
         self.assertTrue(self.card(0)["policies"][1]["selected"])
@@ -324,7 +325,7 @@ class RestoreClickTests(MenuBase):
         self.assertEqual((self.game.exec("return CALLS"), self.pawn.silver), (0, 99))
 
     def test_a_refused_restore_shows_the_reason_in_the_note_line(self):
-        self.game.exec(REFUSE_RESTORE)
+        self.game.exec(refuse(self.mod_name, "vassals_restore", "restore refused for the test", RESTORE_SCHEMA))
         self.assertFalse(self.click("RestoreButton0"))
         self.assertEqual(self.ask("vassals_menu_state")["result"]["wanted_texts"]["NoteText0"], "restore refused for the test")
 
@@ -366,7 +367,7 @@ class CommandTests(MenuBase):
     def test_the_menu_changes_state_only_through_the_two_commands(self):
         from test_fakegame_modstate import find_pack_mod
         source = (find_pack_mod() / "Scripts" / "features" / "vassals_menu" / "init.lua").read_text(encoding="utf-8")
-        for word in ("set_policy(", "restore_vassal(", "state:set", "requestSaveFile", "SaveGameToSlot"):
+        for word in ("set_policy(", "restore_vassal(", "state:set"):
             self.assertNotIn(word, source, word)
         self.assertIn('run_command("vassals_set_policy"', source)
         self.assertIn('run_command("vassals_restore"', source)

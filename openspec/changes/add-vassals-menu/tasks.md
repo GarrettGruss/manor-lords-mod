@@ -20,6 +20,6 @@
 ## 5. Close
 
 - [x] 5.1 Update `CHANGELOG.md` (Added), the wiki and the skills that the change affects (menu list). Verified by `wiki.py check`.
-- [ ] 5.2 Run the full test set and `openspec validate add-vassals-menu --strict`.
+- [x] 5.2 Run the full test set and `openspec validate add-vassals-menu --strict`.
 - [ ] 5.3 Archive as the last commit: `openspec archive add-vassals-menu --yes`.
 - [ ] 5.4 Fill the test results table of the implementation pull request.

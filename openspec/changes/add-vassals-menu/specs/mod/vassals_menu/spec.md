@@ -28,7 +28,7 @@ The header SHALL show "Vassals: N / 3" (N is the number of registered vassals, t
 - Checked by `mod/InvasionMod/scenarios/vassals_menu/window.py` (V13, V14; run 20261105-042459-6e9c).
 
 ### Requirement: Each card shows one vassal
-The menu SHALL show 3 cards, one for each slot (`vassals.max_vassals`). A card for a registered vassal SHALL show the region, the lord, the status, the rich resources, the tribute each month, the families, the buildings, the days as vassal (from the handover), one note line and the policy buttons. The tribute SHALL be `tribute.base x policy factor` for each paid good, as the tribute tick computes it. A slot that was never claimed SHALL show a dim card "Free slot" with the text "Claim and settle a region to gain a vassal." and no buttons. Wiped villages SHALL fill the free cards, oldest first, and the cards SHALL stay in slot order. The days as vassal SHALL count from the handover, also after a restore. The rich resources SHALL show the names of the paid goods (a region with rich soil shows "flax"). A vassal that is registered but not yet handed over to a lord SHALL show the status "Claimed" and no tribute.
+The menu SHALL show 3 cards, one for each slot (`vassals.max_vassals`). A card for a registered vassal SHALL show the region, the lord, the status, the rich resources, the tribute each month, the families, the buildings, the days as vassal, one note line and the policy buttons. The tribute SHALL be `tribute.base x policy factor` for each paid good. The rich resources SHALL be the names of the paid goods ("flax" for rich soil). The days count from the handover, also after a restore.
 
 #### Scenario: A thriving vassal
 - **WHEN** a handed-over vassal with policy `fair` is shown
@@ -40,8 +40,16 @@ The menu SHALL show 3 cards, one for each slot (`vassals.max_vassals`). A card f
 - **THEN** the card shows the status "Rebuilding", the tribute "none", and a note that the tribute waits until the village is rebuilt (no progress numbers)
 - Checked by `harness/tests/test_fakegame_vassals_menu.py`.
 
+### Requirement: Free and wiped slots fill the cards in slot order
+A slot that was never claimed SHALL show a dim card "Free slot" with the text "Claim and settle a region to gain a vassal." and no buttons. Wiped villages SHALL fill the free cards, oldest first. The cards SHALL stay in slot order: a lost slot does not move the other cards.
+
+#### Scenario: Wiped villages and free slots
+- **WHEN** slot 1 is lost and wiped, slot 2 holds a vassal, and slot 3 was never claimed
+- **THEN** the cards are the wiped village, the vassal of slot 2 and the dim "Free slot" card, in that order
+- Checked by `harness/tests/test_fakegame_vassals_menu.py`.
+
 ### Requirement: The status comes from the vassal state
-The status SHALL be derived from existing state only. "Thriving" SHALL mean a handed-over vassal that is not `stalled` and not `rebuilding`. "Stalled" SHALL mean the flag `stalled`. "Rebuilding" SHALL mean the flag `rebuilding`. "Wiped" SHALL mean a record of a wiped region (a region outside the slots, see `mod/vassals`). The menu SHALL NOT add a new status or a new rule for a status.
+The status SHALL be derived from existing state only. A vassal that is registered but not yet handed over to a lord SHALL show "Claimed" and no tribute. "Thriving" SHALL mean a handed-over vassal that is not `stalled` and not `rebuilding`. "Stalled" SHALL mean the flag `stalled`. "Rebuilding" SHALL mean the flag `rebuilding`. "Wiped" SHALL mean a record of a wiped region (a region outside the slots, see `mod/vassals`). The menu SHALL NOT add a new status or a new rule for a status.
 
 #### Scenario: Status mapping
 - **WHEN** vassals with each of the flags and a wiped record are shown in the fake game
