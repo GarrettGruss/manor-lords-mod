@@ -1,4 +1,4 @@
-"""Change add-tech-tooltip: the tech tree menu sets a tooltip text on each node and law button.
+"""Change add-tech-tooltip: the tech tree menu sets a tooltip text on each node button (the law buttons moved to the Laws menu, change add-laws-menu).
 
 Needs the pak: `run.py --scenario tech-tree-widget-tooltip --pak InvasionMod`. Part 1 reads the tooltip property (no mouse).
 Part 2 hovers with the real OS mouse and takes a picture (needs exclusive use of the screen). It saves nothing.
@@ -7,7 +7,7 @@ Part 2 hovers with the real OS mouse and takes a picture (needs exclusive use of
 import time
 
 NAME = "tech-tree-widget-tooltip"
-DESCRIPTION = "Open the tech tree menu, read the tooltip text of node and law buttons, hover a node and a law with the real mouse. Needs --pak InvasionMod."
+DESCRIPTION = "Open the tech tree menu, read the tooltip text of node buttons, hover a node with the real mouse. Needs --pak InvasionMod."
 LIMIT_S = 600
 EXCLUSIVE = True
 LONG_REASON = "Hover scans with a real mouse, many short waits."
@@ -32,10 +32,6 @@ def hint_point(group: str, row: dict) -> tuple:
 EXPECT_NODES = {
     "fair_courts": ["Approval +5", "Opens vassal policy light"],
     "amnesty": ["Buy-back price -50%", "Manor storage capacity +200"],
-}
-EXPECT_LAWS = {
-    "militia_charter": ["Militia attack +5%", "Approval +2"],
-    "trade_pacts": ["Tribute share +25%"],
 }
 
 
@@ -96,16 +92,14 @@ def run(ctx) -> dict:
     ctx.mod.command(PREFIX + "tech_tree_widget_press", kind="path", index=2)
     ensure_picks(ctx, 2)
     for node in ("fair_courts", "amnesty"):
-        ctx.mod.command(PREFIX + "tech_tree_unlock", node=node)  # the law buttons show only for unlocked techs
+        ctx.mod.command(PREFIX + "tech_tree_unlock", node=node)
     time.sleep(SETTLE_S)
     state = widget(ctx)
     check_tooltips(ctx, "T3", state["nodes"], EXPECT_NODES)
-    check_tooltips(ctx, "T4", state["laws"], EXPECT_LAWS)
     ctx.metric("tooltip_nodes", sum(1 for r in state["nodes"] if r["tooltip"]))
     ctx.screenshot("tech-tree-widget-tooltip-menu")
     try:
         hover_picture(ctx, "nodes", "amnesty", "tech-tree-tooltip-node")
-        hover_picture(ctx, "laws", "trade_pacts", "tech-tree-tooltip-law")
     except Exception as problem:  # the real mouse is optional here; the property checks above stand
         ctx.log.info(f"real hover failed: {problem}")
         ctx.metric("real_hover_failed", 1)

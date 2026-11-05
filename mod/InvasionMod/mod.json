@@ -30,6 +30,7 @@
     { "name": "order_tooltip", "requires": ["bandits"], "ids": {} },
     { "name": "liege_influence", "requires": ["mod_state", "tribute"], "ids": {} },
     { "name": "liege_contracts", "requires": ["mod_state", "invasion", "raid_behavior", "bandits", "liege_influence"], "ids": {} },
+    { "name": "laws_menu", "requires": ["tech_tree", "invasion"], "ids": {} },
     { "name": "vassals_menu", "requires": ["vassals", "tribute"], "ids": {} }
   ],
   "gate_scenarios": ["scenario-settings-new-game-menu", "invasion-first-raid"]
