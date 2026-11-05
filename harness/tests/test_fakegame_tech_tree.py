@@ -16,6 +16,7 @@ PACK = find_pack_mod()
 TREE_FILE = PACK / "data" / "tech_tree" / "tree.json"
 
 STUB = """
+package.loaded["HarnessManor"] = { manor_state = function() return { ok = true, modules = { { built = true } } } end } -- the manor term of a tick needs a built manor
 package.loaded["HarnessBandits"] = {
     homeless_rebel = function(request) return { ok = true, families_removed = request.count, squads = { {} }, bandit_units_spawned = 18 } end,
     bandit_tag = function() return { ok = true } end,

@@ -1,6 +1,6 @@
-"""Bandits: the mod public order ticks every 30 game days (+10 manor, -5 for each homeless family) and the mod writes it to the game.
+"""Bandits: the mod public order ticks every 30 game days (+10 with a built manor, -5 for each homeless family) and the mod writes it to the game.
 
-A forced tick checks the six telemetry fields. A 65 game day run checks the tick interval. It saves nothing.
+A forced tick checks the seven telemetry fields. A 65 game day run checks the tick interval. It saves nothing.
 Run on the default fixture or on `--fixture playtest-noai`.
 """
 
@@ -8,7 +8,7 @@ NAME = "bandits-order-tick"
 LIMIT_S = 1500
 SPEED = 3
 LONG_REASON = "65 game days at speed 3 (about 13 s per game day) to count the natural ticks, plus the start."
-TICK_FIELDS = ("day", "order_before", "manor_term", "homeless_count", "homeless_term", "order_after")
+TICK_FIELDS = ("day", "order_before", "manor_built", "manor_term", "homeless_count", "homeless_term", "order_after")
 
 
 def state(ctx) -> dict:
@@ -24,8 +24,8 @@ def run(ctx) -> dict:
 
     forced = ctx.mod.command("InvasionMod.bandits_tick_now")
     tick = forced["last_tick"]
-    ctx.check("the tick record has the six fields", all(field in tick for field in TICK_FIELDS), tick)
-    ctx.check("the manor term is 10", tick["manor_term"] == 10, tick)
+    ctx.check("the tick record has the seven fields", all(field in tick for field in TICK_FIELDS), tick)
+    ctx.check("the manor term is 10 with a built manor and 0 without", tick["manor_term"] == (10 if tick["manor_built"] else 0), tick)
     ctx.check("the homeless term is 5 for each homeless family", tick["homeless_term"] == 5 * tick["homeless_count"], tick)
     want = max(0, min(100, 50 + tick["manor_term"] - tick["homeless_term"]))
     ctx.check("the order after is order before plus manor term minus homeless term", tick["order_after"] == want, [tick, want])

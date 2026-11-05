@@ -32,6 +32,7 @@ local function native_row(d, v)
     local arrow = { angle = 180 }
     function arrow:GetClass() return { GetFName = function() return { ToString = function() return "Image" end } end } end
     function arrow:SetRenderTransformAngle(a) self.angle = a end
+    function arrow:SetColorAndOpacity(c) self.color = c end
     local bar = Box.new()
     bar:AddChildToVerticalBox(arrow)
     local r = { DescriptionText = Block.new(d), ValueText = Block.new(v), vis = 0, arrow = arrow,
@@ -77,6 +78,10 @@ class OrderTooltipTests(unittest.TestCase):
     def test_no_homeless_row_without_homeless(self):
         self.assertEqual(self.build("{ order = 100, manor_term = 10, homeless_term = 0 }"), "100%;Manor|+10|green")
 
+    def test_no_manor_row_without_a_built_manor(self):
+        self.assertEqual(self.build("{ order = 50, manor_term = 0, homeless_term = 10 }"), "50%;Homeless families|-10|red")
+        self.assertEqual(self.build("{ order = 50, manor_term = 0, homeless_term = 0 }"), "50%")
+
     def test_tech_bonus_is_in_the_manor_term(self):
         self.assertEqual(self.build("{ order = 60, manor_term = 15, homeless_term = 0 }"), "60%;Manor|+15|green")
 
@@ -116,6 +121,18 @@ class OrderTooltipTests(unittest.TestCase):
             return kids[2].arrow.angle .. "#" .. kids[3].arrow.angle
         end)()""")
         self.assertEqual(str(result), "0.0#180.0")
+
+    def test_arrow_colour_follows_the_sign(self):
+        result = self.lua.eval("""(function()
+            local widget = require("features.order_tooltip.widget")
+            local rows = require("features.order_tooltip.rows")
+            local tip = new_tip()
+            widget.apply(tip, rows.build({ order = 77, manor_term = 10, homeless_term = 10 }))
+            local kids = tip.recentFactors_VB.kids
+            local up, down = kids[2].arrow.color, kids[3].arrow.color
+            return (up.G > up.R and up.G > up.B) and (down.R > down.G and down.R > down.B) and "ok" or "bad"
+        end)()""")
+        self.assertEqual(str(result), "ok")
 
     def test_failing_widget_call_raises_for_the_caller_to_log(self):
         ok = self.lua.eval("""(function()

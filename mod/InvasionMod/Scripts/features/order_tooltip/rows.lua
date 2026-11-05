@@ -19,10 +19,9 @@ end
 function M.build(terms)
     if terms == nil or type(terms.order) ~= "number" then return nil end
     local rows = {}
-    if terms.manor_term ~= nil then
-        rows[#rows + 1] = row("Manor", terms.manor_term)
-        if (terms.homeless_term or 0) > 0 then rows[#rows + 1] = row("Homeless families", -terms.homeless_term) end
-    end
+    -- No Manor row without a built manor (term 0). Terms are nil before the first tick.
+    if (terms.manor_term or 0) ~= 0 then rows[#rows + 1] = row("Manor", terms.manor_term) end
+    if (terms.homeless_term or 0) > 0 then rows[#rows + 1] = row("Homeless families", -terms.homeless_term) end
     if (terms.leave_gain or 0) ~= 0 then rows[#rows + 1] = row("Left for banditry", terms.leave_gain) end
     return { header = string.format("%d%%", terms.order), header_color = terms.order >= 0 and M.GREEN or M.RED, rows = rows }
 end

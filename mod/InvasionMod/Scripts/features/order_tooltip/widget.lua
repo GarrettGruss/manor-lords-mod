@@ -41,7 +41,9 @@ local function add_row(tip, spec)
     made.DescriptionText:SetText(FText(spec.text))
     made.ValueText:SetText(FText(spec.value))
     paint(made.ValueText, spec.color)
-    find_arrow(made):SetRenderTransformAngle(spec.up and 0.0 or 180.0)
+    local arrow = find_arrow(made)
+    arrow:SetRenderTransformAngle(spec.up and 0.0 or 180.0)
+    arrow:SetColorAndOpacity(COLORS[spec.color]) -- the game arrow is dark red for both signs; tint it like the value text
 end
 
 -- Hide the native rows, add one row for each mod term, write the mod order in the header.
