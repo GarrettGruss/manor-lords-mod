@@ -24,6 +24,6 @@
 ## 5. Docs and close
 
 - [x] 5.1 Update `CHANGELOG.md` (Unreleased), the wiki page `invasion-features.md`. Verified by `wiki.py check`.
-- [ ] 5.2 Run the full test set and `openspec validate add-laws-menu --strict`.
+- [x] 5.2 Run the full test set and `openspec validate add-laws-menu --strict`.
 - [ ] 5.3 Archive as the last commit: `openspec archive add-laws-menu --yes`.
-- [ ] 5.4 Fill the test results table of the implementation pull request.
+- [x] 5.4 Fill the test results table of the implementation pull request.
