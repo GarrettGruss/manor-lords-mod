@@ -18,6 +18,7 @@ sources:
   - resource: repo://openspec/changes/archive/2026-10-21-spike-finite-resource-limits/notes/salt-mine-deposit.md
   - resource: repo://openspec/changes/archive/2026-11-01-spike-region-rich-resources/notes/region-rich-resources.md
   - resource: repo://openspec/changes/archive/2026-10-23-spike-public-order-factor/notes/tick-write.md
+  - resource: repo://openspec/changes/archive/2026-11-04-spike-settle-families-only/notes/settle-families-only-findings.md
   - resource: repo://openspec/changes/archive/2026-10-15-legacy-18-composite-buildings/implementation-notes/siege-camp-and-bm.md
 ---
 # Engine limits found by spikes
@@ -246,3 +247,4 @@ Desk research on 2026-10-28, no game run. Notes: `openspec/changes/archive/*-ass
 - **No mouse.** A PC with `SM_MOUSEPRESENT = 0` stops every real mouse scenario with an InputError. Use the press command of the window.
 - **Pak install path.** `run.py --pak <name>` installs `<work_dir>/out/<name>_P.pak` of the pak config; use `--pak-config` with a private `work_dir` to test a pak that is not built in the shared folder.
 - **JSON depth.** `HarnessJson` reads at most 6 levels; a data file with a list inside an object inside a list inside an object fails to load.
+- **`settleRegion` extras are native.** One call on a settled region adds 5 families, a new tent camp (type 87), 4 buildings, 1 ox and the Modest supply package (+79 goods). No data row drives this: the settlement type argument (1 to 5) and `startingSuppliesMultiplier` change nothing, the goods come from native `getStartingSupplies`, and `buildingStats` row 87 has no capacity or ox field. A pak cannot make a "families only" settle (spike `spike-settle-families-only`, runs `sfo-*`).
