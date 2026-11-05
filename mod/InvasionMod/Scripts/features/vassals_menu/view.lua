@@ -5,7 +5,7 @@ local M = {}
 
 M.TITLE_TEXT = "VASSALS"
 M.POLICIES = { "light", "fair", "heavy" }
-M.STAT_LABELS = { "Status", "Rich resources", "Tribute / month", "Families", "Buildings", "Vassal for" }
+M.STAT_LABELS = { "Status", "Rich resources", "Tribute", "Families", "Buildings", "Vassal for" }
 M.FREE_TITLE = "Free slot"
 M.FREE_NOTE = "Claim and settle a region to gain a vassal."
 
@@ -32,6 +32,10 @@ end
 function M.days_as_vassal(handed_day, today)
     if type(handed_day) ~= "number" or handed_day <= 0 or type(today) ~= "number" then return 0 end
     return math.max(0, today + 1 - handed_day)
+end
+
+function M.days_text(days)
+    return string.format("%d %s", days, days == 1 and "day" or "days")
 end
 
 function M.status_of(row)
@@ -117,7 +121,7 @@ local function vassal_card(position, row, input, totals)
     for _, name in ipairs(M.POLICIES) do policies[#policies + 1] = { name = name, text = M.policy_text(name), selected = name == policy } end
     return {
         position = position - 1, kind = "vassal", slot = row.slot, region = row.region, status = status, status_text = M.STATUS_TEXT[status],
-        title = M.region_text(row.region),
+        title = input.name_of(row.region) or M.region_text(row.region),
         lord_line = (row.lord ~= nil and row.lord ~= NO_LORD) and ("Lord " .. row.lord) or "No lord yet",
         stats = {
             M.STATUS_TEXT[status],
@@ -125,7 +129,7 @@ local function vassal_card(position, row, input, totals)
             pays and M.tribute_text(goods, amount) or "none",
             tostring(row.families or 0),
             tostring(row.buildings or 0),
-            string.format("%d days", M.days_as_vassal(row.handed_day, input.today)),
+            M.days_text(M.days_as_vassal(row.handed_day, input.today)),
         },
         note = M.note_of(status, config),
         policy = policy, policies = policies, policy_hint = M.hint_text(factor, amount),
@@ -138,7 +142,7 @@ local function wiped_card(position, record, input)
     local enough = type(input.silver) == "number" and input.silver >= cost
     return {
         position = position - 1, kind = "wiped", region = record.region, status = "wiped", status_text = M.STATUS_TEXT.wiped,
-        title = M.region_text(record.region), lord_line = "No lord",
+        title = input.name_of(record.region) or M.region_text(record.region), lord_line = "No lord",
         stats = { M.STATUS_TEXT.wiped, "", "", "", "", "" },
         note = M.note_of("wiped", input.config), policies = {},
         restore = { text = "Restore the village", cost = cost, enabled = enough, hint = M.restore_hint(cost, enough), region = record.region },
@@ -160,6 +164,8 @@ end
 -- Cards stay in slot order (owner decision 7). Wiped villages fill the free slots, oldest first (decision 1). A slot that was never
 -- claimed is a dim "Free slot" card (decision 2).
 function M.build(input)
+    -- name_of(region) gives the display name that the game shows (region.regionName), or nil: then the internal name is capitalised.
+    input.name_of = input.name_of or function() return nil end
     local max = input.config.max_vassals
     local by_slot = {}
     for _, row in ipairs(input.rows) do by_slot[row.slot] = row end

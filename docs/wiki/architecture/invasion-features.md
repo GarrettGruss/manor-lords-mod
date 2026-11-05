@@ -43,6 +43,8 @@ flowchart LR
   vassals --> tech_tree
   tribute --> tech_tree
   tech_tree --> tech_tree_widget
+  vassals --> vassals_menu
+  tribute --> vassals_menu
 ```
 
 An arrow means "is required by". `example`, `unit_balance` and `manor_stronghold` have no requirements. The source of truth is `feature_list.lua`, which must equal `mod.json`.
@@ -63,6 +65,7 @@ An arrow means "is required by". `example`, `unit_balance` and `manor_stronghold
 | sack_and_terms | [M06](../../../openspec/changes/archive/2026-10-16-legacy-m06-sack-and-terms/README.md) | raid_behavior, vassals | `scenarios/sack_and_terms/` |
 | vassals | [M07](../../../openspec/changes/archive/2026-10-16-legacy-m07-vassals/README.md) | mod_state | `scenarios/vassals/` |
 | tribute | [M08](../../../openspec/changes/archive/2026-10-16-legacy-m08-tribute/README.md) | vassals, raid_behavior | `scenarios/tribute/` |
+| vassals_menu | change `add-vassals-menu` (#564) | vassals, tribute | `scenarios/vassals_menu/` |
 | refugees | [M09](../../../openspec/changes/archive/2026-10-16-legacy-m09-refugees/README.md) | vassals, bandits | `scenarios/refugees/` |
 | finite_resources | [M10](../../../openspec/changes/archive/2026-10-16-legacy-m10-finite-resources/README.md) | mod_state | `scenarios/finite_resources/` |
 | tech_tree | [M12](../../../openspec/changes/archive/2026-10-16-legacy-m12-tech-tree/README.md) | bandits, unit_balance, mod_state, manor_stronghold, vassals, tribute | `scenarios/tech_tree/` |
@@ -150,6 +153,14 @@ Commands: `sack_state`, `sack_now`, `sack_set_fatal`.
 At each game month change (`TemporalComponent.month`) each handed-over vassal pays goods into the player stores: `tribute.base` (100) x the policy factor x the tech factor of each of 2 goods. The goods are the rich resources of the vassal region (change `update-vassal-tribute-rich-resources`, #552). `features/tribute/world.lua` scans the `ResourceNode` objects once for each loaded game (the cache belongs to one `RTSMultiEngineCPP` object, so a load scans again), reads the decal material, the decal size and position and the clump class and capacity, and maps each node to a region with `getRegionByPos`. `rules.lua` (pure) decides which nodes are rich (`config.tribute.rich`: decal size 5000, clump capacity berries 130, fish and eel 385, mushrooms 122), cuts more than 2 goods by tier (ores iron, stone, salt; then clay, carp, eel; then berries, mushrooms) and fills missing goods with flax, the stand-in for rich soil (0 rich pays flax twice). Game is never rich. No goods move between regions. The mod adds goods to a home store. A subjugation raid on a vassal region that holds 8 game days with at least half its units alive starts the sack of the houses of that vassal (see vassals). A restored vassal pays no tribute while it is rebuilding.
 Commands: `tribute_state`, `tribute_tick_now`, `tribute_test_raid_result`.
 
+### vassals_menu (change `add-vassals-menu`, #564)
+The Vassals window in the bottom bar (base menu id `vassals`, label "Vassals"). It needs `vassals` and `tribute`. It shows 3 cards, one for each vassal slot, and a header line (vassals N / 3, tribute each month, treasury silver). It saves nothing and calls no save function. Files in `Scripts/features/vassals_menu/`: `view.lua` (pure: status words, tribute text, the card model, the order of the cards) and `init.lua` (window, clicks, commands).
+- Data: `vassals.slot_rows`, `vassals.wiped_rows`, the silver of the player and the tribute rules (`tribute.paid_goods`, `tribute.amount_for`: the same code as the monthly tick, with the policy factor and the tech factor). The numbers of a region (families, buildings, paid goods, display name) are read every `vassals_menu.stats_s` seconds, not at each refresh.
+- Status: from existing state only. Thriving = handed over and not stalled and not rebuilding; Stalled and Rebuilding are the flags of the slot; Wiped = a wiped record; "Claimed" = registered but not yet handed over to a lord (no tribute). A wiped record fills a free card, oldest first; a never-claimed slot is a dim "Free slot" card; the cards keep the slot order.
+- Clicks: a policy button (Light, Fair, Heavy) calls `InvasionMod.vassals_set_policy`, the "Restore the village" button of a wiped card calls `InvasionMod.vassals_restore` (button disabled below 100 silver, hint "Needs 100 silver."). Both go through `HarnessCommands.dispatch`. A refusal shows its reason in the note line of the card for `notice_s` seconds.
+- Widget: pak asset `WBP_Vassals` (generator `ue/make_vassals_widget.py`), the look of the liege window and the start screen (game font, flat dark panel, no Close of its own). The texts, the underline of the selected policy and the decorations are written by Lua with a changed-value cache (colour changes, not visibility changes, for Borders). The 12 click buttons are `WBP_ClickButton` in button Borders (`PolicyButton<card>_<policy>`, `RestoreButton<card>`).
+- Commands: `vassals_menu_open`, `vassals_menu_close`, `vassals_menu_state`, `vassals_menu_view` (the header and one model for each card), `vassals_menu_press` (`button`; the same code as a click). Tests: `test_fakegame_vassals_menu.py`, test scenario `vassals-menu-window`.
+
 ### refugees (M09)
 A lost vassal (wiped by a sack) sends a wave of refugee families to the home region: 50 percent of its families (`share_min` and `share_max` are both 0.50), five families a call, three calls at most. Families arrive through `settleRegion` (five families a call, the homeless tent). The game lowers approval and feeds them. Another feature calls `send_wave(vassal_families)` when a vassal is lost. The feature reuses `features.bandits.world.rebel`.
 Commands: `refugees_state`, `refugees_set_timeout`, `refugees_vassal_lost` (test path), `refugees_send_wave`.
@@ -176,7 +187,7 @@ Commands: `tech_tree_widget_open`, `tech_tree_widget_close`, `tech_tree_widget_s
 Tooltip (change `add-tech-tooltip`): `init.lua` calls `SetToolTipText` on the `Border` of each node and law button. The text is `lines.effect_lines(source, tree)`: one line for each effect of `tree.json` (percent kinds as a signed percent, add kinds as a signed number), then "Opens vassal policy ..." lines. `tech_tree_widget_state` lists the tooltip of each button. Lua only, no pak change. Test scenario `tech-tree-widget-tooltip`.
 
 ## Base menu
-Change `add-mod-menu-access-rule` (#308), file `core/menu.lua`. All mod menus (`raid_widget`, `tech_tree_widget`, the tribute menu of `liege_influence`) register with `core/menu.lua`. A menu gives its id, a short label, the pak widget class and two functions: `on_open(widget)` (attach the click buttons, show the first values) and `on_close()`. The base menu does the rest:
+Change `add-mod-menu-access-rule` (#308), file `core/menu.lua`. All mod menus (`raid_widget`, `tech_tree_widget`, the tribute menu of `liege_influence`, `liege_contracts`, `vassals_menu`) register with `core/menu.lua`. A menu gives its id, a short label, the pak widget class and two functions: `on_open(widget)` (attach the click buttons, show the first values) and `on_close()`. The base menu does the rest:
 - **Bottom bar button.** It finds the HUD widget `MainUICPP_C`, its `HorizontalBox` `main_tabs_HB`, and adds a clone of the game's own button class (`mainTabButton_C`) after the game's buttons, with a small text label. The click is the hook on `mainTabButton_C:HandleClicked` (it fires for all buttons of the class, so it matches the clone by name and only queues the click). A load makes a new HUD; a 1 s job adds the buttons again.
 - **Backdrop.** A full-screen `Button` (z-order 450, dimmed) under the content (z-order 500) blocks clicks to the game. The content Borders are set to `SelfHitTestInvisible`, or a click on the empty menu background would reach the game. The backdrop has no click callback.
 - **Close button.** The game's own Close button class (`/Game/UI/Common/menuButton.menuButton_C`, the Close label of the Diplomacy screen), bottom middle (anchor 0.5, 0.95, alignment 0.5), above the backdrop. Its click is the hook on `menuButton_C:DoOnReleased`. The key (F8, F9) and the Esc key also close.

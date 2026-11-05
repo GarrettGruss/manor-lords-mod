@@ -57,7 +57,7 @@ end
 
 local W = { widget = nil, texts = {}, borders = {}, buttons = {}, shown = {}, painted = {}, tinted = {}, visible = {}, dim = {},
             last_refresh = 0, notes = {}, presses = 0, clicks_done = 0 }
-local S = { stats = {}, goods = {}, stats_at = nil } -- families, buildings and rich goods of each region, read every stats_s seconds
+local S = { stats = {}, goods = {}, names = {}, stats_at = nil } -- families, buildings, rich goods and display names of the regions, read every stats_s seconds
 
 local function is_open() return menu.is_open(MENU_ID) end
 
@@ -66,10 +66,26 @@ local function is_open() return menu.is_open(MENU_ID) end
 ---------------------------------------------------------------------------------------------
 
 -- The region numbers are game reads: they are cached for stats_s seconds (the window refreshes twice a second).
+-- The names that the game shows for its regions (region.regionName), by object name. A read only.
+local function read_region_names()
+    local names = {}
+    local engine = FindFirstOf("RTSMultiEngineCPP")
+    if not isValid(engine) then return names end
+    for _, region in ipairs(core.listOf(read(function() return engine.regions end))) do
+        if isValid(region) then
+            local short = core.shortName(region)
+            local text = core.textOf(read(function() return region.regionName end))
+            if short and type(text) == "string" and text ~= "" then names[short] = text end
+        end
+    end
+    return names
+end
+
 local function refresh_stats(force)
     local now = os.clock()
     if not force and S.stats_at and now - S.stats_at < config.stats_s then return end
     S.stats_at = now
+    S.names = read_region_names()
     for _, row in ipairs(vassals.slot_rows(true)) do
         S.stats[row.region] = { families = row.families, buildings = row.buildings }
         S.goods[row.region] = tribute.paid_goods(row.region)
@@ -86,7 +102,8 @@ local function current_model(force)
         if stats then row.families, row.buildings = stats.families, stats.buildings end
     end
     return view.build({ config = vassal_config, rows = rows, wiped = vassals.wiped_rows(), silver = silver_world.silver(),
-                        today = vassal_world.current_day(), goods_of = goods_of, amount = tribute.amount_for })
+                        today = vassal_world.current_day(), goods_of = goods_of, amount = tribute.amount_for,
+                        name_of = function(region) return S.names[region] end })
 end
 
 ---------------------------------------------------------------------------------------------
@@ -231,7 +248,7 @@ end
 local function on_open(made)
     W.widget = made
     W.opened_at, W.reapplied, W.notes = os.clock(), false, {}
-    S.stats, S.goods, S.stats_at = {}, {}, nil
+    S.stats, S.goods, S.names, S.stats_at = {}, {}, {}, nil
     W.texts = menu.find_named(made, "TextBlock", NAMES.texts)
     W.borders = menu.find_named(made, "Border", NAMES.borders)
     local button_borders = menu.find_named(made, "Border", NAMES.buttons)

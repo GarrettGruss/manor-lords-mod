@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Vassals menu (change `add-vassals-menu`, #564): a new menu "Vassals" in the bottom bar, in the look of the game's own windows. It shows the vassals (3 cards: region, lord, status, rich resources, tribute each month, families, buildings, days as vassal), the total tribute and the silver. The player sets the tribute policy (Light, Fair, Heavy) of each vassal with a click and restores a wiped village (100 silver) from its card. It uses the existing commands `vassals_set_policy` and `vassals_restore`. New commands `vassals_menu_view`, `vassals_menu_state`, `vassals_menu_open`, `vassals_menu_close`, `vassals_menu_press`; new test scenario `vassals-menu-window`.
 - Spike finding: vassals work with AI opponents 0 (the "vassals are not enabled" warning is not needed). Test scenario `vassals-spike-noai`.
 - `harness\deploy.ps1` also installs each mod's own pak (`mod/<name>/paks/<name>_P.pak`, today `InvasionMod_P.pak`) into `Content\Paks\~mods\`, so a manual deploy is ready to play. The pak is listed in the run pak manifest, so `run.py --pak` and `pakmod.py remove` can replace or remove it. `-NoPak` skips it; the run launcher, `install.ps1` and `reload_mods.py` pass `-NoPak`.
 

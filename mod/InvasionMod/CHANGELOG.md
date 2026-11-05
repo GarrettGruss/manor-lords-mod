@@ -14,6 +14,7 @@ Each entry names its feature. Format: Keep a Changelog.
 - **liege_influence (update-liege-contracts-tiers):** the arms shipment button and its cooldown. A Medium contract can pay weapons instead.
 
 ### Added
+- **vassals_menu (add-vassals-menu):** the Vassals window in the bottom bar. Three cards show each vassal (region, lord, status Thriving, Stalled, Rebuilding or Wiped, rich resources, tribute each month, families, buildings, days as vassal). You set the tribute policy with Light, Fair or Heavy, and restore a wiped village for 100 silver. The header shows the vassal count, the tribute each month and the silver. The tribute feature has two read functions (`paid_goods`, `amount_for`) that the menu uses.
 - **bandits:** `features/bandits/outlaws.lua` with `ensure_outlaw_pawn()`: makes the Outlaws pawn (camp call, brigands killed and hidden, camp demolished) at game start, after each load and before each rebellion.
 - **raid_behavior:** loot override. The goods that the rebels took become loot overrides of the brigands; the body of such a unit gives these goods at the corpse pit. Saved in ModState (`loot_override_slots` 200), linked again after a load.
 

@@ -154,6 +154,11 @@ class CardTests(MenuBase):
         self.assertEqual([(p["name"], p["selected"]) for p in card["policies"]], [("light", False), ("fair", True), ("heavy", False)])
         self.assertEqual(card["policy_hint"], "Tribute x1: 100 of each rich resource")
 
+    def test_the_card_shows_the_name_that_the_game_shows_for_the_region(self):
+        self.region_by_name["Eichenhau"].regionName = self.game.text("Krumme Leite")
+        card = self.card(0)
+        self.assertEqual((card["title"], card["region"]), ("Krumme Leite", "Eichenhau"))
+
     def test_days_as_vassal_count_from_the_handover(self):
         handed = self.state()["vassals"][0]["handed_day"]
         self.assertEqual(handed, 101)  # day 100 plus 1
