@@ -248,3 +248,10 @@ Desk research on 2026-10-28, no game run. Notes: `openspec/changes/archive/*-ass
 - **Pak install path.** `run.py --pak <name>` installs `<work_dir>/out/<name>_P.pak` of the pak config; use `--pak-config` with a private `work_dir` to test a pak that is not built in the shared folder.
 - **JSON depth.** `HarnessJson` reads at most 6 levels; a data file with a list inside an object inside a list inside an object fails to load.
 - **`settleRegion` extras are native.** One call on a settled region adds 5 families, a new tent camp (type 87), 4 buildings, 1 ox and the Modest supply package (+79 goods). No data row drives this: the settlement type argument (1 to 5) and `startingSuppliesMultiplier` change nothing, the goods come from native `getStartingSupplies`, and `buildingStats` row 87 has no capacity or ox field. A pak cannot make a "families only" settle (spike `spike-settle-families-only`, runs `sfo-*`).
+
+## Loan of squads and villagers (spike `spike-loan-units`, #568)
+
+- **Remove a player squad:** `PawnCPP:addRemoveSquadRequest({Value=id})` works on a spawned squad. In 3 game s `commandedSquads` drops, the men leave the unit list, and no bodies stay. (`disbandSquad` and `RequestDisbandSquad` still do nothing.) `just_die` on all men also removes the squad but leaves bodies.
+- **Give it back:** `spawnArmy` of the same template makes a new squad (new id, full size, 32 militia or 36 retinue). Experience can be written back. Names, gear and ids are not kept.
+- **Hide is visual only:** `SetActorHiddenInGame(true)` on a squad hides the men (the banner icon stays). The squad stays commanded and counted. Moving the actor does not move `realPos`. Hidden villagers keep walking and working.
+- Tested only on spawned squads, not on a rallied retinue or militia. After a load, hide flags are gone; keep a loan record in ModState.
