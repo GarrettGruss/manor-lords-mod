@@ -41,6 +41,8 @@ STONE = 27
 
 
 class ManorStorageTestCase(TechTreeTestCase):
+    STUB_BUILT_MANOR = False
+
     def setUp(self):
         super().setUp()
         self.world = self.game.lua.eval(MANOR)(self.game.fg, self.region, True)
