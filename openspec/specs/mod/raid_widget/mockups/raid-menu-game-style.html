@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Raid menu, game style</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500;700&amp;family=Alegreya+SC:wght@500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0b0a}
+.gold{color:#e8c87a}
+.row{display:flex;align-items:baseline;gap:16px;padding:14px 0;border-bottom:1px solid #3a3731;font-size:24px}
+.mark{color:#8f8878;font-size:16px}
+.label{width:230px;flex-shrink:0;color:#c9c1b0}
+.value{color:#f2ede2}
+.close:hover .word{color:#e8c87a}
+</style>
+</head>
+<body>
+<!-- Mockup at 1440x810. Alegreya stands in for the game font CombinedFont_Mikadan. -->
+<div style="width:1440px;height:810px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#1c1b18 0%,#0e0e0d 70%,#090908 100%);color:#f2ede2;font-family:Alegreya,serif;display:flex;flex-direction:column;align-items:center;">
+
+  <div style="padding-top:22px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+    <h1 style="margin:0;font-family:'Alegreya SC',serif;font-weight:500;font-size:30px;letter-spacing:6px;">RAIDS</h1>
+    <div style="width:300px;height:1px;background:linear-gradient(90deg,transparent,#9c8455 20%,#9c8455 80%,transparent);"></div>
+  </div>
+
+  <div style="margin-top:12px;font-size:20px;color:#c9c1b0;">
+    Raid levels: yearly <span class="gold">2</span>, great <span class="gold">2</span>, vassal <span class="gold">2</span>
+  </div>
+
+  <div style="margin-top:18px;width:1100px;flex-grow:1;box-sizing:border-box;padding:26px 56px;background:linear-gradient(180deg,rgba(58,55,49,0.92),rgba(40,38,34,0.92));box-shadow:inset 0 0 60px rgba(0,0,0,0.55),0 0 0 1px #2c2a26;">
+    <div class="row"><span class="mark">&#9671;</span><span class="label">Yearly raid</span><span class="value">you, <span class="gold">LARGE</span>, about <span class="gold">54</span> raiders (<span class="gold">3</span> squads), in <span class="gold">12</span> days</span></div>
+    <div class="row"><span class="mark">&#9671;</span><span class="label">Subjugation raid</span><span class="value">your vassal <span class="gold">Heinrich</span>, about <span class="gold">30</span> raiders (<span class="gold">2</span> squads), in <span class="gold">40</span> days</span></div>
+    <div class="row"><span class="mark">&#9671;</span><span class="label">Great raid</span><span class="value">wave <span class="gold">2</span> of <span class="gold">3</span></span></div>
+    <div class="row"><span class="mark">&#9671;</span><span class="label">Terms</span><span class="value">offered, <span class="gold">200</span> silver or vassalage (<span class="gold">60</span> a year)</span></div>
+    <!-- A switched-off raid type (empty line) shows no row. -->
+  </div>
+
+  <!-- The framework's bottom Close, in the style of the game's Close button. -->
+  <div style="height:84px;flex-shrink:0;display:flex;align-items:center;">
+    <button type="button" class="close" style="background:none;border:none;color:inherit;cursor:pointer;display:flex;align-items:center;gap:18px;font:inherit;font-size:32px;">
+      <span style="font-size:20px;color:#c9c1b0;">&#10087;</span><span class="word">Close</span><span style="font-size:20px;color:#c9c1b0;display:inline-block;transform:scaleX(-1);">&#10087;</span>
+    </button>
+  </div>
+  <span style="position:absolute;right:120px;bottom:6px;font-size:13px;color:#6f6a60;">EARLY ACCESS (Version 0.8.117) MODDED</span>
+</div>
+</body>
+</html>

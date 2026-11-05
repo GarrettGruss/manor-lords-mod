@@ -16,4 +16,4 @@
 
 ## 4. Archive
 
-- [ ] 4.1 Archive as the last commit: `openspec archive update-raid-menu-style --yes`.
+- [x] 4.1 Archive as the last commit: `openspec archive update-raid-menu-style --yes`.
