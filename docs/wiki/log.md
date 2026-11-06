@@ -1,9 +1,9 @@
 # Wiki update log
 
-## 2026-11-01
 ## 2026-11-06
 * **Update**: [Engine limits](concepts/engine-limits.md) says how removed families no longer leave bodies or a body count (change `fix-removed-families-bodies`, #580).
 
+## 2026-11-01
 * **Update**: [Engine limits found by spikes](concepts/engine-limits.md) adds how to read the rich deposits of a region through the node decal (change `spike-region-rich-resources`, #546).
 
 ## 2026-10-28
