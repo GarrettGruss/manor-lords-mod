@@ -62,7 +62,29 @@ local function read_reward(raw, tier, position, lists)
     return reward
 end
 
-local function read_tier(raw, tier, offer_per_tier, lists)
+-- The groups of interchangeable goods (change update-contract-interchangeable-goods). Returns a list of { goods, label } and a map good -> group.
+local function read_groups(raw)
+    local list, group_of = {}, {}
+    if raw == nil then return list, group_of end
+    if type(raw) ~= "table" then fail("field 'groups' must be a list") end
+    for position, entry in ipairs(raw) do
+        local where = "group " .. position
+        if type(entry) ~= "table" or type(entry.goods) ~= "table" or #entry.goods < 2 then fail(where .. " needs the field 'goods' with at least 2 good ids") end
+        if entry.label ~= nil and (type(entry.label) ~= "string" or entry.label == "") then fail(where .. " field 'label' must be text") end
+        local group = { goods = {}, label = entry.label }
+        for index, good in ipairs(entry.goods) do
+            whole(good, where .. " goods entry " .. index, 0)
+            good = math.tointeger(good) or good
+            if group_of[good] then fail(string.format("good %d is in two groups (group %d)", good, position)) end
+            group_of[good] = group
+            group.goods[#group.goods + 1] = good
+        end
+        list[#list + 1] = group
+    end
+    return list, group_of
+end
+
+local function read_tier(raw, tier, offer_per_tier, lists, group_of)
     if type(raw) ~= "table" then fail("tier '" .. tier .. "' is missing") end
     if type(raw.requests) ~= "table" or #raw.requests < offer_per_tier then
         fail(string.format("tier '%s' has %d requests, but offer_per_tier is %d", tier, type(raw.requests) == "table" and #raw.requests or 0, offer_per_tier))
@@ -74,6 +96,11 @@ local function read_tier(raw, tier, offer_per_tier, lists)
         local key = request.cost or request.good
         if seen[key] then fail(string.format("tier '%s' lists '%s' twice", tier, tostring(key))) end
         seen[key] = true
+        local group = request.good and group_of[request.good]
+        if group then
+            if seen[group] then fail(string.format("tier '%s' lists two requests of the same group (good %d)", tier, request.good)) end
+            seen[group] = true
+        end
         requests[#requests + 1] = request
     end
     local rewards = {}
@@ -81,7 +108,7 @@ local function read_tier(raw, tier, offer_per_tier, lists)
     return { requests = requests, rewards = rewards }
 end
 
--- Build the table from a decoded document. Returns { version, offer_per_tier, tiers, names }.
+-- Build the table from a decoded document. Returns { version, offer_per_tier, tiers, names, groups, group_of }.
 function M.build(doc)
     if type(doc) ~= "table" then fail("the document must be a table") end
     if doc.version ~= 3 then fail("field 'version' must be 3, got " .. tostring(doc.version)) end
@@ -98,14 +125,15 @@ function M.build(doc)
             lists[name][#lists[name] + 1] = math.tointeger(good) or good
         end
     end
+    local groups, group_of = read_groups(doc.groups)
     local tiers = {}
-    for _, tier in ipairs(M.TIERS) do tiers[tier] = read_tier(doc.tiers[tier], tier, per_tier, lists) end
+    for _, tier in ipairs(M.TIERS) do tiers[tier] = read_tier(doc.tiers[tier], tier, per_tier, lists, group_of) end
     local names = {}
     for key, name in pairs(doc.names or {}) do
         if type(name) ~= "string" or name == "" then fail("name of good " .. tostring(key) .. " must be text") end
         names[tonumber(key) or key] = name
     end
-    return { version = doc.version, offer_per_tier = per_tier, tiers = tiers, names = names }
+    return { version = doc.version, offer_per_tier = per_tier, tiers = tiers, names = names, groups = groups, group_of = group_of }
 end
 
 -- Read and build a table from a file. `decode` is HarnessJson.decode.

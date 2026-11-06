@@ -45,14 +45,50 @@ local loan_failed = {} -- the loan records whose return failed (logged once each
 -- State access
 ---------------------------------------------------------------------------------------------
 
--- A saved contract is known when the table still has its request good (or its cost).
+-- A saved contract is known when the table still has its request good (or its cost), or a request for a good of the same group
+-- (a saved contract for mushrooms counts as berries and mushrooms; change update-contract-interchangeable-goods).
 local function is_known(contract)
     local pool = contracts.tiers[contract.tier]
     if pool == nil then return false end
+    local group = contract.good and contracts.group_of[contract.good]
     for _, request in ipairs(pool.requests) do
         if request.good == contract.good and request.cost == contract.cost then return true end
+        if group and request.good and contracts.group_of[request.good] == group then return true end
     end
     return false
+end
+
+-- The stock of the goods that a contract accepts, added up. nil when no stock is known.
+local function stock_of(contract)
+    local total
+    for _, good in ipairs(rules.accepted_goods(contract.good, contracts.group_of)) do
+        local stock = world.stock(good)
+        if stock ~= nil then total = (total or 0) + stock end
+    end
+    return total
+end
+
+-- Take the amount of a goods contract from the stores, the larger stock first. Returns true, or nil and a reason. A short take puts
+-- every taken unit back.
+local function take_contract_goods(contract)
+    local goods = rules.accepted_goods(contract.good, contracts.group_of)
+    local plan, missing = rules.take_plan(goods, function(good) return world.stock(good) end, contract.amount)
+    if plan == nil then return nil, string.format("%d more needed", missing) end
+    local taken, problem = {}, nil
+    for _, step in ipairs(plan) do
+        local got, why = world.take_goods(step.good, step.count)
+        if got ~= nil and got > 0 then taken[#taken + 1] = { good = step.good, count = got } end
+        if got == nil or got < step.count then
+            problem = string.format("only %d of %d units of goods %d could be taken from the stores (the goods lie %s)%s", got or 0, step.count, step.good,
+                world.holders(step.good), why and (": " .. tostring(why)) or "")
+            break
+        end
+    end
+    if problem then
+        for _, row in ipairs(taken) do world.add_goods(row.good, row.count) end -- put the units back
+        return nil, problem
+    end
+    return true
 end
 
 local function offer()
@@ -121,7 +157,7 @@ end
 
 local function make_offer()
     local setup = { tiers = contracts.tiers, base = config.base, weight = config.weight, difficulty = difficulty(), allowed = reward_allowed,
-                    cost_allowed = cost_allowed }
+                    cost_allowed = cost_allowed, group_of = contracts.group_of }
     local list, why = rules.draw_offer(setup, contracts.offer_per_tier, math.random)
     if list == nil then return nil, why end
     -- Saved before any log line, with the fulfilled counts set to 0.
@@ -305,7 +341,7 @@ local function refusal_for(contract, fresh_manor)
         local _, problem = cost_facts(contract)
         facts.cost_problem = problem
     else
-        facts.stock = world.stock(contract.good)
+        facts.stock = stock_of(contract)
     end
     return rules.refusal(contract, facts)
 end
@@ -326,12 +362,9 @@ local function fulfil(id)
             return nil, tostring(problem)
         end
     else
-        local got, problem = world.take_goods(contract.good, contract.amount)
-        if got == nil or got < contract.amount then
-            if got ~= nil and got > 0 then world.add_goods(contract.good, got) end -- put the units back
-            local reason = string.format("only %d of %d units of goods %d could be taken from the stores (the goods lie %s)%s", got or 0, contract.amount, contract.good,
-                world.holders(contract.good), problem and (": " .. tostring(problem)) or "")
-            core.log.warn(TAG, "LIEGE_CONTRACTS fulfil refused: " .. reason)
+        local taken, reason = take_contract_goods(contract)
+        if not taken then
+            core.log.warn(TAG, "LIEGE_CONTRACTS fulfil refused: " .. tostring(reason))
             return nil, reason
         end
     end
@@ -417,14 +450,14 @@ local function card_of(contract, manor)
         short = problem ~= nil
         have = view.cost_have_text(contract.cost, held)
     else
-        stock = world.stock(contract.good)
+        stock = stock_of(contract)
         facts.stock = stock
         short = (stock or 0) < contract.amount
         have = view.have_text(stock, contract.amount)
     end
     local reason = rules.refusal(contract, facts)
     return { id = contract.id, tier = contract.tier, number = contract.number, good = contract.good, cost = contract.cost, amount = contract.amount, done = contract.done,
-             requirement = view.requirement_text(contract, contracts.names, loan_days()), have = have, stock = stock, held = held, short = short,
+             requirement = view.requirement_text(contract, contracts.names, loan_days(), contracts.group_of), have = have, stock = stock, held = held, short = short,
              reward_text = view.reward_text(contract.reward, contracts.names), reward = contract.reward,
              enabled = reason == nil, reason = reason, label = contract.done and "Fulfilled" or "Fulfil" }
 end

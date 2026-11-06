@@ -19,10 +19,21 @@ function M.cost_text(cost, amount, loan_days)
     return string.format("%d of %s", amount, tostring(cost))
 end
 
--- "Deliver 40 firewood" for a Small or Medium contract, "Cost: 3 families, for good" for a Large contract.
-function M.requirement_text(contract, names, loan_days)
+-- The name of what a contract asks for: the label of its group ("berries or mushrooms"), the names of the group joined with " or ",
+-- or the name of the good. `group_of` (good -> group) may be nil.
+function M.goods_label(good, names, group_of)
+    local group = group_of and group_of[good]
+    if group == nil then return good_name(names, good) end
+    if group.label then return group.label end
+    local parts = {}
+    for _, member in ipairs(group.goods) do parts[#parts + 1] = good_name(names, member) end
+    return table.concat(parts, " or ")
+end
+
+-- "Deliver 40 firewood" for a Small or Medium contract, "Deliver 40 berries or mushrooms" for a group, "Cost: 3 families, for good" for a Large contract.
+function M.requirement_text(contract, names, loan_days, group_of)
     if contract.cost then return "Cost: " .. M.cost_text(contract.cost, contract.amount, loan_days) end
-    return string.format("Deliver %d %s", contract.amount, good_name(names, contract.good))
+    return string.format("Deliver %d %s", contract.amount, M.goods_label(contract.good, names, group_of))
 end
 
 -- "In storage: 52 / 50"
