@@ -35,13 +35,13 @@ This file adds only what is specific to agents: replies, subagents, permissions 
 
 - Commits are approved (2026-10-18). Commit each logical change on its branch when it is done. Do not commit to `main`, except the small project-rule changes that CONTRIBUTING.md allows there.
 - Pull requests and merges (2026-10-23; this replaces the merge rules of 2026-10-17, 2026-10-18 and 2026-10-20):
-  - Agents use the GitHub account `garrettgruss-bot`. It is the active `gh` account. Every pull request an agent opens is opened by the bot.
+  - Agents use the owner's GitHub account `GarrettGruss` (owner decision 2026-11-06: the bot account `garrettgruss-bot` is suspended). It is the active `gh` account. Every pull request an agent opens is opened from this account.
   - The ruleset on `main` requires no approval (owner decision 2026-10-23). Auto-merge is the only merge path.
   - After you open a pull request, turn on auto-merge: `gh pr merge <n> --auto --merge`. GitHub merges it as soon as it can, without owner review.
   - Push every commit of a pull request before you open it. A commit pushed after the merge needs a new follow-up pull request.
   - If GitHub refuses auto-merge because the pull request is already mergeable, tell the owner. Do not merge by hand.
   - This applies to every pull request, with or without a gate.
-  - Never approve or review a pull request. Never merge by hand. Never use an admin bypass. Never switch `gh` to the owner's account to act on a pull request.
+  - Never approve or review a pull request. Never merge by hand. Never use an admin bypass. Never switch `gh` to another account.
   - Approved users: garrett.g.gruss@gmail.com.
   - Do not start the implementation of a change before its spec pull request is merged.
   - Do not push in any other case unless the user asks.
