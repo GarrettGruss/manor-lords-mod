@@ -352,7 +352,7 @@ return {
         winter_season = 0,
         tier_limits = { small = 1, medium = 1, large = 1 }, -- contracts the player may fulfil in each tier in one year
         base = { small = 50, medium = 30 },                 -- request amount = max(1, round(base * weight * difficulty)); a Large cost has its own amount in the data file
-        weight = {},          -- optional override of the weight of a good by item id; the default weights are in contracts.json
+        weight = { [220] = 0.4 }, -- eggs: 20 at medium difficulty (owner, 2026-11-06). Optional override of the weight of a good by item id; the default weights are in contracts.json
         -- Difficulty by the yearly raid level of the scenario settings: 0 (off), 1 (easy), 2 (medium), 3 (hard). Open question of the owner.
         difficulty = { [0] = 1.0, [1] = 0.75, [2] = 1.0, [3] = 1.25 },
         -- Day of the calendar year (TemporalComponent.day) on which a season starts, for the countdowns of the window (notes/season-days.md).

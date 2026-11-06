@@ -3,6 +3,8 @@
 Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
+### Tuned
+- **liege_contracts:** a Small contract asks for 20 eggs, not 60 (15 on easy, 25 on hard).
 ### Added
 - **laws_menu (add-laws-menu):** a Laws menu in the bottom bar. You enact and revoke laws there, with a confirmation. You get 1 enact and 1 revoke for each game year (they come back at the start of spring). 1 law slot at the start, 5 at most. The tech window only unlocks now. Contracts will unlock laws and add slots.
 ### Changed
