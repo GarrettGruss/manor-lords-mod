@@ -37,19 +37,116 @@ function M.manor_built()
     return nil, "no manor is built"
 end
 
--- Raise the regional wealth of the player region (change update-liege-contracts-tiers, spike notes/regional-wealth.md).
--- Returns true, or nil and a message. The value is read back; a value that did not rise is a failure.
-function M.add_regional_wealth(amount)
-    local region, problem = core.player_region()
-    if region == nil then return nil, problem end
-    local before = read(function() return region.regionalWealth end)
-    local ok, why = pcall(function() region:addRegionalWealth(amount) end)
-    if not ok then return nil, "addRegionalWealth: " .. tostring(why) end
-    local after = read(function() return region.regionalWealth end)
+-- Raise King's Favour of the player (change update-liege-contracts-tier-goods, spike notes/kings-favour.md: changeKingsFavour on the
+-- player pawn raised kingsFavour from 0 to 10 and the value held). Returns true, or nil and a message. The value is read back.
+function M.add_kings_favour(amount)
+    local engine = FindFirstOf("RTSMultiEngineCPP")
+    if not isValid(engine) then return nil, "no RTSMultiEngineCPP" end
+    local player = read(function() return engine.playerRef end)
+    if not isValid(player) then return nil, "no player pawn" end
+    local before = read(function() return player.kingsFavour end)
+    local ok, why = pcall(function() player:changeKingsFavour(amount) end)
+    if not ok then return nil, "changeKingsFavour: " .. tostring(why) end
+    local after = read(function() return player.kingsFavour end)
     if type(before) == "number" and type(after) == "number" and after < before + amount then
-        return nil, string.format("the regional wealth went from %s to %s, not up by %d", tostring(before), tostring(after), amount)
+        return nil, string.format("King's Favour went from %s to %s, not up by %d", tostring(before), tostring(after), amount)
     end
     return true
+end
+
+-- The King's Favour of the player, or nil.
+function M.kings_favour()
+    local engine = FindFirstOf("RTSMultiEngineCPP")
+    if not isValid(engine) then return nil end
+    local value = read(function() return engine.playerRef.kingsFavour end)
+    return type(value) == "number" and value or nil
+end
+
+---------------------------------------------------------------------------------------------
+-- Large costs
+---------------------------------------------------------------------------------------------
+
+-- The number of families of the player region, or nil.
+function M.family_count()
+    local region = core.player_region()
+    if region == nil then return nil end
+    local count = read(function() return region.workerFamilies:GetArrayNum() end)
+    return type(count) == "number" and math.floor(count) or nil
+end
+
+-- Remove `count` families for good (ManorCore.remove_families: the members die, no body stays; spike notes/send-families.md).
+-- Returns the number of families removed, or nil and a message.
+function M.remove_families(count)
+    local region, problem = core.player_region()
+    if region == nil then return nil, problem end
+    local families = core.remove_families(region, count)
+    return families
+end
+
+local function player_pawn()
+    local engine = FindFirstOf("RTSMultiEngineCPP")
+    if not isValid(engine) then return nil, nil end
+    local player = read(function() return engine.playerRef end)
+    if not isValid(player) then return nil, engine end
+    return player, engine
+end
+
+-- The squads of the player with their living men and the mean experience: a list of { id, men, experience }. One pass over all units.
+function M.player_squads()
+    local player = player_pawn()
+    if player == nil then return nil, "no player pawn" end
+    local wanted = {}
+    for _, handle in ipairs(listOf(read(function() return player.commandedSquads end))) do
+        local id = read(function() return handle.Value end)
+        if type(id) == "number" then wanted[id] = { id = id, men = 0, xp_sum = 0 } end
+    end
+    for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+        if isValid(unit) then
+            local id = read(function() return unit.assignedSquadID.Value end)
+            local row = id ~= nil and wanted[id] or nil
+            if row ~= nil and read(function() return unit.dead end) ~= true then
+                row.men = row.men + 1
+                row.xp_sum = row.xp_sum + (read(function() return unit.combatExperience end) or 0)
+            end
+        end
+    end
+    local list = {}
+    for _, row in pairs(wanted) do
+        list[#list + 1] = { id = row.id, men = row.men, experience = row.men > 0 and math.floor(row.xp_sum / row.men + 0.5) or 0 }
+    end
+    table.sort(list, function(a, b) return a.id < b.id end)
+    return list
+end
+
+-- The template that the game helper registry knows for a squad (a squad that a script spawned), or nil. The units do not tell it.
+function M.known_template(id)
+    local ok, battle = pcall(require, "HarnessBattle")
+    if not ok or type(battle.template_of) ~= "function" then return nil end
+    return battle.template_of(id)
+end
+
+-- Remove a squad of the player (spike spike-loan-units: no bodies, no crash). Returns true, or nil and a message.
+function M.remove_squad(id)
+    local player = player_pawn()
+    if player == nil then return nil, "no player pawn" end
+    local ok, why = pcall(function() player:addRemoveSquadRequest({ Value = id }) end)
+    if not ok then return nil, "addRemoveSquadRequest: " .. tostring(why) end
+    return true
+end
+
+-- A squad of `template` beside the player pawn, with the given mean experience. Returns the squad id, or nil and a message.
+function M.spawn_squad(template, experience)
+    local player = player_pawn()
+    if player == nil then return nil, "no player pawn" end
+    local ok, battle = pcall(require, "HarnessBattle")
+    if not ok then return nil, "HarnessBattle is not available: " .. tostring(battle) end
+    local at = read(function() return player:K2_GetActorLocation() end)
+    if at == nil then return nil, "no player position" end
+    local spawned, why = battle.spawn_at("player", template, 1, { x = at.X, y = at.Y, z = at.Z })
+    if not spawned then return nil, tostring(why) end
+    local id = spawned.squads[1] and spawned.squads[1].id
+    if id ~= nil and (experience or 0) > 0 then pcall(battle.set_squad_experience, { squad = id, value = experience }) end
+    return id
 end
 
 local function built_buildings(region)

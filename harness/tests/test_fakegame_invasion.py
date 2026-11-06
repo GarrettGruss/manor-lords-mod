@@ -409,6 +409,38 @@ class GreatRaidTests(InvasionTestCase):
     def test_difficulty_3_has_3_waves_and_no_relief(self):
         self.check_difficulty(3, 0)
 
+    def promise(self, squads):
+        """A liege contract of the reward relief_promise (change update-liege-contracts-tier-goods) raises the saved bonus."""
+        self.game.exec(f'require("features.invasion.init").add_relief_bonus({squads})')
+
+    def bonus(self):
+        return self.game.exec('return require("features.invasion.init").relief_bonus()')
+
+    def test_a_relief_promise_adds_squads_to_the_relief_army_and_is_used_once(self):
+        self.promise(5)
+        self.check_difficulty(1, 20)  # 15 + 5
+        self.assertEqual(self.bonus(), 0)
+
+    def test_a_relief_promise_counts_when_the_base_is_0(self):
+        self.promise(5)
+        self.check_difficulty(3, 5)  # 0 + 5
+        self.assertEqual(self.bonus(), 0)
+
+    def test_the_promise_stays_until_the_relief_army_comes(self):
+        self.promise(5)
+        self.start_great_raid(1)
+        self.assertEqual(self.bonus(), 5)  # wave 1 is not the relief army
+
+    def test_promises_add_up(self):
+        self.promise(5)
+        self.promise(5)
+        self.check_difficulty(2, 18)  # 8 + 10
+
+    def test_the_promise_is_saved_and_restored(self):
+        self.promise(5)
+        self.game.exec('require("features.invasion.init").state:load()')
+        self.assertEqual(self.bonus(), 5)
+
     def test_the_final_army_is_not_scaled_by_difficulty(self):
         self.start_great_raid(3)
         self.run_to_final()

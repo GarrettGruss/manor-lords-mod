@@ -17,6 +17,7 @@ local state = ModState.open("invasion", "pawn", STATE_VERSION)
 state:register("tribute_last_month", -1, "integer") -- TemporalComponent.month of the last poll
 state:register("tribute_ticks", 0, "integer")
 state:register("tribute_paid_total", 0, "integer")
+state:register("tribute_skip_months", 0, "integer") -- months with no tribute (a liege contract of the cost tribute_season; change update-liege-contracts-tier-goods)
 
 local share_factor = 1     -- set by the tech tree laws (M12.04)
 local history = {}          -- results of the ticks of this session
@@ -114,6 +115,15 @@ end
 local function run_tick()
     local day = current_day()
     local result = { day = day, payments = {} }
+    local skip = state:get("tribute_skip_months")
+    if skip > 0 then
+        -- Saved before the log: the tribute of this month goes to the liege.
+        state:set("tribute_skip_months", skip - 1)
+        result.total, result.skipped = 0, true
+        history[#history + 1] = result
+        core.log.info(TAG, string.format("TRIBUTE tick day=%s skipped for the liege, %d months left", tostring(day), skip - 1))
+        return result
+    end
     for _, row in ipairs(vassals.slot_rows()) do
         if row and row.lord ~= "none" and not row.rebuilding then result.payments[#result.payments + 1] = pay_vassal(row) end
     end
@@ -193,7 +203,7 @@ end
 
 local function command_state()
     return { day = current_day(), season = current_season(), month = current_month(), last_month = state:get("tribute_last_month"),
-        ticks = state:get("tribute_ticks"), paid_total = state:get("tribute_paid_total"), failed_deposits = failed_deposits,
+        ticks = state:get("tribute_ticks"), paid_total = state:get("tribute_paid_total"), skip_months = state:get("tribute_skip_months"), failed_deposits = failed_deposits,
         history = history, stock = stock(),
         siege = siege_resolved }
 end
@@ -219,6 +229,23 @@ local function amount_for(policy_factor)
     return rules.amount(config.base, policy_factor * share_factor)
 end
 
+-- A liege contract gives the tribute of the next `months` months to the liege (they add up). Returns the months that are skipped now.
+local function skip_months(months)
+    local total = state:get("tribute_skip_months") + months
+    state:set("tribute_skip_months", total)
+    core.log.info(TAG, string.format("TRIBUTE the next %d months go to the liege", total))
+    return total
+end
+
+-- The number of vassals that pay tribute now (handed over, not rebuilding), as the tick counts them.
+local function paying_vassals()
+    local count = 0
+    for _, row in ipairs(vassals.slot_rows()) do
+        if row and row.lord ~= "none" and not row.rebuilding then count = count + 1 end
+    end
+    return count
+end
+
 core.log.info(TAG, "feature tribute loaded")
-return { state = state, run_tick = run_tick, on_raid_end = on_raid_end, set_share_factor = function(value) share_factor = value end,
+return { state = state, run_tick = run_tick, skip_months = skip_months, paying_vassals = paying_vassals, on_raid_end = on_raid_end, set_share_factor = function(value) share_factor = value end,
          paid_goods = paid_goods, amount_for = amount_for }

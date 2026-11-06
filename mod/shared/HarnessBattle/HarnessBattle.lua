@@ -235,6 +235,12 @@ function M.clear_battle(request)
     return { ok = true, killed = killed, squads_forgotten = forgotten }
 end
 
+-- The template of a squad that this module spawned, or nil (the units do not tell their template; liege contract loans use this).
+function M.template_of(id)
+    local info = registry[id]
+    return info and info.template or nil
+end
+
 -- Write combatExperience on the living units of one registered squad. Reads the value back from each unit.
 function M.set_squad_experience(request)
     local id, value = request.squad, request.value

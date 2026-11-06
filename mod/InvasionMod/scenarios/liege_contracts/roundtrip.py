@@ -1,4 +1,4 @@
-"""update-liege-tribute-to-contracts: the contract state survives a harness save and a load.
+"""update-liege-tribute-to-contracts (offer updated by update-liege-contracts-tier-goods): the contract state survives a harness save and a load.
 
 Two runs make one round trip, because a run cannot load a save by itself:
   1. phase write (default): offer nine, fulfil one, save with save_game(keep=True).
@@ -21,7 +21,7 @@ def contracts(ctx) -> dict:
     return ctx.mod.command(PREFIX + "liege_contracts_state")
 
 
-OFFER = "s-17-50-g-146-30-0.s-171-70-r-0-60-0.s-145-30-g-17-25-0.m-283-30-s-0-200-0.m-35-24-w-177-15-0.m-6-15-g-35-20-0.l-273-9-t-0-1-0.l-293-5-i-0-1000-0.l-320-18-t-0-1-0"
+OFFER = "s-17-50-g-146-30-0.s-171-70-g-145-25-0.s-32-30-g-27-20-0.m-320-24-g-6-15-0.m-323-20-g-28-20-0.m-172-36-g-149-10-0.l-2-3-k-0-10-0.l-1-1-l-0-1-0.l-3-3-p-0-5-0"
 
 
 def write_phase(ctx) -> dict:

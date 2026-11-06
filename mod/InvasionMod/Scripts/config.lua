@@ -351,13 +351,20 @@ return {
         spring_season = 1,    -- TemporalComponent.Season values (notes/season-values.md): winter 0, spring 1, summer 2, autumn 3
         winter_season = 0,
         tier_limits = { small = 1, medium = 1, large = 1 }, -- contracts the player may fulfil in each tier in one year
-        base = { small = 50, medium = 30, large = 15 },     -- request amount = max(1, round(base * weight * difficulty))
+        base = { small = 50, medium = 30 },                 -- request amount = max(1, round(base * weight * difficulty)); a Large cost has its own amount in the data file
         weight = {},          -- optional override of the weight of a good by item id; the default weights are in contracts.json
         -- Difficulty by the yearly raid level of the scenario settings: 0 (off), 1 (easy), 2 (medium), 3 (hard). Open question of the owner.
         difficulty = { [0] = 1.0, [1] = 0.75, [2] = 1.0, [3] = 1.25 },
         -- Day of the calendar year (TemporalComponent.day) on which a season starts, for the countdowns of the window (notes/season-days.md).
         year_days = 365, spring_start_day = 60, winter_start_day = 335,
         manor_recheck_s = 2,  -- real seconds between two looks for a built manor while the window is open
+        -- Change update-liege-contracts-tier-goods (#569, owner amounts of 2026-11-05).
+        loan_enabled = true,  -- the cost loan_units is drawn (a squad can be removed and respawned, spike spike-loan-units)
+        loan_days = 60,       -- game days that a loaned squad is away (does not scale with the difficulty)
+        -- A squad whose template is not known to the game helper registry gets the template of the smallest size here that is at least its men
+        -- (the sizes were measured in spike-loan-units: spearMilitia 32 men, retinue_tier1 36 men). A bigger squad cannot be loaned.
+        loan_templates = { { men = 32, template = "spearMilitia" }, { men = 36, template = "retinue_tier1" } },
+        min_families_left = 1, -- send_families leaves at least this many families
     },
     -- laws_menu (change add-laws-menu, #563): the Laws menu, and the yearly enact and revoke actions (owner, 2026-11-04).
     -- The actions refresh at the start of spring, with the same clock as the tech picks (tech_tree.spring_season).
