@@ -13,6 +13,13 @@ The mod SHALL read all contracts from the data file `mod/InvasionMod/data/liege_
 - **AND** the table has no `duration` and no penalty field
 - Checked by `harness/tests/test_fakegame_liege_contracts.py`.
 
+#### Scenario: The starter table loads
+- **WHEN** the feature loads the starter table
+- **THEN** each tier has at least `offer_per_tier` requests and at least one reward, and every good id is known (an id of `DT_Items`)
+- **AND** Small requests are only the renewable goods and Medium requests are only the processed goods of table 1 in `design.md`
+- **AND** every good of a group has a name
+- Checked by `harness/tests/test_fakegame_liege_contracts.py`.
+
 #### Scenario: A bad table stops the load
 - **WHEN** the table has an unknown kind, a missing field, a weight of 0 or less, fewer requests in a tier than `offer_per_tier`, a group with fewer than 2 goods, a good in two groups, or two requests of one tier in the same group
 - **THEN** the load fails and the message names the tier or group and the field
