@@ -1,5 +1,5 @@
 ## ADDED Requirements
-<!-- Issue: #583 -->
+<!-- Issue: #586 -->
 
 ### Requirement: The feature gives a read-only revolt status
 The feature SHALL give the order tooltip a read-only status of the next revolt: `days` (days to the revolt, or to the next try after a blocked revolt) and `blocked` (a text or nil). The status SHALL be nil when no banditry timer runs. The status SHALL change no state, start no timer, make no Outlaws pawn and send no event. `blocked` SHALL be set when the number of valid armed families is below `leavers_for` (and `leavers_for` is above 0), or when the Outlaws pawn does not exist. The count of valid armed families SHALL be cached for `armed_cache_seconds` (default 3) real seconds.

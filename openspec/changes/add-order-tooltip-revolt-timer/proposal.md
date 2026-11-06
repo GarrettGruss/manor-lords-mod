@@ -1,5 +1,5 @@
 ## Why
-Issue #583. The Public Order tooltip shows why the order has its value, but not what happens when it is low. The game's Approval tooltip shows a timer. The player of the mod sees no sign that peasants will revolt, or when, or why a revolt did not happen. The row `Left for banditry` also says that peasants leave, but they revolt.
+Issue #586. The Public Order tooltip shows why the order has its value, but not what happens when it is low. The game's Approval tooltip shows a timer. The player of the mod sees no sign that peasants will revolt, or when, or why a revolt did not happen. The row `Left for banditry` also says that peasants leave, but they revolt.
 
 ## What changes
 - Rename the row `Left for banditry` to `Peasants revolted` (tooltip text only; banners and logs keep their text).

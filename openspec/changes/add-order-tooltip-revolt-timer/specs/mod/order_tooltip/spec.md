@@ -1,5 +1,5 @@
 ## MODIFIED Requirements
-<!-- Issue: #583 -->
+<!-- Issue: #586 -->
 
 ### Requirement: The Public Order tooltip lists the mod order terms
 Each time the player opens the Public Order tooltip, the mod SHALL add one row for each term of the last order tick of the mod order: `Manor +<n>` (green, only when the manor term is not 0), `Homeless families -<n>` (red, only when the term is above 0) and, from a revolt until the next tick, `Peasants revolted +<n>` (green). The values SHALL be the values of the last tick and of the last revolt, in order points. A row with a positive value SHALL show a green up arrow, and a row with a negative value SHALL show a red down arrow.
