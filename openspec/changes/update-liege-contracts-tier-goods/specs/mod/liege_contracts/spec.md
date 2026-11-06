@@ -100,22 +100,28 @@ The command `InvasionMod.liege_contract_fulfil` (argument: the contract id, for 
 ## ADDED Requirements
 
 ### Requirement: Large contracts ask for a cost
-A Large contract SHALL hold one cost in place of goods. The kinds are `loan_units`, `loan_peasants`, `send_families`, `tribute_season` and `herd`, (table 2 in `design.md`). A cost SHALL be taken only at fulfilment. A cost kind with no safe method SHALL NOT be in the table. The loan kinds need `liege_contracts.loan_enabled` (set from the spike `spike-loan-units`; if loaning is impossible, the units are lost).
+A Large contract SHALL hold one cost in place of goods: `loan_units` (default 1 squad for 60 game days), `send_families` (default 3 families, for good) or `tribute_season` (default 3 months of vassal tribute), as in table 2 of `design.md`. The amount SHALL scale with the difficulty. A cost SHALL be taken only at fulfilment. A cost kind with no safe method SHALL NOT be in the table (not the herd, not the peasant loan).
 
 #### Scenario: A cost is taken
-- **WHEN** the player fulfils a Large contract with the cost `herd` (10 sheep) and the player region holds at least 10 sheep
-- **THEN** the sheep count falls by 10 and the reward is paid
+- **WHEN** the player fulfils a Large contract with the cost `send_families` (3 families) and the player region holds at least 4 families
+- **THEN** the family count falls by 3 and the reward is paid
 - Checked by `mod/InvasionMod/scenarios/liege_contracts/fulfil.py` (after the spike tasks).
 
+#### Scenario: Costs scale and loans are switchable
+- **WHEN** a Large contract is drawn at difficulty 1.25
+- **THEN** its amount is `max(1, round(amount * difficulty))` (3 families become 4) and the loan length stays 60 days
+- **AND** `loan_units` is drawn only while `liege_contracts.loan_enabled` is true
+- Checked by `harness/tests/test_fakegame_liege_contracts.py`.
+
 #### Scenario: A cost that cannot be paid
-- **WHEN** the player region holds fewer families, animals or units than the cost needs
+- **WHEN** the player region holds fewer families (one family must stay), squads or vassals than the cost needs
 - **THEN** the call is refused with the missing amount and nothing is taken or paid
 - Checked by `harness/tests/test_fakegame_liege_contracts.py`.
 
 #### Scenario: A loan ends
-- **WHEN** a loan contract is fulfilled and the loan length passed (and loaning is possible)
-- **THEN** the loaned units or peasants return to the player, and the end is kept in mod state across a save and load
-- **AND** when loaning is not possible the units or peasants are lost at fulfilment and the card text says "lost"
+- **WHEN** a `loan_units` contract is fulfilled and 60 game days pass
+- **THEN** a squad of the same template returns to the player (equal, not the same men), and the loan record is kept in mod state across a save and load
+- **AND** a squad whose type is not known is refused with a reason, and nothing is taken
 - Checked by `harness/tests/test_fakegame_liege_contracts.py` (after the result of `spike-loan-units`).
 
 #### Scenario: The card shows the cost
@@ -124,7 +130,7 @@ A Large contract SHALL hold one cost in place of goods. The kinds are `loan_unit
 - Checked by `mod/InvasionMod/scenarios/liege_contracts/window.py`, picture evidence.
 
 ### Requirement: Law rewards follow the Laws menu rules
-A `law` reward SHALL unlock one random law that is not unlocked yet, through `laws_unlock(id, source)` of `add-laws-menu`, and SHALL NOT be drawn when no law is locked. The law SHALL work whatever the tech path (owner decision 2026-11-04). Law slots start at 1 and are at most 5 in total. A `law_slot` reward SHALL NOT be drawn at 5 slots; if fulfilled at 5 slots it pays `kings_favour` instead (a lead proposal). The mod SHALL keep no law state of its own.
+A `law` reward SHALL unlock one random law that is not unlocked yet, through `laws_unlock(id, source)` of `add-laws-menu`, and SHALL NOT be drawn when no law is locked. The law SHALL work whatever the tech path (owner decision 2026-11-04). Law slots start at 1 and are at most 5 in total. A `law_slot` reward SHALL NOT be drawn at 5 slots; if fulfilled at 5 slots it pays `kings_favour` instead (owner decision 2026-11-05). The mod SHALL keep no law state of its own.
 
 #### Scenario: A law reward
 - **WHEN** a Large contract with the reward `law` is fulfilled and 3 laws are locked
@@ -148,7 +154,7 @@ A `law` reward SHALL unlock one random law that is not unlocked yet, through `la
 - Checked by `harness/tests/test_fakegame_liege_contracts.py`.
 
 ### Requirement: King's Favour and relief promise rewards
-A `kings_favour` reward SHALL raise `kingsFavour` of the player pawn by the amount (default 10). If the write is not proven by the spike, the reward SHALL NOT be in the table. A `relief_promise` reward SHALL raise the mod state value `relief_bonus_squads` (default +5 squads). The great raid SHALL add `relief_bonus_squads` to the squads of the relief army when it spawns, and SHALL reset the value to 0 after that. The value SHALL be saved and restored after a load.
+A `kings_favour` reward SHALL raise `kingsFavour` of the player pawn by the amount (default 10), through `changeKingsFavour` (spike 1.1). A `relief_promise` reward SHALL raise the mod state value `relief_bonus_squads` (default +5 squads). The great raid SHALL add `relief_bonus_squads` to the squads of the relief army when it spawns, and SHALL reset the value to 0 after that. The value SHALL be saved and restored after a load.
 
 #### Scenario: King's Favour is paid
 - **WHEN** a contract with the reward `kings_favour` (amount 10) is fulfilled
