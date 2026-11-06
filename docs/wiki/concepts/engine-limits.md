@@ -249,6 +249,15 @@ Desk research on 2026-10-28, no game run. Notes: `openspec/changes/archive/*-ass
 - **JSON depth.** `HarnessJson` reads at most 6 levels; a data file with a list inside an object inside a list inside an object fails to load.
 - **`settleRegion` extras are native.** One call on a settled region adds 5 families, a new tent camp (type 87), 4 buildings, 1 ox and the Modest supply package (+79 goods). No data row drives this: the settlement type argument (1 to 5) and `startingSuppliesMultiplier` change nothing, the goods come from native `getStartingSupplies`, and `buildingStats` row 87 has no capacity or ox field. A pak cannot make a "families only" settle (spike `spike-settle-families-only`, runs `sfo-*`).
 
+## Liege contract costs and rewards (change `update-liege-contracts-tier-goods`, #569)
+
+- **King's Favour write.** `changeKingsFavour(10)` on the player pawn raised `kingsFavour` from 0 to 10 and the value held for a game day (run 20261106-000620-91e6). `getKingsFavour_daysLeft()` counts down (249, 248, 247). What the value does is not known.
+- **Families.** `ManorCore.remove_families(region, 3)` removed 3 of 5 families (9 people) with no crash and no refill in 3 game days (run 20261106-001135-9e7b).
+- **Animals cannot be removed.** `getStockOfGood` counts animals (oxen: 2), but they are not in a building `Inventory`: an ox shed (type 97) lists the actors in `animals`. `consumeGoodNoCheck` takes nothing, and `just_die` on a `VAMP_Ox_C` does nothing (`dead` stays false). `K2_DestroyActor` is on the crash list. So a herd cost is not possible (runs 20261106-001313-77bd, -001542-9c52, -001719-bfb7).
+- **Timber.** Wood (16) is a stored good (23 in the player region, run 20261106-001410-ca20).
+- **Separate Lua states.** The harness mod and the Invasion Mod have separate Lua states: a squad that the mod spawns with `HarnessBattle.spawn_at` is not in the registry of the harness mod (`battle_state` does not list it). Count `commandedSquads` of the player pawn instead.
+- **Command mode names.** A `loan_probe` mode with an underscore in its name was refused ("unknown mode nil").
+
 ## Loan of squads and villagers (spike `spike-loan-units`, #568)
 
 - **Remove a player squad:** `PawnCPP:addRemoveSquadRequest({Value=id})` works on a spawned squad. In 3 game s `commandedSquads` drops, the men leave the unit list, and no bodies stay. (`disbandSquad` and `RequestDisbandSquad` still do nothing.) `just_die` on all men also removes the squad but leaves bodies.
