@@ -74,7 +74,7 @@ function M.family_count()
     return type(count) == "number" and math.floor(count) or nil
 end
 
--- Remove `count` families for good (ManorCore.remove_families: the members die, no body stays; spike notes/send-families.md).
+-- Remove `count` families for good (ManorCore.remove_families: the members die, their bodies are hidden and leave the game's body count; change fix-removed-families-bodies).
 -- Returns the number of families removed, or nil and a message.
 function M.remove_families(count)
     local region, problem = core.player_region()
