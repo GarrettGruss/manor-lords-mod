@@ -389,13 +389,51 @@ function M.remove_families(region, count)
         for _, member in ipairs(listOf(family.familyMembers)) do members[#members + 1] = member end
         removedFamilies = removedFamilies + 1
     end
-    local removedPeople = 0
+    local removedPeople, killed = 0, {}
     for _, member in ipairs(members) do
         if isValid(member) and read(function() return member.dead end) ~= true then
-            if pcall(function() member:just_die() end) then removedPeople = removedPeople + 1 end
+            if pcall(function() member:just_die() end) then
+                removedPeople = removedPeople + 1
+                killed[#killed + 1] = member
+            end
         end
     end
+    M.hide_bodies(region, killed)
     return removedFamilies, removedPeople
+end
+
+-- Hide the bodies of units that just died and take them out of Region.corpses (the game's body count).
+-- Why not destroy: K2_DestroyActor on an SMUnit crashes the game (spike-rebel-without-corpses).
+-- A failed hide is skipped, so one bad body does not stop the others. Returns the number of bodies hidden.
+function M.hide_bodies(region, units)
+    local hidden, names = 0, {}
+    for _, unit in ipairs(units) do
+        if isValid(unit) then
+            if pcall(function() unit:SetActorHiddenInGame(true) end) then hidden = hidden + 1 end
+            local name = read(function() return unit:GetFullName() end)
+            if name then names[name] = true end
+        end
+    end
+    M.uncount_bodies(region, names)
+    return hidden
+end
+
+-- Remove the bodies with these full names from Region.corpses. The other entries stay in order.
+function M.uncount_bodies(region, names)
+    if next(names) == nil then return 0 end
+    local list = read(function() return region.corpses end)
+    if list == nil then return 0 end
+    local keep, dropped = {}, 0
+    for _, body in ipairs(listOf(list)) do
+        local name = isValid(body) and read(function() return body:GetFullName() end) or nil
+        if name and names[name] then dropped = dropped + 1 else keep[#keep + 1] = body end
+    end
+    if dropped == 0 then return 0 end
+    pcall(function()
+        list:Empty()
+        for i, body in ipairs(keep) do list[i] = body end
+    end)
+    return dropped
 end
 
 M.MAX_REBEL_FAMILIES = 6

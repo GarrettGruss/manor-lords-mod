@@ -189,6 +189,7 @@ Fixture `playtest-noai` (AI opponents 0, Off map adversary Absent, Raider freque
 - `K2_DestroyActor` on any `SMUnit` crashes the game: a dead body (also after the list was emptied) within seconds (reading 0xe60), a living villager within seconds to 2 game days (reading 0x938).
 - `Region:removeWorkerFamilyAt(familyID)` deletes only the family record. The people stay alive. Its argument is a family id, not an index.
 - Safe on bodies: `SetActorHiddenInGame(true)` (`bHidden` true) and `Region.corpses:Empty()`. No visual effect was shown in a picture.
+- Fix of 2026-11-06 (change `fix-removed-families-bodies`): `ManorCore.remove_families` hides each new body and rebuilds `Region.corpses` without them (`Empty()`, then write the old entries back by index). Test: `just_die` alone raised the count 6 -> 12 for 6 people; the fix kept it at 6 for 3 game days, and the 6 new bodies were `bHidden`. The game's corpse count is `Region.corpses`; no native corpse-removal call is needed.
 - `SMUnit:turnToSoldierJoinSquad` needs a Squad struct (unsafe to read). No reflected setter for the side of a unit was found.
 - No native emigrate or evict function exists on Region, SMUnit or the pawn. Immigration refills the village about every 3 game days.
 

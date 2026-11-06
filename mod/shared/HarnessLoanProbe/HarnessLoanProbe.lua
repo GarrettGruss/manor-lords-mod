@@ -239,6 +239,37 @@ function M.loan_probe(request)
         local before = read(function() return region.workerFamilies:GetArrayNum() end)
         local families, people = sack.remove_families(region, request.count or 1)
         return { ok = true, before = before, families = families, people = people }
+    elseif mode == "famkillraw" then
+        -- Control for fix-removed-families-bodies: just_die only, no hide and no body-count change (the old behaviour).
+        local region, problem = sack.playerRegion(nil)
+        if not region then return { ok = false, error = problem } end
+        local members, families = familyMembers(region, request.count or 1)
+        local killed = 0
+        for _, member in ipairs(members) do
+            if isValid(member) and pcall(function() member:just_die() end) then killed = killed + 1 end
+        end
+        return { ok = true, families = families, people = killed }
+    elseif mode == "corpses" then
+        -- Change fix-removed-families-bodies: the game's body count (Region.corpses) and how many of those bodies are hidden. Read only.
+        local region, problem = sack.playerRegion(nil)
+        if not region then return { ok = false, error = problem } end
+        local list = read(function() return region.corpses end)
+        local total, hiddenCount = 0, 0
+        for _, body in ipairs(listOf(list)) do
+            if isValid(body) then
+                total = total + 1
+                if read(function() return body.bHidden end) == true then hiddenCount = hiddenCount + 1 end
+            end
+        end
+        local deadUnits, deadHidden = 0, 0
+        for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+            if isValid(unit) and read(function() return unit.dead end) == true then
+                deadUnits = deadUnits + 1
+                if read(function() return unit.bHidden end) == true then deadHidden = deadHidden + 1 end
+            end
+        end
+        return { ok = true, corpses = total, hidden = hiddenCount, list_num = read(function() return list:GetArrayNum() end),
+                 dead_units = deadUnits, dead_hidden = deadHidden }
     elseif mode == "famcount" then
         local region, problem = sack.playerRegion(nil)
         if not region then return { ok = false, error = problem } end
