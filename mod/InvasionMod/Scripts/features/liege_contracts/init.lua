@@ -1,5 +1,7 @@
--- Feature liege_contracts (changes update-liege-tribute-to-contracts, #505, and update-liege-contracts-tiers, #533): each spring the
--- liege offers 9 contracts, 3 for each tier Small, Medium and Large. A contract asks for a delivery of one good and pays one reward.
+-- Feature liege_contracts (changes update-liege-tribute-to-contracts, #505, update-liege-contracts-tiers, #533, and
+-- update-liege-contracts-tier-goods, #569): each spring the liege offers 9 contracts, 3 for each tier Small, Medium and Large.
+-- A Small or Medium contract asks for a delivery of one good, a Large contract asks for a cost (a squad loan, families, tribute).
+-- Each contract pays one reward.
 -- The player fulfils contracts at will, up to a limit for each tier and year, and only with a built manor. The offer ends when
 -- winter begins; there is no penalty. The pools are data (data/liege_contracts/contracts.json); the numbers are in config.
 -- The state is saved with ModState. The liege window is a pak widget (mod/InvasionMod/ue/make_liege_widget.py) on the base menu (core/menu.lua).
@@ -13,6 +15,10 @@ local view = require("features.liege_contracts.view")
 local world = require("features.liege_contracts.world")
 local liege = require("features.liege_influence.init")
 local invasion = require("features.invasion.init")
+local tech_tree = require("features.tech_tree.init")
+-- The Laws menu is loaded after this feature (the menu buttons keep their order), so its entry points are looked up when a reward is paid.
+local function laws() return require("features.laws_menu.init") end
+local tribute = require("features.tribute.init")
 local all_config = require("config")
 local config = all_config.liege_contracts
 local menu_config = all_config.liege_influence
@@ -27,22 +33,24 @@ state:register("contracts_spring_no", -1, "integer") -- season counter of the la
 state:register("contracts_offer", "", "string")      -- the offered contracts in text form (rules.encode_offer)
 state:register("contracts_used", "", "string")       -- contracts fulfilled in each tier, "s-1.m-0.l-0"
 state:register("contracts_done", 0, "integer")
+state:register("contracts_loans", "", "string")      -- squads that are on loan: "<template>-<men>-<experience>-<due day>" (rules.encode_loans)
 
 local table_path = world.data_path(config.data_file)
 local contracts = loader.load_file(table_path, json.decode)
 
-local S = { failed_rewards = 0, fulfils = 0 }
+local S = { failed_rewards = 0, fulfils = 0, loans_started = 0, loans_returned = 0 }
+local loan_failed = {} -- the loan records whose return failed (logged once each)
 
 ---------------------------------------------------------------------------------------------
 -- State access
 ---------------------------------------------------------------------------------------------
 
--- A saved contract is known when the table still has its request good.
+-- A saved contract is known when the table still has its request good (or its cost).
 local function is_known(contract)
     local pool = contracts.tiers[contract.tier]
     if pool == nil then return false end
     for _, request in ipairs(pool.requests) do
-        if request.good == contract.good then return true end
+        if request.good == contract.good and request.cost == contract.cost then return true end
     end
     return false
 end
@@ -66,13 +74,21 @@ end
 
 local function limit_of(tier) return config.tier_limits[tier] or 1 end
 
-local function tech_picks_state_exists()
-    return (pcall(function() return state:get("tech_picks_earned") end))
+local function locked_laws()
+    return rules.locked_laws(tech_tree.tree.laws, tech_tree.unlocked_nodes(), tech_tree.granted_laws())
 end
 
--- The tech point reward is allowed only when the tech tree has its pick state (change update-tech-tree-yearly-picks, #499).
+local function slot_cap_reached() return tech_tree.law_slots() >= all_config.tech_tree.max_total_laws end
+
+-- A reward kind that cannot be paid now is not drawn: no law while all laws are unlocked, no law slot at the cap (owner decision 2026-11-04).
 local function reward_allowed(kind)
-    if kind == "tech_point" then return tech_picks_state_exists() end
+    if kind == "law" then return #locked_laws() > 0 end
+    if kind == "law_slot" then return not slot_cap_reached() end
+    return true
+end
+
+local function cost_allowed(cost)
+    if cost == "loan_units" then return config.loan_enabled == true end
     return true
 end
 
@@ -104,7 +120,8 @@ local function difficulty()
 end
 
 local function make_offer()
-    local setup = { tiers = contracts.tiers, base = config.base, weight = config.weight, difficulty = difficulty(), allowed = reward_allowed }
+    local setup = { tiers = contracts.tiers, base = config.base, weight = config.weight, difficulty = difficulty(), allowed = reward_allowed,
+                    cost_allowed = cost_allowed }
     local list, why = rules.draw_offer(setup, contracts.offer_per_tier, math.random)
     if list == nil then return nil, why end
     -- Saved before any log line, with the fulfilled counts set to 0.
@@ -118,36 +135,179 @@ local function fail_reward(reward, why)
     core.log.warn(TAG, string.format("LIEGE_CONTRACTS reward %s failed: %s", reward.kind, tostring(why)))
 end
 
+-- The King's Favour that a law slot reward pays at the slot cap: the amount of the kings_favour reward of the table (10 if it has none).
+local function kings_favour_default()
+    for _, row in ipairs(contracts.tiers.large.rewards) do
+        if row.kind == "kings_favour" then return row.min end
+    end
+    return 10
+end
+
+local function pay_goods(reward)
+    local ok, why = world.add_goods(reward.good, reward.amount)
+    if not ok then return fail_reward(reward, why) end
+end
+
+local function pay_law(reward, contract)
+    local locked = locked_laws()
+    if #locked == 0 then return fail_reward(reward, "no law is locked") end
+    local law_id = locked[math.random(1, #locked)]
+    local source = string.format("Contract: %s %d", view.TIER_NAMES[contract.tier], contract.number)
+    local unlocked, why = laws().laws_unlock(law_id, source)
+    if not unlocked then return fail_reward(reward, why) end
+    reward.law = law_id
+end
+
+local function pay_law_slot(reward)
+    local added = laws().laws_add_slot()
+    if added == nil then return fail_reward(reward, "laws_add_slot gave no answer") end
+    if added.added then return end
+    -- The cap is reached: King's Favour instead (owner decision 2026-11-05).
+    local amount = kings_favour_default()
+    local ok, why = world.add_kings_favour(amount)
+    if not ok then return fail_reward(reward, why) end
+    reward.fallback = { kind = "kings_favour", amount = amount }
+    core.log.info(TAG, string.format("LIEGE_CONTRACTS law slot cap reached: paid %d King's Favour instead", amount))
+end
+
 -- Pays one reward. A failure is logged and counted; it is not retried.
-local function pay_reward(reward)
+local function pay_reward(reward, contract)
     local kind = reward.kind
-    if kind == "influence" then
-        liege.change_influence(reward.amount)
-    elseif kind == "silver" then
-        local ok, why = liege.add_silver(reward.amount)
+    if kind == "goods" or kind == "weapons" or kind == "armor" then
+        pay_goods(reward)
+    elseif kind == "law" then
+        pay_law(reward, contract)
+    elseif kind == "kings_favour" then
+        local ok, why = world.add_kings_favour(reward.amount)
         if not ok then return fail_reward(reward, why) end
-    elseif kind == "goods" or kind == "weapons" then
-        local ok, why = world.add_goods(reward.good, reward.amount)
-        if not ok then return fail_reward(reward, why) end
-    elseif kind == "regional_wealth" then
-        local ok, why = world.add_regional_wealth(reward.amount)
-        if not ok then return fail_reward(reward, why) end
-    elseif kind == "tech_point" then
-        -- The picks belong to the tech tree (change update-tech-tree-yearly-picks, #499).
-        if not tech_picks_state_exists() then return fail_reward(reward, "the tech tree has no pick state (change update-tech-tree-yearly-picks is not built)") end
-        -- -1 means the start pick was not given yet: keep it (the tech tree gives it when the picks start).
-        local earned = state:get("tech_picks_earned")
-        if earned < 0 then earned = (all_config.tech_tree and all_config.tech_tree.initial_picks) or 0 end
-        state:set("tech_picks_earned", earned + reward.amount)
+    elseif kind == "law_slot" then
+        pay_law_slot(reward)
+    elseif kind == "relief_promise" then
+        invasion.add_relief_bonus(reward.amount)
     end
 end
+
+---------------------------------------------------------------------------------------------
+-- Large costs. `cost_facts` only reads; `take_cost` changes the game after the checks of `refusal_for`.
+---------------------------------------------------------------------------------------------
+
+local function loan_days() return config.loan_days end
+
+-- The squads that a loan takes: the `amount` squads with the most men, each with its template. Returns the list, or nil, a reason and
+-- the number of squads of the player.
+local function loan_candidates(amount)
+    local squads, problem = world.player_squads()
+    if squads == nil then return nil, problem end
+    local live = {}
+    for _, squad in ipairs(squads) do
+        if squad.men > 0 then live[#live + 1] = squad end
+    end
+    if #live < amount then return nil, string.format("%d more %s needed", amount - #live, amount - #live == 1 and "squad" or "squads"), #live end
+    table.sort(live, function(a, b) return a.men > b.men end)
+    local picked = {}
+    for index = 1, amount do
+        local squad = live[index]
+        local template, why = rules.loan_template(squad.men, world.known_template(squad.id), config.loan_templates)
+        if template == nil then return nil, why, #live end
+        picked[#picked + 1] = { id = squad.id, men = squad.men, experience = squad.experience, template = template }
+    end
+    return picked, nil, #live
+end
+
+-- What the player holds for a cost, and why the cost cannot be paid now (nil: it can). Returns held, problem.
+local function cost_facts(contract)
+    local cost, amount = contract.cost, contract.amount
+    if cost == "send_families" then
+        local held = world.family_count()
+        if held == nil then return nil, "the families are not known" end
+        local need = amount + config.min_families_left
+        if held < need then return held, string.format("%d more %s needed (%d must stay)", need - held, need - held == 1 and "family" or "families", config.min_families_left) end
+        return held
+    elseif cost == "loan_units" then
+        local _, problem, held = loan_candidates(amount)
+        return held, problem
+    elseif cost == "tribute_season" then
+        local held = tribute.paying_vassals()
+        if held < 1 then return held, "no vassal pays tribute" end
+        return held
+    end
+    return nil, "unknown cost " .. tostring(cost)
+end
+
+local function save_loans(list) state:set("contracts_loans", rules.encode_loans(list)) end
+
+local function loans() return rules.decode_loans(state:get("contracts_loans")) end
+
+-- Takes the cost of a Large contract. Returns true, or nil and a reason. The checks were done by refusal_for.
+local function take_cost(contract)
+    local cost, amount = contract.cost, contract.amount
+    if cost == "send_families" then
+        local removed, why = world.remove_families(amount)
+        if removed == nil then return nil, why end
+        if removed < amount then return nil, string.format("only %d of %d families could be removed", removed, amount) end
+        return true
+    elseif cost == "tribute_season" then
+        tribute.skip_months(amount)
+        return true
+    elseif cost == "loan_units" then
+        local day = world.current_day()
+        if day == nil then return nil, "the game day is not known" end
+        local picked, why = loan_candidates(amount)
+        if picked == nil then return nil, why end
+        for _, squad in ipairs(picked) do
+            local ok, problem = world.remove_squad(squad.id)
+            if not ok then return nil, problem end
+            -- Saved at once after the removal: the squad comes back at the due day, also after a load.
+            local list = loans()
+            list[#list + 1] = { template = squad.template, men = squad.men, experience = squad.experience, due = day + loan_days() }
+            save_loans(list)
+            S.loans_started = S.loans_started + 1
+            core.log.info(TAG, string.format("LIEGE_CONTRACTS loan started: squad %d (%s, %d men) back on day %d", squad.id, squad.template, squad.men, day + loan_days()))
+        end
+        return true
+    end
+    return nil, "unknown cost " .. tostring(cost)
+end
+
+-- Returns the squads whose loan is due. The record is removed (and saved) before the spawn, so a load never returns a squad twice;
+-- a failed spawn puts the record back and logs once.
+local function return_loans()
+    local list = loans()
+    if #list == 0 then return end
+    local due, kept = rules.split_loans(list, world.current_day())
+    for _, loan in ipairs(due) do
+        save_loans(kept)
+        local id, why = world.spawn_squad(loan.template, loan.experience)
+        if id ~= nil then
+            S.loans_returned = S.loans_returned + 1
+            core.log.info(TAG, string.format("LIEGE_CONTRACTS loan ended: squad %d (%s) is back", id, loan.template))
+        else
+            kept[#kept + 1] = loan
+            save_loans(kept)
+            local key = rules.encode_loans({ loan })
+            if not loan_failed[key] then
+                loan_failed[key] = true
+                core.log.error(TAG, string.format("LIEGE_CONTRACTS loan return failed, tries again: %s", tostring(why)))
+            end
+        end
+    end
+end
+
+---------------------------------------------------------------------------------------------
 
 -- Why the contract cannot be fulfilled now, or nil. `fresh_manor`: read the manor now (a click, a command) instead of the cache.
 local function refusal_for(contract, fresh_manor)
     if contract == nil then return rules.refusal(nil, {}) end
     local manor
     if fresh_manor then manor = world.manor_built() == true else manor = manor_built_cached() end
-    return rules.refusal(contract, { manor = manor, used = used()[contract.tier], limit = limit_of(contract.tier), stock = world.stock(contract.good) })
+    local facts = { manor = manor, used = used()[contract.tier], limit = limit_of(contract.tier) }
+    if contract.cost then
+        local _, problem = cost_facts(contract)
+        facts.cost_problem = problem
+    else
+        facts.stock = world.stock(contract.good)
+    end
+    return rules.refusal(contract, facts)
 end
 
 -- The click and the command call this. Returns a result table, or nil and a reason. A refused call changes nothing.
@@ -159,13 +319,21 @@ local function fulfil(id)
         core.log.warn(TAG, string.format("LIEGE_CONTRACTS fulfil %s refused: %s", tostring(id), why))
         return nil, why
     end
-    local got, problem = world.take_goods(contract.good, contract.amount)
-    if got == nil or got < contract.amount then
-        if got ~= nil and got > 0 then world.add_goods(contract.good, got) end -- put the units back
-        local reason = string.format("only %d of %d units of goods %d could be taken from the stores (the goods lie %s)%s", got or 0, contract.amount, contract.good,
-            world.holders(contract.good), problem and (": " .. tostring(problem)) or "")
-        core.log.warn(TAG, "LIEGE_CONTRACTS fulfil refused: " .. reason)
-        return nil, reason
+    if contract.cost then
+        local taken, problem = take_cost(contract)
+        if not taken then
+            core.log.warn(TAG, string.format("LIEGE_CONTRACTS fulfil %s refused: the cost %s could not be taken: %s", id, contract.cost, tostring(problem)))
+            return nil, tostring(problem)
+        end
+    else
+        local got, problem = world.take_goods(contract.good, contract.amount)
+        if got == nil or got < contract.amount then
+            if got ~= nil and got > 0 then world.add_goods(contract.good, got) end -- put the units back
+            local reason = string.format("only %d of %d units of goods %d could be taken from the stores (the goods lie %s)%s", got or 0, contract.amount, contract.good,
+                world.holders(contract.good), problem and (": " .. tostring(problem)) or "")
+            core.log.warn(TAG, "LIEGE_CONTRACTS fulfil refused: " .. reason)
+            return nil, reason
+        end
     end
     -- Saved before the reward and the log, so a crash after the take never lets the contract be fulfilled twice.
     contract.done = true
@@ -175,11 +343,12 @@ local function fulfil(id)
     state:set("contracts_used", rules.encode_used(counts))
     state:set("contracts_done", state:get("contracts_done") + 1)
     local failed_before = S.failed_rewards
-    core.log.try(TAG, pay_reward, contract.reward)
+    core.log.try(TAG, pay_reward, contract.reward, contract)
     S.fulfils = S.fulfils + 1
-    local result = { id = id, tier = contract.tier, good = contract.good, amount = contract.amount, reward = contract.reward,
+    local result = { id = id, tier = contract.tier, good = contract.good, cost = contract.cost, amount = contract.amount, reward = contract.reward,
                      failed_rewards = S.failed_rewards - failed_before }
-    core.log.info(TAG, string.format("LIEGE_CONTRACTS fulfilled %s: %d of goods %d for %s failed_rewards=%d", id, contract.amount, contract.good,
+    core.log.info(TAG, string.format("LIEGE_CONTRACTS fulfilled %s: %s for %s failed_rewards=%d", id,
+        contract.cost and view.cost_text(contract.cost, contract.amount, loan_days()) or string.format("%d of goods %d", contract.amount, contract.good),
         view.reward_text(contract.reward, contracts.names), result.failed_rewards))
     return result
 end
@@ -223,6 +392,7 @@ end
 local function tick()
     if not state.loaded then return end
     drop_unknown()
+    return_loans()
     local info = invasion.season_info()
     if info ~= nil then yearly_step(info) end
 end
@@ -238,11 +408,23 @@ local function days_to_spring() return rules.days_until(world.day_of_year(), con
 
 -- One card for the window and the state command. `manor`: is the manor built (cached or fresh as the caller decides).
 local function card_of(contract, manor)
-    local stock = world.stock(contract.good)
-    local facts = { manor = manor, used = used()[contract.tier], limit = limit_of(contract.tier), stock = stock }
+    local facts = { manor = manor, used = used()[contract.tier], limit = limit_of(contract.tier) }
+    local stock, held, short, have
+    if contract.cost then
+        local problem
+        held, problem = cost_facts(contract)
+        facts.cost_problem = problem
+        short = problem ~= nil
+        have = view.cost_have_text(contract.cost, held)
+    else
+        stock = world.stock(contract.good)
+        facts.stock = stock
+        short = (stock or 0) < contract.amount
+        have = view.have_text(stock, contract.amount)
+    end
     local reason = rules.refusal(contract, facts)
-    return { id = contract.id, tier = contract.tier, number = contract.number, good = contract.good, amount = contract.amount, done = contract.done,
-             requirement = view.requirement_text(contract, contracts.names), have = view.have_text(stock, contract.amount), stock = stock,
+    return { id = contract.id, tier = contract.tier, number = contract.number, good = contract.good, cost = contract.cost, amount = contract.amount, done = contract.done,
+             requirement = view.requirement_text(contract, contracts.names, loan_days()), have = have, stock = stock, held = held, short = short,
              reward_text = view.reward_text(contract.reward, contracts.names), reward = contract.reward,
              enabled = reason == nil, reason = reason, label = contract.done and "Fulfilled" or "Fulfil" }
 end
@@ -276,7 +458,8 @@ local function command_state()
     return { contracts = model.cards, offer = ids, tiers = tiers, manor = manor, done = state:get("contracts_done"), failed_rewards = S.failed_rewards,
              spring_no = state:get("contracts_spring_no"), season = info and info.season, season_no = info and info.no,
              days_to_winter = days_to_winter(), days_to_spring = days_to_spring(), influence = state:get("liege_influence"), silver = liege.silver(),
-             fulfils = S.fulfils, difficulty = difficulty(), offer_text = state:get("contracts_offer"), used_text = state:get("contracts_used"),
+             fulfils = S.fulfils, loans_started = S.loans_started, loans_returned = S.loans_returned, loans_text = state:get("contracts_loans"),
+             relief_bonus_squads = invasion.relief_bonus(), law_slots = tech_tree.law_slots(), kings_favour = world.kings_favour(), difficulty = difficulty(), offer_text = state:get("contracts_offer"), used_text = state:get("contracts_used"),
              notice_text = model.notice_text, remaining_text = model.remaining_text, refresh_text = model.refresh_text }
 end
 
@@ -381,7 +564,7 @@ local function fill_card(row, number, card)
     end
     local verb, goods = view.split_requirement(card.requirement)
     local reward_label, reward = view.split_reward(card.reward_text)
-    local short = (card.stock or 0) < card.amount
+    local short = card.short
     set_text("ReqLabel" .. key, verb)
     set_text("ReqText" .. key, goods)
     set_text("HaveText" .. key, short and "" or card.have)
@@ -546,7 +729,7 @@ local function menu_state()
         local _, goods = view.split_requirement(card.requirement)
         local _, reward = view.split_reward(card.reward_text)
         wanted["ReqText" .. key], wanted["RewText" .. key] = goods, reward
-        wanted[((card.stock or 0) < card.amount and "HaveMiss" or "HaveText") .. key] = card.have
+        wanted[(card.short and "HaveMiss" or "HaveText") .. key] = card.have
     end
     return { open = is_open(), in_viewport = is_open() and read(function() return W.widget:IsInViewport() end) or false,
              texts = shown, view = model, wanted_texts = wanted, buttons = buttons, presses = W.presses, fulfils = S.fulfils,
@@ -581,6 +764,15 @@ if has_commands then
         if result == nil then return nil, reason end
         return result
     end, { id = { type = "string", required = true } })
+    -- Test command: every loan is due now (a real loan is 60 game days; the next tick returns the squads).
+    commands.register("InvasionMod.liege_contracts_loans_due_now", function()
+        local day = world.current_day()
+        if day == nil then return nil, "the game day is not known" end
+        local list = loans()
+        for _, loan in ipairs(list) do loan.due = day end
+        save_loans(list)
+        return { loans = #list, day = day }
+    end, {})
     -- Test command: make an offer now, with no wait for a spring. `ids` names the offer in the saved text form (rules.encode_offer);
     -- without it the draw runs.
     commands.register("InvasionMod.liege_contracts_offer_now", function(args)

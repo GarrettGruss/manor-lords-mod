@@ -1,13 +1,9 @@
 {
- "version": 2,
+ "version": 3,
  "offer_per_tier": 3,
  "tiers": {
   "small": {
    "requests": [
-    {
-     "good": 17,
-     "weight": 1.0
-    },
     {
      "good": 171,
      "weight": 1.4
@@ -17,248 +13,249 @@
      "weight": 1.2
     },
     {
+     "good": 30,
+     "weight": 1.0
+    },
+    {
+     "good": 32,
+     "weight": 1.0
+    },
+    {
      "good": 330,
      "weight": 1.0
+    },
+    {
+     "good": 16,
+     "weight": 1.0
+    },
+    {
+     "good": 13,
+     "weight": 0.8
+    },
+    {
+     "good": 216,
+     "weight": 1.2
     },
     {
      "good": 3,
      "weight": 0.8
     },
     {
+     "good": 220,
+     "weight": 1.2
+    },
+    {
      "good": 15,
      "weight": 1.6
     },
     {
-     "good": 146,
-     "weight": 1.4
-    },
-    {
-     "good": 337,
-     "weight": 1.2
-    },
-    {
-     "good": 339,
-     "weight": 1.2
-    },
-    {
-     "good": 338,
-     "weight": 1.2
-    },
-    {
-     "good": 145,
-     "weight": 0.6
-    },
-    {
-     "good": 205,
-     "weight": 0.4
-    },
-    {
-     "good": 30,
+     "good": 17,
      "weight": 1.0
     }
    ],
    "rewards": [
     {
      "kind": "goods",
-     "goods": "tier1",
+     "goods": "vassal",
      "min": 20,
      "max": 40
-    },
-    {
-     "kind": "regional_wealth",
-     "min": 40,
-     "max": 80
     }
    ]
   },
   "medium": {
    "requests": [
     {
-     "good": 283,
+     "good": 320,
      "weight": 1.0
     },
     {
-     "good": 296,
-     "weight": 1.2
-    },
-    {
-     "good": 46,
+     "good": 323,
      "weight": 1.0
-    },
-    {
-     "good": 45,
-     "weight": 1.2
-    },
-    {
-     "good": 6,
-     "weight": 0.5
     },
     {
      "good": 35,
      "weight": 0.8
     },
     {
+     "good": 172,
+     "weight": 1.2
+    },
+    {
+     "good": 170,
+     "weight": 1.2
+    },
+    {
      "good": 7,
      "weight": 0.8
     },
     {
-     "good": 32,
+     "good": 4,
+     "weight": 0.8
+    },
+    {
+     "good": 12,
+     "weight": 0.8
+    },
+    {
+     "good": 148,
      "weight": 1.0
     }
    ],
    "rewards": [
     {
-     "kind": "weapons",
-     "goods": "weapons",
+     "kind": "goods",
+     "goods": "tools",
      "min": 10,
      "max": 20
     },
     {
      "kind": "goods",
-     "goods": "tier2",
+     "goods": "drinks",
      "min": 15,
      "max": 30
     },
     {
-     "kind": "silver",
-     "min": 150,
-     "max": 300
+     "kind": "goods",
+     "goods": "clothes",
+     "min": 10,
+     "max": 20
     }
    ]
   },
   "large": {
    "requests": [
     {
-     "good": 177,
+     "cost": "loan_units",
+     "min": 1,
+     "max": 1,
      "weight": 1.0
     },
     {
-     "good": 270,
+     "cost": "send_families",
+     "min": 3,
+     "max": 3,
      "weight": 1.0
     },
     {
-     "good": 178,
+     "cost": "tribute_season",
+     "min": 3,
+     "max": 3,
      "weight": 1.0
-    },
-    {
-     "good": 133,
-     "weight": 1.2
-    },
-    {
-     "good": 271,
-     "weight": 1.0
-    },
-    {
-     "good": 273,
-     "weight": 0.6
-    },
-    {
-     "good": 163,
-     "weight": 0.6
-    },
-    {
-     "good": 164,
-     "weight": 0.4
-    },
-    {
-     "good": 293,
-     "weight": 0.35
-    },
-    {
-     "good": 206,
-     "weight": 0.8
-    },
-    {
-     "good": 323,
-     "weight": 1.2
-    },
-    {
-     "good": 320,
-     "weight": 1.2
     }
    ],
    "rewards": [
     {
-     "kind": "tech_point",
+     "kind": "law",
      "min": 1,
      "max": 1
     },
     {
-     "kind": "influence",
-     "min": 1000,
-     "max": 1000
+     "kind": "kings_favour",
+     "min": 10,
+     "max": 10
+    },
+    {
+     "kind": "weapons",
+     "goods": "weapons",
+     "min": 20,
+     "max": 40
+    },
+    {
+     "kind": "armor",
+     "goods": "armor",
+     "min": 15,
+     "max": 30
+    },
+    {
+     "kind": "law_slot",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "kind": "relief_promise",
+     "min": 5,
+     "max": 5
     }
    ]
   }
  },
  "good_lists": {
-  "tier1": [
-   17,
-   171,
-   279,
-   330,
-   3,
-   15,
-   146,
-   337,
-   339,
-   338,
+  "vassal": [
    145,
-   205,
-   30
+   14,
+   146,
+   11,
+   27
   ],
-  "tier2": [
-   283,
-   296,
-   46,
-   45,
-   6,
-   35,
-   7,
-   32
+  "tools": [
+   6
+  ],
+  "drinks": [
+   28,
+   327,
+   325
+  ],
+  "clothes": [
+   149
   ],
   "weapons": [
    177,
-   270,
    178,
    133,
+   270,
    271,
+   205,
    206
+  ],
+  "armor": [
+   163,
+   164,
+   273,
+   293
   ]
  },
  "names": {
-  "17": "planks",
   "171": "berries",
   "279": "mushrooms",
-  "330": "small game",
-  "3": "hides",
-  "15": "rubble stone",
-  "146": "clay",
-  "337": "carrots",
-  "339": "beets",
-  "338": "cabbage",
-  "145": "salt",
-  "205": "bows",
   "30": "carp",
-  "283": "cut stone",
-  "296": "apples",
-  "46": "quinces",
-  "45": "pears",
-  "6": "tools",
-  "35": "metal bars",
-  "7": "wooden parts",
   "32": "eel",
+  "330": "small game",
+  "16": "timber",
+  "13": "charcoal",
+  "216": "firewood",
+  "3": "hides",
+  "220": "eggs",
+  "15": "rubble stone",
+  "17": "planks",
+  "320": "sausages",
+  "323": "smoked fish",
+  "35": "metal bars",
+  "172": "bread",
+  "170": "rye bread",
+  "7": "wooden parts",
+  "4": "leather",
+  "12": "linen",
+  "148": "yarn",
+  "145": "salt",
+  "14": "iron ore",
+  "146": "clay",
+  "11": "flax",
+  "27": "stone",
+  "6": "tools",
+  "28": "ale",
+  "327": "cider",
+  "325": "mead",
+  "149": "clothes",
   "177": "swords",
-  "270": "shields",
   "178": "polearms",
   "133": "spears",
+  "270": "small shields",
   "271": "large shields",
-  "273": "helmets",
+  "205": "bows",
+  "206": "crossbows",
   "163": "gambesons",
   "164": "mail armor",
-  "293": "plate armor",
-  "206": "crossbows",
-  "323": "smoked fish",
-  "320": "sausages"
+  "273": "helmets",
+  "293": "plate armor"
  }
 }

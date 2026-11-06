@@ -23,6 +23,7 @@ local state = ModState.open(MOD, "pawn", STATE_VERSION)
 state:register("level_yearly", config.levels.yearly, "integer")
 state:register("level_great", config.levels.great, "integer")
 state:register("level_vassal", config.levels.vassal, "integer")
+state:register("relief_bonus_squads", 0, "integer") -- squads added to the next relief army (liege contract reward relief_promise); reset after it spawns
 state:register("plan_day", 0, "integer")
 state:register("raid_day", 0, "integer")
 state:register("size_class", 0, "integer")
@@ -325,7 +326,9 @@ local function spawn_great_wave(today)
 end
 
 local function spawn_relief_and_final(today)
-    local count = difficulty_rules.relief_squads(level("great"), clock_config.relief_full_squads)
+    local bonus = state:get("relief_bonus_squads")
+    local count = difficulty_rules.relief_squads(level("great"), clock_config.relief_full_squads) + bonus
+    if bonus > 0 then state:set("relief_bonus_squads", 0) end -- saved before the spawn: the promise is used once
     local centre = spawn_centre()
     if centre == nil then return core.log.error(TAG, "no player pawn: the relief army is not spawned") end
     local final_list = plan_rules.composition(clock_config.final_squads, clock_config.final_tier_difficulty, roles,
@@ -859,4 +862,11 @@ end
 
 return { state = state, on_arrival = on_arrival, set_vassal_provider = set_vassal_provider, season_info = season_info, watch_spawn = watch_spawn, raid_info = raid_info, pick_difficulty = pick_difficulty,
          level = level, difficulty = general_difficulty, set_levels = set_levels, settings_changed = settings_changed, command_state = command_state,
-         set_hold_gate = function(gate) hold_gate = gate end }
+         set_hold_gate = function(gate) hold_gate = gate end,
+         -- A liege contract promises more squads for the next relief army. Returns the bonus that is saved now.
+         add_relief_bonus = function(squads)
+             local total = state:get("relief_bonus_squads") + squads
+             state:set("relief_bonus_squads", total)
+             return total
+         end,
+         relief_bonus = function() return state:get("relief_bonus_squads") end }

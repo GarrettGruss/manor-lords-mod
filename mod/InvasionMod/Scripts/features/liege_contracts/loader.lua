@@ -1,4 +1,4 @@
--- Pure loader of the contracts table (change update-liege-contracts-tiers, #533). No game access.
+-- Pure loader of the contracts table (changes update-liege-contracts-tiers, #533, and update-liege-contracts-tier-goods, #569). No game access.
 -- The data file is JSON (data/liege_contracts/contracts.json). Every problem stops the load with a message that names the
 -- tier and the field (error with level 0), as the tech tree loader does.
 local M = {}
@@ -6,8 +6,10 @@ local M = {}
 M.TIERS = { "small", "medium", "large" } -- the order of the rows in the window
 M.DEFAULT_OFFER_PER_TIER = 3
 
--- Reward kinds. `goods` lists the kinds that need a list of good ids.
-M.REWARD_KINDS = { goods = true, weapons = true, regional_wealth = false, silver = false, tech_point = false, influence = false }
+-- Reward kinds. `true` marks the kinds that need a list of good ids.
+M.REWARD_KINDS = { goods = true, weapons = true, armor = true, law = false, kings_favour = false, law_slot = false, relief_promise = false }
+-- Cost kinds of a Large request (a Large contract asks for a cost, not for goods).
+M.COST_KINDS = { loan_units = true, send_families = true, tribute_season = true }
 
 local function fail(message) error("liege contracts data: " .. message, 0) end
 
@@ -17,15 +19,28 @@ local function whole(value, where, least)
     end
 end
 
-local function read_request(raw, tier, position)
-    local where = string.format("tier '%s' request %d", tier, position)
-    if type(raw) ~= "table" then fail(where .. " must be a table") end
-    if raw.good == nil then fail(where .. " is missing the field 'good'") end
-    whole(raw.good, where .. " field 'good'", 0)
+local function read_weight(raw, where)
     if type(raw.weight) ~= "number" or raw.weight ~= raw.weight or raw.weight <= 0 then
         fail(where .. " field 'weight' must be a number above 0, got " .. tostring(raw.weight))
     end
-    return { good = math.tointeger(raw.good) or raw.good, weight = raw.weight }
+    return raw.weight
+end
+
+local function read_request(raw, tier, position)
+    local where = string.format("tier '%s' request %d", tier, position)
+    if type(raw) ~= "table" then fail(where .. " must be a table") end
+    if tier == "large" then
+        if raw.cost == nil then fail(where .. " is missing the field 'cost'") end
+        if not M.COST_KINDS[raw.cost] then fail(where .. " has unknown cost '" .. tostring(raw.cost) .. "'") end
+        if raw.min == nil then fail(where .. " is missing the field 'min'") end
+        if raw.max == nil then fail(where .. " is missing the field 'max'") end
+        whole(raw.min, where .. " field 'min'", 1)
+        whole(raw.max, where .. " field 'max'", raw.min)
+        return { cost = raw.cost, min = math.tointeger(raw.min) or raw.min, max = math.tointeger(raw.max) or raw.max, weight = read_weight(raw, where) }
+    end
+    if raw.good == nil then fail(where .. " is missing the field 'good'") end
+    whole(raw.good, where .. " field 'good'", 0)
+    return { good = math.tointeger(raw.good) or raw.good, weight = read_weight(raw, where) }
 end
 
 local function read_reward(raw, tier, position, lists)
@@ -56,8 +71,9 @@ local function read_tier(raw, tier, offer_per_tier, lists)
     local requests, seen = {}, {}
     for position, entry in ipairs(raw.requests) do
         local request = read_request(entry, tier, position)
-        if seen[request.good] then fail(string.format("tier '%s' lists the good %d twice", tier, request.good)) end
-        seen[request.good] = true
+        local key = request.cost or request.good
+        if seen[key] then fail(string.format("tier '%s' lists '%s' twice", tier, tostring(key))) end
+        seen[key] = true
         requests[#requests + 1] = request
     end
     local rewards = {}
@@ -68,7 +84,7 @@ end
 -- Build the table from a decoded document. Returns { version, offer_per_tier, tiers, names }.
 function M.build(doc)
     if type(doc) ~= "table" then fail("the document must be a table") end
-    if doc.version ~= 2 then fail("field 'version' must be 2, got " .. tostring(doc.version)) end
+    if doc.version ~= 3 then fail("field 'version' must be 3, got " .. tostring(doc.version)) end
     local per_tier = doc.offer_per_tier == nil and M.DEFAULT_OFFER_PER_TIER or doc.offer_per_tier
     per_tier = math.tointeger(per_tier) or per_tier
     whole(per_tier, "field 'offer_per_tier'", 1)
