@@ -33,6 +33,7 @@ local function native_row(d, v)
     function arrow:GetClass() return { GetFName = function() return { ToString = function() return "Image" end } end } end
     function arrow:SetRenderTransformAngle(a) self.angle = a end
     function arrow:SetColorAndOpacity(c) self.color = c end
+    function arrow:SetVisibility(v) self.vis = v end
     local bar = Box.new()
     bar:AddChildToVerticalBox(arrow)
     local r = { DescriptionText = Block.new(d), ValueText = Block.new(v), vis = 0, arrow = arrow,
@@ -87,10 +88,10 @@ class OrderTooltipTests(unittest.TestCase):
 
     def test_leave_row(self):
         self.assertEqual(self.build("{ order = 50, manor_term = 10, homeless_term = 5, leave_gain = 25 }"),
-                         "50%;Manor|+10|green;Homeless families|-5|red;Left for banditry|+25|green")
+                         "50%;Manor|+10|green;Homeless families|-5|red;Peasants revolted|+25|green")
 
     def test_leave_row_before_first_tick(self):
-        self.assertEqual(self.build("{ order = 50, leave_gain = 25 }"), "50%;Left for banditry|+25|green")
+        self.assertEqual(self.build("{ order = 50, leave_gain = 25 }"), "50%;Peasants revolted|+25|green")
 
     def test_before_first_tick_only_the_header(self):
         self.assertEqual(self.build("{ order = 100 }"), "100%")
@@ -133,6 +134,51 @@ class OrderTooltipTests(unittest.TestCase):
             return (up.G > up.R and up.G > up.B) and (down.R > down.G and down.R > down.B) and "ok" or "bad"
         end)()""")
         self.assertEqual(str(result), "ok")
+
+    def notes(self, revolt: str) -> str:
+        return self.lua.eval(f'(function() local v = require("features.order_tooltip.rows").build({{ order = 20, manor_term = 10, revolt = {revolt} }}); '
+                             'local out = {}; for _, n in ipairs(v.notes) do out[#out + 1] = n.text .. "|" .. n.label .. "|" .. n.value .. "|" .. n.color end; '
+                             'return table.concat(out, ";") end)()')
+
+    def test_no_notes_without_a_timer(self):
+        self.assertEqual(self.notes("nil"), "")
+
+    def test_counter_shows_the_days(self):
+        self.assertEqual(self.notes("{ days = 40 }"), "Peasants revolt in 40 days|Peasants revolt in|40 days|red")
+
+    def test_counter_one_day_and_today(self):
+        self.assertEqual(self.notes("{ days = 1 }"), "Peasants revolt in 1 day|Peasants revolt in|1 day|red")
+        self.assertEqual(self.notes("{ days = 0 }"), "Peasants revolt today|Peasants revolt|today|red")
+
+    def test_blocked_item_is_below_the_counter(self):
+        self.assertEqual(self.notes('{ days = 12, blocked = "3 of 6 armed homes" }'),
+                         "Peasants revolt in 12 days|Peasants revolt in|12 days|red;"
+                         "Revolt blocked: 3 of 6 armed homes|Revolt blocked|3 of 6 armed homes|red")
+        self.assertIn("Revolt blocked: no Outlaws pawn", self.notes('{ days = 12, blocked = "no Outlaws pawn" }'))
+
+    def test_no_blocked_item_when_the_revolt_can_happen(self):
+        self.assertNotIn("Revolt blocked", self.notes("{ days = 12 }"))
+
+    def widget_notes(self, text_only: str) -> str:
+        return str(self.lua.eval(f"""(function()
+            local widget = require("features.order_tooltip.widget")
+            local rows = require("features.order_tooltip.rows")
+            local tip = new_tip()
+            local view = rows.build({{ order = 20, manor_term = 10, revolt = {{ days = 40, blocked = "3 of 6 armed homes" }} }})
+            local added = widget.apply(tip, view, {text_only})
+            local kids = tip.recentFactors_VB.kids
+            local counter, flag = kids[3], kids[4]
+            return added .. "#" .. counter.DescriptionText.text .. "#" .. counter.ValueText.vis .. "#" .. counter.arrow.vis ..
+                "#" .. flag.DescriptionText.text .. "#" .. flag.ValueText.text .. "#" .. flag.ValueText.vis
+        end)()""")).replace("\n", "")
+
+    def test_widget_draws_text_items_without_a_value(self):
+        self.assertEqual(self.widget_notes("true"),
+                         "3#Peasants revolt in 40 days#1#1#Revolt blocked: 3 of 6 armed homes##1")
+
+    def test_widget_fallback_draws_label_and_value(self):
+        self.assertEqual(self.widget_notes("false"),
+                         "3#Peasants revolt in#0#1#Revolt blocked#3 of 6 armed homes#0")
 
     def test_failing_widget_call_raises_for_the_caller_to_log(self):
         ok = self.lua.eval("""(function()
