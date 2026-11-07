@@ -172,6 +172,26 @@ class RulesTests(unittest.TestCase):
         self.assertFalse(self.rules.retry_due(100, 100))
         self.assertTrue(self.rules.retry_due(100, 130))
 
+    def test_revolt_days_count_down_with_a_running_timer(self):
+        cfg = self.order_cfg()
+        cfg["tick_days"] = 30
+        self.assertIsNone(self.rules.revolt_days(-1, 200, 190, None, 3, cfg))
+        self.assertEqual(self.rules.revolt_days(180, 200, 190, None, 3, cfg), 40)
+        self.assertEqual(self.rules.revolt_days(200, 200, 190, None, 3, cfg), 60)
+
+    def test_revolt_days_after_a_blocked_try_count_to_the_next_tick(self):
+        cfg = self.order_cfg()
+        cfg["tick_days"] = 30
+        self.assertEqual(self.rules.revolt_days(100, 182, 170, 3, 3, cfg), 18)  # the next tick is at 170 + 30 = 200
+        self.assertEqual(self.rules.revolt_days(100, 210, 170, 3, 3, cfg), 0)   # the tick is overdue
+        self.assertEqual(self.rules.revolt_days(100, 182, 170, 2, 3, cfg), 0)   # a new tick passed since the block: the retry is due
+        self.assertEqual(self.rules.revolt_days(100, 182, -1, 3, 3, cfg), 0)
+
+    def test_revolt_days_expired_with_no_block_is_zero(self):
+        cfg = self.order_cfg()
+        cfg["tick_days"] = 30
+        self.assertEqual(self.rules.revolt_days(100, 160, 150, None, 3, cfg), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

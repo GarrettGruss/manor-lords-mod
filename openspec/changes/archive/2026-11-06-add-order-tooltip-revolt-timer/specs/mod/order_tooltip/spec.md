@@ -38,7 +38,7 @@ Each time the player opens the Public Order tooltip, the mod SHALL add one row f
 ## ADDED Requirements
 
 ### Requirement: The tooltip shows a revolt counter while the banditry timer runs
-While the banditry timer runs, the tooltip SHALL show the counter `Peasants revolt in <N> days` below the term rows (`1 day` for N = 1, `Peasants revolt today` for N = 0). N is `timer_start + timer_days - today` in game days. When the timer expired and the revolt was blocked, N SHALL be the days to the next order tick (the next try). Without a timer, there SHALL be no counter. The counter SHALL be red.
+While the banditry timer runs, the tooltip SHALL show the counter `Peasants revolt in <N> days` below the term rows (`1 day` for N = 1, `Peasants revolt today` for N = 0). N is `timer_start + timer_days - today` in game days. When the timer expired and the revolt was blocked, N SHALL be the days to the next order tick (the next try). Without a timer, there SHALL be no counter. The counter and the blocked item keep the game text colour (the label does not take a colour).
 
 #### Scenario: A timer runs
 - **WHEN** the order is under the threshold, the timer started 20 game days ago and `timer_days` is 60

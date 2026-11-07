@@ -89,7 +89,7 @@ def run(ctx) -> dict:
     ctx.check("the Manor row has the manor term", f"Manor | +{tick['manor_term']}" in seen["rows"], seen["rows"])
     homeless = tick["homeless_term"]
     ctx.check("the Homeless row matches the homeless term", (f"Homeless families | -{homeless}" in seen["rows"]) == (homeless > 0), [homeless, seen["rows"]])
-    ctx.check("no native row is in the list", all(row.split(" | ")[0] in ("Manor", "Homeless families", "Left for banditry") for row in seen["rows"]), seen["rows"])
+    ctx.check("no native row is in the list", all(row.split(" | ")[0] in ("Manor", "Homeless families", "Peasants revolted") for row in seen["rows"]), seen["rows"])
 
     again = open_tooltip(ctx, seen["applied"] + 1)
     ctx.check("a second open shows the same rows with no duplicates", again["rows"] == seen["rows"], [seen["rows"], again["rows"]])
@@ -98,11 +98,11 @@ def run(ctx) -> dict:
     left = open_tooltip(ctx, again["applied"] + 1)
     time.sleep(1.5)
     ctx.screenshot("tooltip-after-leave")
-    ctx.check("the Left for banditry row shows after a leave", any(row.startswith("Left for banditry | +25") for row in left["rows"]), left["rows"])
+    ctx.check("the Peasants revolted row shows after a leave", any(row.startswith("Peasants revolted | +25") for row in left["rows"]), left["rows"])
 
     ctx.mod.command(PREFIX + "bandits_tick_now")
     after = open_tooltip(ctx, left["applied"] + 1)
-    ctx.check("the Left for banditry row is gone after the next tick", not any(row.startswith("Left for banditry") for row in after["rows"]), after["rows"])
+    ctx.check("the Peasants revolted row is gone after the next tick", not any(row.startswith("Peasants revolted") for row in after["rows"]), after["rows"])
     ctx.check("the header follows the mod order", after["header"] == f"{bandits(ctx)['mod_order']}%", [after["header"], bandits(ctx)["mod_order"]])
     ctx.check("no error was logged", after.get("last_error") is None, after)
     ctx.metric("rows_after_leave", len(left["rows"]))

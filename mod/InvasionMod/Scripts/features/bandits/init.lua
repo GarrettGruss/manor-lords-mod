@@ -422,15 +422,62 @@ local function adjust_order(delta)
     core.log.info(TAG, string.format("BANDITS order adjusted delta=%d order_before=%d order_after=%d", delta, before, mod_order()))
 end
 
+-- The count of valid armed families reads every home inventory, so it is cached for a few real seconds.
+local armed_cache = nil -- { at, count }
+local function armed_count(region)
+    local now = os.time()
+    if armed_cache ~= nil and now - armed_cache.at < config.armed_cache_seconds then return armed_cache.count end
+    local count = #world.armed_families(region, rules.id_set(config.rebellion_weapon_ids))
+    armed_cache = { at = now, count = count }
+    return count
+end
+
+-- Read-only (no state change, no Outlaws pawn made): the next revolt for the order tooltip.
+-- Returns nil without a timer, else { days, blocked } where blocked is nil or the reason text.
+local function revolt_status()
+    if not state.loaded then return nil end
+    local today = world.current_day()
+    if today == nil then return nil end
+    local days = rules.revolt_days(state:get("bandits_timer_start"), today, state:get("bandits_last_tick_day"),
+        blocked_tick, state:get("bandits_ticks"), config)
+    if days == nil then return nil end
+    local status = { days = days }
+    local region = world.region()
+    if region == nil then return status end
+    local needed = rules.leavers_for(world.families(region) or 0, config)
+    if needed < 1 then return status end
+    if not world.bandit_pawn_exists() then
+        status.blocked = "no Outlaws pawn"
+    else
+        local valid = armed_count(region)
+        if rules.rebellion_block(valid, needed) ~= nil then status.blocked = string.format("%d of %d armed homes", valid, needed) end
+    end
+    return status
+end
+
 -- Read-only: the mod order and the terms of the last tick, for the order tooltip. Terms are nil before the first tick.
 local function order_terms()
     if not state.loaded then return nil end
+    local ok, revolt = pcall(revolt_status)
+    if not ok then
+        core.log.warn(TAG, "BANDITS revolt status failed: " .. tostring(revolt))
+        revolt = nil
+    end
     return {
         order = mod_order(),
         manor_term = last_tick and last_tick.manor_term, homeless_term = last_tick and last_tick.homeless_term,
-        leave_gain = leave_gain,
+        leave_gain = leave_gain, revolt = revolt,
     }
 end
 
 core.log.info(TAG, "feature bandits loaded")
-return { state = state, set_modifiers = set_modifiers, adjust_order = adjust_order, order_terms = order_terms }
+-- Test: the revolt status and the real seconds one call took (the first call after the cache expired reads all homes).
+if has_commands then
+    commands.register("InvasionMod.bandits_revolt_status", function()
+        local started = os.clock()
+        local status = revolt_status()
+        return { status = status, cpu_ms = (os.clock() - started) * 1000 }
+    end, {})
+end
+
+return { state = state, set_modifiers = set_modifiers, adjust_order = adjust_order, order_terms = order_terms, revolt_status = revolt_status }

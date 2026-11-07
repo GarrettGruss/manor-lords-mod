@@ -25,7 +25,7 @@ local function apply_now(tip, generation)
     if generation ~= S.generation then return end -- a newer open is on its way
     local view = rows.build(bandits.order_terms())
     if view == nil then return end
-    local ok, result = pcall(widget.apply, tip, view)
+    local ok, result = pcall(widget.apply, tip, view, config.text_items)
     if ok then
         S.applied = S.applied + 1
         S.last_rows = result

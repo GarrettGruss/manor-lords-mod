@@ -726,5 +726,83 @@ class BuyBackTests(BanditsTestCase):
         self.refused("still running")
 
 
+
+class RevoltStatusTests(BanditsTestCase):
+    """The read-only revolt status for the order tooltip (change add-order-tooltip-revolt-timer)."""
+
+    def revolt(self):
+        self.game.exec('local r = require("features.bandits.init").revolt_status(); REVOLT = r')
+        return self.game.exec('return REVOLT and { days = REVOLT.days, blocked = REVOLT.blocked } or nil')
+
+    def remove_pawn(self):
+        for pawn in self.bandit_pawns:
+            self.game.invalidate(pawn)
+        self.camp_works = False  # the ensure poll must not make a new pawn
+
+    def start_timer(self, days_left=40):
+        self.ask("bandits_set_order", value=10)
+        self.ask("bandits_set_timer_days_left", days=days_left)
+
+    def test_no_status_without_a_timer(self):
+        self.assertIsNone(self.revolt())
+
+    def test_days_to_the_revolt(self):
+        self.start_timer(40)
+        self.assertEqual(self.revolt()["days"], 40)
+
+    def test_enough_armed_homes_and_a_pawn_give_no_blocked_text(self):
+        self.arm(6)
+        self.families = 20
+        self.start_timer(40)
+        self.assertIsNone(self.revolt()["blocked"])
+
+    def test_too_few_armed_homes_give_the_count(self):
+        self.arm(3)
+        self.families = 20
+        self.start_timer(40)
+        self.assertEqual(self.revolt()["blocked"], "3 of 6 armed homes")
+
+    def test_no_pawn_blocks_with_its_own_text(self):
+        self.remove_pawn()
+        self.arm(6)
+        self.families = 20
+        self.start_timer(40)
+        self.assertEqual(self.revolt()["blocked"], "no Outlaws pawn")
+
+    def test_the_read_makes_no_pawn_and_changes_no_state(self):
+        self.remove_pawn()
+        self.families = 20
+        self.start_timer(40)
+        before = self.state()
+        calls = (self.camp_calls, len(self.bandit_pawns))
+        self.revolt()
+        self.assertEqual((self.camp_calls, len(self.bandit_pawns)), calls)  # no poll ran in between
+        after = self.state()
+        for key in ("mod_order", "timer", "ticks", "blocks", "leaves", "converted_families"):
+            self.assertEqual(before[key], after[key], key)
+        self.assertEqual(self.dead_members(), 0)
+
+    def test_the_armed_count_is_cached(self):
+        self.arm(6)
+        self.families = 20
+        self.start_timer(40)
+        self.assertIsNone(self.revolt()["blocked"])
+        self.family_rows.clear()
+        self.region.workerFamilies = self.game.array([])
+        self.assertIsNone(self.revolt()["blocked"])  # still the cached 6
+        self.game.exec('require("config").bandits.armed_cache_seconds = 0')
+        self.assertEqual(self.revolt()["blocked"], "0 of 6 armed homes")
+
+    def test_a_blocked_expired_timer_counts_to_the_next_tick(self):
+        self.arm(3)
+        self.families = 20
+        self.start_timer(0)
+        self.ask("bandits_tick_now")  # a tick runs: day 61
+        self.calendar.daysTotal = 79
+        self.game.advance(3)           # the timer expired: the rebellion is tried and blocked
+        self.assertGreaterEqual(self.state()["blocks"], 1)
+        self.assertEqual(self.revolt()["days"], 61 + 30 - 79)
+
+
 if __name__ == "__main__":
     unittest.main()

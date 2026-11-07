@@ -185,6 +185,7 @@ return {
         outlaws_start_polls = 5,         -- polls (one second each) to wait after a load before the Outlaws pawn is checked
         outlaws_max_tries = 5,           -- tries of ensure_outlaw_pawn after a load before the mod gives up
         order_gain = 25,                 -- order gain when the families leave
+        armed_cache_seconds = 3,         -- real seconds to keep the count of armed families (the order tooltip reads it at each open)
         min_families_left = 1,           -- the village never loses its last family to this feature
         buy_back = {                     -- iteration 03. Starting values, tuned in playtests.
             silver_per_family = 10,      -- 2 families cost 20 silver, the amount of the proven letter
@@ -198,6 +199,7 @@ return {
         enabled = true,
         poll_ms = 1000,   -- real time between two tries to set the hook (the tooltip class loads late)
         delay_ms = 60,    -- wait after updateContents (the game rebuilds the rows first)
+        text_items = true, -- the revolt counter and the blocked item are texts with no value; false: label and value rows
     },
     -- M02 iteration 05: the raid widget (one menu for all raid information). Needs the pak InvasionMod_P.pak.
     raid_widget = {

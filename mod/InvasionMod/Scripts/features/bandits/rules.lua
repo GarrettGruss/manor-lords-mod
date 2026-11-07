@@ -132,4 +132,17 @@ function M.retry_due(blocked_ticks, ticks)
     return blocked_ticks == nil or blocked_ticks ~= ticks
 end
 
+-- Days until the next revolt (for the order tooltip), or nil when no timer runs (timer_start < 0).
+-- A running timer gives the days left. After the timer expired and the revolt was blocked, the next try is the next order tick.
+-- An expired timer with no block yet gives 0 (the revolt happens at the next poll).
+function M.revolt_days(timer_start, today, last_tick_day, blocked_tick, ticks, cfg)
+    if timer_start < 0 then return nil end
+    local left = cfg.timer_days - (today - timer_start)
+    if left > 0 then return left end
+    if not M.retry_due(blocked_tick, ticks) and last_tick_day >= 0 then
+        return math.max(0, last_tick_day + cfg.tick_days - today)
+    end
+    return 0
+end
+
 return M

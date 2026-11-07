@@ -31,13 +31,35 @@ local function find_arrow(row)
     error("the row has no arrow image")
 end
 
-local function add_row(tip, spec)
+local function make_row(tip)
     local controller = FindFirstOf("PlayerController")
     local library = StaticFindObject("/Script/UMG.Default__WidgetBlueprintLibrary")
     local made = library:Create(controller, StaticFindObject(ROW_CLASS), controller)
     if made == nil or not made:IsValid() then error("the row widget was not made") end
     -- The row sets its default texts when it joins the list, so the texts are written after the add (spike #422).
     tip.recentFactors_VB:AddChildToVerticalBox(made)
+    return made
+end
+
+-- A text item (the revolt counter, the blocked item): the row with no arrow. text_only: one text in the label, no value.
+-- Otherwise label and value, as the other rows.
+local function add_note(tip, spec, text_only)
+    local made = make_row(tip)
+    if text_only then
+        made.DescriptionText:SetText(FText(spec.text))
+        made.ValueText:SetVisibility(COLLAPSED)
+    else
+        made.DescriptionText:SetText(FText(spec.label))
+        made.ValueText:SetText(FText(spec.value))
+        paint(made.ValueText, spec.color)
+    end
+    -- The label may not take a text colour (run 20261106-235642-5ad1: SetColorAndOpacity is not callable on it); then it keeps the game colour.
+    pcall(paint, made.DescriptionText, spec.color)
+    find_arrow(made):SetVisibility(COLLAPSED)
+end
+
+local function add_row(tip, spec)
+    local made = make_row(tip)
     made.DescriptionText:SetText(FText(spec.text))
     made.ValueText:SetText(FText(spec.value))
     paint(made.ValueText, spec.color)
@@ -46,16 +68,17 @@ local function add_row(tip, spec)
     arrow:SetColorAndOpacity(COLORS[spec.color]) -- the game arrow is dark red for both signs; tint it like the value text
 end
 
--- Hide the native rows, add one row for each mod term, write the mod order in the header.
--- Returns the number of rows added.
-function M.apply(tip, view)
+-- Hide the native rows, add one row for each mod term and the text items below them, write the mod order in the header.
+-- Returns the number of rows added (term rows and text items).
+function M.apply(tip, view, text_only)
     collapse_children(tip.recentFactors_VB)
     if tip.pastFactors_VB ~= nil then collapse_children(tip.pastFactors_VB) end
     for _, spec in ipairs(view.rows) do add_row(tip, spec) end
+    for _, spec in ipairs(view.notes or {}) do add_note(tip, spec, text_only) end
     tip.current_sum_txt:SetText(FText(view.header))
     paint(tip.current_sum_txt, view.header_color)
     if tip.none_txt ~= nil then tip.none_txt:SetVisibility(COLLAPSED) end
-    return #view.rows
+    return #view.rows + #(view.notes or {})
 end
 
 -- Texts of the rows now in the list (for the test command). Collapsed rows are skipped.
