@@ -1,16 +1,28 @@
 {
  "version": 3,
  "offer_per_tier": 3,
+ "groups": [
+  {
+   "goods": [
+    171,
+    279
+   ],
+   "label": "berries/fungi"
+  },
+  {
+   "goods": [
+    3,
+    9
+   ],
+   "label": "hides or pelts"
+  }
+ ],
  "tiers": {
   "small": {
    "requests": [
     {
      "good": 171,
      "weight": 1.4
-    },
-    {
-     "good": 279,
-     "weight": 1.2
     },
     {
      "good": 30,
@@ -256,6 +268,7 @@
   "163": "gambesons",
   "164": "mail armor",
   "273": "helmets",
-  "293": "plate armor"
+  "293": "plate armor",
+  "9": "pelts"
  }
 }

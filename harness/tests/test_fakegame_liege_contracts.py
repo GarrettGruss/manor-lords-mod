@@ -59,6 +59,7 @@ end
 WINTER, SPRING, SUMMER, AUTUMN = 0, 1, 2, 3
 # Goods of the tests (item ids of notes/item-ids.md of change update-liege-contracts-tiers)
 PLANKS, BERRIES, CLAY, SALT, EEL, STONE = 17, 171, 146, 145, 32, 27
+MUSHROOMS, HIDES, PELTS = 279, 3, 9
 SAUSAGES, SMOKED_FISH, BREAD, TOOLS, ALE, CLOTHES = 320, 323, 172, 6, 28, 149
 SWORDS, PLATE = 177, 293
 FEATURE = 'require("features.liege_contracts.init")'
@@ -255,13 +256,14 @@ class LoaderTests(ContractsTestCase):
             local c = {FEATURE}.contracts
             return #c.tiers.small.requests .. ":" .. #c.tiers.medium.requests .. ":" .. #c.tiers.large.requests .. ":" .. c.offer_per_tier
         """)
-        self.assertEqual(sizes, "12:9:3:3")
+        self.assertEqual(sizes, "11:9:3:3")
 
     def test_small_and_medium_requests_are_the_goods_of_table_1(self):
         data = self.data()
         small = {r["good"] for r in data["tiers"]["small"]["requests"]}
         medium = {r["good"] for r in data["tiers"]["medium"]["requests"]}
-        self.assertEqual(small, {171, 279, 30, 32, 330, 16, 13, 216, 3, 220, 15, 17})
+        # 279 (mushrooms) is in the group of berries; pelts (9) are in the group of hides
+        self.assertEqual(small, {171, 30, 32, 330, 16, 13, 216, 3, 220, 15, 17})
         self.assertEqual(medium, {320, 323, 35, 172, 170, 7, 4, 12, 148})
 
     def test_every_good_of_the_starter_table_has_a_name_and_is_an_item_row(self):
@@ -300,6 +302,25 @@ class LoaderTests(ContractsTestCase):
         costs = {r["cost"]: (r["min"], r["max"]) for r in data["tiers"]["large"]["requests"]}
         # 1 squad, 3 families, 3 months of tribute (one season). No peasant loan and no herd (design decisions 9 and 10).
         self.assertEqual(costs, {"loan_units": (1, 1), "send_families": (3, 3), "tribute_season": (3, 3)})
+
+    def groups(self, groups, requests="{ good = 1, weight = 1 }, { good = 2, weight = 1 }"):
+        tier = "{ requests = { " + requests + " }, rewards = { { kind = \"kings_favour\", min = 5, max = 6 } } }"
+        return self.build(small=tier, extra="offer_per_tier = 1, groups = " + groups)
+
+    def test_a_group_table_loads(self):
+        self.assertEqual(self.groups('{ { goods = { 1, 3 }, label = "a or b" } }'), "ok")
+
+    def test_a_group_needs_two_goods(self):
+        self.assertIn("group 1 needs the field 'goods' with at least 2 good ids", self.groups("{ { goods = { 1 } } }"))
+
+    def test_a_good_in_two_groups_stops_the_load(self):
+        self.assertIn("good 1 is in two groups", self.groups("{ { goods = { 1, 3 } }, { goods = { 1, 4 } } }"))
+
+    def test_two_requests_of_one_group_in_a_tier_stop_the_load(self):
+        self.assertIn("tier 'small' lists two requests of the same group", self.groups("{ { goods = { 1, 2 } } }"))
+
+    def test_a_label_must_be_text(self):
+        self.assertIn("field 'label' must be text", self.groups("{ { goods = { 1, 3 }, label = 5 } }"))
 
     def test_a_good_table_loads(self):
         self.assertEqual(self.build(), "ok")
@@ -717,6 +738,76 @@ class FulfilTests(ContractsTestCase):
         self.fulfil("small-1")
         self.game.advance(10)
         self.assertEqual(self.contracts()["failed_rewards"], 1)
+
+
+class InterchangeableGoodsTests(ContractsTestCase):
+    """Change update-contract-interchangeable-goods (#589): hides and pelts, berries and mushrooms stand for each other."""
+
+    def setUp(self):
+        super().setUp()
+        self.offer_now(offer_of(contract(SMALL, BERRIES, 40, "g", SALT, 25), contract(SMALL, HIDES, 20, "g", CLAY, 25), contract(SMALL, EEL, 30, "g", STONE, 20)))
+
+    def test_the_card_names_both_goods_and_the_storage_adds_them(self):
+        self.set_stock(BERRIES, 25)
+        self.set_stock(MUSHROOMS, 20)
+        card = self.card("small-1")
+        self.assertEqual(card["requirement"], "Deliver 40 berries/fungi")
+        self.assertEqual(card["have"], "In storage: 45 / 40")
+        self.assertTrue(card["enabled"], card)
+        self.assertEqual(self.card("small-2")["requirement"], "Deliver 20 hides or pelts")
+
+    def test_the_missing_amount_counts_both_goods(self):
+        self.set_stock(PELTS, 5)
+        self.set_stock(HIDES, 10)
+        card = self.card("small-2")
+        self.assertEqual((card["have"], card["enabled"], card["reason"]), ("In storage: 15 / 20", False, "5 more needed"))
+
+    def test_fulfil_takes_the_larger_stock_first(self):
+        self.set_stock(BERRIES, 25)
+        self.set_stock(MUSHROOMS, 30)
+        self.assertTrue(self.fulfil("small-1")["ok"])
+        self.assertEqual((self.stock(MUSHROOMS), self.stock(BERRIES)), (0, 15))
+
+    def test_a_good_alone_can_pay(self):
+        self.set_stock(PELTS, 20)
+        self.assertTrue(self.fulfil("small-2")["ok"])
+        self.assertEqual((self.stock(PELTS), self.stock(HIDES)), (0, 0))
+
+    def test_a_short_take_puts_the_units_back(self):
+        self.set_stock(BERRIES, 25)
+        self.set_stock(MUSHROOMS, 30)
+        self.world.hide_goods(MUSHROOMS, 10)  # the count says 30, the stores hold 20
+        before = (self.stock(BERRIES), self.stock(MUSHROOMS))
+        answer = self.fulfil("small-1")
+        self.assertFalse(answer["ok"], answer)
+        self.assertEqual((self.stock(BERRIES), self.stock(MUSHROOMS)), before)
+        self.assertFalse(self.card("small-1")["done"])
+
+    def test_a_saved_contract_for_a_group_member_still_loads(self):
+        self.offer_now(offer_of(contract(SMALL, MUSHROOMS, 40, "g", SALT, 25), contract(SMALL, PELTS, 20, "g", CLAY, 25), contract(SMALL, EEL, 30, "g", STONE, 20)))
+        self.assertEqual(self.card("small-1")["requirement"], "Deliver 40 berries/fungi")
+        self.assertEqual(self.card("small-2")["requirement"], "Deliver 20 hides or pelts")
+
+    def test_an_offer_never_holds_a_group_twice_or_pays_a_group_good(self):
+        data = load_data()
+        groups = [set(g["goods"]) for g in data["groups"]]
+        for seed in range(1, 31):
+            self.game.exec(f"math.randomseed({seed})")
+            self.go_to_spring()
+            cards = self.contracts()["contracts"]
+            for group in groups:
+                self.assertLessEqual(len([c for c in cards if c["tier"] == SMALL and c.get("good") in group]), 1)
+            for card in cards:
+                if card.get("good"):
+                    group = next((g for g in groups if card["good"] in g), {card["good"]})
+                    self.assertNotIn(card["reward"].get("good"), group)
+
+    def test_the_starter_groups_are_the_two_pairs_and_every_good_has_a_name(self):
+        data = load_data()
+        self.assertEqual(sorted(sorted(g["goods"]) for g in data["groups"]), [[3, 9], [171, 279]])
+        for group in data["groups"]:
+            for good in group["goods"]:
+                self.assertIn(str(good), data["names"])
 
 
 class LargeCostTests(ContractsTestCase):

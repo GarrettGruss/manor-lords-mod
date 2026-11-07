@@ -49,8 +49,8 @@ local function pick_distinct(list, count, rng)
 end
 
 -- One reward from the pool of a tier. `allowed(kind)` filters the kinds that cannot be drawn now (no locked law, the slot cap). The
--- reward good is never the request good. Returns { kind, good, amount }, or nil and a message.
-local function draw_reward(pool, request_good, allowed, rng)
+-- reward good is never a request good (a good of the request group). `excluded` is a set { [good] = true }. Returns { kind, good, amount }, or nil and a message.
+local function draw_reward(pool, excluded, allowed, rng)
     local rows = {}
     for _, row in ipairs(pool) do
         if allowed == nil or allowed(row.kind) then rows[#rows + 1] = row end
@@ -61,12 +61,53 @@ local function draw_reward(pool, request_good, allowed, rng)
     if row.goods then
         local goods = {}
         for _, good in ipairs(row.goods) do
-            if good ~= request_good then goods[#goods + 1] = good end
+            if not excluded[good] then goods[#goods + 1] = good end
         end
         if #goods == 0 then return nil, "the reward pool holds only the request good" end
         reward.good = goods[between(1, #goods, rng)]
     end
     return reward
+end
+
+-- The goods that a request accepts: the group of `good`, or just `good`. `group_of` is the map of the loaded table (good -> { goods }), may be nil.
+function M.accepted_goods(good, group_of)
+    local group = group_of and group_of[good]
+    if group then return group.goods end
+    return { good }
+end
+
+-- One request for each group in `requests`: the first listed request of a group stands for it (the loader refuses two in one tier,
+-- this keeps a table of an older shape safe). Order is kept.
+local function one_per_group(requests, group_of)
+    if group_of == nil then return requests end
+    local kept, seen = {}, {}
+    for _, request in ipairs(requests) do
+        local group = request.good and group_of[request.good]
+        if group == nil or not seen[group] then kept[#kept + 1] = request end
+        if group then seen[group] = true end
+    end
+    return kept
+end
+
+-- How to take `amount` units from the stocks of the accepted goods: the larger stock first. `goods` is the list of good ids,
+-- `stock_of(good)` the stock of one. Returns a list of { good, count } (counts add up to `amount`), or nil and the amount that is missing.
+function M.take_plan(goods, stock_of, amount)
+    local rows = {}
+    for index, good in ipairs(goods) do rows[#rows + 1] = { good = good, stock = math.floor(stock_of(good) or 0), index = index } end
+    table.sort(rows, function(a, b)
+        if a.stock ~= b.stock then return a.stock > b.stock end
+        return a.index < b.index
+    end)
+    local plan, left = {}, amount
+    for _, row in ipairs(rows) do
+        local count = math.min(row.stock, left)
+        if count > 0 then
+            plan[#plan + 1] = { good = row.good, count = count }
+            left = left - count
+        end
+    end
+    if left > 0 then return nil, left end
+    return plan
 end
 
 -- The amount of a Large cost: the drawn amount scaled by the difficulty (decision 11 of the change).
@@ -76,7 +117,7 @@ end
 
 -- Draws the offer: `per_tier` different requests for each tier, each with one reward.
 -- `setup`: { tiers = the loaded table, base = { small, medium }, weight = { [good] = override }, difficulty = number, allowed = fn(kind),
---            cost_allowed = fn(cost kind) }
+--            cost_allowed = fn(cost kind), group_of = the map of the loaded table (good -> group, optional) }
 -- Returns a list of contracts { id, tier, number, good (or cost), amount, reward, done = false } in tier order, or nil and a message.
 function M.draw_offer(setup, per_tier, rng)
     local offer = {}
@@ -84,12 +125,14 @@ function M.draw_offer(setup, per_tier, rng)
         local pool = setup.tiers[tier]
         if pool == nil then return nil, "tier " .. tier .. " is missing" end
         local requests = {}
-        for _, request in ipairs(pool.requests) do
+        for _, request in ipairs(one_per_group(pool.requests, setup.group_of)) do
             if request.cost == nil or setup.cost_allowed == nil or setup.cost_allowed(request.cost) then requests[#requests + 1] = request end
         end
         if #requests < per_tier then return nil, string.format("tier %s has fewer than %d requests", tier, per_tier) end
         for number, request in ipairs(pick_distinct(requests, per_tier, rng)) do
-            local reward, why = draw_reward(pool.rewards, request.good, setup.allowed, rng)
+            local excluded = {}
+            for _, good in ipairs(M.accepted_goods(request.good, setup.group_of)) do excluded[good] = true end
+            local reward, why = draw_reward(pool.rewards, excluded, setup.allowed, rng)
             if reward == nil then return nil, tier .. ": " .. tostring(why) end
             local contract = { id = tier .. "-" .. number, tier = tier, number = number, done = false, reward = reward }
             if request.cost then
