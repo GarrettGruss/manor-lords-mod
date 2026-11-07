@@ -7,7 +7,7 @@ M.TIERS = { "small", "medium", "large" } -- the order of the rows in the window
 M.DEFAULT_OFFER_PER_TIER = 3
 
 -- Reward kinds. `true` marks the kinds that need a list of good ids.
-M.REWARD_KINDS = { goods = true, weapons = true, armor = true, law = false, kings_favour = false, law_slot = false, relief_promise = false }
+M.REWARD_KINDS = { goods = true, weapons = true, armor = true, law = false, kings_favour = false, law_slot = false, relief_promise = false, retinue_squad = false }
 -- Cost kinds of a Large request (a Large contract asks for a cost, not for goods).
 M.COST_KINDS = { loan_units = true, send_families = true, tribute_season = true }
 

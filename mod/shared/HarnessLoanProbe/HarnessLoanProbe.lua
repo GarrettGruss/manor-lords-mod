@@ -282,6 +282,123 @@ function M.loan_probe(request)
         if mode == "familyhide" then hiddenNow = hideUnits(members, request.source or "plain") end
         return { ok = true, families = families, hidden = hiddenNow, state = describe(members),
                  families_total = read(function() return region.workerFamilies:GetArrayNum() end) }
+    elseif mode == "runits" then
+        -- Spike 2 of add-contract-retinue-reward: the class and a path of one living unit of each commanded squad (to inspect with a name pattern).
+        local seen, out = {}, {}
+        for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+            if isValid(unit) and read(function() return unit.dead end) ~= true then
+                local id = read(function() return unit.assignedSquadID.Value end)
+                if id ~= nil and not seen[id] then
+                    seen[id] = true
+                    out[#out + 1] = { squad = id, class = read(function() return unit:GetClass():GetFName():ToString() end),
+                                      path = read(function() return unit:GetFullName() end) }
+                end
+            end
+        end
+        return { ok = true, units = out }
+    elseif mode == "rsq" then
+        -- Spike 2, risky: read ONLY squadType from the struct returned by getSquadByID (a crash is a result; see DANGEROUS_ACTIONS.md).
+        local engine = FindFirstOf("RTSMultiEngineCPP")
+        local player = engine and read(function() return engine.playerRef end)
+        if not isValid(player) then return { ok = false, error = "no player pawn" } end
+        local out = {}
+        for _, handle in ipairs(listOf(read(function() return player.commandedSquads end))) do
+            local id = read(function() return handle.Value end)
+            if type(id) == "number" then
+                local ok, value = pcall(function() local s = player:getSquadByID({ Value = id }); return tostring(s.squadType) end)
+                out[#out + 1] = { id = id, squadType = ok and value or ("error " .. tostring(value):sub(1, 100)) }
+            end
+        end
+        return { ok = true, squads = out }
+    elseif mode == "rpaths" then
+        local engine = FindFirstOf("RTSMultiEngineCPP")
+        local player = engine and read(function() return engine.playerRef end)
+        local paths = { player = isValid(player) and player:GetFullName() or nil }
+        for _, object in ipairs(FindAllOf("SMBuildingMaster") or {}) do
+            if isValid(object) and read(function() return object:IsConstructed() end) == true then
+                local kind = read(function() return object.Data.bType end)
+                if require("HarnessManor").MANOR_TYPES[kind] == true then paths.manor = object:GetFullName() end
+            end
+        end
+        return { ok = true, paths = paths }
+    elseif mode == "rtype" then
+        -- Spike 2: which cheap, safe read tells a retinue squad? Only scalar answers of PawnCPP functions (no Squad struct).
+        local engine = FindFirstOf("RTSMultiEngineCPP")
+        local player = engine and read(function() return engine.playerRef end)
+        if not isValid(player) then return { ok = false, error = "no player pawn" } end
+        local out = {}
+        for _, handle in ipairs(listOf(read(function() return player.commandedSquads end))) do
+            local id = read(function() return handle.Value end)
+            if type(id) == "number" then
+                local row = { id = id }
+                for _, name in ipairs({ "getSquadStatus", "getSquadCompanyName", "getSquadOwner" }) do
+                    local ok, value = pcall(function()
+                        local v = player[name](player, { Value = id })
+                        local good, text = pcall(function() return v:ToString() end)
+                        return good and text or tostring(v)
+                    end)
+                    row[name] = ok and tostring(value) or ("error " .. tostring(value):sub(1, 80))
+                end
+                out[#out + 1] = row
+            end
+        end
+        return { ok = true, squads = out }
+    elseif mode == "rsquads" or mode == "rbound" or mode == "rinit" or mode == "rhire" then
+        -- Change add-contract-retinue-reward, spike 1: native retinue squads. Never reads a Squad struct (DANGEROUS_ACTIONS.md).
+        local engine = FindFirstOf("RTSMultiEngineCPP")
+        local player = engine and read(function() return engine.playerRef end)
+        if not isValid(player) then return { ok = false, error = "no player pawn" } end
+        local function squadRows()
+            local rows, byId = {}, {}
+            for _, handle in ipairs(listOf(read(function() return player.commandedSquads end))) do
+                local id = read(function() return handle.Value end)
+                if type(id) == "number" then byId[id] = { id = id, men = 0 }; rows[#rows + 1] = byId[id] end
+            end
+            for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+                if isValid(unit) and read(function() return unit.dead end) ~= true then
+                    local row = byId[read(function() return unit.assignedSquadID.Value end)]
+                    if row then row.men = row.men + 1 end
+                end
+            end
+            return rows
+        end
+        local function manorBuilding()
+            for _, object in ipairs(FindAllOf("SMBuildingMaster") or {}) do
+                if isValid(object) and read(function() return object:IsConstructed() end) == true then
+                    local kind = read(function() return object.Data.bType end)
+                    if require("HarnessManor").MANOR_TYPES[kind] == true then return object end
+                end
+            end
+            return nil
+        end
+        local function boundRows(building)
+            local rows = {}
+            for _, member in ipairs(listOf(read(function() return building:getBoundRetinue() end))) do
+                rows[#rows + 1] = { class = read(function() return member:GetClass():GetFName():ToString() end),
+                                    squad = read(function() return member.assignedSquadID.Value end), dead = read(function() return member.dead end) }
+            end
+            return rows
+        end
+        local building = manorBuilding()
+        if mode == "rsquads" then
+            return { ok = true, squads = squadRows(), silver = read(function() return player.silver end) }
+        elseif mode == "rbound" then
+            if not building then return { ok = false, error = "no manor" } end
+            return { ok = true, bound = boundRows(building), squads = squadRows(), limit = read(function() return building:getModularGarrisonLimit() end),
+                     can_hire = read(function() return building:canHireRetinue() end), cost = read(function() return building:GetRetinueHireTreasuryCost() end) }
+        elseif mode == "rinit" then
+            local region, problem = sack.playerRegion(nil)
+            if not region then return { ok = false, error = problem } end
+            local before = squadRows()
+            local ok, err = pcall(function() player:InitializeEmptyRetinueSquad(region) end)
+            return { ok = ok, error = (not ok) and tostring(err) or nil, before = before, after = squadRows() }
+        else
+            if not building then return { ok = false, error = "no manor" } end
+            local before, silver = boundRows(building), read(function() return player.silver end)
+            local ok, err = pcall(function() building:hireExtraRetinue() end)
+            return { ok = ok, error = (not ok) and tostring(err) or nil, bound_before = #before, bound_after = #boundRows(building), squads = squadRows(),
+                     silver_before = silver, silver_after = read(function() return player.silver end) }
+        end
     end
     return { ok = false, error = "unknown mode " .. tostring(mode) }
 end

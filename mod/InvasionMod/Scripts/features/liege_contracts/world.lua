@@ -149,6 +149,32 @@ function M.spawn_squad(template, experience)
     return id
 end
 
+-- A native retinue squad with `men` men for nothing (feature manor_stronghold). Returns the squad id, or nil and a message.
+function M.add_retinue_squad(men)
+    return require("features.manor_stronghold.retinue").add_native_squad(men)
+end
+
+-- The squad that the manor recruits into now, or nil.
+function M.bound_retinue_squad_id()
+    return require("features.manor_stronghold.retinue").bound_squad_id()
+end
+
+-- Writes the mean experience to the living men of a squad (a native squad is not in the helper registry). Returns the number of men changed.
+function M.set_squad_experience(id, value)
+    local changed = 0
+    for _, unit in ipairs(FindAllOf("SMUnit") or {}) do
+        if isValid(unit) and read(function() return unit.assignedSquadID.Value end) == id and read(function() return unit.dead end) ~= true then
+            if pcall(function() unit.combatExperience = value end) then changed = changed + 1 end
+        end
+    end
+    return changed
+end
+
+-- The banner at the top of the screen. Returns true, or false and a message.
+function M.show_banner(text, subtext)
+    return core.show_banner(text, subtext)
+end
+
 local function built_buildings(region)
     local list = {}
     for _, building in ipairs(listOf(region:GetBuildings())) do

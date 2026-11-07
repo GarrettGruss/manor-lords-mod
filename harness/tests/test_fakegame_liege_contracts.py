@@ -92,7 +92,7 @@ def load_data():
 
 # Six families of three villagers, a King's Favour value, and two squads of the player (5: 32 men, 6: 36 men).
 EXTRAS = """
-function(fg, region, pawn)
+function(fg, region, pawn, manor)
     local extras = { families = {}, removed_squads = {} }
     local function rebuild()
         local live = {}
@@ -142,6 +142,45 @@ function(fg, region, pawn)
     end)
     extras.add_squad(5, 32, 2)
     extras.add_squad(6, 36, 4)
+    -- The native retinue (change add-contract-retinue-reward): the manor recruits into the newest retinue squad, 50 silver a man, up to 12.
+    -- Squad 7 is the retinue squad of the start (5 men). The same calls as the real game (spike notes/spike-native-retinue.md).
+    extras.next_id = 7
+    extras.hire_limit = 12
+    extras.bound = {}
+    extras.bound_squad = nil
+    extras.new_retinue_squad = function(men, xp)
+        local id = extras.next_id
+        extras.next_id = id + 1
+        extras.add_squad(id, men, xp or 0)
+        extras.bound_squad = id
+        return id
+    end
+    fg.set_method(pawn, "InitializeEmptyRetinueSquad", function(self, given)
+        assert(given == region, "the region object is needed")
+        extras.new_retinue_squad(0)
+    end)
+    fg.set_method(manor, "getModularGarrisonLimit", function() return 12 end)
+    fg.set_method(manor, "canHireRetinue", function() return true end)
+    fg.set_method(manor, "GetRetinueHireTreasuryCost", function() return 50 end)
+    fg.set_method(manor, "getBoundRetinue", function()
+        local list = {}
+        for _, unit in ipairs(extras.units) do
+            if unit.assignedSquadID.Value == extras.bound_squad and not unit.dead then list[#list + 1] = unit end
+        end
+        return fg.array(list, { wrap = false })
+    end)
+    fg.set_method(manor, "hireExtraRetinue", function()
+        if pawn.silver < 50 then return end
+        local men = 0
+        for _, unit in ipairs(extras.units) do
+            if unit.assignedSquadID.Value == extras.bound_squad and not unit.dead then men = men + 1 end
+        end
+        if men >= extras.hire_limit then return end
+        pawn.silver = pawn.silver - 50
+        extras.units[#extras.units + 1] = fg.object("SMUnit", { dead = false, assignedSquadID = { Value = extras.bound_squad }, combatExperience = 0 },
+            "/Game/Fake/Map.Map:PersistentLevel.Unit_" .. extras.bound_squad .. "_h" .. (#extras.units + 1))
+    end)
+    extras.new_retinue_squad(5, 3)
     return extras
 end
 """
@@ -154,7 +193,7 @@ class ContractsTestCase(TechTreeTestCase):
     def setUp(self):
         super().setUp()
         self.world = self.game.lua.eval(WORLD)(self.game.fg, self.region)
-        self.extras = self.game.lua.eval(EXTRAS)(self.game.fg, self.region, self.pawn)
+        self.extras = self.game.lua.eval(EXTRAS)(self.game.fg, self.region, self.pawn, self.world.manor)
         self.pawn.silver = 1000
         self.calendar.day = 100
         self.ask("invasion_set_level", kind="yearly", value=2)  # difficulty 1.0 (the base class sets level 1)
@@ -210,6 +249,17 @@ class ContractsTestCase(TechTreeTestCase):
 
     def slots(self):
         return self.contracts()["law_slots"]
+
+    def living_men(self, squad):
+        return self.game.exec(f'''
+            local n = 0
+            for _, unit in ipairs(FindAllOf("SMUnit") or {{}}) do
+                if unit.assignedSquadID.Value == {squad} and not unit.dead then n = n + 1 end
+            end
+            return n''')
+
+    def reload_state(self):
+        self.game.exec(f"{FEATURE}.state:load()")
 
 
 class SmokeTests(ContractsTestCase):
@@ -280,7 +330,7 @@ class LoaderTests(ContractsTestCase):
         data = self.data()
         kinds = {name: {reward["kind"] for reward in tier["rewards"]} for name, tier in data["tiers"].items()}
         self.assertEqual(kinds, {"small": {"goods"}, "medium": {"goods"},
-                                 "large": {"law", "kings_favour", "weapons", "armor", "law_slot", "relief_promise"}})
+                                 "large": {"law", "kings_favour", "weapons", "armor", "law_slot", "relief_promise", "retinue_squad"}})
         lists = data["good_lists"]
         small = data["tiers"]["small"]["rewards"][0]
         self.assertEqual(sorted(lists[small["goods"]]), sorted([145, 14, 146, 11, 27]))
@@ -436,9 +486,9 @@ class DrawTests(ContractsTestCase):
             self.assertEqual(card.get("cost") is not None, card["tier"] == LARGE)
 
     def test_rewards_follow_the_tier_and_never_repeat_the_request_good(self):
-        allowed = {SMALL: {"goods"}, MEDIUM: {"goods"}, LARGE: {"law", "kings_favour", "weapons", "armor", "law_slot", "relief_promise"}}
+        allowed = {SMALL: {"goods"}, MEDIUM: {"goods"}, LARGE: {"law", "kings_favour", "weapons", "armor", "law_slot", "relief_promise", "retinue_squad"}}
         ranges = {"goods": {SMALL: (20, 40), MEDIUM: (10, 30)}, "weapons": {LARGE: (20, 40)}, "armor": {LARGE: (15, 30)}, "law": {LARGE: (1, 1)},
-                  "kings_favour": {LARGE: (10, 10)}, "law_slot": {LARGE: (1, 1)}, "relief_promise": {LARGE: (5, 5)}}
+                  "kings_favour": {LARGE: (10, 10)}, "law_slot": {LARGE: (1, 1)}, "relief_promise": {LARGE: (5, 5)}, "retinue_squad": {LARGE: (1, 1)}}
         for seed in range(1, 25):
             self.setUp()
             for card in self.draw(seed):
@@ -499,6 +549,17 @@ class DrawTests(ContractsTestCase):
             self.assertEqual(self.slots(), 5)
             seen.update(card["reward"]["kind"] for card in self.draw(seed) if card["tier"] == LARGE)
         self.assertNotIn("law_slot", seen)
+
+    def test_the_retinue_squad_reward_is_not_drawn_at_the_cap_and_is_drawn_below(self):
+        seen_below, seen_at_cap = set(), set()
+        for seed in range(1, 60):
+            self.setUp()
+            seen_below.update(card["reward"]["kind"] for card in self.draw(seed) if card["tier"] == LARGE)
+            self.setUp()
+            self.game.exec(f"{FEATURE}.state:set('contracts_retinue_squads', 4)")
+            seen_at_cap.update(card["reward"]["kind"] for card in self.draw(seed) if card["tier"] == LARGE)
+        self.assertIn("retinue_squad", seen_below)
+        self.assertNotIn("retinue_squad", seen_at_cap)
 
     def test_the_law_slot_reward_is_drawn_below_the_cap(self):
         seen = set()
@@ -756,7 +817,7 @@ class LargeCostTests(ContractsTestCase):
         self.assertEqual((card["requirement"], card["have"], card["reward_text"]), ("Cost: 3 families, for good", "Families: 6", "+10 King's Favour"))
         self.assertEqual(self.card(LOAN_ID)["requirement"], "Cost: 1 squad for 60 days")
         self.assertEqual(self.card(TRIBUTE_ID)["requirement"], "Cost: tribute for 3 months")
-        self.assertEqual((self.card(LOAN_ID)["have"], self.card(TRIBUTE_ID)["have"]), ("Squads: 2", "Vassals: 2"))
+        self.assertEqual((self.card(LOAN_ID)["have"], self.card(TRIBUTE_ID)["have"]), ("Retinue squads: 0", "Vassals: 2"))
 
     def test_a_cost_card_shows_no_storage_text(self):
         for number, card in enumerate(c for c in self.contracts()["contracts"] if c["tier"] == LARGE):
@@ -782,15 +843,43 @@ class LargeCostTests(ContractsTestCase):
     def relief_bonus(self):
         return self.contracts()["relief_bonus_squads"]
 
-    def test_a_squad_loan_removes_the_biggest_squad_and_writes_the_record(self):
-        self.game.exec("local world = require('features.liege_contracts.world'); world.current_day = function() return 100 end")
+    def freeze_days(self, banners=True):
+        self.game.exec("""
+            local world = require('features.liege_contracts.world')
+            now = 100
+            world.current_day = function() return now end
+            banners = {}
+            world.show_banner = function(text) banners[#banners + 1] = text; return true end
+        """)
+
+
+    def test_a_squad_loan_takes_the_retinue_squad_and_writes_the_record(self):
+        self.freeze_days()
         answer = self.fulfil(LOAN_ID)
         self.assertTrue(answer["ok"], answer)
-        self.assertEqual(list(self.extras.removed_squads.values()), [6])  # 36 men: the retinue squad
+        self.assertEqual(list(self.extras.removed_squads.values()), [7])  # the 5-man retinue squad, not the militia squads 5 and 6
         state = self.contracts()
-        self.assertEqual(state["loans_text"], "retinue_tier1-36-4-160")
+        self.assertEqual(state["loans_text"], "retinue-5-3-160")  # never "spearMilitia"
         self.assertEqual((state["loans_started"], state["done"]), (1, 1))
         self.assertEqual(state["law_slots"], 1)
+
+    def test_a_militia_squad_is_never_loaned(self):
+        self.game.exec("require('features.liege_contracts.world').player_squads = function() return { { id = 5, men = 32, experience = 2 }, { id = 6, men = 36, experience = 4 } } end")
+        answer = self.fulfil(LOAN_ID)
+        self.assertFalse(answer["ok"])
+        self.assertIn("Needs a retinue squad", answer["error"])
+        self.assertEqual(list(self.extras.removed_squads.values()), [])
+        self.assertEqual(self.card(LOAN_ID)["reason"], "Needs a retinue squad")
+        self.assertEqual((self.contracts()["done"], self.contracts()["loans_text"]), (0, ""))
+
+    def test_the_smallest_retinue_squad_is_loaned(self):
+        self.game.advance(12)  # a tick notes the bound squad 7
+        self.assertEqual(self.contracts()["retinue_ids"], "7")
+        self.extras.new_retinue_squad(9, 1)  # squad 8, now the bound squad
+        self.freeze_days()
+        self.assertTrue(self.fulfil(LOAN_ID)["ok"])
+        self.assertEqual(list(self.extras.removed_squads.values()), [7])
+        self.assertEqual(self.contracts()["retinue_ids"], "7.8")
 
     def test_a_squad_loan_pays_a_law(self):
         self.fulfil(LOAN_ID)
@@ -798,104 +887,92 @@ class LargeCostTests(ContractsTestCase):
         self.assertNotEqual(granted, "")
         self.assertIn("Contract: Large 2", self.game.exec(f'return require("features.tech_tree.init").law_source("{granted}")'))
 
-    def test_the_loan_squad_returns_after_60_days_with_the_same_template(self):
-        self.game.exec("""
-            local world = require('features.liege_contracts.world')
-            now = 100
-            world.current_day = function() return now end
-            spawned = {}
-            world.spawn_squad = function(template, experience) spawned[#spawned + 1] = template .. ":" .. experience; return 21 end
-        """)
+    def test_the_loan_squad_returns_after_60_days_as_a_native_retinue_squad_and_a_banner_shows(self):
+        self.freeze_days()
         self.fulfil(LOAN_ID)
+        silver = self.pawn.silver
         self.game.exec("now = 159")
         self.game.advance(5)
-        self.assertEqual(self.game.exec('return #spawned'), 0)
+        self.assertEqual(self.game.exec("return #banners"), 0)
         self.game.exec("now = 160")
         self.game.advance(5)
-        self.assertEqual(self.game.exec('return table.concat(spawned, ",")'), "retinue_tier1:4")
         state = self.contracts()
         self.assertEqual((state["loans_text"], state["loans_returned"]), ("", 1))
+        self.assertEqual(self.game.exec('return table.concat(banners, "|")'), "The liege returns your squad (5 men)")
+        squads = self.game.exec('return require("features.liege_contracts.world").player_squads()')
+        returned = [self.living_men(8)]
+        self.assertEqual(returned, [5])  # the new squad 8 has the 5 men
+        self.assertEqual(self.pawn.silver, silver)  # the return costs the player nothing
+        self.assertIn("8", state["retinue_ids"].split("."))
         self.game.advance(10)
-        self.assertEqual(self.game.exec('return #spawned'), 1)  # once
+        self.assertEqual(self.game.exec("return #banners"), 1)  # once
 
     def test_a_loan_record_survives_a_save_and_a_load(self):
-        self.game.exec("""
-            local world = require('features.liege_contracts.world')
-            now = 100
-            world.current_day = function() return now end
-            spawned = {}
-            world.spawn_squad = function(template, experience) spawned[#spawned + 1] = template; return 21 end
-        """)
+        self.freeze_days()
         self.fulfil(LOAN_ID)
         self.game.exec(f"{FEATURE}.state:load()")
-        self.assertEqual(self.contracts()["loans_text"], "retinue_tier1-36-4-160")
+        self.assertEqual(self.contracts()["loans_text"], "retinue-5-3-160")
         self.game.exec("now = 200")
         self.game.advance(5)
-        self.assertEqual(self.game.exec('return table.concat(spawned, ",")'), "retinue_tier1")
+        self.assertEqual((self.contracts()["loans_text"], self.living_men(8)), ("", 5))
 
     def test_the_test_command_makes_a_loan_due_now(self):
-        self.game.exec("""
-            local world = require('features.liege_contracts.world')
-            now = 100
-            world.current_day = function() return now end
-            spawned = 0
-            world.spawn_squad = function() spawned = spawned + 1; return 21 end
-        """)
+        self.freeze_days()
         self.fulfil(LOAN_ID)
         answer = self.ask("liege_contracts_loans_due_now")
         self.assertTrue(answer["ok"], answer)
         self.game.advance(5)
-        self.assertEqual((self.game.exec("return spawned"), self.contracts()["loans_text"]), (1, ""))
+        self.assertEqual((self.game.exec("return #banners"), self.contracts()["loans_text"]), (1, ""))
 
     def test_a_failed_return_keeps_the_record_and_tries_again(self):
+        self.freeze_days()
         self.game.exec("""
             local world = require('features.liege_contracts.world')
-            now = 100
-            world.current_day = function() return now end
+            local real = world.add_retinue_squad
             attempts = 0
-            world.spawn_squad = function() attempts = attempts + 1; if attempts < 3 then return nil, "no player position" end return 21 end
+            world.add_retinue_squad = function(men)
+                attempts = attempts + 1
+                if attempts < 3 then return nil, "no manor position" end
+                return real(men)
+            end
         """)
         self.fulfil(LOAN_ID)
         self.game.exec("now = 170")
         self.game.advance(3)
-        self.assertEqual(self.contracts()["loans_text"], "retinue_tier1-36-4-160")
+        self.assertEqual(self.contracts()["loans_text"], "retinue-5-3-160")
+        self.assertEqual(self.game.exec("return #banners"), 0)
         self.game.advance(8)
         self.assertEqual(self.game.exec("return attempts"), 3)
-        self.assertEqual(self.contracts()["loans_text"], "")
+        self.assertEqual((self.contracts()["loans_text"], self.game.exec("return #banners")), ("", 1))
 
-    def test_a_squad_of_an_unknown_size_cannot_be_loaned(self):
+    def test_a_banner_that_fails_does_not_stop_the_return(self):
+        self.freeze_days()
+        self.game.exec("require('features.liege_contracts.world').show_banner = function() return false, 'no pawn' end")
+        self.fulfil(LOAN_ID)
+        self.game.exec("now = 170")
+        self.game.advance(5)
+        self.assertEqual((self.contracts()["loans_text"], self.contracts()["loans_returned"]), ("", 1))
+
+    def test_a_squad_with_a_known_mod_template_keeps_it(self):
         self.game.exec("""
             local world = require('features.liege_contracts.world')
-            world.player_squads = function() return { { id = 9, men = 50, experience = 0 } } end
-        """)
-        answer = self.fulfil(LOAN_ID)
-        self.assertFalse(answer["ok"])
-        self.assertIn("the squad type is not known", answer["error"])
-        self.assertEqual((self.contracts()["done"], self.contracts()["loans_text"]), (0, ""))
-
-    def test_a_squad_with_a_known_template_keeps_it(self):
-        self.game.exec("""
-            local world = require('features.liege_contracts.world')
-            world.player_squads = function() return { { id = 9, men = 50, experience = 7 } } end
-            world.known_template = function() return "Brigands" end
+            world.player_squads = function() return { { id = 9, men = 36, experience = 7 } } end
+            world.known_template = function() return "retinue_tier1" end
             world.remove_squad = function() return true end
         """)
         self.assertTrue(self.fulfil(LOAN_ID)["ok"])
-        self.assertEqual(self.contracts()["loans_text"].split("-")[0], "Brigands")
+        self.assertEqual(self.contracts()["loans_text"].split("-")[0], "retinue_tier1")
 
-    def test_the_loan_needs_a_squad(self):
+    def test_the_loan_needs_a_retinue_squad(self):
         self.game.exec("require('features.liege_contracts.world').player_squads = function() return {} end")
         answer = self.fulfil(LOAN_ID)
         self.assertFalse(answer["ok"])
-        self.assertIn("1 more squad needed", answer["error"])
+        self.assertIn("Needs a retinue squad", answer["error"])
 
-    def test_a_size_in_between_takes_the_next_template(self):
-        self.assertEqual(self.template_for(30), "spearMilitia")
-        self.assertEqual(self.template_for(33), "retinue_tier1")
-        self.assertIsNone(self.template_for(37))
-
-    def template_for(self, men):
-        return self.game.exec(f'return (require("features.liege_contracts.rules").loan_template({men}, nil, require("config").liege_contracts.loan_templates))')
+    def test_the_template_of_a_loan(self):
+        rules = 'require("features.liege_contracts.rules")'
+        self.assertEqual(self.game.exec(f"return {rules}.loan_template(nil)"), "retinue")
+        self.assertEqual(self.game.exec(f"return {rules}.loan_template('Brigands')"), "Brigands")
 
     def test_a_failed_squad_removal_changes_nothing(self):
         self.game.exec("require('features.liege_contracts.world').remove_squad = function() return nil, 'addRemoveSquadRequest: no' end")
@@ -993,6 +1070,63 @@ class RewardTests(ContractsTestCase):
         self.offer_now(offer_of(contract(LARGE, TRIBUTE, 3, "p", 0, 5)))
         self.assertTrue(self.fulfil("large-1")["ok"])
         self.assertEqual(self.contracts()["relief_bonus_squads"], 10)
+
+    def squad_total(self):
+        return self.game.exec('return #require("features.liege_contracts.world").player_squads()')
+
+    def test_a_retinue_squad_reward_adds_a_native_squad_of_5_men_for_nothing(self):
+        silver = self.pawn.silver
+        result = self.large("r", 0, 1)
+        squad = result["reward"]["squad"]
+        self.assertEqual(self.living_men(squad), 5)
+        self.assertEqual(self.pawn.silver, silver)  # the 5 recruits are free
+        state = self.contracts()
+        self.assertEqual(state["retinue_squads"], 1)
+        self.assertIn(str(squad), state["retinue_ids"].split("."))
+        self.assertEqual(state["failed_rewards"], 0)
+        self.assertEqual(self.card("large-1")["reward_text"], "+1 retinue squad")
+
+    def test_the_player_pays_the_native_cost_to_grow_the_new_squad(self):
+        squad = self.large("r", 0, 1)["reward"]["squad"]
+        silver = self.pawn.silver
+        self.game.exec('require("features.manor_stronghold.retinue").hire()')
+        self.assertEqual((self.living_men(squad), self.pawn.silver), (6, silver - 50))
+
+    def test_four_retinue_squads_are_paid_and_the_fifth_pays_kings_favour(self):
+        for _ in range(4):
+            self.large("r", 0, 1)
+        self.assertEqual(self.contracts()["retinue_squads"], 4)
+        squads, favour = self.squad_total(), self.pawn.kingsFavour
+        result = self.large("r", 0, 1)
+        self.assertEqual((self.contracts()["retinue_squads"], self.squad_total()), (4, squads))
+        self.assertEqual(self.pawn.kingsFavour, favour + 10)
+        self.assertEqual(result["reward"]["fallback"], {"kind": "kings_favour", "amount": 10})
+
+    def test_a_retinue_squad_reward_without_a_built_manor_is_a_failed_reward(self):
+        squads = self.squad_total()
+        self.offer_now(offer_of(contract(LARGE, TRIBUTE, 3, "r", 0, 1)))
+        self.assertTrue(self.fulfil("large-1")["ok"])  # the manor is built at the check ...
+        self.assertEqual((self.contracts()["failed_rewards"], self.contracts()["retinue_squads"]), (0, 1))
+        self.world.manor.Data.constructed = False  # ... and gone at the next one
+        self.game.exec("require('features.liege_contracts.world').manor_built = function() return true end")
+        self.offer_now(offer_of(contract(LARGE, TRIBUTE, 3, "r", 0, 1)))
+        self.assertTrue(self.fulfil("large-1")["ok"])
+        self.assertEqual((self.contracts()["failed_rewards"], self.contracts()["retinue_squads"], self.squad_total()), (1, 1, squads + 1))
+
+    def test_a_squad_that_gets_too_few_men_fails_and_the_credit_of_the_missing_men_is_taken_back(self):
+        silver = self.pawn.silver
+        self.extras.hire_limit = 3  # the native hire stops at 3 men for each squad
+        self.large("r", 0, 1)
+        self.assertEqual((self.contracts()["failed_rewards"], self.contracts()["retinue_squads"]), (1, 0))
+        self.assertEqual(self.pawn.silver, silver)  # +250 credit, -150 for the 3 recruits, -100 taken back
+
+    def test_the_retinue_squad_reward_is_saved_and_decoded(self):
+        self.offer_now(offer_of(contract(LARGE, TRIBUTE, 3, "r", 0, 1)))
+        before = self.contracts()["offer_text"]
+        self.reload_state()
+        self.game.advance(4)
+        self.assertEqual(self.contracts()["offer_text"], before)
+        self.assertEqual(self.card("large-1")["reward"], {"kind": "retinue_squad", "amount": 1})
 
 
 class ManorTests(ContractsTestCase):

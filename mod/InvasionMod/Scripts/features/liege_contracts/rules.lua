@@ -5,7 +5,7 @@ M.TIERS = { "small", "medium", "large" }
 M.TIERS_INDEX = { small = 1, medium = 2, large = 3 }
 local TIER_LETTER = { small = "s", medium = "m", large = "l" }
 local LETTER_TIER = { s = "small", m = "medium", l = "large" }
-local KIND_LETTER = { goods = "g", weapons = "w", armor = "a", law = "l", kings_favour = "k", law_slot = "s", relief_promise = "p" }
+local KIND_LETTER = { goods = "g", weapons = "w", armor = "a", law = "l", kings_favour = "k", law_slot = "s", relief_promise = "p", retinue_squad = "r" }
 -- A Large contract has a cost in place of a good. The saved text holds the cost code in the place of the good id.
 M.COST_CODE = { loan_units = 1, send_families = 2, tribute_season = 3 }
 local CODE_COST = {}
@@ -209,16 +209,54 @@ function M.split_loans(list, day)
     return due, kept
 end
 
--- The template of a squad. `known` is the template that the game helper registry knows (a squad that was spawned by a script), or nil.
--- Otherwise the smallest size in `sizes` ({ { men = 32, template = "spearMilitia" }, ... }, in rising order) that is at least `men`.
--- Returns the template, or nil and a reason.
-function M.loan_template(men, known, sizes)
-    if known ~= nil then return known end
-    for _, row in ipairs(sizes) do
-        if men <= row.men then return row.template end
-    end
-    return nil, "the squad type is not known"
+-- The template of a loaned retinue squad. `known` is the template that the game helper registry knows (a mod squad that a script spawned), or nil.
+-- A native retinue squad has no known template: its record template is NATIVE_RETINUE (change add-contract-retinue-reward; the old guess by size gave "spearMilitia" for a 5-man retinue).
+M.NATIVE_RETINUE = "retinue"
+function M.loan_template(known)
+    return known or M.NATIVE_RETINUE
 end
+
+-- Ids of the retinue squads: "22.24" (ModState text). No safe read tells a retinue squad, so the mod keeps the ids.
+function M.encode_ids(list)
+    local parts = {}
+    for _, id in ipairs(list) do parts[#parts + 1] = string.format("%d", id) end
+    return table.concat(parts, ".")
+end
+
+function M.decode_ids(text)
+    local list = {}
+    for entry in string.gmatch(text or "", "[^%.]+") do
+        local id = tonumber(entry)
+        if id then list[#list + 1] = id end
+    end
+    return list
+end
+
+-- The list `ids` with `id` added once. Returns the new list and whether it changed.
+function M.add_id(ids, id)
+    for _, held in ipairs(ids) do
+        if held == id then return ids, false end
+    end
+    local out = {}
+    for index, held in ipairs(ids) do out[index] = held end
+    out[#out + 1] = id
+    return out, true
+end
+
+-- The squads (list of { id, men }) that are retinue: their id is in `ids`, or `known(id)` names the template of a mod retinue squad. Smallest first.
+function M.retinue_squads(squads, ids, known_template)
+    local have = {}
+    for _, id in ipairs(ids) do have[id] = true end
+    local out = {}
+    for _, squad in ipairs(squads) do
+        if squad.men > 0 and (have[squad.id] or known_template(squad.id) == "retinue_tier1") then out[#out + 1] = squad end
+    end
+    table.sort(out, function(a, b) if a.men ~= b.men then return a.men < b.men end return a.id < b.id end)
+    return out
+end
+
+-- The cap rule of the retinue squad reward: more squads may be paid while `granted` is below `cap`.
+function M.retinue_below_cap(granted, cap) return granted < cap end
 
 -- The most men that a squad has among `squads` ({ id, men, ... }), or nil.
 function M.largest_squad(squads)
