@@ -53,7 +53,8 @@ local function add_note(tip, spec, text_only)
         made.ValueText:SetText(FText(spec.value))
         paint(made.ValueText, spec.color)
     end
-    paint(made.DescriptionText, spec.color)
+    -- The label may not take a text colour (run 20261106-235642-5ad1: SetColorAndOpacity is not callable on it); then it keeps the game colour.
+    pcall(paint, made.DescriptionText, spec.color)
     find_arrow(made):SetVisibility(COLLAPSED)
 end
 

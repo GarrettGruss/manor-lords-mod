@@ -67,7 +67,7 @@ To build a new menu with these elements, see [Building mod UI](../workflows/buil
 | Class | Path | Named children / functions | Status |
 |---|---|---|---|
 | `BigTooltip_ApprovalAndPublicOrder_C` | public order tooltip | `recentFactors_VB`; hook `updateContents` (pre) | Used |
-| `approvalFactorWidget_C` | `/Game/UI/Tooltips/approvalFactorWidget` | `DescriptionText`, `ValueText`, arrow `Image_45` (texture `tiny_arrow_triangle_up`) | Used (`order_tooltip/widget.lua:5`) |
+| `approvalFactorWidget_C` | `/Game/UI/Tooltips/approvalFactorWidget` | `DescriptionText` (no `SetColorAndOpacity`), `ValueText`, arrow `Image_45` (texture `tiny_arrow_triangle_up`). Collapse `ValueText` and the arrow to show a plain text line | Used (`order_tooltip/widget.lua:5`) |
 | `ChoiceTooltip_C` | `/Game/UI/Tooltips/ChoiceTooltip` | `localizedTextBox_C_1.TextBlock_16`. Attach with `Button:SetToolTip(tip)`. The game rebuilds it: hook `Construct` and set the text again | Third-party |
 
 ### Settings and development tree

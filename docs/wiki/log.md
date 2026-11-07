@@ -1,6 +1,7 @@
 # Wiki update log
 
 ## 2026-11-06
+* **Update**: [Invasion features](architecture/invasion-features.md) and [Native UI elements](concepts/native-ui-elements.md) say how the Public Order tooltip draws a text item with no value and the revolt counter (change `add-order-tooltip-revolt-timer`, #586).
 * **Update**: [Engine limits](concepts/engine-limits.md) says how removed families no longer leave bodies or a body count (change `fix-removed-families-bodies`, #580).
 
 ## 2026-11-01

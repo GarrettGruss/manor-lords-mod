@@ -6,6 +6,7 @@ Each entry names its feature. Format: Keep a Changelog.
 ### Tuned
 - **liege_contracts:** a Small contract asks for 20 eggs, not 60 (15 on easy, 25 on hard).
 ### Added
+- **order_tooltip (add-order-tooltip-revolt-timer):** the Public Order tooltip shows `Peasants revolt in N days` while the banditry timer runs, and `Revolt blocked: V of N armed homes` when the revolt would be blocked (too few armed homes, or no Outlaws pawn). The row `Left for banditry` is now `Peasants revolted`.
 - **laws_menu (add-laws-menu):** a Laws menu in the bottom bar. You enact and revoke laws there, with a confirmation. You get 1 enact and 1 revoke for each game year (they come back at the start of spring). 1 law slot at the start, 5 at most. The tech window only unlocks now. Contracts will unlock laws and add slots.
 ### Changed
 - **liege_contracts (update-liege-contracts-tier-goods):** Small asks for renewable goods and pays vassal goods; Medium asks for processed goods and pays tools, drinks or clothes. Large asks for a cost (1 squad loaned for 60 days, 3 families for good, 3 months of vassal tribute; scaled by difficulty) and pays a law, 10 King's Favour, weapons, armor, a law slot (King's Favour at 5 slots) or +5 squads in the next relief army. Silver, regional wealth, tech point and influence rewards are gone.
