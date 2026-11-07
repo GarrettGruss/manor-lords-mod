@@ -40,7 +40,7 @@ A Small or Medium contract SHALL ask for the delivery of one good, or of one gro
 
 #### Scenario: A group contract shows both goods
 - **WHEN** a contract asks for berries (group berries and mushrooms) in the amount 40
-- **THEN** the card text is "Deliver 40 berries or mushrooms" and the text fits the card
+- **THEN** the card text is "Deliver 40 berries/fungi" and the text fits the card
 - **AND** with 25 berries and 20 mushrooms in the stores the card shows "In storage: 45 / 40" and Fulfil is enabled
 - Checked by `harness/tests/test_fakegame_liege_contracts.py` and `mod/InvasionMod/scenarios/liege_contracts/interchangeable.py`.
 

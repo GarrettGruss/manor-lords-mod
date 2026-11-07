@@ -3,6 +3,8 @@
 Each entry names its feature. Format: Keep a Changelog.
 
 ## [Unreleased]
+### Added
+- **liege_contracts (update-contract-interchangeable-goods):** hides and pelts are interchangeable in a contract, and so are berries and mushrooms. A card reads "Deliver 40 berries/fungi" (the label in the data file is short so it fits the card); any mix of the two goods pays it (the larger stock is taken first). A contract for mushrooms is now the same contract as berries, so the config `weight[279]` has no effect (use `weight[171]`).
 ### Tuned
 - **liege_contracts:** a Small contract asks for 20 eggs, not 60 (15 on easy, 25 on hard).
 ### Added

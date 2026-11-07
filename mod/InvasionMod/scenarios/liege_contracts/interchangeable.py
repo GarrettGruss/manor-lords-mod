@@ -57,7 +57,7 @@ def run(ctx) -> dict:
     time.sleep(SETTLE_S + 0.8)
     state = menu(ctx)
     texts = state["texts"]
-    expect.equals("I2 the berries card names both goods", (texts.get("ReqLabel0_0"), texts.get("ReqText0_0")), ("Deliver", "40 BERRIES OR MUSHROOMS"))
+    expect.equals("I2 the berries card names both goods", (texts.get("ReqLabel0_0"), texts.get("ReqText0_0")), ("Deliver", "40 BERRIES/FUNGI"))
     expect.equals("I3 the hides card names both goods", (texts.get("ReqLabel0_1"), texts.get("ReqText0_1")), ("Deliver", "20 HIDES OR PELTS"))
     pair_storage = stock(ctx, BERRIES) + stock(ctx, MUSHROOMS)
     expect.equals("I4 the storage line adds both goods", texts.get("HaveText0_0") or texts.get("HaveMiss0_0"), f"In storage: {pair_storage} / 40")

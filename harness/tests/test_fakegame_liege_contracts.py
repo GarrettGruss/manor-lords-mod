@@ -751,7 +751,7 @@ class InterchangeableGoodsTests(ContractsTestCase):
         self.set_stock(BERRIES, 25)
         self.set_stock(MUSHROOMS, 20)
         card = self.card("small-1")
-        self.assertEqual(card["requirement"], "Deliver 40 berries or mushrooms")
+        self.assertEqual(card["requirement"], "Deliver 40 berries/fungi")
         self.assertEqual(card["have"], "In storage: 45 / 40")
         self.assertTrue(card["enabled"], card)
         self.assertEqual(self.card("small-2")["requirement"], "Deliver 20 hides or pelts")
@@ -785,7 +785,7 @@ class InterchangeableGoodsTests(ContractsTestCase):
 
     def test_a_saved_contract_for_a_group_member_still_loads(self):
         self.offer_now(offer_of(contract(SMALL, MUSHROOMS, 40, "g", SALT, 25), contract(SMALL, PELTS, 20, "g", CLAY, 25), contract(SMALL, EEL, 30, "g", STONE, 20)))
-        self.assertEqual(self.card("small-1")["requirement"], "Deliver 40 berries or mushrooms")
+        self.assertEqual(self.card("small-1")["requirement"], "Deliver 40 berries/fungi")
         self.assertEqual(self.card("small-2")["requirement"], "Deliver 20 hides or pelts")
 
     def test_an_offer_never_holds_a_group_twice_or_pays_a_group_good(self):

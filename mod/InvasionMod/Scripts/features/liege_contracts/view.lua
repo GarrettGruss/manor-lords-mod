@@ -19,7 +19,7 @@ function M.cost_text(cost, amount, loan_days)
     return string.format("%d of %s", amount, tostring(cost))
 end
 
--- The name of what a contract asks for: the label of its group ("berries or mushrooms"), the names of the group joined with " or ",
+-- The name of what a contract asks for: the label of its group ("berries/fungi"), the names of the group joined with " or ",
 -- or the name of the good. `group_of` (good -> group) may be nil.
 function M.goods_label(good, names, group_of)
     local group = group_of and group_of[good]
@@ -30,7 +30,7 @@ function M.goods_label(good, names, group_of)
     return table.concat(parts, " or ")
 end
 
--- "Deliver 40 firewood" for a Small or Medium contract, "Deliver 40 berries or mushrooms" for a group, "Cost: 3 families, for good" for a Large contract.
+-- "Deliver 40 firewood" for a Small or Medium contract, "Deliver 40 berries/fungi" for a group, "Cost: 3 families, for good" for a Large contract.
 function M.requirement_text(contract, names, loan_days, group_of)
     if contract.cost then return "Cost: " .. M.cost_text(contract.cost, contract.amount, loan_days) end
     return string.format("Deliver %d %s", contract.amount, M.goods_label(contract.good, names, group_of))
