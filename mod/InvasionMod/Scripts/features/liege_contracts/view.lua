@@ -29,7 +29,7 @@ M.NEEDS_RETINUE_TEXT = "Needs a retinue squad"
 
 -- The banner when a loaned squad comes back.
 function M.loan_return_text(men)
-    return string.format("The liege returns your squad (%d men)", men)
+    return string.format("The liege returns your squad (%d men)", men), "The loan has ended"
 end
 
 -- "In storage: 52 / 50"

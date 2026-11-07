@@ -319,7 +319,7 @@ local function return_loans()
         if id ~= nil then
             S.loans_returned = S.loans_returned + 1
             core.log.info(TAG, string.format("LIEGE_CONTRACTS loan ended: squad %d (%s, %d men) is back", id, loan.template, loan.men))
-            local shown, problem = world.show_banner(view.loan_return_text(loan.men))
+            local shown, problem = world.show_banner(view.loan_return_text(loan.men))  -- title and subtext
             if not shown then core.log.warn(TAG, "LIEGE_CONTRACTS loan banner failed: " .. tostring(problem)) end
         else
             kept[#kept + 1] = loan

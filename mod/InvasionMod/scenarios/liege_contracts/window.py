@@ -28,7 +28,7 @@ def contract(tier, good, amount, kind, reward_good, reward_amount):
 OFFER = ".".join([
     contract("s", PLANKS, 50, "g", CLAY, 30), contract("s", 171, 70, "g", SALT, 25), contract("s", EEL, 30, "g", STONE, 20),
     contract("m", SAUSAGES, 24, "g", TOOLS, 15), contract("m", SMOKED_FISH, 20, "g", ALE, 20), contract("m", BREAD, 36, "g", CLOTHES, 10),
-    contract("l", 2, 3, "k", 0, 10), contract("l", 1, 1, "l", 0, 1), contract("l", 3, 3, "p", 0, 5),
+    contract("l", 2, 3, "k", 0, 10), contract("l", 1, 1, "l", 0, 1), contract("l", 3, 3, "r", 0, 1),
 ])
 
 
@@ -70,7 +70,7 @@ def check_layout(ctx, state: dict, has_manor: bool) -> None:
     expect.equals("W7 the first reward text", (texts.get("RewLabel0_0"), texts.get("RewText0_0")), ("Reward:", "+30 CLAY"))
     expect.equals("W7b the Large cards show a cost line and the reward", [(texts.get(f"ReqLabel2_{c}"), texts.get(f"ReqText2_{c}"), texts.get(f"RewText2_{c}")) for c in range(3)],
                   [("Cost:", "3 FAMILIES, FOR GOOD", "+10 KING'S FAVOUR"), ("Cost:", "1 SQUAD FOR 60 DAYS", "A NEW LAW"),
-                   ("Cost:", "TRIBUTE FOR 3 MONTHS", "+5 RELIEF SQUADS")])
+                   ("Cost:", "TRIBUTE FOR 3 MONTHS", "+1 RETINUE SQUAD")])
     expect.equals("W8 the tier boxes show the name and the count", [(texts.get(f"TierName{i}"), texts.get(f"TierCount{i}")) for i in range(3)],
                   [("Small", "0 / 1"), ("Medium", "0 / 1"), ("Large", "0 / 1")])
     expect.equals("W9 the top bar has the two countdowns", ["days remaining" in texts["RemainValue"], "In spring, in" in texts["RefreshValue"]], [True, True])

@@ -171,8 +171,8 @@ function M.set_squad_experience(id, value)
 end
 
 -- The banner at the top of the screen. Returns true, or false and a message.
-function M.show_banner(text)
-    return core.show_banner(text)
+function M.show_banner(text, subtext)
+    return core.show_banner(text, subtext)
 end
 
 local function built_buildings(region)
