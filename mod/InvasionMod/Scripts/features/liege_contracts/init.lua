@@ -35,10 +35,13 @@ state:register("contracts_used", "", "string")       -- contracts fulfilled in e
 state:register("contracts_done", 0, "integer")
 state:register("contracts_loans", "", "string")      -- squads that are on loan: "<template>-<men>-<experience>-<due day>" (rules.encode_loans)
 
+state:register("contracts_retinue_squads", 0, "integer") -- reward squads paid so far (cap: config retinue_squad_cap)
+state:register("retinue_squad_ids", "", "string")        -- ids of the retinue squads, "22.24" (rules.encode_ids); no safe read tells a retinue squad
+
 local table_path = world.data_path(config.data_file)
 local contracts = loader.load_file(table_path, json.decode)
 
-local S = { failed_rewards = 0, fulfils = 0, loans_started = 0, loans_returned = 0 }
+local S = { failed_rewards = 0, fulfils = 0, loans_started = 0, loans_returned = 0, ticks = 0 }
 local loan_failed = {} -- the loan records whose return failed (logged once each)
 
 ---------------------------------------------------------------------------------------------
@@ -84,7 +87,16 @@ local function slot_cap_reached() return tech_tree.law_slots() >= all_config.tec
 local function reward_allowed(kind)
     if kind == "law" then return #locked_laws() > 0 end
     if kind == "law_slot" then return not slot_cap_reached() end
+    if kind == "retinue_squad" then return rules.retinue_below_cap(state:get("contracts_retinue_squads"), config.retinue_squad_cap) end
     return true
+end
+
+local function retinue_ids() return rules.decode_ids(state:get("retinue_squad_ids")) end
+
+local function note_retinue_id(id)
+    if id == nil then return end
+    local list, changed = rules.add_id(retinue_ids(), id)
+    if changed then state:set("retinue_squad_ids", rules.encode_ids(list)) end
 end
 
 local function cost_allowed(cost)
@@ -158,16 +170,34 @@ local function pay_law(reward, contract)
     reward.law = law_id
 end
 
-local function pay_law_slot(reward)
-    local added = laws().laws_add_slot()
-    if added == nil then return fail_reward(reward, "laws_add_slot gave no answer") end
-    if added.added then return end
-    -- The cap is reached: King's Favour instead (owner decision 2026-11-05).
+-- The cap of a reward is reached: King's Favour instead (owner decisions 2026-11-05 and 2026-11-06).
+local function pay_favour_instead(reward, what)
     local amount = kings_favour_default()
     local ok, why = world.add_kings_favour(amount)
     if not ok then return fail_reward(reward, why) end
     reward.fallback = { kind = "kings_favour", amount = amount }
-    core.log.info(TAG, string.format("LIEGE_CONTRACTS law slot cap reached: paid %d King's Favour instead", amount))
+    core.log.info(TAG, string.format("LIEGE_CONTRACTS %s cap reached: paid %d King's Favour instead", what, amount))
+end
+
+local function pay_law_slot(reward)
+    local added = laws().laws_add_slot()
+    if added == nil then return fail_reward(reward, "laws_add_slot gave no answer") end
+    if added.added then return end
+    pay_favour_instead(reward, "law slot")
+end
+
+-- A native retinue squad of config.retinue_squad_men men (the game saves it). At the cap: King's Favour.
+local function pay_retinue_squad(reward)
+    if not rules.retinue_below_cap(state:get("contracts_retinue_squads"), config.retinue_squad_cap) then
+        return pay_favour_instead(reward, "retinue squad")
+    end
+    local id, why = world.add_retinue_squad(config.retinue_squad_men)
+    if id == nil then return fail_reward(reward, why) end
+    state:set("contracts_retinue_squads", state:get("contracts_retinue_squads") + 1)
+    note_retinue_id(id)
+    reward.squad = id
+    core.log.info(TAG, string.format("LIEGE_CONTRACTS retinue squad %d with %d men paid (%d of %d)", id, config.retinue_squad_men,
+        state:get("contracts_retinue_squads"), config.retinue_squad_cap))
 end
 
 -- Pays one reward. A failure is logged and counted; it is not retried.
@@ -182,6 +212,8 @@ local function pay_reward(reward, contract)
         if not ok then return fail_reward(reward, why) end
     elseif kind == "law_slot" then
         pay_law_slot(reward)
+    elseif kind == "retinue_squad" then
+        pay_retinue_squad(reward)
     elseif kind == "relief_promise" then
         invasion.add_relief_bonus(reward.amount)
     end
@@ -193,23 +225,20 @@ end
 
 local function loan_days() return config.loan_days end
 
--- The squads that a loan takes: the `amount` squads with the most men, each with its template. Returns the list, or nil, a reason and
--- the number of squads of the player.
-local function loan_candidates(amount)
+-- The squads that a loan takes: retinue squads only (change add-contract-retinue-reward), the `amount` squads with the fewest men, each with
+-- its template. `fresh`: read the manor bound squad now (a fulfilment); the window and the tick use the saved ids. Returns the list, or nil, a reason
+-- and the number of retinue squads of the player.
+local function loan_candidates(amount, fresh)
+    if fresh then note_retinue_id(world.bound_retinue_squad_id()) end
     local squads, problem = world.player_squads()
     if squads == nil then return nil, problem end
-    local live = {}
-    for _, squad in ipairs(squads) do
-        if squad.men > 0 then live[#live + 1] = squad end
-    end
-    if #live < amount then return nil, string.format("%d more %s needed", amount - #live, amount - #live == 1 and "squad" or "squads"), #live end
-    table.sort(live, function(a, b) return a.men > b.men end)
+    local live = rules.retinue_squads(squads, retinue_ids(), world.known_template)
+    if #live == 0 then return nil, view.NEEDS_RETINUE_TEXT, 0 end
+    if #live < amount then return nil, string.format("%d more retinue %s needed", amount - #live, amount - #live == 1 and "squad" or "squads"), #live end
     local picked = {}
     for index = 1, amount do
         local squad = live[index]
-        local template, why = rules.loan_template(squad.men, world.known_template(squad.id), config.loan_templates)
-        if template == nil then return nil, why, #live end
-        picked[#picked + 1] = { id = squad.id, men = squad.men, experience = squad.experience, template = template }
+        picked[#picked + 1] = { id = squad.id, men = squad.men, experience = squad.experience, template = rules.loan_template(world.known_template(squad.id)) }
     end
     return picked, nil, #live
 end
@@ -252,7 +281,7 @@ local function take_cost(contract)
     elseif cost == "loan_units" then
         local day = world.current_day()
         if day == nil then return nil, "the game day is not known" end
-        local picked, why = loan_candidates(amount)
+        local picked, why = loan_candidates(amount, true)
         if picked == nil then return nil, why end
         for _, squad in ipairs(picked) do
             local ok, problem = world.remove_squad(squad.id)
@@ -277,10 +306,21 @@ local function return_loans()
     local due, kept = rules.split_loans(list, world.current_day())
     for _, loan in ipairs(due) do
         save_loans(kept)
-        local id, why = world.spawn_squad(loan.template, loan.experience)
+        local id, why
+        if loan.template == rules.NATIVE_RETINUE then
+            id, why = world.add_retinue_squad(loan.men)
+            if id ~= nil then
+                note_retinue_id(id)
+                world.set_squad_experience(id, loan.experience)
+            end
+        else
+            id, why = world.spawn_squad(loan.template, loan.experience)
+        end
         if id ~= nil then
             S.loans_returned = S.loans_returned + 1
-            core.log.info(TAG, string.format("LIEGE_CONTRACTS loan ended: squad %d (%s) is back", id, loan.template))
+            core.log.info(TAG, string.format("LIEGE_CONTRACTS loan ended: squad %d (%s, %d men) is back", id, loan.template, loan.men))
+            local shown, problem = world.show_banner(view.loan_return_text(loan.men))
+            if not shown then core.log.warn(TAG, "LIEGE_CONTRACTS loan banner failed: " .. tostring(problem)) end
         else
             kept[#kept + 1] = loan
             save_loans(kept)
@@ -302,6 +342,7 @@ local function refusal_for(contract, fresh_manor)
     if fresh_manor then manor = world.manor_built() == true else manor = manor_built_cached() end
     local facts = { manor = manor, used = used()[contract.tier], limit = limit_of(contract.tier) }
     if contract.cost then
+        if fresh_manor and contract.cost == "loan_units" then note_retinue_id(world.bound_retinue_squad_id()) end
         local _, problem = cost_facts(contract)
         facts.cost_problem = problem
     else
@@ -392,6 +433,9 @@ end
 local function tick()
     if not state.loaded then return end
     drop_unknown()
+    S.ticks = S.ticks + 1
+    -- The manor bound squad is the newest retinue squad (a squad that the player made by hand). A slow look: the building list is not read at each tick.
+    if S.ticks % config.retinue_scan_ticks == 1 then note_retinue_id(world.bound_retinue_squad_id()) end
     return_loans()
     local info = invasion.season_info()
     if info ~= nil then yearly_step(info) end
@@ -459,7 +503,7 @@ local function command_state()
              spring_no = state:get("contracts_spring_no"), season = info and info.season, season_no = info and info.no,
              days_to_winter = days_to_winter(), days_to_spring = days_to_spring(), influence = state:get("liege_influence"), silver = liege.silver(),
              fulfils = S.fulfils, loans_started = S.loans_started, loans_returned = S.loans_returned, loans_text = state:get("contracts_loans"),
-             relief_bonus_squads = invasion.relief_bonus(), law_slots = tech_tree.law_slots(), kings_favour = world.kings_favour(), difficulty = difficulty(), offer_text = state:get("contracts_offer"), used_text = state:get("contracts_used"),
+             relief_bonus_squads = invasion.relief_bonus(), retinue_squads = state:get("contracts_retinue_squads"), retinue_ids = state:get("retinue_squad_ids"), law_slots = tech_tree.law_slots(), kings_favour = world.kings_favour(), difficulty = difficulty(), offer_text = state:get("contracts_offer"), used_text = state:get("contracts_used"),
              notice_text = model.notice_text, remaining_text = model.remaining_text, refresh_text = model.refresh_text }
 end
 

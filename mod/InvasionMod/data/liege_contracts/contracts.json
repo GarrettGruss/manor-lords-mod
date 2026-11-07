@@ -172,6 +172,11 @@
      "max": 1
     },
     {
+     "kind": "retinue_squad",
+     "min": 1,
+     "max": 1
+    },
+    {
      "kind": "relief_promise",
      "min": 5,
      "max": 5

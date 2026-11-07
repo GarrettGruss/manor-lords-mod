@@ -139,6 +139,12 @@ class RetinueTests(ManorStorageTestCase):
         self.unlock_militia_rights("prosperity", ["fair_courts"])
         self.assertFalse(any("retinue_bonus=12" in line for line in self.game.log_lines()))
 
+    def test_a_native_squad_needs_a_built_manor_and_adds_nothing_without_one(self):
+        self.world.buildings[1].Data.constructed = False
+        answer = self.game.exec('local id, why = require("features.manor_stronghold.retinue").add_native_squad(5); return tostring(id) .. "|" .. tostring(why)')
+        self.assertTrue(answer.startswith("nil|"), answer)
+        self.assertNotIn("nil|nil", answer)
+
     def test_the_retinue_hooks_are_registered(self):
         self.assertTrue(any("manor_stronghold" in line and "loaded" in line for line in self.game.log_lines()))
 

@@ -25,6 +25,13 @@ function M.requirement_text(contract, names, loan_days)
     return string.format("Deliver %d %s", contract.amount, good_name(names, contract.good))
 end
 
+M.NEEDS_RETINUE_TEXT = "Needs a retinue squad"
+
+-- The banner when a loaned squad comes back.
+function M.loan_return_text(men)
+    return string.format("The liege returns your squad (%d men)", men)
+end
+
 -- "In storage: 52 / 50"
 function M.have_text(have, need)
     return string.format("In storage: %d / %d", math.floor(have or 0), need)
@@ -32,7 +39,7 @@ end
 
 -- The line under a Large cost: what the player has now ("Families: 5").
 function M.cost_have_text(cost, held)
-    local label = cost == "loan_units" and "Squads" or cost == "send_families" and "Families" or "Vassals"
+    local label = cost == "loan_units" and "Retinue squads" or cost == "send_families" and "Families" or "Vassals"
     return string.format("%s: %d", label, math.floor(held or 0))
 end
 
@@ -43,6 +50,7 @@ function M.reward_text(reward, names)
     if kind == "law" then return "a new law" end
     if kind == "kings_favour" then return string.format("+%d King's Favour", reward.amount) end
     if kind == "law_slot" then return string.format("+%d law slot%s", reward.amount, reward.amount == 1 and "" or "s") end
+    if kind == "retinue_squad" then return string.format("+%d retinue squad%s", reward.amount, reward.amount == 1 and "" or "s") end
     if kind == "relief_promise" then return string.format("+%d relief squads", reward.amount) end
     return string.format("+%d %s", reward.amount, tostring(kind))
 end

@@ -361,9 +361,10 @@ return {
         -- Change update-liege-contracts-tier-goods (#569, owner amounts of 2026-11-05).
         loan_enabled = true,  -- the cost loan_units is drawn (a squad can be removed and respawned, spike spike-loan-units)
         loan_days = 60,       -- game days that a loaned squad is away (does not scale with the difficulty)
-        -- A squad whose template is not known to the game helper registry gets the template of the smallest size here that is at least its men
-        -- (the sizes were measured in spike-loan-units: spearMilitia 32 men, retinue_tier1 36 men). A bigger squad cannot be loaned.
-        loan_templates = { { men = 32, template = "spearMilitia" }, { men = 36, template = "retinue_tier1" } },
+        -- Change add-contract-retinue-reward (#591, owner decisions of 2026-11-06): the reward retinue_squad adds a native retinue squad.
+        retinue_squad_men = 5,  -- men in the new squad; the player pays the native recruiting to grow it (native limit: 12 for each squad)
+        retinue_scan_ticks = 5, -- one look at the manor bound squad for this many ticks (poll_ms each)
+        retinue_squad_cap = 4,  -- reward squads from contracts; at the cap the reward pays King's Favour
         min_families_left = 1, -- send_families leaves at least this many families
     },
     -- laws_menu (change add-laws-menu, #563): the Laws menu, and the yearly enact and revoke actions (owner, 2026-11-04).
